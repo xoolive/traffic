@@ -109,6 +109,15 @@ class SO6(object):
         return SO6(self.data[(self.data.time1 <= after) &
                              (self.data.time2 >= before)])
 
+    def intersects(self, sector):
+        west, south, east, north = sector.bounds
+        sub = self.data[(self.data.lat1 <= north) &
+                        (self.data.lat2 >= south) &
+                        (self.data.lon1 <= east) &
+                        (self.data.lon2 >= west)]
+        return SO6(sub.groupby('callsign').filter(
+            lambda f: sector.intersects(Flight(f).linestring())))
+
 
 
 
