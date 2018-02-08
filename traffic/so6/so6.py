@@ -106,8 +106,8 @@ class SO6(object):
 
     def between(self, before, after):
         before, after = to_datetime(before), to_datetime(after)
-        return SO6(self.data[(self.data.time1 >= after) &
-                             (self.data.time2 <= before)])
+        return SO6(self.data[(self.data.time1 <= after) &
+                             (self.data.time2 >= before)])
 
 
 
