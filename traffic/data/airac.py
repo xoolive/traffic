@@ -41,6 +41,8 @@ class Sector(object):
         return self.area.__getitem__(*args)
 
     def _repr_svg_(self):
+        for p, low, up in self:
+            print(low, up)
         return self.flatten()._repr_svg_()
 
     def __repr__(self):
