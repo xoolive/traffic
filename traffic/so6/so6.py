@@ -33,6 +33,8 @@ class Flight(object):
         self.interpolator = dict()
 
     def _repr_svg_(self):
+        print(f"{self.callsign}: {self.origin} ({self.start})"
+              f" → {self.destination} ({self.stop})")
         return self.linestring._repr_svg_()
 
     def plot(self, ax, **kwargs):
@@ -52,11 +54,11 @@ class Flight(object):
 
     @property
     def start(self):
-        return min(self.times())
+        return min(self.times)
 
     @property
     def stop(self):
-        return max(self.times())
+        return max(self.times)
 
     @property
     def origin(self):
@@ -194,6 +196,7 @@ class SO6(object):
 
     def intersects(self, sector):
         west, south, east, north = sector.bounds
+        # TODO c'est faux ça !
         sub = self.data[(self.data.lat1 <= north) &
                         (self.data.lat2 >= south) &
                         (self.data.lon1 <= east) &
