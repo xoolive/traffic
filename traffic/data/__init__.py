@@ -1,4 +1,4 @@
-from .airac import get_area, init_airac
+from .airac import get_area, init_airac  # noqa
 
 import configparser
 from appdirs import user_config_dir, user_cache_dir
@@ -20,13 +20,12 @@ if not cache_dir.exists():
 config = configparser.ConfigParser()
 config.read(config_file)
 
-airac_path = config.get("global", "airac_path", fallback="")
-if airac_path == "":
+airac_path_str = config.get("global", "airac_path", fallback="")
+if airac_path_str == "":
     raise ImportError(f"Please edit file {config_file} with AIRAC directory")
 
-airac_path = Path(airac_path)
+airac_path = Path(airac_path_str)
 if not airac_path.exists():
     raise ImportError(f"Please edit file {config_file} with AIRAC directory")
 
 init_airac(airac_path, cache_dir)
-

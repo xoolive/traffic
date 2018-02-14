@@ -1,22 +1,19 @@
-import os
-import re
 import pickle
+import re
 import zipfile
-import tempfile
-
-from pathlib import Path
 from functools import lru_cache
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 from xml.etree import ElementTree
 
 import numpy as np
-
-from shapely.ops import cascaded_union
-from shapely.geometry import Polygon
-
 from matplotlib.patches import Polygon as MplPolygon
 
-full_dict = {}
-all_points = {}
+from shapely.geometry import Polygon
+from shapely.ops import cascaded_union
+
+full_dict: Dict[str, Any] = {}
+all_points: Dict[str, Tuple[float, ...]] = {}
 tree = None
 
 ns = {'adrmsg': 'http://www.eurocontrol.int/cfmu/b2b/ADRMessage',
@@ -27,11 +24,11 @@ ns = {'adrmsg': 'http://www.eurocontrol.int/cfmu/b2b/ADRMessage',
 
 class Sector(object):
 
-    def __init__(self, name, area):
-        self.area = area
-        self.name = name
+    def __init__(self, name: str, area: Polygon) -> None:
+        self.area: Polygon = area
+        self.name: str = name
 
-    def flatten(self):
+    def flatten(self) -> Polygon:
         return cascaded_union([p[0] for p in self])
 
     def intersects(self, structure):
@@ -39,6 +36,9 @@ class Sector(object):
 
     def __getitem__(self, *args):
         return self.area.__getitem__(*args)
+
+    def __iter__(self):
+        return self.area.__iter__()
 
     def _repr_svg_(self):
         for p, low, up in self:
@@ -64,7 +64,6 @@ class Sector(object):
         ax.add_patch(MplPolygon(coords, **kwargs))
 
 
-
 def init_airac(airac_path, cache_dir):
     global full_dict, all_points, tree
 
@@ -86,10 +85,8 @@ def init_airac(airac_path, cache_dir):
 
     tree = ElementTree.parse((airac_path / 'Airspace.BASELINE').as_posix())
 
-
     for airspace in tree.findall('adrmsg:hasMember/aixm:Airspace', ns):
         full_dict[airspace.find('gml:identifier', ns).text] = airspace
-
 
     points = ElementTree.parse((airac_path / 'DesignatedPoint.BASELINE').
                                as_posix())
@@ -112,23 +109,44 @@ def init_airac(airac_path, cache_dir):
         pickle.dump((full_dict, all_points, tree), fh)
 
 
-def cascaded_union_with_alt(polyalt):
+ExtrudedPolygon = Tuple[Polygon, float, float]
+SectorList = List[ExtrudedPolygon]
+
+
+def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
+    # TODO merge altitudes
     altitudes = set(alt for _, *low_up in polyalt for alt in low_up)
     slices = sorted(altitudes)
     results = []
-    last_matched = {}
+    # last_matched = {}
     for low, up in zip(slices, slices[1:]):
         matched_poly = [p for (p, low_, up_) in polyalt
                         if low_ <= low <= up_ and low_ <= up <= up_]
-        results.append([cascaded_union(matched_poly), low, up])
+        results.append((cascaded_union(matched_poly), low, up))
     return results
+
+
+def append_coords(lr, block_poly: List[Tuple[Polygon, Any, Any]]) -> None:
+    coords: List[Tuple[float, ...]] = []
+    gml, xlink = ns['gml'], ns['xlink']
+    for point in lr.iter():
+        if point.tag in ('{%s}pos' % (gml),
+                         '{%s}pointProperty' % (gml)):
+            if point.tag.endswith('pos'):
+                coords.append(tuple(float(x) for x in point.text.split()))
+            else:
+                points = point.attrib['{%s}href' % (xlink)]
+                coords.append(all_points[points.split(':')[2]])
+    block_poly.append(
+        (Polygon([(lon, lat) for lat, lon in coords]), None, None))
+
 
 @lru_cache(None)
 def make_polygon(airspace):
     polygons = []
     for block in airspace.findall(
-        "aixm:geometryComponent/aixm:AirspaceGeometryComponent/"
-        "aixm:theAirspaceVolume/aixm:AirspaceVolume", ns):
+            "aixm:geometryComponent/aixm:AirspaceGeometryComponent/"
+            "aixm:theAirspaceVolume/aixm:AirspaceVolume", ns):
         block_poly = []
         upper = block.find("aixm:upperLimit", ns)
         lower = block.find("aixm:lowerLimit", ns)
@@ -139,8 +157,8 @@ def make_polygon(airspace):
                  re.match("\d{3}", lower.text) else float("-inf"))
 
         for component in block.findall(
-            "aixm:contributorAirspace/aixm:AirspaceVolumeDependency/"
-            "aixm:theAirspace", ns):
+                "aixm:contributorAirspace/aixm:AirspaceVolumeDependency/"
+                "aixm:theAirspace", ns):
             key = component.attrib['{http://www.w3.org/1999/xlink}href']
             key = key.split(':')[2]
             child = full_dict[key]
@@ -161,16 +179,7 @@ def make_polygon(airspace):
                                 "aixm:horizontalProjection/aixm:Surface/"
                                 "gml:patches/gml:PolygonPatch/gml:exterior/"
                                 "gml:LinearRing", ns):
-                            coords = []
-                            for point in lr.iter():
-                                if point.tag in ('{%s}pos' % (ns['gml']),
-                                                 '{%s}pointProperty' % (ns['gml'])):
-                                    if point.tag.endswith('pos'):
-                                        coords.append([float(x) for x in point.text.split()])
-                                    else:
-                                        points = point.attrib['{http://www.w3.org/1999/xlink}href']
-                                        coords.append(all_points[points.split(':')[2]])
-                            block_poly.append((Polygon([(lon, lat) for lat, lon in coords]), None, None))
+                            append_coords(lr, block_poly)
 
         if upper == float('inf') and lower == float('-inf'):
             polygons += cascaded_union_with_alt(block_poly)
@@ -181,17 +190,21 @@ def make_polygon(airspace):
     return(cascaded_union_with_alt(polygons))
 
 
-def get_area(name, type_ = None):
+def get_area(name: str, type_: Optional[str]=None) -> Sector:
     polygon = None
+    if tree is None:
+        raise RuntimeError("run init_airac first")
 
     for airspace in tree.findall('adrmsg:hasMember/aixm:Airspace', ns):
-        for ts in airspace.findall("aixm:timeSlice/aixm:AirspaceTimeSlice", ns):
+        for ts in airspace.findall(
+                "aixm:timeSlice/aixm:AirspaceTimeSlice", ns):
 
             designator = ts.find("aixm:designator", ns)
 
             if (designator is not None and
-                (designator.text == name) and
-                (type_ is None or ts.find("aixm:type", ns).text == type_)):
+                    (designator.text == name) and
+                    (type_ is None or
+                     ts.find("aixm:type", ns).text == type_)):
 
                 polygon = make_polygon(ts)
                 break

@@ -1,24 +1,32 @@
 from calendar import timegm
 from datetime import datetime, timedelta
+from typing import Dict, Iterator, Set, Tuple, Union
+
+import numpy as np
 
 import maya
-import numpy as np
 import pandas as pd
-
-from shapely.geometry import LineString
-from scipy.interpolate import interp1d
 from cartopy.crs import PlateCarree
+from scipy.interpolate import interp1d
+from shapely.geometry import LineString
 
-def time(int_):
-    ts = timegm((2000 + int_//10000, int_//100 % 100, int_ % 100, 0, 0, 0))
+timelike = Union[str, int, datetime]
+
+
+def time(int_: int) -> datetime:
+    ts = timegm((2000 + int_ // 10000,
+                 int_ // 100 % 100,
+                 int_ % 100, 0, 0, 0))
     return datetime.fromtimestamp(ts)
 
-def hour(int_):
-    return timedelta(hours=int_//10000,
-                     minutes=int_//100 % 100,
+
+def hour(int_: int) -> timedelta:
+    return timedelta(hours=int_ // 10000,
+                     minutes=int_ // 100 % 100,
                      seconds=int_ % 100)
 
-def to_datetime(time):
+
+def to_datetime(time: timelike) -> datetime:
     if isinstance(time, str):
         time = maya.parse(time).epoch
     if isinstance(time, int):
@@ -28,14 +36,17 @@ def to_datetime(time):
 
 class Flight(object):
 
-    def __init__(self, data):
-        self.data = data
-        self.interpolator = dict()
+    def __init__(self, data: pd.DataFrame) -> None:
+        self.data: pd.DataFrame = data
+        self.interpolator: Dict = dict()
 
     def _repr_svg_(self):
         print(f"{self.callsign}: {self.origin} ({self.start})"
               f" → {self.destination} ({self.stop})")
         return self.linestring._repr_svg_()
+
+    def __len__(self) -> int:
+        return self.data.shape[0]
 
     def plot(self, ax, **kwargs):
         if 'projection' in ax.__dict__ and 'transform' not in kwargs:
@@ -49,31 +60,31 @@ class Flight(object):
                     [segment.lat1, segment.lat2], **kwargs)
 
     @property
-    def callsign(self):
+    def callsign(self) -> int:
         return self.data.iloc[0].callsign
 
     @property
-    def start(self):
+    def start(self) -> datetime:
         return min(self.times)
 
     @property
-    def stop(self):
+    def stop(self) -> datetime:
         return max(self.times)
 
     @property
-    def origin(self):
+    def origin(self) -> str:
         return self.data.iloc[0].origin
 
     @property
-    def destination(self):
+    def destination(self) -> str:
         return self.data.iloc[0].destination
 
     @property
-    def aircraft(self):
+    def aircraft(self) -> str:
         return self.data.iloc[0].aircraft
 
     @property
-    def coords(self):
+    def coords(self) -> Iterator[Tuple[float, float, float]]:
         if self.data.shape[0] == 0:
             return
         for _, s in self.data.iterrows():
@@ -81,7 +92,7 @@ class Flight(object):
         yield s.lon2, s.lat2, s.alt2
 
     @property
-    def times(self):
+    def times(self) -> Iterator[datetime]:
         if self.data.shape[0] == 0:
             return
         for _, s in self.data.iterrows():
@@ -89,14 +100,11 @@ class Flight(object):
         yield s.time2
 
     @property
-    def linestring(self):
+    def linestring(self) -> LineString:
         return LineString(list(self.coords))
 
     def interpolate(self, times, proj=PlateCarree()):
-        """Interpolates a trajectory in time.
-
-        times:  a numpy array of timestamps
-        """
+        """Interpolates a trajectory in time.  """
         if proj not in self.interpolator:
             self.interpolator[proj] = interp1d(
                 np.stack(t.timestamp() for t in self.times),
@@ -105,58 +113,58 @@ class Flight(object):
         return PlateCarree().transform_points(
             proj, *self.interpolator[proj](times))
 
-    def at(self, time, proj=PlateCarree()):
+    def at(self, time: timelike, proj=PlateCarree()) -> np.ndarray:
         time = to_datetime(time)
-        return self.interpolate(np.array([time.timestamp()]), proj)
+        timearray: np.ndarray[datetime] = np.array([time.timestamp()])
+        return self.interpolate(timearray, proj)
 
-    def between(self, before, after):
+    def between(self, before: timelike, after: timelike) -> 'Flight':
         before, after = to_datetime(before), to_datetime(after)
 
-        t = np.stack(self.times)
+        t: np.ndarray = np.stack(self.times)
         index = np.where((before < t) & (t < after))
 
-        new_data = np.r_[self.at(before),
-                         np.stack(self.coords)[index],
-                         self.at(after)]
+        new_data: np.ndarray = np.vstack([self.at(before),
+                                          np.stack(self.coords)[index],
+                                          self.at(after)])
 
-        df = (pd.DataFrame.from_records(np.c_[new_data[:-1,:], new_data[1:,:]],
-                                        columns=['lat1', 'lon1', 'alt1',
-                                                 'lat2', 'lon2', 'alt2']).
-              assign(time1=[before, *t[index]],
-                     time2=[*t[index], after],
-                     origin=self.origin,
-                     destination=self.destination,
-                     aircraft=self.aircraft,
-                     callsign=self.callsign))
+        df: pd.DataFrame = (
+            pd.DataFrame.from_records(
+                np.c_[new_data[:-1, :], new_data[1:, :]],
+                columns=['lat1', 'lon1', 'alt1', 'lat2', 'lon2', 'alt2']).
+            assign(time1=[before, *t[index]],
+                   time2=[*t[index], after],
+                   origin=self.origin,
+                   destination=self.destination,
+                   aircraft=self.aircraft,
+                   callsign=self.callsign))
 
         return Flight(df)
 
 
-
-
 class SO6(object):
 
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, data: pd.DataFrame) -> None:
+        self.data: pd.DataFrame = data
 
-    def __getitem__(self, callsign):
+    def __getitem__(self, callsign: str) -> Flight:
         return Flight(self.data.groupby('callsign').get_group(callsign))
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[str, Flight]]:
         return iter(self.data.groupby('callsign'))
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.callsigns)
 
     def _ipython_key_completions_(self):
         return self.callsigns
 
     @property
-    def callsigns(self):
+    def callsigns(self) -> Set[str]:
         return set(self.data.callsign)
 
     @classmethod
-    def parse_so6(self, filename):
+    def parse_so6(self, filename: str) -> 'SO6':
         so6 = pd.read_csv(filename, sep=" ", header=-1,
                           names=['d1', 'origin', 'destination', 'aircraft',
                                  'hour1', 'hour2', 'alt1', 'alt2', 'd2',
@@ -177,24 +185,25 @@ class SO6(object):
         return SO6(so6)
 
     @classmethod
-    def parse_pkl(self, filename):
+    def parse_pkl(self, filename: str) -> 'SO6':
         so6 = pd.read_pickle(filename)
         return SO6(so6)
 
-    def to_pkl(self, filename):
+    def to_pkl(self, filename: str) -> None:
         self.data.to_pickle(filename)
 
-    def at(self, time):
+    def at(self, time: timelike) -> 'SO6':
         time = to_datetime(time)
         return SO6(self.data[(self.data.time1 <= time) &
                              (self.data.time2 > time)])
 
-    def between(self, before, after):
+    def between(self, before: timelike, after: timelike) -> 'SO6':
         before, after = to_datetime(before), to_datetime(after)
         return SO6(self.data[(self.data.time1 <= after) &
                              (self.data.time2 >= before)])
 
-    def intersects(self, sector):
+    # TODO à refaire, à retyper
+    def intersects(self, sector) -> 'SO6':
         west, south, east, north = sector.bounds
         # TODO c'est faux ça !
         sub = self.data[(self.data.lat1 <= north) &
@@ -203,7 +212,3 @@ class SO6(object):
                         (self.data.lon2 >= west)]
         return SO6(sub.groupby('callsign').filter(
             lambda f: sector.intersects(Flight(f).linestring())))
-
-
-
-
