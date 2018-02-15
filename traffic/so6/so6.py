@@ -12,6 +12,7 @@ from shapely.geometry import LineString
 
 timelike = Union[str, int, datetime]
 
+from ..data.airac import Sector
 
 def time(int_: int) -> datetime:
     ts = timegm((2000 + int_ // 10000,
@@ -131,7 +132,7 @@ class Flight(object):
         df: pd.DataFrame = (
             pd.DataFrame.from_records(
                 np.c_[new_data[:-1, :], new_data[1:, :]],
-                columns=['lat1', 'lon1', 'alt1', 'lat2', 'lon2', 'alt2']).
+                columns=['lon1', 'lat1', 'alt1', 'lon2', 'lat2', 'alt2']).
             assign(time1=[before, *t[index]],
                    time2=[*t[index], after],
                    origin=self.origin,
@@ -140,6 +141,14 @@ class Flight(object):
                    callsign=self.callsign))
 
         return Flight(df)
+
+    def intersects(self, sector: Sector):
+        for layer in sector:
+            ix = self.linestring.intersection(layer.polygon)
+            if not ix.is_empty:
+                if any(layer.lower < x[2] < layer.upper for x in ix.coords):
+                    return True
+        return False
 
 
 class SO6(object):

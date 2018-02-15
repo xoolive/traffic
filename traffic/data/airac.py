@@ -3,7 +3,7 @@ import re
 import zipfile
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, NamedTuple
 from xml.etree import ElementTree
 
 import numpy as np
@@ -11,6 +11,7 @@ from matplotlib.patches import Polygon as MplPolygon
 
 from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
+
 
 full_dict: Dict[str, Any] = {}
 all_points: Dict[str, Tuple[float, ...]] = {}
@@ -21,15 +22,20 @@ ns = {'adrmsg': 'http://www.eurocontrol.int/cfmu/b2b/ADRMessage',
       'gml': 'http://www.opengis.net/gml/3.2',
       'xlink': 'http://www.w3.org/1999/xlink'}
 
+ExtrudedPolygon = NamedTuple('ExtrudedPolygon',
+                             [('polygon', Polygon),
+                              ('lower', float), ('upper', float)])
+SectorList = List[ExtrudedPolygon]
+
 
 class Sector(object):
 
-    def __init__(self, name: str, area: Polygon) -> None:
-        self.area: Polygon = area
+    def __init__(self, name: str, area: List[ExtrudedPolygon]) -> None:
+        self.area: List[ExtrudedPolygon] = area
         self.name: str = name
 
     def flatten(self) -> Polygon:
-        return cascaded_union([p[0] for p in self])
+        return cascaded_union([p.polygon for p in self])
 
     def intersects(self, structure):
         pass
@@ -41,8 +47,8 @@ class Sector(object):
         return self.area.__iter__()
 
     def _repr_svg_(self):
-        for p, low, up in self:
-            print(low, up)
+        for polygon in self:
+            print(polygon.lower, polygon.upper)
         return self.flatten()._repr_svg_()
 
     def __repr__(self):
@@ -62,6 +68,10 @@ class Sector(object):
         if 'edgecolor' not in kwargs:
             kwargs['edgecolor'] = 'red'
         ax.add_patch(MplPolygon(coords, **kwargs))
+
+    @property
+    def bounds(self) -> Tuple[float, ...]:
+        return self.flatten().bounds
 
 
 def init_airac(airac_path, cache_dir):
@@ -109,10 +119,6 @@ def init_airac(airac_path, cache_dir):
         pickle.dump((full_dict, all_points, tree), fh)
 
 
-ExtrudedPolygon = Tuple[Polygon, float, float]
-SectorList = List[ExtrudedPolygon]
-
-
 def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
     # TODO merge altitudes
     altitudes = set(alt for _, *low_up in polyalt for alt in low_up)
@@ -122,11 +128,11 @@ def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
     for low, up in zip(slices, slices[1:]):
         matched_poly = [p for (p, low_, up_) in polyalt
                         if low_ <= low <= up_ and low_ <= up <= up_]
-        results.append((cascaded_union(matched_poly), low, up))
+        results.append(ExtrudedPolygon(cascaded_union(matched_poly), low, up))
     return results
 
 
-def append_coords(lr, block_poly: List[Tuple[Polygon, Any, Any]]) -> None:
+def append_coords(lr, block_poly):
     coords: List[Tuple[float, ...]] = []
     gml, xlink = ns['gml'], ns['xlink']
     for point in lr.iter():
@@ -142,12 +148,12 @@ def append_coords(lr, block_poly: List[Tuple[Polygon, Any, Any]]) -> None:
 
 
 @lru_cache(None)
-def make_polygon(airspace):
-    polygons = []
+def make_polygon(airspace) -> SectorList:
+    polygons: SectorList = []
     for block in airspace.findall(
             "aixm:geometryComponent/aixm:AirspaceGeometryComponent/"
             "aixm:theAirspaceVolume/aixm:AirspaceVolume", ns):
-        block_poly = []
+        block_poly: SectorList = []
         upper = block.find("aixm:upperLimit", ns)
         lower = block.find("aixm:lowerLimit", ns)
 
@@ -184,7 +190,7 @@ def make_polygon(airspace):
         if upper == float('inf') and lower == float('-inf'):
             polygons += cascaded_union_with_alt(block_poly)
         else:
-            polygons.append((cascaded_union(
+            polygons.append(ExtrudedPolygon(cascaded_union(
                 [p for (p, *_) in block_poly]), lower, upper))
 
     return(cascaded_union_with_alt(polygons))
@@ -208,5 +214,8 @@ def get_area(name: str, type_: Optional[str]=None) -> Sector:
 
                 polygon = make_polygon(ts)
                 break
+
+    if polygon is None:
+        raise ValueError(f"Sector {name} not found")
 
     return Sector(name, polygon)
