@@ -1,5 +1,6 @@
 from calendar import timegm
 from datetime import datetime, timedelta
+from decimal import ROUND_DOWN, ROUND_UP, Decimal
 from typing import Dict, Iterator, Set, Tuple, Union
 
 import numpy as np
@@ -7,12 +8,17 @@ import numpy as np
 import maya
 import pandas as pd
 from cartopy.crs import PlateCarree
+from fastkml import kml
+from fastkml.geometry import Geometry
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString
-
-timelike = Union[str, int, datetime]
+from shapely.geometry.base import BaseMultipartGeometry
 
 from ..data.airac import Sector
+
+timelike = Union[str, int, datetime]
+time_or_delta = Union[timelike, timedelta]
+
 
 def time(int_: int) -> datetime:
     ts = timegm((2000 + int_ // 10000,
@@ -119,8 +125,12 @@ class Flight(object):
         timearray: np.ndarray[datetime] = np.array([time.timestamp()])
         return self.interpolate(timearray, proj)
 
-    def between(self, before: timelike, after: timelike) -> 'Flight':
-        before, after = to_datetime(before), to_datetime(after)
+    def between(self, before: timelike, after: time_or_delta) -> 'Flight':
+        before = to_datetime(before)
+        if isinstance(after, timedelta):
+            after = before + after
+        else:
+            after = to_datetime(after)
 
         t: np.ndarray = np.stack(self.times)
         index = np.where((before < t) & (t < after))
@@ -146,9 +156,31 @@ class Flight(object):
         for layer in sector:
             ix = self.linestring.intersection(layer.polygon)
             if not ix.is_empty:
-                if any(layer.lower < x[2] < layer.upper for x in ix.coords):
-                    return True
+                if isinstance(ix, BaseMultipartGeometry):
+                    # TODO this sounds plausible yet weird...
+                    for part in ix:
+                        if any(100*layer.lower < x[2] < 100*layer.upper
+                               for x in part.coords):
+                            return True
+                else:
+                    if any(layer.lower < x[2] < layer.upper
+                           for x in ix.coords):
+                        return True
         return False
+
+    def export_kml(self, **kwargs):
+
+        params = {'name': self.callsign,
+                  'description': f"{self.origin} → {self.destination}"}
+        for key, value in kwargs.items():
+            params[key] = value
+
+        placemark = kml.Placemark(**params)
+        placemark.visibility = 1
+        placemark.geometry = Geometry(geometry=self.linestring,
+                                      extrude=True,
+                                      altitude_mode='relativeToGround')
+        return placemark
 
 
 class SO6(object):
@@ -206,18 +238,46 @@ class SO6(object):
         return SO6(self.data[(self.data.time1 <= time) &
                              (self.data.time2 > time)])
 
-    def between(self, before: timelike, after: timelike) -> 'SO6':
-        before, after = to_datetime(before), to_datetime(after)
+    def between(self, before: timelike, after: time_or_delta) -> 'SO6':
+        before = to_datetime(before)
+        if isinstance(after, timedelta):
+            after = before + after
+        else:
+            after = to_datetime(after)
         return SO6(self.data[(self.data.time1 <= after) &
                              (self.data.time2 >= before)])
 
-    # TODO à refaire, à retyper
     def intersects(self, sector) -> 'SO6':
-        west, south, east, north = sector.bounds
-        # TODO c'est faux ça !
-        sub = self.data[(self.data.lat1 <= north) &
-                        (self.data.lat2 >= south) &
-                        (self.data.lon1 <= east) &
-                        (self.data.lon2 >= west)]
-        return SO6(sub.groupby('callsign').filter(
-            lambda f: sector.intersects(Flight(f).linestring())))
+        return SO6(self.data.
+                   groupby('callsign').
+                   filter(lambda flight: Flight(flight).intersects(sector)))
+
+    def inside_bbox(self, bounds: Union[Sector, Tuple[float, ...]]) -> 'SO6':
+
+        if isinstance(bounds, Sector):
+           bounds = bounds.flatten().bounds
+
+        west, south, east, north = bounds
+
+        # Transform coords into intelligible floats
+        # '-2.06 <= lon1 <= 4.50 & 42.36 <= lat1 <= 48.14', instead of
+        #  (-2.066666603088379, 42.366943359375, 4.491666793823242,
+        #   48.13333511352539)
+
+        dec = Decimal('0.00')
+        west = Decimal(west).quantize(dec, rounding=ROUND_DOWN)
+        east = Decimal(east).quantize(dec, rounding=ROUND_UP)
+        south = Decimal(south).quantize(dec, rounding=ROUND_DOWN)
+        north = Decimal(north).quantize(dec, rounding=ROUND_UP)
+
+        # the numexpr query is 10% faster than the regular
+        # data[data.lat1 >= ...] conjunctions of comparisons
+        query = "{0} <= lon1 <= {2} & {1} <= lat1 <= {3}"
+        query = query.format(west, south, east, north)
+
+        data = self.data.query(query)
+
+        callsigns: Set[str] = set(data.callsign)
+
+        return SO6(self.data.groupby('callsign').filter(
+            lambda data: data.iloc[0].callsign in callsigns))

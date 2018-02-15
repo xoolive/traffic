@@ -1,4 +1,4 @@
-from .airac import get_area, init_airac  # noqa
+from .airac import SectorParser  # noqa
 
 import configparser
 from appdirs import user_config_dir, user_cache_dir
@@ -28,4 +28,4 @@ airac_path = Path(airac_path_str)
 if not airac_path.exists():
     raise ImportError(f"Please edit file {config_file} with AIRAC directory")
 
-init_airac(airac_path, cache_dir)
+sectors = SectorParser(airac_path, cache_dir)
