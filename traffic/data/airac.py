@@ -67,15 +67,18 @@ class Sector(object):
         return self.flatten().bounds
 
 def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
-    # TODO merge altitudes
     altitudes = set(alt for _, *low_up in polyalt for alt in low_up)
     slices = sorted(altitudes)
-    results = []
-    # last_matched = {}
+    results: List[ExtrudedPolygon] = []
     for low, up in zip(slices, slices[1:]):
         matched_poly = [p for (p, low_, up_) in polyalt
                         if low_ <= low <= up_ and low_ <= up <= up_]
-        results.append(ExtrudedPolygon(cascaded_union(matched_poly), low, up))
+        new_poly = ExtrudedPolygon(cascaded_union(matched_poly), low, up)
+        if len(results) > 0 and new_poly.polygon.equals(results[-1].polygon):
+            merged = ExtrudedPolygon(new_poly.polygon, results[-1].lower, up)
+            results[-1] = merged
+        else:
+            results.append(new_poly)
     return results
 
 
