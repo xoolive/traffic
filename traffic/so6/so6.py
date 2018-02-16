@@ -174,10 +174,12 @@ class Flight(object):
                   'description': f"{self.origin} → {self.destination}"}
         for key, value in kwargs.items():
             params[key] = value
-
         placemark = kml.Placemark(**params)
         placemark.visibility = 1
-        placemark.geometry = Geometry(geometry=self.linestring,
+        # Convert to meters
+        coords = np.stack(self.coords)
+        coords[:, 2] *= 0.3048
+        placemark.geometry = Geometry(geometry=LineString(coords),
                                       extrude=True,
                                       altitude_mode='relativeToGround')
         return placemark

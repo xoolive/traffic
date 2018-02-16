@@ -3,15 +3,16 @@ import re
 import zipfile
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, NamedTuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from xml.etree import ElementTree
 
 import numpy as np
 from matplotlib.patches import Polygon as MplPolygon
 
+from fastkml import kml
+from fastkml.geometry import Geometry
 from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
-
 
 ExtrudedPolygon = NamedTuple('ExtrudedPolygon',
                              [('polygon', Polygon),
@@ -65,6 +66,30 @@ class Sector(object):
     @property
     def bounds(self) -> Tuple[float, ...]:
         return self.flatten().bounds
+
+    def decompose(self, extr_p):
+        c = np.stack(extr_p.polygon.exterior.coords)
+        alt = np.zeros(c.shape[0], dtype=float)
+
+        alt[:] = min(extr_p.upper, 400) * 30.48
+        upper_layer = np.c_[c, alt]
+        yield Polygon(upper_layer)
+        alt[:] = max(0, extr_p.lower) * 30.48
+        lower_layer = np.c_[c, alt][::-1, :]
+        yield Polygon(lower_layer)
+
+        for i, j in zip(range(c.shape[0]-1), range(c.shape[0], 1, -1)):
+            yield Polygon(np.r_[lower_layer[i:i+2,:], upper_layer[j-2:j, :]])
+
+    def export_kml(self, **kwargs):
+        folder = kml.Folder(name=self.name, description=self.type)
+        for extr_p in self:
+            for elt in self.decompose(extr_p):
+                placemark = kml.Placemark(**kwargs)
+                placemark.geometry = kml.Geometry(
+                    geometry=elt, altitude_mode='relativeToGround')
+                folder.append(placemark)
+        return folder
 
 def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
     altitudes = set(alt for _, *low_up in polyalt for alt in low_up)
