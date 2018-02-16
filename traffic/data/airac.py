@@ -1,9 +1,12 @@
+import operator
 import pickle
 import re
+import warnings
 import zipfile
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import (Any, Callable, Dict, Iterator, List, NamedTuple, Optional,
+                    Tuple)
 from xml.etree import ElementTree
 
 import numpy as np
@@ -11,7 +14,7 @@ from matplotlib.patches import Polygon as MplPolygon
 
 from fastkml import kml
 from fastkml.geometry import Geometry
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import cascaded_union
 
 ExtrudedPolygon = NamedTuple('ExtrudedPolygon',
@@ -41,18 +44,26 @@ class Sector(object):
         return self.area.__iter__()
 
     def _repr_svg_(self):
+        print("{self.name}/{self.type}")
         for polygon in self:
             print(polygon.lower, polygon.upper)
         return self.flatten()._repr_svg_()
 
     def __repr__(self):
-        return f"Sector {self.name}"
+        return f"Sector {self.name}/{self.type}"
 
     def __str__(self):
         return f"""Sector {self.name} with {len(self.area)} parts"""
 
     def plot(self, ax, **kwargs):
-        coords = np.stack(self.flatten().exterior.coords)
+        flat = self.flatten()
+        if isinstance(flat, MultiPolygon):
+            for poly in flat:
+                # quick and dirty
+                sub = Sector("", [ExtrudedPolygon(poly, 0, 0)])
+                sub.plot(ax, **kwargs)
+            return
+        coords = np.stack(flat.exterior.coords)
         if 'projection' in ax.__dict__:
             from cartopy.crs import PlateCarree
             coords = ax.projection.transform_points(
@@ -94,6 +105,9 @@ class Sector(object):
 def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
     altitudes = set(alt for _, *low_up in polyalt for alt in low_up)
     slices = sorted(altitudes)
+    if len(slices) == 1 and slices[0] is None:
+        simple_union = cascaded_union([p for p, *_ in polyalt])
+        return [ExtrudedPolygon(simple_union, float("-inf"), float("inf"))]
     results: List[ExtrudedPolygon] = []
     for low, up in zip(slices, slices[1:]):
         matched_poly = [p for (p, low_, up_) in polyalt
@@ -250,7 +264,10 @@ class SectorParser(object):
 
         return(cascaded_union_with_alt(polygons))
 
-    def __getitem__(self, name: str) -> Sector:
+    def __getitem__(self, name: str) -> Optional[Sector]:
+        return next(self.search(name, operator.eq), None)
+
+    def search(self, name: str, cmp: Callable=re.match) -> Iterator[Sector]:
         polygon = None
         type_: Optional[str] = None
 
@@ -265,16 +282,15 @@ class SectorParser(object):
 
                 designator = ts.find("aixm:designator", self.ns)
 
-                if (designator is not None and
-                        (designator.text == name) and
+                if (designator is not None and cmp(name, designator.text) and
                         (type_ is None or
                          ts.find("aixm:type", self.ns).text == type_)):
 
                     polygon = self.make_polygon(ts)
                     type_ = ts.find("aixm:type", self.ns).text
-                    break
-
-        if polygon is None:
-            raise ValueError(f"Sector {name} not found")
-
-        return Sector(name, polygon, type_)
+                    if len(polygon) > 0:
+                        yield Sector(designator.text, polygon, type_)
+                    else:
+                        warnings.warn(
+                            f"{designator.text} produces an empty sector",
+                            RuntimeWarning)
