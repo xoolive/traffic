@@ -34,17 +34,18 @@ class Sector(object):
     def flatten(self) -> Polygon:
         return cascaded_union([p.polygon for p in self])
 
-    def intersects(self, structure):
-        pass
-
     def __getitem__(self, *args):
         return self.area.__getitem__(*args)
+
+    def __add__(self, other: 'Sector') -> 'Sector':
+        union = cascaded_union_with_alt(list(self) + list(other))
+        return Sector(f"{self.name}+{other.name}", union)
 
     def __iter__(self):
         return self.area.__iter__()
 
     def _repr_svg_(self):
-        print("{self.name}/{self.type}")
+        print(f"{self.name}/{self.type}")
         for polygon in self:
             print(polygon.lower, polygon.upper)
         return self.flatten()._repr_svg_()
