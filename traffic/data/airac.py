@@ -3,7 +3,7 @@ import pickle
 import re
 import warnings
 import zipfile
-from functools import lru_cache
+from functools import lru_cache, partial
 from pathlib import Path
 from typing import (Any, Callable, Dict, Iterator, List, NamedTuple, Optional,
                     Tuple)
@@ -15,7 +15,7 @@ from matplotlib.patches import Polygon as MplPolygon
 from fastkml import kml
 from fastkml.geometry import Geometry
 from shapely.geometry import Polygon, MultiPolygon
-from shapely.ops import cascaded_union
+from shapely.ops import cascaded_union, transform
 
 ExtrudedPolygon = NamedTuple('ExtrudedPolygon',
                              [('polygon', Polygon),
@@ -25,9 +25,9 @@ SectorList = List[ExtrudedPolygon]
 
 class Sector(object):
 
-    def __init__(self, name: str, area: List[ExtrudedPolygon],
+    def __init__(self, name: str, elements: List[ExtrudedPolygon],
                  type_: Optional[str]=None) -> None:
-        self.area: List[ExtrudedPolygon] = area
+        self.elements: List[ExtrudedPolygon] = elements
         self.name: str = name
         self.type: Optional[str] = type_
 
@@ -35,14 +35,14 @@ class Sector(object):
         return cascaded_union([p.polygon for p in self])
 
     def __getitem__(self, *args):
-        return self.area.__getitem__(*args)
+        return self.polylist.__getitem__(*args)
 
     def __add__(self, other: 'Sector') -> 'Sector':
         union = cascaded_union_with_alt(list(self) + list(other))
         return Sector(f"{self.name}+{other.name}", union)
 
     def __iter__(self):
-        return self.area.__iter__()
+        return self.elements.__iter__()
 
     def _repr_svg_(self):
         print(f"{self.name}/{self.type}")
@@ -54,7 +54,15 @@ class Sector(object):
         return f"Sector {self.name}/{self.type}"
 
     def __str__(self):
-        return f"""Sector {self.name} with {len(self.area)} parts"""
+        return f"""Sector {self.name} with {len(self.elements)} parts"""
+
+    def annotate(self, ax, **kwargs):
+        if 'projection' in ax.__dict__:
+            from cartopy.crs import PlateCarree
+            kwargs['transform'] = PlateCarree()
+        if 's' not in kwargs:
+            kwargs['s'] = self.name
+        ax.text(*np.array(self.centroid), **kwargs)
 
     def plot(self, ax, **kwargs):
         flat = self.flatten()
@@ -78,6 +86,23 @@ class Sector(object):
     @property
     def bounds(self) -> Tuple[float, ...]:
         return self.flatten().bounds
+
+    @property
+    def area(self) -> float:
+        import pyproj  # leave it as an optional import
+        geom = self.flatten()
+        return transform(
+            partial(
+                pyproj.transform,
+                pyproj.Proj(init='EPSG:4326'),
+                pyproj.Proj(proj='aea',
+                            lat1=geom.bounds[1], lat2=geom.bounds[3],
+                            lon1=geom.bounds[0], lon2=geom.bounds[2])),
+            geom).area
+
+    @property
+    def centroid(self):
+        return self.flatten().centroid
 
     def decompose(self, extr_p):
         c = np.stack(extr_p.polygon.exterior.coords)
