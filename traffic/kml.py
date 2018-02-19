@@ -38,6 +38,7 @@ def toStyle(color: str, alpha: float=0.5) -> kml.StyleUrl:
     if len(color) != 7:
         raise ValueError("Invalid color")
     color = color[1:]
+    # KML colors are f***ed...
     key = hex(int(alpha*255))[2:] + color[4:6] + color[2:4] + color[:2]
     return _stylemap[key]
 
@@ -47,8 +48,6 @@ def export(filename: str):
     global current_document
     kml_tree = kml.KML()
     current_document = kml.Document()
-    # I like the += notation better...
-    current_document.__radd__ = current_document.append
     yield current_document
     kml_tree.append(current_document)
     with open(filename, 'w') as kml_file:
