@@ -1,7 +1,7 @@
 from calendar import timegm
 from datetime import datetime, timedelta
 from decimal import ROUND_DOWN, ROUND_UP, Decimal
-from typing import Dict, Iterator, Set, Tuple, Union
+from typing import Dict, Iterator, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -15,6 +15,7 @@ from shapely.geometry import LineString
 from shapely.geometry.base import BaseMultipartGeometry
 
 from ..data.airac import Sector
+from ..kml import toStyle
 
 timelike = Union[str, int, datetime]
 time_or_delta = Union[timelike, timedelta]
@@ -168,10 +169,13 @@ class Flight(object):
                         return True
         return False
 
-    def export_kml(self, **kwargs):
-
+    def export_kml(self, styleUrl:Optional[kml.StyleUrl]=None,
+                   color:Optional[str]=None, alpha:float=.5, **kwargs):
+        if color is not None:
+            styleUrl = toStyle(color)
         params = {'name': self.callsign,
-                  'description': f"{self.origin} → {self.destination}"}
+                  'description': f"{self.origin} → {self.destination}",
+                  'styleUrl': styleUrl}
         for key, value in kwargs.items():
             params[key] = value
         placemark = kml.Placemark(**params)

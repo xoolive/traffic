@@ -17,6 +17,8 @@ from fastkml.geometry import Geometry
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import cascaded_union, transform
 
+from ..kml import toStyle
+
 ExtrudedPolygon = NamedTuple('ExtrudedPolygon',
                              [('polygon', Polygon),
                               ('lower', float), ('upper', float)])
@@ -118,11 +120,14 @@ class Sector(object):
         for i, j in zip(range(c.shape[0]-1), range(c.shape[0], 1, -1)):
             yield Polygon(np.r_[lower_layer[i:i+2,:], upper_layer[j-2:j, :]])
 
-    def export_kml(self, **kwargs):
+    def export_kml(self, styleUrl:Optional[kml.StyleUrl]=None,
+                   color:Optional[str]=None, alpha:float=.5):
+        if color is not None:
+            styleUrl = toStyle(color)
         folder = kml.Folder(name=self.name, description=self.type)
         for extr_p in self:
             for elt in self.decompose(extr_p):
-                placemark = kml.Placemark(**kwargs)
+                placemark = kml.Placemark(styleUrl=styleUrl)
                 placemark.geometry = kml.Geometry(
                     geometry=elt, altitude_mode='relativeToGround')
                 folder.append(placemark)
