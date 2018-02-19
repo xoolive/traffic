@@ -1,7 +1,7 @@
 from calendar import timegm
 from datetime import datetime, timedelta
 from decimal import ROUND_DOWN, ROUND_UP, Decimal
-from typing import Dict, Iterator, Optional, Set, Tuple, Union
+from typing import Dict, Iterable, Iterator, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -198,7 +198,8 @@ class SO6(object):
         return Flight(self.data.groupby('callsign').get_group(callsign))
 
     def __iter__(self) -> Iterator[Tuple[str, Flight]]:
-        return iter(self.data.groupby('callsign'))
+        for callsign, flight in self.data.groupby('callsign'):
+            yield callsign, Flight(flight)
 
     def __len__(self) -> int:
         return len(self.callsigns)
@@ -287,3 +288,9 @@ class SO6(object):
 
         return SO6(self.data.groupby('callsign').filter(
             lambda data: data.iloc[0].callsign in callsigns))
+
+    def select(self, query: Union['SO6', Iterable[str]]) -> 'SO6':
+        if isinstance(query, SO6):
+            query = query.callsigns
+        select = self.data.callsign.isin(query)
+        return SO6(self.data[select])
