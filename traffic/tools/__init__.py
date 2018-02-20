@@ -6,3 +6,5 @@ except ImportError:
     import pyximport
     pyximport.install()
     from .bresenham import bresenham  # noqa
+
+from .douglas_peucker import douglas_peucker
