@@ -292,6 +292,7 @@ class SO6(object):
 
     def select(self, query: Union['SO6', Iterable[str]]) -> 'SO6':
         if isinstance(query, SO6):
+            # not very natural, but why not...
             query = query.callsigns
         select = self.data.callsign.isin(query)
         return SO6(self.data[select])

@@ -15,7 +15,7 @@ bdx_noon_flights = (so6.at("2016/01/01 12:00").
 # Trajectoire des vols entre midi et 12h30, pour ceux qui sont à midi dans le
 # secteur
 so6_interval = so6.between("2016/01/01 12:00", timedelta(minutes=30))
-so6_bdx = so6_interval.select(bdx_noon_flights)
+so6_bdx = so6_interval.select(bdx_noon_flights.callsigns)
 
 
 with kml.export('export.kml') as fh:
