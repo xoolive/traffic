@@ -18,8 +18,8 @@ so6_interval = so6.between("2016/01/01 12:00", timedelta(minutes=30))
 so6_bdx = so6_interval.select(bdx_noon_flights.callsigns)
 
 
-with kml.export('export.kml') as fh:
-    fh.append(sectors['LFBBBDX'].export_kml(color='blue', alpha=.3))
+with kml.export('export.kml') as doc:
+    doc.append(sectors['LFBBBDX'].export_kml(color='blue', alpha=.3))
     # iterate on so6 yield callsign, flight
     for callsign, flight in tqdm(so6_bdx):
-        fh.append(flight.export_kml(color='#aa3a3a'))
+        doc.append(flight.export_kml(color='#aa3a3a'))
