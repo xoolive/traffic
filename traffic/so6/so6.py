@@ -1,7 +1,7 @@
 from calendar import timegm
 from datetime import datetime, timedelta
 from decimal import ROUND_DOWN, ROUND_UP, Decimal
-from typing import Dict, Iterable, Iterator, Optional, Set, Tuple, Union
+from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 
 import numpy as np
 
@@ -136,16 +136,24 @@ class Flight(object):
         t: np.ndarray = np.stack(self.times)
         index = np.where((before < t) & (t < after))
 
-        new_data: np.ndarray = np.vstack([self.at(before),
-                                          np.stack(self.coords)[index],
-                                          self.at(after)])
+        new_data: np.ndarray = np.stack(self.coords)[index]
+        time1: List[datetime] = [before, *t[index]]
+        time2: List[datetime] = [*t[index], after]
+
+        if before > t[0]:
+            new_data = np.vstack([self.at(before), new_data])
+        else:
+            time1, time2 = time1[1:], time2[1:]
+        if after < t[-1]:
+            new_data = np.vstack([new_data, self.at(after)])
+        else:
+            time1, time2 = time1[:-1], time2[:-1]
 
         df: pd.DataFrame = (
             pd.DataFrame.from_records(
                 np.c_[new_data[:-1, :], new_data[1:, :]],
                 columns=['lon1', 'lat1', 'alt1', 'lon2', 'lat2', 'alt2']).
-            assign(time1=[before, *t[index]],
-                   time2=[*t[index], after],
+            assign(time1=time1, time2=time2,
                    origin=self.origin,
                    destination=self.destination,
                    aircraft=self.aircraft,
