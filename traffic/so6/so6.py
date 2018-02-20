@@ -172,6 +172,7 @@ class Flight(object):
     def export_kml(self, styleUrl:Optional[kml.StyleUrl]=None,
                    color:Optional[str]=None, alpha:float=.5, **kwargs):
         if color is not None:
+            # the style will be set only if the kml.export context is open
             styleUrl = toStyle(color)
         params = {'name': self.callsign,
                   'description': f"{self.origin} → {self.destination}",

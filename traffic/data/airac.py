@@ -123,6 +123,7 @@ class Sector(object):
     def export_kml(self, styleUrl:Optional[kml.StyleUrl]=None,
                    color:Optional[str]=None, alpha:float=.5):
         if color is not None:
+            # the style will be set only if the kml.export context is open
             styleUrl = toStyle(color)
         folder = kml.Folder(name=self.name, description=self.type)
         for extr_p in self:

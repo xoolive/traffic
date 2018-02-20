@@ -52,5 +52,6 @@ def export(filename: str):
     kml_tree.append(current_document)
     with open(filename, 'w') as kml_file:
         kml_file.write(kml_tree.to_string(prettyprint=True))
+    _stylemap.clear()
     current_document = None
 
