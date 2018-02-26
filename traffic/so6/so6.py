@@ -49,7 +49,8 @@ class Flight(object):
         self.interpolator: Dict = dict()
 
     def _repr_svg_(self):
-        print(f"{self.callsign}: {self.origin} ({self.start})"
+        flight_ids = set(self.data.flight_id)
+        print(f"{self.callsign} {flight_ids}:\n {self.origin} ({self.start})"
               f" → {self.destination} ({self.stop})")
         return self.linestring._repr_svg_()
 
@@ -68,8 +69,12 @@ class Flight(object):
                     [segment.lat1, segment.lat2], **kwargs)
 
     @property
-    def callsign(self) -> int:
+    def callsign(self) -> str:
         return self.data.iloc[0].callsign
+
+    @property
+    def flight_id(self) -> int:
+        return self.data.iloc[0].flight_id
 
     @property
     def start(self) -> datetime:
@@ -177,8 +182,8 @@ class Flight(object):
                         return True
         return False
 
-    def export_kml(self, styleUrl:Optional[kml.StyleUrl]=None,
-                   color:Optional[str]=None, alpha:float=.5, **kwargs):
+    def export_kml(self, styleUrl: Optional[kml.StyleUrl]=None,
+                   color: Optional[str]=None, alpha: float=.5, **kwargs):
         if color is not None:
             # the style will be set only if the kml.export context is open
             styleUrl = toStyle(color)
@@ -198,27 +203,42 @@ class Flight(object):
         return placemark
 
 
+identifier = Union[int, str]
+
+
 class SO6(object):
 
     def __init__(self, data: pd.DataFrame) -> None:
         self.data: pd.DataFrame = data
 
-    def __getitem__(self, callsign: str) -> Flight:
-        return Flight(self.data.groupby('callsign').get_group(callsign))
+    def __getitem__(self, _id: identifier) -> Flight:
+        if isinstance(_id, int):
+            return Flight(self.data.groupby('flight_id').get_group(_id))
+        if isinstance(_id, str):
+            return Flight(self.data.groupby('callsign').get_group(_id))
 
-    def __iter__(self) -> Iterator[Tuple[str, Flight]]:
-        for callsign, flight in self.data.groupby('callsign'):
-            yield callsign, Flight(flight)
+    def __iter__(self) -> Iterator[Tuple[int, Flight]]:
+        for flight_id, flight in self.data.groupby('flight_id'):
+            yield flight_id, Flight(flight)
 
     def __len__(self) -> int:
-        return len(self.callsigns)
+        return len(self.flight_ids)
 
     def _ipython_key_completions_(self):
-        return self.callsigns
+        return self.flight_ids + self.callsigns
+
+    def get(self, callsign: str) -> Iterable[Tuple[int, Flight]]:
+        all_flights = self.data.groupby('callsign').get_group(callsign)
+        for flight_id, flight in all_flights.groupby('flight_id'):
+            yield flight_id, Flight(flight)
 
     @property
     def callsigns(self) -> Set[str]:
         return set(self.data.callsign)
+
+    @property
+    def flight_ids(self) -> Set[int]:
+        return set(self.data.flight_id)
 
     @classmethod
     def parse_so6(self, filename: str) -> 'SO6':
@@ -227,7 +247,7 @@ class SO6(object):
                                  'hour1', 'hour2', 'alt1', 'alt2', 'd2',
                                  'callsign', 'date1', 'date2',
                                  'lat1', 'lon1', 'lat2', 'lon2',
-                                 'd3', 'd4', 'd5', 'd6'])
+                                 'flight_id', 'd3', 'd4', 'd5'])
 
         so6 = so6.assign(lat1=so6.lat1/60, lat2=so6.lat2/60,
                          lon1=so6.lon1/60, lon2=so6.lon2/60,
@@ -235,7 +255,7 @@ class SO6(object):
                          time1=so6.date1.apply(time) + so6.hour1.apply(hour),
                          time2=so6.date2.apply(time) + so6.hour2.apply(hour),)
 
-        for col in ('d1', 'd2', 'd3', 'd4', 'd5', 'd6',
+        for col in ('d1', 'd2', 'd3', 'd4', 'd5',
                     'date1', 'date2', 'hour1', 'hour2'):
             del so6[col]
 
@@ -264,14 +284,13 @@ class SO6(object):
                              (self.data.time2 >= before)])
 
     def intersects(self, sector) -> 'SO6':
-        return SO6(self.data.
-                   groupby('callsign').
+        return SO6(self.data.groupby('flight_id').
                    filter(lambda flight: Flight(flight).intersects(sector)))
 
     def inside_bbox(self, bounds: Union[Sector, Tuple[float, ...]]) -> 'SO6':
 
         if isinstance(bounds, Sector):
-           bounds = bounds.flatten().bounds
+            bounds = bounds.flatten().bounds
 
         west, south, east, north = bounds
 
@@ -295,7 +314,7 @@ class SO6(object):
 
         callsigns: Set[str] = set(data.callsign)
 
-        return SO6(self.data.groupby('callsign').filter(
+        return SO6(self.data.groupby('flight_id').filter(
             lambda data: data.iloc[0].callsign in callsigns))
 
     def select(self, query: Union['SO6', Iterable[str]]) -> 'SO6':
