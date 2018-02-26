@@ -36,8 +36,8 @@ class Sector(object):
     def flatten(self) -> Polygon:
         return cascaded_union([p.polygon for p in self])
 
-    def __getitem__(self, *args):
-        return self.polylist.__getitem__(*args)
+    def __getitem__(self, *args) -> ExtrudedPolygon:
+        return self.elements.__getitem__(*args)
 
     def __add__(self, other: 'Sector') -> 'Sector':
         union = cascaded_union_with_alt(list(self) + list(other))

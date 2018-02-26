@@ -12,7 +12,7 @@ from fastkml import kml
 from fastkml.geometry import Geometry
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString
-from shapely.geometry.base import BaseMultipartGeometry
+from shapely.geometry import base
 
 from ..data.airac import Sector
 from ..kml import toStyle
@@ -162,6 +162,7 @@ class Flight(object):
                    origin=self.origin,
                    destination=self.destination,
                    aircraft=self.aircraft,
+                   flight_id=self.flight_id,
                    callsign=self.callsign))
 
         return Flight(df)
@@ -170,7 +171,7 @@ class Flight(object):
         for layer in sector:
             ix = self.linestring.intersection(layer.polygon)
             if not ix.is_empty:
-                if isinstance(ix, BaseMultipartGeometry):
+                if isinstance(ix, base.BaseMultipartGeometry):
                     # TODO this sounds plausible yet weird...
                     for part in ix:
                         if any(100*layer.lower < x[2] < 100*layer.upper
@@ -181,6 +182,34 @@ class Flight(object):
                            for x in ix.coords):
                         return True
         return False
+
+    def clip(self, shape: base.BaseGeometry) -> 'Flight':
+        def xy_time(self):
+            iterator = iter(zip(self.coords, self.times))
+            try:
+                while True:
+                    coords, time = next(iterator)
+                    yield (coords[0], coords[1], time.timestamp())
+            except StopIteration:
+                return
+
+        coords = np.stack(self.linestring.intersection(shape).coords)
+        times = list(datetime.fromtimestamp(t)
+                     for t in np.stack(LineString(list(xy_time(self))).
+                                       intersection(shape).coords)[:, 2])
+
+        df: pd.DataFrame = (
+            pd.DataFrame.from_records(
+                np.c_[coords[:-1, :], coords[1:, :]],
+                columns=['lon1', 'lat1', 'alt1', 'lon2', 'lat2', 'alt2']).
+            assign(time1=times[:-1], time2=times[1:],
+                   origin=self.origin,
+                   destination=self.destination,
+                   aircraft=self.aircraft,
+                   flight_id=self.flight_id,
+                   callsign=self.callsign)
+        )
+        return Flight(df)
 
     def export_kml(self, styleUrl: Optional[kml.StyleUrl]=None,
                    color: Optional[str]=None, alpha: float=.5, **kwargs):
