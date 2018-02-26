@@ -225,7 +225,7 @@ class SO6(object):
         return len(self.flight_ids)
 
     def _ipython_key_completions_(self):
-        return self.flight_ids + self.callsigns
+        return {*self.flight_ids, *self.callsigns}
 
     def get(self, callsign: str) -> Iterable[Tuple[int, Flight]]:
         all_flights = self.data.groupby('callsign').get_group(callsign)
