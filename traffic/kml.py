@@ -50,8 +50,7 @@ def export(filename: str):
     current_document = kml.Document()
     yield current_document
     kml_tree.append(current_document)
-    with open(filename, 'w') as kml_file:
+    with open(filename, 'w', encoding="utf8") as kml_file:
         kml_file.write(kml_tree.to_string(prettyprint=True))
     _stylemap.clear()
     current_document = None
-
