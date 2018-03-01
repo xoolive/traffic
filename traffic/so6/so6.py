@@ -1,6 +1,7 @@
 from calendar import timegm
 from datetime import datetime, timedelta
 from decimal import ROUND_DOWN, ROUND_UP, Decimal
+from io import StringIO
 from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 
 import numpy as np
@@ -11,8 +12,7 @@ from cartopy.crs import PlateCarree
 from fastkml import kml
 from fastkml.geometry import Geometry
 from scipy.interpolate import interp1d
-from shapely.geometry import LineString
-from shapely.geometry import base
+from shapely.geometry import LineString, base
 
 from ..data.airac import Sector
 from ..kml import toStyle
@@ -270,7 +270,7 @@ class SO6(object):
         return set(self.data.flight_id)
 
     @classmethod
-    def parse_so6(self, filename: str) -> 'SO6':
+    def parse_so6(self, filename: Union[str, StringIO]) -> 'SO6':
         so6 = pd.read_csv(filename, sep=" ", header=-1,
                           names=['d1', 'origin', 'destination', 'aircraft',
                                  'hour1', 'hour2', 'alt1', 'alt2', 'd2',
@@ -289,6 +289,20 @@ class SO6(object):
             del so6[col]
 
         return SO6(so6)
+
+    @classmethod
+    def parse_so6_7z(self, filename: str) -> 'SO6':
+        from libarchive.public import memory_reader
+        with open(filename, 'rb') as fh:
+            with memory_reader(fh.read()) as entries:
+                s = StringIO()
+                for file in entries:
+                    for block in file.get_blocks():
+                        s.write(block.decode())
+                s.seek(0)
+                so6 = SO6.parse_so6(s)
+                s.close()
+                return so6
 
     @classmethod
     def parse_pkl(self, filename: str) -> 'SO6':
