@@ -178,7 +178,7 @@ class Flight(object):
                                for x in part.coords):
                             return True
                 else:
-                    if any(layer.lower < x[2] < layer.upper
+                    if any(100*layer.lower < x[2] < 100*layer.upper
                            for x in ix.coords):
                         return True
         return False
