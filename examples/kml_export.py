@@ -1,25 +1,57 @@
+import argparse
 from datetime import timedelta
+from pathlib import Path
+from typing import Optional
 
+import maya
 from tqdm import tqdm
-from traffic import kml
-from traffic.data import sectors
-from traffic.so6 import SO6
-
-so6 = SO6.parse_pkl("20160101_20160101_0000_2359_____m3.pkl")
-
-# This will help to select callsigns (only one line per flight because of `at`)
-bdx_noon_flights = (so6.at("2016/01/01 12:00").
-                    inside_bbox(sectors['LFBBBDX']).
-                    intersects(sectors['LFBBBDX']))
-
-# Trajectoire des vols entre midi et 12h30, pour ceux qui sont à midi dans le
-# secteur
-so6_interval = so6.between("2016/01/01 12:00", timedelta(minutes=30))
-so6_bdx = so6_interval.select(bdx_noon_flights.callsigns)
 
 
-with kml.export('export.kml') as doc:
-    doc.append(sectors['LFBBBDX'].export_kml(color='blue', alpha=.3))
-    # iterate on so6 yield callsign, flight
-    for callsign, flight in tqdm(so6_bdx):
-        doc.append(flight.export_kml(color='#aa3a3a'))
+def so6_to_kml(input_file: Path, output_file: Path, sector_name: Optional[str],
+               start_time: Optional[str], stop_time: Optional[str]) -> None:
+
+    # Slow imports: let's put them here for a quick access to help
+    from traffic import kml
+    from traffic.data import sectors
+    from traffic.so6 import SO6
+
+    so6 = SO6.parse_file(input_file.as_posix())
+
+    if start_time is not None and stop_time is not None:
+        so6 = so6.between(start_time, stop_time)
+
+    if sector_name is not None:
+        sector = sectors[sector_name]
+        so6 = so6.inside_bbox(sector).intersects(sector)
+
+    with kml.export(output_file.as_posix()) as doc:
+        if sector_name is not None:
+            doc.append(sector.export_kml(color='blue', alpha=.3))
+
+        # iterate on so6 yield callsign, flight
+        for callsign, flight in tqdm(so6):
+            doc.append(flight.export_kml(color='#aa3a3a'))
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description="Export SO6 to KML")
+
+    parser.add_argument("-o", dest="output_file", type=Path,
+                        default="output.kml",
+                        help="outfile file (.kml)")
+
+    parser.add_argument("-s", dest="sector_name",
+                        help="name of the sector to pick in AIRAC files")
+
+    parser.add_argument("-f", dest="start_time",
+                        help="start_time to filter trajectories")
+
+    parser.add_argument("-t", dest="stop_time",
+                        help="stop_time to filter trajectories")
+
+    parser.add_argument("input_file", type=Path,
+                        help="so6 file to parse")
+
+    args = parser.parse_args()
+    so6_to_kml(**vars(args))

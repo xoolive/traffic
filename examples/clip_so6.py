@@ -50,7 +50,7 @@ if __name__ == '__main__':
                         help="directory containing so6 files")
     parser.add_argument("-o", dest="output_dir", type=Path,
                         help="output directory for pkl files")
-    parser.add_argument("-s", dest="sectorname",
+    parser.add_argument("-s", dest="sector_name",
                         help="name of the sector to pick in AIRAC files")
     parser.add_argument("-t", dest="max_workers", default=4, type=int,
                         help="number of parallel processes")
