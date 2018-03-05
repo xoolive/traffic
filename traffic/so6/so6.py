@@ -2,6 +2,7 @@ from calendar import timegm
 from datetime import datetime, timedelta
 from decimal import ROUND_DOWN, ROUND_UP, Decimal
 from io import StringIO
+from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 
 import numpy as np
@@ -14,8 +15,8 @@ from fastkml.geometry import Geometry
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString, base
 
-from ..data.airac import Sector
-from ..kml import toStyle
+from ..data.airac import Sector  # type: ignore
+from ..kml import toStyle  # type: ignore
 
 timelike = Union[str, int, datetime]
 time_or_delta = Union[timelike, timedelta]
@@ -308,6 +309,18 @@ class SO6(object):
     def parse_pkl(self, filename: str) -> 'SO6':
         so6 = pd.read_pickle(filename)
         return SO6(so6)
+
+    @classmethod
+    def parse_file(self, filename: str) -> 'SO6':
+        path = Path(filename)
+        if path.suffixes == ['.pkl']:
+            return SO6.parse_pkl(filename)
+        if path.suffixes == ['.so6', '.7z']:
+            return SO6.parse_so6_7z(filename)
+        if path.suffixes == ['.so6']:
+            return SO6.parse_so6(filename)
+        raise ValueError(f"Unknown extension {path.suffixes}")
+
 
     def to_pkl(self, filename: str) -> None:
         self.data.to_pickle(filename)
