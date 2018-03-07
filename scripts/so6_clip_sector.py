@@ -4,7 +4,7 @@ from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 from traffic.data import sectors
-from traffic.data.airac import Sector
+from traffic.data.airac import Sector  # for typing
 from traffic.so6 import SO6
 
 
