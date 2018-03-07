@@ -3,10 +3,11 @@ import pickle
 import re
 import warnings
 import zipfile
+from collections import defaultdict
 from functools import lru_cache, partial
 from pathlib import Path
 from typing import (Any, Callable, Dict, Iterator, List, NamedTuple, Optional,
-                    Tuple)
+                    Set, Tuple)
 from xml.etree import ElementTree
 
 import numpy as np
@@ -14,16 +15,17 @@ from matplotlib.patches import Polygon as MplPolygon
 
 from fastkml import kml
 from fastkml.geometry import Geometry
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import cascaded_union, transform
 
-from ..kml import toStyle
+from ..kml import toStyle  # type: ignore
 
 ExtrudedPolygon = NamedTuple('ExtrudedPolygon',
                              [('polygon', Polygon),
                               ('lower', float), ('upper', float)])
 SectorList = List[ExtrudedPolygon]
 
+components: Dict[str, Set[str]] = defaultdict(set)
 
 class Sector(object):
 
@@ -43,7 +45,7 @@ class Sector(object):
         union = cascaded_union_with_alt(list(self) + list(other))
         return Sector(f"{self.name}+{other.name}", union)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ExtrudedPolygon]:
         return self.elements.__iter__()
 
     def _repr_svg_(self):
@@ -105,6 +107,10 @@ class Sector(object):
     @property
     def centroid(self):
         return self.flatten().centroid
+
+    @property
+    def components(self) -> Set[str]:
+        return components[self.name]
 
     def decompose(self, extr_p):
         c = np.stack(extr_p.polygon.exterior.coords)
@@ -250,6 +256,9 @@ class SectorParser(object):
     @lru_cache(None)
     def make_polygon(self, airspace) -> SectorList:
         polygons: SectorList = []
+        designator = airspace.find("aixm:designator", self.ns)
+        if designator is not None:
+            name = designator.text
         for block in airspace.findall(
                 "aixm:geometryComponent/aixm:AirspaceGeometryComponent/"
                 "aixm:theAirspaceVolume/aixm:AirspaceVolume", self.ns):
@@ -272,6 +281,8 @@ class SectorParser(object):
                         "aixm:timeSlice/aixm:AirspaceTimeSlice", self.ns):
                     new_d = ats.find("aixm:designator", self.ns)
                     if new_d is not None:
+                        if designator is not None:
+                            components[name].add(new_d.text)
                         block_poly += self.make_polygon(ats)
                     else:
                         for sub in ats.findall(
