@@ -339,7 +339,7 @@ class SO6(object):
         return SO6(self.data[(self.data.time1 <= after) &
                              (self.data.time2 >= before)])
 
-    def intersects(self, sector) -> 'SO6':
+    def intersects(self, sector: Sector) -> 'SO6':
         return SO6(self.data.groupby('flight_id').
                    filter(lambda flight: Flight(flight).intersects(sector)))
 
@@ -347,6 +347,9 @@ class SO6(object):
 
         if isinstance(bounds, Sector):
             bounds = bounds.flatten().bounds
+
+        if isinstance(bounds, base.BaseGeometry):
+            bounds = bounds.bounds
 
         west, south, east, north = bounds
 
