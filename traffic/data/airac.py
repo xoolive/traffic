@@ -15,7 +15,7 @@ from matplotlib.patches import Polygon as MplPolygon
 
 from fastkml import kml
 from fastkml.geometry import Geometry
-from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry import MultiPolygon, Polygon, mapping
 from shapely.ops import cascaded_union, transform
 
 from ..kml import toStyle  # type: ignore
@@ -23,9 +23,12 @@ from ..kml import toStyle  # type: ignore
 ExtrudedPolygon = NamedTuple('ExtrudedPolygon',
                              [('polygon', Polygon),
                               ('lower', float), ('upper', float)])
+SectorInfo = NamedTuple('SectorInfo',
+                        [('name', str), ('type', Optional[str])])
+
 SectorList = List[ExtrudedPolygon]
 
-components: Dict[str, Set[str]] = defaultdict(set)
+components: Dict[str, Set[SectorInfo]] = defaultdict(set)
 
 class Sector(object):
 
@@ -109,7 +112,7 @@ class Sector(object):
         return self.flatten().centroid
 
     @property
-    def components(self) -> Set[str]:
+    def components(self) -> Set[SectorInfo]:
         return components[self.name]
 
     def decompose(self, extr_p):
@@ -139,6 +142,16 @@ class Sector(object):
                     geometry=elt, altitude_mode='relativeToGround')
                 folder.append(placemark)
         return folder
+
+    def export_json(self) -> Dict[str, Any]:
+        export: Dict[str, Any] = {'name': self.name, 'type': self.type}
+        shapes = []
+        for p in self:
+            shapes.append({'upper': p.upper,
+                           'lower': p.lower,
+                           'polygon': mapping(p.polygon)})
+        export['shapes'] = shapes
+        return export
 
 def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
     altitudes = set(alt for _, *low_up in polyalt for alt in low_up)
@@ -280,9 +293,12 @@ class SectorParser(object):
                 for ats in child.findall(
                         "aixm:timeSlice/aixm:AirspaceTimeSlice", self.ns):
                     new_d = ats.find("aixm:designator", self.ns)
+                    new_t = ats.find("aixm:type", self.ns)
                     if new_d is not None:
                         if designator is not None:
-                            components[name].add(new_d.text)
+                            components[name].add(SectorInfo(
+                                new_d.text,
+                                new_t.text if new_t is not None else None))
                         block_poly += self.make_polygon(ats)
                     else:
                         for sub in ats.findall(
@@ -337,3 +353,28 @@ class SectorParser(object):
                         warnings.warn(
                             f"{designator.text} produces an empty sector",
                             RuntimeWarning)
+
+    def parse(sectors, pattern: str, cmp=re.match):
+        name = pattern
+        names = name.split('/')
+        type_pattern: Optional[str] = None
+
+        if len(names) > 1:
+            name, type_pattern = names
+
+        for airspace in sectors.tree.findall(
+                        'adrmsg:hasMember/aixm:Airspace', sectors.ns):
+            for ts in airspace.findall(
+                    "aixm:timeSlice/aixm:AirspaceTimeSlice", sectors.ns):
+
+                type_ = ts.find("aixm:type", sectors.ns)
+                designator = ts.find('aixm:designator', sectors.ns)
+
+                if ((type_pattern is None or
+                     (type_ is not None and type_.text == type_pattern))
+                        and (designator is not None and
+                             cmp(name, designator.text))):
+                    yield SectorInfo(
+                        designator.text,
+                        type_.text if type_ is not None else None)
+
