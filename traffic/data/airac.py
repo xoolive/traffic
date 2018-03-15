@@ -179,29 +179,42 @@ class SectorParser(object):
           'gml': 'http://www.opengis.net/gml/3.2',
           'xlink': 'http://www.w3.org/1999/xlink'}
 
-    def __init__(self, airac_path: Path, cache_dir: Path) -> None:
+    airac_path: Optional[Path] = None
+    cache_dir: Optional[Path] = None
+
+    def __init__(self, config_file: Path) -> None:
+        self.config_file = config_file
+        self.initialized = False
+
+    def init_cache(self) -> None:
+
+        msg = f"Edit file {self.config_file} with AIRAC directory"
+
+        if self.airac_path is None or self.cache_dir is None:
+             raise RuntimeError(msg)
 
         self.full_dict: Dict[str, Any] = {}
         self.all_points: Dict[str, Tuple[float, ...]] = {}
 
-        assert airac_path.is_dir()
+        assert self.airac_path.is_dir()
 
-        cache_file = cache_dir / "airac.cache"
+        cache_file = self.cache_dir / "airac.cache"
         if cache_file.exists():
             with cache_file.open("rb") as fh:
                 self.full_dict, self.all_points, self.tree = pickle.load(fh)
+                self.initialized = True
                 return
 
         for filename in ['Airspace.BASELINE', 'DesignatedPoint.BASELINE',
                          'Navaid.BASELINE']:
 
-            if ~(airac_path / filename).exists():
+            if ~(self.airac_path / filename).exists():
                 zippath = zipfile.ZipFile(
-                    airac_path.joinpath(f"{filename}.zip").as_posix())
-                zippath.extractall(airac_path.as_posix())
+                    self.airac_path.joinpath(f"{filename}.zip").as_posix())
+                zippath.extractall(self.airac_path.as_posix())
 
         self.tree = ElementTree.parse(
-            (airac_path / 'Airspace.BASELINE').as_posix())
+            (self.airac_path / 'Airspace.BASELINE').as_posix())
 
         for airspace in self.tree.findall(
                 'adrmsg:hasMember/aixm:Airspace', self.ns):
@@ -211,7 +224,7 @@ class SectorParser(object):
             assert(identifier.text is not None)
             self.full_dict[identifier.text] = airspace
 
-        points = ElementTree.parse((airac_path / 'DesignatedPoint.BASELINE').
+        points = ElementTree.parse((self.airac_path / 'DesignatedPoint.BASELINE').
                                    as_posix())
 
         for point in points.findall(
@@ -230,7 +243,7 @@ class SectorParser(object):
             self.all_points[identifier.text] = tuple(
                 float(x) for x in floats.text.split())
 
-        points = ElementTree.parse((airac_path / 'Navaid.BASELINE').as_posix())
+        points = ElementTree.parse((self.airac_path / 'Navaid.BASELINE').as_posix())
 
         for point in points.findall(
                 "adrmsg:hasMember/aixm:Navaid", self.ns):
@@ -250,6 +263,8 @@ class SectorParser(object):
 
         with cache_file.open("wb") as fh:
             pickle.dump((self.full_dict, self.all_points, self.tree), fh)
+
+        self.initialized = True
 
     def append_coords(self, lr, block_poly):
         coords: List[Tuple[float, ...]] = []
@@ -327,6 +342,10 @@ class SectorParser(object):
         return next(self.search(name, operator.eq), None)
 
     def search(self, name: str, cmp: Callable=re.match) -> Iterator[Sector]:
+
+        if not self.initialized:
+            self.init_cache()
+
         polygon = None
         type_: Optional[str] = None
 
@@ -354,7 +373,11 @@ class SectorParser(object):
                             f"{designator.text} produces an empty sector",
                             RuntimeWarning)
 
-    def parse(sectors, pattern: str, cmp=re.match):
+    def parse(self, pattern: str, cmp=re.match):
+
+        if not self.initialized:
+            self.init_cache()
+
         name = pattern
         names = name.split('/')
         type_pattern: Optional[str] = None
@@ -362,13 +385,13 @@ class SectorParser(object):
         if len(names) > 1:
             name, type_pattern = names
 
-        for airspace in sectors.tree.findall(
-                        'adrmsg:hasMember/aixm:Airspace', sectors.ns):
+        for airspace in self.tree.findall(
+                        'adrmsg:hasMember/aixm:Airspace', self.ns):
             for ts in airspace.findall(
-                    "aixm:timeSlice/aixm:AirspaceTimeSlice", sectors.ns):
+                    "aixm:timeSlice/aixm:AirspaceTimeSlice", self.ns):
 
-                type_ = ts.find("aixm:type", sectors.ns)
-                designator = ts.find('aixm:designator', sectors.ns)
+                type_ = ts.find("aixm:type", self.ns)
+                designator = ts.find('aixm:designator', self.ns)
 
                 if ((type_pattern is None or
                      (type_ is not None and type_.text == type_pattern))

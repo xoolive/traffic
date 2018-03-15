@@ -7,7 +7,6 @@ from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 
 import numpy as np
 
-import maya
 import pandas as pd
 from cartopy.crs import PlateCarree
 from fastkml import kml
@@ -15,11 +14,9 @@ from fastkml.geometry import Geometry
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString, base
 
+from ..core.time import time_or_delta, timelike, to_datetime  # type: ignore
 from ..data.airac import Sector  # type: ignore
 from ..kml import toStyle  # type: ignore
-
-timelike = Union[str, int, datetime]
-time_or_delta = Union[timelike, timedelta]
 
 
 def time(int_: int) -> datetime:
@@ -33,14 +30,6 @@ def hour(int_: int) -> timedelta:
     return timedelta(hours=int_ // 10000,
                      minutes=int_ // 100 % 100,
                      seconds=int_ % 100)
-
-
-def to_datetime(time: timelike) -> datetime:
-    if isinstance(time, str):
-        time = maya.parse(time).epoch
-    if isinstance(time, int):
-        time = datetime.fromtimestamp(time)
-    return time
 
 
 class Flight(object):
