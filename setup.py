@@ -9,6 +9,7 @@ setup(name="traffic",
       version=0.1,
       description="Tools for ATM",
       ext_modules=cythonize(extensions),
-      packages=["traffic", "traffic.data", "traffic.so6", "traffic.tools"],
+      packages=["traffic", "traffic.core", "traffic.data", "traffic.so6",
+                "traffic.tools"],
       package_data={'traffic.tools': 'traffic/tools/bresenham.pyx'},
       )
