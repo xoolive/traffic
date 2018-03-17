@@ -3,7 +3,7 @@ import pandas as pd
 import pyproj
 
 def _douglas_peucker_rec(x: np.ndarray, y: np.ndarray,
-                         mask: np.ndarray, max_dist: float) -> None:
+                         mask: np.ndarray, tolerance: float) -> None:
     l = len(x)
     if l < 3: return
 
@@ -11,16 +11,16 @@ def _douglas_peucker_rec(x: np.ndarray, y: np.ndarray,
     d = np.abs(np.dot(np.dstack([x[1:-1]-x[0], y[1:-1]-y[0]])[0],
                       v/np.sqrt(np.sum(v*v))))
 
-    if np.max(d) < max_dist:
+    if np.max(d) < tolerance:
         mask[np.s_[1:l-1]] = 0
         return
 
     arg = np.argmax(d)
-    _douglas_peucker_rec(x[:arg+2], y[:arg+2], mask[:arg+2], max_dist)
-    _douglas_peucker_rec(x[arg+1:], y[arg+1:], mask[arg+1:], max_dist)
+    _douglas_peucker_rec(x[:arg+2], y[:arg+2], mask[:arg+2], tolerance)
+    _douglas_peucker_rec(x[arg+1:], y[arg+1:], mask[arg+1:], tolerance)
 
 
-def douglas_peucker(*args, df=None, max_dist, x='x', y='y', lat=None, lon=None):
+def douglas_peucker(*args, df=None, tolerance, x='x', y='y', lat=None, lon=None):
     """Ramer-Douglas-Peucker algorithm for 2D lines.
 
     Simplify a 2D-line trajectory by keeping the points further away from the
@@ -28,7 +28,7 @@ def douglas_peucker(*args, df=None, max_dist, x='x', y='y', lat=None, lon=None):
 
     Parameters:
         df        Optional                a Pandas dataframe
-        max_dist  float                   the threshold for cutting the
+        tolerance float                   the threshold for cutting the
                                           trajectory
         x, y      str or ndarray[float]   the column names if a dataframe is
                                           given, otherwise a series of float
@@ -51,8 +51,8 @@ def douglas_peucker(*args, df=None, max_dist, x='x', y='y', lat=None, lon=None):
         raise ValueError("Provide a dataframe if x and y are column names")
     if df is None and (isinstance(lon, str) or isinstance(lat, str)):
         raise ValueError("Provide a dataframe if lat and lon are column names")
-    if max_dist < 0:
-        raise ValueError("max_dist must be a positive float")
+    if tolerance < 0:
+        raise ValueError("tolerance must be a positive float")
 
     if df is not None and isinstance(lat, str) and isinstance(lon, str):
         lat, lon = df[lat].values, df[lon].values
@@ -68,6 +68,6 @@ def douglas_peucker(*args, df=None, max_dist, x='x', y='y', lat=None, lon=None):
         x, y = np.array(x), np.array(y)
 
     mask = np.ones(len(x), dtype=bool)
-    _douglas_peucker_rec(x, y, mask, max_dist)
+    _douglas_peucker_rec(x, y, mask, tolerance)
 
     return mask
