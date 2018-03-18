@@ -1,12 +1,16 @@
+import configparser
+from pathlib import Path
+
+from appdirs import user_cache_dir, user_config_dir
+
 from .airac import SectorParser
-from .flightradar24 import FlightRadar24
 from .airport import AirportParser
+from .airways import Airways
+from .flightradar24 import FlightRadar24
+from .navaid import NavaidParser
 
 # Parse configuration and input specific parameters in below classes
 
-import configparser
-from appdirs import user_config_dir, user_cache_dir
-from pathlib import Path
 
 __all__ = ['airports', 'fr24', 'sectors']
 
@@ -32,7 +36,11 @@ if airac_path_str != "":
 SectorParser.cache_dir = cache_dir
 FlightRadar24.token = config.get("global", "fr24_token", fallback="")
 AirportParser.cache = cache_dir / "airports.pkl"
+NavaidParser.cache = cache_dir / "navaids.pkl"
+Airways.cache = cache_dir / "airways.pkl"
 
 sectors = SectorParser(config_file)
 airports = AirportParser()
+navaids = NavaidParser()
 fr24 = FlightRadar24()
+airways = Airways()

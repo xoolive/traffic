@@ -1,12 +1,11 @@
 import pickle
 import re
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
-Airport = NamedTuple('Airport', [('alt', int), ('country', str),
-                                 ('iata', str), ('icao', str),
-                                 ('lat', float), ('lon', float),
-                                 ('name', str)])
+Airport = NamedTuple(
+    'Airport', [('alt', int), ('country', str), ('iata', str), ('icao', str),
+                ('lat', float), ('lon', float), ('name', str)])
 
 def airport_repr(self):
     return(f"""{self.icao}/{self.iata}    {self.name.strip()} ({self.country})
@@ -16,7 +15,7 @@ Airport.__repr__ = airport_repr
 
 class AirportParser(object):
 
-    cache: Path = None
+    cache: Optional[Path] = None
 
     def __init__(self):
         if self.cache is not None and self.cache.exists():
