@@ -3,3 +3,4 @@ __pycache__
 *.c
 *.so
 *.pyd
+*.pkl
