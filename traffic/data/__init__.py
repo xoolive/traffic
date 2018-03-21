@@ -4,6 +4,7 @@ from pathlib import Path
 from appdirs import user_cache_dir, user_config_dir
 
 from .airac import SectorParser
+from .aircraft import Aircraft
 from .airport import AirportParser
 from .airways import Airways
 from .flightradar24 import FlightRadar24
@@ -38,9 +39,11 @@ FlightRadar24.token = config.get("global", "fr24_token", fallback="")
 AirportParser.cache = cache_dir / "airports.pkl"
 NavaidParser.cache = cache_dir / "navaids.pkl"
 Airways.cache = cache_dir / "airways.pkl"
+Aircraft.cache = cache_dir / "aircraft.pkl"
 
 sectors = SectorParser(config_file)
 airports = AirportParser()
 navaids = NavaidParser()
 fr24 = FlightRadar24()
 airways = Airways()
+aircraft = Aircraft()
