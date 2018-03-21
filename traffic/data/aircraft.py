@@ -24,7 +24,7 @@ class Aircraft(object):
                     self.aircraft.to_pickle(self.cache)
 
     def __getitem__(self, name: str) -> pd.DataFrame:
-        table = self.aircraft[(self.aircraft.icao == name.upper()) |
+        table = self.aircraft[(self.aircraft.icao == name.lower()) |
                               (self.aircraft.regid == name.upper())]
         return table
 
