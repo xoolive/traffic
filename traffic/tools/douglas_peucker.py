@@ -20,7 +20,31 @@ def _douglas_peucker_rec(x: np.ndarray, y: np.ndarray,
     _douglas_peucker_rec(x[arg+1:], y[arg+1:], mask[arg+1:], tolerance)
 
 
-def douglas_peucker(*args, df=None, tolerance, x='x', y='y', lat=None, lon=None):
+def _douglas_peucker_rec_3d(x: np.ndarray, y: np.ndarray, z: np.ndarray,
+                            mask: np.ndarray, tolerance: float) -> None:
+    l = len(x)
+    if l < 3: return
+
+    start = np.array([x[0], y[0], z[0]])
+    end = np.array([x[-1], y[-1], z[-1]])
+    point = np.dstack([x[1:], y[1:], z[1:]])[0] - start
+    d = np.cross(point/np.linalg.norm(point), start-end)
+    d = np.sqrt(np.sum(d*d, axis=1))
+
+    if np.max(d) < tolerance:
+        mask[np.s_[1:l-1]] = 0
+        return
+
+    arg = np.argmax(d)
+    _douglas_peucker_rec_3d(x[:arg+2], y[:arg+2], z[:arg+2],
+                            mask[:arg+2], tolerance)
+    _douglas_peucker_rec_3d(x[arg+1:], y[arg+1:], z[arg+1:],
+                            mask[arg+1:], tolerance)
+
+
+def douglas_peucker(*args, df: pd.DataFrame=None, tolerance:float,
+                    x='x', y='y', z=None,
+                    factor_z: float = 1/0.3048, lat=None, lon=None):
     """Ramer-Douglas-Peucker algorithm for 2D lines.
 
     Simplify a 2D-line trajectory by keeping the points further away from the
@@ -30,7 +54,8 @@ def douglas_peucker(*args, df=None, tolerance, x='x', y='y', lat=None, lon=None)
         df        Optional                a Pandas dataframe
         tolerance float                   the threshold for cutting the
                                           trajectory
-        x, y      str or ndarray[float]   the column names if a dataframe is
+        factor_z  float                   for ft/m conversion (default 1/.3048)
+        x, y, z   str or ndarray[float]   the column names if a dataframe is
                                           given, otherwise a series of float
         lat, lon  str or ndarray[float]   the column names if a dataframe is
                                           given, otherwise a series of float.
@@ -65,9 +90,19 @@ def douglas_peucker(*args, df=None, tolerance, x='x', y='y', lat=None, lon=None)
                         lat1=lat.min(), lat2=lat.max(),
                         ), lon, lat)
     else:
+        if df is not None:
+            x, y = df[x].values, df[y].values
         x, y = np.array(x), np.array(y)
 
+    if z is not None:
+        if df is not None:
+            z = df[z].values
+        z = factor_z * np.array(z)
+
     mask = np.ones(len(x), dtype=bool)
-    _douglas_peucker_rec(x, y, mask, tolerance)
+    if z is None:
+        _douglas_peucker_rec(x, y, mask, tolerance)
+    else:
+        _douglas_peucker_rec_3d(x, y, z, mask, tolerance)
 
     return mask
