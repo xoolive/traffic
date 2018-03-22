@@ -43,18 +43,20 @@ def _douglas_peucker_rec_3d(x: np.ndarray, y: np.ndarray, z: np.ndarray,
 
 
 def douglas_peucker(*args, df: pd.DataFrame=None, tolerance:float,
-                    x='x', y='y', z=None,
-                    factor_z: float = 1/0.3048, lat=None, lon=None):
-    """Ramer-Douglas-Peucker algorithm for 2D lines.
+                    x='x', y='y', z=None, z_factor: float = 3.048,
+                    lat=None, lon=None):
+    """Ramer-Douglas-Peucker algorithm for 2D/3D trajectories.
 
-    Simplify a 2D-line trajectory by keeping the points further away from the
-    straight-line.
+    Simplify a trajectory by keeping the points further away from the straight
+    line.
 
     Parameters:
         df        Optional                a Pandas dataframe
         tolerance float                   the threshold for cutting the
                                           trajectory
-        factor_z  float                   for ft/m conversion (default 1/.3048)
+        z_factor  float                   for ft/m conversion (default 3.048)
+                                            1km lateral, 100m vertical seems
+                                            like a good ratio
         x, y, z   str or ndarray[float]   the column names if a dataframe is
                                           given, otherwise a series of float
         lat, lon  str or ndarray[float]   the column names if a dataframe is
@@ -97,7 +99,7 @@ def douglas_peucker(*args, df: pd.DataFrame=None, tolerance:float,
     if z is not None:
         if df is not None:
             z = df[z].values
-        z = factor_z * np.array(z)
+        z = z_factor * np.array(z)
 
     mask = np.ones(len(x), dtype=bool)
     if z is None:
