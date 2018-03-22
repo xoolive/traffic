@@ -35,7 +35,8 @@ if airac_path_str != "":
     SectorParser.airac_path = Path(airac_path_str)
 
 SectorParser.cache_dir = cache_dir
-FlightRadar24.token = config.get("global", "fr24_token", fallback="")
+FlightRadar24.username = config.get("global", "fr24_username", fallback="")
+FlightRadar24.password = config.get("global", "fr24_password", fallback="")
 AirportParser.cache = cache_dir / "airports.pkl"
 NavaidParser.cache = cache_dir / "navaids.pkl"
 Airways.cache = cache_dir / "airways.pkl"
