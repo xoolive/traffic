@@ -8,6 +8,7 @@ from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 import numpy as np
 
 import pandas as pd
+import pyproj
 from cartopy.crs import PlateCarree
 from fastkml import kml
 from fastkml.geometry import Geometry
@@ -200,6 +201,76 @@ class Flight(object):
                    callsign=self.callsign)
         )
         return Flight(df)
+
+
+    def clip_altitude(self, min_: int, max_: int) -> Iterator['Flight']:
+
+        def buffer_to_iter(proj, buffer):
+            df = pd.DataFrame.from_records(buffer)
+
+            df['lon1'], df['lat1'] = pyproj.transform(
+                    proj, pyproj.Proj(init='EPSG:4326'),
+                    df.x1.values, df.y1.values)
+
+            df['lon2'], df['lat2'] = pyproj.transform(
+                        proj, pyproj.Proj(init='EPSG:4326'),
+                        df.x2.values, df.y2.values)
+
+            yield df.drop(['x1', 'x2', 'y1', 'y2'], axis=1)
+
+        data = self.data.copy()
+
+        proj = pyproj.Proj(proj='lcc',
+                           lat0=data.lat1.mean(), lon0=data.lon1.mean(),
+                           lat1=data.lat1.min(), lat2=data.lat1.max(),
+                           )
+
+        data['x1'], data['y1'] = pyproj.transform(
+                    pyproj.Proj(init='EPSG:4326'),
+                    proj, data.lon1.values, data.lat1.values)
+
+        data['x2'], data['y2'] = pyproj.transform(
+                    pyproj.Proj(init='EPSG:4326'),
+                    proj, data.lon2.values, data.lat2.values)
+
+
+        buffer = []
+        for (_, line) in data.iterrows():
+            if ((line.alt1 < max_ or line.alt2 < max_) and
+                    (line.alt1 > min_ or line.alt2 > min_)):
+
+                if line.alt1 != line.alt2:
+                    f_x = (line.x1 - line.x2) / (line.alt1 - line.alt2)
+                    f_y = (line.y1 - line.y2) / (line.alt1 - line.alt2)
+
+                if (line.alt1 > max_):
+                    line.x1 = line.x2 + (max_ - line.alt2) * f_x
+                    line.y1 = line.y2 + (max_ - line.alt2) * f_y
+                    line.alt1 = max_
+                if (line.alt1 < min_):
+                    line.x1 = line.x2 + (min_ - line.alt2) * f_x
+                    line.y1 = line.y2 + (min_ - line.alt2) * f_y
+                    line.alt1 = min_
+                if (line.alt2 > max_):
+                    line.x2 = line.x1 + (max_ - line.alt1) * f_x
+                    line.y2 = line.y1 + (max_ - line.alt1) * f_y
+                    line.alt2 = max_
+                if (line.alt2 < min_):
+                    line.x2 = line.x1 + (min_ - line.alt1) * f_x
+                    line.y2 = line.y1 + (min_ - line.alt1) * f_y
+                    line.alt2 = min_
+
+                buffer.append(line)
+
+            else:
+                if len(buffer) > 0:
+                    yield from buffer_to_iter(proj, buffer)
+                    buffer = []
+
+        if len(buffer) > 0:
+            yield from buffer_to_iter(proj, buffer)
+
+
 
     def export_kml(self, styleUrl: Optional[kml.StyleUrl]=None,
                    color: Optional[str]=None, alpha: float=.5, **kwargs):
