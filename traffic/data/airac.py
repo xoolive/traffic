@@ -330,6 +330,8 @@ class SectorParser(object):
                                     "gml:LinearRing", self.ns):
                                 self.append_coords(lr, block_poly)
 
+                    break  # only one timeslice
+
             if upper == float('inf') and lower == float('-inf'):
                 polygons += cascaded_union_with_alt(block_poly)
             else:
