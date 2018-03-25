@@ -30,9 +30,8 @@ class AirportParser(object):
 
     def __getitem__(self, name: str):
         return next((a for a in self.airports
-                     if (a.iata == name.upper()) or (a.icao == name.upper())
-                     or (re.match(name, a.country, flags=re.IGNORECASE))
-                     or (re.match(name, a.name, flags=re.IGNORECASE))), None)
+                     if (a.iata == name.upper()) or (a.icao == name.upper())),
+                     None)
 
     def search(self, name: str):
         return list((a for a in self.airports
