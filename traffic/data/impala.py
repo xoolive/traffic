@@ -20,7 +20,7 @@ class ImpalaWrapper(object):
                      "and time>={before_time} and time<{after_time} "
                      "{other_where}")
 
-    def __init__(self, username: str="", password: str="") -> None:
+    def __init__(self, username: str, password: str) -> None:
 
         self.username = username
         self.password = password
