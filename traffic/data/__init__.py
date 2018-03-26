@@ -9,6 +9,7 @@ from .airport import AirportParser
 from .airways import Airways
 from .flightradar24 import FlightRadar24
 from .navaid import NavaidParser
+from .opensky import OpenSky
 
 # Parse configuration and input specific parameters in below classes
 
@@ -48,3 +49,6 @@ navaids = NavaidParser()
 fr24 = FlightRadar24()
 airways = Airways()
 aircraft = Aircraft()
+opensky_username = config.get("global", "opensky_username", fallback="")
+opensky_password = config.get("global", "opensky_password", fallback="")
+opensky = OpenSky(opensky_username, opensky_password)
