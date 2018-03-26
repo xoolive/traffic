@@ -1,7 +1,6 @@
 import hashlib
 import re
 import tempfile
-import time
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
@@ -19,17 +18,12 @@ class ImpalaWrapper(object):
     basic_request = ("select * from state_vectors_data4 {other_columns}"
                      "where hour>={before_hour} and hour<{after_hour} "
                      "and time>={before_time} and time<{after_time} "
-                    "{other_where}")
+                     "{other_where}")
 
     def __init__(self, username: str="", password: str="") -> None:
 
         self.username = username
         self.password = password
-
-        if username == "" or password == "":
-            self.auth = None
-        else:
-            self.auth = (username, password)
         self.connected = False
 
         self.cache_dir = Path(tempfile.gettempdir()) / "cache_opensky"
@@ -53,7 +47,8 @@ class ImpalaWrapper(object):
         return dt + timedelta(0, rounding - seconds, -dt.microsecond)
 
     @staticmethod
-    def _format_dataframe(df: pd.DataFrame, nautical_units=True) -> pd.DataFrame:
+    def _format_dataframe(df: pd.DataFrame,
+                          nautical_units=True) -> pd.DataFrame:
 
         df.callsign = df.callsign.str.strip()
 
@@ -72,12 +67,11 @@ class ImpalaWrapper(object):
 
     def _connect(self) -> None:
         if self.username == "" or self.password == "":
-            raise NotImplementedError("This method requires authentication.")
+            raise RuntimeError("This method requires authentication.")
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect("data.opensky-network.org", port=2230,
-                       username=self.username,
-                       password=self.password)
+                       username=self.username, password=self.password)
         self.c = client.invoke_shell()
         self.connected = True
         total = ""
@@ -118,23 +112,34 @@ class ImpalaWrapper(object):
 
     def history(self, before: datetime, after: datetime,
                 callsign: Optional[Union[str, Iterable[str]]]=None,
-                serials=None,
+                serials: Optional[Iterable[int]]=None,
                 bounds: Optional[Tuple[float, float, float, float]]=None,
                 other_columns: str="", other_where: str="") -> pd.DataFrame:
 
         before_hour = self._round_time(before, how='before')
         after_hour = self._round_time(after, how='after')
 
-        if serials is not None:
+        if isinstance(serials, Iterable):
             other_columns += ", state_vectors_data4.serials s "
+            other_where += "and s.ITEM in {} ".format(tuple(serials))
+
+        if isinstance(callsign, str):
+            other_where += "and callsign='{:<8s}' ".format(callsign)
+
+        elif isinstance(callsign, Iterable):
+            callsign = ",".join("'{:<8s}'".format(c) for c in callsign)
+            other_where += "and callsign in ({}) ".format(callsign)
 
         if bounds is not None:
             try:
                 # thinking of shapely bounds attribute (in this order)
                 # I just don't want to add the shapely dependency here
                 west, south, east, north = bounds.bounds  # type: ignore
-            except:
+            except AttributeError:
                 west, south, east, north = bounds
+
+            other_where += "and lon>={} and lon<={} ".format(west, east)
+            other_where += "and lat>={} and lat<={} ".format(south, north)
 
         seq = np.arange(before_hour, after_hour + timedelta(hours=1),
                         timedelta(hours=1)).astype(datetime)
@@ -150,17 +155,6 @@ class ImpalaWrapper(object):
                 other_columns=other_columns,
                 other_where=other_where)
 
-            if isinstance(callsign, str):
-                request += "and callsign='{:<8s}' ".format(callsign)
-
-            elif isinstance(callsign, Iterable):
-                callsign = ",".join("'{:<8s}'".format(c) for c in callsign)
-                request += "and callsign in ({}) ".format(callsign)
-
-            if bounds is not None:
-                request += "and lon>={} and lon<={} ".format(west, east)
-                request += "and lat>={} and lat<={} ".format(south, north)
-
             df = self._impala(request)
 
             if df is None:
@@ -172,7 +166,7 @@ class ImpalaWrapper(object):
             df = df[df.lat != 'lat']  # header is regularly repeated
 
             # restore all types
-            for column_name in ['lat', 'lon', 'velocity', 'heading', 'heading',
+            for column_name in ['lat', 'lon', 'velocity', 'heading',
                                 'geoaltitude', 'baroaltitude', 'vertrate',
                                 'time', 'lastposupdate']:
                 df[column_name] = df[column_name].astype(float)
