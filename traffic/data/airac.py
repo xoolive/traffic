@@ -95,6 +95,11 @@ class Sector(object):
         return self.flatten().bounds
 
     @property
+    def extent(self) -> Tuple[float, ...]:
+        west, south, east, north = self.bounds
+        return west, east, south, north
+
+    @property
     def area(self) -> float:
         import pyproj  # leave it as an optional import
         geom = self.flatten()

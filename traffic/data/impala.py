@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 class ImpalaWrapper(object):
 
-    basic_request = ("select * from state_vectors_data4 {other_columns}"
+    basic_request = ("select * from state_vectors_data4 {other_columns} "
                      "where hour>={before_hour} and hour<{after_hour} "
                      "and time>={before_time} and time<{after_time} "
                      "{other_where}")
@@ -37,9 +37,9 @@ class ImpalaWrapper(object):
         round_to = date_delta.total_seconds()
         seconds = (dt - dt.min).seconds
 
-        if how == 'before':
+        if how == 'after':
             rounding = (seconds + round_to) // round_to * round_to
-        elif how == 'after':
+        elif how == 'before':
             rounding = seconds // round_to * round_to
         else:
             raise ValueError("parameter how must be `before` or `after`")
@@ -59,8 +59,12 @@ class ImpalaWrapper(object):
             df.vertical_rate = df.vertical_rate / 0.3048 * 60
 
         df.timestamp = df.timestamp.apply(datetime.fromtimestamp)
-        df.last_position = df.last_position.apply(datetime.fromtimestamp)
+        # warning is raised here: SettingWithCopyWarning:
+        # A value is trying to be set on a copy of a slice from a DataFrame.
+        # Try using .loc[row_indexer,col_indexer] = value instead
+        pd.options.mode.chained_assignment = None
         df = df.loc[df.last_position.notnull()]  # do we really miss much?
+        df.last_position = df.last_position.apply(datetime.fromtimestamp)
         df = df.sort_values('timestamp')
 
         return df
@@ -114,7 +118,8 @@ class ImpalaWrapper(object):
                 callsign: Optional[Union[str, Iterable[str]]]=None,
                 serials: Optional[Iterable[int]]=None,
                 bounds: Optional[Tuple[float, float, float, float]]=None,
-                other_columns: str="", other_where: str="") -> pd.DataFrame:
+                other_columns: str="",
+                other_where: str="") -> Optional[pd.DataFrame]:
 
         before_hour = self._round_time(before, how='before')
         after_hour = self._round_time(after, how='after')
@@ -150,8 +155,8 @@ class ImpalaWrapper(object):
             request = self.basic_request.format(
                 before_time=before.timestamp(),
                 after_time=after.timestamp(),
-                before_hour=before.timestamp(),
-                after_hour=after.timestamp(),
+                before_hour=before_hour.timestamp(),
+                after_hour=after_hour.timestamp(),
                 other_columns=other_columns,
                 other_where=other_where)
 
@@ -171,6 +176,10 @@ class ImpalaWrapper(object):
                                 'geoaltitude', 'baroaltitude', 'vertrate',
                                 'time', 'lastposupdate']:
                 df[column_name] = df[column_name].astype(float)
+
+            df.onground = (df.onground == 'true')
+            df.alert = (df.alert == 'true')
+            df.spi = (df.spi == 'true')
 
             # better (to me) formalism about columns
             df = df.rename(columns={'lat': 'latitude',

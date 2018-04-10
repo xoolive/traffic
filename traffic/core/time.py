@@ -8,7 +8,9 @@ time_or_delta = Union[timelike, timedelta]
 
 def to_datetime(time: timelike) -> datetime:
     if isinstance(time, str):
-        time = maya.parse(time).epoch
+        time = maya.parse(time)
+    if isinstance(time, maya.core.MayaDT):
+        time = time.epoch
     if isinstance(time, int):
         time = datetime.fromtimestamp(time)
     return time
