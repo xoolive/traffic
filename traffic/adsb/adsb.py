@@ -58,7 +58,7 @@ class Flight(ShapelyMixin, DataFrameMixin):
         cumul = ''
         for flight in self.split():
             title = f'<b>{", ".join(flight.callsign)}</b>'
-            title += f'({", ".join(flight.icao24)})'
+            title += f' ({", ".join(flight.icao24)})'
             no_wrap_div = '<div style="white-space: nowrap">{}</div>'
             cumul += title + no_wrap_div.format(flight._repr_svg_())
         return cumul
