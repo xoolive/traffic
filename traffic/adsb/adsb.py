@@ -1,9 +1,13 @@
+from functools import lru_cache
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Set
 
 import numpy as np
 
 import pandas as pd
+from shapely.geometry import LineString
+
+from ..core.mixins import DataFrameMixin, ShapelyMixin  # type: ignore
 
 
 def split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
@@ -14,21 +18,16 @@ def split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
     else:
         yield data
 
-class DataFrameWrapper(object):
-
-    def __init__(self, data: pd.DataFrame) -> None:
-        self.data = data
-
-    def _repr_html_(self):
-        return self.data._repr_html_()
-
-class Flight(DataFrameWrapper):
+class Flight(ShapelyMixin, DataFrameMixin):
 
     def plot(self, ax, **kwargs):
         if 'projection' in ax.__dict__:
             from cartopy.crs import PlateCarree
             kwargs['transform'] = PlateCarree()
-        ax.plot(self.data.longitude, self.data.latitude, **kwargs)
+        for subflight in self.split(10, 'm'):
+            ax.plot(subflight.data.longitude,
+                    subflight.data.latitude,
+                    **kwargs)
 
     def split(self, value=10, unit='m'):
         for data in split(self.data, value, unit):
@@ -42,7 +41,30 @@ class Flight(DataFrameWrapper):
     def stop(self):
         return self.data.timestamp.max()
 
-class ADSB(DataFrameWrapper):
+    @property
+    def callsign(self):
+        return set(self.data.callsign)
+
+    @property
+    def icao24(self):
+        return set(self.data.icao24)
+
+    @property
+    def shape(self):
+        data = self.data[self.data.longitude.notnull()]
+        return LineString(zip(data.longitude, data.latitude))
+
+    def _repr_html_(self):
+        cumul = ''
+        for flight in self.split():
+            title = f'<b>{", ".join(flight.callsign)}</b>'
+            title += f'({", ".join(flight.icao24)})'
+            no_wrap_div = '<div style="white-space: nowrap">{}</div>'
+            cumul += title + no_wrap_div.format(flight._repr_svg_())
+        return cumul
+
+
+class ADSB(DataFrameMixin):
 
     def __getitem__(self, index: str) -> Optional[Flight]:
         try:
@@ -55,11 +77,27 @@ class ADSB(DataFrameWrapper):
             return Flight(data)
 
     def _ipython_key_completions_(self):
-        return {*self.data.icao24, *self.data.callsign}
+        return {*self.aircraft, *self.callsigns}
 
     def __iter__(self):
         for _, df in self.data.groupby('icao24'):
             yield Flight(df)
+
+    @property
+    @lru_cache()
+    def callsigns(self) -> Set[str]:
+        """Return only the most relevant callsigns"""
+        sub = (self.data.query('callsign == callsign').
+               groupby(('callsign', 'icao24')).
+               filter(lambda x: len(x) > 10))
+        return set(cs for cs in sub.callsign if len(cs) > 3 and " " not in cs)
+
+    @property
+    def aircraft(self) -> Set[str]:
+        return set(self.data.icao24)
+
+    def query(self, query: str) -> 'ADSB':
+        return ADSB(self.data.query(query))
 
     def resample(self, rule='1s', kernel=(10, 'm')):
         cumul = []
@@ -74,8 +112,13 @@ class ADSB(DataFrameWrapper):
                              fillna(method='pad'))
         return ADSB(pd.concat(cumul))
 
+    def plot(self, ax, **kwargs):
+        for flight in self:
+            flight.plot(ax, **kwargs)
+
     @classmethod
     def parse_file(self, filename: str) -> 'ADSB':
         path = Path(filename)
         if path.suffixes == ['.pkl']:
             return ADSB(pd.read_pickle(path))
+

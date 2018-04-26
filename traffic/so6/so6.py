@@ -1,3 +1,4 @@
+import warnings
 from calendar import timegm
 from datetime import datetime, timedelta
 from decimal import ROUND_DOWN, ROUND_UP, Decimal
@@ -15,6 +16,7 @@ from fastkml.geometry import Geometry
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString, base
 
+from ..core.mixins import DataFrameMixin, ShapelyMixin  # type: ignore
 from ..core.time import time_or_delta, timelike, to_datetime  # type: ignore
 from ..data.airac import Sector  # type: ignore
 from ..kml import toStyle  # type: ignore
@@ -33,17 +35,19 @@ def hour(int_: int) -> timedelta:
                      seconds=int_ % 100)
 
 
-class Flight(object):
+class Flight(DataFrameMixin, ShapelyMixin):
 
     def __init__(self, data: pd.DataFrame) -> None:
         self.data: pd.DataFrame = data
         self.interpolator: Dict = dict()
 
-    def _repr_svg_(self):
+    def _repr_html_(self):
         flight_ids = set(self.data.flight_id)
-        print(f"{self.callsign} {flight_ids}:\n {self.origin} ({self.start})"
-              f" → {self.destination} ({self.stop})")
-        return self.linestring._repr_svg_()
+        title = (f"<b>{self.callsign}</b> {flight_ids}:<br/>"
+                 f"{self.origin} ({self.start})"
+                 f" → {self.destination} ({self.stop})")
+        no_wrap_div = '<div style="white-space: nowrap">{}</div>'
+        return title + no_wrap_div.format(self._repr_svg_())
 
     def __len__(self) -> int:
         return self.data.shape[0]
@@ -106,6 +110,10 @@ class Flight(object):
     @property
     def linestring(self) -> LineString:
         return LineString(list(self.coords))
+
+    @property
+    def shape(self) -> LineString:
+        return self.linestring
 
     def interpolate(self, times, proj=PlateCarree()):
         """Interpolates a trajectory in time.  """
@@ -295,11 +303,7 @@ class Flight(object):
 
 identifier = Union[int, str]
 
-
-class SO6(object):
-
-    def __init__(self, data: pd.DataFrame) -> None:
-        self.data: pd.DataFrame = data
+class SO6(DataFrameMixin):
 
     def __getitem__(self, _id: identifier) -> Flight:
         if isinstance(_id, int):
@@ -383,6 +387,7 @@ class SO6(object):
 
 
     def to_pkl(self, filename: str) -> None:
+        warnings.warn("Use to_pickle instead", DeprecationWarning)
         self.data.to_pickle(filename)
 
     def at(self, time: timelike) -> 'SO6':

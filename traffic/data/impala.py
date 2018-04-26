@@ -177,9 +177,13 @@ class ImpalaWrapper(object):
                                 'time', 'lastposupdate']:
                 df[column_name] = df[column_name].astype(float)
 
-            df.onground = (df.onground == 'true')
-            df.alert = (df.alert == 'true')
-            df.spi = (df.spi == 'true')
+            df.icao24 = df.icao24.apply(
+                lambda x: "{:0>6}".format(hex(int(str(x), 16))[2:]))
+
+            if df.onground.dtype != bool:
+                df.onground = (df.onground == 'true')
+                df.alert = (df.alert == 'true')
+                df.spi = (df.spi == 'true')
 
             # better (to me) formalism about columns
             df = df.rename(columns={'lat': 'latitude',

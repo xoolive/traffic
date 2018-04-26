@@ -13,12 +13,14 @@ from xml.etree import ElementTree
 import numpy as np
 from matplotlib.patches import Polygon as MplPolygon
 
+import pyproj
 from fastkml import kml
 from fastkml.geometry import Geometry
 from shapely.geometry import MultiPolygon, Polygon, mapping
 from shapely.ops import cascaded_union, transform
 
 from ..kml import toStyle  # type: ignore
+from ..core.mixins import ShapelyMixin
 
 ExtrudedPolygon = NamedTuple('ExtrudedPolygon',
                              [('polygon', Polygon),
@@ -30,7 +32,7 @@ SectorList = List[ExtrudedPolygon]
 
 components: Dict[str, Set[SectorInfo]] = defaultdict(set)
 
-class Sector(object):
+class Sector(ShapelyMixin):
 
     def __init__(self, name: str, elements: List[ExtrudedPolygon],
                  type_: Optional[str]=None) -> None:
@@ -40,6 +42,10 @@ class Sector(object):
 
     def flatten(self) -> Polygon:
         return cascaded_union([p.polygon for p in self])
+
+    @property
+    def shape(self):
+        return self.flatten()
 
     def __getitem__(self, *args) -> ExtrudedPolygon:
         return self.elements.__getitem__(*args)
@@ -51,11 +57,16 @@ class Sector(object):
     def __iter__(self) -> Iterator[ExtrudedPolygon]:
         return self.elements.__iter__()
 
-    def _repr_svg_(self):
-        print(f"{self.name}/{self.type}")
+    def _repr_html_(self):
+        title = f'<b>{self.name}/{self.type}</b>'
+        shapes = ''
+        title += '<ul>'
         for polygon in self:
-            print(polygon.lower, polygon.upper)
-        return self.flatten()._repr_svg_()
+            title += f'<li>{polygon.lower}, {polygon.upper}</li>'
+            shapes += polygon.polygon._repr_svg_()
+        title += '</ul>'
+        no_wrap_div = '<div style="white-space: nowrap">{}</div>'
+        return title + no_wrap_div.format(shapes)
 
     def __repr__(self):
         return f"Sector {self.name}/{self.type}"
@@ -89,32 +100,6 @@ class Sector(object):
         if 'edgecolor' not in kwargs:
             kwargs['edgecolor'] = 'red'
         ax.add_patch(MplPolygon(coords, **kwargs))
-
-    @property
-    def bounds(self) -> Tuple[float, ...]:
-        return self.flatten().bounds
-
-    @property
-    def extent(self) -> Tuple[float, ...]:
-        west, south, east, north = self.bounds
-        return west, east, south, north
-
-    @property
-    def area(self) -> float:
-        import pyproj  # leave it as an optional import
-        geom = self.flatten()
-        return transform(
-            partial(
-                pyproj.transform,
-                pyproj.Proj(init='EPSG:4326'),
-                pyproj.Proj(proj='aea',
-                            lat1=geom.bounds[1], lat2=geom.bounds[3],
-                            lon1=geom.bounds[0], lon2=geom.bounds[2])),
-            geom).area
-
-    @property
-    def centroid(self):
-        return self.flatten().centroid
 
     @property
     def components(self) -> Set[SectorInfo]:
