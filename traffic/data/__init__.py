@@ -8,13 +8,14 @@ from .aircraft import Aircraft
 from .airport import AirportParser
 from .airways import Airways
 from .flightradar24 import FlightRadar24
+from .impala import ImpalaWrapper
 from .navaid import NavaidParser
 from .opensky import OpenSky
 
 # Parse configuration and input specific parameters in below classes
 
-
-__all__ = ['airports', 'fr24', 'sectors']
+__all__ = ['aircraft', 'airports', 'airways', 'navaids', 'sectors',
+           'flightradar24', 'opensky', ]
 
 config_dir = Path(user_config_dir("traffic"))
 cache_dir = Path(user_cache_dir("traffic"))
@@ -43,10 +44,15 @@ NavaidParser.cache = cache_dir / "navaids.pkl"
 Airways.cache = cache_dir / "airways.pkl"
 Aircraft.cache = cache_dir / "aircraft.pkl"
 
+ImpalaWrapper.cache_dir = cache_dir / "impala"
+# not great here...
+if not ImpalaWrapper.cache_dir.exists():
+    ImpalaWrapper.cache_dir.mkdir(parents=True)
+
 sectors = SectorParser(config_file)
 airports = AirportParser()
 navaids = NavaidParser()
-fr24 = FlightRadar24()
+flightradar24 = FlightRadar24()
 airways = Airways()
 aircraft = Aircraft()
 opensky_username = config.get("global", "opensky_username", fallback="")

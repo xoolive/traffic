@@ -56,15 +56,14 @@ class OpenSky(ImpalaWrapper):
             after_time=after.timestamp(),
             before_hour=before_hour.timestamp(),
             after_hour=after_hour.timestamp(),
-            airport_latmax = airport.lat + 0.1,
-            airport_latmin = airport.lat - 0.1,
-            airport_lonmax = airport.lon + 0.1,
-            airport_lonmin = airport.lon - 0.1,)
+            airport_latmax=airport.lat + 0.1,
+            airport_latmin=airport.lat - 0.1,
+            airport_lonmax=airport.lon + 0.1,
+            airport_lonmin=airport.lon - 0.1,)
 
         df = self._impala(request)
 
         return df
-
 
     def history(self, before: timelike, after: timelike,
                 *args, **kwargs) -> Optional[pd.DataFrame]:

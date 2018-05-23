@@ -1,6 +1,6 @@
 import hashlib
+import logging
 import re
-import tempfile
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
@@ -20,15 +20,17 @@ class ImpalaWrapper(object):
                      "and time>={before_time} and time<{after_time} "
                      "{other_where}")
 
+    cache_dir: Path
+
     def __init__(self, username: str, password: str) -> None:
 
         self.username = username
         self.password = password
         self.connected = False
 
-        self.cache_dir = Path(tempfile.gettempdir()) / "cache_opensky"
-        if not self.cache_dir.exists():
-            self.cache_dir.mkdir(parents=True)
+    def clear_cache(self) -> None:
+        for file in self.cache_dir.glob('*'):
+            file.unlink()
 
     @staticmethod
     def _round_time(dt: datetime, how: str='before',
@@ -91,6 +93,7 @@ class ImpalaWrapper(object):
         if not cachename.exists():
             if not self.connected:
                 self._connect()
+            logging.info("Sending request: {}".format(request))
             self.c.send(request + ";\n")
             total = ""
             while len(total) == 0 or total[-19:] != "[hadoop-1:21000] > ":
@@ -99,6 +102,7 @@ class ImpalaWrapper(object):
             with cachename.open('w') as fh:
                 fh.write(total)
 
+        logging.info("Reading request in cache {}".format(cachename))
         with cachename.open('r') as fh:
             s = StringIO()
             count = 0
