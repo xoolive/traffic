@@ -14,6 +14,12 @@ class DataFrameMixin(object):
     def _repr_html_(self):
         return self.data._repr_html_()
 
+    def __repr__(self):
+        return self.data.__repr__()
+
+    def __len__(self) -> int:
+        return self.data.shape[0]
+
     def to_pickle(self, filename: str) -> None:
         self.data.to_pickle(filename)
 

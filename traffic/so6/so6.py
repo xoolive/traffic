@@ -49,9 +49,6 @@ class Flight(DataFrameMixin, ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
-    def __len__(self) -> int:
-        return self.data.shape[0]
-
     def plot(self, ax, **kwargs):
         if 'projection' in ax.__dict__ and 'transform' not in kwargs:
             kwargs['transform'] = PlateCarree()

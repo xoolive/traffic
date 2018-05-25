@@ -12,6 +12,8 @@ import pandas as pd
 import paramiko
 from tqdm import tqdm
 
+from ..core.time import round_time
+
 
 class ImpalaWrapper(object):
 
@@ -31,22 +33,6 @@ class ImpalaWrapper(object):
     def clear_cache(self) -> None:
         for file in self.cache_dir.glob('*'):
             file.unlink()
-
-    @staticmethod
-    def _round_time(dt: datetime, how: str='before',
-                    date_delta: timedelta=timedelta(hours=1)) -> datetime:
-
-        round_to = date_delta.total_seconds()
-        seconds = (dt - dt.min).seconds
-
-        if how == 'after':
-            rounding = (seconds + round_to) // round_to * round_to
-        elif how == 'before':
-            rounding = seconds // round_to * round_to
-        else:
-            raise ValueError("parameter how must be `before` or `after`")
-
-        return dt + timedelta(0, rounding - seconds, -dt.microsecond)
 
     @staticmethod
     def _format_dataframe(df: pd.DataFrame,
@@ -125,8 +111,8 @@ class ImpalaWrapper(object):
                 other_columns: str="",
                 other_where: str="") -> Optional[pd.DataFrame]:
 
-        before_hour = self._round_time(before, how='before')
-        after_hour = self._round_time(after, how='after')
+        before_hour = round_time(before, how='before')
+        after_hour = round_time(after, how='after')
 
         if isinstance(serials, Iterable):
             other_columns += ", state_vectors_data4.serials s "
