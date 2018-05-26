@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from numbers import Number
-from typing import Union
+from typing import Iterator, Tuple, Union
+
+import numpy as np
 
 import maya
 
@@ -32,3 +34,18 @@ def round_time(time: timelike, how: str='before',
         raise ValueError("parameter how must be `before` or `after`")
 
     return dt + timedelta(0, rounding - seconds, -dt.microsecond)
+
+timetuple = Tuple[datetime, datetime, datetime, datetime]
+
+def split_times(before: datetime, after: datetime,
+                date_delta: timedelta = timedelta(hours=1)
+                ) -> Iterator[timetuple]:
+
+    before_hour = round_time(before, date_delta=date_delta)
+    after_hour = round_time(after, date_delta=date_delta)
+
+    seq = np.arange(before_hour, after + date_delta,
+                    date_delta).astype(datetime)
+
+    for bh, ah in zip(seq[:-1], seq[1:]):
+        yield (before, after, bh, ah)

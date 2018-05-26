@@ -6,13 +6,11 @@ from io import StringIO
 from pathlib import Path
 from typing import Iterable, Optional, Tuple, Union
 
-import numpy as np
-
 import pandas as pd
 import paramiko
 from tqdm import tqdm
 
-from ..core.time import round_time
+from ..core.time import split_times
 
 
 class ImpalaWrapper(object):
@@ -105,14 +103,12 @@ class ImpalaWrapper(object):
         return None
 
     def history(self, before: datetime, after: datetime,
+                date_delta: timedelta=timedelta(hours=1),
                 callsign: Optional[Union[str, Iterable[str]]]=None,
                 serials: Optional[Iterable[int]]=None,
                 bounds: Optional[Tuple[float, float, float, float]]=None,
                 other_columns: str="",
                 other_where: str="") -> Optional[pd.DataFrame]:
-
-        before_hour = round_time(before, how='before')
-        after_hour = round_time(after, how='after')
 
         if isinstance(serials, Iterable):
             other_columns += ", state_vectors_data4.serials s "
@@ -136,19 +132,19 @@ class ImpalaWrapper(object):
             other_where += "and lon>={} and lon<={} ".format(west, east)
             other_where += "and lat>={} and lat<={} ".format(south, north)
 
-        seq = np.arange(before_hour, after_hour + timedelta(hours=1),
-                        timedelta(hours=1)).astype(datetime)
         cumul = []
+        sequence = list(split_times(before, after, date_delta))
 
-        for before, after in tqdm(zip(seq, seq[1:]), total=len(seq)-1):
+        for bt, at, bh, ah in tqdm(sequence):
+
+            logging.info(
+                f"Sending request between time {bt} and {at} "
+                f"and hour {bh} and {ah}")
 
             request = self.basic_request.format(
-                before_time=before.timestamp(),
-                after_time=after.timestamp(),
-                before_hour=before_hour.timestamp(),
-                after_hour=after_hour.timestamp(),
-                other_columns=other_columns,
-                other_where=other_where)
+                before_time=bt.timestamp(), after_time=at.timestamp(),
+                before_hour=bh.timestamp(), after_hour=ah.timestamp(),
+                other_columns=other_columns, other_where=other_where)
 
             df = self._impala(request)
 
