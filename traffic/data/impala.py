@@ -152,7 +152,9 @@ class ImpalaWrapper(object):
                 continue
 
             df = df.drop(['lastcontact', ], axis=1)
-            # may be useful if several serials
+            # may be useful if several serials (TODO option, on icao24)
+            # TODO remove serials as well (option)
+
             df = df.drop_duplicates(('callsign', 'time'))
             if df.lat.dtype == object:
                 df = df[df.lat != 'lat']  # header is regularly repeated
