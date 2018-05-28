@@ -22,11 +22,17 @@ from shapely.ops import cascaded_union, transform
 from ..kml import toStyle  # type: ignore
 from ..core.mixins import ShapelyMixin
 
-ExtrudedPolygon = NamedTuple('ExtrudedPolygon',
-                             [('polygon', Polygon),
-                              ('lower', float), ('upper', float)])
-SectorInfo = NamedTuple('SectorInfo',
-                        [('name', str), ('type', Optional[str])])
+
+class ExtrudedPolygon(NamedTuple):
+    polygon: Polygon
+    lower: float
+    upper: float
+
+
+class SectorInfo(NamedTuple):
+    name: str
+    type: Optional[str]
+
 
 SectorList = List[ExtrudedPolygon]
 

@@ -3,15 +3,24 @@ import re
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-Airport = NamedTuple(
-    'Airport', [('alt', int), ('country', str), ('iata', str), ('icao', str),
-                ('lat', float), ('lon', float), ('name', str)])
 
-def airport_repr(self):
-    return(f"""{self.icao}/{self.iata}    {self.name.strip()} ({self.country})
-    {self.lat} {self.lon} altitude: {self.alt}""")
+class __airport__nt(NamedTuple):
 
-Airport.__repr__ = airport_repr
+    alt: int
+    country: str
+    iata: str
+    icao: str
+    lat: float
+    lon: float
+    name: str
+
+class Airport(__airport__nt):
+
+    def __repr__(self):
+        return (
+            f"{self.icao}/{self.iata}    {self.name.strip()} ({self.country})"
+            f"\n\t{self.lat} {self.lon} altitude: {self.alt}")
+
 
 class AirportParser(object):
 

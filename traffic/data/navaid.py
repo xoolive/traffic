@@ -5,14 +5,20 @@ from typing import List, NamedTuple, Optional
 
 import requests
 
-Information = NamedTuple(
-    'Information', [('id', str), ('type', str), ('lat', float), ('lon', float),
-                    ('alt', Optional[float]), ('frequency', Optional[float]),
-                    ('magnetic_variation', Optional[float]),
-                    ('description', Optional[str])])
 
+class __navaid__nt(NamedTuple):
 
-class Navaid(Information):
+    id: str
+    type: str
+    lat: float
+    lon: float
+    alt: Optional[float]
+    frequency: Optional[float]
+    magnetic_variation: Optional[float]
+    description: Optional[str]
+
+class Navaid(__navaid__nt):
+
     def __repr__(self):
         if self.type == 'FIX':
             return f"{self.id} ({self.type}): {self.lat} {self.lon}"

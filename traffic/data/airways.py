@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from operator import itemgetter
 from pathlib import Path
-from typing import NamedTuple, Optional, Set, Tuple, Union
+from typing import Optional, Set, Tuple, Union
 
 import pandas as pd
 import requests
