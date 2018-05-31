@@ -1,5 +1,7 @@
+import logging
 from functools import lru_cache, partial
-from typing import Tuple
+from pathlib import Path
+from typing import Optional, Tuple
 
 import pandas as pd
 import pyproj
@@ -22,6 +24,29 @@ class DataFrameMixin(object):
 
     def to_pickle(self, filename: str) -> None:
         self.data.to_pickle(filename)
+
+    def to_csv(self, filename: str) -> None:
+        self.data.to_csv(filename)
+
+    def to_hdf(self, filename: str) -> None:
+        self.data.to_hdf(filename)
+
+    def to_json(self, filename: str) -> None:
+        self.data.to_json(filename)
+
+    def to_excel(self, filename: str) -> None:
+        self.data.to_excel(filename)
+
+    @classmethod
+    def from_file(cls, filename: str) -> Optional['DataFrameMixin']:
+        path = Path(filename)
+        if path.suffixes == ['.pkl']:
+            return cls(pd.read_pickle(path))
+        logging.warn(f"Suffix {''.join(path.suffixes)} not supported")
+        return None
+
+    def query(self, query: str) -> 'DataFrameMixin':
+        return self.__class__(self.data.query(query))
 
 
 class ShapelyMixin(object):

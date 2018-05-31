@@ -4,21 +4,42 @@ import re
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Iterable, Optional, Tuple, Union
+from typing import Callable, Iterable, Optional, Tuple, Union
 
 import pandas as pd
 import paramiko
-from tqdm import tqdm
+import requests
 
-from ..core.time import split_times
+from ...core.time import round_time, split_times, timelike, to_datetime
+from ...core.traffic import Traffic
+from ..airport import Airport
 
 
-class ImpalaWrapper(object):
+class OpenSky(object):
+
+    columns = ["icao24", "callsign", "origin_country", "last_position",
+               "timestamp", "longitude", "latitude", "altitude", "onground",
+               "ground_speed", "track", "vertical_rate", "sensors",
+               "baro_altitude", "squawk", "spi", "position_source"]
 
     basic_request = ("select * from state_vectors_data4 {other_columns} "
                      "where hour>={before_hour} and hour<{after_hour} "
                      "and time>={before_time} and time<{after_time} "
                      "{other_where}")
+
+    airport_request = ("select icao24, callsign from state_vectors_data4 "
+                       "where lat<={airport_latmax} and lat>={airport_latmin} "
+                       "and lon<={airport_lonmax} and lon>={airport_lonmin} "
+                       "and baroaltitude<=1000 "
+                       "and hour>={before_hour} and hour<{after_hour} "
+                       "and time>={before_time} and time<{after_time} "
+                       "group by icao24, callsign")
+
+    sensor_request = ("select icao24, callsign, s.ITEM as serial,"
+                      "count(*) as count from "
+                      "state_vectors_data4, state_vectors_data4.serials s "
+                      "where hour>={before_hour} and hour<{after_hour} "
+                      "{other_where} group by icao24, callsign, s.ITEM")
 
     cache_dir: Path
 
@@ -27,6 +48,11 @@ class ImpalaWrapper(object):
         self.username = username
         self.password = password
         self.connected = False
+
+        if username == "" or password == "":
+            self.auth = None
+        else:
+            self.auth = (username, password)
 
     def clear_cache(self) -> None:
         for file in self.cache_dir.glob('*'):
@@ -102,13 +128,17 @@ class ImpalaWrapper(object):
 
         return None
 
-    def history(self, before: datetime, after: datetime,
+    def history(self, before: timelike, after: timelike,
                 date_delta: timedelta=timedelta(hours=1),
                 callsign: Optional[Union[str, Iterable[str]]]=None,
                 serials: Optional[Iterable[int]]=None,
                 bounds: Optional[Tuple[float, float, float, float]]=None,
-                other_columns: str="",
-                other_where: str="") -> Optional[pd.DataFrame]:
+                other_columns: str="", other_where: str="",
+                progress_bar: Callable[[Iterable], Iterable]=iter
+                ) -> Optional[Traffic]:
+
+        before = to_datetime(before)
+        after = to_datetime(after)
 
         if isinstance(serials, Iterable):
             other_columns += ", state_vectors_data4.serials s "
@@ -135,7 +165,7 @@ class ImpalaWrapper(object):
         cumul = []
         sequence = list(split_times(before, after, date_delta))
 
-        for bt, at, bh, ah in tqdm(sequence):
+        for bt, at, bh, ah in progress_bar(sequence):
 
             logging.info(
                 f"Sending request between time {bt} and {at} "
@@ -188,6 +218,71 @@ class ImpalaWrapper(object):
             cumul.append(df)
 
         if len(cumul) > 0:
-            return pd.concat(cumul)
+            return Traffic(pd.concat(cumul))
 
         return None
+
+    def sensors(self, before: timelike, after: timelike,
+                bounds: Tuple[float, float, float, float]) -> pd.DataFrame:
+
+        before_hour = round_time(before, "before")
+        after_hour = round_time(after, "after")
+
+        try:
+            # thinking of shapely bounds attribute (in this order)
+            # I just don't want to add the shapely dependency here
+            west, south, east, north = bounds.bounds  # type: ignore
+        except AttributeError:
+            west, south, east, north = bounds
+
+        other_where = "and lon>={} and lon<={} ".format(west, east)
+        other_where += "and lat>={} and lat<={} ".format(south, north)
+
+        query = self.sensor_request.format(before_hour=before_hour,
+                                           after_hour=after_hour,
+                                           other_where=other_where)
+
+        logging.info(f"Sending request: {query}")
+        df = self._impala(query)
+        if df is None:
+            return None
+
+        df = df[df['count'] != 'count']
+        df['count'] = df['count'].astype(int)
+
+        return df
+
+    def online_aircraft(self, own=False) -> pd.DataFrame:
+        what = "own" if (own and self.username != ""
+                         and self.password != "") else "all"
+        c = requests.get(f"https://opensky-network.org/api/states/{what}",
+                         auth=self.auth)
+        if c.status_code != 200:
+            raise ValueError(c.content.decode())
+        r = pd.DataFrame.from_records(c.json()['states'], columns=self.columns)
+        r = r.drop(['origin_country', 'spi', 'sensors'], axis=1)
+        r = r.dropna()
+        return self._format_dataframe(r, nautical_units=True)
+
+    def at_airport(self, before: timelike, after: timelike,
+                   airport: Airport) -> Optional[pd.DataFrame]:
+
+        before = to_datetime(before)
+        after = to_datetime(after)
+
+        before_hour = round_time(before, how='before')
+        after_hour = round_time(after, how='after')
+
+        request = self.airport_request.format(
+            before_time=before.timestamp(),
+            after_time=after.timestamp(),
+            before_hour=before_hour.timestamp(),
+            after_hour=after_hour.timestamp(),
+            airport_latmax=airport.lat + 0.1,
+            airport_latmin=airport.lat - 0.1,
+            airport_lonmax=airport.lon + 0.1,
+            airport_lonmin=airport.lon - 0.1,)
+
+        df = self._impala(request)
+
+        return df

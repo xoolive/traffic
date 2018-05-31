@@ -15,8 +15,8 @@ setup(name="traffic",
           "traffic=traffic.console:main"
       ]},
       ext_modules=cythonize(extensions),
-      packages=["traffic", "traffic.adsb", "traffic.core", "traffic.data",
-                "traffic.so6", "traffic.tools"],
+      packages=["traffic", "traffic.core", "traffic.data",
+                "traffic.data.adsb", "traffic.so6", "traffic.tools"],
       package_data={'traffic.tools': bresenham_path},
       python_requires='>=3.6',
       )

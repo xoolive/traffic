@@ -3,14 +3,14 @@ from pathlib import Path
 
 from appdirs import user_cache_dir, user_config_dir
 
+from .adsb.flightradar24 import FlightRadar24
+from .adsb.opensky import OpenSky
+
 from .airac import SectorParser
 from .aircraft import Aircraft
 from .airport import AirportParser
 from .airways import Airways
-from .flightradar24 import FlightRadar24
-from .impala import ImpalaWrapper
 from .navaid import NavaidParser
-from .opensky import OpenSky
 
 # Parse configuration and input specific parameters in below classes
 
@@ -46,10 +46,10 @@ NavaidParser.cache = cache_dir / "navaids.pkl"
 Airways.cache = cache_dir / "airways.pkl"
 Aircraft.cache = cache_dir / "aircraft.pkl"
 
-ImpalaWrapper.cache_dir = cache_dir / "impala"
+OpenSky.cache_dir = cache_dir / "impala"
 # not great here...
-if not ImpalaWrapper.cache_dir.exists():
-    ImpalaWrapper.cache_dir.mkdir(parents=True)
+if not OpenSky.cache_dir.exists():
+    OpenSky.cache_dir.mkdir(parents=True)
 
 sectors = SectorParser(config_file)
 airports = AirportParser()
@@ -57,6 +57,7 @@ navaids = NavaidParser()
 flightradar24 = FlightRadar24()
 airways = Airways()
 aircraft = Aircraft()
+
 opensky_username = config.get("global", "opensky_username", fallback="")
 opensky_password = config.get("global", "opensky_password", fallback="")
 opensky = OpenSky(opensky_username, opensky_password)
