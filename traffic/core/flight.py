@@ -24,6 +24,15 @@ class Flight(DataFrameMixin, ShapelyMixin):
     def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
 
+    def __add__(self, other):
+        # useful for compatibility with sum() function
+        if other == 0: return self
+        # keep import here to avoid recursion
+        from .traffic import Traffic
+        return Traffic(pd.concat([self.data, other.data]))
+
+    def __radd__(self, other):
+        return self + other
 
     def info_html(self) -> str:
         title = f"<b>Flight {self.callsign}</b>"
@@ -40,7 +49,7 @@ class Flight(DataFrameMixin, ShapelyMixin):
             title += f"<li><b>origin:</b> {self.start}</li>"
         if self.destination is not None:
             title += f"<li><b>destination:</b> {self.destination} "
-            title +=f"({self.stop})</li>"
+            title += f"({self.stop})</li>"
         else:
             title += f"<li><b>destination:</b> {self.stop}</li>"
         title += "</ul>"
@@ -50,7 +59,6 @@ class Flight(DataFrameMixin, ShapelyMixin):
         title = self.info_html()
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
-
 
     @property
     def start(self) -> datetime:
@@ -128,6 +136,16 @@ class Flight(DataFrameMixin, ShapelyMixin):
             return f"{self.icao24} / {ac.iloc[0].regid} ({ac.iloc[0].mdl})"
 
     @property
+    def registration(self) -> Optional[str]:
+        from ..data import aircraft as acdb
+        if not isinstance(self.icao24, str):
+            return None
+        ac = acdb[self.icao24]
+        if ac.shape[0] != 1:
+            return None
+        return ac.iloc[0].regid
+
+    @property
     def linestring(self) -> LineString:
         data = self.data[self.data.longitude.notnull()]
         return LineString(zip(data['longitude'], data['latitude']))
@@ -140,9 +158,6 @@ class Flight(DataFrameMixin, ShapelyMixin):
         if 'projection' in ax.__dict__ and 'transform' not in kwargs:
             from cartopy.crs import PlateCarree
             kwargs['transform'] = PlateCarree()
-
-        if 'color' not in kwargs:
-            kwargs['color'] = '#aaaaaa'
 
         ax.plot(*self.shape.xy, **kwargs)
 
@@ -158,4 +173,3 @@ class Flight(DataFrameMixin, ShapelyMixin):
                 reset_index().
                 fillna(method='pad'))
         return Flight(data)
-

@@ -1,19 +1,22 @@
 import argparse
-from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
-import maya
 from tqdm import tqdm
 
 
-def so6_to_kml(input_file: Path, output_file: Path, sector_name: Optional[str],
-               start_time: Optional[str], stop_time: Optional[str]) -> None:
+def so6_to_kml(
+    input_file: Path,
+    output_file: Path,
+    sector_name: Optional[str],
+    start_time: Optional[str],
+    stop_time: Optional[str],
+) -> None:
 
     # Slow imports: let's put them here for a quick access to help
-    from traffic import kml
     from traffic.data import sectors
-    from traffic.so6 import SO6
+    from traffic.data.so6 import SO6
+    from traffic.drawing import kml
 
     so6 = SO6.parse_file(input_file.as_posix())
 
@@ -26,32 +29,40 @@ def so6_to_kml(input_file: Path, output_file: Path, sector_name: Optional[str],
 
     with kml.export(output_file.as_posix()) as doc:
         if sector_name is not None:
-            doc.append(sector.export_kml(color='blue', alpha=.3))
+            doc.append(sector.export_kml(color="blue", alpha=.3))
 
         # iterate on so6 yield callsign, flight
         for callsign, flight in tqdm(so6):
-            doc.append(flight.export_kml(color='#aa3a3a'))
+            doc.append(flight.export_kml(color="#aa3a3a"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Export SO6 to KML")
 
-    parser.add_argument("-o", dest="output_file", type=Path,
-                        default="output.kml",
-                        help="outfile file (.kml)")
+    parser.add_argument(
+        "-o",
+        dest="output_file",
+        type=Path,
+        default="output.kml",
+        help="outfile file (.kml)",
+    )
 
-    parser.add_argument("-s", dest="sector_name",
-                        help="name of the sector to pick in AIRAC files")
+    parser.add_argument(
+        "-s",
+        dest="sector_name",
+        help="name of the sector to pick in AIRAC files",
+    )
 
-    parser.add_argument("-f", dest="start_time",
-                        help="start_time to filter trajectories")
+    parser.add_argument(
+        "-f", dest="start_time", help="start_time to filter trajectories"
+    )
 
-    parser.add_argument("-t", dest="stop_time",
-                        help="stop_time to filter trajectories")
+    parser.add_argument(
+        "-t", dest="stop_time", help="stop_time to filter trajectories"
+    )
 
-    parser.add_argument("input_file", type=Path,
-                        help="so6 file to parse")
+    parser.add_argument("input_file", type=Path, help="so6 file to parse")
 
     args = parser.parse_args()
     so6_to_kml(**vars(args))

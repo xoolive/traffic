@@ -4,15 +4,15 @@ import re
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Callable, Iterable, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, Optional, Tuple, Union, cast
 
 import pandas as pd
 import paramiko
 import requests
 
+from ...core import Flight, Traffic
 from ...core.time import round_time, split_times, timelike, to_datetime
-from ...core.traffic import Traffic
-from ..airport import Airport
+from ..basic.airport import Airport
 
 
 class OpenSky(object):
@@ -41,13 +41,17 @@ class OpenSky(object):
                       "where hour>={before_hour} and hour<{after_hour} "
                       "{other_where} group by icao24, callsign, s.ITEM")
 
-    cache_dir: Path
+    shell: Optional[Any]  # the connection to the Impala shell
 
-    def __init__(self, username: str, password: str) -> None:
+    def __init__(self, username: str, password: str, cache_dir: Path) -> None:
 
         self.username = username
         self.password = password
         self.connected = False
+        self.cache_dir = cache_dir
+        self.shell = None
+        if not self.cache_dir.exists():
+            self.cache_dir.mkdir(parents=True)
 
         if username == "" or password == "":
             self.auth = None
@@ -88,11 +92,11 @@ class OpenSky(object):
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect("data.opensky-network.org", port=2230,
                        username=self.username, password=self.password)
-        self.c = client.invoke_shell()
+        self.shell = client.invoke_shell()
         self.connected = True
         total = ""
         while len(total) == 0 or total[-19:] != "[hadoop-1:21000] > ":
-            b = self.c.recv(256)
+            b = self.shell.recv(256)
             total += b.decode()
 
     def _impala(self, request: str) -> Optional[pd.DataFrame]:
@@ -103,11 +107,15 @@ class OpenSky(object):
         if not cachename.exists():
             if not self.connected:
                 self._connect()
+
+            # Now we are connected so self.c is not None
+            self.shell = cast(Any, self.shell)
+
             logging.info("Sending request: {}".format(request))
-            self.c.send(request + ";\n")
+            self.shell.send(request + ";\n")
             total = ""
             while len(total) == 0 or total[-19:] != "[hadoop-1:21000] > ":
-                b = self.c.recv(256)
+                b = self.shell.recv(256)
                 total += b.decode()
             with cachename.open('w') as fh:
                 fh.write(total)
@@ -134,8 +142,8 @@ class OpenSky(object):
                 serials: Optional[Iterable[int]]=None,
                 bounds: Optional[Tuple[float, float, float, float]]=None,
                 other_columns: str="", other_where: str="",
-                progress_bar: Callable[[Iterable], Iterable]=iter
-                ) -> Optional[Traffic]:
+                progressbar: Callable[[Iterable], Iterable]=iter
+                ) -> Optional[Union[Traffic, Flight]]:
 
         before = to_datetime(before)
         after = to_datetime(after)
@@ -165,7 +173,7 @@ class OpenSky(object):
         cumul = []
         sequence = list(split_times(before, after, date_delta))
 
-        for bt, at, bh, ah in progress_bar(sequence):
+        for bt, at, bh, ah in progressbar(sequence):
 
             logging.info(
                 f"Sending request between time {bt} and {at} "
@@ -182,9 +190,9 @@ class OpenSky(object):
                 continue
 
             df = df.drop(['lastcontact', ], axis=1)
-            # may be useful if several serials (TODO option, on icao24)
-            # TODO remove serials as well (option)
 
+            # TODO option for callsign/icao24
+            # TODO remove serials as well (option)
             df = df.drop_duplicates(('callsign', 'time'))
             if df.lat.dtype == object:
                 df = df[df.lat != 'lat']  # header is regularly repeated
@@ -217,13 +225,18 @@ class OpenSky(object):
             df = self._format_dataframe(df)
             cumul.append(df)
 
-        if len(cumul) > 0:
-            return Traffic(pd.concat(cumul))
+        if len(cumul) == 0:
+            return None
 
-        return None
+        if isinstance(callsign, str):
+            return Flight(pd.concat(cumul))
 
-    def sensors(self, before: timelike, after: timelike,
-                bounds: Tuple[float, float, float, float]) -> pd.DataFrame:
+        return Traffic(pd.concat(cumul))
+
+    def sensors(
+            self, before: timelike, after: timelike,
+            bounds: Tuple[float, float, float, float]
+    ) -> Optional[pd.DataFrame]:
 
         before_hour = round_time(before, "before")
         after_hour = round_time(after, "after")

@@ -8,8 +8,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from shapely.ops import cascaded_union
 from tqdm import tqdm
 from traffic.data import sectors
-from traffic.data.airac import Sector  # for typing
-from traffic.so6 import SO6, to_datetime
+from traffic.data.sectors.airac import Sector  # for typing
+from traffic.data.so6 import SO6, to_datetime
 
 
 def occupancy(data, configuration):

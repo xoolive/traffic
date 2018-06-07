@@ -4,7 +4,7 @@ import re
 import warnings
 import zipfile
 from collections import defaultdict
-from functools import lru_cache, partial
+from functools import lru_cache
 from pathlib import Path
 from typing import (Any, Callable, Dict, Iterator, List, NamedTuple, Optional,
                     Set, Tuple)
@@ -13,14 +13,12 @@ from xml.etree import ElementTree
 import numpy as np
 from matplotlib.patches import Polygon as MplPolygon
 
-import pyproj
 from fastkml import kml
-from fastkml.geometry import Geometry
 from shapely.geometry import MultiPolygon, Polygon, mapping
-from shapely.ops import cascaded_union, transform
+from shapely.ops import cascaded_union
 
-from ..kml import toStyle  # type: ignore
-from ..core.mixins import ShapelyMixin
+from ...drawing.kml import toStyle  # type: ignore
+from ...core.mixins import ShapelyMixin
 
 
 class ExtrudedPolygon(NamedTuple):
@@ -37,6 +35,7 @@ class SectorInfo(NamedTuple):
 SectorList = List[ExtrudedPolygon]
 
 components: Dict[str, Set[SectorInfo]] = defaultdict(set)
+
 
 class Sector(ShapelyMixin):
 
@@ -122,11 +121,11 @@ class Sector(ShapelyMixin):
         lower_layer = np.c_[c, alt][::-1, :]
         yield Polygon(lower_layer)
 
-        for i, j in zip(range(c.shape[0]-1), range(c.shape[0], 1, -1)):
-            yield Polygon(np.r_[lower_layer[i:i+2,:], upper_layer[j-2:j, :]])
+        for i, j in zip(range(c.shape[0] - 1), range(c.shape[0], 1, -1)):
+            yield Polygon(np.r_[lower_layer[i:i+2, :], upper_layer[j-2:j, :]])
 
-    def export_kml(self, styleUrl:Optional[kml.StyleUrl]=None,
-                   color:Optional[str]=None, alpha:float=.5):
+    def export_kml(self, styleUrl: Optional[kml.StyleUrl]=None,
+                   color: Optional[str]=None, alpha: float=.5):
         if color is not None:
             # the style will be set only if the kml.export context is open
             styleUrl = toStyle(color)
@@ -148,6 +147,7 @@ class Sector(ShapelyMixin):
                            'polygon': mapping(p.polygon)})
         export['shapes'] = shapes
         return export
+
 
 def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
     altitudes = set(alt for _, *low_up in polyalt for alt in low_up)
@@ -187,7 +187,7 @@ class SectorParser(object):
         msg = f"Edit file {self.config_file} with AIRAC directory"
 
         if self.airac_path is None or self.cache_dir is None:
-             raise RuntimeError(msg)
+            raise RuntimeError(msg)
 
         self.full_dict: Dict[str, Any] = {}
         self.all_points: Dict[str, Tuple[float, ...]] = {}
@@ -220,8 +220,8 @@ class SectorParser(object):
             assert(identifier.text is not None)
             self.full_dict[identifier.text] = airspace
 
-        points = ElementTree.parse((self.airac_path / 'DesignatedPoint.BASELINE').
-                                   as_posix())
+        points = ElementTree.parse(
+            (self.airac_path / 'DesignatedPoint.BASELINE').as_posix())
 
         for point in points.findall(
                 "adrmsg:hasMember/aixm:DesignatedPoint", self.ns):
@@ -239,7 +239,8 @@ class SectorParser(object):
             self.all_points[identifier.text] = tuple(
                 float(x) for x in floats.text.split())
 
-        points = ElementTree.parse((self.airac_path / 'Navaid.BASELINE').as_posix())
+        points = ElementTree.parse(
+            (self.airac_path / 'Navaid.BASELINE').as_posix())
 
         for point in points.findall(
                 "adrmsg:hasMember/aixm:Navaid", self.ns):
@@ -275,7 +276,6 @@ class SectorParser(object):
                     coords.append(self.all_points[points.split(':')[2]])
         block_poly.append(
             (Polygon([(lon, lat) for lat, lon in coords]), None, None))
-
 
     @lru_cache(None)
     def make_polygon(self, airspace) -> SectorList:
@@ -384,7 +384,7 @@ class SectorParser(object):
             name, type_pattern = names
 
         for airspace in self.tree.findall(
-                        'adrmsg:hasMember/aixm:Airspace', self.ns):
+                'adrmsg:hasMember/aixm:Airspace', self.ns):
             for ts in airspace.findall(
                     "aixm:timeSlice/aixm:AirspaceTimeSlice", self.ns):
 
@@ -392,10 +392,9 @@ class SectorParser(object):
                 designator = ts.find('aixm:designator', self.ns)
 
                 if ((type_pattern is None or
-                     (type_ is not None and type_.text == type_pattern))
-                        and (designator is not None and
-                             cmp(name, designator.text))):
+                     (type_ is not None and type_.text == type_pattern)) and
+                        (designator is not None and
+                         cmp(name, designator.text))):
                     yield SectorInfo(
                         designator.text,
                         type_.text if type_ is not None else None)
-

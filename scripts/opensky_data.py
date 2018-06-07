@@ -15,7 +15,7 @@ def opensky_data(date, after, output_file, **kwargs):
     if after is None:
         after = before + timedelta(days=1)
 
-    data = opensky.history(before, after, progress_bar=tqdm, **kwargs)
+    data = opensky.history(before, after, progressbar=tqdm, **kwargs)
 
     if output_file.suffix == '.pkl':
         data.to_pickle(output_file.as_posix())

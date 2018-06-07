@@ -35,4 +35,3 @@ class Aircraft(object):
 
     def stats(self, name: str) -> pd.DataFrame:
         return self.operator(name).groupby(('mdl', 'type'))[['icao']].count()
-

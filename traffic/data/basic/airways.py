@@ -1,8 +1,7 @@
 import re
-from collections import defaultdict
 from operator import itemgetter
 from pathlib import Path
-from typing import Optional, Set, Tuple, Union
+from typing import Optional, Set, Tuple, Union, cast
 
 import pandas as pd
 import requests
@@ -28,6 +27,8 @@ class Airways(object):
                 self.airways = pd.read_pickle(self.cache)
             else:
                 self.initialize()
+                # self.airways is set in above method
+                self.airways = cast(pd.DataFrame, self.airways)
                 if self.cache is not None:
                     self.airways.to_pickle(self.cache)
         else:
@@ -74,14 +75,21 @@ class Airways(object):
         self.airways = airways
 
     def __getitem__(self, name: str) -> BaseGeometry:
+        self.airways = cast(pd.DataFrame, self.airways)
         return linemerge(self.airways.groupby('id').get_group(name).linestring)
 
     def through(self, navaid: Union[str, Navaid],
-                up_min: Optional[int] = None) -> Set[str]:
+                up_min: Optional[int] = None) -> Optional[Set[str]]:
 
         if isinstance(navaid, str):
-            from ..data import navaids  # type: ignore
-            navaid = navaids[navaid]
+            from .. import navaids
+            _navaid = navaids[navaid]
+            if _navaid is None:
+                return None
+            navaid = _navaid
+
+        navaid = cast(Navaid, navaid)
+        self.airways = cast(pd.DataFrame, self.airways)
 
         subset = self.airways[((self.airways.fromlat == navaid.lat) &
                                (self.airways.fromlon == navaid.lon)) |
@@ -100,6 +108,8 @@ class Airways(object):
             bounds = bounds.bounds
 
         west, south, east, north = bounds
+
+        self.airways = cast(pd.DataFrame, self.airways)
 
         candidates = self.airways[
             ((self.airways.west >= west) | (self.airways.east >= west)) &
@@ -129,4 +139,3 @@ class Airways(object):
 
         for line in self.airways.linestring:
             ax.plot(*line.xy, **kwargs)
-

@@ -4,8 +4,8 @@ from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 from traffic.data import sectors
-from traffic.data.airac import Sector  # for typing
-from traffic.so6 import SO6
+from traffic.data.sectors.airac import Sector  # for typing
+from traffic.data.so6 import SO6
 
 
 def clip(so6: SO6, sector: Sector) -> SO6:

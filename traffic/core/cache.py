@@ -15,7 +15,7 @@ class Cache(UserDict):
         filename = self.cachedir / f"{hashcode}.json"
         if filename.exists():
             response = json.loads(filename.read_text())
-            # Attention à ne pas réécrire le fichier...
+            # Do not overwrite the file!
             super().__setitem__(hashcode, response)
             return response
 

@@ -6,11 +6,11 @@ from appdirs import user_cache_dir, user_config_dir
 from .adsb.flightradar24 import FlightRadar24
 from .adsb.opensky import OpenSky
 
-from .airac import SectorParser
-from .aircraft import Aircraft
-from .airport import AirportParser
-from .airways import Airways
-from .navaid import NavaidParser
+from .sectors.airac import SectorParser
+from .basic.aircraft import Aircraft
+from .basic.airport import AirportParser
+from .basic.airways import Airways
+from .basic.navaid import NavaidParser
 
 # Parse configuration and input specific parameters in below classes
 
@@ -49,14 +49,9 @@ airways = Airways()
 navaids = NavaidParser()
 sectors = SectorParser(config_file)
 
-OpenSky.cache_dir = cache_dir / "opensky"
-# TODO not great here...
-if not OpenSky.cache_dir.exists():
-    OpenSky.cache_dir.mkdir(parents=True)
-
 opensky_username = config.get("global", "opensky_username", fallback="")
 opensky_password = config.get("global", "opensky_password", fallback="")
-opensky = OpenSky(opensky_username, opensky_password)
+opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
 
 FlightRadar24.username = config.get("global", "fr24_username", fallback="")
 FlightRadar24.password = config.get("global", "fr24_password", fallback="")

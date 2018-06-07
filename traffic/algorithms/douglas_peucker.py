@@ -1,6 +1,8 @@
+# flake8: noqa
 import numpy as np
 import pandas as pd
 import pyproj
+
 
 def _douglas_peucker_rec(x: np.ndarray, y: np.ndarray,
                          mask: np.ndarray, tolerance: float) -> None:
