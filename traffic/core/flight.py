@@ -1,34 +1,40 @@
 import logging
-from datetime import datetime
-from typing import Iterator, Optional, Set, Union
+from datetime import datetime, timedelta
+from typing import Dict, Iterator, Optional, Set, Tuple, Union
 
 import numpy as np
 
 import pandas as pd
-from shapely.geometry import LineString
+import pyproj
+from cartopy.crs import PlateCarree
+from fastkml import kml
+from fastkml.geometry import Geometry
+from shapely.geometry import LineString, base
 
-from .mixins import DataFrameMixin, ShapelyMixin
+from ..core.time import time_or_delta, timelike, to_datetime
+from ..data.sectors.airac import Sector
+from ..drawing.kml import toStyle
+from .mixins import DataFrameMixin, GeographyMixin, ShapelyMixin
 
 
 def split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
     diff = data.timestamp.diff().values
     if diff.max() > np.timedelta64(value, unit):
-        yield from split(data.iloc[:diff.argmax()], value, unit)
-        yield from split(data.iloc[diff.argmax():], value, unit)
+        yield from split(data.iloc[: diff.argmax()], value, unit)
+        yield from split(data.iloc[diff.argmax() :], value, unit)
     else:
         yield data
 
 
-class Flight(DataFrameMixin, ShapelyMixin):
-
-    def __init__(self, data: pd.DataFrame) -> None:
-        self.data = data
+class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     def __add__(self, other):
         # useful for compatibility with sum() function
-        if other == 0: return self
+        if other == 0:
+            return self
         # keep import here to avoid recursion
         from .traffic import Traffic
+
         return Traffic(pd.concat([self.data, other.data]))
 
     def __radd__(self, other):
@@ -61,12 +67,16 @@ class Flight(DataFrameMixin, ShapelyMixin):
         return title + no_wrap_div.format(self._repr_svg_())
 
     @property
+    def timestamp(self) -> Iterator[datetime]:
+        yield from self.data.timestamp
+
+    @property
     def start(self) -> datetime:
-        return self.data.timestamp.min()
+        return min(self.timestamp)
 
     @property
     def stop(self) -> datetime:
-        return self.data.timestamp.max()
+        return max(self.timestamp)
 
     @property
     def callsign(self) -> Union[str, Set[str]]:
@@ -78,7 +88,7 @@ class Flight(DataFrameMixin, ShapelyMixin):
 
     @property
     def number(self) -> Optional[Union[str, Set[str]]]:
-        if 'number' not in self.data.columns:
+        if "number" not in self.data.columns:
             return None
         tmp = set(self.data.number)
         if len(tmp) == 1:
@@ -96,7 +106,7 @@ class Flight(DataFrameMixin, ShapelyMixin):
 
     @property
     def flight_id(self) -> Optional[Union[str, Set[str]]]:
-        if 'flight_id' not in self.data.columns:
+        if "flight_id" not in self.data.columns:
             return None
         tmp = set(self.data.flight_id)
         if len(tmp) == 1:
@@ -106,7 +116,7 @@ class Flight(DataFrameMixin, ShapelyMixin):
 
     @property
     def origin(self) -> Optional[Union[str, Set[str]]]:
-        if 'origin' not in self.data.columns:
+        if "origin" not in self.data.columns:
             return None
         tmp = set(self.data.origin)
         if len(tmp) == 1:
@@ -116,7 +126,7 @@ class Flight(DataFrameMixin, ShapelyMixin):
 
     @property
     def destination(self) -> Optional[Union[str, Set[str]]]:
-        if 'destination' not in self.data.columns:
+        if "destination" not in self.data.columns:
             return None
         tmp = set(self.data.destination)
         if len(tmp) == 1:
@@ -129,6 +139,7 @@ class Flight(DataFrameMixin, ShapelyMixin):
         if not isinstance(self.icao24, str):
             return None
         from ..data import aircraft as acdb
+
         ac = acdb[self.icao24]
         if ac.shape[0] != 1:
             return self.icao24
@@ -138,6 +149,7 @@ class Flight(DataFrameMixin, ShapelyMixin):
     @property
     def registration(self) -> Optional[str]:
         from ..data import aircraft as acdb
+
         if not isinstance(self.icao24, str):
             return None
         ac = acdb[self.icao24]
@@ -146,30 +158,143 @@ class Flight(DataFrameMixin, ShapelyMixin):
         return ac.iloc[0].regid
 
     @property
-    def linestring(self) -> LineString:
+    def coords(self) -> Iterator[Tuple[float, float, float]]:
         data = self.data[self.data.longitude.notnull()]
-        return LineString(zip(data['longitude'], data['latitude']))
+        altitude = (
+            "baro_altitude"
+            if "baro_altitude" in self.data.columns
+            else "altitude"
+        )
+        yield from zip(data["longitude"], data["latitude"], data[altitude])
+
+    @property
+    def xy_time(self) -> Iterator[Tuple[float, float, float]]:
+        iterator = iter(zip(self.coords, self.timestamp))
+        while True:
+            next_ = next(iterator, None)
+            if next_ is None:
+                return
+            coords, time = next_
+            yield (coords[0], coords[1], time.timestamp())
+
+    @property
+    def linestring(self) -> LineString:
+        return LineString(list(self.coords))
 
     @property
     def shape(self) -> LineString:
         return self.linestring
 
-    def plot(self, ax, **kwargs):
-        if 'projection' in ax.__dict__ and 'transform' not in kwargs:
-            from cartopy.crs import PlateCarree
-            kwargs['transform'] = PlateCarree()
+    def airborne(self) -> "Flight":
+        altitude = (
+            "baro_altitude"
+            if "baro_altitude" in self.data.columns
+            else "altitude"
+        )
+        return self.__class__(self.data[self.data[altitude].notnull()])
 
+    # -- Interpolation and resampling --
+
+    def split(self, value: int = 10, unit: str = "m") -> Iterator["Flight"]:
+        for data in split(self.data, value, unit):
+            yield self.__class__(data)
+
+    def resample(self, rule: str = "1s") -> "Flight":
+        data = (
+            self.data.assign(start=self.start, stop=self.stop)
+            .set_index("timestamp")
+            .resample(rule)
+            .interpolate()
+            .reset_index()
+            .fillna(method="pad")
+        )
+        return self.__class__(data)
+
+    def at(self, time: timelike) -> pd.core.series.Series:
+        index = to_datetime(time)
+        return self.data.set_index("timestamp").loc[time]
+
+    def between(self, before: timelike, after: time_or_delta) -> "Flight":
+        before = to_datetime(before)
+        if isinstance(after, timedelta):
+            after = before + after
+        else:
+            after = to_datetime(after)
+
+        t: np.ndarray = np.stack(self.timestamp)
+        index = np.where((before < t) & (t < after))
+        return self.__class__(self.data.iloc[index])
+
+    # -- Geometry operations --
+
+    def intersects(self, sector: Sector):
+        for layer in sector:
+            ix = self.airborne().linestring.intersection(layer.polygon)
+            if not ix.is_empty:
+                if isinstance(ix, base.BaseMultipartGeometry):
+                    for part in ix:
+                        if any(
+                            100 * layer.lower < x[2] < 100 * layer.upper
+                            for x in part.coords
+                        ):
+                            return True
+                else:
+                    if any(
+                        100 * layer.lower < x[2] < 100 * layer.upper
+                        for x in ix.coords
+                    ):
+                        return True
+        return False
+
+    def clip(self, shape: base.BaseGeometry) -> "Flight":
+        times = list(
+            datetime.fromtimestamp(t)
+            for t in np.stack(
+                LineString(list(self.airborne().xy_time))
+                .intersection(shape)
+                .coords
+            )[:, 2]
+        )
+        return self.__class__(
+            self.data[
+                (self.data.timestamp >= min(times))
+                & (self.data.timestamp <= max(times))
+            ]
+        )
+
+    # -- Visualisation --
+
+    def plot(self, ax, **kwargs):
+        if "projection" in ax.__dict__ and "transform" not in kwargs:
+            from cartopy.crs import PlateCarree
+            kwargs["transform"] = PlateCarree()
         ax.plot(*self.shape.xy, **kwargs)
 
-    def split(self, value: int=10, unit: str='m') -> Iterator['Flight']:
-        for data in split(self.data, value, unit):
-            yield Flight(data)
-
-    def resample(self, rule: str='1s') -> 'Flight':
-        data = (self.data.assign(start=self.start, stop=self.stop).
-                set_index('timestamp').
-                resample(rule).
-                interpolate().
-                reset_index().
-                fillna(method='pad'))
-        return Flight(data)
+    def export_kml(
+        self,
+        styleUrl: Optional[kml.StyleUrl] = None,
+        color: Optional[str] = None,
+        alpha: float = .5,
+        **kwargs,
+    ):
+        if color is not None:
+            # the style will be set only if the kml.export context is open
+            styleUrl = toStyle(color)
+        params = {
+            "name": self.callsign,
+            "description": self.info_html(),
+            "styleUrl": styleUrl,
+        }
+        for key, value in kwargs.items():
+            params[key] = value
+        placemark = kml.Placemark(**params)
+        placemark.visibility = 1
+        # Convert to meters
+        coords = np.stack(self.coords)
+        coords[:, 2] *= 0.3048
+        placemark.geometry = Geometry(
+            geometry=LineString(coords),
+            extrude=True,
+            altitude_mode="relativeToGround",
+        )
+        return placemark

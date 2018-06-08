@@ -136,7 +136,7 @@ class OpenSky(object):
 
         return None
 
-    def history(self, before: timelike, after: timelike,
+    def history(self, before: timelike, after: Optional[timelike]=None,
                 date_delta: timedelta=timedelta(hours=1),
                 callsign: Optional[Union[str, Iterable[str]]]=None,
                 serials: Optional[Iterable[int]]=None,
@@ -145,8 +145,12 @@ class OpenSky(object):
                 progressbar: Callable[[Iterable], Iterable]=iter
                 ) -> Optional[Union[Traffic, Flight]]:
 
+        return_flight = False
         before = to_datetime(before)
-        after = to_datetime(after)
+        if after is not None:
+            after = to_datetime(after)
+        else:
+            after = before + timedelta(days=1)
 
         if isinstance(serials, Iterable):
             other_columns += ", state_vectors_data4.serials s "
@@ -154,6 +158,7 @@ class OpenSky(object):
 
         if isinstance(callsign, str):
             other_where += "and callsign='{:<8s}' ".format(callsign)
+            return_flight = True
 
         elif isinstance(callsign, Iterable):
             callsign = ",".join("'{:<8s}'".format(c) for c in callsign)
@@ -228,7 +233,7 @@ class OpenSky(object):
         if len(cumul) == 0:
             return None
 
-        if isinstance(callsign, str):
+        if return_flight:
             return Flight(pd.concat(cumul))
 
         return Traffic(pd.concat(cumul))

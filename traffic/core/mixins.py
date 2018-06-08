@@ -112,3 +112,31 @@ class ShapelyMixin(object):
 
     # Nothing special made on plots because it really depends on the nature of
     # the geometry of the shape held in the structure.
+
+
+class GeographyMixin(object):
+
+    def compute_xy(self, projection=None):
+        """Computes x and y columns from latitudes and longitudes.
+
+        The source projection is WGS84 (EPSG 4326).
+        The default destination projection is a Lambert Conformal Conical
+        projection centered on the data inside the dataframe.
+
+        For consistency reasons with pandas DataFrame, a new Traffic structure
+        is returned.
+
+        """
+        if projection is None:
+            projection = pyproj.Proj(proj='lcc',
+                                     lat_1=self.data.latitude.min(),
+                                     lat_2=self.data.latitude.max(),
+                                     lat_0=self.data.latitude.mean(),
+                                     lon_0=self.data.longitude.mean())
+
+        x, y = pyproj.transform(pyproj.Proj(init='EPSG:4326'),
+                                projection,
+                                self.data.longitude.values,
+                                self.data.latitude.values)
+
+        return self.__class__(self.data.assign(x=x, y=y))

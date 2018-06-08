@@ -1,8 +1,6 @@
-from datetime import timedelta
 from pathlib import Path
 
 from tqdm import tqdm
-from traffic.core.time import to_datetime
 from traffic.data import opensky, sectors
 
 
@@ -11,11 +9,7 @@ def opensky_data(date, after, output_file, **kwargs):
     if kwargs['bounds'] is not None:
         kwargs['bounds'] = sectors[kwargs['bounds']]
 
-    before = to_datetime(date)
-    if after is None:
-        after = before + timedelta(days=1)
-
-    data = opensky.history(before, after, progressbar=tqdm, **kwargs)
+    data = opensky.history(date, after, progressbar=tqdm, **kwargs)
 
     if output_file.suffix == '.pkl':
         data.to_pickle(output_file.as_posix())
