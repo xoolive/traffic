@@ -5,6 +5,7 @@ from collections import Iterable
 from pathlib import Path
 from typing import NamedTuple, Optional
 
+import requests
 from cartopy.crs import PlateCarree
 
 from ...core.mixins import ShapelyMixin
@@ -72,10 +73,11 @@ class AirportParser(object):
             with open(self.cache, "rb") as fh:
                 self.airports = pickle.load(fh)
         else:
-            from ..adsb.flightradar24 import FlightRadar24
+            c = requests.get("https://www.flightradar24.com/_json/airports.php",
+                             headers={"user-agent": "Mozilla/5.0"})
+            self.airports = list(Airport(**a) for a in c.json()["rows"])
 
             logging.info("Caching airport list from FlightRadar")
-            self.airports = FlightRadar24().get_airports()
             if self.cache is not None:
                 with open(self.cache, "wb") as fh:
                     pickle.dump(self.airports, fh)

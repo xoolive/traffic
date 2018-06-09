@@ -122,7 +122,8 @@ class Sector(ShapelyMixin):
         yield Polygon(lower_layer)
 
         for i, j in zip(range(c.shape[0] - 1), range(c.shape[0], 1, -1)):
-            yield Polygon(np.r_[lower_layer[i:i+2, :], upper_layer[j-2:j, :]])
+            yield Polygon(np.r_[lower_layer[i:i+2, :],  # noqa: E226
+                                upper_layer[j-2:j, :]])  # noqa: E226
 
     def export_kml(self, styleUrl: Optional[kml.StyleUrl]=None,
                    color: Optional[str]=None, alpha: float=.5):

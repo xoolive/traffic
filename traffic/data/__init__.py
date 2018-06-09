@@ -53,7 +53,7 @@ opensky_username = config.get("global", "opensky_username", fallback="")
 opensky_password = config.get("global", "opensky_password", fallback="")
 opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
 
-FlightRadar24.username = config.get("global", "fr24_username", fallback="")
-FlightRadar24.password = config.get("global", "fr24_password", fallback="")
-FlightRadar24.cache_dir = cache_dir / "flightradar24"
-flightradar24 = FlightRadar24()
+fr24_username = config.get("global", "fr24_username", fallback="")
+fr24_password = config.get("global", "fr24_password", fallback="")
+flightradar24 = FlightRadar24(cache_dir / "flightradar24",
+                              fr24_username, fr24_password)
