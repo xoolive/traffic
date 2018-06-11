@@ -61,6 +61,17 @@ class Flight(FlightMixin):
             yield s.lon1, s.lat1, s.alt1
         yield s.lon2, s.lat2, s.alt2
 
+    @property
+    def linestring(self) -> LineString:
+        return LineString(list(self.coords))
+
+    @property
+    def shape(self) -> LineString:
+        return self.linestring
+
+    def airborne(self):
+        return self
+
     def interpolate(self, times, proj=PlateCarree()):
         """Interpolates a trajectory in time.  """
         if proj not in self.interpolator:

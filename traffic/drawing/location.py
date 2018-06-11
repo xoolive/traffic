@@ -4,7 +4,7 @@ from typing import Dict, List
 import requests
 from shapely.geometry import shape
 
-from .mixins import ShapelyMixin
+from ..core.mixins import ShapelyMixin
 
 
 def nominatim_request(query: str, **kwargs):
