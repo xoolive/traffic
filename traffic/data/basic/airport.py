@@ -1,7 +1,7 @@
 import logging
 import pickle
 import re
-from collections import Iterable
+from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple, Optional
 
@@ -41,14 +41,17 @@ class Airport(AirportNamedTuple, ShapelyMixin):
         # not so bad balance for common usecases...
         return (self.lon - 1, self.lon + 1, self.lat - .7, self.lat + .7)
 
-    @property
-    def shape(self):
+    @lru_cache()
+    def osm_request(self):
         from cartotools.osm import request, tags
-
         return request(
             (self.lon - .06, self.lat - .06, self.lon + .06, self.lat + .06),
             **tags.airport,
-        ).shape
+        )
+
+    @property
+    def shape(self):
+        return self.osm_request().shape
 
     def plot(self, ax, **kwargs):
         params = {
@@ -57,11 +60,7 @@ class Airport(AirportNamedTuple, ShapelyMixin):
             "crs": PlateCarree(),
             **kwargs,
         }
-        if isinstance(self.shape, Iterable):
-            for shape in self.shape:
-                ax.add_geometries([shape], **params)
-        else:
-            ax.add_geometries([self.shape], **params)
+        ax.add_geometries(list(self.osm_request()), **params)
 
 
 class AirportParser(object):

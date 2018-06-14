@@ -1,19 +1,44 @@
+import logging
 from functools import lru_cache
-from typing import Iterator, Optional, Set, Tuple, Union
+from pathlib import Path
+from typing import Callable, Dict, Iterator, Optional, Set, Tuple, Union
 
 import pandas as pd
 import pyproj
 from shapely.geometry import base
 
-from ..data.sectors.airac import Sector
 from .flight import Flight
 from .mixins import DataFrameMixin, GeographyMixin
 
 
 class Traffic(DataFrameMixin, GeographyMixin):
+
+    _parse_extension: Dict[str, Callable[..., pd.DataFrame]] = dict()
+
     @classmethod
     def from_flights(cls, flights: Iterator[Flight]):
         return cls(pd.concat([f.data for f in flights]))
+
+    @classmethod
+    def from_file(
+        cls, filename: Union[Path, str], **kwargs
+    ) -> Optional['Traffic']:
+
+        tentative = super().from_file(filename)
+        if tentative is not None:
+            return cls(tentative.data)
+
+        path = Path(filename)
+        method = cls._parse_extension.get("".join(path.suffixes), None)
+        if method is None:
+            logging.warn(f"{path.suffixes} extension is not supported")
+            return None
+
+        data = method(filename, **kwargs)
+        if data is None:
+            return None
+
+        return cls(data)
 
     # --- Special methods ---
 
@@ -135,25 +160,3 @@ class Traffic(DataFrameMixin, GeographyMixin):
             for subflight in flight.split(*kernel):
                 cumul.append(subflight.resample(rule))
         return self.__class__.from_flights(cumul)
-
-    def inside_bbox(
-        self, bounds: Union[Sector, Tuple[float, ...]]
-    ) -> "Traffic":
-
-        if isinstance(bounds, Sector):
-            bounds = bounds.flatten().bounds
-
-        if isinstance(bounds, base.BaseGeometry):
-            bounds = bounds.bounds
-
-        west, south, east, north = bounds
-
-        query = "{0} <= longitude <= {2} & {1} <= latitude <= {3}"
-        query = query.format(west, south, east, north)
-
-        data = self.data.query(query)
-
-        return self.__class__(data)
-
-    def intersects(self, sector: Sector) -> 'Traffic':
-        return sum(flight for flight in self if flight.intersects(sector))

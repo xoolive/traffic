@@ -7,6 +7,7 @@ from .adsb.flightradar24 import FlightRadar24
 from .adsb.opensky import OpenSky
 
 from .sectors.airac import SectorParser
+from .sectors.eurofirs import eurofirs
 from .basic.aircraft import Aircraft
 from .basic.airport import AirportParser
 from .basic.airways import Airways

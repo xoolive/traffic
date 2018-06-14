@@ -17,6 +17,6 @@ setup(name="traffic",
                 "traffic.data", "traffic.data.adsb", "traffic.data.basic",
                 "traffic.data.sectors", "traffic.data.so6",
                 "traffic.algorithms", "traffic.drawing"],
-      # package_data={'traffic.algorithms': bresenham_path},
+      package_data={'traffic.data.sectors': ['firs.json']},
       python_requires='>=3.6',
       )

@@ -12,7 +12,6 @@ from fastkml.geometry import Geometry
 from shapely.geometry import LineString, base
 
 from ..core.time import time_or_delta, timelike, to_datetime
-from ..data.sectors.airac import Sector
 from ..drawing.kml import toStyle
 from .mixins import DataFrameMixin, GeographyMixin, ShapelyMixin
 
@@ -34,8 +33,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             return self
         # keep import here to avoid recursion
         from .traffic import Traffic
-
-        return Traffic(pd.concat([self.data, other.data]))
+        return Traffic.from_flights([self, other])
 
     def __radd__(self, other):
         return self + other
@@ -178,11 +176,14 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             yield (coords[0], coords[1], time.timestamp())
 
     @property
-    def linestring(self) -> LineString:
-        return LineString(list(self.coords))
+    def linestring(self) -> Optional[LineString]:
+        coords = list(self.coords)
+        if len(coords) < 2:
+            return None
+        return LineString(coords)
 
     @property
-    def shape(self) -> LineString:
+    def shape(self) -> Optional[LineString]:
         return self.linestring
 
     def airborne(self) -> "Flight":
@@ -226,25 +227,6 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return self.__class__(self.data.iloc[index])
 
     # -- Geometry operations --
-
-    def intersects(self, sector: Sector):
-        for layer in sector:
-            ix = self.airborne().linestring.intersection(layer.polygon)
-            if not ix.is_empty:
-                if isinstance(ix, base.BaseMultipartGeometry):
-                    for part in ix:
-                        if any(
-                            100 * layer.lower < x[2] < 100 * layer.upper
-                            for x in part.coords
-                        ):
-                            return True
-                else:
-                    if any(
-                        100 * layer.lower < x[2] < 100 * layer.upper
-                        for x in ix.coords
-                    ):
-                        return True
-        return False
 
     def clip(self, shape: base.BaseGeometry) -> "Flight":
         times = list(

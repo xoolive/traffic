@@ -9,20 +9,20 @@ from shapely.ops import transform
 
 
 class DataFrameMixin(object):
-
     def __init__(self, data: pd.DataFrame) -> None:
         self.data: pd.DataFrame = data
 
     @classmethod
-    def from_file(cls, filename: str) -> Optional['DataFrameMixin']:
+    def from_file(
+        cls, filename: Union[Path, str]
+    ) -> Optional["DataFrameMixin"]:
         path = Path(filename)
-        if path.suffixes == ['.pkl']:
+        if path.suffixes == [".pkl"]:
             return cls(pd.read_pickle(path))
-        if path.suffixes == ['.csv']:
+        if path.suffixes == [".csv"]:
             return cls(pd.read_csv(path))
-        if path.suffixes == ['.h5']:
+        if path.suffixes == [".h5"]:
             return cls(pd.read_hdf(path))
-        logging.warn(f"Suffix {''.join(path.suffixes)} not supported")
         return None
 
     # --- Special methods ---
@@ -53,7 +53,7 @@ class DataFrameMixin(object):
     def to_excel(self, filename: Union[str, Path]) -> None:
         self.data.to_excel(filename)
 
-    def query(self, query: str) -> 'DataFrameMixin':
+    def query(self, query: str) -> "DataFrameMixin":
         return self.__class__(self.data.query(query))
 
     def groupby(self, *args, **kwargs):
@@ -86,7 +86,9 @@ class ShapelyMixin(object):
     # --- Representations ---
 
     def _repr_svg_(self):
-        return self.project_shape()._repr_svg_()
+        project = self.project_shape()
+        if project is not None:
+            return project._repr_svg_()
 
     def _repr_html_(self):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
@@ -100,22 +102,31 @@ class ShapelyMixin(object):
         locally respect areas, which is convenient for the area item.
         """
 
+        if self.shape is None:
+            return None
+
         if projection is None:
             bounds = self.bounds
-            projection = pyproj.Proj(proj='aea',  # equivalent projection
-                                     lat1=bounds[1], lat2=bounds[3],
-                                     lon1=bounds[0], lon2=bounds[2])
+            projection = pyproj.Proj(
+                proj="aea",  # equivalent projection
+                lat1=bounds[1],
+                lat2=bounds[3],
+                lon1=bounds[0],
+                lon2=bounds[2],
+            )
 
-        return transform(partial(pyproj.transform,
-                                 pyproj.Proj(init='EPSG:4326'),
-                                 projection), self.shape)
+        return transform(
+            partial(
+                pyproj.transform, pyproj.Proj(init="EPSG:4326"), projection
+            ),
+            self.shape,
+        )
 
     # Nothing special made on plots because it really depends on the nature of
     # the geometry of the shape held in the structure.
 
 
 class GeographyMixin(object):
-
     def compute_xy(self, projection=None):
         """Computes x and y columns from latitudes and longitudes.
 
@@ -128,15 +139,19 @@ class GeographyMixin(object):
 
         """
         if projection is None:
-            projection = pyproj.Proj(proj='lcc',
-                                     lat_1=self.data.latitude.min(),
-                                     lat_2=self.data.latitude.max(),
-                                     lat_0=self.data.latitude.mean(),
-                                     lon_0=self.data.longitude.mean())
+            projection = pyproj.Proj(
+                proj="lcc",
+                lat_1=self.data.latitude.min(),
+                lat_2=self.data.latitude.max(),
+                lat_0=self.data.latitude.mean(),
+                lon_0=self.data.longitude.mean(),
+            )
 
-        x, y = pyproj.transform(pyproj.Proj(init='EPSG:4326'),
-                                projection,
-                                self.data.longitude.values,
-                                self.data.latitude.values)
+        x, y = pyproj.transform(
+            pyproj.Proj(init="EPSG:4326"),
+            projection,
+            self.data.longitude.values,
+            self.data.latitude.values,
+        )
 
         return self.__class__(self.data.assign(x=x, y=y))
