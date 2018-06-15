@@ -48,7 +48,8 @@ aircraft = Aircraft()
 airports = AirportParser()
 airways = Airways()
 navaids = NavaidParser()
-sectors = SectorParser(config_file)
+airac = SectorParser(config_file)
+sectors = airac  # deprecated?
 
 opensky_username = config.get("global", "opensky_username", fallback="")
 opensky_password = config.get("global", "opensky_password", fallback="")

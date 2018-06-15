@@ -1,26 +1,15 @@
 from collections import defaultdict
-from typing import (
-    Any,
-    Dict,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set,
+                    Tuple, Union)
 
 import numpy as np
 from matplotlib.patches import Polygon as MplPolygon
 
-from fastkml import kml
-from shapely.geometry import MultiPolygon, Polygon, base, mapping
+from shapely.geometry import Polygon, base, mapping
 from shapely.ops import cascaded_union
 
-from ...core import Flight, Traffic
-from ...core.mixins import ShapelyMixin
-from ...drawing.kml import toStyle  # type: ignore
+from . import Flight, Traffic
+from .mixins import ShapelyMixin
 
 
 class ExtrudedPolygon(NamedTuple):
@@ -135,25 +124,6 @@ class Sector(ShapelyMixin):
                 ]
             )
 
-    def export_kml(
-        self,
-        styleUrl: Optional[kml.StyleUrl] = None,
-        color: Optional[str] = None,
-        alpha: float = .5,
-    ):
-        if color is not None:
-            # the style will be set only if the kml.export context is open
-            styleUrl = toStyle(color)
-        folder = kml.Folder(name=self.name, description=self.type)
-        for extr_p in self:
-            for elt in self.decompose(extr_p):
-                placemark = kml.Placemark(styleUrl=styleUrl)
-                placemark.geometry = kml.Geometry(
-                    geometry=elt, altitude_mode="relativeToGround"
-                )
-                folder.append(placemark)
-        return folder
-
     def export_json(self) -> Dict[str, Any]:
         export: Dict[str, Any] = {"name": self.name, "type": self.type}
         shapes = []
@@ -222,7 +192,10 @@ def _traffic_intersects(traffic: Traffic, sector: Sector) -> Traffic:
 
 def _flight_intersects(flight: Flight, sector: Sector) -> bool:
     for layer in sector:
-        ix = flight.airborne().linestring.intersection(layer.polygon)
+        linestring = flight.airborne().linestring
+        if linestring is None:
+            return False
+        ix = linestring.intersection(layer.polygon)
         if not ix.is_empty:
             if isinstance(ix, base.BaseMultipartGeometry):
                 for part in ix:

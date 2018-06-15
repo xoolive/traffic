@@ -3,6 +3,9 @@ from pathlib import Path
 from typing import Optional
 
 from tqdm import tqdm
+from traffic.data import sectors
+from traffic.data.so6 import SO6
+from traffic.drawing import kml
 
 
 def so6_to_kml(
@@ -12,11 +15,6 @@ def so6_to_kml(
     start_time: Optional[str],
     stop_time: Optional[str],
 ) -> None:
-
-    # Slow imports: let's put them here for a quick access to help
-    from traffic.data import sectors
-    from traffic.data.so6 import SO6
-    from traffic.drawing import kml
 
     so6 = SO6.parse_file(input_file.as_posix())
 

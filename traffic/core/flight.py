@@ -7,12 +7,9 @@ import numpy as np
 import pandas as pd
 import pyproj
 from cartopy.crs import PlateCarree
-from fastkml import kml
-from fastkml.geometry import Geometry
 from shapely.geometry import LineString, base
 
 from ..core.time import time_or_delta, timelike, to_datetime
-from ..drawing.kml import toStyle
 from .mixins import DataFrameMixin, GeographyMixin, ShapelyMixin
 
 
@@ -252,31 +249,3 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             kwargs["transform"] = PlateCarree()
         ax.plot(*self.shape.xy, **kwargs)
 
-    def export_kml(
-        self,
-        styleUrl: Optional[kml.StyleUrl] = None,
-        color: Optional[str] = None,
-        alpha: float = .5,
-        **kwargs,
-    ):
-        if color is not None:
-            # the style will be set only if the kml.export context is open
-            styleUrl = toStyle(color)
-        params = {
-            "name": self.callsign,
-            "description": self.info_html(),
-            "styleUrl": styleUrl,
-        }
-        for key, value in kwargs.items():
-            params[key] = value
-        placemark = kml.Placemark(**params)
-        placemark.visibility = 1
-        # Convert to meters
-        coords = np.stack(self.coords)
-        coords[:, 2] *= 0.3048
-        placemark.geometry = Geometry(
-            geometry=LineString(coords),
-            extrude=True,
-            altitude_mode="relativeToGround",
-        )
-        return placemark

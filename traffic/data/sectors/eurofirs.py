@@ -2,10 +2,10 @@ import json
 from pathlib import Path
 
 from shapely.geometry import shape
+
 from .core import ExtrudedPolygon, Sector
 
-
-with Path(__file__).absolute().with_name("firs.json").open('r') as fh:
+with Path(__file__).absolute().with_name("firs.json").open("r") as fh:
     fir = json.loads("".join(fh.readlines()))
 
 eurofirs = {
@@ -14,8 +14,8 @@ eurofirs = {
         elements=[
             ExtrudedPolygon(
                 shape(elt["geometry"]),
-                elt["properties"]["LOWERLIMIT"],
-                elt["properties"]["UPPERLIMIT"],
+                int(elt["properties"]["LOWERLIMIT"]),
+                int(elt["properties"]["UPPERLIMIT"]),
             )
         ],
         type_=elt["properties"]["TYPE"],

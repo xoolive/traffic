@@ -11,9 +11,14 @@ from xml.etree import ElementTree
 from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
 
-from .core import components  # to be moved here TODO
-from .core import (ExtrudedPolygon, Sector, SectorInfo, SectorList,
-                   cascaded_union_with_alt)
+from ...core.sector import components  # to be moved here TODO
+from ...core.sector import (
+    ExtrudedPolygon,
+    Sector,
+    SectorInfo,
+    SectorList,
+    cascaded_union_with_alt,
+)
 
 
 class SectorParser(object):
