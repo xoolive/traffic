@@ -11,6 +11,6 @@ The repository contains sample data. The sample `so6` file has been generated fr
 
 ## Documentation
 
-coming soon
+Documentation available at [https://airtraffic.readthedocs.io/](https://airtraffic.readthedocs.io/)
 
-In the meantime, you can check the `scripts` and `notebooks` directories.
+If things are still missing there, you can check the `scripts` and `notebooks` directories.
