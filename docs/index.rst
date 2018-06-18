@@ -8,12 +8,12 @@ traffic
 
 Source code on `github <https://github.com/xoolive/traffic>`_
 
-The ``traffic`` library helps working with common sources of air traffic data.
+The traffic library helps working with common sources of air traffic data.
 
 Its main purpose is to offer basic cumbersome data analysis methods commonly
 applied to trajectories and ATC sectors. When a specific function is not
 provided, the access to the underlying structure is direct, through an attribute
-pointing to a ``pandas`` dataframe.
+pointing to a pandas dataframe.
 
 The library also offers facilities to parse and/or access traffic data from open
 sources of ADS-B traffic like the `OpenSky Network <https://opensky-network.org/>`_
