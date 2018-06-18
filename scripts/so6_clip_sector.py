@@ -1,10 +1,10 @@
 import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
-from traffic.data import sectors
 from traffic.core import Sector  # for typing
+from traffic.data import airac as sectors
 from traffic.data.so6 import SO6
 
 

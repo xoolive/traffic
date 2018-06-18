@@ -7,8 +7,8 @@ import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from shapely.ops import cascaded_union
 from tqdm import tqdm
-from traffic.data import sectors
-from traffic.data.sectors.airac import Sector  # for typing
+from traffic.data import airac as sectors
+from traffic.core import Sector  # for typing
 from traffic.data.so6 import SO6, to_datetime
 
 

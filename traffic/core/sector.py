@@ -56,7 +56,7 @@ class Sector(ShapelyMixin):
         return self.elements.__iter__()
 
     def _repr_html_(self):
-        title = f"<b>{self.name}/{self.type}</b>"
+        title = f"<b>{self.name} ({self.type})</b>"
         shapes = ""
         title += "<ul>"
         for polygon in self:

@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from tqdm import tqdm
-from traffic.data import sectors
+from traffic.data import airac as sectors
 from traffic.data.so6 import SO6
 from traffic.drawing import kml
 

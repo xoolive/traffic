@@ -9,7 +9,7 @@ from typing import List, Optional
 
 
 def export_json(patterns: List[str], output_file: Optional[Path]):
-    from traffic.data import sectors
+    from traffic.data import airac as sectors
 
     if output_file is None:
         for pattern in patterns:

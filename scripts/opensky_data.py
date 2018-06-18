@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from tqdm import tqdm
-from traffic.data import opensky, sectors
+from traffic.data import opensky, airac as sectors
 
 
 def opensky_data(date, after, output_file, **kwargs):

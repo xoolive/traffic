@@ -15,3 +15,7 @@ A `Flight` object inherits from both mixins: it embeds a `pandas.DataFrame` with
 - exporting to various formats: csv, hdf5, matplotlib, kml, czml
 
 A `Traffic` object is a structure flattening several flights. It provides methods for accessing every flight by identification (callsign, aircraft id or flight id) and unfolds Flight methods on all flights included.
+
+## Sector
+
+A `Sector` object is a list of `ShapelyMixin` objects associated with a lower and a upper altitude. A sector provides intersection and clipping methods to `Flight` objects.
