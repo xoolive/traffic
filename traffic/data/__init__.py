@@ -3,7 +3,6 @@ from pathlib import Path
 
 from appdirs import user_cache_dir, user_config_dir
 
-from .adsb.flightradar24 import FlightRadar24
 from .adsb.opensky import OpenSky
 
 from .sectors.airac import SectorParser
@@ -25,8 +24,11 @@ config_file = config_dir / "traffic.conf"
 if not config_dir.exists():
     config_dir.mkdir()
     with config_file.open('w') as fh:
-        # TODO prepare a bit more
-        fh.write("[global]\nairac_path = ")
+        fh.write("""[global]
+airac_path =
+opensky_username =
+opensky_password =
+""")
 
 if not cache_dir.exists():
     cache_dir.mkdir()
@@ -54,8 +56,3 @@ sectors = airac  # deprecated?
 opensky_username = config.get("global", "opensky_username", fallback="")
 opensky_password = config.get("global", "opensky_password", fallback="")
 opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
-
-fr24_username = config.get("global", "fr24_username", fallback="")
-fr24_password = config.get("global", "fr24_password", fallback="")
-flightradar24 = FlightRadar24(cache_dir / "flightradar24",
-                              fr24_username, fr24_password)
