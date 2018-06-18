@@ -1,6 +1,6 @@
-# A Pythonic access to common sources of ATM data
+# A Pythonic API to common sources of air traffic data
 
-The `traffic` library helps working with common sources of ATM data
+The `traffic` library helps working with common sources of air traffic data
 
 - `traffic.algorithms` provides basic tools for working with trajectories (Douglas-Peucker, etc.)
 - `traffic.core` provides basic structures for flights, set of flights (traffic) and sectors;
