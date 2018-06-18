@@ -10,6 +10,7 @@ except ImportError:
 from cartopy.feature import NaturalEarthFeature
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 
+from ..core.mixins import ShapelyMixin
 
 def countries(**kwargs):
     params = {'category': 'cultural',
@@ -62,3 +63,11 @@ def _set_default_extent(self):
 
 
 GeoAxesSubplot.set_default_extent = _set_default_extent
+
+def _set_extent(self, shape):
+    if isinstance(shape, ShapelyMixin):
+        return self._set_extent(shape.extent)
+    self._set_extent(shape)
+
+GeoAxesSubplot._set_extent = GeoAxesSubplot.set_extent
+GeoAxesSubplot.set_extent = _set_extent

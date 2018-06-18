@@ -36,11 +36,6 @@ class Airport(AirportNamedTuple, ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
-#    @property
-#    def extent(self):
-#         not so bad balance for common usecases...
-#        return (self.lon - 1, self.lon + 1, self.lat - .7, self.lat + .7)
-
     @lru_cache()
     def osm_request(self):
         from cartotools.osm import request, tags
@@ -55,7 +50,7 @@ class Airport(AirportNamedTuple, ShapelyMixin):
 
     def plot(self, ax, **kwargs):
         params = {
-            "edgecolor": "steelblue",
+            "edgecolor": "#aaaaaa",
             "facecolor": "None",
             "crs": PlateCarree(),
             **kwargs,

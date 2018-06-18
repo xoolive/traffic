@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from traffic.drawing import countries, rivers, lakes, ocean, TransverseMercator
 from traffic.data import eurofirs
 

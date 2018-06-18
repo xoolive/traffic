@@ -4,6 +4,7 @@ from pathlib import Path
 from appdirs import user_cache_dir, user_config_dir
 
 from .adsb.opensky import OpenSky
+from .adsb import sqlite  # this could be a plugin...
 
 from .sectors.airac import SectorParser
 from .sectors.eurofirs import eurofirs
