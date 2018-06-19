@@ -4,27 +4,50 @@ Quickstart
 Loading ADSB traffic
 --------------------
 
-The ``Traffic`` class offers a ``from_file`` classmethod for loading
-traffic data. A pandas DataFrame is loaded into a structure offering
-various methods for iteration, analysis and display.
+The Traffic class offers a from_file classmethod for loading traffic data. A
+pandas DataFrame is loaded into a structure offering various methods for
+iteration, analysis and display.
 
-The basic representation of a ``Traffic`` object is a summary view of
-the data: the structure tries to infer how to discriminate flights based
-on a ``flight_id`` column (if none, on a pair ``(icao24, callsign)``)
-and returns a number of sample points for each trajectory.
+The basic representation of a Traffic object is a summary view of the data: the
+structure tries to infer how to discriminate flights based on a flight_id column
+(if none, on a pair (icao24, callsign)) and returns a number of sample points
+for each trajectory.
 
 .. code:: python
 
     from traffic.core import Traffic
-    t = Traffic.from_file("../data/20170713-opensky.pkl")
+    t = Traffic.from_file("./data/20170713-opensky.pkl")
     t
-
 
 
 
 .. raw:: html
 
     <b>Traffic with 5 identifiers</b><style  type="text/css" >
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+            font-size: 85%;
+            margin-bottom: 1em;
+            line-height: 1.6;
+            table-layout: fixed;
+        }
+        thead {
+            border-bottom: 1px solid #bdbdbd;
+            vertical-align: bottom;
+        }
+        tbody td, tr, th {
+            text-align: right;
+            vertical-align: middle;
+            padding: 0.5em 0.5em;
+            line-height: normal;
+            white-space: normal;
+            max-width: none;
+            border: none;
+        }
+        tbody tr:nth-child(2n) {
+            background: #f5f5f5;
+        }
         #T_11fadeb8_73bd_11e8_89f5_18dbf22f3d9erow0_col0 {
                 width:  10em;
                  height:  80%;
@@ -106,7 +129,7 @@ The access to the underlying DataFrame is direct:
             vertical-align: top;
         }
     </style>
-    <table border="1" class="dataframe">
+    <table border="0" class="dataframe">
       <thead>
         <tr style="text-align: right;">
           <th></th>
@@ -170,9 +193,8 @@ The access to the underlying DataFrame is direct:
 
 
 
-A ``Traffic`` object can be indexed by ``flight_id`` (or by ``callsign``
-and ``icao24``): it returns a ``Flight`` object with a specific
-representation.
+A Traffic object can be indexed by flight_id (or by callsign and icao24): it
+returns a Flight object with a specific representation.
 
 .. code:: python
 
@@ -187,11 +209,10 @@ representation.
 
 
 
-The indexation may trigger a warning if the structure detects that
-several flights may be embedded in a single ``Flight`` structure. In
-that case, it is possible to try splitting the flight. By default, a new
-Flight is created if no data has been received during a 10 minute
-interval.
+The indexation may trigger a warning if the structure detects that several
+flights may be embedded in a single Flight structure. In that case, it is
+possible to try splitting the flight. By default, a new Flight is created if no
+data has been received during a 10 minute interval.
 
 .. code:: python
 
@@ -227,10 +248,10 @@ interval.
 
 
 
-A ``Traffic`` object can be iterated: it splits flights by
-``flight_id``. If flights are yielded by ``icao24``/``callsign``, they
-are also splitted with no empty 10 minute interval. We can create a new
-Traffic object with a ``flight_id`` identifier.
+A Traffic object can be iterated: it splits flights by flight_id. If flights are
+yielded by icao24/callsign, they are also splitted so as to remain with no empty
+10 minute interval. We can create a new Traffic object with a flight_id
+identifier.
 
 .. code:: python
 
@@ -305,10 +326,9 @@ Display trajectories
 --------------------
 
 The most basic displaying option uses
-`Cartopy <https://github.com/SciTools/cartopy>`__ for producing
-Matplotlib plots. A projection it taken from the ``drawing`` module
-(here Lambert 93) and all ``traffic`` structures adapt to the projection
-passed to Matplotlib.
+`Cartopy <https://github.com/SciTools/cartopy>`__ for producing Matplotlib
+plots. A projection it taken from the drawing module (here Lambert 93) and all
+traffic structures adapt to the projection passed to Matplotlib.
 
 .. code:: python
 
@@ -334,11 +354,10 @@ passed to Matplotlib.
 Sectors (example of European FIRs)
 ----------------------------------
 
-European FIRs are embedded in the package. The representation displays a
-bullet list of min/max altitudes with corresponding extruded polygons.
+European FIRs are embedded in the package. The representation displays a bullet
+list of min/max altitudes with corresponding extruded polygons.
 
-FIRs usually consist of simple polygons extruded from the ground to
-FL195.
+FIRs usually consist of simple polygons extruded from the ground to FL195.
 
 .. code:: python
 
