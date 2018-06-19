@@ -13,7 +13,7 @@ the data: the structure tries to infer how to discriminate flights based
 on a ``flight_id`` column (if none, on a pair ``(icao24, callsign)``)
 and returns a number of sample points for each trajectory.
 
-.. code:: ipython3
+.. code:: python
 
     from traffic.core import Traffic
     t = Traffic.from_file("../data/20170713-opensky.pkl")
@@ -83,7 +83,7 @@ and returns a number of sample points for each trajectory.
 
 The access to the underlying DataFrame is direct:
 
-.. code:: ipython3
+.. code:: python
 
     t.data.sample(5)[['timestamp', 'icao24', 'callsign', 'latitude', 'longitude', 'baro_altitude']]
 
@@ -174,7 +174,7 @@ A ``Traffic`` object can be indexed by ``flight_id`` (or by ``callsign``
 and ``icao24``): it returns a ``Flight`` object with a specific
 representation.
 
-.. code:: ipython3
+.. code:: python
 
     t['AIB01KV']
 
@@ -193,7 +193,7 @@ that case, it is possible to try splitting the flight. By default, a new
 Flight is created if no data has been received during a 10 minute
 interval.
 
-.. code:: ipython3
+.. code:: python
 
     t['020025']
 
@@ -211,7 +211,7 @@ interval.
 
 
 
-.. code:: ipython3
+.. code:: python
 
     from IPython.display import HTML
      
@@ -232,7 +232,7 @@ A ``Traffic`` object can be iterated: it splits flights by
 are also splitted with no empty 10 minute interval. We can create a new
 Traffic object with a ``flight_id`` identifier.
 
-.. code:: ipython3
+.. code:: python
 
     from traffic.core import Flight
     
@@ -310,7 +310,7 @@ Matplotlib plots. A projection it taken from the ``drawing`` module
 (here Lambert 93) and all ``traffic`` structures adapt to the projection
 passed to Matplotlib.
 
-.. code:: ipython3
+.. code:: python
 
     %matplotlib inline
     import matplotlib.pyplot as plt
@@ -340,7 +340,7 @@ bullet list of min/max altitudes with corresponding extruded polygons.
 FIRs usually consist of simple polygons extruded from the ground to
 FL195.
 
-.. code:: ipython3
+.. code:: python
 
     from traffic.data import eurofirs
     eurofirs['LOVV']
@@ -354,12 +354,12 @@ polygons), and clip the trajectory to the 2D projection of a sector. If
 the trajectory reenters a sector many times, a generator is yielded in
 place of a Flight.
 
-.. code:: ipython3
+.. code:: python
 
     >>> t['KLM88T'].intersects(eurofirs['LOVV'])
     False
 
-.. code:: ipython3
+.. code:: python
 
     >>> t['KLM88T'].intersects(eurofirs['LFBB'])
     True
@@ -367,7 +367,7 @@ place of a Flight.
 The clipping only functions with 2D shapes: sectors can be flattened into 2D
 polygons.
 
-.. code:: ipython3
+.. code:: python
 
     t['KLM88T'].clip(eurofirs['LFBB'].flatten())
 
@@ -377,7 +377,7 @@ polygons.
 
 Sectors also provide their plotting facilities:
 
-.. code:: ipython3
+.. code:: python
 
     %matplotlib inline
     import matplotlib.pyplot as plt
