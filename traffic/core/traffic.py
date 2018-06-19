@@ -144,6 +144,12 @@ class Traffic(DataFrameMixin, GeographyMixin):
         )
 
     def plot(self, ax, **kwargs):
+        params = {}
+        if sum(1 for _ in zip(range(8), self)) == 8:
+            params['color'] = '#aaaaaa'
+            params['linewidth'] = 1
+            params['alpha'] = .8
+            kwargs = {**params, **kwargs}  # precedence of kwargs over params
         for flight in self:
             flight.plot(ax, **kwargs)
 
