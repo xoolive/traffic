@@ -6,7 +6,6 @@ import numpy as np
 
 import pandas as pd
 import pyproj
-from cartopy.crs import PlateCarree
 from shapely.geometry import LineString, base
 
 from ..core.time import time_or_delta, timelike, to_datetime
@@ -23,13 +22,13 @@ def split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
 
 
 class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
-
     def __add__(self, other):
         # useful for compatibility with sum() function
         if other == 0:
             return self
         # keep import here to avoid recursion
         from .traffic import Traffic
+
         return Traffic.from_flights([self, other])
 
     def __radd__(self, other):
@@ -225,27 +224,49 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     # -- Geometry operations --
 
-    def clip(self, shape: base.BaseGeometry) -> "Flight":
-        times = list(
-            datetime.fromtimestamp(t)
-            for t in np.stack(
-                LineString(list(self.airborne().xy_time))
-                .intersection(shape)
-                .coords
-            )[:, 2]
-        )
-        return self.__class__(
-            self.data[
-                (self.data.timestamp >= min(times))
-                & (self.data.timestamp <= max(times))
-            ]
-        )
+    def clip(
+        self, shape: base.BaseGeometry
+    ) -> Union[None, "Flight", Iterator["Flight"]]:
+
+
+        linestring = LineString(list(self.airborne().xy_time))
+        intersection = linestring.intersection(shape)
+
+        if intersection.is_empty:
+            return None
+
+        if isinstance(intersection, LineString):
+            times = list(
+                datetime.fromtimestamp(t)
+                for t in np.stack(intersection.coords)[:, 2]
+            )
+            return self.__class__(
+                self.data[
+                    (self.data.timestamp >= min(times))
+                    & (self.data.timestamp <= max(times))
+                ]
+            )
+
+        def _clip_generator():
+            for segment in intersection:
+                times = list(
+                    datetime.fromtimestamp(t)
+                    for t in np.stack(segment.coords)[:, 2]
+                )
+                yield self.__class__(
+                    self.data[
+                        (self.data.timestamp >= min(times))
+                        & (self.data.timestamp <= max(times))
+                    ]
+                )
+
+        return (leg for leg in _clip_generator())
 
     # -- Visualisation --
 
     def plot(self, ax, **kwargs):
         if "projection" in ax.__dict__ and "transform" not in kwargs:
             from cartopy.crs import PlateCarree
+
             kwargs["transform"] = PlateCarree()
         ax.plot(*self.shape.xy, **kwargs)
-

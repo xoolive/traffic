@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 from .cartopy import *
 
@@ -48,3 +49,5 @@ if not mpl_style_location.parent.is_dir():
 
 with mpl_style_location.open('w') as fh:
     fh.write(_traffic_style)
+
+plt.style.reload_library()
