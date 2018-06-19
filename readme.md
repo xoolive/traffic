@@ -1,5 +1,7 @@
 #  A toolbox for manipulating and analysing air traffic data 
 
+[![Documentation Status](https://readthedocs.org/projects/airtraffic/badge/?version=latest)](https://airtraffic.readthedocs.io/en/latest/?badge=latest)
+
 The `traffic` library helps working with common sources of air traffic data
 
 - `traffic.algorithms` provides basic tools for working with trajectories (Douglas-Peucker, etc.)
