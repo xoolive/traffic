@@ -335,7 +335,7 @@ traffic structures adapt to the projection passed to Matplotlib.
     %matplotlib inline
     import matplotlib.pyplot as plt
     
-    from traffic.drawing import Lambert93, countries, location
+    from traffic.drawing import Lambert93, countries
     from traffic.data import eurofirs
     
     with plt.style.context('traffic'):
@@ -401,7 +401,7 @@ Sectors also provide their plotting facilities:
     %matplotlib inline
     import matplotlib.pyplot as plt
     
-    from traffic.drawing import Lambert93, countries, location
+    from traffic.drawing import Lambert93, countries
     from traffic.data import eurofirs
     
     with plt.style.context('traffic'):
