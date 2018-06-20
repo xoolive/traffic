@@ -11,7 +11,7 @@ provided, the access to the underlying structure is direct, through an attribute
 pointing to a pandas dataframe.
 
 The library also offers facilities to parse and/or access traffic data from open
-sources of ADS-B traffic like the `OpenSky Network <https://opensky-network.org/>`_
+sources of ADS-B traffic like the [OpenSky Network](https://opensky-network.org/)
 or Eurocontrol DDR files. It is designed to be easily extendable to other
 sources of data.
 
