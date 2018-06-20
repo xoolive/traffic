@@ -50,7 +50,7 @@ class Airport(AirportNamedTuple, ShapelyMixin):
 
     def plot(self, ax, **kwargs):
         params = {
-            "edgecolor": "#aaaaaa",
+            "edgecolor": "silver",
             "facecolor": "None",
             "crs": PlateCarree(),
             **kwargs,
