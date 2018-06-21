@@ -18,16 +18,16 @@ class ExtrudedPolygon(NamedTuple):
     upper: float
 
 
-class SectorInfo(NamedTuple):
+class AirspaceInfo(NamedTuple):
     name: str
     type: Optional[str]
 
 
-SectorList = List[ExtrudedPolygon]
-components: Dict[str, Set[SectorInfo]] = defaultdict(set)
+AirspaceList = List[ExtrudedPolygon]
+components: Dict[str, Set[AirspaceInfo]] = defaultdict(set)
 
 
-class Sector(ShapelyMixin):
+class Airspace(ShapelyMixin):
     def __init__(
         self,
         name: str,
@@ -48,9 +48,9 @@ class Sector(ShapelyMixin):
     def __getitem__(self, *args) -> ExtrudedPolygon:
         return self.elements.__getitem__(*args)
 
-    def __add__(self, other: "Sector") -> "Sector":
+    def __add__(self, other: "Airspace") -> "Airspace":
         union = cascaded_union_with_alt(list(self) + list(other))
-        return Sector(f"{self.name}+{other.name}", union)
+        return Airspace(f"{self.name}+{other.name}", union)
 
     def __iter__(self) -> Iterator[ExtrudedPolygon]:
         return self.elements.__iter__()
@@ -67,10 +67,10 @@ class Sector(ShapelyMixin):
         return title + no_wrap_div.format(shapes)
 
     def __repr__(self):
-        return f"Sector {self.name} ({self.type})"
+        return f"Airspace {self.name} ({self.type})"
 
     def __str__(self):
-        return f"""Sector {self.name} with {len(self.elements)} parts"""
+        return f"""Airspace {self.name} with {len(self.elements)} parts"""
 
     def annotate(self, ax, **kwargs):
         if "projection" in ax.__dict__:
@@ -86,7 +86,7 @@ class Sector(ShapelyMixin):
         if isinstance(flat, base.BaseMultipartGeometry):
             for poly in flat:
                 # quick and dirty
-                sub = Sector("", [ExtrudedPolygon(poly, 0, 0)])
+                sub = Airspace("", [ExtrudedPolygon(poly, 0, 0)])
                 sub.plot(ax, **kwargs)
             return
 
@@ -102,7 +102,7 @@ class Sector(ShapelyMixin):
             ax.add_patch(MplPolygon(list(flat.exterior.coords), **kwargs))
 
     @property
-    def components(self) -> Set[SectorInfo]:
+    def components(self) -> Set[AirspaceInfo]:
         return components[self.name]
 
     def decompose(self, extr_p):
@@ -139,7 +139,7 @@ class Sector(ShapelyMixin):
         return export
 
 
-def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
+def cascaded_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
     altitudes = set(alt for _, *low_up in polyalt for alt in low_up)
     slices = sorted(altitudes)
     if len(slices) == 1 and slices[0] is None:
@@ -165,10 +165,10 @@ def cascaded_union_with_alt(polyalt: SectorList) -> SectorList:
 
 
 def _traffic_inside_bbox(
-    traffic: Traffic, bounds: Union[Sector, Tuple[float, ...]]
+    traffic: Traffic, bounds: Union[Airspace, Tuple[float, ...]]
 ) -> Traffic:
 
-    if isinstance(bounds, Sector):
+    if isinstance(bounds, Airspace):
         bounds = bounds.flatten().bounds
 
     if isinstance(bounds, base.BaseGeometry):
@@ -184,14 +184,14 @@ def _traffic_inside_bbox(
     return traffic.__class__(data)
 
 
-def _traffic_intersects(traffic: Traffic, sector: Sector) -> Traffic:
+def _traffic_intersects(traffic: Traffic, airspace: Airspace) -> Traffic:
     return Traffic.from_flights(
-        flight for flight in traffic if flight.intersects(sector)
+        flight for flight in traffic if flight.intersects(airspace)
     )
 
 
-def _flight_intersects(flight: Flight, sector: Sector) -> bool:
-    for layer in sector:
+def _flight_intersects(flight: Flight, airspace: Airspace) -> bool:
+    for layer in airspace:
         linestring = flight.airborne().linestring
         if linestring is None:
             return False

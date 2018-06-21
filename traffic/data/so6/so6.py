@@ -14,10 +14,9 @@ from cartopy.crs import PlateCarree
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString, base
 
-from ...core import Flight as FlightMixin
+from ...core import Flight as FlightMixin, Airspace
 from ...core.mixins import DataFrameMixin
 from ...core.time import time_or_delta, timelike, to_datetime
-from ..sectors.airac import Sector
 
 
 def time(int_: int) -> datetime:
@@ -369,16 +368,16 @@ class SO6(DataFrameMixin):
             self.data[(self.data.time1 <= after) & (self.data.time2 >= before)]
         )
 
-    def intersects(self, sector: Sector) -> "SO6":
+    def intersects(self, sector: Airspace) -> "SO6":
         return SO6(
             self.data.groupby("flight_id").filter(
                 lambda flight: Flight(flight).intersects(sector)
             )
         )
 
-    def inside_bbox(self, bounds: Union[Sector, Tuple[float, ...]]) -> "SO6":
+    def inside_bbox(self, bounds: Union[Airspace, Tuple[float, ...]]) -> "SO6":
 
-        if isinstance(bounds, Sector):
+        if isinstance(bounds, Airspace):
             bounds = bounds.flatten().bounds
 
         if isinstance(bounds, base.BaseGeometry):

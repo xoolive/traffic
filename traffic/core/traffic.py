@@ -26,6 +26,17 @@ class Traffic(DataFrameMixin, GeographyMixin):
 
         tentative = super().from_file(filename)
         if tentative is not None:
+            tentative.data = tentative.data.rename(
+                # tentative rename of columns for compatibility
+                columns={'lat': 'latitude',
+                         'lon': 'longitude',
+                         'velocity': 'ground_speed',
+                         'heading': 'track',
+                         'vertrate': 'vertical_rate',
+                         'baroaltitude': 'baro_altitude',
+                         'geoaltitude': 'altitude',
+                         'time': 'timestamp'}
+            )
             return cls(tentative.data)
 
         path = Path(filename)

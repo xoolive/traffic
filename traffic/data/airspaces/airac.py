@@ -11,17 +11,17 @@ from xml.etree import ElementTree
 from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
 
-from ...core.sector import components  # to be moved here TODO
-from ...core.sector import (
+from ...core.airspace import components  # to be moved here TODO
+from ...core.airspace import (
     ExtrudedPolygon,
-    Sector,
-    SectorInfo,
-    SectorList,
+    Airspace,
+    AirspaceInfo,
+    AirspaceList,
     cascaded_union_with_alt,
 )
 
 
-class SectorParser(object):
+class AirspaceParser(object):
 
     ns = {
         "adrmsg": "http://www.eurocontrol.int/cfmu/b2b/ADRMessage",
@@ -147,8 +147,8 @@ class SectorParser(object):
         )
 
     @lru_cache(None)
-    def make_polygon(self, airspace) -> SectorList:
-        polygons: SectorList = []
+    def make_polygon(self, airspace) -> AirspaceList:
+        polygons: AirspaceList = []
         designator = airspace.find("aixm:designator", self.ns)
         if designator is not None:
             name = designator.text
@@ -157,7 +157,7 @@ class SectorParser(object):
             "aixm:theAirspaceVolume/aixm:AirspaceVolume",
             self.ns,
         ):
-            block_poly: SectorList = []
+            block_poly: AirspaceList = []
             upper = block.find("aixm:upperLimit", self.ns)
             lower = block.find("aixm:lowerLimit", self.ns)
 
@@ -188,7 +188,7 @@ class SectorParser(object):
                     if new_d is not None:
                         if designator is not None:
                             components[name].add(
-                                SectorInfo(
+                                AirspaceInfo(
                                     new_d.text,
                                     new_t.text if new_t is not None else None,
                                 )
@@ -227,10 +227,10 @@ class SectorParser(object):
 
         return cascaded_union_with_alt(polygons)
 
-    def __getitem__(self, name: str) -> Optional[Sector]:
+    def __getitem__(self, name: str) -> Optional[Airspace]:
         return next(self.search(name, operator.eq), None)
 
-    def search(self, name: str, cmp: Callable = re.match) -> Iterator[Sector]:
+    def search(self, name: str, cmp: Callable = re.match) -> Iterator[Airspace]:
 
         if not self.initialized:
             self.init_cache()
@@ -263,10 +263,10 @@ class SectorParser(object):
                     polygon = self.make_polygon(ts)
                     type_ = ts.find("aixm:type", self.ns).text
                     if len(polygon) > 0:
-                        yield Sector(designator.text, polygon, type_)
+                        yield Airspace(designator.text, polygon, type_)
                     else:
                         warnings.warn(
-                            f"{designator.text} produces an empty sector",
+                            f"{designator.text} produces an empty airspace",
                             RuntimeWarning,
                         )
 
@@ -296,7 +296,7 @@ class SectorParser(object):
                     type_pattern is None
                     or (type_ is not None and type_.text == type_pattern)
                 ) and (designator is not None and cmp(name, designator.text)):
-                    yield SectorInfo(
+                    yield AirspaceInfo(
                         designator.text,
                         type_.text if type_ is not None else None,
                     )

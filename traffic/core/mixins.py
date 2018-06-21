@@ -17,7 +17,7 @@ class DataFrameMixin(object):
         cls, filename: Union[Path, str]
     ) -> Optional["DataFrameMixin"]:
         path = Path(filename)
-        if path.suffixes == [".pkl"]:
+        if path.suffixes in [[".pkl"], [".pkl", ".gz"]]:
             return cls(pd.read_pickle(path))
         if path.suffixes == [".csv"]:
             return cls(pd.read_csv(path))

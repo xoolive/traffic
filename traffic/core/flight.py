@@ -61,7 +61,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return title + no_wrap_div.format(self._repr_svg_())
 
     @property
-    def timestamp(self) -> Iterator[datetime]:
+    def timestamp(self) -> Iterator[pd.Timestamp]:
         yield from self.data.timestamp
 
     @property
@@ -169,7 +169,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             if next_ is None:
                 return
             coords, time = next_
-            yield (coords[0], coords[1], time.timestamp())
+            yield (coords[0], coords[1], time.to_pydatetime().timestamp())
 
     @property
     def linestring(self) -> Optional[LineString]:

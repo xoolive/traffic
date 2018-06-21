@@ -3,13 +3,13 @@ from pathlib import Path
 
 from shapely.geometry import shape
 
-from ...core.sector import ExtrudedPolygon, Sector
+from ...core.airspace import ExtrudedPolygon, Airspace
 
 with Path(__file__).absolute().with_name("firs.json").open("r") as fh:
     fir = json.loads("".join(fh.readlines()))
 
 eurofirs = {
-    elt["properties"]["IDENT"]: Sector(
+    elt["properties"]["IDENT"]: Airspace(
         name=elt["properties"]["NAME"][:-4],  # Remove " FIR" at the end
         elements=[
             ExtrudedPolygon(
