@@ -12,6 +12,7 @@ from .basic.aircraft import Aircraft
 from .basic.airport import AirportParser
 from .basic.airways import Airways
 from .basic.navaid import NavaidParser
+from .so6 import SO6
 
 # Parse configuration and input specific parameters in below classes
 

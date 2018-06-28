@@ -75,7 +75,7 @@ class Flight(FlightMixin):
         """Interpolates a trajectory in time.  """
         if proj not in self.interpolator:
             self.interpolator[proj] = interp1d(
-                np.stack(t.timestamp() for t in self.timestamp),
+                np.stack(t.to_pydatetime().timestamp() for t in self.timestamp),
                 proj.transform_points(
                     PlateCarree(), *np.stack(self.coords).T
                 ).T,
