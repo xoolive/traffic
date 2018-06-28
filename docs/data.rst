@@ -5,3 +5,4 @@ Sources of data
     :maxdepth: 1
 
     data_basic
+    opensky_usage

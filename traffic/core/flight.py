@@ -269,4 +269,5 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             from cartopy.crs import PlateCarree
 
             kwargs["transform"] = PlateCarree()
-        ax.plot(*self.shape.xy, **kwargs)
+        if self.shape is not None:
+            ax.plot(*self.shape.xy, **kwargs)

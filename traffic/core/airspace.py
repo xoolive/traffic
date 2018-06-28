@@ -93,7 +93,7 @@ class Airspace(ShapelyMixin):
         if "facecolor" not in kwargs:
             kwargs["facecolor"] = "None"
         if "edgecolor" not in kwargs:
-            kwargs["edgecolor"] = "red"
+            kwargs["edgecolor"] = ax._get_lines.get_next_color()
 
         if "projection" in ax.__dict__:
             from cartopy.crs import PlateCarree
