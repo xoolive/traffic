@@ -7,14 +7,17 @@ day of traffic across Europe. This data cannot be shared so the file
 included in the repository has actually been generated from OpenSky
 ADS-B data to match so6 format.
 
+Basic usage
+~~~~~~~~~~~
+
 You can read so6 files as text files (.so6 extension) or as 7-zipped
 text files (you need libarchive library for that).
 
 .. code:: python
 
     from traffic.data import SO6
-    so6 = SO6.from_file("../data/20180101_20180101_0000_2359_____m3.so6.7z")
-    so6.to_pickle("../data/20180101_20180101_0000_2359_____m3.pkl")
+    so6 = SO6.from_file("./data/20180101_20180101_0000_2359_____m3.so6.7z")
+    so6.to_pickle("./data/20180101_20180101_0000_2359_____m3.pkl")
 
 If you are going to work a lot with data for one day, it is recommended
 to serialize the data so that it loads faster. The structure holds a
@@ -25,7 +28,7 @@ fits a regular webpage width.)
 
     # Read the serialized version
     from traffic.data import SO6
-    so6 = SO6.from_file("../data/20180101_20180101_0000_2359_____m3.pkl")
+    so6 = SO6.from_file("./data/20180101_20180101_0000_2359_____m3.pkl")
     so6.data.head().drop(columns=['alt1', 'alt2', 'aircraft', 'flight_id'])
 
 
@@ -321,6 +324,8 @@ airspace can be projected to a 2D representation for that purpose:
     <b>Flight HOP36PP</b> (332206265)<ul><li><b>aircraft:</b> A319</li><li><b>origin:</b> LFML (2018-01-01 19:20:19.612862)</li><li><b>destination:</b> LFBD (2018-01-01 19:58:00)</li></ul><div style="white-space: nowrap"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="-20317.650998594778 4660018.773758144 353488.6236408914 130200.52362473682" preserveAspectRatio="xMinYMin meet"><g transform="matrix(1,0,0,-1,0,9450238.071141025)"><polyline fill="none" stroke="#66cc99" stroke-width="2356.590824272609" points="320078.8013963377,4673110.945004103 93398.87407311927,4754561.883957243 36435.06118046089,4774490.218033796 -7225.479752635839,4777127.126136922" opacity="0.8" /></g></svg></div>
 
 
+Interpolation and clipping
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Since DDR files contain few points on their trajectory, interpolation
 functions are provided:
@@ -529,7 +534,8 @@ with time intervals.
 
     False
 
-
+Spatial filtering
+~~~~~~~~~~~~~~~~~
 
 You can filter a SO6 to a bounding box (computed from a Polygon bounding
 box), or to an airspace. The filtering to a bounding box is much faster

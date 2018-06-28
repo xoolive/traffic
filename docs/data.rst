@@ -7,3 +7,4 @@ Sources of data
     data_basic
     opensky_usage
     so6_usage
+    airac_usage
