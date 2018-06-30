@@ -1,5 +1,5 @@
 import argparse
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -7,13 +7,13 @@ import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from shapely.ops import cascaded_union
 from tqdm import tqdm
-from traffic.data import airac as sectors
-from traffic.core import Sector  # for typing
+from traffic.data import airac
 from traffic.data.so6 import SO6, to_datetime
 
 
 def occupancy(data, configuration):
     return len(data.intersects(configuration))
+
 
 def compute_stats(input_file: Path, output_file: Optional[Path],
                   sector_list: List[str], max_workers: int, interval: int,
@@ -41,9 +41,9 @@ def compute_stats(input_file: Path, output_file: Optional[Path],
 
     delta = timedelta(minutes=interval)
     size_range = int((end_time - start_time) / delta) + 1
-    time_list = [start_time + i*delta for i in range(size_range)]
+    time_list = [start_time + i * delta for i in range(size_range)]
 
-    all_sectors = [sectors[sector] for sector in sector_list]
+    all_sectors = [airac[airspace] for airspace in sector_list]
     so6 = so6.inside_bbox(cascaded_union([s.flatten() for s in all_sectors]))
 
     for start_ in tqdm(time_list):
@@ -90,15 +90,15 @@ if __name__ == '__main__':
     parser.add_argument("-t", dest="max_workers", default=4, type=int,
                         help="number of parallel processes")
     parser.add_argument("-f", dest="starting_from",
-                       help="start time (yyyy:mm:ddThh:mm:ssZ)")
+                        help="start time (yyyy:mm:ddThh:mm:ssZ)")
     parser.add_argument("-u", dest="ending_at",
-                       help="end time (yyyy:mm:ddThh:mm:ssZ)")
+                        help="end time (yyyy:mm:ddThh:mm:ssZ)")
 
     parser.add_argument("input_file", type=Path,
                         help="SO6 file to parse")
 
     parser.add_argument("sector_list", nargs='+',
-                        help="list of sectors to pick in AIRAC files")
+                        help="list of airspaces to pick in AIRAC files")
 
     args = parser.parse_args()
     res = compute_stats(**vars(args))

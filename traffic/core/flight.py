@@ -1,11 +1,11 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Iterator, Optional, Set, Tuple, Union
+from typing import Iterator, Optional, Set, Tuple, Union
 
 import numpy as np
 
 import pandas as pd
-import pyproj
+from cartopy.mpl.geoaxes import GeoAxesSubplot
 from shapely.geometry import LineString, base
 
 from ..core.time import time_or_delta, timelike, to_datetime
@@ -16,7 +16,7 @@ def split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
     diff = data.timestamp.diff().values
     if diff.max() > np.timedelta64(value, unit):
         yield from split(data.iloc[: diff.argmax()], value, unit)
-        yield from split(data.iloc[diff.argmax() :], value, unit)
+        yield from split(data.iloc[diff.argmax():], value, unit)
     else:
         yield data
 
@@ -55,7 +55,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         title += "</ul>"
         return title
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         title = self.info_html()
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
@@ -65,11 +65,11 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         yield from self.data.timestamp
 
     @property
-    def start(self) -> datetime:
+    def start(self) -> pd.Timestamp:
         return min(self.timestamp)
 
     @property
-    def stop(self) -> datetime:
+    def stop(self) -> pd.Timestamp:
         return max(self.timestamp)
 
     @property
@@ -209,9 +209,9 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     def at(self, time: timelike) -> pd.core.series.Series:
         index = to_datetime(time)
-        return self.data.set_index("timestamp").loc[time]
+        return self.data.set_index("timestamp").loc[index]
 
-    def between(self, before: timelike, after: time_or_delta) -> "Flight":
+    def between(self, before: timelike, after: time_or_delta) -> 'Flight':
         before = to_datetime(before)
         if isinstance(after, timedelta):
             after = before + after
@@ -227,7 +227,6 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
     def clip(
         self, shape: base.BaseGeometry
     ) -> Union[None, "Flight", Iterator["Flight"]]:
-
 
         linestring = LineString(list(self.airborne().xy_time))
         intersection = linestring.intersection(shape)
@@ -264,7 +263,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     # -- Visualisation --
 
-    def plot(self, ax, **kwargs):
+    def plot(self, ax: GeoAxesSubplot, **kwargs) -> None:
         if "projection" in ax.__dict__ and "transform" not in kwargs:
             from cartopy.crs import PlateCarree
 

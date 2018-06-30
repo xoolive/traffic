@@ -1,11 +1,10 @@
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, Dict, Iterator, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, Optional, Set, Union
 
 import pandas as pd
-import pyproj
-from shapely.geometry import base
+from cartopy.mpl.geoaxes import GeoAxesSubplot
 
 from .flight import Flight
 from .mixins import DataFrameMixin, GeographyMixin
@@ -53,13 +52,13 @@ class Traffic(DataFrameMixin, GeographyMixin):
 
     # --- Special methods ---
 
-    def __add__(self, other) -> "Traffic":
+    def __add__(self, other) -> 'Traffic':
         # useful for compatibility with sum() function
         if other == 0:
             return self
         return self.__class__(pd.concat([self.data, other.data]))
 
-    def __radd__(self, other) -> "Traffic":
+    def __radd__(self, other) -> 'Traffic':
         return self + other
 
     def __getitem__(self, index: str) -> Optional[Flight]:
@@ -86,7 +85,7 @@ class Traffic(DataFrameMixin, GeographyMixin):
             return self.flight_ids
         return {*self.aircraft, *self.callsigns}
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Flight]:
         if self.flight_ids is not None:
             for _, df in self.data.groupby("flight_id"):
                 yield Flight(df)
@@ -94,10 +93,10 @@ class Traffic(DataFrameMixin, GeographyMixin):
             for _, df in self.data.groupby("icao24"):
                 yield from Flight(df).split()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.stats().__repr__()
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         stats = self.stats()
         shape = stats.shape[0]
         if shape > 10:
@@ -110,11 +109,11 @@ class Traffic(DataFrameMixin, GeographyMixin):
     # --- Properties ---
 
     @property
-    def start_time(self):
+    def start_time(self) -> pd.Timestamp:
         return self.data.timestamp.min()
 
     @property
-    def end_time(self):
+    def end_time(self) -> pd.Timestamp:
         return self.data.timestamp.max()
 
     # https://github.com/python/mypy/issues/1362
@@ -154,8 +153,8 @@ class Traffic(DataFrameMixin, GeographyMixin):
             .rename(columns={"timestamp": "count"})
         )
 
-    def plot(self, ax, **kwargs):
-        params = {}
+    def plot(self, ax: GeoAxesSubplot, **kwargs) -> None:
+        params: Dict[str, Any] = {}
         if sum(1 for _ in zip(range(8), self)) == 8:
             params['color'] = '#aaaaaa'
             params['linewidth'] = 1

@@ -5,6 +5,7 @@ from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set,
 import numpy as np
 from matplotlib.patches import Polygon as MplPolygon
 
+from cartopy.mpl.geoaxes import GeoAxesSubplot
 from shapely.geometry import Polygon, base, mapping
 from shapely.ops import cascaded_union
 
@@ -72,7 +73,7 @@ class Airspace(ShapelyMixin):
     def __str__(self):
         return f"""Airspace {self.name} with {len(self.elements)} parts"""
 
-    def annotate(self, ax, **kwargs):
+    def annotate(self, ax: GeoAxesSubplot, **kwargs) -> None:
         if "projection" in ax.__dict__:
             from cartopy.crs import PlateCarree
 
@@ -81,7 +82,7 @@ class Airspace(ShapelyMixin):
             kwargs["s"] = self.name
         ax.text(*np.array(self.centroid), **kwargs)
 
-    def plot(self, ax, **kwargs):
+    def plot(self, ax: GeoAxesSubplot, **kwargs) -> None:
         flat = self.flatten()
         if isinstance(flat, base.BaseMultipartGeometry):
             for poly in flat:
