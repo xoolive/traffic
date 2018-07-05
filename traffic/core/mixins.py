@@ -4,10 +4,17 @@ from typing import Optional, Tuple, Union
 
 import pandas as pd
 import pyproj
+from shapely.geometry import Point, base
 from shapely.ops import transform
 
 
 class DataFrameMixin(object):
+
+    """DataFrameMixin aggregates a pandas DataFrame and provides the same
+    representation methods.
+
+    """
+
     def __init__(self, data: pd.DataFrame) -> None:
         self.data: pd.DataFrame = data
 
@@ -61,25 +68,44 @@ class DataFrameMixin(object):
 
 class ShapelyMixin(object):
 
+    """ShapelyMixin expects a shape attribute as a Geometry and provides methods
+    consistent with GIS geometries.
+
+    However no plot method is provided at this level because it depends on the
+    nature of the shape.
+    """
+
+    shape: base.BaseGeometry
+
     # --- Properties ---
 
     @property
     def bounds(self) -> Tuple[float, float, float, float]:
-        # just natural!
-        return self.shape.bounds  # type: ignore
+        """Returns the bounds of the shape.
+        Bounds are given in the following order in the origin crs:
+        west, south, east, north
+        """
+        return self.shape.bounds
 
     @property
     def extent(self) -> Tuple[float, float, float, float]:
-        # convenient for ax.set_extent
+        """Returns the extent of the shape.
+        Extent is given in the following order in the origin crs:
+        west, east, south, north
+
+        This method is convenient for the ax.set_extent method
+        """
         west, south, east, north = self.bounds
         return west, east, south, north
 
     @property
-    def centroid(self):
+    def centroid(self) -> Point:
+        """Returns the centroid of the shape."""
         return self.shape.centroid
 
     @property
     def area(self) -> float:
+        """Returns the area of the shape, in square meters."""
         return self.project_shape().area
 
     # --- Representations ---
@@ -89,16 +115,18 @@ class ShapelyMixin(object):
         if project is not None:
             return project._repr_svg_()
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return no_wrap_div.format(self._repr_svg_())
 
     @lru_cache()
-    def project_shape(self, projection=None):
+    def project_shape(
+        self, projection: pyproj.Proj = None
+    ) -> base.BaseGeometry:
         """Projection for a decent representation of the structure.
 
         By default, an equivalent projection is applied. Equivalent projections
-        locally respect areas, which is convenient for the area item.
+        locally respect areas, which is convenient for the area attribute.
         """
 
         if self.shape is None:
@@ -113,7 +141,6 @@ class ShapelyMixin(object):
                 lon1=bounds[0],
                 lon2=bounds[2],
             )
-
         return transform(
             partial(
                 pyproj.transform, pyproj.Proj(init="EPSG:4326"), projection
@@ -121,12 +148,13 @@ class ShapelyMixin(object):
             self.shape,
         )
 
-    # Nothing special made on plots because it really depends on the nature of
-    # the geometry of the shape held in the structure.
-
 
 class GeographyMixin(object):
-    def compute_xy(self, projection=None):
+    """Adds Euclidean coordinates to a latitude/longitude DataFrame."""
+
+    data: pd.DataFrame
+
+    def compute_xy(self, projection: pyproj.Proj = None):
         """Computes x and y columns from latitudes and longitudes.
 
         The source projection is WGS84 (EPSG 4326).

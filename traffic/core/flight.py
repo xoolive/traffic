@@ -12,29 +12,40 @@ from ..core.time import time_or_delta, timelike, to_datetime
 from .mixins import DataFrameMixin, GeographyMixin, ShapelyMixin
 
 
-def split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
+def _split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
     diff = data.timestamp.diff().values
     if diff.max() > np.timedelta64(value, unit):
-        yield from split(data.iloc[: diff.argmax()], value, unit)
-        yield from split(data.iloc[diff.argmax():], value, unit)
+        yield from _split(data.iloc[: diff.argmax()], value, unit)
+        yield from _split(data.iloc[diff.argmax():], value, unit)
     else:
         yield data
 
 
 class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
+    """Flight is the basic class associated to an aircraft itinerary.
+
+    A Flight is supposed to start at takeoff and end after landing, taxiing and
+    parking.
+
+    If the current structure seems to contain many flights, warnings may be
+    raised.
+    """
+
     def __add__(self, other):
-        # useful for compatibility with sum() function
+        """Concatenates two Flight objects in the same Traffic structure."""
         if other == 0:
+            # useful for compatibility with sum() function
             return self
+
         # keep import here to avoid recursion
         from .traffic import Traffic
-
         return Traffic.from_flights([self, other])
 
     def __radd__(self, other):
+        """Concatenates two Flight objects in the same Traffic structure."""
         return self + other
 
-    def info_html(self) -> str:
+    def _info_html(self) -> str:
         title = f"<b>Flight {self.callsign}</b>"
         if self.number is not None:
             title += f" / {self.number}"
@@ -56,24 +67,28 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return title
 
     def _repr_html_(self) -> str:
-        title = self.info_html()
+        title = self._info_html()
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
     @property
     def timestamp(self) -> Iterator[pd.Timestamp]:
+        """Iterates the timestamp column of the DataFrame."""
         yield from self.data.timestamp
 
     @property
     def start(self) -> pd.Timestamp:
+        """Returns the minimum timestamp value of the DataFrame."""
         return min(self.timestamp)
 
     @property
     def stop(self) -> pd.Timestamp:
+        """Returns the maximum timestamp value of the DataFrame."""
         return max(self.timestamp)
 
     @property
     def callsign(self) -> Union[str, Set[str]]:
+        """Returns the unique callsign value(s) of the DataFrame."""
         tmp = set(self.data.callsign)
         if len(tmp) == 1:
             return tmp.pop()
@@ -82,6 +97,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     @property
     def number(self) -> Optional[Union[str, Set[str]]]:
+        """Returns the unique number value(s) of the DataFrame."""
         if "number" not in self.data.columns:
             return None
         tmp = set(self.data.number)
@@ -92,6 +108,10 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     @property
     def icao24(self) -> Union[str, Set[str]]:
+        """Returns the unique icao24 value(s) of the DataFrame.
+
+        icao24 is a unique identifier associated to a transponder.
+        """
         tmp = set(self.data.icao24)
         if len(tmp) == 1:
             return tmp.pop()
@@ -100,6 +120,11 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     @property
     def flight_id(self) -> Optional[Union[str, Set[str]]]:
+        """Returns the unique flight_id value(s) of the DataFrame.
+
+        If you know how to split flights, you may want to append such a column
+        in the DataFrame.
+        """
         if "flight_id" not in self.data.columns:
             return None
         tmp = set(self.data.flight_id)
@@ -110,6 +135,10 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     @property
     def origin(self) -> Optional[Union[str, Set[str]]]:
+        """Returns the unique origin value(s) of the DataFrame.
+
+        The origin airport is mostly represented as a ICAO or a IATA code.
+        """
         if "origin" not in self.data.columns:
             return None
         tmp = set(self.data.origin)
@@ -120,6 +149,10 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     @property
     def destination(self) -> Optional[Union[str, Set[str]]]:
+        """Returns the unique destination value(s) of the DataFrame.
+
+        The destination airport is mostly represented as a ICAO or a IATA code.
+        """
         if "destination" not in self.data.columns:
             return None
         tmp = set(self.data.destination)
@@ -153,6 +186,10 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
+        """Iterates on longitudes, latitudes and altitudes.
+
+        If the baro_altitude field is present, it is preferred over altitude
+        """
         data = self.data[self.data.longitude.notnull()]
         altitude = (
             "baro_altitude"
@@ -163,6 +200,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     @property
     def xy_time(self) -> Iterator[Tuple[float, float, float]]:
+        """Iterates on longitudes, latitudes and timestamps."""
         iterator = iter(zip(self.coords, self.timestamp))
         while True:
             next_ = next(iterator, None)
@@ -182,7 +220,12 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
     def shape(self) -> Optional[LineString]:
         return self.linestring
 
-    def airborne(self) -> "Flight":
+    def airborne(self) -> 'Flight':
+        """Returns the airborne part of the Flight.
+
+        The airborne part is determined by null values on the altitude (or
+        baro_altitude if present) column.
+        """
         altitude = (
             "baro_altitude"
             if "baro_altitude" in self.data.columns
@@ -192,11 +235,16 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     # -- Interpolation and resampling --
 
-    def split(self, value: int = 10, unit: str = "m") -> Iterator["Flight"]:
-        for data in split(self.data, value, unit):
+    def split(self, value: int = 10, unit: str = "m") -> Iterator['Flight']:
+        """Splits Flights in several legs.
+
+        By default, Flights are split if no value is given during 10 minutes.
+        """
+        for data in _split(self.data, value, unit):
             yield self.__class__(data)
 
-    def resample(self, rule: str = "1s") -> "Flight":
+    def resample(self, rule: str = "1s") -> 'Flight':
+        """Resamples a Flight at a one point per second rate. """
         data = (
             self.data.assign(start=self.start, stop=self.stop)
             .set_index("timestamp")
@@ -211,7 +259,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         index = to_datetime(time)
         return self.data.set_index("timestamp").loc[index]
 
-    def between(self, before: timelike, after: time_or_delta) -> 'Flight':
+    def between(self, before: timelike, after: time_or_delta) -> "Flight":
         before = to_datetime(before)
         if isinstance(after, timedelta):
             after = before + after
