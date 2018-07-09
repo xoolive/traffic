@@ -90,7 +90,7 @@ class Traffic(DataFrameMixin, GeographyMixin):
             for _, df in self.data.groupby("flight_id"):
                 yield Flight(df)
         else:
-            for _, df in self.data.groupby("icao24"):
+            for _, df in self.data.groupby(("icao24", "callsign")):
                 yield from Flight(df).split()
 
     def __repr__(self) -> str:
