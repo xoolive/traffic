@@ -1,3 +1,4 @@
+import logging
 import operator
 import pickle
 import re
@@ -5,25 +6,50 @@ import warnings
 import zipfile
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
+from typing import (Any, Callable, Dict, Iterator, List, NamedTuple, Optional,
+                    Tuple, Union)
 from xml.etree import ElementTree
 
 from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
 
 from ...core.airspace import components  # to be moved here TODO
-from ...core.airspace import (
-    ExtrudedPolygon,
-    Airspace,
-    AirspaceInfo,
-    AirspaceList,
-    cascaded_union_with_alt,
-)
+from ...core.airspace import (Airspace, AirspaceInfo, AirspaceList,
+                              ExtrudedPolygon, cascaded_union_with_alt)
+from ...data.basic.airport import Airport
+
+
+class Point(NamedTuple):
+    latitude: float
+    longitude: float
+    name: Optional[str]
+    type: Optional[str]
+
+    def __repr__(self) -> str:
+        return f"{self.name} ({self.type}): {self.latitude} {self.longitude}"
+
+
+class _Airport(NamedTuple):
+    latitude: float
+    longitude: float
+    altitude: float
+    iata: Optional[str]
+    icao: Optional[str]
+    name: Optional[str]
+    city: Optional[str]
+    type: Optional[str]
+
+    def __repr__(self):
+        return (
+            f"{self.icao}/{self.iata}    {self.name} ({self.type})"
+            f"\n\t{self.latitude} {self.longitude} altitude: {self.altitude}"
+        )
 
 
 class AirspaceParser(object):
 
     ns = {
+        'adrext': 'http://www.aixm.aero/schema/5.1/extensions/EUR/ADR',
         "adrmsg": "http://www.eurocontrol.int/cfmu/b2b/ADRMessage",
         "aixm": "http://www.aixm.aero/schema/5.1",
         "gml": "http://www.opengis.net/gml/3.2",
@@ -45,7 +71,7 @@ class AirspaceParser(object):
             raise RuntimeError(msg)
 
         self.full_dict: Dict[str, Any] = {}
-        self.all_points: Dict[str, Tuple[float, ...]] = {}
+        self.all_points: Dict[str, Point] = {}
 
         assert self.airac_path.is_dir()
 
@@ -57,9 +83,11 @@ class AirspaceParser(object):
                 return
 
         for filename in [
+            "AirportHeliport.BASELINE",
             "Airspace.BASELINE",
             "DesignatedPoint.BASELINE",
             "Navaid.BASELINE",
+            "StandardInstrumentArrival.BASELINE"
         ]:
 
             if ~(self.airac_path / filename).exists():
@@ -101,8 +129,21 @@ class AirspaceParser(object):
             assert floats is not None
             assert floats.text is not None
 
-            self.all_points[identifier.text] = tuple(
-                float(x) for x in floats.text.split()
+            designator = point.find(
+                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/aixm:designator",
+                self.ns,
+            )
+            type_ = point.find(
+                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/aixm:type",
+                self.ns,
+            )
+
+            name = designator.text if designator is not None else None
+            type_str = type_.text if type_ is not None else None
+
+            coords = tuple(float(x) for x in floats.text.split())
+            self.all_points[identifier.text] = Point(
+                coords[0], coords[1], name, type_str
             )
 
         points = ElementTree.parse(
@@ -123,14 +164,33 @@ class AirspaceParser(object):
             assert floats is not None
             assert floats.text is not None
 
-            self.all_points[identifier.text] = tuple(
-                float(x) for x in floats.text.split()
+            designator = point.find(
+                "aixm:timeSlice/aixm:NavaidTimeSlice/aixm:designator",
+                self.ns
+            )
+            type_ = point.find(
+                "aixm:timeSlice/aixm:NavaidTimeSlice/aixm:type",
+                self.ns
+            )
+
+            name = designator.text if designator is not None else None
+            type_str = type_.text if type_ is not None else None
+
+            coords = tuple(float(x) for x in floats.text.split())
+            self.all_points[identifier.text] = Point(
+                coords[0], coords[1], name, type_str
             )
 
         with cache_file.open("wb") as fh:
             pickle.dump((self.full_dict, self.all_points, self.tree), fh)
 
         self.initialized = True
+
+    def points(self, name: str) -> Iterator[Point]:
+        if not self.initialized:
+            self.init_cache()
+        return (point for point in self.all_points.values()
+                if point.name == name)
 
     def append_coords(self, lr, block_poly):
         coords: List[Tuple[float, ...]] = []
@@ -141,7 +201,10 @@ class AirspaceParser(object):
                     coords.append(tuple(float(x) for x in point.text.split()))
                 else:
                     points = point.attrib["{%s}href" % (xlink)]
-                    coords.append(self.all_points[points.split(":")[2]])
+                    current_point = self.all_points[points.split(":")[2]]
+                    coords.append(
+                        (current_point.latitude, current_point.longitude)
+                    )
         block_poly.append(
             (Polygon([(lon, lat) for lat, lon in coords]), None, None)
         )
@@ -300,3 +363,121 @@ class AirspaceParser(object):
                         designator.text,
                         type_.text if type_ is not None else None,
                     )
+
+    def airports(self) -> Iterator[Tuple[str, _Airport]]:
+
+        assert self.airac_path is not None
+
+        a_tree = ElementTree.parse(
+            (self.airac_path / 'AirportHeliport.BASELINE').as_posix()
+        )
+
+        for elt in a_tree.findall("adrmsg:hasMember/aixm:AirportHeliport",
+                                  self.ns):
+
+            identifier = elt.find("gml:identifier", self.ns)
+            assert identifier is not None
+            assert identifier.text is not None
+
+            apt = elt.find("aixm:timeSlice/aixm:AirportHeliportTimeSlice",
+                           self.ns)
+            if apt is None:
+                continue
+
+            nameElt = apt.find("aixm:name", self.ns)
+            icaoElt = apt.find("aixm:locationIndicatorICAO", self.ns)
+            iataElt = apt.find("aixm:designatorIATA", self.ns)
+            typeElt = apt.find("aixm:controlType", self.ns)
+            cityElt = apt.find("aixm:servedCity/aixm:City/aixm:name", self.ns)
+            posElt = apt.find("aixm:ARP/aixm:ElevatedPoint/gml:pos", self.ns)
+            altElt = apt.find("aixm:ARP/aixm:ElevatedPoint/aixm:elevation",
+                              self.ns)
+
+            if (posElt is None or posElt.text is None or altElt is None or
+                    altElt.text is None or icaoElt is None):
+                continue
+
+            coords = tuple(float(x) for x in posElt.text.split())
+
+            yield (identifier.text, _Airport(
+                coords[0],
+                coords[1],
+                float(altElt.text),
+                iataElt.text if iataElt is not None else None,
+                icaoElt.text,
+                nameElt.text if nameElt is not None else None,
+                cityElt.text if cityElt is not None else None,
+                typeElt.text if typeElt is not None else None
+            ))
+
+    def star(self, airport: Union[str, Airport]) -> Iterator[Tuple[Point, ...]]:
+
+        if not self.initialized:
+            self.init_cache()
+
+        assert self.airac_path is not None
+
+        if isinstance(airport, Airport):
+            airport = airport.icao
+
+        airports_dict: Dict[str, _Airport] = {
+            key: airport for key, airport in self.airports()
+        }
+
+        tree = ElementTree.parse(
+            (self.airac_path / 'StandardInstrumentArrival.BASELINE').as_posix()
+        )
+
+        for elt in tree.findall("adrmsg:hasMember/"
+                                "aixm:StandardInstrumentArrival",
+                                self.ns):
+
+            identifier = elt.find("gml:identifier", self.ns)
+            assert identifier is not None
+            assert identifier.text is not None
+
+            star = elt.find("aixm:timeSlice/"
+                            "aixm:StandardInstrumentArrivalTimeSlice",
+                            self.ns)
+
+            if star is None:
+                logging.warn("No aixm:StandardInstrumentArrivalTimeSlice found")
+                continue
+
+            handle = star.find("aixm:airportHeliport", self.ns)
+            if handle is None:
+                logging.warn("No aixm:airportHeliport found")
+                continue
+
+            airport_id = handle.attrib["{%s}href" % (self.ns['xlink'])]
+            if airports_dict[airport_id.split(":")[2]].icao == airport:
+                points = star.find("aixm:extension/"
+                                   "adrext:StandardInstrumentArrivalExtension",
+                                   self.ns)
+
+                if points is None:
+                    logging.warn(
+                        "No aixm:StandardInstrumentArrivalExtension found"
+                    )
+                    continue
+
+                segment: List[Point] = []
+                for p in points.getchildren():
+                    x = p.find("aixm:TerminalSegmentPoint/"
+                               "aixm:pointChoice_fixDesignatedPoint",
+                               self.ns)
+
+                    if x is not None:
+                        x_id = x.attrib["{%s}href" % (self.ns['xlink'])]
+                        point = self.all_points[x_id.split(':')[2]]
+                        segment.append(point._replace(type=p.tag.split('}')[1]))
+
+                    x = p.find("aixm:TerminalSegmentPoint/"
+                               "aixm:pointChoice_navaidSystem",
+                               self.ns)
+                    if x is not None:
+                        x_id = x.attrib["{%s}href" % (self.ns['xlink'])]
+                        point = self.all_points[x_id.split(':')[2]]
+                        segment.append(point._replace(type=p.tag.split('}')[1]))
+
+                yield tuple(segment)
