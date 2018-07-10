@@ -1,11 +1,13 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Iterator, Optional, Set, Tuple, Union
+from typing import (Callable, Iterable, Iterator, Optional, Set, Tuple, Union,
+                    cast)
 
 import numpy as np
 
 import pandas as pd
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+import scipy.signal
 from shapely.geometry import LineString, base
 
 from ..core.time import time_or_delta, timelike, to_datetime
@@ -184,6 +186,27 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             return None
         return ac.iloc[0].regid
 
+    def coords4d(
+        self, delta_t: bool = False
+    ) -> Iterator[Tuple[float, float, float, float]]:
+        data = self.data[self.data.longitude.notnull()]
+        altitude = (
+            "baro_altitude"
+            if "baro_altitude" in self.data.columns
+            else "altitude"
+        )
+
+        if delta_t:
+            time = (data["timestamp"] - data["timestamp"].min()).apply(
+                lambda x: x.total_seconds()
+            )
+        else:
+            time = data["timestamp"]
+
+        yield from zip(
+            time, data["longitude"], data["latitude"], data[altitude]
+        )
+
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
         """Iterates on longitudes, latitudes and altitudes.
@@ -232,89 +255,79 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             else "altitude"
         )
         return self.__class__(self.data[self.data[altitude].notnull()])
-    
-    def filtering(self, features, kernels_size):
-    
+
+    def filter(
+        self,
+        features: Optional[Iterable[str]] = None,
+        kernels_size: Optional[Iterable[int]] = None,
+        strategy: Callable[
+            [pd.DataFrame], pd.DataFrame
+        ] = lambda x: x.bfill().ffill(),
+    ) -> "Flight":
+
         default_kernels_size = {
-            'altitude': 17, 'track': 5, 'ground_speed': 5, 
-            'longitude': 15, 'latitude': 15, 'cas': 5, 'tas': 5
+            "altitude": 17,
+            "track": 5,
+            "ground_speed": 5,
+            "longitude": 15,
+            "latitude": 15,
+            "cas": 5,
+            "tas": 5,
         }
 
-        def prepare(df, feature, kernel_size=5):
-            """ Prepare data by feature for the filtering
+        def cascaded_filters(
+            df, feature: str, kernel_size: int, filt=scipy.signal.medfilt
+        ) -> pd.DataFrame:
+            """Produces a mask for data to be discarded.
 
-            Our filtering works as follow: given a signal y over time,
-            we first apply a low pass filter (e.g medfilt) which give y_m. 
-            epsilon2 is the difference between y and y_m squaring
-            we aplpy an other first order low pass filter (e.g medfilt) which give sigma
+            The filtering applies a low pass filter (e.g medfilt) to a signal
+            and measures the difference between the raw and the filtered signal.
 
-            `flight`: the flight to filtered
-            `feature`: column to filtered
-            `kernel_size`: size of the kernel for the medfilt
+            The average of the squared differences is then produced (sq_eps) and
+            used as a threashold for filtering.
 
             Errors may raised if the kernel_size is too large
             """
-            f = pd.DataFrame(np.nan, index=df.index, columns=['timestamp', 'y', 'y_m', 'epsilon2', 'sigma'])
-            f['timestamp'] = df['timestamp']
-            f['y'] = df[feature]
-            f['y_m'] = medfilt(f['y'], kernel_size)
-            f['epsilon2'] = (f['y'] - f['y_m'])**2
-            f['sigma'] = np.sqrt(medfilt(f.epsilon2, kernel_size))
+            y = df[feature].astype(float)
+            y_m = filt(y, kernel_size)
+            sq_eps = (y - y_m) ** 2
+            return pd.DataFrame(
+                {
+                    "timestamp": df["timestamp"],
+                    "y": y,
+                    "y_m": y_m,
+                    "sq_eps": sq_eps,
+                    # useful for now but should be helpful nonetheless
+                    "sigma": np.sqrt(filt(sq_eps, kernel_size)),
+                },
+                index=df.index,
+            )
 
-            return f
+        new_data = self.data.sort_values(by="timestamp").copy()
 
-        def decision(df):
-            """ Decision accept/reject data points in the signal
+        if features is None:
+            features = [
+                cast(str, feature)
+                for feature in self.data.columns
+                if self.data[feature].dtype
+                in [np.float32, np.float64, np.int32, np.int64]
+            ]
 
-            If the point is accepted given the criterion, the value is not alter
-            Otherwise it is as follow: ...
-            """
-            mean_epsilon2, values = df.epsilon2.mean(), []
-
-            for idx, val in enumerate(df.values):
-                row = df.iloc[idx]
-                y, y_m, sigma, epsilon2 = row['y'], row['y_m'], row['sigma'], row['epsilon2']
-
-                if epsilon2 > mean_epsilon2:
-                    borne_inf = y_m - sigma
-                    borne_sup = y_m + sigma
-                    if y < borne_inf:
-                        values.append(borne_inf)
-                    elif y > borne_sup:
-                        values.append(borne_sup)        
-                    else:
-                        values.append(y) # maybe mean t-1 t+1
-                else:
-                    values.append(y)
-
-            return values
-
-        self.data = self.data.sort_values(by='timestamp')
-
-        if features == None:
-            features = []
-            for feature in self.data.columns:
-                dtype = self.data[feature].dtype
-                if dtype == np.float32 or dtype == np.float64 or dtype == np.int32 or dtype == np.int64:
-                    features.append(feature)
-
-        if kernels_size == None:
-            kernels_size = [0 for _ in range(len(features))]
+        if kernels_size is None:
+            kernels_size = [0 for _ in features]
             for idx, feature in enumerate(features):
                 kernels_size[idx] = default_kernels_size.get(feature, 17)
 
-        for feature, kernel_size in zip(features, kernels_size):
+        for feat, ks in zip(features, kernels_size):
 
-            # Prepare flight for the filtering
-            df = prepare(self.data[['timestamp', feature]], feature, kernel_size)
+            # Prepare each flight for the filtering
+            df = cascaded_filters(new_data[["timestamp", feat]], feat, ks)
 
-            # Decision accept/reject for all data point in the time series
-            self.data.iloc[:][feature] = decision(df)
+            # Decision to accept/reject for all data points in the time series
+            new_data.loc[df.sq_eps > df.sq_eps.mean(), feat] = None
 
-        return self
-    
-    
-    
+        return self.__class__(strategy(new_data))
+
     # -- Interpolation and resampling --
 
     def split(self, value: int = 10, unit: str = "m") -> Iterator['Flight']:

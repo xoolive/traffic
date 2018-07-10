@@ -1,6 +1,6 @@
 from functools import lru_cache, partial
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Tuple, Union
 
 import pandas as pd
 import pyproj
@@ -19,9 +19,7 @@ class DataFrameMixin(object):
         self.data: pd.DataFrame = data
 
     @classmethod
-    def from_file(
-        cls, filename: Union[Path, str]
-    ) -> Optional["DataFrameMixin"]:
+    def from_file(cls, filename: Union[Path, str]):
         path = Path(filename)
         if path.suffixes in [[".pkl"], [".pkl", ".gz"]]:
             return cls(pd.read_pickle(path))

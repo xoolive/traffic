@@ -1,7 +1,7 @@
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Optional, Set, Union
+from typing import Any, Callable, Dict, Iterator, Iterable, Optional, Set, Union
 
 import pandas as pd
 from cartopy.mpl.geoaxes import GeoAxesSubplot
@@ -15,26 +15,28 @@ class Traffic(DataFrameMixin, GeographyMixin):
     _parse_extension: Dict[str, Callable[..., pd.DataFrame]] = dict()
 
     @classmethod
-    def from_flights(cls, flights: Iterator[Flight]):
+    def from_flights(cls, flights: Iterable[Flight]):
         return cls(pd.concat([f.data for f in flights]))
 
     @classmethod
     def from_file(
         cls, filename: Union[Path, str], **kwargs
-    ) -> Optional['Traffic']:
+    ) -> Optional["Traffic"]:
 
         tentative = super().from_file(filename)
         if tentative is not None:
             tentative.data = tentative.data.rename(
                 # tentative rename of columns for compatibility
-                columns={'lat': 'latitude',
-                         'lon': 'longitude',
-                         'velocity': 'ground_speed',
-                         'heading': 'track',
-                         'vertrate': 'vertical_rate',
-                         'baroaltitude': 'baro_altitude',
-                         'geoaltitude': 'altitude',
-                         'time': 'timestamp'}
+                columns={
+                    "lat": "latitude",
+                    "lon": "longitude",
+                    "velocity": "ground_speed",
+                    "heading": "track",
+                    "vertrate": "vertical_rate",
+                    "baroaltitude": "baro_altitude",
+                    "geoaltitude": "altitude",
+                    "time": "timestamp",
+                }
             )
             return cls(tentative.data)
 
@@ -153,12 +155,32 @@ class Traffic(DataFrameMixin, GeographyMixin):
             .rename(columns={"timestamp": "count"})
         )
 
+    def assign_id(self) -> "Traffic":
+        if "flight_id" in self.data.columns:
+            return self
+        return Traffic.from_flights(
+            Flight(f.data.assign(flight_id=f"{f.callsign}_{id_:>03}"))
+            for id_, f in enumerate(self)
+        )
+
+    def filter(
+        self,
+        features: Optional[Iterable[str]] = None,
+        kernels_size: Optional[Iterable[int]] = None,
+        strategy: Callable[
+            [pd.DataFrame], pd.DataFrame
+        ] = lambda x: x.bfill().ffill(),
+    ) -> "Traffic":
+        return Traffic.from_flights(
+            flight.filter(features, kernels_size, strategy) for flight in self
+        )
+
     def plot(self, ax: GeoAxesSubplot, **kwargs) -> None:
         params: Dict[str, Any] = {}
         if sum(1 for _ in zip(range(8), self)) == 8:
-            params['color'] = '#aaaaaa'
-            params['linewidth'] = 1
-            params['alpha'] = .8
+            params["color"] = "#aaaaaa"
+            params["linewidth"] = 1
+            params["alpha"] = .8
             kwargs = {**params, **kwargs}  # precedence of kwargs over params
         for flight in self:
             flight.plot(ax, **kwargs)

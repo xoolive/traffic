@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 import numpy as np
 
@@ -19,13 +19,16 @@ def fmt_timedelta(x: pd.Timestamp) -> str:
     )
 
 
-def to_bluesky(traffic: Traffic, filename: Union[str, Path],
-               minimum_time: Optional[timelike] = None) -> None:
+def to_bluesky(
+    traffic: Traffic,
+    filename: Union[str, Path],
+    minimum_time: Optional[timelike] = None,
+) -> None:
     """Generates a Bluesky scenario file."""
 
     if minimum_time is not None:
         minimum_time = to_datetime(minimum_time)
-        traffic = traffic.query(f"timestamp >= '{minimum_time}'")
+        traffic = cast(Traffic, traffic.query(f"timestamp >= '{minimum_time}'"))
 
     if isinstance(filename, str):
         filename = Path(filename)
@@ -52,7 +55,8 @@ def to_bluesky(traffic: Traffic, filename: Union[str, Path],
     with filename.open("w") as fh:
         t_delta = traffic.data.timestamp - traffic.start_time
         data = (
-            traffic.data.groupby("flight_id")
+            traffic.assign_id().data
+            .groupby("flight_id")
             .filter(lambda x: x.shape[0] > 3)
             .assign(timedelta=t_delta.apply(fmt_timedelta))
             .sort_values(by="timestamp")

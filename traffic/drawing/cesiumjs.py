@@ -4,12 +4,13 @@ import json
 import logging
 import random
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional, Union
+from typing import Any, Dict, Iterator, Optional, Union, cast
 
 import maya
 import pandas as pd
 
 from ..core import Flight, Traffic
+from ..data import SO6
 from ..core.time import timelike, to_datetime
 
 
@@ -26,16 +27,12 @@ class _CZML_Params:
 
 
 def format_ts(ts: pd.Timestamp) -> str:
-    return maya.MayaDT(int(ts.to_pydatetime().timestamp())).rfc3339()[:-4]
+    return maya.MayaDT(  # type: ignore
+        int(ts.to_pydatetime().timestamp())
+    ).rfc3339()[:-4]
 
 
 def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
-
-    altitude = (
-        "baro_altitude"
-        if "baro_altitude" in flight.data.columns
-        else "altitude"
-    )
 
     start = format_ts(flight.start)
     stop = format_ts(flight.stop)
@@ -53,15 +50,8 @@ def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
         "availability": availability,
         "position": {
             "epoch": start,
-            "cartographicDegrees": list(itertools.chain(
-                *zip(
-                    (flight.data.timestamp - flight.start).apply(
-                        lambda x: x.total_seconds()
-                    ),
-                    flight.data.longitude,
-                    flight.data.latitude,
-                    flight.data[altitude],
-                ))
+            "cartographicDegrees": list(
+                itertools.chain(*flight.coords4d(delta_t=True))
             ),
         },
         "path": {
@@ -83,25 +73,13 @@ def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
         "availability": availability,
         "position": {
             "epoch": start,
-            "cartographicDegrees": list(itertools.chain(
-                *zip(
-                    (flight.data.timestamp - flight.start).apply(
-                        lambda x: x.total_seconds()
-                    ),
-                    flight.data.longitude,
-                    flight.data.latitude,
-                    flight.data.baro_altitude,
-                ))
+            "cartographicDegrees": list(
+                itertools.chain(*flight.coords4d(delta_t=True))
             ),
         },
         "point": {
             "color": {
-                "rgba": [
-                    255,
-                    255,
-                    255,
-                    200,
-                ]  # white center instead of color
+                "rgba": [255, 255, 255, 200]  # white center instead of color
             },
             "outlineColor": {"rgba": color},
             "outlineWidth": _CZML_Params.point_outline_width,
@@ -111,13 +89,16 @@ def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
     }
 
 
-def to_czml(traffic: Traffic, filename: Union[str, Path],
-            minimum_time: Optional[timelike] = None) -> None:
+def to_czml(
+    traffic: Union[Traffic, SO6],
+    filename: Union[str, Path],
+    minimum_time: Optional[timelike] = None,
+) -> None:
     """Generates a CesiumJS scenario file."""
 
     if minimum_time is not None:
         minimum_time = to_datetime(minimum_time)
-        traffic = traffic.query(f"timestamp >= '{minimum_time}'")
+        traffic = cast(Traffic, traffic.query(f"timestamp >= '{minimum_time}'"))
 
     if isinstance(filename, str):
         filename = Path(filename)
@@ -130,8 +111,8 @@ def to_czml(traffic: Traffic, filename: Union[str, Path],
     export = [
         {
             "id": "document",
-            "name": f'Traffic_{start}',
-            "version": '1.0',
+            "name": f"Traffic_{start}",
+            "version": "1.0",
             "author": getpass.getuser(),
             "clock": {
                 "interval": availability,
@@ -151,3 +132,4 @@ def to_czml(traffic: Traffic, filename: Union[str, Path],
 
 
 setattr(Traffic, "to_czml", to_czml)
+setattr(SO6, "to_czml", to_czml)

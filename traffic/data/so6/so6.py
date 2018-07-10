@@ -52,6 +52,23 @@ class Flight(FlightMixin):
     def registration(self) -> None:
         return None
 
+    def coords4d(
+            self, delta_t: bool=False
+    ) -> Iterator[Tuple[float, float, float, float]]:
+        t = 0
+        if self.data.shape[0] == 0:
+            return
+        for _, s in self.data.iterrows():
+            if delta_t:
+                yield t, s.lon1, s.lat1, s.alt1
+                t += (s.time2 - s.time1).total_seconds()
+            else:
+                yield s.time1, s.lon1, s.lat1, s.alt1
+        if delta_t:
+            yield t, s.lon2, s.lat2, s.alt2
+        else:
+            yield s.time2, s.lon2, s.lat2, s.alt2
+
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
         if self.data.shape[0] == 0:
@@ -243,9 +260,9 @@ class SO6(DataFrameMixin):
         if isinstance(_id, str):
             return Flight(self.data.groupby("callsign").get_group(_id))
 
-    def __iter__(self) -> Iterator[Tuple[int, Flight]]:
-        for flight_id, flight in self.data.groupby("flight_id"):
-            yield flight_id, Flight(flight)
+    def __iter__(self) -> Iterator[Flight]:
+        for _, flight in self.data.groupby("flight_id"):
+            yield Flight(flight)
 
     def __len__(self) -> int:
         return len(self.flight_ids)
@@ -259,6 +276,14 @@ class SO6(DataFrameMixin):
             yield flight_id, Flight(flight)
 
     @property
+    def start_time(self) -> pd.Timestamp:
+        return min(self.data.time1)
+
+    @property
+    def end_time(self) -> pd.Timestamp:
+        return max(self.data.time2)
+
+    @property
     def callsigns(self) -> Set[str]:
         return set(self.data.callsign)
 
@@ -267,7 +292,7 @@ class SO6(DataFrameMixin):
         return set(self.data.flight_id)
 
     @classmethod
-    def from_so6(self, filename: Union[str, StringIO]) -> "SO6":
+    def from_so6(self, filename: Union[str, Path, StringIO]) -> "SO6":
         so6 = pd.read_csv(
             filename,
             sep=" ",
@@ -323,7 +348,7 @@ class SO6(DataFrameMixin):
         return SO6(so6)
 
     @classmethod
-    def from_so6_7z(self, filename: str) -> "SO6":
+    def from_so6_7z(self, filename: Union[str, Path]) -> "SO6":
         from libarchive.public import memory_reader
 
         with open(filename, "rb") as fh:
@@ -343,7 +368,7 @@ class SO6(DataFrameMixin):
         return cls.from_file(filename)
 
     @classmethod
-    def from_file(cls, filename: str) -> Optional["SO6"]:
+    def from_file(cls, filename: Union[Path, str]) -> Optional["SO6"]:
         path = Path(filename)
         if path.suffixes == [".so6", ".7z"]:
             return SO6.from_so6_7z(filename)
@@ -371,7 +396,7 @@ class SO6(DataFrameMixin):
     def intersects(self, sector: Airspace) -> "SO6":
         return SO6(
             self.data.groupby("flight_id").filter(
-                lambda flight: Flight(flight).intersects(sector)
+                lambda flight: Flight(flight).intersects(sector)  # type:ignore
             )
         )
 
