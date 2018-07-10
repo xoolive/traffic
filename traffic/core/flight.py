@@ -232,7 +232,89 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             else "altitude"
         )
         return self.__class__(self.data[self.data[altitude].notnull()])
+    
+    def filtering(self, features, kernels_size):
+    
+        default_kernels_size = {
+            'altitude': 17, 'track': 5, 'ground_speed': 5, 
+            'longitude': 15, 'latitude': 15, 'cas': 5, 'tas': 5
+        }
 
+        def prepare(df, feature, kernel_size=5):
+            """ Prepare data by feature for the filtering
+
+            Our filtering works as follow: given a signal y over time,
+            we first apply a low pass filter (e.g medfilt) which give y_m. 
+            epsilon2 is the difference between y and y_m squaring
+            we aplpy an other first order low pass filter (e.g medfilt) which give sigma
+
+            `flight`: the flight to filtered
+            `feature`: column to filtered
+            `kernel_size`: size of the kernel for the medfilt
+
+            Errors may raised if the kernel_size is too large
+            """
+            f = pd.DataFrame(np.nan, index=df.index, columns=['timestamp', 'y', 'y_m', 'epsilon2', 'sigma'])
+            f['timestamp'] = df['timestamp']
+            f['y'] = df[feature]
+            f['y_m'] = medfilt(f['y'], kernel_size)
+            f['epsilon2'] = (f['y'] - f['y_m'])**2
+            f['sigma'] = np.sqrt(medfilt(f.epsilon2, kernel_size))
+
+            return f
+
+        def decision(df):
+            """ Decision accept/reject data points in the signal
+
+            If the point is accepted given the criterion, the value is not alter
+            Otherwise it is as follow: ...
+            """
+            mean_epsilon2, values = df.epsilon2.mean(), []
+
+            for idx, val in enumerate(df.values):
+                row = df.iloc[idx]
+                y, y_m, sigma, epsilon2 = row['y'], row['y_m'], row['sigma'], row['epsilon2']
+
+                if epsilon2 > mean_epsilon2:
+                    borne_inf = y_m - sigma
+                    borne_sup = y_m + sigma
+                    if y < borne_inf:
+                        values.append(borne_inf)
+                    elif y > borne_sup:
+                        values.append(borne_sup)        
+                    else:
+                        values.append(y) # maybe mean t-1 t+1
+                else:
+                    values.append(y)
+
+            return values
+
+        self.data = self.data.sort_values(by='timestamp')
+
+        if features == None:
+            features = []
+            for feature in self.data.columns:
+                dtype = self.data[feature].dtype
+                if dtype == np.float32 or dtype == np.float64 or dtype == np.int32 or dtype == np.int64:
+                    features.append(feature)
+
+        if kernels_size == None:
+            kernels_size = [0 for _ in range(len(features))]
+            for idx, feature in enumerate(features):
+                kernels_size[idx] = default_kernels_size.get(feature, 17)
+
+        for feature, kernel_size in zip(features, kernels_size):
+
+            # Prepare flight for the filtering
+            df = prepare(self.data[['timestamp', feature]], feature, kernel_size)
+
+            # Decision accept/reject for all data point in the time series
+            self.data.iloc[:][feature] = decision(df)
+
+        return self
+    
+    
+    
     # -- Interpolation and resampling --
 
     def split(self, value: int = 10, unit: str = "m") -> Iterator['Flight']:
