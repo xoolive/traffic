@@ -8,10 +8,10 @@ from typing import Any, Dict, Iterator, Optional, Union, cast
 
 import maya
 import pandas as pd
-
-from ..core import Flight, Traffic
-from ..data import SO6
-from ..core.time import timelike, to_datetime
+from traffic.core import Flight, Traffic
+from traffic.core.time import timelike, to_datetime
+from traffic.data import SO6
+from traffic.plugins import PluginProvider
 
 
 class _CZML_Params:
@@ -131,5 +131,8 @@ def to_czml(
     logging.info(f"Scenario file {filename} written")
 
 
-setattr(Traffic, "to_czml", to_czml)
-setattr(SO6, "to_czml", to_czml)
+class CesiumJS(PluginProvider):
+
+    def load_plugin(self):
+        setattr(Traffic, "to_czml", to_czml)
+        setattr(SO6, "to_czml", to_czml)

@@ -8,7 +8,7 @@ from fastkml import LineStyle, PolyStyle, kml
 from fastkml.geometry import Geometry
 from shapely.geometry import LineString
 
-from ..core import Flight, Sector
+from ..core import Flight, Airspace
 
 _colormap = {
     "blue": "#1928f0",
@@ -72,7 +72,7 @@ def _flight_export_kml(
         styleUrl = toStyle(color)
     params = {
         "name": flight.callsign,
-        "description": flight.info_html(),
+        "description": flight._info_html(),
         "styleUrl": styleUrl,
     }
     for key, value in kwargs.items():
@@ -90,8 +90,8 @@ def _flight_export_kml(
     return placemark
 
 
-def _sector_export_kml(
-    sector: Sector,
+def _airspace_export_kml(
+    sector: Airspace,
     styleUrl: Optional[kml.StyleUrl] = None,
     color: Optional[str] = None,
     alpha: float = .5,
@@ -111,5 +111,5 @@ def _sector_export_kml(
 
 
 setattr(Flight, "export_kml", _flight_export_kml)
-setattr(Sector, "export_kml", _sector_export_kml)
+setattr(Airspace, "export_kml", _airspace_export_kml)
 _stylemap = StyleMap()

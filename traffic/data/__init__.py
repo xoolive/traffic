@@ -1,11 +1,7 @@
-import configparser
 from pathlib import Path
 
-from appdirs import user_cache_dir, user_config_dir
-
+from .. import config, cache_dir, config_file
 from .adsb.opensky import OpenSky
-from .adsb import sqlite  # this could be a plugin...
-
 from .airspaces.airac import AirspaceParser
 from .airspaces.eurofirs import eurofirs
 from .basic.aircraft import Aircraft
@@ -19,25 +15,6 @@ from .so6 import SO6  # noqa: F401
 
 __all__ = ['aircraft', 'airports', 'airways', 'navaids', 'airac', 'eurofirs',
            'opensky', ]
-
-config_dir = Path(user_config_dir("traffic"))
-cache_dir = Path(user_cache_dir("traffic"))
-config_file = config_dir / "traffic.conf"
-
-if not config_dir.exists():
-    config_dir.mkdir()
-    with config_file.open('w') as fh:
-        fh.write("""[global]
-airac_path =
-opensky_username =
-opensky_password =
-""")
-
-if not cache_dir.exists():
-    cache_dir.mkdir()
-
-config = configparser.ConfigParser()
-config.read(config_file.as_posix())
 
 airac_path_str = config.get("global", "airac_path", fallback="")
 if airac_path_str != "":

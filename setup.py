@@ -14,14 +14,15 @@ setup(
     ext_modules=cythonize(extensions),
     packages=[
         "traffic",
+        "traffic.algorithms",
         "traffic.core",
         "traffic.data",
         "traffic.data.adsb",
         "traffic.data.basic",
         "traffic.data.airspaces",
         "traffic.data.so6",
-        "traffic.algorithms",
         "traffic.drawing",
+        "traffic.plugins",
     ],
     package_data={"traffic.data.airspaces": ["firs.json"]},
     install_requires=[
