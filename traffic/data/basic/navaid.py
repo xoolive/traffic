@@ -8,7 +8,7 @@ import requests
 
 class NavaidTuple(NamedTuple):
 
-    id: str
+    name: str
     type: str
     lat: float
     lon: float
@@ -17,14 +17,28 @@ class NavaidTuple(NamedTuple):
     magnetic_variation: Optional[float]
     description: Optional[str]
 
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, d):
+        self.__dict__.update(d)
+
+    def __getattr__(self, name):
+        if name == 'latitude':
+            return self.lat
+        if name == 'longitude':
+            return self.lon
+        if name == 'altitude':
+            return self.alt
+
 
 class Navaid(NavaidTuple):
     def __repr__(self):
         if self.type == "FIX":
-            return f"{self.id} ({self.type}): {self.lat} {self.lon}"
+            return f"{self.name} ({self.type}): {self.lat} {self.lon}"
         else:
             return (
-                f"{self.id} ({self.type}): {self.lat} {self.lon}"
+                f"{self.name} ({self.type}): {self.lat} {self.lon}"
                 f" {self.alt:.0f}\n"
                 f"{self.description if self.description is not None else ''}"
                 f" {self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}"
@@ -51,7 +65,7 @@ class NavaidParser(object):
 
     def __getitem__(self, name: str) -> Optional[Navaid]:
         return next(
-            (pt for pt in self.navaids if (pt.id == name.upper())), None
+            (pt for pt in self.navaids if (pt.name == name.upper())), None
         )
 
     def search(self, name: str) -> List[Navaid]:
@@ -63,7 +77,7 @@ class NavaidParser(object):
                     pt.description is not None
                     and (re.match(name, pt.description, re.IGNORECASE))
                 )
-                or (pt.id == name.upper())
+                or (pt.name == name.upper())
             )
         )
 

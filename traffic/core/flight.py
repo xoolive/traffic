@@ -1,16 +1,19 @@
 import logging
+import re
 from datetime import datetime, timedelta
-from typing import (Callable, Iterable, Iterator, Optional, Set, Tuple, Union,
-                    cast)
+from typing import (Callable, Iterable, Iterator, NamedTuple, Optional, Set,
+                    Tuple, Union, cast)
 
 import numpy as np
 
 import pandas as pd
-from cartopy.mpl.geoaxes import GeoAxesSubplot
 import scipy.signal
+from cartopy.mpl.geoaxes import GeoAxesSubplot
 from shapely.geometry import LineString, base
 
 from ..core.time import time_or_delta, timelike, to_datetime
+from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
+                       guess_airport)
 from .mixins import DataFrameMixin, GeographyMixin, ShapelyMixin
 
 
@@ -18,7 +21,7 @@ def _split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
     diff = data.timestamp.diff().values
     if diff.max() > np.timedelta64(value, unit):
         yield from _split(data.iloc[: diff.argmax()], value, unit)
-        yield from _split(data.iloc[diff.argmax():], value, unit)
+        yield from _split(data.iloc[diff.argmax() :], value, unit)  # noqa
     else:
         yield data
 
@@ -41,6 +44,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
         # keep import here to avoid recursion
         from .traffic import Traffic
+
         return Traffic.from_flights([self, other])
 
     def __radd__(self, other):
@@ -136,6 +140,11 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return tmp
 
     @property
+    def squawk(self) -> Set[int]:
+        """Returns all the unique squawk values in the trajectory."""
+        return set(self.data.squawk.astype(int))
+
+    @property
     def origin(self) -> Optional[Union[str, Set[str]]]:
         """Returns the unique origin value(s) of the DataFrame.
 
@@ -162,6 +171,54 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             return tmp.pop()
         logging.warn("Several destinations for one flight, consider splitting")
         return tmp
+
+    def guess_takeoff_airport(self) -> DistanceAirport:
+        data = self.data.sort_values("timestamp")
+        return guess_airport(data.iloc[0])
+
+    def guess_landing_airport(self) -> DistanceAirport:
+        data = self.data.sort_values("timestamp")
+        return guess_airport(data.iloc[-1])
+
+    def guess_landing_runway(
+        # TODO Specify a 'Point' trait in place of NamedTuple
+        self,
+        airport: Union[None, str, NamedTuple] = None,
+    ) -> DistancePointTrajectory:
+
+        from ..data import runways
+        from ..data.basic.airport import Airport
+
+        if airport is None:
+            airport = self.guess_landing_airport().airport
+        if isinstance(airport, Airport):
+            airport = airport.icao
+        all_runways = runways[airport].values()
+
+        subset = (
+            self.airborne()
+            .query('vertical_rate < 0')
+            .last(minutes=10)
+            .resample()
+        )
+        candidate = subset.closest_point(all_runways)
+
+        avg_track = subset.data.track.tail(10).mean()
+        # TODO compute rwy track in the data module
+        rwy_track = 10 * int(next(re.finditer('\d+', candidate.name)).group())
+
+        if abs(avg_track - rwy_track) > 20:
+            logging.warn(f"({self.flight_id}) Candidate runway "
+                         f"{candidate.name} is not consistent "
+                         f"with average track {avg_track}.")
+
+        return candidate
+
+    def closest_point(self, points: Union[Iterable[NamedTuple], NamedTuple]):
+        # if isinstance(points, NamedTuple):
+        if getattr(points, "_asdict", None) is not None:
+            points = [points]  # type: ignore
+        return min(closest_point(self.data, point) for point in points)
 
     @property
     def aircraft(self) -> Optional[str]:
@@ -243,7 +300,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
     def shape(self) -> Optional[LineString]:
         return self.linestring
 
-    def airborne(self) -> 'Flight':
+    def airborne(self) -> "Flight":
         """Returns the airborne part of the Flight.
 
         The airborne part is determined by null values on the altitude (or
@@ -255,6 +312,20 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             else "altitude"
         )
         return self.__class__(self.data[self.data[altitude].notnull()])
+
+    def first(self, **kwargs) -> "Flight":
+        return Flight(
+            self.data[
+                np.stack(self.timestamp) - self.start < timedelta(**kwargs)
+            ]
+        )
+
+    def last(self, **kwargs) -> "Flight":
+        return Flight(
+            self.data[
+                self.stop - np.stack(self.timestamp) < timedelta(**kwargs)
+            ]
+        )
 
     def filter(
         self,
@@ -330,7 +401,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     # -- Interpolation and resampling --
 
-    def split(self, value: int = 10, unit: str = "m") -> Iterator['Flight']:
+    def split(self, value: int = 10, unit: str = "m") -> Iterator["Flight"]:
         """Splits Flights in several legs.
 
         By default, Flights are split if no value is given during 10 minutes.
@@ -338,7 +409,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         for data in _split(self.data, value, unit):
             yield self.__class__(data)
 
-    def resample(self, rule: str = "1s") -> 'Flight':
+    def resample(self, rule: str = "1s") -> "Flight":
         """Resamples a Flight at a one point per second rate. """
         data = (
             self.data.assign(start=self.start, stop=self.stop)
@@ -366,6 +437,14 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return self.__class__(self.data.iloc[index])
 
     # -- Geometry operations --
+
+    def extent(self) -> Tuple[float, float, float, float]:
+        return (
+            self.data.longitude.min() - .1,
+            self.data.longitude.max() + .1,
+            self.data.latitude.min() - .1,
+            self.data.latitude.max() + .1,
+        )
 
     def clip(
         self, shape: base.BaseGeometry

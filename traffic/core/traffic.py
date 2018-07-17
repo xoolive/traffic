@@ -95,6 +95,9 @@ class Traffic(DataFrameMixin, GeographyMixin):
             for _, df in self.data.groupby(("icao24", "callsign")):
                 yield from Flight(df).split()
 
+    def __len__(self):
+        return sum(1 for _ in self)
+
     def __repr__(self) -> str:
         return self.stats().__repr__()
 

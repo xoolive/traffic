@@ -30,6 +30,7 @@ setup(
         "matplotlib",
         "pandas",
         "cython",
+        "geodesy",
         "Cartopy",
         "Shapely",
         "requests",

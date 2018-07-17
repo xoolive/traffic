@@ -177,6 +177,7 @@ class OpenSky(object):
         *args,
         date_delta: timedelta = timedelta(hours=1),
         callsign: Optional[Union[str, Iterable[str]]] = None,
+        icao24: Optional[Union[str, Iterable[str]]] = None,
         serials: Optional[Iterable[int]] = None,
         bounds: Optional[Tuple[float, float, float, float]] = None,
         other_tables: str = "",
@@ -196,6 +197,13 @@ class OpenSky(object):
         if isinstance(serials, Iterable):
             other_tables += ", state_vectors_data4.serials s "
             other_params += "and s.ITEM in {} ".format(tuple(serials))
+
+        if isinstance(icao24, str):
+            other_params += "and icao24='{}' ".format(icao24)
+
+        elif isinstance(icao24, Iterable):
+            icao24 = ",".join("'{}'".format(c) for c in icao24)
+            other_params += "and icao24 in ({}) ".format(icao24)
 
         if isinstance(callsign, str):
             other_params += "and callsign='{:<8s}' ".format(callsign)

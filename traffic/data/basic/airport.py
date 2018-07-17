@@ -21,6 +21,20 @@ class AirportNamedTuple(NamedTuple):
     lon: float
     name: str
 
+    def __getattr__(self, name):
+        if name == 'latitude':
+            return self.lat
+        if name == 'longitude':
+            return self.lon
+        if name == 'altitude':
+            return self.alt
+
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, d):
+        self.__dict__.update(d)
+
 
 class Airport(AirportNamedTuple, ShapelyMixin):
 

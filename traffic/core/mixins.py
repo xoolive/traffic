@@ -57,7 +57,7 @@ class DataFrameMixin(object):
     def to_excel(self, filename: Union[str, Path]) -> None:
         self.data.to_excel(filename)
 
-    def query(self, query: str) -> "DataFrameMixin":
+    def query(self, query: str):
         return self.__class__(self.data.query(query))
 
     def groupby(self, *args, **kwargs):
