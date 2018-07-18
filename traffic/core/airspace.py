@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib.patches import Polygon as MplPolygon
 
 from cartopy.mpl.geoaxes import GeoAxesSubplot
-from shapely.geometry import Polygon, base, mapping
+from shapely.geometry import Polygon, base, mapping, shape
 from shapely.ops import cascaded_union
 
 from . import Flight, Traffic
@@ -98,6 +98,7 @@ class Airspace(ShapelyMixin):
 
         if "projection" in ax.__dict__:
             from cartopy.crs import PlateCarree
+
             ax.add_geometries([flat], crs=PlateCarree(), **kwargs)
         else:
             ax.add_patch(MplPolygon(list(flat.exterior.coords), **kwargs))
@@ -120,8 +121,8 @@ class Airspace(ShapelyMixin):
         for i, j in zip(range(c.shape[0] - 1), range(c.shape[0], 1, -1)):
             yield Polygon(
                 np.r_[
-                    lower_layer[i:i+2, :],  # noqa: E226
-                    upper_layer[j-2:j, :],  # noqa: E226
+                    lower_layer[i : i + 2, :],  # noqa: E203
+                    upper_layer[j - 2 : j, :],  # noqa: E203
                 ]
             )
 
@@ -138,6 +139,21 @@ class Airspace(ShapelyMixin):
             )
         export["shapes"] = shapes
         return export
+
+    @classmethod
+    def from_json(cls, json: Dict[str, Any]):
+        return cls(
+            name=json["name"],
+            type_=json["type"],
+            elements=[
+                ExtrudedPolygon(
+                    polygon=shape(layer["polygon"]),
+                    upper=layer["upper"],
+                    lower=layer["lower"],
+                )
+                for layer in json["shapes"]
+            ],
+        )
 
 
 def cascaded_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
