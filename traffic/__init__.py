@@ -32,7 +32,8 @@ config = configparser.ConfigParser()
 config.read(config_file.as_posix())
 
 _selected = [
-    s.strip() for s in config.get("plugins", "enabled_plugins").split(",")
+    s.strip() for s in config.get("plugins", "enabled_plugins",
+                                  fallback="").split(",")
 ]
 _plugin_paths = [Path(__file__).parent / "plugins", config_dir / "plugins"]
 _all_plugins = []

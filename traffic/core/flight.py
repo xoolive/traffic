@@ -172,6 +172,17 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         logging.warn("Several destinations for one flight, consider splitting")
         return tmp
 
+    def query_opensky(self):
+        """Return the equivalent Flight from OpenSky History."""
+        from ..data import opensky
+        query_params = {
+            "before": self.start,
+            "after": self.stop,
+            "callsign": self.callsign,
+            "icao24": self.icao24,
+        }
+        return opensky.history(**query_params)
+
     def guess_takeoff_airport(self) -> DistanceAirport:
         data = self.data.sort_values("timestamp")
         return guess_airport(data.iloc[0])
@@ -197,7 +208,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
         subset = (
             self.airborne()
-            .query('vertical_rate < 0')
+            .query("vertical_rate < 0")
             .last(minutes=10)
             .resample()
         )
@@ -205,12 +216,14 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
         avg_track = subset.data.track.tail(10).mean()
         # TODO compute rwy track in the data module
-        rwy_track = 10 * int(next(re.finditer('\d+', candidate.name)).group())
+        rwy_track = 10 * int(next(re.finditer("\d+", candidate.name)).group())
 
         if abs(avg_track - rwy_track) > 20:
-            logging.warn(f"({self.flight_id}) Candidate runway "
-                         f"{candidate.name} is not consistent "
-                         f"with average track {avg_track}.")
+            logging.warn(
+                f"({self.flight_id}) Candidate runway "
+                f"{candidate.name} is not consistent "
+                f"with average track {avg_track}."
+            )
 
         return candidate
 
