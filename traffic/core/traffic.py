@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, Iterator, Iterable, Optional, Set, Union
 import pandas as pd
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 
+from ..core.time import time_or_delta, timelike
 from .flight import Flight
 from .mixins import DataFrameMixin, GeographyMixin
 
@@ -144,6 +145,18 @@ class Traffic(DataFrameMixin, GeographyMixin):
         return None
 
     # --- Easy work ---
+    
+    def at(self, time: timelike) -> "Traffic":
+        list_flights = [flight.at(start) for flight in self
+                        if flight.start <= time <= flight.stop]
+        return Traffic(pd.DataFrame
+                       .from_records(list_flights)
+                       .assign(timestamp=[s.name for s in list_flights]))
+
+    def between(self, before: timelike, after: time_or_delta) -> "Traffic":
+        return Traffic.from_flights(
+            flight.between(before, after) for flight in self
+        )
 
     @lru_cache()
     def stats(self) -> pd.DataFrame:

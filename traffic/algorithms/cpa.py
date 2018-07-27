@@ -63,6 +63,9 @@ def compute_cpa(
     if "x" not in traffic.data.columns or "y" not in traffic.data.columns:
         traffic = traffic.compute_xy()
 
+    # TODO bugfix
+    traffic = Traffic(traffic.data.reset_index())
+        
     for ts, d in progressbar(traffic.groupby("timestamp"), total=total):
 
         cpa = cpadict[round_time(ts, by=rounding_time)]
