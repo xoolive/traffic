@@ -1,13 +1,28 @@
-""" This module defines a set of standard aerodynamic functions and constants."""
-# Vectorized versions of aero conversion routines
-from math import *
+"""
+Functions for aeronautics in this module
+    - physical quantities always in SI units
+    - lat,lon,course and heading in degrees
+International Standard Atmosphere
+    p,rho,T = atmos(H)    # atmos as function of geopotential altitude H [m]
+    a = vsound(H)         # speed of sound [m/s] as function of H[m]
+    p = pressure(H)       # calls atmos but retruns only pressure [Pa]
+    T = temperature(H)    # calculates temperature [K]
+    rho = density(H)      # calls atmos but retruns only pressure [Pa]
+Speed conversion at altitude H[m] in ISA:
+    Mach = tas2mach(Vtas,H)    # true airspeed (Vtas) to mach number conversion
+    Vtas = mach2tas(Mach,H)    # true airspeed (Vtas) to mach number conversion
+    Vtas = eas2tas(Veas,H)     # equivalent airspeed to true airspeed, H in [m]
+    Veas = tas2eas(Vtas,H)     # true airspeed to equivent airspeed, H in [m]
+    Vtas = cas2tas(Vcas,H)     # Vcas  to Vtas conversion both m/s, H in [m]
+    Vcas = tas2cas(Vtas,H)     # Vtas to Vcas conversion both m/s, H in [m]
+    Vcas = mach2cas(Mach,H)    # Mach to Vcas conversion Vcas in m/s, H in [m]
+    Mach   = cas2mach(Vcas,H)  # Vcas to mach copnversion Vcas in m/s, H in [m]
+"""
+
 import numpy as np
 
-# International standard atmpshere only up to 72000 ft / 22 km
+# -- Constants Aeronautics --
 
-#
-# Constants Aeronautics
-#
 kts = 0.514444              # m/s  of 1 knot
 ft  = 0.3048                # m    of 1 foot
 fpm = ft/60.                # feet per minute
@@ -28,37 +43,8 @@ beta = -0.0065              # [K/m] ISA temp gradient below tropopause
 Rearth = 6371000.           # m  Average earth radius
 a0  = np.sqrt(gamma*R*T0)   # sea level speed of sound ISA
 
+# -- Vectorized aero functions --
 
-#
-# Functions for aeronautics in this module
-#  - physical quantities always in SI units
-#  - lat,lon,course and heading in degrees
-#
-#  International Standard Atmosphere up to 22 km
-#
-#   p,rho,T = vatmos(h)    # atmos as function of geopotential altitude h [m]
-#   a = vvsound(h)         # speed of sound [m/s] as function of h[m]
-#   p = vpressure(h)       # calls atmos but retruns only pressure [Pa]
-#   T = vtemperature(h)    # calculates temperature [K] (saves time rel to atmos)
-#   rho = vdensity(h)      # calls atmos but retruns only pressure [Pa]
-#
-#  Speed conversion at altitude h[m] in ISA:
-#
-# M   = vtas2mach(tas,h)  # true airspeed (tas) to mach number conversion
-# tas = vmach2tas(M,h)    # true airspeed (tas) to mach number conversion
-# tas = veas2tas(eas,h)   # equivalent airspeed to true airspeed, h in [m]
-# eas = vtas2eas(tas,h)   # true airspeed to equivent airspeed, h in [m]
-# tas = vcas2tas(cas,h)   # cas  to tas conversion both m/s, h in [m]
-# cas = vtas2cas(tas,h)   # tas to cas conversion both m/s, h in [m]
-# cas = vmach2cas(M,h)    # Mach to cas conversion cas in m/s, h in [m]
-# M   = vcas2mach(cas,h)   # cas to mach copnversion cas in m/s, h in [m]
-
-# Atmosphere up to 22 km (72178 ft)
-
-
-# ------------------------------------------------------------------------------
-# Vectorized aero functions
-# ------------------------------------------------------------------------------
 def vatmos(h):  # h in m
     # Temp
     T = vtemp(h)
@@ -96,7 +82,8 @@ def vvsound(h):  # Speed of sound for given altitude h [m]
     return a
 
 
-# ---------Speed conversions---h in [m]------------------
+# -- Speed conversions --
+
 def vtas2mach(tas, h):
     """ True airspeed (tas) to mach number conversion """
     a = vvsound(h)
@@ -172,9 +159,8 @@ def vcasormach2tas(spd, h):
     return tas
 
 
-# ------------------------------------------------------------------------------
-# Scalar aero functions
-# ------------------------------------------------------------------------------
+# -- Scalar aero functions --
+
 def atmos(h):
     """ atmos(altitude): International Standard Atmosphere calculator
 
@@ -303,11 +289,12 @@ def density(h):   # air density at given altitude h [m]
 
 def vsound(h):  # Speed of sound for given altitude h [m]
     T = temp(h)
-    a = sqrt(gamma*R*T)
+    a = np.sqrt(gamma*R*T)
     return a
 
 
-# ---------Speed conversions---h in [m]------------------
+# -- Speed conversions --
+
 def tas2mach(tas, h):
     """ True airspeed (tas) to mach number conversion """
     a = vsound(h)
