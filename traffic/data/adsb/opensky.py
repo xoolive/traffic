@@ -120,6 +120,9 @@ class OpenSky(object):
             port=2230,
             username=self.username,
             password=self.password,
+            look_for_keys=False,
+            allow_agent=False,
+            compress=True,
         )
         self.shell = client.invoke_shell()
         self.connected = True
