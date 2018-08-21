@@ -93,7 +93,7 @@ class Traffic(DataFrameMixin, GeographyMixin):
             for _, df in self.data.groupby("flight_id"):
                 yield Flight(df)
         else:
-            for _, df in self.data.groupby(("icao24", "callsign")):
+            for _, df in self.data.groupby(["icao24", "callsign"]):
                 yield from Flight(df).split()
 
     def __len__(self):
@@ -129,7 +129,7 @@ class Traffic(DataFrameMixin, GeographyMixin):
         """Return only the most relevant callsigns"""
         sub = (
             self.data.query("callsign == callsign")
-            .groupby(("callsign", "icao24"))
+            .groupby(["callsign", "icao24"])
             .filter(lambda x: len(x) > 10)
         )
         return set(cs for cs in sub.callsign if len(cs) > 3 and " " not in cs)
@@ -163,7 +163,7 @@ class Traffic(DataFrameMixin, GeographyMixin):
         """Statistics about flights contained in the structure.
         Useful for a meaningful representation.
         """
-        key = ("icao24", "callsign") if self.flight_ids is None else "flight_id"
+        key = ["icao24", "callsign"] if self.flight_ids is None else "flight_id"
         return (
             self.data.groupby(key)[["timestamp"]]
             .count()
