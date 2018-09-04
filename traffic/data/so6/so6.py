@@ -422,7 +422,7 @@ class SO6(DataFrameMixin):
 
         # the numexpr query is 10% faster than the regular
         # data[data.lat1 >= ...] conjunctions of comparisons
-        query = "{0} <= lon1 <= {2} & {1} <= lat1 <= {3}"
+        query = "{0} <= lon1 <= {2} and {1} <= lat1 <= {3}"
         query = query.format(west, south, east, north)
 
         data = self.data.query(query)
