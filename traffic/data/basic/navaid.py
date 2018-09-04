@@ -24,11 +24,11 @@ class NavaidTuple(NamedTuple):
         self.__dict__.update(d)
 
     def __getattr__(self, name):
-        if name == 'latitude':
+        if name == "latitude":
             return self.lat
-        if name == 'longitude':
+        if name == "longitude":
             return self.lon
-        if name == 'altitude':
+        if name == "altitude":
             return self.alt
 
 
@@ -43,6 +43,27 @@ class Navaid(NavaidTuple):
                 f"{self.description if self.description is not None else ''}"
                 f" {self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}"
             )
+
+    def plot(self, ax, text_kw=None, **kwargs):
+
+        if text_kw is None:
+            text_kw = {}
+
+        if "projection" in ax.__dict__ and "transform" not in kwargs:
+            from cartopy.crs import PlateCarree
+            from matplotlib.transforms import offset_copy
+
+            kwargs["transform"] = PlateCarree()
+            geodetic_transform = PlateCarree()._as_mpl_transform(ax)
+            text_kw["transform"] = offset_copy(
+                geodetic_transform, units="dots", x=15
+            )
+
+        if "color" not in kwargs:
+            kwargs["color"] = "black"
+
+        ax.scatter(self.lon, self.lat, marker="^", **kwargs)
+        ax.text(self.lon, self.lat, self.name, **text_kw)
 
 
 __github_url = "https://raw.githubusercontent.com/"
