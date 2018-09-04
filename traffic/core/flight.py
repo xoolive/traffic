@@ -1,3 +1,5 @@
+# fmt: off
+
 import logging
 import re
 from datetime import datetime, timedelta
@@ -15,6 +17,8 @@ from ..core.time import time_or_delta, timelike, to_datetime
 from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
                        guess_airport)
 from .mixins import DataFrameMixin, GeographyMixin, ShapelyMixin
+
+# fmt: on
 
 
 def _split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
@@ -175,6 +179,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
     def query_opensky(self):
         """Return the equivalent Flight from OpenSky History."""
         from ..data import opensky
+
         query_params = {
             "before": self.start,
             "after": self.stop,
@@ -342,14 +347,13 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     def filter(
         self,
-        features: Optional[Iterable[str]] = None,
-        kernels_size: Optional[Iterable[int]] = None,
         strategy: Callable[
             [pd.DataFrame], pd.DataFrame
         ] = lambda x: x.bfill().ffill(),
+        **kwargs,
     ) -> "Flight":
 
-        default_kernels_size = {
+        ks_dict = {
             "altitude": 17,
             "track": 5,
             "ground_speed": 5,
@@ -357,6 +361,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             "latitude": 15,
             "cas": 5,
             "tas": 5,
+            **kwargs,
         }
 
         def cascaded_filters(
@@ -389,18 +394,19 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
         new_data = self.data.sort_values(by="timestamp").copy()
 
-        if features is None:
+        if len(kwargs) == 0:
             features = [
                 cast(str, feature)
                 for feature in self.data.columns
                 if self.data[feature].dtype
                 in [np.float32, np.float64, np.int32, np.int64]
             ]
+        else:
+            features = list(kwargs.keys())
 
-        if kernels_size is None:
-            kernels_size = [0 for _ in features]
-            for idx, feature in enumerate(features):
-                kernels_size[idx] = default_kernels_size.get(feature, 17)
+        kernels_size = [0 for _ in features]
+        for idx, feature in enumerate(features):
+            kernels_size[idx] = ks_dict.get(feature, 17)
 
         for feat, ks in zip(features, kernels_size):
 
@@ -435,8 +441,36 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return self.__class__(data)
 
     def at(self, time: timelike) -> pd.core.series.Series:
+        class Position(pd.core.series.Series):
+            def plot(self, ax, text_kw=None, **kwargs):
+
+                if text_kw is None:
+                    text_kw = {}
+
+                if "projection" in ax.__dict__ and "transform" not in kwargs:
+                    from cartopy.crs import PlateCarree
+                    from matplotlib.transforms import offset_copy
+
+                    kwargs["transform"] = PlateCarree()
+                    geodetic_transform = PlateCarree()._as_mpl_transform(ax)
+                    text_kw["transform"] = offset_copy(
+                        geodetic_transform, units="dots", x=15
+                    )
+
+                if "color" not in kwargs:
+                    kwargs["color"] = "black"
+
+                ax.scatter(self.longitude, self.latitude, **kwargs)
+                ax.text(self.longitude, self.latitude, self.callsign, **text_kw)
+
         index = to_datetime(time)
-        return self.data.set_index("timestamp").loc[index]
+        return Position(self.data.set_index("timestamp").loc[index])
+
+    def before(self, ts: timelike) -> "Flight":
+        return self.between(self.start, ts)
+
+    def after(self, ts: timelike) -> "Flight":
+        return self.between(ts, self.stop)
 
     def between(self, before: timelike, after: time_or_delta) -> "Flight":
         before = to_datetime(before)

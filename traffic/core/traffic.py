@@ -1,14 +1,19 @@
+# fmt: off
+
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Iterable, Optional, Set, Union
+from typing import (Any, Callable, Dict, Iterable, Iterator, Optional, Set,
+                    Union)
 
 import pandas as pd
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 
-from ..core.time import time_or_delta, timelike
+from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
 from .mixins import DataFrameMixin, GeographyMixin
+
+# fmt: on
 
 
 class Traffic(DataFrameMixin, GeographyMixin):
@@ -55,13 +60,13 @@ class Traffic(DataFrameMixin, GeographyMixin):
 
     # --- Special methods ---
 
-    def __add__(self, other) -> 'Traffic':
+    def __add__(self, other) -> "Traffic":
         # useful for compatibility with sum() function
         if other == 0:
             return self
         return self.__class__(pd.concat([self.data, other.data]))
 
-    def __radd__(self, other) -> 'Traffic':
+    def __radd__(self, other) -> "Traffic":
         return self + other
 
     def __getitem__(self, index: str) -> Optional[Flight]:
@@ -145,13 +150,25 @@ class Traffic(DataFrameMixin, GeographyMixin):
         return None
 
     # --- Easy work ---
-    
+
     def at(self, time: timelike) -> "Traffic":
-        list_flights = [flight.at(start) for flight in self
-                        if flight.start <= time <= flight.stop]
-        return Traffic(pd.DataFrame
-                       .from_records(list_flights)
-                       .assign(timestamp=[s.name for s in list_flights]))
+        time = to_datetime(time)
+        list_flights = [
+            flight.at(time)
+            for flight in self
+            if flight.start <= time <= flight.stop
+        ]
+        return Traffic(
+            pd.DataFrame.from_records(list_flights).assign(
+                timestamp=[s.name for s in list_flights]
+            )
+        )
+
+    def before(self, ts: timelike) -> "Traffic":
+        return Traffic.from_flights(flight.before(ts) for flight in self)
+
+    def after(self, ts: timelike) -> "Traffic":
+        return Traffic.from_flights(flight.after(ts) for flight in self)
 
     def between(self, before: timelike, after: time_or_delta) -> "Traffic":
         return Traffic.from_flights(
@@ -181,25 +198,27 @@ class Traffic(DataFrameMixin, GeographyMixin):
 
     def filter(
         self,
-        features: Optional[Iterable[str]] = None,
-        kernels_size: Optional[Iterable[int]] = None,
         strategy: Callable[
             [pd.DataFrame], pd.DataFrame
         ] = lambda x: x.bfill().ffill(),
+        **kwargs,
     ) -> "Traffic":
         return Traffic.from_flights(
-            flight.filter(features, kernels_size, strategy) for flight in self
+            flight.filter(strategy, **kwargs) for flight in self
         )
 
-    def plot(self, ax: GeoAxesSubplot, **kwargs) -> None:
+    def plot(
+        self, ax: GeoAxesSubplot, nb_flights: Optional[int] = None, **kwargs
+    ) -> None:
         params: Dict[str, Any] = {}
         if sum(1 for _ in zip(range(8), self)) == 8:
             params["color"] = "#aaaaaa"
             params["linewidth"] = 1
             params["alpha"] = .8
             kwargs = {**params, **kwargs}  # precedence of kwargs over params
-        for flight in self:
-            flight.plot(ax, **kwargs)
+        for i, flight in enumerate(self):
+            if nb_flights is None or i < nb_flights:
+                flight.plot(ax, **kwargs)
 
     # --- Real work ---
 
