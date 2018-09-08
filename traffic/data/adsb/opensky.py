@@ -87,7 +87,9 @@ class OpenSky(object):
             file.unlink()
 
     @staticmethod
-    def _format_dataframe(df: pd.DataFrame, nautical_units=True) -> pd.DataFrame:
+    def _format_dataframe(
+        df: pd.DataFrame, nautical_units=True
+    ) -> pd.DataFrame:
 
         df.callsign = df.callsign.str.strip()
 
@@ -129,7 +131,9 @@ class OpenSky(object):
             b = self.shell.recv(256)
             total += b.decode()
 
-    def _impala(self, request: str, cached: bool = True) -> Optional[pd.DataFrame]:
+    def _impala(
+        self, request: str, cached: bool = True
+    ) -> Optional[pd.DataFrame]:
 
         digest = hashlib.md5(request.encode("utf8")).hexdigest()
         cachename = self.cache_dir / digest
@@ -235,7 +239,8 @@ class OpenSky(object):
         for bt, at, bh, ah in progressbar(sequence):
 
             logging.info(
-                f"Sending request between time {bt} and {at} " f"and hour {bh} and {ah}"
+                f"Sending request between time {bt} and {at} "
+                f"and hour {bh} and {ah}"
             )
 
             request = self.basic_request.format(
@@ -353,19 +358,27 @@ class OpenSky(object):
         return df
 
     def online_aircraft(self, own=False) -> pd.DataFrame:
-        what = "own" if (own and self.username != "" and self.password != "") else "all"
+        what = (
+            "own"
+            if (own and self.username != "" and self.password != "")
+            else "all"
+        )
         c = requests.get(
             f"https://opensky-network.org/api/states/{what}", auth=self.auth
         )
         if c.status_code != 200:
             raise ValueError(c.content.decode())
-        r = pd.DataFrame.from_records(c.json()["states"], columns=self._json_columns)
+        r = pd.DataFrame.from_records(
+            c.json()["states"], columns=self._json_columns
+        )
         r = r.drop(["origin_country", "spi", "sensors"], axis=1)
         r = r.dropna()
         return self._format_dataframe(r, nautical_units=True)
 
     def online_track(self, icao24: str) -> Flight:
-        c = requests.get(f"https://opensky-network.org/api/tracks/?icao24={icao24}")
+        c = requests.get(
+            f"https://opensky-network.org/api/tracks/?icao24={icao24}"
+        )
         if c.status_code != 200:
             raise ValueError(c.content.decode())
         json = c.json()
@@ -391,7 +404,9 @@ class OpenSky(object):
         )
 
     def get_route(self, callsign: str) -> Tuple[Airport, ...]:
-        c = requests.get(f"https://opensky-network.org/api/routes?callsign={callsign}")
+        c = requests.get(
+            f"https://opensky-network.org/api/routes?callsign={callsign}"
+        )
         if c.status_code == 404:
             raise ValueError("Unknown callsign")
         if c.status_code != 200:
