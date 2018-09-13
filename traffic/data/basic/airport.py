@@ -8,7 +8,7 @@ from typing import NamedTuple, Optional
 import requests
 from cartopy.crs import PlateCarree
 
-from ...core.mixins import ShapelyMixin
+from ...core.mixins import ShapelyMixin, PointMixin
 
 
 class AirportNamedTuple(NamedTuple):
@@ -70,6 +70,13 @@ class Airport(AirportNamedTuple, ShapelyMixin):
             **kwargs,
         }
         ax.add_geometries(list(self.osm_request()), **params)
+
+    @property
+    def point(self):
+        p = PointMixin()
+        p.latitude = self.latitude
+        p.longitude = self.longitude
+        return p
 
 
 class AirportParser(object):

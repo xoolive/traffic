@@ -1,4 +1,8 @@
+# fmt: off
+
+import json
 from collections import defaultdict
+from pathlib import Path
 from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set,
                     Tuple, Union)
 
@@ -11,6 +15,8 @@ from shapely.ops import cascaded_union
 
 from . import Flight, Traffic
 from .mixins import ShapelyMixin
+
+# fmt: on
 
 
 class ExtrudedPolygon(NamedTuple):
@@ -154,6 +160,12 @@ class Airspace(ShapelyMixin):
                 for layer in json["shapes"]
             ],
         )
+
+    @classmethod
+    def from_file(cls, filename: Union[Path, str]):
+        path = Path(filename)
+        with path.open('r') as fh:
+            return cls.from_json(json.load(fh))
 
 
 def cascaded_union_with_alt(polyalt: AirspaceList) -> AirspaceList:

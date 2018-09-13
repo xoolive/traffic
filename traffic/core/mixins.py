@@ -2,6 +2,8 @@ from functools import lru_cache, partial
 from pathlib import Path
 from typing import Tuple, Union
 
+from matplotlib.axes._subplots import Axes
+
 import pandas as pd
 import pyproj
 from shapely.geometry import Point, base
@@ -62,6 +64,9 @@ class DataFrameMixin(object):
 
     def groupby(self, *args, **kwargs):
         return self.data.groupby(*args, **kwargs)
+
+    def assign(self, *args, **kwargs):
+        return self.__class__(self.data.assign(*args, **kwargs))
 
 
 class ShapelyMixin(object):
@@ -180,3 +185,30 @@ class GeographyMixin(object):
         )
 
         return self.__class__(self.data.assign(x=x, y=y))
+
+
+class PointMixin(object):
+
+    latitude: float
+    longitude: float
+
+    def plot(
+        self, ax: Axes, text_kw=None, shift=dict(units="dots", x=15), **kwargs
+    ):
+
+        if text_kw is None:
+            text_kw = {}
+
+        if "projection" in ax.__dict__ and "transform" not in kwargs:
+            from cartopy.crs import PlateCarree
+            from matplotlib.transforms import offset_copy
+
+            kwargs["transform"] = PlateCarree()
+            geodetic_transform = PlateCarree()._as_mpl_transform(ax)
+            text_kw["transform"] = offset_copy(geodetic_transform, **shift)
+
+        if "color" not in kwargs:
+            kwargs["color"] = "black"
+
+        ax.scatter(self.longitude, self.latitude, **kwargs)
+        ax.text(self.longitude, self.latitude, **text_kw)

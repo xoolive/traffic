@@ -29,7 +29,7 @@ class _CZML_Params:
 def format_ts(ts: pd.Timestamp) -> str:
     return maya.MayaDT(  # type: ignore
         int(ts.to_pydatetime().timestamp())
-    ).rfc3339()[:-4]
+    ).rfc3339()
 
 
 def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
@@ -95,6 +95,12 @@ def to_czml(
     minimum_time: Optional[timelike] = None,
 ) -> None:
     """Generates a CesiumJS scenario file."""
+
+    if isinstance(traffic, Traffic):
+        if 'baro_altitude' in traffic.data.columns:
+            traffic = traffic.query('baro_altitude == baro_altitude')
+        elif 'altitude' in traffic.data.columns:
+            traffic = traffic.query('altitude == altitude')
 
     if minimum_time is not None:
         minimum_time = to_datetime(minimum_time)

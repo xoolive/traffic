@@ -3,10 +3,11 @@
 import logging
 import re
 from datetime import datetime, timedelta
-from typing import (Callable, Iterable, Iterator, NamedTuple, Optional, Set,
-                    Tuple, Union, cast)
+from typing import (Callable, Iterable, Iterator, List, NamedTuple, Optional,
+                    Set, Tuple, Union, cast)
 
 import numpy as np
+from matplotlib.axes._subplots import Axes
 
 import pandas as pd
 import scipy.signal
@@ -16,7 +17,7 @@ from shapely.geometry import LineString, base
 from ..core.time import time_or_delta, timelike, to_datetime
 from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
                        guess_airport)
-from .mixins import DataFrameMixin, GeographyMixin, ShapelyMixin
+from .mixins import DataFrameMixin, GeographyMixin, PointMixin, ShapelyMixin
 
 # fmt: on
 
@@ -418,6 +419,41 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
         return self.__class__(strategy(new_data))
 
+    def distance(self, other: "Flight") -> pd.DataFrame:
+
+        from geodesy.wgs84 import distance as geo_distance
+
+        start = max(self.airborne().start, other.airborne().start)
+        stop = min(self.airborne().stop, other.airborne().stop)
+        f1, f2 = (
+            self.between(start, stop).resample("1s"),
+            other.between(start, stop).resample("1s"),
+        )
+
+        cols = ["timestamp", "latitude", "longitude", "altitude"]
+        table = (
+            f1.data[cols]
+            .rename(columns={"baro_altitude": "altitude"})
+            .merge(
+                f2.data[cols].rename(columns={"baro_altitude": "altitude"}),
+                on="timestamp",
+            )
+        )
+
+        return table.assign(
+            timestamp=lambda df: df.timestamp.dt.tz_localize(
+                datetime.now().astimezone().tzinfo
+            ).dt.tz_convert("utc"),
+            d_horz=geo_distance(
+                table.latitude_x,
+                table.longitude_x,
+                table.latitude_y,
+                table.longitude_y,
+            )
+            / 1852,
+            d_vert=(table.altitude_x - table.altitude_y).abs(),
+        )
+
     # -- Interpolation and resampling --
 
     def split(self, value: int = 10, unit: str = "m") -> Iterator["Flight"]:
@@ -429,39 +465,27 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             yield self.__class__(data)
 
     def resample(self, rule: str = "1s") -> "Flight":
-        """Resamples a Flight at a one point per second rate. """
+        """Resamples a Flight at a one point per second rate."""
         data = (
             self.data.assign(start=self.start, stop=self.stop)
             .set_index("timestamp")
             .resample(rule)
+            .min()
             .interpolate()
             .reset_index()
             .fillna(method="pad")
         )
         return self.__class__(data)
 
+    def as_sample(self, nb_points: int) -> 'Flight':
+        data = self.data.set_index("timestamp").asfreq(
+            (self.stop - self.start) / (nb_points - 1), method="nearest"
+        )
+        return self.__class__(data)
+
     def at(self, time: timelike) -> pd.core.series.Series:
-        class Position(pd.core.series.Series):
-            def plot(self, ax, text_kw=None, **kwargs):
-
-                if text_kw is None:
-                    text_kw = {}
-
-                if "projection" in ax.__dict__ and "transform" not in kwargs:
-                    from cartopy.crs import PlateCarree
-                    from matplotlib.transforms import offset_copy
-
-                    kwargs["transform"] = PlateCarree()
-                    geodetic_transform = PlateCarree()._as_mpl_transform(ax)
-                    text_kw["transform"] = offset_copy(
-                        geodetic_transform, units="dots", x=15
-                    )
-
-                if "color" not in kwargs:
-                    kwargs["color"] = "black"
-
-                ax.scatter(self.longitude, self.latitude, **kwargs)
-                ax.text(self.longitude, self.latitude, self.callsign, **text_kw)
+        class Position(PointMixin, pd.core.series.Series):
+            pass
 
         index = to_datetime(time)
         return Position(self.data.set_index("timestamp").loc[index])
@@ -539,3 +563,35 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             kwargs["transform"] = PlateCarree()
         if self.shape is not None:
             ax.plot(*self.shape.xy, **kwargs)
+
+    def plot_time(
+        self,
+        ax: Axes,
+        y: Union[str, List[str]],
+        secondary_y: Union[None, str, List[str]] = None,
+        **kwargs,
+    ) -> None:
+        if isinstance(y, str):
+            y = [y]
+        if isinstance(secondary_y, str):
+            secondary_y = [secondary_y]
+        if secondary_y is None:
+            secondary_y = []
+
+        for column in y:
+            kw = {
+                **kwargs,
+                **dict(
+                    y=column,
+                    secondary_y=column if column in secondary_y else "",
+                ),
+            }
+            (
+                self.data.query(f"{column} == {column}")
+                .assign(
+                    timestamp=lambda df: df.timestamp.dt.tz_localize(
+                        datetime.now().astimezone().tzinfo
+                    ).dt.tz_convert("utc")
+                )
+                .plot(ax=ax, x="timestamp", **kw)
+            )
