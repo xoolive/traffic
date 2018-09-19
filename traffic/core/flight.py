@@ -477,11 +477,51 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         )
         return self.__class__(data)
 
-    def as_sample(self, nb_points: int) -> 'Flight':
+    def as_sample(self, nb_points: int) -> "Flight":
         data = self.data.set_index("timestamp").asfreq(
             (self.stop - self.start) / (nb_points - 1), method="nearest"
         )
         return self.__class__(data)
+
+    def comet(b, **kwargs) -> "Flight":
+
+        import geodesy.wgs84 as geo
+
+        last_line = b.data.iloc[-1]
+        window = b.last(seconds=20)
+        delta = timedelta(**kwargs)
+
+        new_gs = window.data.ground_speed.mean()
+        new_vr = window.data.vertical_rate.mean()
+
+        new_lat, new_lon = geo.destination(
+            last_line.latitude,
+            last_line.longitude,
+            last_line.track,
+            new_gs * delta.total_seconds() * 1852 / 3600,
+        )
+
+        new_balt = last_line.baro_altitude + new_vr * delta.total_seconds() / 60
+        new_alt = last_line.altitude + new_vr * delta.total_seconds() / 60
+
+        return Flight(
+            pd.DataFrame.from_records(
+                [
+                    last_line,
+                    pd.Series(
+                        {
+                            "timestamp": last_line.timestamp + delta,
+                            "latitude": new_lat,
+                            "longitude": new_lon,
+                            "altitude": new_alt,
+                            "baro_altitude": new_balt,
+                            "groundspeed": new_gs,
+                            "vertical_rate": new_vr,
+                        }
+                    ),
+                ]
+            ).ffill()
+        )
 
     def at(self, time: timelike) -> pd.core.series.Series:
         class Position(PointMixin, pd.core.series.Series):
@@ -562,7 +602,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
             kwargs["transform"] = PlateCarree()
         if self.shape is not None:
-            ax.plot(*self.shape.xy, **kwargs)
+            return ax.plot(*self.shape.xy, **kwargs)
 
     def plot_time(
         self,

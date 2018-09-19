@@ -22,7 +22,7 @@ class Traffic(DataFrameMixin, GeographyMixin):
 
     @classmethod
     def from_flights(cls, flights: Iterable[Flight]):
-        return cls(pd.concat([f.data for f in flights]))
+        return cls(pd.concat([f.data for f in flights], sort=False))
 
     @classmethod
     def from_file(
@@ -64,7 +64,7 @@ class Traffic(DataFrameMixin, GeographyMixin):
         # useful for compatibility with sum() function
         if other == 0:
             return self
-        return self.__class__(pd.concat([self.data, other.data]))
+        return self.__class__(pd.concat([self.data, other.data], sort=False))
 
     def __radd__(self, other) -> "Traffic":
         return self + other
