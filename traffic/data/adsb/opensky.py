@@ -310,9 +310,9 @@ class OpenSky(object):
             return None
 
         if return_flight:
-            return Flight(pd.concat(cumul))
+            return Flight(pd.concat(cumul, sort=True))
 
-        return Traffic(pd.concat(cumul))
+        return Traffic(pd.concat(cumul, sort=True))
 
     def sensors(
         self,
@@ -397,7 +397,7 @@ class OpenSky(object):
             )
             .drop(columns="_")
             .assign(
-                timestamp=df.timestamp.apply(datetime.fromtimestamp),
+                timestamp=lambda df: df.timestamp.apply(datetime.fromtimestamp),
                 icao24=json["icao24"],
                 callsign=json["callsign"],
             )
@@ -412,6 +412,7 @@ class OpenSky(object):
         if c.status_code != 200:
             raise ValueError(c.content.decode())
         json = c.json()
+        from traffic.data import airports
         return tuple(airports[a] for a in json["route"])
 
     def at_airport(
