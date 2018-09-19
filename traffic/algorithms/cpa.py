@@ -7,7 +7,7 @@ import numpy as np
 
 import pandas as pd
 from scipy.spatial.distance import pdist, squareform
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 from ..core import Traffic
 from ..core.time import round_time

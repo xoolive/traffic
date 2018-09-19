@@ -9,6 +9,7 @@ from typing import (Callable, Iterable, Iterator, List, NamedTuple, Optional,
 import numpy as np
 from matplotlib.axes._subplots import Axes
 
+import geodesy.wgs84 as geo
 import pandas as pd
 import scipy.signal
 from cartopy.mpl.geoaxes import GeoAxesSubplot
@@ -421,8 +422,6 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     def distance(self, other: "Flight") -> pd.DataFrame:
 
-        from geodesy.wgs84 import distance as geo_distance
-
         start = max(self.airborne().start, other.airborne().start)
         stop = min(self.airborne().stop, other.airborne().stop)
         f1, f2 = (
@@ -444,7 +443,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             timestamp=lambda df: df.timestamp.dt.tz_localize(
                 datetime.now().astimezone().tzinfo
             ).dt.tz_convert("utc"),
-            d_horz=geo_distance(
+            d_horz=geo.distance(
                 table.latitude_x,
                 table.longitude_x,
                 table.latitude_y,
@@ -484,8 +483,6 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return self.__class__(data)
 
     def comet(b, **kwargs) -> "Flight":
-
-        import geodesy.wgs84 as geo
 
         last_line = b.data.iloc[-1]
         window = b.last(seconds=20)

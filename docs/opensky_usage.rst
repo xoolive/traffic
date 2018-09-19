@@ -280,15 +280,11 @@ trajectory length.
 
 
 You can also access the history database from OpenSky through their `Impala
-<https://opensky-network.org/impala-guide>`__ shell. The API provided here
-(check the documentation for the function) lets you pass a progressbar as an
-argument. Check `tqdm <https://github.com/tqdm/tqdm>`__ for more details.
+<https://opensky-network.org/impala-guide>`__ shell.
 
 .. code:: python
 
-    from tqdm import tqdm
-    flight = opensky.history("2017-02-05", callsign="EZY158T",
-                             progressbar=tqdm)
+    flight = opensky.history("2017-02-05", callsign="EZY158T")
     
     flight
 

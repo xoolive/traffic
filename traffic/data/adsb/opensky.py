@@ -9,6 +9,7 @@ from typing import Any, Callable, Iterable, Optional, Tuple, Union, cast
 import pandas as pd
 import paramiko
 import requests
+from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
 from ...core.time import round_time, split_times, timelike, to_datetime
@@ -196,6 +197,9 @@ class OpenSky(object):
             after = to_datetime(after)
         else:
             after = before + timedelta(days=1)
+
+        if progressbar == iter and after - before > timedelta(hours=1):
+            progressbar = tqdm
 
         if isinstance(serials, Iterable):
             other_tables += ", state_vectors_data4.serials s "
