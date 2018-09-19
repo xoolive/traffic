@@ -38,7 +38,7 @@ setup(
         "maya",
         "appdirs",
         "paramiko",
-        "tqdm>=4.24",
+        "tqdm>=4.26",
         "cartotools==1.0",
     ],
     dependency_links=[
