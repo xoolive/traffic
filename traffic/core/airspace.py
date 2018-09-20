@@ -14,7 +14,7 @@ from shapely.geometry import Polygon, base, mapping, shape
 from shapely.ops import cascaded_union
 
 from . import Flight, Traffic
-from .mixins import ShapelyMixin
+from .mixins import ShapelyMixin, PointMixin
 
 # fmt: on
 
@@ -110,6 +110,12 @@ class Airspace(ShapelyMixin):
             ax.add_patch(MplPolygon(list(flat.exterior.coords), **kwargs))
 
     @property
+    def point(self) -> PointMixin:
+        p = PointMixin()
+        p.longitude, p.latitude = list(self.centroid.coords)[0]
+        return p
+
+    @property
     def components(self) -> Set[AirspaceInfo]:
         return components[self.name]
 
@@ -131,6 +137,20 @@ class Airspace(ShapelyMixin):
                     upper_layer[j - 2 : j, :],  # noqa: E203
                 ]
             )
+
+    def above(self, level: int) -> "Airspace":
+        return Airspace(
+            self.name,
+            list(c for c in self.elements if c.upper >= level),
+            type_=self.type
+        )
+
+    def below(self, level: int) -> "Airspace":
+        return Airspace(
+            self.name,
+            list(c for c in self.elements if c.lower <= level),
+            type_=self.type
+        )
 
     def export_json(self) -> Dict[str, Any]:
         export: Dict[str, Any] = {"name": self.name, "type": self.type}
