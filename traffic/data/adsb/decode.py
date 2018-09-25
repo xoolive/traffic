@@ -1,4 +1,5 @@
 # fmt: off
+
 import os
 import socket
 import threading
@@ -12,9 +13,10 @@ from typing import (Any, Dict, Iterable, Iterator, List, Optional, TextIO,
 import pandas as pd
 import pyModeS as pms
 from tqdm.autonotebook import tqdm
-from traffic.core import Flight, Traffic
-from traffic.data import airports
-from traffic.data.basic.airport import Airport
+
+from ...core import Flight, Traffic
+from ...data import airports
+from ...data.basic.airport import Airport
 
 # fmt: on
 
