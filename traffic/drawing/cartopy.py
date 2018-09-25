@@ -1,11 +1,14 @@
 try:
     from cartotools.crs import *  # noqa: F401 F403
     from cartotools.osm import location
+    from cartotools.osm.nominatim import Nominatim
+    cartotools = True
 except ImportError:
     # cartotools provides a few more basic projections
     from cartopy.crs import *  # noqa: F401 F403
     # Basic version of the complete cached requests included in cartotools
     from .location import location  # noqa: F401
+    cartotools = False
 
 from cartopy.feature import NaturalEarthFeature
 from cartopy.mpl.geoaxes import GeoAxesSubplot
@@ -68,6 +71,8 @@ GeoAxesSubplot.set_default_extent = _set_default_extent
 
 def _set_extent(self, shape):
     if isinstance(shape, ShapelyMixin):
+        return self._set_extent(shape.extent)
+    if cartotools and isinstance(shape, Nominatim):
         return self._set_extent(shape.extent)
     self._set_extent(shape)
 
