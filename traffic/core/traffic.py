@@ -22,7 +22,10 @@ class Traffic(DataFrameMixin, GeographyMixin):
 
     @classmethod
     def from_flights(cls, flights: Iterable[Flight]):
-        return cls(pd.concat([f.data for f in flights], sort=False))
+        cumul = [f.data for f in flights if f is not None]
+        if len(cumul) == 0:
+            return None
+        return cls(pd.concat(cumul, sort=False))
 
     @classmethod
     def from_file(

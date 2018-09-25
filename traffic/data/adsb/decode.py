@@ -1,3 +1,4 @@
+# fmt: off
 import os
 import socket
 import threading
@@ -5,18 +6,8 @@ from collections import UserDict
 from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 from pathlib import Path
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    TextIO,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, TextIO,
+                    Tuple, Union, cast)
 
 import pandas as pd
 import pyModeS as pms
@@ -25,11 +16,29 @@ from traffic.core import Flight, Traffic
 from traffic.data import airports
 from traffic.data.basic.airport import Airport
 
+# fmt: on
+
+
+class StoppableThread(threading.Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the to_be_stopped() condition."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._stop_event = threading.Event()
+
+    def stop(self):
+        self._stop_event.set()
+
+    def to_be_stopped(self):
+        return self._stop_event.is_set()
+
 
 class Aircraft(object):
     def __init__(self, icao24: str, lat0: float, lon0: float) -> None:
         self.icao24 = icao24
         self._callsign: Optional[str] = None
+        self._flight: Optional[Flight] = None
         self.cumul: List[Dict] = []
 
         self.t0: Optional[datetime] = None
@@ -48,6 +57,30 @@ class Aircraft(object):
         self.lat0: float = lat0
         self.lon0: float = lon0
 
+        self.lock = threading.Lock()
+
+    @property
+    def flight(self) -> Optional[Flight]:
+        with self.lock:  # access then clear not thread-safe, hence the lock
+            df = pd.DataFrame.from_records(self.cumul)
+            self.cumul.clear()
+
+        if self._flight is not None:
+            df = pd.concat([self._flight.data, df], sort=False)
+
+        if len(df) == 0:
+            return None
+
+        self._flight = Flight(
+            df.assign(
+                callsign=df.callsign.replace("", None)
+                .fillna(method="ffill")
+                .fillna(method="bfill")
+            )
+        )
+
+        return self._flight
+
     @property
     def callsign(self):
         return self._callsign
@@ -59,9 +92,10 @@ class Aircraft(object):
         if callsign == "":
             return
         self._callsign = callsign
-        self.cumul.append(
-            dict(timestamp=t, icao24=self.icao24, callsign=self._callsign)
-        )
+        with self.lock:
+            self.cumul.append(
+                dict(timestamp=t, icao24=self.icao24, callsign=self._callsign)
+            )
 
     @property
     def speed(self):
@@ -83,15 +117,16 @@ class Aircraft(object):
         self.spd = spd
         self.trk = trk
 
-        self.cumul.append(
-            dict(
-                timestamp=t,
-                icao24=self.icao24,
-                groundspeed=spd,
-                track_angle=trk,
-                vertical_speed=roc,
+        with self.lock:
+            self.cumul.append(
+                dict(
+                    timestamp=t,
+                    icao24=self.icao24,
+                    groundspeed=spd,
+                    track_angle=trk,
+                    vertical_speed=roc,
+                )
             )
-        )
 
     @property
     def position(self):
@@ -120,16 +155,17 @@ class Aircraft(object):
             self.lat, self.lon = latlon
             self.alt = pms.adsb.altitude(msg)
 
-            self.cumul.append(
-                dict(
-                    timestamp=t,
-                    icao24=self.icao24,
-                    latitude=self.lat,
-                    longitude=self.lon,
-                    altitude=self.alt,
-                    onground=False,
+            with self.lock:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        latitude=self.lat,
+                        longitude=self.lon,
+                        altitude=self.alt,
+                        onground=False,
+                    )
                 )
-            )
 
     @property
     def surface(self):
@@ -141,15 +177,16 @@ class Aircraft(object):
         self.lat, self.lon = pms.adsb.surface_position_with_ref(
             msg, self.lat0, self.lon0
         )
-        self.cumul.append(
-            dict(
-                timestamp=t,
-                icao24=self.icao24,
-                latitude=self.lat,
-                longitude=self.lon,
-                onground=True,
+        with self.lock:
+            self.cumul.append(
+                dict(
+                    timestamp=t,
+                    icao24=self.icao24,
+                    latitude=self.lat,
+                    longitude=self.lon,
+                    onground=True,
+                )
             )
-        )
 
     @property
     def bds20(self):
@@ -162,9 +199,10 @@ class Aircraft(object):
         if callsign == "":
             return
         self._callsign = callsign
-        self.cumul.append(
-            dict(timestamp=t, icao24=self.icao24, callsign=self._callsign)
-        )
+        with self.lock:
+            self.cumul.append(
+                dict(timestamp=t, icao24=self.icao24, callsign=self._callsign)
+            )
 
     @property
     def bds40(self):
@@ -173,15 +211,16 @@ class Aircraft(object):
     @bds40.setter
     def bds40(self, args):
         t, msg = args
-        self.cumul.append(
-            dict(
-                timestamp=t,
-                icao24=self.icao24,
-                alt_fms=pms.commb.alt40fms(msg),
-                alt_mcp=pms.commb.alt40mcp(msg),
-                p_baro=pms.commb.p40baro(msg),
+        with self.lock:
+            self.cumul.append(
+                dict(
+                    timestamp=t,
+                    icao24=self.icao24,
+                    alt_fms=pms.commb.alt40fms(msg),
+                    alt_mcp=pms.commb.alt40mcp(msg),
+                    p_baro=pms.commb.p40baro(msg),
+                )
             )
-        )
 
     @property
     def bds44(self):
@@ -192,17 +231,18 @@ class Aircraft(object):
         t, msg = args
         wind = pms.commb.wind44(msg)
         wind = wind if wind is not None else (None, None)
-        self.cumul.append(
-            dict(
-                timestamp=t,
-                icao24=self.icao24,
-                humidity=pms.commb.hum44(msg),
-                pression=pms.commb.p44(msg),
-                temperature=pms.commb.temp44(msg),
-                windspeed=wind[0],
-                winddirection=wind[1],
+        with self.lock:
+            self.cumul.append(
+                dict(
+                    timestamp=t,
+                    icao24=self.icao24,
+                    humidity=pms.commb.hum44(msg),
+                    pression=pms.commb.p44(msg),
+                    temperature=pms.commb.temp44(msg),
+                    windspeed=wind[0],
+                    winddirection=wind[1],
+                )
             )
-        )
 
     @property
     def bds50(self):
@@ -211,17 +251,18 @@ class Aircraft(object):
     @bds50.setter
     def bds50(self, args):
         t, msg = args
-        self.cumul.append(
-            dict(
-                timestamp=t,
-                icao24=self.icao24,
-                gs=pms.commb.gs50(msg),
-                roll=pms.commb.roll50(msg),
-                tas=pms.commb.tas50(msg),
-                track=pms.commb.trk50(msg),
-                track_rate=pms.commb.rtrk50(msg),
+        with self.lock:
+            self.cumul.append(
+                dict(
+                    timestamp=t,
+                    icao24=self.icao24,
+                    gs=pms.commb.gs50(msg),
+                    roll=pms.commb.roll50(msg),
+                    tas=pms.commb.tas50(msg),
+                    track=pms.commb.trk50(msg),
+                    track_rate=pms.commb.rtrk50(msg),
+                )
             )
-        )
 
     @property
     def bds60(self):
@@ -230,17 +271,18 @@ class Aircraft(object):
     @bds60.setter
     def bds60(self, args):
         t, msg = args
-        self.cumul.append(
-            dict(
-                timestamp=t,
-                icao24=self.icao24,
-                ias=pms.commb.ias60(msg),
-                heading=pms.commb.hdg60(msg),
-                mach=pms.commb.mach60(msg),
-                vrbaro=pms.commb.vr60baro(msg),
-                vrins=pms.commb.vr60ins(msg),
+        with self.lock:
+            self.cumul.append(
+                dict(
+                    timestamp=t,
+                    icao24=self.icao24,
+                    ias=pms.commb.ias60(msg),
+                    heading=pms.commb.hdg60(msg),
+                    mach=pms.commb.mach60(msg),
+                    vrbaro=pms.commb.vr60baro(msg),
+                    vrins=pms.commb.vr60ins(msg),
+                )
             )
-        )
 
 
 class AircraftDict(UserDict):
@@ -261,7 +303,7 @@ class AircraftDict(UserDict):
 
 
 class Decoder:
-    thread: Optional[threading.Thread]
+    thread: Optional[StoppableThread]
 
     def __init__(
         self, reference: Union[str, Airport, Tuple[float, float]]
@@ -316,6 +358,9 @@ class Decoder:
 
         def next_msg(s: Any) -> Iterator[str]:
             while True:
+                if decoder.thread is None or decoder.thread.to_be_stopped():
+                    s.close()
+                    return
                 data = s.recv(2048)
                 while len(data) > 10:
                     if data[1] == 0x33:
@@ -361,13 +406,14 @@ class Decoder:
 
                 decoder.process(now, msg[18:])
 
-        decoder.thread = threading.Thread(target=decode)
+        decoder.thread = StoppableThread(target=decode)
         decoder.thread.start()
         return decoder
 
     def stop(self):
         if self.thread is not None and self.thread.is_alive():
             self.thread.stop()
+            self.thread.join()
 
     def __del__(self):
         self.stop()
@@ -526,12 +572,16 @@ class Decoder:
                 dict(
                     icao24=key,
                     callsign=ac.callsign,
-                    length=len(ac.cumul),
+                    length=(
+                        (len(ac.cumul) + len(ac._flight))
+                        if ac._flight is not None
+                        else len(ac.cumul)
+                    ),
                     position=ac.lat is not None,
                     data=ac,
                 )
                 for (key, ac) in self.acs.items()
-                if len(ac.cumul) > 0 and ac.callsign is not None
+                if ac.callsign is not None
             ),
             key=itemgetter("length"),
             reverse=True,
@@ -544,11 +594,4 @@ class Decoder:
         )
 
     def __getitem__(self, icao):
-        df = pd.DataFrame.from_records(self.acs[icao].cumul)
-        return Flight(
-            df.assign(
-                callsign=df.callsign.replace("", None)
-                .fillna(method="ffill")
-                .fillna(method="bfill")
-            )
-        )
+        return self.acs[icao].flight
