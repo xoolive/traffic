@@ -436,7 +436,7 @@ class Decoder:
         reference: Union[str, Airport, Tuple[float, float]],
     ):
         now = datetime.now(timezone.utc)
-        filename = now.strftime("~/ADSB_EHS_RAW_%Y%m%d_host.csv")
+        filename = now.strftime(f"~/ADSB_EHS_RAW_%Y%m%d_{host}.csv")
         today = os.path.expanduser(filename)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
