@@ -320,6 +320,19 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
     def shape(self) -> Optional[LineString]:
         return self.linestring
 
+    @property
+    def point(self) -> Optional[PointMixin]:
+        positions = self.data.query("latitude == latitude")
+        if len(positions) > 0:
+            x = positions.iloc[-1]
+            point = PointMixin()
+            point.latitude = x.latitude
+            point.longitude = x.longitude
+            point.altitude = x.altitude
+            point.timestamp = x.timestamp
+            return point
+        return None
+
     def airborne(self) -> "Flight":
         """Returns the airborne part of the Flight.
 
@@ -615,6 +628,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         if secondary_y is None:
             secondary_y = []
 
+        localized = self.data.timestamp.dt.tz is not None
         for column in y:
             kw = {
                 **kwargs,
@@ -623,12 +637,19 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
                     secondary_y=column if column in secondary_y else "",
                 ),
             }
-            (
-                self.data.query(f"{column} == {column}")
-                .assign(
-                    timestamp=lambda df: df.timestamp.dt.tz_localize(
-                        datetime.now().astimezone().tzinfo
-                    ).dt.tz_convert("utc")
+            subtab = self.data.query(f"{column} == {column}")
+
+            if localized:
+                (
+                    subtab.assign(
+                        timestamp=lambda df: df.timestamp.dt.tz_convert("utc")
+                    ).plot(ax=ax, x="timestamp", **kw)
                 )
-                .plot(ax=ax, x="timestamp", **kw)
-            )
+            else:
+                (
+                    subtab.assign(
+                        timestamp=lambda df: df.timestamp.dt.tz_localize(
+                            datetime.now().astimezone().tzinfo
+                        ).dt.tz_convert("utc")
+                    ).plot(ax=ax, x="timestamp", **kw)
+                )
