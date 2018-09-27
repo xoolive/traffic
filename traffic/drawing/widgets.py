@@ -2,53 +2,49 @@
 
 import re
 from datetime import datetime
+from typing import Any, Dict, Union
 
 import matplotlib.pyplot as plt
 from IPython import get_ipython
 from IPython.display import clear_output
 
-from ipywidgets import (Button, HBox, SelectionRangeSlider, SelectMultiple,
-                        Text, VBox)
+from ipywidgets import (Button, Dropdown, HBox, SelectionRangeSlider,
+                        SelectMultiple, Text, VBox)
 
-from .cartopy import EuroPP, countries, location, rivers  # noqa
+from . import *  # noqa: F401, F403, type: ignore
 from ..core import Traffic
-from ..data import airac
+from ..data import airac, airports
+from ..drawing import (EuroPP, PlateCarree, Projection,  # type: ignore
+                       countries, location, rivers)
 
 # fmt: on
 
 
 class TrafficWidget(object):
-    def __init__(self, traffic: Traffic) -> None:
+    def __init__(self, traffic: Traffic, projection=EuroPP()) -> None:
         ipython = get_ipython()
         ipython.magic("matplotlib ipympl")
 
         self.traffic = traffic
+        self.create_map(projection)
 
-        with plt.style.context("traffic"):
-            self.ax = plt.axes(projection=EuroPP())
-            self.ax.clear()
-            self.ax.add_feature(countries())
-            self.ax.add_feature(rivers())
+        self.trajectories: Dict[str, Any] = dict()
+        self.points: Dict[str, Any] = dict()
 
-            self.ax.figure.set_tight_layout(True)
-            self.ax.figure.set_size_inches((6, 6))
-            self.ax.background_patch.set_visible(False)
-            self.ax.outline_patch.set_visible(False)
-            self.ax.format_coord = lambda x, y: ""
-            self.ax.set_global()
+        self.projection = Dropdown(options=["EuroPP", "Lambert93", "Mercator"])
+        self.projection.observe(self.on_projection_change)
 
-        self.trajectories = dict()
-        self.points = dict()
-
-        self.identifier_input = Text()
+        self.identifier_input = Text(description="Callsign/ID")
         self.identifier_input.observe(self.on_id_input)
 
         self.identifier_select = SelectMultiple(
-            options=sorted(self.traffic.callsigns), value=[], rows=20
+            options=sorted(self.traffic.callsigns),  # type: ignore
+            value=[],
+            rows=20,
         )
         self.identifier_select.observe(self.on_id_change)
 
-        self.area_input = Text()
+        self.area_input = Text(description="Area")
         self.area_input.observe(self.on_area_input)
 
         self.extent_button = Button(description="Extent")
@@ -56,6 +52,12 @@ class TrafficWidget(object):
 
         self.plot_button = Button(description="Plot")
         self.plot_button.on_click(self.on_plot_button)
+
+        self.clear_button = Button(description="Reset")
+        self.clear_button.on_click(self.on_clear_button)
+
+        self.plot_airport = Button(description="Airport")
+        self.plot_airport.on_click(self.on_plot_airport)
 
         self.area_select = SelectMultiple(
             options=[], value=[], rows=3, disabled=False
@@ -65,7 +67,7 @@ class TrafficWidget(object):
         self.altitude_select = SelectionRangeSlider(
             options=[0, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000],
             index=(0, 8),
-            description="altitude",
+            description="Altitude",
             disabled=False,
             continuous_update=False,
         )
@@ -90,7 +92,7 @@ class TrafficWidget(object):
         self.time_slider = SelectionRangeSlider(
             options=options,
             index=(0, 99),
-            description="date",
+            description="Date",
             continuous_update=False,
         )
         self.time_slider.observe(self.on_time_select)
@@ -100,12 +102,14 @@ class TrafficWidget(object):
                 self.ax.figure.canvas,
                 VBox(
                     [
-                        self.area_input,
+                        self.projection,
                         HBox([self.extent_button, self.plot_button]),
+                        HBox([self.plot_airport, self.clear_button]),
+                        self.area_input,
                         self.area_select,
-                        self.identifier_input,
                         self.time_slider,
                         self.altitude_select,
+                        self.identifier_input,
                         self.identifier_select,
                     ]
                 ),
@@ -114,7 +118,43 @@ class TrafficWidget(object):
 
     def _ipython_display_(self):
         clear_output()
+        self.ax.figure.canvas.set_window_title("")
         return self._main_elt._ipython_display_()
+
+    def create_map(
+        self, projection: Union[str, Projection] = "EuroPP()"  # type: ignore
+    ):
+        if isinstance(projection, str):
+            if not projection.endswith("()"):
+                projection = projection + "()"
+            projection = eval(projection)
+
+        self.projection = projection
+
+        with plt.style.context("traffic"):
+            self.ax = plt.axes(projection=projection)
+            self.ax.clear()
+            self.ax.add_feature(countries())
+            if projection.__class__.__name__.split(".")[-1] in [
+                "EuroPP",
+                "Lambert93",
+            ]:
+                self.ax.add_feature(rivers())
+
+            self.ax.figure.set_tight_layout(True)
+            self.ax.figure.set_size_inches((6, 6))
+            self.ax.background_patch.set_visible(False)
+            self.ax.outline_patch.set_visible(False)
+            self.ax.format_coord = lambda x, y: ""
+            self.ax.set_global()
+
+    def on_projection_change(self, elt):
+        self._debug = elt
+        projection_idx = elt["new"]["index"]
+        self.create_map(elt["owner"].options[projection_idx])
+
+    def on_clear_button(self, elt):
+        self.create_map(self.projection)
 
     def on_area_input(self, elt):
         search_text = elt["new"]["value"]
@@ -152,6 +192,18 @@ class TrafficWidget(object):
             )
         else:
             airac[self.area_select.value[0]].plot(self.ax, color="crimson")
+
+    def on_plot_airport(self, elt):
+        if len(self.area_input.value) == 0:
+            from cartotools.osm import request, tags
+
+            west, east, south, north = self.ax.get_extent(crs=PlateCarree())
+            if abs(east - west) > 1 or abs(north - south) > 1:
+                # that would be a too big request
+                return
+            request((west, south, east, north), **tags.airport).plot(self.ax)
+        else:
+            airports[self.area_input.value].plot(self.ax)
 
     def on_id_change(self, change):
         if change["name"] != "value":
