@@ -2,12 +2,15 @@ try:
     from cartotools.crs import *  # noqa: F401 F403
     from cartotools.osm import location
     from cartotools.osm.nominatim import Nominatim
+
     cartotools = True
 except ImportError:
     # cartotools provides a few more basic projections
     from cartopy.crs import *  # noqa: F401 F403
+
     # Basic version of the complete cached requests included in cartotools
     from .location import location  # noqa: F401
+
     cartotools = False
 
 from cartopy.feature import NaturalEarthFeature
@@ -17,46 +20,54 @@ from ..core.mixins import ShapelyMixin
 
 
 def countries(**kwargs):
-    params = {'category': 'cultural',
-              'name': 'admin_0_countries',
-              'scale': '10m',
-              'edgecolor': '#524c50',
-              'facecolor': 'none',
-              'alpha': .5,
-              **kwargs}
+    params = {
+        "category": "cultural",
+        "name": "admin_0_countries",
+        "scale": "10m",
+        "edgecolor": "#524c50",
+        "facecolor": "none",
+        "alpha": .5,
+        **kwargs,
+    }
     return NaturalEarthFeature(**params)
 
 
 def rivers(**kwargs):
-    params = {'category': 'physical',
-              'name': 'rivers_lake_centerlines',
-              'scale': '10m',
-              'edgecolor': '#226666',
-              'facecolor': 'none',
-              'alpha': .5,
-              **kwargs}
+    params = {
+        "category": "physical",
+        "name": "rivers_lake_centerlines",
+        "scale": "10m",
+        "edgecolor": "#226666",
+        "facecolor": "none",
+        "alpha": .5,
+        **kwargs,
+    }
     return NaturalEarthFeature(**params)
 
 
 def lakes(**kwargs):
-    params = {'category': 'physical',
-              'name': 'lakes',
-              'scale': '10m',
-              'edgecolor': '#226666',
-              'facecolor': '#226666',
-              'alpha': .2,
-              **kwargs}
+    params = {
+        "category": "physical",
+        "name": "lakes",
+        "scale": "10m",
+        "edgecolor": "#226666",
+        "facecolor": "#226666",
+        "alpha": .2,
+        **kwargs,
+    }
     return NaturalEarthFeature(**params)
 
 
 def ocean(**kwargs):
-    params = {'category': 'physical',
-              'name': 'ocean',
-              'scale': '10m',
-              'edgecolor': '#226666',
-              'facecolor': '#226666',
-              'alpha': .2,
-              **kwargs}
+    params = {
+        "category": "physical",
+        "name": "ocean",
+        "scale": "10m",
+        "edgecolor": "#226666",
+        "facecolor": "#226666",
+        "alpha": .2,
+        **kwargs,
+    }
     return NaturalEarthFeature(**params)
 
 

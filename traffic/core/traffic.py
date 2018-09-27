@@ -40,8 +40,9 @@ class Traffic(DataFrameMixin, GeographyMixin):
                     "lat": "latitude",
                     "lon": "longitude",
                     "velocity": "ground_speed",
-                    "heading": "track",
+                    "groundspeed": "ground_speed",
                     "vertrate": "vertical_rate",
+                    "roc": "vertical_rate",
                     "baroaltitude": "baro_altitude",
                     "geoaltitude": "altitude",
                     "time": "timestamp",
@@ -222,6 +223,12 @@ class Traffic(DataFrameMixin, GeographyMixin):
         for i, flight in enumerate(self):
             if nb_flights is None or i < nb_flights:
                 flight.plot(ax, **kwargs)
+
+    @property
+    def widget(self):
+        from ..drawing.widgets import TrafficWidget
+
+        return TrafficWidget(self)
 
     # --- Real work ---
 

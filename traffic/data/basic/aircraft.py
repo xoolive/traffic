@@ -39,7 +39,7 @@ class Aircraft(object):
         return table
 
     def stats(self, name: str) -> pd.DataFrame:
-        return self.operator(name).groupby(("mdl", "type"))[["icao"]].count()
+        return self.operator(name).groupby(["mdl", "type"])[["icao"]].count()
 
     def merge(self, t: Traffic) -> Traffic:
         return Traffic(
