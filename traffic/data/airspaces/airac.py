@@ -1,3 +1,5 @@
+# fmt: off
+
 import logging
 import operator
 import pickle
@@ -17,6 +19,8 @@ from ...core.airspace import components  # to be moved here TODO
 from ...core.airspace import (Airspace, AirspaceInfo, AirspaceList,
                               ExtrudedPolygon, cascaded_union_with_alt)
 from ...data.basic.airport import Airport
+
+# fmt: on
 
 
 class Point(NamedTuple):
@@ -46,10 +50,14 @@ class _Airport(NamedTuple):
         )
 
 
+def _re_match_ignorecase(x, y):
+    return re.match(x, y, re.IGNORECASE)
+
+
 class AirspaceParser(object):
 
     ns = {
-        'adrext': 'http://www.aixm.aero/schema/5.1/extensions/EUR/ADR',
+        "adrext": "http://www.aixm.aero/schema/5.1/extensions/EUR/ADR",
         "adrmsg": "http://www.eurocontrol.int/cfmu/b2b/ADRMessage",
         "aixm": "http://www.aixm.aero/schema/5.1",
         "gml": "http://www.opengis.net/gml/3.2",
@@ -87,7 +95,7 @@ class AirspaceParser(object):
             "Airspace.BASELINE",
             "DesignatedPoint.BASELINE",
             "Navaid.BASELINE",
-            "StandardInstrumentArrival.BASELINE"
+            "StandardInstrumentArrival.BASELINE",
         ]:
 
             if ~(self.airac_path / filename).exists():
@@ -165,12 +173,10 @@ class AirspaceParser(object):
             assert floats.text is not None
 
             designator = point.find(
-                "aixm:timeSlice/aixm:NavaidTimeSlice/aixm:designator",
-                self.ns
+                "aixm:timeSlice/aixm:NavaidTimeSlice/aixm:designator", self.ns
             )
             type_ = point.find(
-                "aixm:timeSlice/aixm:NavaidTimeSlice/aixm:type",
-                self.ns
+                "aixm:timeSlice/aixm:NavaidTimeSlice/aixm:type", self.ns
             )
 
             name = designator.text if designator is not None else None
@@ -189,8 +195,9 @@ class AirspaceParser(object):
     def points(self, name: str) -> Iterator[Point]:
         if not self.initialized:
             self.init_cache()
-        return (point for point in self.all_points.values()
-                if point.name == name)
+        return (
+            point for point in self.all_points.values() if point.name == name
+        )
 
     def append_coords(self, lr, block_poly):
         coords: List[Tuple[float, ...]] = []
@@ -293,7 +300,9 @@ class AirspaceParser(object):
     def __getitem__(self, name: str) -> Optional[Airspace]:
         return next(self.search(name, operator.eq), None)
 
-    def search(self, name: str, cmp: Callable = re.match) -> Iterator[Airspace]:
+    def search(
+        self, name: str, cmp: Callable = _re_match_ignorecase
+    ) -> Iterator[Airspace]:
 
         if not self.initialized:
             self.init_cache()
@@ -333,7 +342,9 @@ class AirspaceParser(object):
                             RuntimeWarning,
                         )
 
-    def parse(self, pattern: str, cmp=re.match):
+    def parse(
+        self, pattern: str, cmp: Callable = _re_match_ignorecase
+    ) -> Iterator[AirspaceInfo]:
 
         if not self.initialized:
             self.init_cache()
@@ -369,18 +380,20 @@ class AirspaceParser(object):
         assert self.airac_path is not None
 
         a_tree = ElementTree.parse(
-            (self.airac_path / 'AirportHeliport.BASELINE').as_posix()
+            (self.airac_path / "AirportHeliport.BASELINE").as_posix()
         )
 
-        for elt in a_tree.findall("adrmsg:hasMember/aixm:AirportHeliport",
-                                  self.ns):
+        for elt in a_tree.findall(
+            "adrmsg:hasMember/aixm:AirportHeliport", self.ns
+        ):
 
             identifier = elt.find("gml:identifier", self.ns)
             assert identifier is not None
             assert identifier.text is not None
 
-            apt = elt.find("aixm:timeSlice/aixm:AirportHeliportTimeSlice",
-                           self.ns)
+            apt = elt.find(
+                "aixm:timeSlice/aixm:AirportHeliportTimeSlice", self.ns
+            )
             if apt is None:
                 continue
 
@@ -390,25 +403,34 @@ class AirspaceParser(object):
             typeElt = apt.find("aixm:controlType", self.ns)
             cityElt = apt.find("aixm:servedCity/aixm:City/aixm:name", self.ns)
             posElt = apt.find("aixm:ARP/aixm:ElevatedPoint/gml:pos", self.ns)
-            altElt = apt.find("aixm:ARP/aixm:ElevatedPoint/aixm:elevation",
-                              self.ns)
+            altElt = apt.find(
+                "aixm:ARP/aixm:ElevatedPoint/aixm:elevation", self.ns
+            )
 
-            if (posElt is None or posElt.text is None or altElt is None or
-                    altElt.text is None or icaoElt is None):
+            if (
+                posElt is None
+                or posElt.text is None
+                or altElt is None
+                or altElt.text is None
+                or icaoElt is None
+            ):
                 continue
 
             coords = tuple(float(x) for x in posElt.text.split())
 
-            yield (identifier.text, _Airport(
-                coords[0],
-                coords[1],
-                float(altElt.text),
-                iataElt.text if iataElt is not None else None,
-                icaoElt.text,
-                nameElt.text if nameElt is not None else None,
-                cityElt.text if cityElt is not None else None,
-                typeElt.text if typeElt is not None else None
-            ))
+            yield (
+                identifier.text,
+                _Airport(
+                    coords[0],
+                    coords[1],
+                    float(altElt.text),
+                    iataElt.text if iataElt is not None else None,
+                    icaoElt.text,
+                    nameElt.text if nameElt is not None else None,
+                    cityElt.text if cityElt is not None else None,
+                    typeElt.text if typeElt is not None else None,
+                ),
+            )
 
     def star(self, airport: Union[str, Airport]) -> Iterator[Tuple[Point, ...]]:
 
@@ -425,20 +447,21 @@ class AirspaceParser(object):
         }
 
         tree = ElementTree.parse(
-            (self.airac_path / 'StandardInstrumentArrival.BASELINE').as_posix()
+            (self.airac_path / "StandardInstrumentArrival.BASELINE").as_posix()
         )
 
-        for elt in tree.findall("adrmsg:hasMember/"
-                                "aixm:StandardInstrumentArrival",
-                                self.ns):
+        for elt in tree.findall(
+            "adrmsg:hasMember/" "aixm:StandardInstrumentArrival", self.ns
+        ):
 
             identifier = elt.find("gml:identifier", self.ns)
             assert identifier is not None
             assert identifier.text is not None
 
-            star = elt.find("aixm:timeSlice/"
-                            "aixm:StandardInstrumentArrivalTimeSlice",
-                            self.ns)
+            star = elt.find(
+                "aixm:timeSlice/" "aixm:StandardInstrumentArrivalTimeSlice",
+                self.ns,
+            )
 
             if star is None:
                 logging.warn("No aixm:StandardInstrumentArrivalTimeSlice found")
@@ -449,11 +472,13 @@ class AirspaceParser(object):
                 logging.warn("No aixm:airportHeliport found")
                 continue
 
-            airport_id = handle.attrib["{%s}href" % (self.ns['xlink'])]
+            airport_id = handle.attrib["{%s}href" % (self.ns["xlink"])]
             if airports_dict[airport_id.split(":")[2]].icao == airport:
-                points = star.find("aixm:extension/"
-                                   "adrext:StandardInstrumentArrivalExtension",
-                                   self.ns)
+                points = star.find(
+                    "aixm:extension/"
+                    "adrext:StandardInstrumentArrivalExtension",
+                    self.ns,
+                )
 
                 if points is None:
                     logging.warn(
@@ -463,21 +488,25 @@ class AirspaceParser(object):
 
                 segment: List[Point] = []
                 for p in points.getchildren():
-                    x = p.find("aixm:TerminalSegmentPoint/"
-                               "aixm:pointChoice_fixDesignatedPoint",
-                               self.ns)
+                    x = p.find(
+                        "aixm:TerminalSegmentPoint/"
+                        "aixm:pointChoice_fixDesignatedPoint",
+                        self.ns,
+                    )
 
                     if x is not None:
-                        x_id = x.attrib["{%s}href" % (self.ns['xlink'])]
-                        point = self.all_points[x_id.split(':')[2]]
-                        segment.append(point._replace(type=p.tag.split('}')[1]))
+                        x_id = x.attrib["{%s}href" % (self.ns["xlink"])]
+                        point = self.all_points[x_id.split(":")[2]]
+                        segment.append(point._replace(type=p.tag.split("}")[1]))
 
-                    x = p.find("aixm:TerminalSegmentPoint/"
-                               "aixm:pointChoice_navaidSystem",
-                               self.ns)
+                    x = p.find(
+                        "aixm:TerminalSegmentPoint/"
+                        "aixm:pointChoice_navaidSystem",
+                        self.ns,
+                    )
                     if x is not None:
-                        x_id = x.attrib["{%s}href" % (self.ns['xlink'])]
-                        point = self.all_points[x_id.split(':')[2]]
-                        segment.append(point._replace(type=p.tag.split('}')[1]))
+                        x_id = x.attrib["{%s}href" % (self.ns["xlink"])]
+                        point = self.all_points[x_id.split(":")[2]]
+                        segment.append(point._replace(type=p.tag.split("}")[1]))
 
                 yield tuple(segment)

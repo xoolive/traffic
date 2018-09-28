@@ -4,9 +4,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, Union
 
-import matplotlib.pyplot as plt
 from IPython import get_ipython
-from IPython.display import clear_output
 
 from ipywidgets import (Button, Dropdown, HBox, SelectionRangeSlider,
                         SelectMultiple, Text, VBox)
@@ -16,6 +14,8 @@ from ..core import Traffic
 from ..data import airac, airports
 from ..drawing import (EuroPP, PlateCarree, Projection,  # type: ignore
                        countries, location, rivers)
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
 # fmt: on
 
@@ -24,6 +24,11 @@ class TrafficWidget(object):
     def __init__(self, traffic: Traffic, projection=EuroPP()) -> None:
         ipython = get_ipython()
         ipython.magic("matplotlib ipympl")
+        from ipympl.backend_nbagg import FigureCanvasNbAgg, FigureManagerNbAgg
+
+        self.fig = Figure(figsize=(6, 6))
+        self.canvas = FigureCanvasNbAgg(self.fig)
+        self.manager = FigureManagerNbAgg(self.canvas, 0)
 
         self.traffic = traffic
         self.create_map(projection)
@@ -99,7 +104,7 @@ class TrafficWidget(object):
 
         self._main_elt = HBox(
             [
-                self.ax.figure.canvas,
+                self.canvas,
                 VBox(
                     [
                         self.projection,
@@ -117,9 +122,9 @@ class TrafficWidget(object):
         )
 
     def _ipython_display_(self):
-        clear_output()
-        self.ax.figure.canvas.set_window_title("")
-        return self._main_elt._ipython_display_()
+        self.canvas.draw_idle()
+        self._main_elt._ipython_display_()
+        self.canvas.set_window_title("")
 
     def create_map(
         self, projection: Union[str, Projection] = "EuroPP()"  # type: ignore
@@ -132,21 +137,23 @@ class TrafficWidget(object):
         self.projection = projection
 
         with plt.style.context("traffic"):
-            self.ax = plt.axes(projection=projection)
-            self.ax.clear()
+
+            self.fig.clear()
+            self.ax = self.fig.add_subplot(111, projection=self.projection)
             self.ax.add_feature(countries())
             if projection.__class__.__name__.split(".")[-1] in [
-                "EuroPP",
-                "Lambert93",
+                # "EuroPP",
+                "Lambert93"
             ]:
                 self.ax.add_feature(rivers())
 
-            self.ax.figure.set_tight_layout(True)
-            self.ax.figure.set_size_inches((6, 6))
+            self.fig.set_tight_layout(True)
             self.ax.background_patch.set_visible(False)
             self.ax.outline_patch.set_visible(False)
             self.ax.format_coord = lambda x, y: ""
             self.ax.set_global()
+
+        self.canvas.draw_idle()
 
     def on_projection_change(self, elt):
         self._debug = elt
@@ -158,7 +165,9 @@ class TrafficWidget(object):
 
     def on_area_input(self, elt):
         search_text = elt["new"]["value"]
-        if len(search_text) > 0:
+        if len(search_text) == 0:
+            self.area_select.options = list()
+        else:
             self.area_select.options = list(
                 x.name for x in airac.parse(search_text)
             )
@@ -167,6 +176,7 @@ class TrafficWidget(object):
         if elt["name"] != "value":
             return
         self.ax.set_extent(airac[elt["new"][0]])
+        self.canvas.draw_idle()
 
     def on_extent_button(self, elt):
         if len(self.area_select.value) == 0:
@@ -176,6 +186,7 @@ class TrafficWidget(object):
                 self.ax.set_extent(location(self.area_input.value))
         else:
             self.ax.set_extent(airac[self.area_select.value[0]])
+        self.canvas.draw_idle()
 
     def on_id_input(self, elt):
         # low, up = alt.value
@@ -192,6 +203,7 @@ class TrafficWidget(object):
             )
         else:
             airac[self.area_select.value[0]].plot(self.ax, color="crimson")
+        self.canvas.draw_idle()
 
     def on_plot_airport(self, elt):
         if len(self.area_input.value) == 0:
@@ -204,6 +216,7 @@ class TrafficWidget(object):
             request((west, south, east, north), **tags.airport).plot(self.ax)
         else:
             airports[self.area_input.value].plot(self.ax)
+        self.canvas.draw_idle()
 
     def on_id_change(self, change):
         if change["name"] != "value":
@@ -221,6 +234,7 @@ class TrafficWidget(object):
                 f = self.traffic[c]
                 if f is not None:
                     self.trajectories[c], *_ = f.plot(self.ax)
+        self.canvas.draw_idle()
 
     def on_altitude_select(self, change):
         low, up = change["new"]["index"]
