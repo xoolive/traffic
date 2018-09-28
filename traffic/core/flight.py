@@ -99,8 +99,10 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return max(self.timestamp)
 
     @property
-    def callsign(self) -> Union[str, Set[str]]:
+    def callsign(self) -> Union[str, Set[str], None]:
         """Returns the unique callsign value(s) of the DataFrame."""
+        if 'callsign' not in self.data.columns:
+            return None
         tmp = set(self.data.callsign)
         if len(tmp) == 1:
             return tmp.pop()
@@ -119,11 +121,13 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return tmp
 
     @property
-    def icao24(self) -> Union[str, Set[str]]:
+    def icao24(self) -> Union[str, Set[str], None]:
         """Returns the unique icao24 value(s) of the DataFrame.
 
         icao24 is a unique identifier associated to a transponder.
         """
+        if "icao24" not in self.data.columns:
+            return None
         tmp = set(self.data.icao24)
         if len(tmp) == 1:
             return tmp.pop()
