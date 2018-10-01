@@ -537,9 +537,12 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             ).ffill()
         )
 
-    def at(self, time: timelike) -> pd.core.series.Series:
+    def at(self, time: Optional[timelike] = None) -> pd.core.series.Series:
         class Position(PointMixin, pd.core.series.Series):
             pass
+
+        if time is None:
+            return Position(self.data.ffill().iloc[-1])
 
         index = to_datetime(time)
         return Position(self.data.set_index("timestamp").loc[index])

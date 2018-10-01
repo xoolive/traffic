@@ -1,7 +1,8 @@
 from functools import lru_cache, partial
 from pathlib import Path
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
+from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 
 import pandas as pd
@@ -58,6 +59,9 @@ class DataFrameMixin(object):
 
     def to_excel(self, filename: Union[str, Path]) -> None:
         self.data.to_excel(filename)
+
+    def sort_values(self, key: str):
+        return self.__class__(self.data.sort_values(key))
 
     def query(self, query: str):
         return self.__class__(self.data.query(query))
@@ -210,5 +214,10 @@ class PointMixin(object):
         if "color" not in kwargs:
             kwargs["color"] = "black"
 
-        ax.scatter(self.longitude, self.latitude, **kwargs)
-        ax.text(self.longitude, self.latitude, **text_kw)
+        if 's' not in text_kw:
+            text_kw['s'] = getattr(self, 'callsign', '')
+
+        cumul: List[Artist] = []
+        cumul.append(ax.scatter(self.longitude, self.latitude, **kwargs))
+        cumul.append(ax.text(self.longitude, self.latitude, **text_kw))
+        return cumul
