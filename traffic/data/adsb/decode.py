@@ -17,6 +17,7 @@ from tqdm.autonotebook import tqdm
 from ...core import Flight, Traffic
 from ...data import airports
 from ...data.basic.airport import Airport
+from ...drawing.widgets import TrafficWidget
 
 # fmt: on
 
@@ -595,5 +596,22 @@ class Decoder:
             [self[elt["icao24"]] for elt in self.aircraft]
         )
 
+    @property
+    def widget(self):
+        return DecoderWidget(self)
+
     def __getitem__(self, icao):
         return self.acs[icao].flight
+
+
+class DecoderWidget(TrafficWidget):
+    def __init__(self, decoder: Decoder, *args, **kwargs) -> None:
+        self.decoder = decoder
+        super().__init__(decoder.traffic, *args, **kwargs)
+
+    @property
+    def traffic(self) -> Traffic:
+        self._traffic = self.decoder.traffic
+        self.t_view = self._traffic
+        self.set_time_range()
+        return self._traffic

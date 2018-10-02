@@ -3,7 +3,7 @@
 import re
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 import matplotlib.pyplot as plt
 from IPython import get_ipython
@@ -24,23 +24,22 @@ from ..drawing import (EuroPP, PlateCarree, Projection,  # type: ignore
 
 
 class TrafficWidget(object):
-    @property
-    def traffic(self):
-        return self._traffic
 
+    # -- Constructor --
     def __init__(self, traffic: Traffic, projection=EuroPP()) -> None:
+
         ipython = get_ipython()
         ipython.magic("matplotlib ipympl")
         from ipympl.backend_nbagg import FigureCanvasNbAgg, FigureManagerNbAgg
 
-        self.mapfig = Figure(figsize=(6, 6))
-        self.timefig = Figure(figsize=(6, 4))
+        self.fig_map = Figure(figsize=(6, 6))
+        self.fig_time = Figure(figsize=(6, 4))
 
-        self.mapcanvas = FigureCanvasNbAgg(self.mapfig)
-        self.timecanvas = FigureCanvasNbAgg(self.timefig)
+        self.canvas_map = FigureCanvasNbAgg(self.fig_map)
+        self.canvas_time = FigureCanvasNbAgg(self.fig_time)
 
-        self.mapmanager = FigureManagerNbAgg(self.mapcanvas, 0)
-        self.timemanager = FigureManagerNbAgg(self.timecanvas, 0)
+        self.manager_map = FigureManagerNbAgg(self.canvas_map, 0)
+        self.manager_time = FigureManagerNbAgg(self.canvas_time, 0)
 
         layout = {"width": "590px", "height": "800px", "border": "none"}
         self.output = Output(layout=layout)
@@ -58,7 +57,7 @@ class TrafficWidget(object):
         self.identifier_input.observe(self.on_id_input)
 
         self.identifier_select = SelectMultiple(
-            options=sorted(self.traffic.callsigns),  # type: ignore
+            options=sorted(self._traffic.callsigns),  # type: ignore
             value=[],
             rows=20,
         )
@@ -93,37 +92,25 @@ class TrafficWidget(object):
         )
         self.altitude_select.observe(self.on_altitude_select)
 
-        tz_now = datetime.now().astimezone().tzinfo
-        self.dates = [
-            self.traffic.start_time
-            + i * (self.traffic.end_time - self.traffic.start_time) / 99
-            for i in range(100)
-        ]
-        if self.traffic.start_time.tzinfo is not None:
-            options = [
-                t.tz_convert("utc").strftime("%H:%M") for t in self.dates
-            ]
-        else:
-            options = [
-                t.tz_localize(tz_now).tz_convert("utc").strftime("%H:%M")
-                for t in self.dates
-            ]
-
         self.time_slider = SelectionRangeSlider(
-            options=options,
+            options=list(range(100)),
             index=(0, 99),
             description="Date",
             continuous_update=False,
         )
+        self.lock_time_change = False
+        self.set_time_range()
+
         self.time_slider.observe(self.on_time_select)
-        self.mapcanvas.observe(self.on_mapax_change, ["_button", "_png_is_old"])
-        self.timecanvas.observe(self.on_timeax_change, ["_png_is_old"])
+        self.canvas_map.observe(
+            self.on_axmap_change, ["_button", "_png_is_old"]
+        )
+        self.canvas_time.observe(self.on_axtime_change, ["_png_is_old"])
 
         self.tabs = Tab()
-        self.tabs.children = [self.mapcanvas, self.timecanvas, self.output]
+        self.tabs.children = [self.canvas_map, self.canvas_time]
         self.tabs.set_title(0, "Map")
         self.tabs.set_title(1, "Plots")
-        self.tabs.set_title(2, "Logs")
 
         self._main_elt = HBox(
             [
@@ -144,14 +131,45 @@ class TrafficWidget(object):
             ]
         )
 
-    def _ipython_display_(self):
+    @property
+    def traffic(self) -> Traffic:
+        return self._traffic
+
+    def _ipython_display_(self) -> None:
         clear_output()
-        self.mapcanvas.draw_idle()
+        self.canvas_map.draw_idle()
         self._main_elt._ipython_display_()
+
+    def debug(self) -> None:
+        if self.tabs.children[-1] != self.output:
+            self.tabs.children = list(self.tabs.children) + [self.output]
+
+    def set_time_range(self) -> None:
+        with self.output:
+            tz_now = datetime.now().astimezone().tzinfo
+            self.dates = [
+                self._traffic.start_time
+                + i * (self._traffic.end_time - self._traffic.start_time) / 99
+                for i in range(100)
+            ]
+            if self._traffic.start_time.tzinfo is not None:
+                options = [
+                    t.tz_convert("utc").strftime("%H:%M") for t in self.dates
+                ]
+            else:
+                options = [
+                    t.tz_localize(tz_now).tz_convert("utc").strftime("%H:%M")
+                    for t in self.dates
+                ]
+
+            self.lock_time_change = True
+            self.time_slider.options = options
+            self.time_slider.index = (0, 99)
+            self.lock_time_change = False
 
     def create_map(
         self, projection: Union[str, Projection] = "EuroPP()"  # type: ignore
-    ):
+    ) -> None:
         with self.output:
             if isinstance(projection, str):
                 if not projection.endswith("()"):
@@ -162,8 +180,8 @@ class TrafficWidget(object):
 
             with plt.style.context("traffic"):
 
-                self.mapfig.clear()
-                self.ax = self.mapfig.add_subplot(
+                self.fig_map.clear()
+                self.ax = self.fig_map.add_subplot(
                     111, projection=self.projection
                 )
                 self.ax.add_feature(countries())
@@ -172,35 +190,66 @@ class TrafficWidget(object):
                 ]:
                     self.ax.add_feature(rivers())
 
-                self.mapfig.set_tight_layout(True)
+                self.fig_map.set_tight_layout(True)
                 self.ax.background_patch.set_visible(False)
                 self.ax.outline_patch.set_visible(False)
                 self.ax.format_coord = lambda x, y: ""
                 self.ax.set_global()
 
             self.default_plot()
-            self.mapcanvas.draw_idle()
+            self.canvas_map.draw_idle()
 
-    def create_timeplot(self):
+    def default_plot(self) -> None:
+        with self.output:
+            # clear all trajectory pieces
+            for key, value in self.trajectories.items():
+                for elt in value:
+                    elt.remove()
+            self.trajectories.clear()
+
+            lon_min, lon_max, lat_min, lat_max = self.ax.get_extent(
+                PlateCarree()
+            )
+            cur_flights = list(
+                f.at()
+                for f in self.t_view
+                if lat_min <= getattr(f.at(), "latitude", -90) <= lat_max
+                and lon_min <= getattr(f.at(), "longitude", -180) <= lon_max
+            )
+
+            def params(at):
+                if len(cur_flights) < 10:
+                    return dict(s=8, text_kw=dict(s=at.callsign))
+                else:
+                    return dict(s=8, text_kw=dict(s=""))
+
+            for at in cur_flights:
+                self.trajectories[at.callsign] += at.plot(self.ax, **params(at))
+
+            self.canvas_map.draw_idle()
+
+    def create_timeplot(self) -> None:
         with plt.style.context("traffic"):
-            self.timefig.clear()
-            self.timeax = self.timefig.add_subplot(111)
-            self.timefig.set_tight_layout(True)
+            self.fig_time.clear()
+            self.ax_time = self.fig_time.add_subplot(111)
+            self.fig_time.set_tight_layout(True)
 
-    def on_projection_change(self, change):
+    # -- Callbacks --
+
+    def on_projection_change(self, change: Dict[str, Any]) -> None:
         with self.output:
             if change["name"] == "value":
                 self.trajectories.clear()
                 self.create_map(change["new"])
 
-    def on_clear_button(self, elt):
+    def on_clear_button(self, elt: Dict[str, Any]) -> None:
         with self.output:
             self.t_view = self.traffic.sort_values("timestamp")
             self.trajectories.clear()
             self.create_map(self.projection)
             self.create_timeplot()
 
-    def on_area_input(self, elt):
+    def on_area_input(self, elt: Dict[str, Any]) -> None:
         with self.output:
             if elt["name"] != "value":
                 return
@@ -212,14 +261,14 @@ class TrafficWidget(object):
                     x.name for x in airac.parse(search_text)
                 )
 
-    def on_area_click(self, elt):
+    def on_area_click(self, elt: Dict[str, Any]) -> None:
         with self.output:
             if elt["name"] != "value":
                 return
             self.ax.set_extent(airac[elt["new"][0]])
-            self.mapcanvas.draw_idle()
+            self.canvas_map.draw_idle()
 
-    def on_extent_button(self, elt):
+    def on_extent_button(self, elt: Dict[str, Any]) -> None:
         with self.output:
             if len(self.area_select.value) == 0:
                 if len(self.area_input.value) == 0:
@@ -232,25 +281,25 @@ class TrafficWidget(object):
             t1, t2 = self.time_slider.index
             low, up = self.altitude_select.value
             self.on_filter(low, up, t1, t2)
-            self.mapcanvas.draw_idle()
+            self.canvas_map.draw_idle()
 
-    def on_timeax_change(self, change):
+    def on_axtime_change(self, change: Dict[str, Any]) -> None:
         with self.output:
             if change["name"] == "_png_is_old":
                 # go away!!
-                return self.mapcanvas.set_window_title("")
+                return self.canvas_map.set_window_title("")
 
-    def on_mapax_change(self, change):
+    def on_axmap_change(self, change: Dict[str, Any]) -> None:
         with self.output:
             if change["name"] == "_png_is_old":
                 # go away!!
-                return self.mapcanvas.set_window_title("")
+                return self.canvas_map.set_window_title("")
             if change["new"] is None:
                 t1, t2 = self.time_slider.index
                 low, up = self.altitude_select.value
                 self.on_filter(low, up, t1, t2)
 
-    def on_id_input(self, elt):
+    def on_id_input(self, elt: Dict[str, Any]) -> None:
         with self.output:
             # low, up = alt.value
             self.identifier_select.options = sorted(
@@ -259,7 +308,7 @@ class TrafficWidget(object):
                 if re.match(elt["new"]["value"], callsign, flags=re.IGNORECASE)
             )
 
-    def on_plot_button(self, elt):
+    def on_plot_button(self, elt: Dict[str, Any]) -> None:
         with self.output:
             if len(self.area_select.value) == 0:
                 if len(self.area_input.value) == 0:
@@ -268,10 +317,12 @@ class TrafficWidget(object):
                     self.ax, color="grey", linestyle="dashed"
                 )
             else:
-                airac[self.area_select.value[0]].plot(self.ax, color="crimson")
-            self.mapcanvas.draw_idle()
+                airspace = airac[self.area_select.value[0]]
+                if airspace is not None:
+                    airspace.plot(self.ax)
+            self.canvas_map.draw_idle()
 
-    def on_plot_airport(self, elt):
+    def on_plot_airport(self, elt: Dict[str, Any]) -> None:
         with self.output:
             if len(self.area_input.value) == 0:
                 from cartotools.osm import request, tags
@@ -285,9 +336,9 @@ class TrafficWidget(object):
                 )
             else:
                 airports[self.area_input.value].plot(self.ax)
-            self.mapcanvas.draw_idle()
+            self.canvas_map.draw_idle()
 
-    def on_id_change(self, change):
+    def on_id_change(self, change: Dict[str, Any]) -> None:
         with self.output:
             if change["name"] != "value":
                 return
@@ -308,52 +359,29 @@ class TrafficWidget(object):
                         self.ax, s=8, text_kw=dict(s=c)
                     )
 
-                    f.plot_time(self.timeax, y=["altitude"], label=f.callsign)
+                    try:
+                        f.plot_time(
+                            self.ax_time, y=["altitude"], label=f.callsign
+                        )
+                    except TypeError:  # no numeric data to plot
+                        pass
 
             if len(callsigns) == 0:
                 self.default_plot()
+            else:
+                self.ax_time.legend()
 
             # non conformal with traffic style
-            for elt in self.timeax.get_xticklabels():
+            for elt in self.ax_time.get_xticklabels():
                 elt.set_size(12)
-            for elt in self.timeax.get_yticklabels():
+            for elt in self.ax_time.get_yticklabels():
                 elt.set_size(12)
-            self.timeax.set_xlabel('')
+            self.ax_time.set_xlabel("")
 
-            self.mapcanvas.draw_idle()
-            self.timeax.legend()
-            self.timecanvas.draw_idle()
+            self.canvas_map.draw_idle()
+            self.canvas_time.draw_idle()
 
-    def default_plot(self):
-        with self.output:
-            # clear all trajectory pieces
-            for key, value in self.trajectories.items():
-                for elt in value:
-                    elt.remove()
-            self.trajectories.clear()
-
-            lon_min, lon_max, lat_min, lat_max = self.ax.get_extent(
-                PlateCarree()
-            )
-            cur_flights = list(
-                f.at()
-                for f in self.t_view
-                if lat_min <= f.at().latitude <= lat_max
-                and lon_min <= f.at().longitude <= lon_max
-            )
-
-            def params(at):
-                if len(cur_flights) < 10:
-                    return dict(s=8, text_kw=dict(s=at.callsign))
-                else:
-                    return dict(s=8, text_kw=dict(s=""))
-
-            for at in cur_flights:
-                self.trajectories[at.callsign] += at.plot(self.ax, **params(at))
-
-            self.mapcanvas.draw_idle()
-
-    def on_filter(self, low, up, t1, t2):
+    def on_filter(self, low, up, t1, t2) -> None:
         with self.output:
             west, east, south, north = self.ax.get_extent(crs=PlateCarree())
 
@@ -378,7 +406,7 @@ class TrafficWidget(object):
             )
             return self.default_plot()
 
-    def on_altitude_select(self, change):
+    def on_altitude_select(self, change: Dict[str, Any]) -> None:
         with self.output:
             if change["name"] != "value":
                 return
@@ -387,8 +415,10 @@ class TrafficWidget(object):
             t1, t2 = self.time_slider.index
             self.on_filter(low, up, t1, t2)
 
-    def on_time_select(self, change):
+    def on_time_select(self, change: Dict[str, Any]) -> None:
         with self.output:
+            if self.lock_time_change:
+                return
             if change["name"] != "index":
                 return
             t1, t2 = change["new"]
