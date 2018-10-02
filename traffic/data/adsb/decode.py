@@ -15,7 +15,6 @@ import pyModeS as pms
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
-from ...data import airports
 from ...data.basic.airport import Airport
 from ...drawing.ipywidgets import TrafficWidget
 
@@ -312,6 +311,8 @@ class Decoder:
         self, reference: Union[str, Airport, Tuple[float, float]]
     ) -> None:
         if isinstance(reference, str):
+            from ...data import airports
+
             reference = airports[reference]
         if isinstance(reference, Airport):
             lat0, lon0 = reference.lat, reference.lon

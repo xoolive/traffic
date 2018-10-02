@@ -16,7 +16,6 @@ from ipywidgets import (Button, Dropdown, HBox, Output, SelectionRangeSlider,
 
 from . import *  # noqa: F401, F403, type: ignore
 from ..core import Traffic
-from ..data import airac, airports
 from ..drawing import (EuroPP, PlateCarree, Projection,  # type: ignore
                        countries, location, rivers)
 
@@ -257,6 +256,8 @@ class TrafficWidget(object):
             if len(search_text) == 0:
                 self.area_select.options = list()
             else:
+                from ..data import airac
+
                 self.area_select.options = list(
                     x.name for x in airac.parse(search_text)
                 )
@@ -265,6 +266,8 @@ class TrafficWidget(object):
         with self.output:
             if elt["name"] != "value":
                 return
+            from ..data import airac
+
             self.ax.set_extent(airac[elt["new"][0]])
             self.canvas_map.draw_idle()
 
@@ -276,6 +279,8 @@ class TrafficWidget(object):
                 else:
                     self.ax.set_extent(location(self.area_input.value))
             else:
+                from ..data import airac
+
                 self.ax.set_extent(airac[self.area_select.value[0]])
 
             t1, t2 = self.time_slider.index
@@ -317,6 +322,8 @@ class TrafficWidget(object):
                     self.ax, color="grey", linestyle="dashed"
                 )
             else:
+                from ..data import airac
+
                 airspace = airac[self.area_select.value[0]]
                 if airspace is not None:
                     airspace.plot(self.ax)
@@ -335,6 +342,8 @@ class TrafficWidget(object):
                     self.ax
                 )
             else:
+                from ..data import airports
+
                 airports[self.area_input.value].plot(self.ax)
             self.canvas_map.draw_idle()
 
@@ -354,10 +363,13 @@ class TrafficWidget(object):
             for c in callsigns:
                 f = self.t_view[c]
                 if f is not None:
-                    self.trajectories[c] += f.plot(self.ax)
-                    self.trajectories[c] += f.at().plot(
-                        self.ax, s=8, text_kw=dict(s=c)
-                    )
+                    try:
+                        self.trajectories[c] += f.plot(self.ax)
+                        self.trajectories[c] += f.at().plot(
+                            self.ax, s=8, text_kw=dict(s=c)
+                        )
+                    except TypeError:  # NoneType object is not iterable
+                        pass
 
                     try:
                         f.plot_time(
@@ -380,6 +392,12 @@ class TrafficWidget(object):
 
             self.canvas_map.draw_idle()
             self.canvas_time.draw_idle()
+
+            if len(callsigns) != 0:
+                low, up = self.ax_time.get_ylim()
+                if (up - low) / up < 0.05:
+                    self.ax_time.set_ylim(up - .05 * up, up + .05 * up)
+                    self.canvas_time.draw_idle()
 
     def on_filter(self, low, up, t1, t2) -> None:
         with self.output:

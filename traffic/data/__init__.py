@@ -2,6 +2,7 @@ from pathlib import Path
 
 from .. import config, cache_dir, config_file
 from .adsb.opensky import OpenSky
+from .adsb.decode import Decoder as ModeS_Decoder  # noqa: F401
 from .airspaces.airac import AirspaceParser
 from .airspaces.eurofirs import eurofirs
 from .basic.aircraft import Aircraft
