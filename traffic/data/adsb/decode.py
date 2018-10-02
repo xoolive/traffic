@@ -17,7 +17,7 @@ from tqdm.autonotebook import tqdm
 from ...core import Flight, Traffic
 from ...data import airports
 from ...data.basic.airport import Airport
-from ...drawing.widgets import TrafficWidget
+from ...drawing.ipywidgets import TrafficWidget
 
 # fmt: on
 

@@ -226,7 +226,7 @@ class Traffic(DataFrameMixin, GeographyMixin):
 
     @property
     def widget(self):
-        from ..drawing.widgets import TrafficWidget
+        from ..drawing.ipywidgets import TrafficWidget
 
         return TrafficWidget(self)
 
