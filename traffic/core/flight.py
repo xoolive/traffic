@@ -537,7 +537,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             ).ffill()
         )
 
-    def at(self, time: Optional[timelike] = None) -> pd.core.series.Series:
+    def at(self, time: Optional[timelike] = None) -> Optional[pd.core.series.Series]:
         class Position(PointMixin, pd.core.series.Series):
             pass
 
@@ -545,7 +545,12 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             return Position(self.data.ffill().iloc[-1])
 
         index = to_datetime(time)
-        return Position(self.data.set_index("timestamp").loc[index])
+        df = self.data.set_index("timestamp")
+        if index not in df.index:
+            id_ = getattr(self, 'flight_id', self.callsign)
+            logging.warn(f'No index {index} for flight {id_}')
+            return None
+        return Position(df.loc[index])
 
     def before(self, ts: timelike) -> "Flight":
         return self.between(self.start, ts)
