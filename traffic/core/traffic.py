@@ -163,8 +163,9 @@ class Traffic(DataFrameMixin, GeographyMixin):
             if flight.start <= time <= flight.stop
         ]
         return Traffic(
-            pd.DataFrame.from_records(list_flights).assign(
-                timestamp=[s.name for s in list_flights]
+            pd.DataFrame.from_records([s for s in list_flights if s is not None]).assign(
+                # attribute 'name' refers to the index, i.e. 'timestamp'
+                timestamp=[s.name for s in list_flights if s is not None]
             )
         )
 
