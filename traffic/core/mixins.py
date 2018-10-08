@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import lru_cache, partial
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -195,6 +196,8 @@ class PointMixin(object):
 
     latitude: float
     longitude: float
+    altitude: float
+    timestamp: datetime
 
     def plot(
         self, ax: Axes, text_kw=None, shift=dict(units="dots", x=15), **kwargs

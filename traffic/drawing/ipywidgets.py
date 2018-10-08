@@ -180,20 +180,21 @@ class TrafficWidget(object):
             with plt.style.context("traffic"):
 
                 self.fig_map.clear()
-                self.ax = self.fig_map.add_subplot(
+                self.trajectories.clear()
+                self.ax_map = self.fig_map.add_subplot(
                     111, projection=self.projection
                 )
-                self.ax.add_feature(countries())
+                self.ax_map.add_feature(countries())
                 if projection.__class__.__name__.split(".")[-1] in [
                     "Lambert93"
                 ]:
-                    self.ax.add_feature(rivers())
+                    self.ax_map.add_feature(rivers())
 
                 self.fig_map.set_tight_layout(True)
-                self.ax.background_patch.set_visible(False)
-                self.ax.outline_patch.set_visible(False)
-                self.ax.format_coord = lambda x, y: ""
-                self.ax.set_global()
+                self.ax_map.background_patch.set_visible(False)
+                self.ax_map.outline_patch.set_visible(False)
+                self.ax_map.format_coord = lambda x, y: ""
+                self.ax_map.set_global()
 
             self.default_plot()
             self.canvas_map.draw_idle()
@@ -205,8 +206,9 @@ class TrafficWidget(object):
                 for elt in value:
                     elt.remove()
             self.trajectories.clear()
+            self.ax_map.set_prop_cycle(None)
 
-            lon_min, lon_max, lat_min, lat_max = self.ax.get_extent(
+            lon_min, lon_max, lat_min, lat_max = self.ax_map.get_extent(
                 PlateCarree()
             )
             cur_flights = list(
@@ -223,7 +225,7 @@ class TrafficWidget(object):
                     return dict(s=8, text_kw=dict(s=""))
 
             for at in cur_flights:
-                self.trajectories[at.callsign] += at.plot(self.ax, **params(at))
+                self.trajectories[at.callsign] += at.plot(self.ax_map, **params(at))
 
             self.canvas_map.draw_idle()
 
@@ -238,13 +240,11 @@ class TrafficWidget(object):
     def on_projection_change(self, change: Dict[str, Any]) -> None:
         with self.output:
             if change["name"] == "value":
-                self.trajectories.clear()
                 self.create_map(change["new"])
 
     def on_clear_button(self, elt: Dict[str, Any]) -> None:
         with self.output:
             self.t_view = self.traffic.sort_values("timestamp")
-            self.trajectories.clear()
             self.create_map(self.projection)
             self.create_timeplot()
 
@@ -268,20 +268,20 @@ class TrafficWidget(object):
                 return
             from ..data import airac
 
-            self.ax.set_extent(airac[elt["new"][0]])
+            self.ax_map.set_extent(airac[elt["new"][0]])
             self.canvas_map.draw_idle()
 
     def on_extent_button(self, elt: Dict[str, Any]) -> None:
         with self.output:
             if len(self.area_select.value) == 0:
                 if len(self.area_input.value) == 0:
-                    self.ax.set_global()
+                    self.ax_map.set_global()
                 else:
-                    self.ax.set_extent(location(self.area_input.value))
+                    self.ax_map.set_extent(location(self.area_input.value))
             else:
                 from ..data import airac
 
-                self.ax.set_extent(airac[self.area_select.value[0]])
+                self.ax_map.set_extent(airac[self.area_select.value[0]])
 
             t1, t2 = self.time_slider.index
             low, up = self.altitude_select.value
@@ -319,14 +319,14 @@ class TrafficWidget(object):
                 if len(self.area_input.value) == 0:
                     return self.default_plot()
                 location(self.area_input.value).plot(
-                    self.ax, color="grey", linestyle="dashed"
+                    self.ax_map, color="grey", linestyle="dashed"
                 )
             else:
                 from ..data import airac
 
                 airspace = airac[self.area_select.value[0]]
                 if airspace is not None:
-                    airspace.plot(self.ax)
+                    airspace.plot(self.ax_map)
             self.canvas_map.draw_idle()
 
     def on_plot_airport(self, elt: Dict[str, Any]) -> None:
@@ -334,17 +334,17 @@ class TrafficWidget(object):
             if len(self.area_input.value) == 0:
                 from cartotools.osm import request, tags
 
-                west, east, south, north = self.ax.get_extent(crs=PlateCarree())
+                west, east, south, north = self.ax_map.get_extent(crs=PlateCarree())
                 if abs(east - west) > 1 or abs(north - south) > 1:
                     # that would be a too big request
                     return
                 request((west, south, east, north), **tags.airport).plot(
-                    self.ax
+                    self.ax_map
                 )
             else:
                 from ..data import airports
 
-                airports[self.area_input.value].plot(self.ax)
+                airports[self.area_input.value].plot(self.ax_map)
             self.canvas_map.draw_idle()
 
     def on_id_change(self, change: Dict[str, Any]) -> None:
@@ -364,9 +364,9 @@ class TrafficWidget(object):
                 f = self.t_view[c]
                 if f is not None:
                     try:
-                        self.trajectories[c] += f.plot(self.ax)
+                        self.trajectories[c] += f.plot(self.ax_map)
                         self.trajectories[c] += f.at().plot(
-                            self.ax, s=8, text_kw=dict(s=c)
+                            self.ax_map, s=8, text_kw=dict(s=c)
                         )
                     except TypeError:  # NoneType object is not iterable
                         pass
@@ -401,7 +401,7 @@ class TrafficWidget(object):
 
     def on_filter(self, low, up, t1, t2) -> None:
         with self.output:
-            west, east, south, north = self.ax.get_extent(crs=PlateCarree())
+            west, east, south, north = self.ax_map.get_extent(crs=PlateCarree())
 
             self.t_view = (
                 self.traffic.between(self.dates[t1], self.dates[t2])

@@ -2,6 +2,9 @@ import configparser
 import imp
 import inspect
 import logging
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 from appdirs import user_cache_dir, user_config_dir
@@ -31,9 +34,19 @@ if not cache_dir.exists():
 config = configparser.ConfigParser()
 config.read(config_file.as_posix())
 
+
+def edit_config():
+    if sys.platform.startswith("darwin"):
+        subprocess.call(("open", config_file))
+    elif os.name == "nt":  # For Windows
+        os.startfile(config_dir)
+    elif os.name == "posix":  # For Linux, Mac, etc.
+        subprocess.call(("xdg-open", config_file))
+
+
 _selected = [
-    s.strip() for s in config.get("plugins", "enabled_plugins",
-                                  fallback="").split(",")
+    s.strip()
+    for s in config.get("plugins", "enabled_plugins", fallback="").split(",")
 ]
 _plugin_paths = [Path(__file__).parent / "plugins", config_dir / "plugins"]
 _all_plugins = []
