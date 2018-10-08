@@ -27,6 +27,7 @@ class StoppableThread(threading.Thread):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.daemon = True  # is it redundant?
         self._stop_event = threading.Event()
 
     def stop(self):

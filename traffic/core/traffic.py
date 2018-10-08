@@ -136,11 +136,7 @@ class Traffic(DataFrameMixin, GeographyMixin):
     @lru_cache()
     def callsigns(self) -> Set[str]:
         """Return only the most relevant callsigns"""
-        sub = (
-            self.data.query("callsign == callsign")
-            .groupby(["callsign", "icao24"])
-            .filter(lambda x: len(x) > 10)
-        )
+        sub = self.data.query("callsign == callsign")
         return set(cs for cs in sub.callsign if len(cs) > 3 and " " not in cs)
 
     @property

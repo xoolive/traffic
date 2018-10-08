@@ -7,11 +7,13 @@ from typing import (Callable, Iterable, Iterator, List, NamedTuple, Optional,
                     Set, Tuple, Union, cast)
 
 import numpy as np
+from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 
 import geodesy.wgs84 as geo
 import pandas as pd
 import scipy.signal
+from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from shapely.geometry import LineString, base
 
@@ -30,6 +32,10 @@ def _split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
         yield from _split(data.iloc[diff.argmax() :], value, unit)  # noqa
     else:
         yield data
+
+
+class Position(PointMixin, pd.core.series.Series):
+    pass
 
 
 class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
@@ -101,7 +107,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
     @property
     def callsign(self) -> Union[str, Set[str], None]:
         """Returns the unique callsign value(s) of the DataFrame."""
-        if 'callsign' not in self.data.columns:
+        if "callsign" not in self.data.columns:
             return None
         tmp = set(self.data.callsign)
         if len(tmp) == 1:
@@ -537,9 +543,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             ).ffill()
         )
 
-    def at(self, time: Optional[timelike] = None) -> Optional[pd.core.series.Series]:
-        class Position(PointMixin, pd.core.series.Series):
-            pass
+    def at(self, time: Optional[timelike] = None) -> Optional[Position]:
 
         if time is None:
             return Position(self.data.ffill().iloc[-1])
@@ -547,8 +551,8 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         index = to_datetime(time)
         df = self.data.set_index("timestamp")
         if index not in df.index:
-            id_ = getattr(self, 'flight_id', self.callsign)
-            logging.warn(f'No index {index} for flight {id_}')
+            id_ = getattr(self, "flight_id", self.callsign)
+            logging.warn(f"No index {index} for flight {id_}")
             return None
         return Position(df.loc[index])
 
@@ -618,13 +622,13 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     # -- Visualisation --
 
-    def plot(self, ax: GeoAxesSubplot, **kwargs) -> None:
-        if "projection" in ax.__dict__ and "transform" not in kwargs:
-            from cartopy.crs import PlateCarree
+    def plot(self, ax: GeoAxesSubplot, **kwargs) -> List[Artist]:
 
+        if "projection" in ax.__dict__ and "transform" not in kwargs:
             kwargs["transform"] = PlateCarree()
         if self.shape is not None:
             return ax.plot(*self.shape.xy, **kwargs)
+        return []
 
     def plot_time(
         self,
