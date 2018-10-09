@@ -1,17 +1,13 @@
-from setuptools import setup
-from setuptools.extension import Extension
-from Cython.Build import cythonize
+import os
 import os.path
 
-bresenham_path = os.path.join("traffic", "algorithms", "bresenham.pyx")
-extensions = [Extension("traffic.algorithms.bresenham", [bresenham_path])]
+from setuptools import setup
 
 setup(
     name="traffic",
     version=0.1,
     description="A toolbox for manipulating and analysing air traffic data",
     entry_points={"console_scripts": ["traffic=traffic.console:main"]},
-    ext_modules=cythonize(extensions),
     packages=[
         "traffic",
         "traffic.algorithms",
@@ -23,8 +19,15 @@ setup(
         "traffic.data.so6",
         "traffic.drawing",
         "traffic.plugins",
+        "traffic.qtgui",
     ],
-    package_data={"traffic.data.airspaces": ["firs.json"]},
+    package_data={
+        "traffic.data.airspaces": ["firs.json"],
+        "traffic": [
+            os.path.join("..", "icons", f)
+            for f in os.listdir(os.path.join("..", "traffic", "icons"))
+        ],
+    },
     install_requires=[
         "numpy",
         "scipy",
@@ -40,6 +43,7 @@ setup(
         "paramiko",
         "tqdm>=4.26",
         "cartotools==1.0",
+        "pyModeS==2.0",
     ],
     dependency_links=[
         "https://github.com/xoolive/cartotools.git#whl=cartotools-1.0"

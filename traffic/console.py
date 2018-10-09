@@ -2,23 +2,21 @@ import sys
 import argparse
 from pathlib import Path
 
-from .data import airports as data_airports
-from .data import navaids as data_navaids
-from .data import aircraft as data_aircraft
-from .data.adsb.decode import Decoder
-
 
 def get_airports(*args):
+    from .data import airports as data_airports
     for airport in data_airports.search(args[0]):
         print(airport)
 
 
 def get_navaids(*args):
+    from .data import navaids as data_navaids
     for navaid in data_navaids.search(args[0]):
         print(navaid)
 
 
 def get_aircraft(*args):
+    from .data import aircraft as data_aircraft
     if args[0] == "get":
         print(data_aircraft[args[1]])
     elif args[0] == "operator":
@@ -30,6 +28,7 @@ def get_aircraft(*args):
 
 
 def decode(*args):
+    from .data.adsb.decode import Decoder
     parser = argparse.ArgumentParser()
 
     parser.add_argument("file", help="path to the file to decode", type=Path)
@@ -41,15 +40,26 @@ def decode(*args):
     args = parser.parse_args(args)
     decoder = Decoder.from_file(args.file, args.reference)
     decoder.traffic.to_pickle(
-        args.output if args.output is not None else args.file.with_suffix(".pkl")
+        args.output
+        if args.output is not None
+        else args.file.with_suffix(".pkl")
     )
 
+def launch_gui(*args):
+    from traffic.qtgui import layout
+    layout.main()
+
+def config(*args):
+    from . import edit_config
+    edit_config()
 
 cmd = {
     "airport": get_airports,
     "navaid": get_navaids,
     "aircraft": get_aircraft,
     "decode": decode,
+    'config': config,
+    'gui': launch_gui,
 }
 
 
