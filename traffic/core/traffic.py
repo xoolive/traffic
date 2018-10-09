@@ -121,6 +121,9 @@ class Traffic(DataFrameMixin, GeographyMixin):
         rep = f"<b>Traffic with {shape} identifiers</b>"
         return rep + styler._repr_html_()
 
+    def subset(self, callsigns: Iterable[str]) -> "Traffic":
+        return Traffic.from_flights(f for f in self if f.callsign in callsigns)
+
     # --- Properties ---
 
     @property
@@ -159,7 +162,9 @@ class Traffic(DataFrameMixin, GeographyMixin):
             if flight.start <= time <= flight.stop
         ]
         return Traffic(
-            pd.DataFrame.from_records([s for s in list_flights if s is not None]).assign(
+            pd.DataFrame.from_records(
+                [s for s in list_flights if s is not None]
+            ).assign(
                 # attribute 'name' refers to the index, i.e. 'timestamp'
                 timestamp=[s.name for s in list_flights if s is not None]
             )
