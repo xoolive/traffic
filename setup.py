@@ -33,20 +33,20 @@ setup(
         "scipy",
         "matplotlib",
         "pandas",
-        "cython",
-        "geodesy",
         "Cartopy",
         "Shapely",
         "requests",
-        "maya",
-        "appdirs",
-        "paramiko",
-        "tqdm>=4.26",
+        "maya",  # human-friendly datetimes
+        "appdirs",  # proper configuration directories
+        "paramiko",  # ssh connections
+        "PyQt5",
+        "ipywidgets",  # IPython widgets for traffic
+        "tornado",  # dependency for matplotlib with WebAgg
+        "ipympl",  # interactive matplotlib in notebooks
+        "tqdm>=4.26",  # progressbars
+        "geodesy",
         "cartotools==1.0",
         "pyModeS==2.0",
-    ],
-    dependency_links=[
-        "https://github.com/xoolive/cartotools.git#whl=cartotools-1.0"
     ],
     python_requires=">=3.6",
 )

@@ -104,6 +104,12 @@ class TimeCanvas(FigureCanvasQTAgg):
             if (up - low) / up < 0.05:
                 self.ax.set_ylim(up - .05 * up, up + .05 * up)
 
+        if len(callsigns) > 0 and len(secondary_y) > 0:
+            ax2, _ = next(iter(self.ax.get_shared_x_axes()))
+            low, up = ax2.get_ylim()
+            if (up - low) / up < 0.05:
+                ax2.set_ylim(up - .05 * up, up + .05 * up)
+
         self.draw()
 
     def draw(self):
