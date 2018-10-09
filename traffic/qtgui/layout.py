@@ -539,21 +539,11 @@ class MainScreen(QMainWindow):
         icon_path = Path(__file__).absolute().parent.parent.parent / "icons"
 
         if sys.platform == "linux":
-            # icon_mini = QtGui.QIcon(
-            #     (icon_path / "travel-mini-white.svg").as_posix()
-            # )
             icon_full = QtGui.QIcon((icon_path / "travel-white.svg").as_posix())
         else:
-            # icon_mini = QtGui.QIcon(
-            #     (icon_path / "travel-mini-grey.svg").as_posix()
-            # )
             icon_full = QtGui.QIcon((icon_path / "travel-grey.svg").as_posix())
 
         self.setWindowIcon(icon_full)
-
-        # self.trayIcon = QSystemTrayIcon(icon_mini, self)
-        # not useful yet...
-        # self.trayIcon.show()
 
     def set_time_range(self) -> None:
         assert self._traffic is not None
