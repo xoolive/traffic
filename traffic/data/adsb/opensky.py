@@ -417,6 +417,7 @@ class OpenSky(object):
             raise ValueError(c.content.decode())
         json = c.json()
         from traffic.data import airports
+
         return tuple(airports[a] for a in json["route"])
 
     def at_airport(
@@ -470,3 +471,31 @@ class OpenSky(object):
         df = self._impala(request)
 
         return df
+
+    def extended(
+        self,
+        before: timelike,
+        after: Optional[timelike] = None,
+        *args,
+        date_delta: timedelta = timedelta(hours=1),
+        icao24: Optional[Union[str, Iterable[str]]] = None,
+        serials: Optional[Iterable[int]] = None,
+        other_tables: str = "",
+        other_params: str = "",
+        progressbar: Callable[[Iterable], Iterable] = iter,
+        cached: bool = True,
+    ):
+        from .opensky_extended import extended
+
+        return extended(
+            self,
+            before,
+            after,
+            date_delta,
+            icao24,
+            serials,
+            other_tables,
+            other_params,
+            progressbar,
+            cached,
+        )
