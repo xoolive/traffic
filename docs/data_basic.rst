@@ -305,7 +305,7 @@ structure with aircraft models.
     from traffic.core import Traffic
     from traffic.data import aircraft
     
-    t = Traffic.from_file("../data/20170713-opensky.pkl")
+    t = Traffic.from_file("../data/sample_opensky.pkl")
     
     aircraft.merge(t)
 

@@ -16,7 +16,7 @@ for each trajectory.
 .. code:: python
 
     from traffic.core import Traffic
-    t = Traffic.from_file("./data/20170713-opensky.pkl")
+    t = Traffic.from_file("./data/sample_opensky.pkl")
     t
 
 
