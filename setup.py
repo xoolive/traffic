@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -19,19 +19,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     entry_points={"console_scripts": ["traffic=traffic.console:main"]},
-    packages=[
-        "traffic",
-        "traffic.algorithms",
-        "traffic.core",
-        "traffic.data",
-        "traffic.data.adsb",
-        "traffic.data.basic",
-        "traffic.data.airspaces",
-        "traffic.data.so6",
-        "traffic.drawing",
-        "traffic.plugins",
-        "traffic.qtgui",
-    ],
+    packages=find_packages(),
     package_data={
         "traffic.data.airspaces": ["firs.json"],
         "traffic": [
