@@ -20,11 +20,19 @@ Earth (kmz) and CesiumJS (czml).
 
 ## Installation
 
+Latest release:
+
 ```
-python setup.py install
+pip install traffic
+```
+
+Development version:
+
+```
+pip install git+https://github.com/xoolive/traffic
 ```
 
 ## Documentation
 
-Documentation available at [https://airtraffic.readthedocs.io/](https://airtraffic.readthedocs.io/)
+Documentation available [here](https://airtraffic.readthedocs.io/)
 
