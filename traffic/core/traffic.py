@@ -33,20 +33,35 @@ class Traffic(DataFrameMixin, GeographyMixin):
     ) -> Optional["Traffic"]:
 
         tentative = super().from_file(filename)
+
         if tentative is not None:
+            rename_columns = {
+                "time": "timestamp",
+                "lat": "latitude",
+                "lon": "longitude",
+                # speeds
+                "velocity": "groundspeed",
+                "ground_speed": "groundspeed",
+                "ias": "IAS",
+                "tas": "TAS",
+                "mach": "Mach",
+                # vertical rate
+                "vertrate": "vertical_rate",
+                "vertical_speed": "vertical_rate",
+                "roc": "vertical_rate",
+                # let's just make baroaltitude the altitude by default
+                "baro_altitude": "altitude",
+                "baroaltitude": "altitude",
+                "geo_altitude": "geoaltitude",
+            }
+
+            if 'baroaltitude' in tentative.data.columns:
+                # for retrocompatibility
+                rename_columns['altitude'] = 'geoaltitude'
+
             tentative.data = tentative.data.rename(
                 # tentative rename of columns for compatibility
-                columns={
-                    "lat": "latitude",
-                    "lon": "longitude",
-                    "velocity": "ground_speed",
-                    "groundspeed": "ground_speed",
-                    "vertrate": "vertical_rate",
-                    "roc": "vertical_rate",
-                    "baroaltitude": "baro_altitude",
-                    "geoaltitude": "altitude",
-                    "time": "timestamp",
-                }
+                columns=rename_columns
             )
             return cls(tentative.data)
 

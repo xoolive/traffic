@@ -113,6 +113,7 @@ class Aircraft(object):
 
         spd, trk, roc, tag = vdata
         if tag != "GS":
+            # does it ever happen...
             return
         if (spd is None) or (trk is None):
             return
@@ -120,16 +121,20 @@ class Aircraft(object):
         self.spd = spd
         self.trk = trk
 
+        delta = pms.adsb.altitude_diff(msg)
+
         with self.lock:
             self.cumul.append(
                 dict(
                     timestamp=t,
                     icao24=self.icao24,
                     groundspeed=spd,
-                    track_angle=trk,
-                    vertical_speed=roc,
+                    track=trk,
+                    vertical_rate=roc,
                 )
             )
+            if delta is not None and self.alt is not None:
+                self.cumul[-1]['geoaltitude'] = self.alt + delta
 
     @property
     def position(self):
@@ -192,20 +197,57 @@ class Aircraft(object):
             )
 
     @property
+    def altcode(self):
+        pass
+
+    @altcode.setter
+    def altcode(self, args):
+        t, msg = args
+        self.alt = pms.common.altcode(msg)
+        with self.lock:
+            self.cumul.append(
+                dict(timestamp=t, icao24=self.icao24, altitude=self.alt)
+            )
+
+    @property
+    def idcode(self):
+        pass
+
+    @idcode.setter
+    def idcode(self, args):
+        t, msg = args
+        with self.lock:
+            self.cumul.append(
+                dict(
+                    timestamp=t,
+                    icao24=self.icao24,
+                    squawk=pms.common.idcode(msg),
+                )
+            )
+
+    @property
     def bds20(self):
         pass
 
     @bds20.setter
     def bds20(self, args):
         t, msg = args
-        callsign = pms.adsb.callsign(msg).strip("_")
+        callsign = pms.commb.cs20(msg).strip("_")
         if callsign == "":
             return
         self._callsign = callsign
         with self.lock:
-            self.cumul.append(
-                dict(timestamp=t, icao24=self.icao24, callsign=self._callsign)
-            )
+            # in case altitude was already included from altcode (DF 4 or 20)
+            # or squawk from idcode (DF5 or 21)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(**last_entry, callsign=self._callsign)
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t, icao24=self.icao24, callsign=self._callsign
+                    )
+                )
 
     @property
     def bds40(self):
@@ -215,15 +257,26 @@ class Aircraft(object):
     def bds40(self, args):
         t, msg = args
         with self.lock:
-            self.cumul.append(
-                dict(
-                    timestamp=t,
-                    icao24=self.icao24,
-                    alt_fms=pms.commb.alt40fms(msg),
-                    alt_mcp=pms.commb.alt40mcp(msg),
-                    p_baro=pms.commb.p40baro(msg),
+            # in case altitude was already included from altcode (DF 4 or 20)
+            # or squawk from idcode (DF5 or 21)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
+                    selected_fms=pms.commb.alt40fms(msg),
+                    selected_mcp=pms.commb.alt40mcp(msg),
+                    barometric_setting=pms.commb.p40baro(msg),
                 )
-            )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        selected_fms=pms.commb.alt40fms(msg),
+                        selected_mcp=pms.commb.alt40mcp(msg),
+                        barometric_setting=pms.commb.p40baro(msg),
+                    )
+                )
 
     @property
     def bds44(self):
@@ -235,17 +288,30 @@ class Aircraft(object):
         wind = pms.commb.wind44(msg)
         wind = wind if wind is not None else (None, None)
         with self.lock:
-            self.cumul.append(
-                dict(
-                    timestamp=t,
-                    icao24=self.icao24,
+            # in case altitude was already included from altcode (DF 4 or 20)
+            # or squawk from idcode (DF5 or 21)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
                     humidity=pms.commb.hum44(msg),
                     pression=pms.commb.p44(msg),
                     temperature=pms.commb.temp44(msg),
                     windspeed=wind[0],
                     winddirection=wind[1],
                 )
-            )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        humidity=pms.commb.hum44(msg),
+                        pression=pms.commb.p44(msg),
+                        temperature=pms.commb.temp44(msg),
+                        windspeed=wind[0],
+                        winddirection=wind[1],
+                    )
+                )
 
     @property
     def bds50(self):
@@ -255,17 +321,31 @@ class Aircraft(object):
     def bds50(self, args):
         t, msg = args
         with self.lock:
-            self.cumul.append(
-                dict(
-                    timestamp=t,
-                    icao24=self.icao24,
-                    gs=pms.commb.gs50(msg),
+            # in case altitude was already included from altcode (DF 4 or 20)
+            # or squawk from idcode (DF5 or 21)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
+                    groundspeed=pms.commb.gs50(msg),
                     roll=pms.commb.roll50(msg),
                     tas=pms.commb.tas50(msg),
                     track=pms.commb.trk50(msg),
                     track_rate=pms.commb.rtrk50(msg),
                 )
-            )
+            else:
+
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        groundspeed=pms.commb.gs50(msg),
+                        roll=pms.commb.roll50(msg),
+                        tas=pms.commb.tas50(msg),
+                        track=pms.commb.trk50(msg),
+                        track_rate=pms.commb.rtrk50(msg),
+                    )
+                )
 
     @property
     def bds60(self):
@@ -275,17 +355,30 @@ class Aircraft(object):
     def bds60(self, args):
         t, msg = args
         with self.lock:
-            self.cumul.append(
-                dict(
-                    timestamp=t,
-                    icao24=self.icao24,
+            # in case altitude was already included from altcode (DF 4 or 20)
+            # or squawk from idcode (DF5 or 21)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
                     ias=pms.commb.ias60(msg),
                     heading=pms.commb.hdg60(msg),
                     mach=pms.commb.mach60(msg),
-                    vrbaro=pms.commb.vr60baro(msg),
-                    vrins=pms.commb.vr60ins(msg),
+                    vertical_rate_barometric=pms.commb.vr60baro(msg),
+                    vertical_rate_inertial=pms.commb.vr60ins(msg),
                 )
-            )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        ias=pms.commb.ias60(msg),
+                        heading=pms.commb.hdg60(msg),
+                        mach=pms.commb.mach60(msg),
+                        vertical_rate_barometric=pms.commb.vr60baro(msg),
+                        vertical_rate_inertial=pms.commb.vr60ins(msg),
+                    )
+                )
 
 
 class AircraftDict(UserDict):
@@ -477,6 +570,16 @@ class Decoder:
 
         df = pms.df(msg)
 
+        if df == 4 or df == 20:
+            icao = pms.icao(msg)
+            ac = self.acs[icao.lower()]
+            ac.altcode = time, msg
+
+        if df == 5 or df == 21:
+            icao = pms.icao(msg)
+            ac = self.acs[icao.lower()]
+            ac.idcode = time, msg
+
         if df == 17 or df == 18:  # ADS-B
 
             if int(pms.crc(msg, encode=False), 2) != 0:
@@ -496,7 +599,12 @@ class Decoder:
                 ac.speed = time, msg
 
             if 9 <= tc <= 18:
+                # This is barometric altitude
                 ac.position = time, msg
+
+            if 20 <= tc <= 22:
+                # Only GNSS altitude
+                pass
 
             # if 9 <= tc <= 18:
             #     ac["nic_bc"] = pms.adsb.nic_b(msg)
@@ -543,8 +651,6 @@ class Decoder:
             ac = self.acs[icao.lower()]
 
             if bds == "BDS20":
-                if pms.common.typecode(msg) is None:
-                    return
                 ac.bds20 = time, msg
                 return
 
