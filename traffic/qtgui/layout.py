@@ -540,8 +540,10 @@ class MainScreen(QMainWindow):
 
         if sys.platform == "linux":
             icon_full = QtGui.QIcon((icon_path / "travel-white.svg").as_posix())
-        else:
+        elif sys.platform == "darwin":
             icon_full = QtGui.QIcon((icon_path / "travel-grey.svg").as_posix())
+        else:
+            icon_full = QtGui.QIcon((icon_path / "travel-orange.svg").as_posix())
 
         self.setWindowIcon(icon_full)
 
