@@ -5,11 +5,17 @@ import logging
 import os
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 
+
 from appdirs import user_cache_dir, user_config_dir
+from tqdm import TqdmExperimentalWarning
 
 from .plugins import PluginProvider
+
+# Silence this warning about autonotebook mode for tqdm
+warnings.simplefilter('ignore', TqdmExperimentalWarning)
 
 config_dir = Path(user_config_dir("traffic"))
 cache_dir = Path(user_cache_dir("traffic"))

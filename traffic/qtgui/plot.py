@@ -228,7 +228,11 @@ class MapCanvas(FigureCanvasQTAgg):
                         self.trajectories[c] += f_at.plot(
                             self.ax, s=8, text_kw=dict(s=c)
                         )
-                except TypeError:  # NoneType object is not iterable
+                except AttributeError:
+                    # 'DataFrame' object has no attribute 'longitude'
+                    pass
+                except TypeError:
+                    # NoneType object is not iterable
                     pass
 
         if len(callsigns) == 0:

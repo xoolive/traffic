@@ -9,12 +9,13 @@ from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set,
 import numpy as np
 from matplotlib.patches import Polygon as MplPolygon
 
+from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from shapely.geometry import Polygon, base, mapping, shape
 from shapely.ops import cascaded_union
 
 from . import Flight, Traffic
-from .mixins import ShapelyMixin, PointMixin
+from .mixins import PointMixin, ShapelyMixin
 
 # fmt: on
 
@@ -81,8 +82,6 @@ class Airspace(ShapelyMixin):
 
     def annotate(self, ax: GeoAxesSubplot, **kwargs) -> None:
         if "projection" in ax.__dict__:
-            from cartopy.crs import PlateCarree
-
             kwargs["transform"] = PlateCarree()
         if "s" not in kwargs:
             kwargs["s"] = self.name
@@ -103,8 +102,6 @@ class Airspace(ShapelyMixin):
             kwargs["edgecolor"] = ax._get_lines.get_next_color()
 
         if "projection" in ax.__dict__:
-            from cartopy.crs import PlateCarree
-
             ax.add_geometries([flat], crs=PlateCarree(), **kwargs)
         else:
             ax.add_patch(MplPolygon(list(flat.exterior.coords), **kwargs))

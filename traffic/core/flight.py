@@ -156,9 +156,9 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return tmp
 
     @property
-    def squawk(self) -> Set[int]:
+    def squawk(self) -> Set[str]:
         """Returns all the unique squawk values in the trajectory."""
-        return set(self.data.squawk.astype(int))
+        return set(self.data.squawk.ffill().bfill())
 
     @property
     def origin(self) -> Optional[Union[str, Set[str]]]:
@@ -277,12 +277,6 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         self, delta_t: bool = False
     ) -> Iterator[Tuple[float, float, float, float]]:
         data = self.data[self.data.longitude.notnull()]
-        altitude = (
-            "baro_altitude"
-            if "baro_altitude" in self.data.columns
-            else "altitude"
-        )
-
         if delta_t:
             time = (data["timestamp"] - data["timestamp"].min()).apply(
                 lambda x: x.total_seconds()
@@ -291,22 +285,16 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             time = data["timestamp"]
 
         yield from zip(
-            time, data["longitude"], data["latitude"], data[altitude]
+            time, data["longitude"], data["latitude"], data["altitude"]
         )
 
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
         """Iterates on longitudes, latitudes and altitudes.
 
-        If the baro_altitude field is present, it is preferred over altitude
         """
         data = self.data[self.data.longitude.notnull()]
-        altitude = (
-            "baro_altitude"
-            if "baro_altitude" in self.data.columns
-            else "altitude"
-        )
-        yield from zip(data["longitude"], data["latitude"], data[altitude])
+        yield from zip(data["longitude"], data["latitude"], data["altitude"])
 
     @property
     def xy_time(self) -> Iterator[Tuple[float, float, float]]:
@@ -346,15 +334,9 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
     def airborne(self) -> "Flight":
         """Returns the airborne part of the Flight.
 
-        The airborne part is determined by null values on the altitude (or
-        baro_altitude if present) column.
+        The airborne part is determined by null values on the altitude column.
         """
-        altitude = (
-            "baro_altitude"
-            if "baro_altitude" in self.data.columns
-            else "altitude"
-        )
-        return self.__class__(self.data[self.data[altitude].notnull()])
+        return self.__class__(self.data[self.data["altitude"].notnull()])
 
     def first(self, **kwargs) -> "Flight":
         return Flight(
@@ -453,14 +435,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         )
 
         cols = ["timestamp", "latitude", "longitude", "altitude"]
-        table = (
-            f1.data[cols]
-            .rename(columns={"baro_altitude": "altitude"})
-            .merge(
-                f2.data[cols].rename(columns={"baro_altitude": "altitude"}),
-                on="timestamp",
-            )
-        )
+        table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
         return table.assign(
             timestamp=lambda df: df.timestamp.dt.tz_localize(
