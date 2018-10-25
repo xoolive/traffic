@@ -16,8 +16,8 @@ text files (you need libarchive library for that).
 .. code:: python
 
     from traffic.data import SO6
-    so6 = SO6.from_file("./data/20180101_20180101_0000_2359_____m3.so6.7z")
-    so6.to_pickle("./data/20180101_20180101_0000_2359_____m3.pkl")
+    so6 = SO6.from_file("./data/sample_m3.so6.7z")
+    so6.to_pickle("./data/sample_m3.pkl")
 
 If you are going to work a lot with data for one day, it is recommended
 to serialize the data so that it loads faster. The structure holds a
@@ -28,7 +28,7 @@ fits a regular webpage width.)
 
     # Read the serialized version
     from traffic.data import SO6
-    so6 = SO6.from_file("./data/20180101_20180101_0000_2359_____m3.pkl")
+    so6 = SO6.from_file("./data/sample_m3.pkl")
     so6.data.head().drop(columns=['alt1', 'alt2', 'aircraft', 'flight_id'])
 
 
