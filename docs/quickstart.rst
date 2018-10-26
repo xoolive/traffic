@@ -19,6 +19,106 @@ a number of sample points for each trajectory.
     from traffic.core import Traffic
     t = Traffic.from_file('../data/sample_opensky.pkl')
 
+
+.. raw:: html
+
+    <b>Traffic with 397 identifiers</b><style  type="text/css" >
+        #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row0_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
+            }    #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row1_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 96.9%, transparent 96.9%);
+            }    #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row2_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 96.3%, transparent 96.3%);
+            }    #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row3_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 95.5%, transparent 95.5%);
+            }    #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row4_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 94.6%, transparent 94.6%);
+            }    #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row5_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 93.2%, transparent 93.2%);
+            }    #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row6_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 92.9%, transparent 92.9%);
+            }    #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row7_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 91.4%, transparent 91.4%);
+            }    #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row8_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 90.9%, transparent 90.9%);
+            }    #T_4c8c4466_d968_11e8_9db5_a45e60ccda45row9_col0 {
+                width:  10em;
+                 height:  80%;
+                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 90.2%, transparent 90.2%);
+            }</style>  
+    <table id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45" > 
+    <thead>    <tr> 
+            <th class="blank" ></th> 
+            <th class="blank level0" ></th> 
+            <th class="col_heading level0 col0" >count</th> 
+        </tr>    <tr> 
+            <th class="index_name level0" >icao24</th> 
+            <th class="index_name level1" >callsign</th> 
+            <th class="blank" ></th> 
+        </tr></thead> 
+    <tbody>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row0" class="row_heading level0 row0" >4ca84d</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row0" class="row_heading level1 row0" >RYR3YM</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row0_col0" class="data row0 col0" >2859</td> 
+        </tr>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row1" class="row_heading level0 row1" >393320</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row1" class="row_heading level1 row1" >AFR27GH</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row1_col0" class="data row1 col0" >2770</td> 
+        </tr>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row2" class="row_heading level0 row2" >505c98</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row2" class="row_heading level1 row2" >RAM667</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row2_col0" class="data row2 col0" >2752</td> 
+        </tr>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row3" class="row_heading level0 row3" >3944ef</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row3" class="row_heading level1 row3" >HOP87DJ</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row3_col0" class="data row3 col0" >2731</td> 
+        </tr>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row4" class="row_heading level0 row4" >4ca574</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row4" class="row_heading level1 row4" >IBK5111</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row4_col0" class="data row4 col0" >2706</td> 
+        </tr>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row5" class="row_heading level0 row5" >393322</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row5" class="row_heading level1 row5" >AFR23FK</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row5_col0" class="data row5 col0" >2665</td> 
+        </tr>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row6" class="row_heading level0 row6" >40643a</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row6" class="row_heading level1 row6" >EZY57FT</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row6_col0" class="data row6 col0" >2656</td> 
+        </tr>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row7" class="row_heading level0 row7" >394c18</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row7" class="row_heading level1 row7" >AFR140W</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row7_col0" class="data row7 col0" >2613</td> 
+        </tr>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row8" class="row_heading level0 row8" >344692</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row8" class="row_heading level1 row8" >VLG2972</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row8_col0" class="data row8 col0" >2599</td> 
+        </tr>    <tr> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level0_row9" class="row_heading level0 row9" >400cd1</th> 
+            <th id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45level1_row9" class="row_heading level1 row9" >EZY81GE</th> 
+            <td id="T_4c8c4466_d968_11e8_9db5_a45e60ccda45row9_col0" class="data row9 col0" >2579</td> 
+        </tr></tbody> 
+    </table> 
+
+
+
 A Traffic object can be indexed by flight\_id (or by callsign and
 icao24): it returns a Flight object with a specific representation.
 
