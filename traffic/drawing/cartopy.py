@@ -39,7 +39,7 @@ def rivers(**kwargs):
         "scale": "10m",
         "edgecolor": "#226666",
         "facecolor": "none",
-        "alpha": .5,
+        "alpha": .2,
         **kwargs,
     }
     return NaturalEarthFeature(**params)
