@@ -303,178 +303,33 @@ structure with aircraft models.
 .. code:: python
 
     from traffic.core import Traffic
-    from traffic.data import aircraft
-    
     t = Traffic.from_file("../data/sample_opensky.pkl")
-    
-    aircraft.merge(t)
+    t_ext = aircraft.merge(t)
+    t_ext['AFR23FK'].at()
 
+.. parsed-literal::
+    alert                                 False
+    altitude                                375
+    callsign                            AFR23FK
+    geoaltitude                             550
+    groundspeed                         147.611
+    hour                             1500235200
+    icao24                               393322
+    last_position    2017-07-16 22:14:35.733000
+    latitude                            43.6282
+    longitude                           1.36716
+    onground                               True
+    spi                                   False
+    squawk                                 1000
+    timestamp               2017-07-16 22:19:35
+    track                               322.431
+    vertical_rate                          -576
+    regid                                F-GMZC
+    mdl                                    A321
+    type                        Airbus A321-111
+    operator                         Air France
+    Name: 329480, dtype: object
 
-
-
-.. raw:: html
-
-    <b>Traffic with 5 identifiers</b><style  type="text/css" >
-        #T_3b67de0a_75f6_11e8_8482_737beb11541frow0_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_3b67de0a_75f6_11e8_8482_737beb11541frow1_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 38.8%, transparent 38.8%);
-            }    #T_3b67de0a_75f6_11e8_8482_737beb11541frow2_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 22.2%, transparent 22.2%);
-            }    #T_3b67de0a_75f6_11e8_8482_737beb11541frow3_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 20.2%, transparent 20.2%);
-            }    #T_3b67de0a_75f6_11e8_8482_737beb11541frow4_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 16.3%, transparent 16.3%);
-            }</style>  
-    <table id="T_3b67de0a_75f6_11e8_8482_737beb11541f" > 
-    <thead>    <tr> 
-            <th class="blank" ></th> 
-            <th class="blank level0" ></th> 
-            <th class="col_heading level0 col0" >count</th> 
-        </tr>    <tr> 
-            <th class="index_name level0" >icao24</th> 
-            <th class="index_name level1" >callsign</th> 
-            <th class="blank" ></th> 
-        </tr></thead> 
-    <tbody>    <tr> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel0_row0" class="row_heading level0 row0" >3803da</th> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel1_row0" class="row_heading level1 row0" >AIB01KV</th> 
-            <td id="T_3b67de0a_75f6_11e8_8482_737beb11541frow0_col0" class="data row0 col0" >11246</td> 
-        </tr>    <tr> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel0_row1" class="row_heading level0 row1" >a184d7</th> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel1_row1" class="row_heading level1 row1" >N1972N</th> 
-            <td id="T_3b67de0a_75f6_11e8_8482_737beb11541frow1_col0" class="data row1 col0" >4362</td> 
-        </tr>    <tr> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel0_row2" class="row_heading level0 row2" >020025</th> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel1_row2" class="row_heading level1 row2" >RAM653D</th> 
-            <td id="T_3b67de0a_75f6_11e8_8482_737beb11541frow2_col0" class="data row2 col0" >2492</td> 
-        </tr>    <tr> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel0_row3" class="row_heading level0 row3" >484164</th> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel1_row3" class="row_heading level1 row3" >KLM88T</th> 
-            <td id="T_3b67de0a_75f6_11e8_8482_737beb11541frow3_col0" class="data row3 col0" >2275</td> 
-        </tr>    <tr> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel0_row4" class="row_heading level0 row4" >020025</th> 
-            <th id="T_3b67de0a_75f6_11e8_8482_737beb11541flevel1_row4" class="row_heading level1 row4" >RAM650E</th> 
-            <td id="T_3b67de0a_75f6_11e8_8482_737beb11541frow4_col0" class="data row4 col0" >1833</td> 
-        </tr></tbody> 
-    </table> 
-
-
-
-.. code:: python
-
-    aircraft.merge(t).data[['timestamp', 'latitude', 'longitude',
-                            'icao24', 'callsign',
-                            'regid', 'mdl', 'type', 'operator']].sample(5)
-
-
-
-
-.. raw:: html
-
-    <div>
-    <style scoped>
-        .dataframe tbody tr th:only-of-type {
-            vertical-align: middle;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    
-        .dataframe thead th {
-            text-align: right;
-        }
-    </style>
-    <table border="0" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th></th>
-          <th>timestamp</th>
-          <th>latitude</th>
-          <th>longitude</th>
-          <th>icao24</th>
-          <th>callsign</th>
-          <th>regid</th>
-          <th>mdl</th>
-          <th>type</th>
-          <th>operator</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>12068</th>
-          <td>2017-07-13 15:11:59</td>
-          <td>43.887169</td>
-          <td>-0.064152</td>
-          <td>3803da</td>
-          <td>AIB01KV</td>
-          <td>F-WWKV</td>
-          <td>A332</td>
-          <td>Airbus A330</td>
-          <td>Airbus</td>
-        </tr>
-        <tr>
-          <th>14342</th>
-          <td>2017-07-13 15:49:53</td>
-          <td>43.268164</td>
-          <td>1.107200</td>
-          <td>3803da</td>
-          <td>AIB01KV</td>
-          <td>F-WWKV</td>
-          <td>A332</td>
-          <td>Airbus A330</td>
-          <td>Airbus</td>
-        </tr>
-        <tr>
-          <th>9293</th>
-          <td>2017-07-13 14:39:34</td>
-          <td>44.463858</td>
-          <td>0.921177</td>
-          <td>020025</td>
-          <td>RAM653D</td>
-          <td>CN-RNP</td>
-          <td>B738</td>
-          <td>Boeing 737-8B6</td>
-          <td>Royal Air Maroc</td>
-        </tr>
-        <tr>
-          <th>11693</th>
-          <td>2017-07-13 15:05:44</td>
-          <td>44.447704</td>
-          <td>-1.004177</td>
-          <td>3803da</td>
-          <td>AIB01KV</td>
-          <td>F-WWKV</td>
-          <td>A332</td>
-          <td>Airbus A330</td>
-          <td>Airbus</td>
-        </tr>
-        <tr>
-          <th>21294</th>
-          <td>2017-07-13 18:29:13</td>
-          <td>45.192810</td>
-          <td>1.037685</td>
-          <td>484164</td>
-          <td>KLM88T</td>
-          <td>PH-BXL</td>
-          <td>B738</td>
-          <td>Boeing 737-8K2</td>
-          <td>KLM</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
 
 
 
