@@ -426,12 +426,6 @@ TMA.
         if flight.intersects(airac['LFBOTMA'])
     )
 
-.. code:: python
-
-    t_tma
-
-
-
 
 .. raw:: html
 
