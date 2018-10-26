@@ -9,14 +9,14 @@ except ImportError:
     from cartopy.crs import *  # noqa: F401 F403
 
     # Basic version of the complete cached requests included in cartotools
-    from .location import location  # noqa: F401
+    from .location import location, Nominatim  # noqa: F401
 
     cartotools = False
 
 from cartopy.feature import NaturalEarthFeature
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 
-from ..core.mixins import ShapelyMixin
+from ..core.mixins import ShapelyMixin, PointMixin
 
 
 def countries(**kwargs):
@@ -81,6 +81,8 @@ GeoAxesSubplot.set_default_extent = _set_default_extent
 
 
 def _set_extent(self, shape):
+    if isinstance(shape, str):
+        shape = location(shape)
     if isinstance(shape, ShapelyMixin):
         return self._set_extent(shape.extent)
     if cartotools and isinstance(shape, Nominatim):
@@ -90,3 +92,10 @@ def _set_extent(self, shape):
 
 GeoAxesSubplot._set_extent = GeoAxesSubplot.set_extent
 GeoAxesSubplot.set_extent = _set_extent
+
+def _point(self):
+    point = PointMixin()
+    (point.longitude, ), (point.latitude, ) = self.shape.centroid.xy
+    return point
+
+setattr(Nominatim, 'point', property(_point))
