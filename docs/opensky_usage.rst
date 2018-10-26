@@ -17,8 +17,8 @@ the contents of the variable.
 
 .. code:: python
 
-    import traffic.data
-    traffic.data.config_file
+    import traffic
+    traffic.config_file
 
 
 
@@ -29,7 +29,10 @@ the contents of the variable.
 
 
 
-The most basic usage for the OpenSky module is to get the instant
+REST API
+~~~~~~~~
+
+The most basic usage for the OpenSky REST API is to get the instant
 position for all aircraft. This part actually does not require
 authentication.
 
@@ -39,60 +42,147 @@ authentication.
     import matplotlib.pyplot as plt
     
     from traffic.data import opensky
-    from traffic.drawing import EuroPP, PlateCarree, countries
+    from traffic.drawing import EuroPP, countries
     
-    online_aircraft = opensky.online_aircraft()
+    sv = opensky.api_states()
     
     with plt.style.context('traffic'):
-        fig = plt.figure()
-        ax = plt.axes(projection=EuroPP())
-    
+        fig, ax = plt.subplots(subplot_kw=dict(projection=EuroPP()))
         ax.add_feature(countries())
         ax.gridlines()
         ax.set_extent((-7, 15, 40, 55))
     
-        online_aircraft.plot.scatter(x='longitude', y='latitude', 
-                                     transform=PlateCarree(), ax=ax)
+        sv.plot(ax, s=10)
 
 
 
-.. image:: _static/opensky_instant.png
+.. image:: _static/opensky_states.png
    :scale: 70 %
    :alt: Traffic over Western Europe
    :align: center
 
 
-With online\_aircraft, you only get a dataframe, no wrapping has been
-done into a Traffic as you get only one point per aircraft. You can
-listen on the online\_aircraft for a while, concatenate many dataframes
-and build a Traffic structure if you need.
+You may access all callsigns in the state vector (or select few of
+them), then select the trajectory associated to a callsign (a
+``Flight``):
 
 .. code:: python
 
-    from traffic.core import Traffic
+    import random
+    random.sample(sv.callsigns, 6)
 
-    import pandas as pd
-    import time
-    
-    buffer = []
-    for _ in range(20):
-        buffer.append(opensky.online_aircraft())
-        time.sleep(10)
-        
-    t = Traffic(pd.concat(buffer))
+
+
+
+.. parsed-literal::
+
+    ['RYR925Y', 'SKW5223', 'SWA1587', 'SWA2476', 'GTI8876', 'AAL2498']
 
 
 
 .. code:: python
 
-    t
+    flight = sv['AAL2498']
+    flight
 
 
 
 
 .. raw:: html
 
-    <b>Traffic with 4884 identifiers</b><style  type="text/css" >
+    <b>Flight AAL2498</b><ul><li><b>aircraft:</b> a0b8fb / N146AA (A321)</li><li><b>origin:</b> 2018-10-26 13:53:10</li><li><b>destination:</b> 2018-10-26 15:11:31</li></ul><div style="white-space: nowrap"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="-6845023.70795756 6678551.369031437 637538.6161351176 933256.6202398855" preserveAspectRatio="xMinYMin meet"><g transform="matrix(1,0,0,-1,0,14290359.358302759)"><polyline fill="none" stroke="#66cc99" stroke-width="6221.710801599237" points="-6243814.279016881,7577242.929262438 -6242050.151831327,7574552.888785886 -6242904.567845496,7571359.42083786 -6246357.82391024,7568543.909245812 -6256499.31756654,7560715.970840162 -6277227.169884746,7541390.50458704 -6281130.94550974,7537274.976118297 -6350144.525103287,7476141.493057531 -6355126.211674089,7470587.259849855 -6358708.811518395,7464541.33944743 -6362316.530047662,7458344.286944356 -6369900.394129546,7445272.123495277 -6377147.771967366,7432780.444869007 -6394529.55743652,7399704.606443817 -6398326.396566964,7384662.332646362 -6399963.215924804,7377847.064561219 -6401818.10817302,7370160.554693365 -6405282.789124413,7355548.903443681 -6407175.0941675315,7347741.301999811 -6409980.911144296,7341360.545005388 -6414255.01355224,7334884.532401066 -6422398.958588682,7322713.701141733 -6426639.343222028,7316398.573100253 -6431070.804420984,7309800.276071383 -6439863.239508707,7296662.354303936 -6474982.721880522,7244364.9714220995 -6497546.614132676,7210730.748455089 -6507474.688179849,7195987.932258153 -6515881.086898378,7183471.096975141 -6520648.2935569575,7176380.6798243625 -6524992.585254946,7169914.87133326 -6556974.974751948,7122323.080997851 -6575713.769267349,7094404.81918638 -6580251.2774371905,7087604.601586199 -6593963.495141538,7067213.362996821 -6678932.681971921,6940604.713737707 -6732113.195571215,6861205.016122479 -6773882.4948789375,6798792.987157221 -6789103.655758513,6776035.762636188 -6793445.820960725,6768393.602882766 -6797210.35803154,6759371.579779787 -6799868.5049212305,6750358.102026892 -6800461.54559176,6748292.031733118 -6810458.647948676,6713116.429040321" opacity="0.8" /></g></svg></div>
+
+
+
+.. code:: python
+
+    # The same functionality is accessible based on the transponder code (icao24)
+    opensky.api_tracks(flight.icao24)
+
+
+
+
+.. raw:: html
+
+    <b>Flight AAL2498</b><ul><li><b>aircraft:</b> a0b8fb / N146AA (A321)</li><li><b>origin:</b> 2018-10-26 13:53:10</li><li><b>destination:</b> 2018-10-26 15:11:31</li></ul><div style="white-space: nowrap"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="-6845023.70795756 6678551.369031437 637538.6161351176 933256.6202398855" preserveAspectRatio="xMinYMin meet"><g transform="matrix(1,0,0,-1,0,14290359.358302759)"><polyline fill="none" stroke="#66cc99" stroke-width="6221.710801599237" points="-6243814.279016881,7577242.929262438 -6242050.151831327,7574552.888785886 -6242904.567845496,7571359.42083786 -6246357.82391024,7568543.909245812 -6256499.31756654,7560715.970840162 -6277227.169884746,7541390.50458704 -6281130.94550974,7537274.976118297 -6350144.525103287,7476141.493057531 -6355126.211674089,7470587.259849855 -6358708.811518395,7464541.33944743 -6362316.530047662,7458344.286944356 -6369900.394129546,7445272.123495277 -6377147.771967366,7432780.444869007 -6394529.55743652,7399704.606443817 -6398326.396566964,7384662.332646362 -6399963.215924804,7377847.064561219 -6401818.10817302,7370160.554693365 -6405282.789124413,7355548.903443681 -6407175.0941675315,7347741.301999811 -6409980.911144296,7341360.545005388 -6414255.01355224,7334884.532401066 -6422398.958588682,7322713.701141733 -6426639.343222028,7316398.573100253 -6431070.804420984,7309800.276071383 -6439863.239508707,7296662.354303936 -6474982.721880522,7244364.9714220995 -6497546.614132676,7210730.748455089 -6507474.688179849,7195987.932258153 -6515881.086898378,7183471.096975141 -6520648.2935569575,7176380.6798243625 -6524992.585254946,7169914.87133326 -6556974.974751948,7122323.080997851 -6575713.769267349,7094404.81918638 -6580251.2774371905,7087604.601586199 -6593963.495141538,7067213.362996821 -6678932.681971921,6940604.713737707 -6732113.195571215,6861205.016122479 -6773882.4948789375,6798792.987157221 -6789103.655758513,6776035.762636188 -6793445.820960725,6768393.602882766 -6797210.35803154,6759371.579779787 -6799868.5049212305,6750358.102026892 -6800461.54559176,6748292.031733118 -6810458.647948676,6713116.429040321" opacity="0.8" /></g></svg></div>
+
+
+
+The API gives access to other functionalities, like an attempt to map a
+callsign to a route:
+
+.. code:: python
+
+    opensky.api_routes('AFR291')
+
+
+
+
+.. parsed-literal::
+
+    (RJBB/KIX    Osaka Kansai International Airport (Japan)
+     	34.427299 135.244003 altitude: 26,
+     LFPG/CDG    Paris Charles de Gaulle Airport (France)
+     	49.012516 2.555752 altitude: 392)
+
+
+
+You may get the serial numbers associated to your account and also plot
+the polygon of their range (by default on the current day).
+
+.. code:: python
+
+    opensky.api_sensors
+
+
+
+
+.. parsed-literal::
+
+    {'1433801924', '1549047001'}
+
+
+
+.. code:: python
+
+    with plt.style.context('traffic'):
+        fig, ax = plt.subplots(subplot_kw=dict(projection=EuroPP()))
+        ax.add_feature(countries())
+        
+        ax.gridlines()
+        ax.set_extent((-7, 15, 40, 55))
+        
+        # get only the positions detected by your sensors
+        sv = opensky.api_states(True)
+        sv.plot(ax, s=20)
+    
+        for sensor in opensky.api_sensors:
+            c = opensky.api_range(sensor)
+            c.plot(ax, linewidth=2, edgecolor='grey', linestyle='dashed')
+            c.point.plot(ax, marker='x', text_kw=dict(s=c.point.name))
+
+
+.. image:: _static/opensky_coverage.png
+   :scale: 70 %
+   :alt: OpenSky Coverage
+   :align: center
+
+
+
+The API also offers an attempt to map an airport with aircraft departing
+or arriving at an airport:
+
+.. code:: python
+
+    opensky.api_departure('LFBO', '2018-10-25 11:11', '2018-10-25 13:42')
+
+
+
+
+.. raw:: html
+
+    <div>
+    <style  type="text/css" >
         table {
             border-collapse: collapse;
             border-spacing: 0;
@@ -117,183 +207,218 @@ and build a Traffic structure if you need.
         tbody tr:nth-child(2n) {
             background: #f5f5f5;
         }
-        #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row0_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row1_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row2_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row3_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row4_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row5_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row6_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row7_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row8_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }    #T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row9_col0 {
-                width:  10em;
-                 height:  80%;
-                background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 100.0%, transparent 100.0%);
-            }</style>  
-    <table id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6" > 
-    <thead>    <tr> 
-            <th class="blank" ></th> 
-            <th class="blank level0" ></th> 
-            <th class="col_heading level0 col0" >count</th> 
-        </tr>    <tr> 
-            <th class="index_name level0" >icao24</th> 
-            <th class="index_name level1" >callsign</th> 
-            <th class="blank" ></th> 
-        </tr></thead> 
-    <tbody>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row0" class="row_heading level0 row0" >4ca53f</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row0" class="row_heading level1 row0" >RYR68MK</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row0_col0" class="data row0 col0" >20</td> 
-        </tr>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row1" class="row_heading level0 row1" >7335a5</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row1" class="row_heading level1 row1" >IRM117</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row1_col0" class="data row1 col0" >20</td> 
-        </tr>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row2" class="row_heading level0 row2" >738062</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row2" class="row_heading level1 row2" >ELY5426</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row2_col0" class="data row2 col0" >20</td> 
-        </tr>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row3" class="row_heading level0 row3" >738058</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row3" class="row_heading level1 row3" >ELY2366</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row3_col0" class="data row3 col0" >20</td> 
-        </tr>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row4" class="row_heading level0 row4" >738057</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row4" class="row_heading level1 row4" >ELY320</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row4_col0" class="data row4 col0" >20</td> 
-        </tr>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row5" class="row_heading level0 row5" >738051</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row5" class="row_heading level1 row5" >ELY312</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row5_col0" class="data row5 col0" >20</td> 
-        </tr>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row6" class="row_heading level0 row6" >738044</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row6" class="row_heading level1 row6" >ELY007</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row6_col0" class="data row6 col0" >20</td> 
-        </tr>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row7" class="row_heading level0 row7" >7335d6</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row7" class="row_heading level1 row7" >IRM133</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row7_col0" class="data row7 col0" >20</td> 
-        </tr>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row8" class="row_heading level0 row8" >732541</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row8" class="row_heading level1 row8" >IRA711</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row8_col0" class="data row8 col0" >20</td> 
-        </tr>    <tr> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level0_row9" class="row_heading level0 row9" >740737</th> 
-            <th id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6level1_row9" class="row_heading level1 row9" >RJA107</th> 
-            <td id="T_86ead712_7ab8_11e8_bd51_098dc8c9bfc6row9_col0" class="data row9 col0" >20</td> 
-        </tr></tbody> 
-    </table> 
-
-
-
-You can now plot a basic unprocessed version of the traffic over Europe
-in ten minutes: most aircraft behave well but you get the noise as well.
-
-.. code:: python
-
-    with plt.style.context('traffic'):
-        fig = plt.figure()
-        ax = plt.axes(projection=EuroPP())
+        </style>
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
+        }
     
-        ax.add_feature(countries())
-        ax.gridlines()
-        ax.set_extent((-7, 15, 40, 55))
+        .dataframe tbody tr th {
+            vertical-align: top;
+        }
     
-        t.plot(ax)
+        .dataframe thead th {
+            text-align: right;
+        }
+    </style>
+    <table border="0" class="dataframe">
+      <thead>
+        <tr style="text-align: right;">
+          <th></th>
+          <th>firstSeen</th>
+          <th>lastSeen</th>
+          <th>icao24</th>
+          <th>callsign</th>
+          <th>estDepartureAirport</th>
+          <th>estArrivalAirport</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>17</th>
+          <td>2018-10-25 13:36:49</td>
+          <td>2018-10-25 14:39:53</td>
+          <td>406a93</td>
+          <td>EZY178A</td>
+          <td>LFBO</td>
+          <td>LFPO</td>
+        </tr>
+        <tr>
+          <th>16</th>
+          <td>2018-10-25 13:44:04</td>
+          <td>2018-10-25 14:47:58</td>
+          <td>0a0027</td>
+          <td>DAH1077</td>
+          <td>LFBO</td>
+          <td>None</td>
+        </tr>
+        <tr>
+          <th>15</th>
+          <td>2018-10-25 13:49:11</td>
+          <td>2018-10-25 15:11:59</td>
+          <td>3c6744</td>
+          <td>DLH97F</td>
+          <td>LFBO</td>
+          <td>EDDM</td>
+        </tr>
+        <tr>
+          <th>14</th>
+          <td>2018-10-25 13:56:41</td>
+          <td>2018-10-25 15:11:27</td>
+          <td>4ca5f2</td>
+          <td>RYR87ZE</td>
+          <td>LFBO</td>
+          <td>EBCI</td>
+        </tr>
+        <tr>
+          <th>13</th>
+          <td>2018-10-25 14:01:00</td>
+          <td>2018-10-25 14:36:57</td>
+          <td>3944ef</td>
+          <td>HOP13ZI</td>
+          <td>LFBO</td>
+          <td>LFLL</td>
+        </tr>
+        <tr>
+          <th>12</th>
+          <td>2018-10-25 14:03:25</td>
+          <td>2018-10-25 14:48:29</td>
+          <td>3815da</td>
+          <td>FWWEZ</td>
+          <td>LFBO</td>
+          <td>None</td>
+        </tr>
+        <tr>
+          <th>11</th>
+          <td>2018-10-25 14:15:30</td>
+          <td>2018-10-25 15:51:29</td>
+          <td>485814</td>
+          <td>KLM96H</td>
+          <td>LFBO</td>
+          <td>EHAM</td>
+        </tr>
+        <tr>
+          <th>10</th>
+          <td>2018-10-25 14:18:05</td>
+          <td>2018-10-25 17:58:05</td>
+          <td>389b9b</td>
+          <td>AIB01HF</td>
+          <td>LFBO</td>
+          <td>LFBO</td>
+        </tr>
+        <tr>
+          <th>9</th>
+          <td>2018-10-25 14:28:35</td>
+          <td>2018-10-25 15:48:59</td>
+          <td>440833</td>
+          <td>EZY71TU</td>
+          <td>LFBO</td>
+          <td>EGGD</td>
+        </tr>
+        <tr>
+          <th>8</th>
+          <td>2018-10-25 14:36:42</td>
+          <td>2018-10-25 15:42:28</td>
+          <td>44056d</td>
+          <td>EZY987K</td>
+          <td>LFBO</td>
+          <td>EBTY</td>
+        </tr>
+        <tr>
+          <th>7</th>
+          <td>2018-10-25 14:52:19</td>
+          <td>2018-10-25 15:37:44</td>
+          <td>39b9f9</td>
+          <td>HOP14YI</td>
+          <td>LFBO</td>
+          <td>LFML</td>
+        </tr>
+        <tr>
+          <th>6</th>
+          <td>2018-10-25 15:07:45</td>
+          <td>2018-10-25 16:06:28</td>
+          <td>3985aa</td>
+          <td>AFR48FC</td>
+          <td>LFBO</td>
+          <td>LFPO</td>
+        </tr>
+        <tr>
+          <th>5</th>
+          <td>2018-10-25 15:08:56</td>
+          <td>2018-10-25 16:27:17</td>
+          <td>38161a</td>
+          <td>FWWEB</td>
+          <td>LFBO</td>
+          <td>LFBO</td>
+        </tr>
+        <tr>
+          <th>4</th>
+          <td>2018-10-25 15:10:30</td>
+          <td>2018-10-25 18:49:32</td>
+          <td>151d42</td>
+          <td>RSD076</td>
+          <td>LFBO</td>
+          <td>UUWW</td>
+        </tr>
+        <tr>
+          <th>3</th>
+          <td>2018-10-25 15:28:45</td>
+          <td>2018-10-25 16:41:41</td>
+          <td>c074fb</td>
+          <td>CGSHU</td>
+          <td>LFBO</td>
+          <td>LFPB</td>
+        </tr>
+        <tr>
+          <th>2</th>
+          <td>2018-10-25 15:31:13</td>
+          <td>2018-10-25 17:00:38</td>
+          <td>382aba</td>
+          <td>AIB04YX</td>
+          <td>LFBO</td>
+          <td>LFBO</td>
+        </tr>
+        <tr>
+          <th>1</th>
+          <td>2018-10-25 15:32:47</td>
+          <td>2018-10-25 17:00:36</td>
+          <td>02a0ad</td>
+          <td>TAR283</td>
+          <td>LFBO</td>
+          <td>DTTA</td>
+        </tr>
+        <tr>
+          <th>0</th>
+          <td>2018-10-25 15:37:16</td>
+          <td>2018-10-25 16:33:58</td>
+          <td>393324</td>
+          <td>AFR61FJ</td>
+          <td>LFBO</td>
+          <td>LFPO</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
 
 
 
-.. image:: _static/opensky_trajectories.png
-   :scale: 70 %
-   :alt: Traffic over France
-   :align: center
+Access to the Impala Shell
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+For more advanced request or a dig in further history, you may be
+eligible for an direct access to the history database through their
+`Impala <https://opensky-network.org/impala-guide>`__ shell. The
+``history`` function builds requests, stores the result in cache files
+and do the parsing before building a ``pandas`` DataFrame and wrap it in
+a ``Traffic`` structure.
 
-The easy way to deal with that is to discard trajectories that fly a
-longer distance than average. We can start by plotting a distribution of
-trajectory length.
-
-.. code:: python
-
-    length = [flight.project_shape().length for flight in t if flight.shape is not None]
-    plt.hist([l for l in length  if l < 2e5], bins=30);
-
-
-
-.. image:: _static/trajectory_distribution.png
-   :scale: 70 %
-   :alt: Trajectory length distribution
-   :align: center
-
-
-.. code:: python
-
-    filtered = Traffic.from_flights([flight for flight in t
-                                     if flight.shape is not None and
-                                     flight.project_shape().length < 6e4])
-
-.. code:: python
-
-    with plt.style.context('traffic'):
-        fig = plt.figure()
-        ax = plt.axes(projection=EuroPP())
-    
-        ax.add_feature(countries())
-        ax.gridlines()
-        ax.set_extent((-7, 15, 40, 55))
-    
-        filtered.plot(ax)
-
-
-
-.. image:: _static/opensky_filtered.png
-   :scale: 70 %
-   :alt: Traffic over Western Europe
-   :align: center
-
-
-You can also access the history database from OpenSky through their `Impala
-<https://opensky-network.org/impala-guide>`__ shell.
+You may pass requests based on time ranges, callsigns, aircraft, areas
+or sensors' serial numbers.
 
 .. code:: python
 
     flight = opensky.history("2017-02-05", callsign="EZY158T")
-    
     flight
-
-
-
-.. parsed-literal::
-    100%|██████████| 24/24 [00:00<00:00, 44.24it/s]
-
-
 
 .. raw:: html
 
@@ -301,7 +426,9 @@ You can also access the history database from OpenSky through their `Impala
 
 
 
-You can of course plot the flight on the map after that.
+
+It is easy to plot a flight after that, with usual methods applicable to
+a ``Flight``.
 
 .. code:: python
 
@@ -312,25 +439,337 @@ You can of course plot the flight on the map after that.
     from traffic.drawing import EuroPP, countries, location
     
     with plt.style.context('traffic'):
-        
-        fig = plt.figure()
         ax = plt.axes(projection=EuroPP())
     
         ax.add_feature(countries())
-    
         ax.gridlines()
-        ax.set_extent(location('France').extent)
+        
+        ax.set_extent(location('France'))
+        
+        for name, fir in eurofirs.items():
+            if name.startswith('LF'):
+                fir.plot(ax, edgecolor='navy', linewidth=2, linestyle='dotted')
+                fir.point.plot(ax, alpha=0,  text_kw=dict(s=name, fontsize=16, horizontalalignment='center'))
     
-        [fir.plot(ax, edgecolor='steelblue')
-         for name, fir in eurofirs.items() if name.startswith('LF')]
-    
-        flight.plot(ax, color='#aa3a3a')
+        flight.plot(ax, color='gray', linestyle='dashed')
+        flight.before('2017-02-05 16:12').plot(ax, color='#aa3a3a')
+        flight.at('2017-02-05 16:12').plot(
+            ax, s=15, marker='o', text_kw=dict(s="16:12", horizontalalignment='right',), shift=dict(units='dots', x=-10)
+        )
 
 
 
 
-.. image:: _static/diverted_flight.png
+.. image:: _static/opensky_ezy158t.png
    :scale: 70 %
-   :alt: Diverted flight
+   :alt: EZY158T
    :align: center
+
+
+
+It is also possible to make requests based on bounding boxes. Notice the
+splitting into time intervals (by hour) is done for you and the result
+is cached into files.
+
+.. code:: python
+
+    from traffic.core.logging import loglevel
+    loglevel('INFO')
+    
+    t = opensky.history(
+        "2018-10-01 11:50", "2018-10-01 12:10",
+        bounds=eurofirs['LFBB']
+    )
+
+
+.. parsed-literal::
+
+    INFO:root:Sending request between time 2018-10-01 13:50:00 and 2018-10-01 14:10:00 and hour 2018-10-01 13:00:00 and 2018-10-01 14:00:00
+    INFO:root:Reading request in cache /home/xo/.cache/traffic/opensky/0917bce032e5f16a84befe6e3816fb4b
+    INFO:root:Sending request between time 2018-10-01 13:50:00 and 2018-10-01 14:10:00 and hour 2018-10-01 14:00:00 and 2018-10-01 15:00:00
+    INFO:root:Reading request in cache /home/xo/.cache/traffic/opensky/ac66322613c0f320ae505351e12ef89e
+
+
+It is easy to filter flights based on criterion in the dataframe.
+
+.. code:: python
+
+    from traffic.data import airports
+    
+    with plt.style.context('traffic'):
+        
+        fig, (ax1, ax2) = plt.subplots(
+            1, 2, figsize=(15, 10),
+            subplot_kw=dict(projection=EuroPP())
+        )
+        
+        for ax in (ax1, ax2):
+            ax.add_feature(countries())
+            ax.set_extent(eurofirs['LFBB'])
+            
+            for airport_code in ('LFBO', 'LFBD'):
+                airports[airport_code].plot(
+                    ax, color='firebrick'
+                )
+                airports[airport_code].point.plot(
+                    ax, alpha=0, 
+                    text_kw=dict(
+                        s=airport_code,
+                        bbox=dict(
+                            facecolor='firebrick',
+                            alpha=0.3,
+                            boxstyle='round')
+                    )
+                )
+                
+            eurofirs['LFBB'].plot(
+                ax, edgecolor='navy',
+                linewidth=2,
+                linestyle='dotted')
+        
+        t.plot(ax1)
+        t.query('altitude < 20000').plot(ax2)
+
+
+
+.. image:: _static/opensky_traffic.png
+   :scale: 70 %
+   :alt: Traffic over LFBB FIR
+   :align: center
+
+
+Advanced usage: information about sensors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By adding the ``count`` flag to the request, you get the number of
+sensors which received the message. You may then add this dimension on
+various plots or analyses.
+
+.. code:: python
+
+    # Silence previous logs about the requests
+    loglevel('WARN')
+    
+    flight = opensky.history(
+        "2018-06-11 15:00",
+        "2018-06-11 17:00",
+        callsign='KLM1308',
+        count=True
+    )
+
+
+.. code:: python
+
+    import matplotlib.dates as dates
+    
+    with plt.style.context('traffic'):
+        
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 8))
+        
+        params = dict(y=['count', 'altitude'], secondary_y='altitude')
+        flight.plot_time(ax1, **params)
+        
+        # altitude is often noisy. A basic window based filtering is provided (can be cascaded).
+        flight.filter(altitude=17).filter(altitude=53).plot_time(
+            ax2, **params
+        )
+                                       
+        for ax in (ax1, ax2):
+            ax.xaxis.set_major_formatter(dates.DateFormatter('%b %d, %H:%M'))
+            ax.set_xlabel('')  # silence the 'timestamp' label
+
+
+
+
+.. image:: _static/opensky_timecount.png
+   :scale: 70 %
+   :alt: KLM1308
+   :align: center
+
+
+.. code:: python
+
+    from traffic.drawing import EuroPP, PlateCarree, countries, rivers
+    
+    with plt.style.context('traffic'):
+        fig, ax = plt.subplots(
+            subplot_kw=dict(projection=EuroPP())
+        )
+        ax.add_feature(countries())
+        ax.add_feature(rivers())
+        ax.set_extent((-7, 13, 40, 55))
+        
+        sc = (
+            flight.data.plot.scatter(
+                ax=ax, x='longitude', y='latitude', c='count',
+                transform=PlateCarree(), s=5, cmap='viridis'
+            )
+        )
+        
+
+
+.. image:: _static/opensky_mapcount.png
+   :scale: 70 %
+   :alt: KLM1308
+   :align: center
+
+
+
+
+Advanced usage: Extended Mode-S (EHS)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+EHS messages are not automatically decoded for your on the OpenSky
+Database but you may access them and decode them aside. (better
+integration to come)
+
+.. code:: python
+
+    df = opensky.extended(
+        flight.start, flight.stop,
+        icao24=flight.icao24
+    )
+    df.head()
+
+
+
+
+.. raw:: html
+
+    <div>
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
+        }
+    
+        .dataframe tbody tr th {
+            vertical-align: top;
+        }
+    
+        .dataframe thead th {
+            text-align: right;
+        }
+    </style>
+    <table border="0" class="dataframe">
+      <thead>
+        <tr style="text-align: right;">
+          <th></th>
+          <th>mintime</th>
+          <th>maxtime</th>
+          <th>rawmsg</th>
+          <th>msgcount</th>
+          <th>icao24</th>
+          <th>hour</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>1530</th>
+          <td>2018-06-11 17:34:24.774</td>
+          <td>2018-06-11 17:34:24.853</td>
+          <td>a0000132fa81c1000000007f158d</td>
+          <td>1</td>
+          <td>484cb8</td>
+          <td>1528729200</td>
+        </tr>
+        <tr>
+          <th>2538</th>
+          <td>2018-06-11 17:34:28.603</td>
+          <td>2018-06-11 17:34:28.639</td>
+          <td>a00001398db000307c00007b6429</td>
+          <td>2</td>
+          <td>484cb8</td>
+          <td>1528729200</td>
+        </tr>
+        <tr>
+          <th>461</th>
+          <td>2018-06-11 17:34:28.629</td>
+          <td>2018-06-11 17:34:28.629</td>
+          <td>a8000800f259250e22a4587818e7</td>
+          <td>1</td>
+          <td>484cb8</td>
+          <td>1528729200</td>
+        </tr>
+        <tr>
+          <th>1048</th>
+          <td>2018-06-11 17:34:28.629</td>
+          <td>2018-06-11 17:34:28.629</td>
+          <td>a8000800580b91187452aefda6f2</td>
+          <td>1</td>
+          <td>484cb8</td>
+          <td>1528729200</td>
+        </tr>
+        <tr>
+          <th>1020</th>
+          <td>2018-06-11 17:34:32.447</td>
+          <td>2018-06-11 17:34:32.513</td>
+          <td>a00001908db000307c0000bbf321</td>
+          <td>2</td>
+          <td>484cb8</td>
+          <td>1528729200</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+
+
+.. code:: python
+
+    from datetime import timedelta
+    from tqdm.autonotebook import tqdm
+    
+    from traffic.core.time import round_time
+    from traffic.data.adsb.decode import Decoder
+    
+    lon0, lat0, _ = next(iter(flight.shape.coords))
+    
+    decoder = Decoder((lat0, lon0))  # create a decoder
+    rs = flight.resample()  # resample the flight at 1 Hz
+    
+    for _, line in tqdm(df.iterrows(), total=df.shape[0]):
+        ts = round_time(line.mintime, 'before', timedelta(minutes=1))
+        if ts >= rs.start:
+            data = rs.at(ts)
+            if flight.icao24 in decoder.acs and data is not None:
+                ac = decoder.acs[flight.icao24]
+                ac.spd = data.groundspeed
+                ac.trk = data.track
+                ac.alt = data.altitude
+        decoder.process(line.mintime, line.rawmsg)
+
+
+.. code:: python
+
+    t = decoder.traffic['KLM1308'] + flight
+    ext_flight = t['KLM1308']
+
+.. code:: python
+
+    import numpy as np
+    
+    with plt.style.context('traffic'):
+        fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(15, 8))
+    
+        ext_flight.filter().filter(groundspeed=53, tas=53, ias=53).plot_time(
+            ax1, ['groundspeed', 'ias', 'tas'],
+        )
+        
+        ext_flight.filter().filter(heading=53, track=53).assign(
+            heading=lambda x: np.degrees(np.unwrap(np.radians(x.heading))),
+            track=lambda x: np.degrees(np.unwrap(np.radians(x.track)))
+        ).plot_time(
+            ax2, ['heading', 'track']
+        )
+        
+        ax1.legend()
+        ax2.legend()
+
+
+
+.. image:: _static/opensky_ehs.png
+   :scale: 70 %
+   :alt: EHS
+   :align: center
+
 
