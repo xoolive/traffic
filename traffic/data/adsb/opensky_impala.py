@@ -4,10 +4,11 @@ import re
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional, Tuple, Union, cast
+from typing import Callable, Iterable, Optional, Tuple, Union, cast
 
 import pandas as pd
 import paramiko
+from shapely.geometry.base import BaseGeometry
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
@@ -45,13 +46,14 @@ class Impala(object):
         "{other_params}"
     )
 
+    shell: paramiko.Channel
+
     def __init__(self, username: str, password: str, cache_dir: Path) -> None:
 
         self.username = username
         self.password = password
         self.connected = False
         self.cache_dir = cache_dir
-        self.shell = None
         if not self.cache_dir.exists():
             self.cache_dir.mkdir(parents=True)
 
@@ -61,6 +63,10 @@ class Impala(object):
             self.auth = (username, password)
 
     def clear_cache(self) -> None:
+        """Clear cache files for OpenSky.
+
+        The directory containing cache files tends to clog after a while.
+        """
         for file in self.cache_dir.glob("*"):
             file.unlink()
 
@@ -68,27 +74,35 @@ class Impala(object):
     def _format_dataframe(
         df: pd.DataFrame, nautical_units=True
     ) -> pd.DataFrame:
+        """
+        This function converts types, strips spaces after callsigns and sorts
+        the DataFrame by timestamp.
+
+        For some reason, all data arriving from OpenSky are converted to
+        units in metric system. Optionally, you may convert the units back to
+        nautical miles, feet and feet/min.
+
+        """
 
         df.callsign = df.callsign.str.strip()
 
         if nautical_units:
             df.altitude = df.altitude / 0.3048
-            if 'geoaltitude' in df.columns:
+            if "geoaltitude" in df.columns:
                 df.geoaltitude = df.geoaltitude / 0.3048
-            if 'groundspeed' in df.columns:
+            if "groundspeed" in df.columns:
                 df.groundspeed = df.groundspeed / 1852 * 3600
-            if 'vertical_rate' in df.columns:
+            if "vertical_rate" in df.columns:
                 df.vertical_rate = df.vertical_rate / 0.3048 * 60
 
         df.timestamp = df.timestamp.apply(datetime.fromtimestamp)
 
-        # warning is raised here: SettingWithCopyWarning:
-        # A value is trying to be set on a copy of a slice from a DataFrame.
-        # Try using .loc[row_indexer,col_indexer] = value instead
-        pd.options.mode.chained_assignment = None
-        if 'last_position' in df.columns:
-            df = df.loc[df.last_position.notnull()]  # do we really miss much?
-            df.last_position = df.last_position.apply(datetime.fromtimestamp)
+        if "last_position" in df.columns:
+            df = df.query("last_position == last_position").assign(
+                last_position=lambda df: df.last_position.apply(
+                    datetime.fromtimestamp
+                )
+            )
 
         return df.sort_values("timestamp")
 
@@ -127,9 +141,6 @@ class Impala(object):
             if not self.connected:
                 self._connect()
 
-            # Now we are connected so self.c is not None
-            self.shell = cast(Any, self.shell)
-
             logging.info("Sending request: {}".format(request))
             self.shell.send(request + ";\n")
             total = ""
@@ -157,29 +168,60 @@ class Impala(object):
 
     def history(
         self,
-        before: timelike,
-        after: Optional[timelike] = None,
-        *args,
+        start: timelike,
+        stop: Optional[timelike] = None,
+        *args,  # more reasonable to be explicit about arguments
         date_delta: timedelta = timedelta(hours=1),
-        callsign: Optional[Union[str, Iterable[str]]] = None,
-        icao24: Optional[Union[str, Iterable[str]]] = None,
-        serials: Optional[Iterable[int]] = None,
-        bounds: Optional[Tuple[float, float, float, float]] = None,
+        callsign: Union[None, str, Iterable[str]] = None,
+        icao24: Union[None, str, Iterable[str]] = None,
+        serials: Union[None, str, Iterable[str]] = None,
+        bounds: Union[
+            BaseGeometry, Tuple[float, float, float, float], None
+        ] = None,
+        cached: bool = True,
+        count: bool = False,
         other_tables: str = "",
         other_params: str = "",
         progressbar: Callable[[Iterable], Iterable] = iter,
-        cached: bool = True,
-        count: bool = False,
     ) -> Optional[Union[Traffic, Flight]]:
 
-        return_flight = False
-        before = to_datetime(before)
-        if after is not None:
-            after = to_datetime(after)
-        else:
-            after = before + timedelta(days=1)
+        """Get Traffic from the OpenSky Impala shell.
 
-        if progressbar == iter and after - before > timedelta(hours=1):
+        The method builds appropriate SQL requests, caches results and formats
+        data into a proper pandas DataFrame. Requests are split by hour (by
+        default) in case the connection fails.
+
+        Args:
+            start: a string, epoch or datetime
+            stop (optional): a string, epoch or datetime, by default, one day
+            after start
+            date_delta (optional): how to split the requests (default: one day)
+            callsign (optional): a string or a list of strings (default: empty)
+            icao24 (optional): a string or a list of strings identifying the
+            transponder code of the aircraft (default: empty)
+            serials (optional): a string or a list of strings identifying the
+            sensors receiving the data. (default: empty)
+            bounds (optional): a shape (requires the bounds attribute) or a
+            tuple of floats (west, south, east, north) to put a geographical
+            limit on the request. (default: empty)
+            cached (boolean): whether to look first whether the request has been
+            cached (default: True)
+            count (boolean): add a column stating how many sensors received each
+            line (default: False)
+
+        Returns:
+            a Traffic structure wrapping the dataframe
+
+        """
+
+        return_flight = False
+        start = to_datetime(start)
+        if stop is not None:
+            stop = to_datetime(stop)
+        else:
+            stop = start + timedelta(days=1)
+
+        if progressbar == iter and stop - start > timedelta(hours=1):
             progressbar = tqdm
 
         if isinstance(serials, Iterable):
@@ -213,7 +255,7 @@ class Impala(object):
             other_params += "and lat>={} and lat<={} ".format(south, north)
 
         cumul = []
-        sequence = list(split_times(before, after, date_delta))
+        sequence = list(split_times(start, stop, date_delta))
         columns = ", ".join(self._impala_columns)
 
         if count is True:
@@ -293,17 +335,139 @@ class Impala(object):
         if len(cumul) == 0:
             return None
 
+        df = pd.concat(cumul, sort=True).sort_values("timestamp")
+
+        if count is True:
+            df = df.assign(count=lambda df: df['count'].astype(int))
+
         if return_flight:
-            return Flight(pd.concat(cumul, sort=True))
+            return Flight(df)
 
-        return Traffic(pd.concat(cumul, sort=True))
+        return Traffic(df)
 
-    def sensors(
+    def extended(
         self,
-        before: timelike,
-        after: timelike,
-        bounds: Tuple[float, float, float, float],
+        start: timelike,
+        stop: Optional[timelike] = None,
+        *args,  # more reasonable to be explicit about arguments
+        date_delta: timedelta = timedelta(hours=1),
+        icao24: Union[None, str, Iterable[str]] = None,
+        serials: Union[None, str, Iterable[str]] = None,
+        other_tables: str = "",
+        other_params: str = "",
+        progressbar: Callable[[Iterable], Iterable] = iter,
+        cached: bool = True,
+    ) -> pd.DataFrame:
+        """Get EHS message from the OpenSky Impala shell.
+
+        The method builds appropriate SQL requests, caches results and formats
+        data into a proper pandas DataFrame. Requests are split by hour (by
+        default) in case the connection fails.
+
+        Args:
+            start: a string, epoch or datetime
+            stop (optional): a string, epoch or datetime, by default, one day
+            after start
+            date_delta (optional): how to split the requests (default: one day)
+            icao24 (optional): a string or a list of strings identifying the
+            transponder code of the aircraft (default: empty)
+            serials (optional): a string or a list of strings identifying the
+            sensors receiving the data. (default: empty)
+            cached (boolean): whether to look first whether the request has been
+            cached (default: True)
+
+        Returns:
+            a Traffic structure wrapping the dataframe
+
+        """
+
+        _request = (
+            "select {columns} from rollcall_replies_data4 {other_tables} "
+            "where hour>={before_hour} and hour<{after_hour} "
+            "and rollcall_replies_data4.mintime>={before_time} "
+            "and rollcall_replies_data4.maxtime<{after_time} "
+            "{other_params}"
+        )
+
+        columns = (
+            "rollcall_replies_data4.mintime, "
+            "rollcall_replies_data4.maxtime, "
+            "rawmsg, msgcount, icao24, message, identity, hour"
+        )
+
+        start = to_datetime(start)
+        if stop is not None:
+            stop = to_datetime(stop)
+        else:
+            stop = start + timedelta(days=1)
+
+        if isinstance(icao24, str):
+            other_params += "and icao24='{}' ".format(icao24)
+        elif isinstance(icao24, Iterable):
+            icao24 = ",".join("'{}'".format(c) for c in icao24)
+            other_params += "and icao24 in ({}) ".format(icao24)
+
+        if isinstance(serials, Iterable):
+            other_tables += ", rollcall_replies_data4.sensors s "
+            other_params += "and s.serial in {} ".format(tuple(serials))
+            columns = "s.serial, s.mintime as time, " + columns
+        elif isinstance(serials, str):
+            other_tables += ", rollcall_replies_data4.sensors s "
+            other_params += "and s.serial == {} ".format((serials))
+            columns = "s.serial, s.mintime as time, " + columns
+
+        other_params += "and message is not null "
+        sequence = list(split_times(start, stop, date_delta))
+        cumul = []
+
+        for bt, at, bh, ah in progressbar(sequence):
+
+            logging.info(
+                f"Sending request between time {bt} and {at} "
+                f"and hour {bh} and {ah}"
+            )
+
+            request = _request.format(
+                columns=columns,
+                before_time=int(bt.timestamp()),
+                after_time=int(at.timestamp()),
+                before_hour=bh.timestamp(),
+                after_hour=ah.timestamp(),
+                other_tables=other_tables,
+                other_params=other_params,
+            )
+
+            df = self._impala(request, cached)
+
+            if df is None:
+                continue
+
+            if df.hour.dtype == object:
+                df = df[df.hour != "hour"]
+
+            for column_name in ["mintime", "maxtime"]:
+                df[column_name] = (
+                    df[column_name].astype(float).apply(datetime.fromtimestamp)
+                )
+
+            df.icao24 = df.icao24.apply(
+                lambda x: "{:0>6}".format(hex(int(str(x), 16))[2:])
+            )
+
+            cumul.append(df)
+
+        if len(cumul) == 0:
+            return None
+
+        return pd.concat(cumul).sort_values("mintime")
+
+    def within_bounds(
+            self,
+            before: timelike,
+            after: timelike,
+            bounds: Union[BaseGeometry, Tuple[float, float, float, float]],
     ) -> Optional[pd.DataFrame]:
+        """EXPERIMENTAL."""
 
         before = to_datetime(before)
         after = to_datetime(after)
@@ -341,13 +505,14 @@ class Impala(object):
 
         return df
 
-    def at_airport(
+    def within_airport(
         self,
         before: timelike,
         after: timelike,
         airport: Union[Airport, str],
         count: bool = False,
     ) -> Optional[pd.DataFrame]:
+        """EXPERIMENTAL."""
 
         before = to_datetime(before)
         after = to_datetime(after)
@@ -393,99 +558,9 @@ class Impala(object):
 
         return df
 
-    def extended(
-        self,
-        before: timelike,
-        after: Optional[timelike] = None,
-        *args,
-        date_delta: timedelta = timedelta(hours=1),
-        icao24: Optional[Union[str, Iterable[str]]] = None,
-        serials: Optional[Iterable[int]] = None,
-        other_tables: str = "",
-        other_params: str = "",
-        progressbar: Callable[[Iterable], Iterable] = iter,
-        cached: bool = True,
-    ):
 
-        _request = (
-            "select {columns} from rollcall_replies_data4 {other_tables} "
-            "where hour>={before_hour} and hour<{after_hour} "
-            "and rollcall_replies_data4.mintime>={before_time} "
-            "and rollcall_replies_data4.maxtime<{after_time} "
-            "{other_params}"
-        )
-
-        columns = (
-            "rollcall_replies_data4.mintime, "
-            "rollcall_replies_data4.maxtime, "
-            "rawmsg, msgcount, icao24, message, identity, hour"
-        )
-
-        before = to_datetime(before)
-        if after is not None:
-            after = to_datetime(after)
-        else:
-            after = before + timedelta(days=1)
-
-        if isinstance(icao24, str):
-            other_params += "and icao24='{}' ".format(icao24)
-
-        elif isinstance(icao24, Iterable):
-            icao24 = ",".join("'{}'".format(c) for c in icao24)
-            other_params += "and icao24 in ({}) ".format(icao24)
-
-        if isinstance(serials, Iterable):
-            other_tables += ", rollcall_replies_data4.sensors s "
-            other_params += "and s.serial in {} ".format(tuple(serials))
-            columns = "s.serial, s.mintime as time, " + columns
-        else:
-            raise NotImplementedError()
-
-        other_params += "and message is not null "
-        sequence = list(split_times(before, after, date_delta))
-        cumul = []
-
-        for bt, at, bh, ah in progressbar(sequence):
-
-            logging.info(
-                f"Sending request between time {bt} and {at} "
-                f"and hour {bh} and {ah}"
-            )
-
-            request = _request.format(
-                columns=columns,
-                before_time=bt.timestamp(),
-                after_time=at.timestamp(),
-                before_hour=bh.timestamp(),
-                after_hour=ah.timestamp(),
-                other_tables=other_tables,
-                other_params=other_params,
-            )
-
-            df = self._impala(request, cached)
-
-            if df is None:
-                continue
-
-            if df.hour.dtype == object:
-                df = df[df.hour != "hour"]
-
-            for column_name in ["mintime", "maxtime", "time"]:
-                df[column_name] = (
-                    df[column_name].astype(float).apply(datetime.fromtimestamp)
-                )
-
-            df.icao24 = df.icao24.apply(
-                lambda x: "{:0>6}".format(hex(int(str(x), 16))[2:])
-            )
-
-            cumul.append(df)
-
-        if len(cumul) == 0:
-            return None
-
-        return pd.concat(cumul)
-
+# below this line is only helpful references
+# ------------------------------------------
 
 """
 [hadoop-1:21000] > describe rollcall_replies_data4;

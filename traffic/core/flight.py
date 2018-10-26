@@ -496,7 +496,6 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             new_gs * delta.total_seconds() * 1852 / 3600,
         )
 
-        new_balt = last_line.baro_altitude + new_vr * delta.total_seconds() / 60
         new_alt = last_line.altitude + new_vr * delta.total_seconds() / 60
 
         return Flight(
@@ -509,7 +508,6 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
                             "latitude": new_lat,
                             "longitude": new_lon,
                             "altitude": new_alt,
-                            "baro_altitude": new_balt,
                             "groundspeed": new_gs,
                             "vertical_rate": new_vr,
                         }
