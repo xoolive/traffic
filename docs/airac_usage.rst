@@ -149,7 +149,7 @@ by a trajectory (here from the so6 file)
 .. code:: python
 
     from traffic.data import SO6
-    so6 = SO6.from_file('../data/20180101_20180101_0000_2359_____m3.pkl')
+    so6 = SO6.from_file('../data/sample_m3.pkl')
     
     with plt.style.context('traffic'):
         fig = plt.figure()
@@ -182,10 +182,11 @@ at noon.
 .. code:: python
 
     # callsigns at noon inside LFBBBDX
-    bdx_noon = (so6
-                .at("2018-01-01 12:00")
-                .inside_bbox(airac['LFBBBDX'])
-                .intersects(airac['LFBBBDX']))
+    bdx_noon = (
+        so6.at("2018-01-01 12:00")
+        .inside_bbox(airac['LFBBBDX'])
+        .intersects(airac['LFBBBDX'])
+    )
     
     # full so6 limited to flights hereabove
     so6_bdx_noon = so6.select(bdx_noon)
