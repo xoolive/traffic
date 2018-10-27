@@ -193,8 +193,8 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         from ..data import opensky
 
         query_params = {
-            "before": self.start,
-            "after": self.stop,
+            "start": self.start,
+            "stop": self.stop,
             "callsign": self.callsign,
             "icao24": self.icao24,
         }
