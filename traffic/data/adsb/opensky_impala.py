@@ -392,7 +392,7 @@ class Impala(object):
         columns = (
             "rollcall_replies_data4.mintime, "
             "rollcall_replies_data4.maxtime, "
-            "rawmsg, msgcount, icao24, message, identity, hour"
+            "rawmsg, msgcount, icao24, message, altitude, identity, hour"
         )
 
         start = to_datetime(start)
@@ -555,6 +555,9 @@ class Impala(object):
         )
 
         df = self._impala(request)
+
+        if df.callsign.dtype == object:
+            df = df[df.callsign != "callsign"]
 
         return df
 
