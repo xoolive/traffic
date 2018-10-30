@@ -55,7 +55,8 @@ class Traffic(DataFrameMixin, GeographyMixin):
                 "geo_altitude": "geoaltitude",
             }
 
-            if 'baroaltitude' in tentative.data.columns:
+            if ('baroaltitude' in tentative.data.columns or
+                'baro_altitude' in tentative.data.columns):
                 # for retrocompatibility
                 rename_columns['altitude'] = 'geoaltitude'
 
