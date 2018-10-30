@@ -338,7 +338,7 @@ class Impala(object):
         df = pd.concat(cumul, sort=True).sort_values("timestamp")
 
         if count is True:
-            df = df.assign(count=lambda df: df['count'].astype(int))
+            df = df.assign(count=lambda df: df["count"].astype(int))
 
         if return_flight:
             return Flight(df)
@@ -462,18 +462,18 @@ class Impala(object):
         return pd.concat(cumul).sort_values("mintime")
 
     def within_bounds(
-            self,
-            before: timelike,
-            after: timelike,
-            bounds: Union[BaseGeometry, Tuple[float, float, float, float]],
+        self,
+        start: timelike,
+        stop: timelike,
+        bounds: Union[BaseGeometry, Tuple[float, float, float, float]],
     ) -> Optional[pd.DataFrame]:
         """EXPERIMENTAL."""
 
-        before = to_datetime(before)
-        after = to_datetime(after)
+        start = to_datetime(start)
+        stop = to_datetime(stop)
 
-        before_hour = round_time(before, "before")
-        after_hour = round_time(after, "after")
+        before_hour = round_time(start, "before")
+        after_hour = round_time(stop, "after")
 
         try:
             # thinking of shapely bounds attribute (in this order)
@@ -488,8 +488,8 @@ class Impala(object):
         query = self.basic_request.format(
             columns="icao24, callsign, s.ITEM as serial, count(*) as count",
             other_tables=", state_vectors_data4.serials s",
-            before_time=before.timestamp(),
-            after_time=after.timestamp(),
+            before_time=start.timestamp(),
+            after_time=stop.timestamp(),
             before_hour=before_hour.timestamp(),
             after_hour=after_hour.timestamp(),
             other_params=other_params + "group by icao24, callsign, s.ITEM",
@@ -507,18 +507,18 @@ class Impala(object):
 
     def within_airport(
         self,
-        before: timelike,
-        after: timelike,
+        start: timelike,
+        stop: timelike,
         airport: Union[Airport, str],
         count: bool = False,
     ) -> Optional[pd.DataFrame]:
         """EXPERIMENTAL."""
 
-        before = to_datetime(before)
-        after = to_datetime(after)
+        start = to_datetime(start)
+        stop = to_datetime(stop)
 
-        before_hour = round_time(before, how="before")
-        after_hour = round_time(after, how="after")
+        before_hour = round_time(start, how="before")
+        after_hour = round_time(stop, how="after")
 
         if isinstance(airport, str):
             from traffic.data import airports
@@ -546,8 +546,8 @@ class Impala(object):
 
         request = self.basic_request.format(
             columns=columns,
-            before_time=before.timestamp(),
-            after_time=after.timestamp(),
+            before_time=start.timestamp(),
+            after_time=stop.timestamp(),
             before_hour=before_hour.timestamp(),
             after_hour=after_hour.timestamp(),
             other_tables=other_tables,
@@ -556,7 +556,11 @@ class Impala(object):
 
         df = self._impala(request)
 
-        if df.callsign.dtype == object:
+        if (
+            df is not None
+            and "callsign" in df.columns
+            and df.callsign.dtype == object
+        ):
             df = df[df.callsign != "callsign"]
 
         return df
