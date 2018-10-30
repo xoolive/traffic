@@ -570,7 +570,7 @@ various plots or analyses.
         flight.plot_time(ax1, **params)
         
         # altitude is often noisy. A basic window based filtering is provided (can be cascaded).
-        flight.filter(altitude=17).filter(altitude=53).plot_time(
+        flight.filter().filter(altitude=53).plot_time(
             ax2, **params
         )
                                        

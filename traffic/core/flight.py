@@ -393,7 +393,6 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
                     "y": y,
                     "y_m": y_m,
                     "sq_eps": sq_eps,
-                    # useful for now but should be helpful nonetheless
                     "sigma": np.sqrt(filt(sq_eps, kernel_size)),
                 },
                 index=df.index,
@@ -421,7 +420,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             df = cascaded_filters(new_data[["timestamp", feat]], feat, ks)
 
             # Decision to accept/reject for all data points in the time series
-            new_data.loc[df.sq_eps > df.sq_eps.mean(), feat] = None
+            new_data.loc[df.sq_eps > df.sigma, feat] = None
 
         return self.__class__(strategy(new_data))
 
