@@ -315,6 +315,8 @@ pretreated with a cascade of median filters. All timestamps are plotted
 in UTC.
 
 .. code:: python
+    %matplotlib inline
+    import matplotlib.pyplot as plt
 
     with plt.style.context('traffic'):
         fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
