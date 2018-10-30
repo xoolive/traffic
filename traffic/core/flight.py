@@ -460,23 +460,26 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         for data in _split(self.data, value, unit):
             yield self.__class__(data)
 
-    def resample(self, rule: str = "1s") -> "Flight":
+    def resample(self, rule: Union[str, int] = "1s") -> "Flight":
         """Resamples a Flight at a one point per second rate."""
-        data = (
-            self.data.assign(start=self.start, stop=self.stop)
-            .set_index("timestamp")
-            .resample(rule)
-            .min()
-            .interpolate()
-            .reset_index()
-            .fillna(method="pad")
-        )
-        return self.__class__(data)
 
-    def as_sample(self, nb_points: int) -> "Flight":
-        data = self.data.set_index("timestamp").asfreq(
-            (self.stop - self.start) / (nb_points - 1), method="nearest"
-        )
+        if isinstance(rule, str):
+            data = (
+                self.data.assign(start=self.start, stop=self.stop)
+                .set_index("timestamp")
+                .resample(rule)
+                .min()
+                .interpolate()
+                .reset_index()
+                .fillna(method="pad")
+            )
+        elif isinstance(rule, int):
+            data = self.data.set_index("timestamp").asfreq(
+                (self.stop - self.start) / (rule - 1), method="nearest"
+            )
+        else:
+            raise TypeError("rule must be a str or an int")
+
         return self.__class__(data)
 
     def comet(b, **kwargs) -> "Flight":
