@@ -195,7 +195,7 @@ gui.main()
         shortcut.save()
 
 
-def main(*args):
+def main(args):
 
     fname = {"linux": LinuxApp(), "darwin": DarwinApp(), "win32": WindowsApp()}
 
