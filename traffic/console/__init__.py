@@ -2,21 +2,31 @@ import argparse
 import logging
 import sys
 
-from . import config, data, decode, gui, makeapp, opensky, show
+import importlib
+import pkgutil
 
-cmd = {
-    "config": config.main,
-    "data": data.main,
-    "decode": decode.main,
-    "config": config.main,
-    "gui": gui.main,
-    "makeapp": makeapp.main,
-    "opensky": opensky.main,
-    "show": show.main
-}
+
+def import_submodules(package, recursive=True):
+    """ Import all submodules of a module, recursively, including subpackages
+
+    :param package: package (name or actual module)
+    :type package: str | module
+    :rtype: dict[str, types.ModuleType]
+    """
+    if isinstance(package, str):
+        package = importlib.import_module(package)
+    results = {}
+    for loader, name, is_pkg in pkgutil.walk_packages(package.__path__):
+        full_name = package.__name__ + "." + name
+        results[name] = importlib.import_module(full_name)
+        if recursive and is_pkg:
+            results.update(import_submodules(full_name))
+    return results
 
 
 def main():
+
+    cmd = import_submodules(__name__, recursive=False)
 
     parser = argparse.ArgumentParser(
         description="traffic command-line interface",
@@ -33,9 +43,10 @@ def main():
     )
 
     args = parser.parse_args()
-    fun = cmd.get(args.command, None)
 
-    if fun is None:
+    mod = cmd.get(args.command, None)
+
+    if mod is None:
         return parser.print_help()
 
-    return fun(args.args)
+    return mod.main(args.args)
