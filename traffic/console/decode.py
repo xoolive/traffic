@@ -7,7 +7,7 @@ from ..data.adsb.decode import Decoder
 def main(args):
     parser = argparse.ArgumentParser(
         prog="traffic decode",
-        description="Decode ADS-B and EHS messages from file"
+        description="Decode ADS-B and EHS messages from file",
     )
 
     parser.add_argument("file", help="path to the file to decode", type=Path)
@@ -18,8 +18,13 @@ def main(args):
 
     parser.add_argument("-o", "--output", help="output pickle file", type=Path)
 
-    parser.add_argument("-v", dest="verbose", action="count", default=0,
-                        help="display logging messages")
+    parser.add_argument(
+        "-v",
+        dest="verbose",
+        action="count",
+        default=0,
+        help="display logging messages",
+    )
 
     args = parser.parse_args(args)
 

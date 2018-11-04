@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+
 def opensky_data(start, stop, output_file, **kwargs):
 
     from ..data import airac, opensky
@@ -12,8 +13,8 @@ def opensky_data(start, stop, output_file, **kwargs):
         else:
             kwargs["bounds"] = airac[bounds]
 
-    if 'verbose' in kwargs:
-        del kwargs['verbose']
+    if "verbose" in kwargs:
+        del kwargs["verbose"]
 
     data = opensky.history(start, stop, **kwargs)
 
@@ -38,7 +39,7 @@ def main(args):
 
     parser = argparse.ArgumentParser(
         prog="traffic opensky",
-        description="Get data from OpenSky Impala records"
+        description="Get data from OpenSky Impala records",
     )
 
     parser.add_argument("start", help="start date for records")
@@ -56,8 +57,13 @@ def main(args):
         help="bounding box for records (sector name or WSEN)",
     )
 
-    parser.add_argument("-v", dest="verbose", action="count", default=0,
-                        help="display logging messages")
+    parser.add_argument(
+        "-v",
+        dest="verbose",
+        action="count",
+        default=0,
+        help="display logging messages",
+    )
 
     args = parser.parse_args(args)
 

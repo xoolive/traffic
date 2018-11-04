@@ -2,9 +2,6 @@ import configparser
 import imp
 import inspect
 import logging
-import os
-import subprocess
-import sys
 import warnings
 from pathlib import Path
 
@@ -39,16 +36,6 @@ if not cache_dir.exists():
 
 config = configparser.ConfigParser()
 config.read(config_file.as_posix())
-
-
-def edit_config():
-    if sys.platform.startswith("darwin"):
-        subprocess.call(("open", config_file))
-    elif os.name == "nt":  # For Windows
-        os.startfile(config_dir)
-    elif os.name == "posix":  # For Linux, Mac, etc.
-        subprocess.call(("xdg-open", config_file))
-
 
 _selected = [
     s.strip()
