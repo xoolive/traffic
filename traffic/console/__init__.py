@@ -1,9 +1,18 @@
 import argparse
-import logging
-import sys
-
 import importlib
+import logging
 import pkgutil
+import sys
+from pathlib import Path
+
+
+def dispatch_open(filename: Path):
+    if sys.platform.startswith("darwin"):
+        subprocess.call(("open", filename))
+    elif os.name == "nt":  # For Windows
+        os.startfile(filename)
+    elif os.name == "posix":  # For Linux, Mac, etc.
+        subprocess.call(("xdg-open", filename))
 
 
 def import_submodules(package, recursive=True):
@@ -34,7 +43,7 @@ def main():
     )
 
     parser.add_argument(
-        "command", help=f"choose among: {', '.join(cmd.keys())}"
+        "command", help=f"among: {', '.join(cmd.keys())}"
     )
     parser.add_argument(
         "args",
