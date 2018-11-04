@@ -1,18 +1,4 @@
-
 import argparse
-
-def get_aircraft(*args):
-    from ..data import aircraft as data_aircraft
-
-    if args[0] == "get":
-        print(data_aircraft[args[1]])
-    elif args[0] == "operator":
-        print(data_aircraft.operator(" ".join(args[1:])))
-    elif args[0] == "stats":
-        print(data_aircraft.stats(" ".join(args[1:])))
-    else:
-        raise RuntimeError("Usage: traffic aircraft [get|operator|stats]")
-
 
 
 def main(args):
