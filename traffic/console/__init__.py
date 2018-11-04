@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 
-from . import data, decode, gui, makeapp
+from . import data, decode, gui, makeapp, opensky
 from .. import edit_config
 
 cmd = {
@@ -11,6 +11,7 @@ cmd = {
     "config": edit_config,
     "gui": gui.main,
     "makeapp": makeapp.main,
+    'opensky': opensky.main
 }
 
 
