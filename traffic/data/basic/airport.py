@@ -24,11 +24,11 @@ class AirportNamedTuple(NamedTuple):
     # TODO inspect why it fails on some machines...
     # well then it works on Airport
     def __getattr__(self, name):
-        if name == 'latitude':
+        if name == "latitude":
             return self.lat
-        if name == 'longitude':
+        if name == "longitude":
             return self.lon
-        if name == 'altitude':
+        if name == "altitude":
             return self.alt
 
     def __getstate__(self):
@@ -39,16 +39,23 @@ class AirportNamedTuple(NamedTuple):
 
 
 class Airport(AirportNamedTuple, ShapelyMixin):
-
     def __getattr__(self, name):
-        if name == 'latitude':
+        if name == "latitude":
             return self.lat
-        if name == 'longitude':
+        if name == "longitude":
             return self.lon
-        if name == 'altitude':
+        if name == "altitude":
             return self.alt
 
     def __repr__(self):
+        short_name = (
+            self.name.replace("International", "")
+            .replace("Airport", "")
+            .strip()
+        )
+        return f"{self.icao}/{self.iata}: {short_name}"
+
+    def __str__(self):
         return (
             f"{self.icao}/{self.iata}    {self.name.strip()} ({self.country})"
             f"\n\t{self.lat} {self.lon} altitude: {self.alt}"
@@ -63,6 +70,7 @@ class Airport(AirportNamedTuple, ShapelyMixin):
     @lru_cache()
     def osm_request(self):
         from cartotools.osm import request, tags
+
         return request(
             (self.lon - .06, self.lat - .06, self.lon + .06, self.lat + .06),
             **tags.airport,
@@ -98,8 +106,10 @@ class AirportParser(object):
             with open(self.cache, "rb") as fh:
                 self.airports = pickle.load(fh)
         else:
-            c = requests.get("https://www.flightradar24.com/_json/airports.php",
-                             headers={"user-agent": "Mozilla/5.0"})
+            c = requests.get(
+                "https://www.flightradar24.com/_json/airports.php",
+                headers={"user-agent": "Mozilla/5.0"},
+            )
             self.airports = list(Airport(**a) for a in c.json()["rows"])
 
             logging.info("Caching airport list from FlightRadar")
