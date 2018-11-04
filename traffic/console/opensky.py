@@ -1,18 +1,16 @@
+import logging
 from pathlib import Path
 
-from traffic.data import airac as sectors
-from traffic.data import opensky
-from traffic.core.logging import loglevel
-
-
 def opensky_data(start, stop, output_file, **kwargs):
+
+    from ..data import airac, opensky
 
     if kwargs["bounds"] is not None:
         bounds = kwargs["bounds"]
         if "," in bounds:
             kwargs["bounds"] = tuple(float(f) for f in bounds.split(","))
         else:
-            kwargs["bounds"] = sectors[bounds]
+            kwargs["bounds"] = airac[bounds]
 
     if 'verbose' in kwargs:
         del kwargs['verbose']
@@ -35,11 +33,12 @@ def opensky_data(start, stop, output_file, **kwargs):
         data.to_excel(output_file.as_posix())
 
 
-if __name__ == "__main__":
+def main(args):
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Get data from OpenSky records"
+        prog="traffic opensky",
+        description="Get data from OpenSky Impala records"
     )
 
     parser.add_argument("start", help="start date for records")
@@ -60,11 +59,12 @@ if __name__ == "__main__":
     parser.add_argument("-v", dest="verbose", action="count", default=0,
                         help="display logging messages")
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
+    logger = logging.getLogger()
     if args.verbose == 1:
-        loglevel('INFO')
+        logger.setLevel(logging.INFO)
     elif args.verbose >= 2:
-        loglevel('DEBUG')
+        logger.setLevel(logging.DEBUG)
 
     opensky_data(**vars(args))
