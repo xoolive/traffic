@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 
-from . import config, data, decode, gui, makeapp, opensky
+from . import config, data, decode, gui, makeapp, opensky, show
 
 cmd = {
     "config": config.main,
@@ -12,11 +12,11 @@ cmd = {
     "gui": gui.main,
     "makeapp": makeapp.main,
     "opensky": opensky.main,
+    "show": show.main
 }
 
 
 def main():
-    import argparse
 
     parser = argparse.ArgumentParser(
         description="traffic command-line interface",

@@ -1,3 +1,4 @@
+import argparse
 import logging
 from pathlib import Path
 
@@ -35,7 +36,6 @@ def opensky_data(start, stop, output_file, **kwargs):
 
 
 def main(args):
-    import argparse
 
     parser = argparse.ArgumentParser(
         prog="traffic opensky",
