@@ -2,16 +2,16 @@ import argparse
 import logging
 import sys
 
-from . import data, decode, gui, makeapp, opensky
-from .. import edit_config
+from . import config, data, decode, gui, makeapp, opensky
 
 cmd = {
-    'data': data.main,
+    "config": config.main,
+    "data": data.main,
     "decode": decode.main,
-    "config": edit_config,
+    "config": config.main,
     "gui": gui.main,
     "makeapp": makeapp.main,
-    'opensky': opensky.main
+    "opensky": opensky.main,
 }
 
 
@@ -20,13 +20,16 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="traffic command-line interface",
-        epilog="For specific help about each command, type traffic command -h"
+        epilog="For specific help about each command, type traffic command -h",
     )
 
-    parser.add_argument("command", help=f"choose among: {', '.join(cmd.keys())}")
     parser.add_argument(
-        "args", nargs=argparse.REMAINDER,
-        help="all arguments to dispatch to command"
+        "command", help=f"choose among: {', '.join(cmd.keys())}"
+    )
+    parser.add_argument(
+        "args",
+        nargs=argparse.REMAINDER,
+        help="all arguments to dispatch to command",
     )
 
     args = parser.parse_args()
