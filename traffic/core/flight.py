@@ -16,6 +16,7 @@ import scipy.signal
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from shapely.geometry import LineString, base
+from tqdm.autonotebook import tqdm
 
 from ..core.time import time_or_delta, timelike, to_datetime
 from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
@@ -188,7 +189,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         logging.warn("Several destinations for one flight, consider splitting")
         return tmp
 
-    def query_opensky(self):
+    def query_opensky(self) -> Optional["Flight"]:
         """Return the equivalent Flight from OpenSky History."""
         from ..data import opensky
 
@@ -198,7 +199,59 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             "callsign": self.callsign,
             "icao24": self.icao24,
         }
-        return opensky.history(**query_params)
+        return opensky.history(**query_params)  # type: ignore
+
+    def query_ehs(self) -> "Flight":
+        """Extend data with extra columns from EHS."""
+        from ..data import opensky, ModeS_Decoder
+
+        df = opensky.extended(self.start, self.stop, icao24=self.icao24)
+
+        timestamped_df = df.sort_values("mintime").assign(
+            timestamp=lambda df: df.mintime.apply(
+                lambda x: x.replace(microsecond=0)
+            )
+        )
+
+        referenced_df = (
+            timestamped_df.merge(self.data, on="timestamp", how="outer")
+            .sort_values("timestamp")
+            .rename(
+                columns=dict(altitude_y="alt", groundspeed="spd", track="trk")
+            )[["timestamp", "alt", "spd", "trk"]]
+            .ffill()
+            .merge(
+                timestamped_df[["timestamp", "icao24", "rawmsg"]],
+                on="timestamp",
+                how="right",
+            )
+        )
+
+        identifier = (
+            self.flight_id if self.flight_id is not None else self.callsign
+        )
+        # who cares about default lat0, lon0 with EHS
+        decoder = ModeS_Decoder((0, 0))
+        for _, line in tqdm(
+            referenced_df.iterrows(),
+            total=referenced_df.shape[0],
+            desc=f"{identifier}:",
+            leave=False,
+        ):
+
+            decoder.process(
+                line.timestamp,
+                line.rawmsg,
+                spd=line.spd,
+                trk=line.trk,
+                alt=line.alt,
+            )
+
+        t = decoder.traffic[self.icao24] + self
+
+        # sometimes weird callsigns are decoded and should be discarded
+        # so it seems better to filter on callsign rather than on icao24
+        return t[self.callsign]
 
     def guess_takeoff_airport(self) -> DistanceAirport:
         data = self.data.sort_values("timestamp")
@@ -363,7 +416,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         ks_dict = {
             "altitude": 17,
             "track": 5,
-            "ground_speed": 5,
+            "groundspeed": 5,
             "longitude": 15,
             "latitude": 15,
             "cas": 5,
@@ -476,7 +529,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         elif isinstance(rule, int):
             data = self.data.set_index("timestamp").asfreq(
                 (self.stop - self.start) / (rule - 1), method="nearest"
-            )
+            ).reset_index()
         else:
             raise TypeError("rule must be a str or an int")
 
@@ -488,7 +541,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         window = b.last(seconds=20)
         delta = timedelta(**kwargs)
 
-        new_gs = window.data.ground_speed.mean()
+        new_gs = window.data.groundspeed.mean()
         new_vr = window.data.vertical_rate.mean()
 
         new_lat, new_lon = geo.destination(
