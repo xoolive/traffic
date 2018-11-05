@@ -55,10 +55,12 @@ class Traffic(DataFrameMixin, GeographyMixin):
                 "geo_altitude": "geoaltitude",
             }
 
-            if ('baroaltitude' in tentative.data.columns or
-                'baro_altitude' in tentative.data.columns):
+            if (
+                "baroaltitude" in tentative.data.columns
+                or "baro_altitude" in tentative.data.columns
+            ):
                 # for retrocompatibility
-                rename_columns['altitude'] = 'geoaltitude'
+                rename_columns["altitude"] = "geoaltitude"
 
             tentative.data = tentative.data.rename(
                 # tentative rename of columns for compatibility
@@ -125,7 +127,12 @@ class Traffic(DataFrameMixin, GeographyMixin):
         return sum(1 for _ in self)
 
     def __repr__(self) -> str:
-        return self.stats().__repr__()
+        stats = self.stats()
+        shape = stats.shape[0]
+        if shape > 10:
+            # stylers are not efficient on big dataframes...
+            stats = stats.head(10)
+        return stats.__repr__()
 
     def _repr_html_(self) -> str:
         stats = self.stats()
@@ -138,7 +145,11 @@ class Traffic(DataFrameMixin, GeographyMixin):
         return rep + styler._repr_html_()
 
     def subset(self, callsigns: Iterable[str]) -> "Traffic":
-        return Traffic.from_flights(f for f in self if f.callsign in callsigns)
+        return Traffic.from_flights(
+            flight
+            for flight in self
+            if flight.callsign in callsigns  # type: ignore
+        )
 
     # --- Properties ---
 

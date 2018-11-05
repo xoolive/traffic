@@ -71,6 +71,25 @@ class Impala(object):
             file.unlink()
 
     @staticmethod
+    def _read_cache(cachename: Path) -> Optional[pd.DataFrame]:
+
+        logging.info("Reading request in cache {}".format(cachename))
+        with cachename.open("r") as fh:
+            s = StringIO()
+            count = 0
+            for line in fh.readlines():
+                if re.match("\|.*\|", line):
+                    count += 1
+                    s.write(re.sub(" *\| *", ",", line)[1:-2])
+                    s.write("\n")
+            if count > 0:
+                s.seek(0)
+                df = pd.read_csv(s)
+                return df
+
+        return None
+
+    @staticmethod
     def _format_dataframe(
         df: pd.DataFrame, nautical_units=True
     ) -> pd.DataFrame:
@@ -150,21 +169,53 @@ class Impala(object):
             with cachename.open("w") as fh:
                 fh.write(total)
 
-        logging.info("Reading request in cache {}".format(cachename))
-        with cachename.open("r") as fh:
-            s = StringIO()
-            count = 0
-            for line in fh.readlines():
-                if re.match("\|.*\|", line):
-                    count += 1
-                    s.write(re.sub(" *\| *", ",", line)[1:-2])
-                    s.write("\n")
-            if count > 0:
-                s.seek(0)
-                df = pd.read_csv(s)
-                return df
+        return self._read_cache(cachename)
 
-        return None
+    @staticmethod
+    def _format_history(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.drop(["lastcontact"], axis=1)
+
+        if df.lat.dtype == object:
+            df = df[df.lat != "lat"]  # header is regularly repeated
+        # restore all types
+        for column_name in [
+            "lat",
+            "lon",
+            "velocity",
+            "heading",
+            "vertrate",
+            "baroaltitude",
+            "geoaltitude",
+            "lastposupdate",
+            # "lastcontact",
+        ]:
+            df[column_name] = df[column_name].astype(float)
+
+        for column_name in ["time", "hour"]:
+            df[column_name] = df[column_name].astype(int)
+
+        df.icao24 = df.icao24.apply(
+            lambda x: "{:0>6}".format(hex(int(str(x), 16))[2:])
+        )
+
+        if df.onground.dtype != bool:
+            df.onground = df.onground == "true"
+            df.alert = df.alert == "true"
+            df.spi = df.spi == "true"
+
+        # better (to me) formalism about columns
+        return df.rename(
+            columns={
+                "lat": "latitude",
+                "lon": "longitude",
+                "heading": "track",
+                "velocity": "groundspeed",
+                "vertrate": "vertical_rate",
+                "baroaltitude": "altitude",
+                "time": "timestamp",
+                "lastposupdate": "last_position",
+            }
+        )
 
     def history(
         self,
@@ -285,50 +336,7 @@ class Impala(object):
             if df is None:
                 continue
 
-            df = df.drop(["lastcontact"], axis=1)
-
-            if df.lat.dtype == object:
-                df = df[df.lat != "lat"]  # header is regularly repeated
-            # restore all types
-            for column_name in [
-                "lat",
-                "lon",
-                "velocity",
-                "heading",
-                "vertrate",
-                "baroaltitude",
-                "geoaltitude",
-                "lastposupdate",
-                # "lastcontact",
-            ]:
-                df[column_name] = df[column_name].astype(float)
-
-            for column_name in ["time", "hour"]:
-                df[column_name] = df[column_name].astype(int)
-
-            df.icao24 = df.icao24.apply(
-                lambda x: "{:0>6}".format(hex(int(str(x), 16))[2:])
-            )
-
-            if df.onground.dtype != bool:
-                df.onground = df.onground == "true"
-                df.alert = df.alert == "true"
-                df.spi = df.spi == "true"
-
-            # better (to me) formalism about columns
-            df = df.rename(
-                columns={
-                    "lat": "latitude",
-                    "lon": "longitude",
-                    "heading": "track",
-                    "velocity": "groundspeed",
-                    "vertrate": "vertical_rate",
-                    "baroaltitude": "altitude",
-                    "time": "timestamp",
-                    "lastposupdate": "last_position",
-                }
-            )
-
+            df = self._format_history(df)
             df = self._format_dataframe(df)
             cumul.append(df)
 

@@ -134,7 +134,7 @@ class Aircraft(object):
                 )
             )
             if delta is not None and self.alt is not None:
-                self.cumul[-1]['geoaltitude'] = self.alt + delta
+                self.cumul[-1]["geoaltitude"] = self.alt + delta
 
     @property
     def position(self):
@@ -563,7 +563,15 @@ class Decoder:
                 self.redefine_reference(time)
             self.process(time, msg)
 
-    def process(self, time: datetime, msg: str) -> None:
+    def process(
+        self,
+        time: datetime,
+        msg: str,
+        *args,
+        spd: Optional[float] = None,
+        trk: Optional[float] = None,
+        alt: Optional[float] = None,
+    ) -> None:
 
         if len(msg) != 28:
             return
@@ -663,9 +671,16 @@ class Decoder:
                 return
 
             if bds == "BDS50,BDS60":
-                if ac.spd is None or ac.trk is None or ac.alt is None:
+                if spd is not None and trk is not None and alt is not None:
+                    bds = pms.bds.is50or60(msg, spd, trk, alt)
+                elif (
+                    ac.spd is not None
+                    and ac.trk is not None
+                    and ac.alt is not None
+                ):
+                    bds = pms.bds.is50or60(msg, ac.spd, ac.trk, ac.alt)
+                else:
                     return
-                bds = pms.bds.is50or60(msg, ac.spd, ac.trk, ac.alt)
                 # do not return!
 
             if bds == "BDS50":
