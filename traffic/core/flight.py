@@ -3,25 +3,26 @@
 import logging
 import re
 from datetime import datetime, timedelta
-from typing import (Callable, Iterable, Iterator, List, NamedTuple, Optional,
-                    Set, Tuple, Union, cast)
 
 import numpy as np
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
+import scipy.signal
 
 import pandas as pd
-import scipy.signal
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
 from shapely.geometry import LineString, base
 from tqdm.autonotebook import tqdm
+from typing import (Callable, Iterable, Iterator, List, NamedTuple, Optional,
+                    Set, Tuple, Union, cast)
 
 from . import geodesy as geo
 from ..core.time import time_or_delta, timelike, to_datetime
 from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
                        guess_airport)
 from .mixins import DataFrameMixin, GeographyMixin, PointMixin, ShapelyMixin
+
 
 # fmt: on
 
@@ -89,6 +90,23 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         title = self._info_html()
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
+
+    def __repr__(self) -> str:
+        output = f"Flight {self.callsign}"
+        if self.number is not None:
+            output += f" / {self.number}"
+        if self.flight_id is not None:
+            output += f" ({self.flight_id})"
+        output += f"\naircraft: {self.aircraft}"
+        if self.origin is not None:
+            output += f"\norigin: {self.origin} ({self.start})"
+        else:
+            output += f"\norigin: {self.start}"
+        if self.destination is not None:
+            output += f"\ndestination: {self.destination} ({self.stop})"
+        else:
+            output += f"\ndestination: {self.stop}"
+        return output
 
     @property
     def timestamp(self) -> Iterator[pd.Timestamp]:
@@ -423,8 +441,8 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             "groundspeed": 5,
             "longitude": 15,
             "latitude": 15,
-            "cas": 5,
-            "tas": 5,
+            "IAS": 5,
+            "TAS": 5,
             **kwargs,
         }
 

@@ -26,12 +26,10 @@ def main(args):
         action="store_true",
         help="print the first lines of the traffic file",
     )
-    group.add_argument(
-        "--stats",
-        "-s",
-        dest="stats",
-        action="store_true",
-        help="print extended stats about each Flight in the traffic file",
+    parser.add_argument(
+        "callsigns",
+        nargs=argparse.REMAINDER,
+        help="display specific information about specific flights",
     )
 
     args = parser.parse_args(args)
@@ -48,5 +46,8 @@ def main(args):
         print("Head of the DataFrame:")
         print(t.data.head())
 
-    elif args.stats:
-        raise NotImplementedError
+    if args.callsigns:
+        for callsign in args.callsigns:
+            print()
+            print(t[callsign])
+
