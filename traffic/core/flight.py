@@ -220,6 +220,8 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
                 columns=dict(altitude_y="alt", groundspeed="spd", track="trk")
             )[["timestamp", "alt", "spd", "trk"]]
             .ffill()
+            # because of many microsecond-precise timestamps, do not let size explode!
+            .drop_duplicates()
             .merge(
                 timestamped_df[["timestamp", "icao24", "rawmsg"]],
                 on="timestamp",
@@ -248,6 +250,8 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             )
 
         t = decoder.traffic[self.icao24] + self
+        if 'flight_id' in self.data.columns:
+            t.data.flight_id = self.flight_id
 
         # sometimes weird callsigns are decoded and should be discarded
         # so it seems better to filter on callsign rather than on icao24
