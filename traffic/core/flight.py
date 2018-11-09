@@ -10,7 +10,6 @@ import numpy as np
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 
-import geodesy.wgs84 as geo
 import pandas as pd
 import scipy.signal
 from cartopy.crs import PlateCarree
@@ -18,6 +17,7 @@ from cartopy.mpl.geoaxes import GeoAxesSubplot
 from shapely.geometry import LineString, base
 from tqdm.autonotebook import tqdm
 
+from . import geodesy as geo
 from ..core.time import time_or_delta, timelike, to_datetime
 from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
                        guess_airport)
@@ -494,10 +494,10 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
                 datetime.now().astimezone().tzinfo
             ).dt.tz_convert("utc"),
             d_horz=geo.distance(
-                table.latitude_x,
-                table.longitude_x,
-                table.latitude_y,
-                table.longitude_y,
+                table.latitude_x.values,
+                table.longitude_x.values,
+                table.latitude_y.values,
+                table.longitude_y.values,
             )
             / 1852,
             d_vert=(table.altitude_x - table.altitude_y).abs(),
@@ -527,24 +527,28 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
                 .fillna(method="pad")
             )
         elif isinstance(rule, int):
-            data = self.data.set_index("timestamp").asfreq(
-                (self.stop - self.start) / (rule - 1), method="nearest"
-            ).reset_index()
+            data = (
+                self.data.set_index("timestamp")
+                .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
+                .reset_index()
+            )
         else:
             raise TypeError("rule must be a str or an int")
 
         return self.__class__(data)
 
-    def comet(b, **kwargs) -> "Flight":
+    def comet(self, **kwargs) -> "Flight":
 
-        last_line = b.data.iloc[-1]
-        window = b.last(seconds=20)
+        last_line = self.at()
+        if last_line is None:
+            raise ValueError("Unknown data for this flight")
+        window = self.last(seconds=20)
         delta = timedelta(**kwargs)
 
         new_gs = window.data.groundspeed.mean()
         new_vr = window.data.vertical_rate.mean()
 
-        new_lat, new_lon = geo.destination(
+        new_lat, new_lon, _ = geo.destination(
             last_line.latitude,
             last_line.longitude,
             last_line.track,

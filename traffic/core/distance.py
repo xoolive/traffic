@@ -1,9 +1,10 @@
-import geodesy.sphere as geo
+from typing import NamedTuple, Optional
 
-from typing import Optional, NamedTuple
+import numpy as np
 
 import pandas as pd
-# from ..data.basic.airport import Airport
+
+from . import geodesy as geo
 
 
 class DistanceAirport(NamedTuple):
@@ -33,10 +34,10 @@ def closest_point(
     else:
         name = "unnamed"
     dist_vect = geo.distance(
-        data.latitude,
-        data.longitude,
-        [latitude for _ in data.latitude],
-        [longitude for _ in data.longitude],
+        data.latitude.values,
+        data.longitude.values,
+        latitude * np.ones(len(data.latitude)),
+        longitude * np.ones(len(data.longitude)),
     )
     argmin = dist_vect.argmin()
     return DistancePointTrajectory(dist_vect[argmin], name, data.iloc[argmin])

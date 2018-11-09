@@ -44,8 +44,7 @@ setup(
         "ipywidgets",  # IPython widgets for traffic
         "tornado",  # dependency for matplotlib with WebAgg
         "ipympl",  # interactive matplotlib in notebooks
-        "tqdm>=4.26",  # progressbars
-        "geodesy",
+        "tqdm>=4.28",  # progressbars
         "cartotools==1.0",
         "pyModeS==2.0",
     ],
