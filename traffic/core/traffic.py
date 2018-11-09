@@ -101,9 +101,9 @@ class Traffic(DataFrameMixin, GeographyMixin):
         # if no such index as flight_id or no flight_id column
         try:
             value16 = int(index, 16)  # noqa: F841 (unused value16)
-            data = self.data[self.data.icao24 == index]
+            data = self.data.query("icao24 == @index")
         except ValueError:
-            data = self.data[self.data.callsign == index]
+            data = self.data.query("callsign == @index")
 
         if data.shape[0] > 0:
             return Flight(data)
