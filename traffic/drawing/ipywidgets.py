@@ -106,8 +106,28 @@ class TrafficWidget(object):
         )
         self.canvas_time.observe(self.on_axtime_change, ["_png_is_old"])
 
+        col_options = []
+        for column, dtype in self._traffic.data.dtypes.items():
+            if column not in ("latitude", "longitude"):
+                if dtype in ["float64", "int64"]:
+                    col_options.append(column)
+
+        self.y_selector = SelectMultiple(
+            options=col_options, value=[], rows=5, disabled=False
+        )
+        self.y_selector.observe(self.on_id_change)
+
+        self.sec_y_selector = SelectMultiple(
+            options=col_options, value=[], rows=5, disabled=False
+        )
+        self.sec_y_selector.observe(self.on_id_change)
+
+        self.time_tab = VBox(
+            [HBox([self.y_selector, self.sec_y_selector]), self.canvas_time]
+        )
+
         self.tabs = Tab()
-        self.tabs.children = [self.canvas_map, self.canvas_time]
+        self.tabs.children = [self.canvas_map, self.time_tab]
         self.tabs.set_title(0, "Map")
         self.tabs.set_title(1, "Plots")
 
@@ -225,7 +245,9 @@ class TrafficWidget(object):
                     return dict(s=8, text_kw=dict(s=""))
 
             for at in cur_flights:
-                self.trajectories[at.callsign] += at.plot(self.ax_map, **params(at))
+                self.trajectories[at.callsign] += at.plot(
+                    self.ax_map, **params(at)
+                )
 
             self.canvas_map.draw_idle()
 
@@ -334,7 +356,9 @@ class TrafficWidget(object):
             if len(self.area_input.value) == 0:
                 from cartotools.osm import request, tags
 
-                west, east, south, north = self.ax_map.get_extent(crs=PlateCarree())
+                west, east, south, north = self.ax_map.get_extent(
+                    crs=PlateCarree()
+                )
                 if abs(east - west) > 1 or abs(north - south) > 1:
                     # that would be a too big request
                     return
@@ -352,6 +376,17 @@ class TrafficWidget(object):
             if change["name"] != "value":
                 return
 
+            y = self.y_selector.value + self.sec_y_selector.value
+            secondary_y = self.sec_y_selector.value
+            callsigns = self.identifier_select.value
+
+            if len(y) == 0:
+                y = ["altitude"]
+            extra_dict = dict()
+            if len(y) > 1:
+                # just to avoid confusion...
+                callsigns = callsigns[:1]
+
             # clear all trajectory pieces
             self.create_timeplot()
             for key, value in self.trajectories.items():
@@ -359,23 +394,27 @@ class TrafficWidget(object):
                     elt.remove()
             self.trajectories.clear()
 
-            callsigns = change["new"]
-            for c in callsigns:
-                f = self.t_view[c]
-                if f is not None:
+            for callsign in callsigns:
+                flight = self.t_view[callsign]
+                if len(y) == 1:
+                    extra_dict["label"] = callsign
+                if flight is not None:
                     try:
-                        self.trajectories[c] += f.plot(self.ax_map)
-                        self.trajectories[c] += f.at().plot(
-                            self.ax_map, s=8, text_kw=dict(s=c)
+                        self.trajectories[callsign] += flight.plot(self.ax_map)
+                        self.trajectories[callsign] += flight.at().plot(
+                            self.ax_map, s=8, text_kw=dict(s=callsign)
                         )
-                    except TypeError:  # NoneType object is not iterable
+                    except Exception:  # NoneType object is not iterable
                         pass
 
                     try:
-                        f.plot_time(
-                            self.ax_time, y=["altitude"], label=f.callsign
+                        flight.plot_time(
+                            self.ax_time,
+                            y=y,
+                            secondary_y=secondary_y,
+                            **extra_dict,
                         )
-                    except TypeError:  # no numeric data to plot
+                    except Exception:  # no numeric data to plot
                         pass
 
             if len(callsigns) == 0:
