@@ -26,6 +26,7 @@ setup(
         "traffic": [
             os.path.join("..", "icons", f)
             for f in os.listdir(os.path.join("..", "traffic", "icons"))
+            if f.startswith("travel")
         ],
     },
     python_requires=">=3.6",
@@ -46,7 +47,8 @@ setup(
         "ipympl",  # interactive matplotlib in notebooks
         "tqdm>=4.28",  # progressbars
         "cartotools==1.0",
-        # restore dependency when officially released
+        # restore dependency versionwhen officially released
+        "pyModeS",
         # "pyModeS==2.0",
     ],
     classifiers=[
