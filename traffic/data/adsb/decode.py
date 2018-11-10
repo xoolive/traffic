@@ -7,18 +7,25 @@ from collections import UserDict
 from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 from pathlib import Path
-from typing import (Any, Dict, Iterable, Iterator, List, Optional, TextIO,
-                    Tuple, Union, cast)
+
+import pkg_resources
 
 import pandas as pd
 import pyModeS as pms
 from tqdm.autonotebook import tqdm
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, TextIO,
+                    Tuple, Union, cast)
 
 from ...core import Flight, Traffic
 from ...data.basic.airport import Airport
 from ...drawing.ipywidgets import TrafficWidget
 
 # fmt: on
+
+if pkg_resources.get_distribution("construct").version < "2.0":
+    raise RuntimeError(
+        "Install pyModeS>=2.0 from https://github.com/junzis/pyModeS"
+    )
 
 
 class StoppableThread(threading.Thread):
