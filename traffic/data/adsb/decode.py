@@ -3,6 +3,7 @@
 import os
 import socket
 import threading
+import warnings
 from collections import UserDict
 from datetime import datetime, timedelta, timezone
 from operator import itemgetter
@@ -22,8 +23,8 @@ from ...drawing.ipywidgets import TrafficWidget
 
 # fmt: on
 
-if pkg_resources.get_distribution("construct").version < "2.0":
-    raise RuntimeError(
+if pkg_resources.get_distribution("pyModeS").version < "2.0":
+    warnings.warn(
         "Install pyModeS>=2.0 from https://github.com/junzis/pyModeS"
     )
 
