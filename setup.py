@@ -10,7 +10,7 @@ with open(os.path.join(here, 'readme.md'), encoding='utf-8') as f:
 
 setup(
     name="traffic",
-    version="1.0.1",
+    version="1.1",
     author="Xavier Olive",
     author_email="git@xoolive.org",
     url="https://github.com/xoolive/traffic/",
@@ -46,7 +46,8 @@ setup(
         "ipympl",  # interactive matplotlib in notebooks
         "tqdm>=4.28",  # progressbars
         "cartotools==1.0",
-        "pyModeS==2.0",
+        # restore dependency when officially released
+        # "pyModeS==2.0",
     ],
     classifiers=[
         # How mature is this project? Common values are
