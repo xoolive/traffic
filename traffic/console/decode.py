@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 
 from ..data.adsb.decode import Decoder
