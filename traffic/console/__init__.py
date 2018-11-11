@@ -2,6 +2,7 @@ import argparse
 import importlib
 import logging
 import pkgutil
+import subprocess
 import sys
 from pathlib import Path
 
