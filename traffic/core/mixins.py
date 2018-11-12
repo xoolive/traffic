@@ -54,8 +54,8 @@ class DataFrameMixin(object):
     def to_csv(self, filename: Union[str, Path]) -> None:
         self.data.to_csv(filename)
 
-    def to_hdf(self, filename: Union[str, Path]) -> None:
-        self.data.to_hdf(filename)
+    def to_hdf(self, filename: Union[str, Path], key: str) -> None:
+        self.data.to_hdf(filename, key)
 
     def to_json(self, filename: Union[str, Path]) -> None:
         self.data.to_json(filename)
