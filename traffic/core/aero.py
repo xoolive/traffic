@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Functions for aeronautics in this module
     - physical quantities always in SI units
@@ -213,7 +214,7 @@ def atmos(h):
     # Calculate if sothermic layer
     if a[i] == 0:
         T   = T0[i]
-        p   = p0[i]*exp(-g0/(R*T)*(h-h0[i]))
+        p   = p0[i]*np.exp(-g0/(R*T)*(h-h0[i]))
         rho = p/(R*T)
 
     # Calculate for temperature gradient
@@ -312,14 +313,14 @@ def mach2tas(M, h):
 def eas2tas(eas, h):
     """ Equivalent airspeed to true airspeed """
     rho = density(h)
-    tas = eas * sqrt(rho0 / rho)
+    tas = eas * np.sqrt(rho0 / rho)
     return tas
 
 
 def tas2eas(tas, h):
     """ True airspeed to equivent airspeed """
     rho = density(h)
-    eas = tas * sqrt(rho / rho0)
+    eas = tas * np.sqrt(rho / rho0)
     return eas
 
 
@@ -327,7 +328,7 @@ def cas2tas(cas, h):
     """ cas2tas conversion both m/s h in m """
     p, rho, T = atmos(h)
     qdyn = p0*((1.+rho0*cas*cas/(7.*p0))**3.5-1.)
-    tas = sqrt(7.*p/rho*((1.+qdyn/p)**(2./7.)-1.))
+    tas = np.sqrt(7.*p/rho*((1.+qdyn/p)**(2./7.)-1.))
     tas = -1 * tas if cas < 0 else tas
     return tas
 
@@ -336,7 +337,7 @@ def tas2cas(tas, h):
     """ tas2cas conversion both m/s """
     p, rho, T = atmos(h)
     qdyn = p*((1.+rho*tas*tas/(7.*p))**3.5-1.)
-    cas = sqrt(7.*p0/rho0*((qdyn/p0+1.)**(2./7.)-1.))
+    cas = np.sqrt(7.*p0/rho0*((qdyn/p0+1.)**(2./7.)-1.))
     cas = -1 * cas if tas < 0 else cas
     return cas
 

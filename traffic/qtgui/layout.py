@@ -13,13 +13,13 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QApplication, QComboBox, QFileDialog, QGridLayout,
                              QHBoxLayout, QInputDialog, QLabel, QLineEdit,
                              QListWidget, QMainWindow, QMessageBox,
-                             QPushButton, QSlider, QSystemTrayIcon, QTabWidget,
-                             QVBoxLayout, QWidget)
+                             QPushButton, QSlider, QTabWidget, QVBoxLayout,
+                             QWidget)
 
 from cartopy.crs import PlateCarree
 
 from .. import config
-from ..core import Traffic, Flight
+from ..core import Flight, Traffic
 from ..data import ModeS_Decoder, airac
 from ..drawing import location
 from .plot import MapCanvas, NavigationToolbar2QT, TimeCanvas
@@ -543,7 +543,9 @@ class MainScreen(QMainWindow):
         elif sys.platform == "darwin":
             icon_full = QtGui.QIcon((icon_path / "travel-grey.svg").as_posix())
         else:
-            icon_full = QtGui.QIcon((icon_path / "travel-orange.svg").as_posix())
+            icon_full = QtGui.QIcon(
+                (icon_path / "travel-orange.svg").as_posix()
+            )
 
         self.setWindowIcon(icon_full)
 

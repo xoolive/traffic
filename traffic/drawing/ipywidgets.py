@@ -3,7 +3,7 @@
 import re
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Set, Union, cast
 
 import matplotlib.pyplot as plt
 from IPython import get_ipython
@@ -245,9 +245,10 @@ class TrafficWidget(object):
                     return dict(s=8, text_kw=dict(s=""))
 
             for at in cur_flights:
-                self.trajectories[at.callsign] += at.plot(
-                    self.ax_map, **params(at)
-                )
+                if at is not None:
+                    self.trajectories[at.callsign] += at.plot(
+                        self.ax_map, **params(at)
+                    )
 
             self.canvas_map.draw_idle()
 
@@ -328,10 +329,12 @@ class TrafficWidget(object):
 
     def on_id_input(self, elt: Dict[str, Any]) -> None:
         with self.output:
+            # typing issue because of the lru_cache_wrappen
+            callsigns = cast(Set[str], self.t_view.callsigns)
             # low, up = alt.value
             self.identifier_select.options = sorted(
                 callsign
-                for callsign in self.t_view.callsigns
+                for callsign in callsigns
                 if re.match(elt["new"]["value"], callsign, flags=re.IGNORECASE)
             )
 
@@ -401,9 +404,11 @@ class TrafficWidget(object):
                 if flight is not None:
                     try:
                         self.trajectories[callsign] += flight.plot(self.ax_map)
-                        self.trajectories[callsign] += flight.at().plot(
-                            self.ax_map, s=8, text_kw=dict(s=callsign)
-                        )
+                        at = flight.at()
+                        if at is not None:
+                            self.trajectories[callsign] += at.plot(
+                                self.ax_map, s=8, text_kw=dict(s=callsign)
+                            )
                     except Exception:  # NoneType object is not iterable
                         pass
 

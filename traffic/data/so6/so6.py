@@ -1,7 +1,8 @@
+# fmt: off
+
 import warnings
 from calendar import timegm
 from datetime import datetime, timedelta
-# from decimal import ROUND_DOWN, ROUND_UP, Decimal
 from io import StringIO
 from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
@@ -14,9 +15,13 @@ from cartopy.crs import PlateCarree
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString, base
 
-from ...core import Flight as FlightMixin, Airspace
+from ...core import Airspace
+from ...core import Flight as FlightMixin
+from ...core.flight import Position
 from ...core.mixins import DataFrameMixin
 from ...core.time import time_or_delta, timelike, to_datetime
+
+# fmt: on
 
 
 def time(int_: int) -> datetime:
@@ -31,13 +36,12 @@ def hour(int_: int) -> timedelta:
 
 
 class Flight(FlightMixin):
-
     def __init__(self, data: pd.DataFrame) -> None:
         super().__init__(data)
         self.interpolator: Dict = dict()
 
     @property
-    def timestamp(self) -> Iterator[datetime]:
+    def timestamp(self) -> Iterator[pd.datetime]:
         if self.data.shape[0] == 0:
             return
         for _, s in self.data.iterrows():
@@ -53,7 +57,7 @@ class Flight(FlightMixin):
         return None
 
     def coords4d(
-            self, delta_t: bool=False
+        self, delta_t: bool = False
     ) -> Iterator[Tuple[float, float, float, float]]:
         t = 0
         if self.data.shape[0] == 0:
@@ -88,7 +92,7 @@ class Flight(FlightMixin):
     def airborne(self):
         return self
 
-    def interpolate(self, times, proj=PlateCarree()):
+    def interpolate(self, times, proj=PlateCarree()) -> np.ndarray:
         """Interpolates a trajectory in time.  """
         if proj not in self.interpolator:
             self.interpolator[proj] = interp1d(
@@ -101,10 +105,17 @@ class Flight(FlightMixin):
             proj, *self.interpolator[proj](times)
         )
 
-    def at(self, time: timelike, proj=PlateCarree()) -> np.ndarray:
+    def at(self, time: Optional[timelike] = None) -> Position:
+        if time is None:
+            raise NotImplementedError()
+
         time = to_datetime(time)
         timearray: np.ndarray[datetime] = np.array([time.timestamp()])
-        return self.interpolate(timearray, proj)
+        res = self.interpolate(timearray)
+
+        return Position(
+            pd.Series(res[0], index=["longitude", "latitude", "altitude"])
+        )
 
     def between(self, before: timelike, after: time_or_delta) -> "Flight":
         before = to_datetime(before)

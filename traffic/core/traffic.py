@@ -3,8 +3,8 @@
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, Iterator, Optional, Set,
-                    Union)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+                    Optional, Set, Tuple, Union)
 
 import pandas as pd
 from cartopy.mpl.geoaxes import GeoAxesSubplot
@@ -12,6 +12,9 @@ from cartopy.mpl.geoaxes import GeoAxesSubplot
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
 from .mixins import DataFrameMixin, GeographyMixin
+
+if TYPE_CHECKING:
+    from .airspace import Airspace  # noqa: F401
 
 # fmt: on
 
@@ -258,6 +261,18 @@ class Traffic(DataFrameMixin, GeographyMixin):
         from ..drawing.ipywidgets import TrafficWidget
 
         return TrafficWidget(self)
+
+    def inside_bbox(
+        self, bounds: Union["Airspace", Tuple[float, ...]]
+    ) -> "Traffic":
+        # implemented and monkey-patched in airspace.py
+        # given here for consistency in types
+        raise NotImplementedError
+
+    def intersects(self, airspace: "Airspace") -> "Traffic":
+        # implemented and monkey-patched in airspace.py
+        # given here for consistency in types
+        raise NotImplementedError
 
     # --- Real work ---
 

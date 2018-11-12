@@ -1,9 +1,4 @@
 import argparse
-import logging
-import os
-import subprocess
-import sys
-
 from pathlib import Path
 
 
@@ -50,4 +45,3 @@ def main(args):
         for callsign in args.callsigns:
             print()
             print(t[callsign])
-

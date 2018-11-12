@@ -65,7 +65,7 @@ def compute_cpa(
 
     # TODO bugfix
     traffic = Traffic(traffic.data.reset_index())
-        
+
     for ts, d in progressbar(traffic.groupby("timestamp"), total=total):
 
         cpa = cpadict[round_time(ts, by=rounding_time)]
