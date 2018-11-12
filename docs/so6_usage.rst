@@ -335,7 +335,10 @@ functions are provided:
     # Interpolation at a given date (str (UTC), int (timestamp) or datetime)
     so6['HOP36PP'].at("2018/01/01 18:40")
 
-    array([[1.73315595e+00, 4.43885865e+01, 2.66388571e+04]])
+    longitude        1.733156
+    latitude        44.388586
+    altitude     26638.857143
+    dtype: float64
 
 
 
@@ -578,9 +581,11 @@ airspace. Note that this chaining may not be safe for smaller airspaces.
 .. code:: python
 
     %%time
-    bdx_flights = (noon
-                   .inside_bbox(airac['LFBBBDX'])
-                   .intersects(airac['LFBBBDX']))
+    bdx_flights = (
+        noon
+        .inside_bbox(airac["LFBBBDX"])
+        .intersects(airac["LFBBBDX"])
+    )
 
     CPU times: user 1.42 s, sys: 8.27 ms, total: 1.43 s
     Wall time: 1.43 s

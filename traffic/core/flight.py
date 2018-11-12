@@ -3,19 +3,19 @@
 import logging
 import re
 from datetime import datetime, timedelta
+from typing import (TYPE_CHECKING, Callable, Iterable, Iterator, List,
+                    NamedTuple, Optional, Set, Tuple, Union, cast)
 
 import numpy as np
-import scipy.signal
-
-import pandas as pd
-from cartopy.crs import PlateCarree
-from cartopy.mpl.geoaxes import GeoAxesSubplot
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
+
+import pandas as pd
+import scipy.signal
+from cartopy.crs import PlateCarree
+from cartopy.mpl.geoaxes import GeoAxesSubplot
 from shapely.geometry import LineString, base
 from tqdm.autonotebook import tqdm
-from typing import (Callable, Iterable, Iterator, List, NamedTuple, Optional,
-                    Set, Tuple, Union, cast)
 
 from . import geodesy as geo
 from ..core.time import time_or_delta, timelike, to_datetime
@@ -23,6 +23,8 @@ from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
                        guess_airport)
 from .mixins import DataFrameMixin, GeographyMixin, PointMixin, ShapelyMixin
 
+if TYPE_CHECKING:
+    from .airspace import Airspace  # noqa: F401
 
 # fmt: on
 
@@ -238,8 +240,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
                 columns=dict(altitude_y="alt", groundspeed="spd", track="trk")
             )[["timestamp", "alt", "spd", "trk"]]
             .ffill()
-            # because of many microsecond-precise timestamps, do not let size explode!
-            .drop_duplicates()
+            .drop_duplicates()  # bugfix! NEVER ERASE THAT LINE!
             .merge(
                 timestamped_df[["timestamp", "icao24", "rawmsg"]],
                 on="timestamp",
@@ -268,7 +269,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             )
 
         t = decoder.traffic[self.icao24] + self
-        if 'flight_id' in self.data.columns:
+        if "flight_id" in self.data.columns:
             t.data.flight_id = self.flight_id
 
         # sometimes weird callsigns are decoded and should be discarded
@@ -636,6 +637,11 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             self.data.latitude.min() - .1,
             self.data.latitude.max() + .1,
         )
+
+    def intersects(self, airspace: "Airspace") -> bool:
+        # implemented and monkey-patched in airspace.py
+        # given here for consistency in types
+        raise NotImplementedError
 
     def clip(
         self, shape: base.BaseGeometry

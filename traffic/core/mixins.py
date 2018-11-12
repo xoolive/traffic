@@ -1,7 +1,7 @@
 from datetime import datetime
 from functools import lru_cache, partial
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import List, Tuple, TypeVar, Union
 
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
@@ -10,6 +10,8 @@ import pandas as pd
 import pyproj
 from shapely.geometry import Point, base
 from shapely.ops import transform
+
+T = TypeVar("T", bound="DataFrameMixin")
 
 
 class DataFrameMixin(object):
@@ -61,16 +63,16 @@ class DataFrameMixin(object):
     def to_excel(self, filename: Union[str, Path]) -> None:
         self.data.to_excel(filename)
 
-    def sort_values(self, key: str):
+    def sort_values(self: T, key: str) -> T:
         return self.__class__(self.data.sort_values(key))
 
-    def query(self, query: str):
+    def query(self: T, query: str) -> T:
         return self.__class__(self.data.query(query))
 
     def groupby(self, *args, **kwargs):
         return self.data.groupby(*args, **kwargs)
 
-    def assign(self, *args, **kwargs):
+    def assign(self: T, *args, **kwargs) -> T:
         return self.__class__(self.data.assign(*args, **kwargs))
 
 
@@ -201,7 +203,7 @@ class PointMixin(object):
 
     def plot(
         self, ax: Axes, text_kw=None, shift=dict(units="dots", x=15), **kwargs
-    ):
+    ) -> List[Artist]:
 
         if text_kw is None:
             text_kw = {}
@@ -217,8 +219,8 @@ class PointMixin(object):
         if "color" not in kwargs:
             kwargs["color"] = "black"
 
-        if 's' not in text_kw:
-            text_kw['s'] = getattr(self, 'callsign', '')
+        if "s" not in text_kw:
+            text_kw["s"] = getattr(self, "callsign", "")
 
         cumul: List[Artist] = []
         cumul.append(ax.scatter(self.longitude, self.latitude, **kwargs))

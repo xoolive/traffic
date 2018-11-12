@@ -1,22 +1,10 @@
-try:
-    from cartotools.crs import *  # noqa: F401 F403
-    from cartotools.osm import location
-    from cartotools.osm.nominatim import Nominatim
-
-    cartotools = True
-except ImportError:
-    # cartotools provides a few more basic projections
-    from cartopy.crs import *  # noqa: F401 F403
-
-    # Basic version of the complete cached requests included in cartotools
-    from .location import location, Nominatim  # noqa: F401
-
-    cartotools = False
-
 from cartopy.feature import NaturalEarthFeature
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+from cartotools.crs import *  # noqa: F401 F403
+from cartotools.osm import location
+from cartotools.osm.nominatim import Nominatim
 
-from ..core.mixins import ShapelyMixin, PointMixin
+from ..core.mixins import PointMixin, ShapelyMixin
 
 
 def countries(**kwargs):
@@ -85,7 +73,7 @@ def _set_extent(self, shape):
         shape = location(shape)
     if isinstance(shape, ShapelyMixin):
         return self._set_extent(shape.extent)
-    if cartotools and isinstance(shape, Nominatim):
+    if isinstance(shape, Nominatim):
         return self._set_extent(shape.extent)
     self._set_extent(shape)
 
@@ -93,9 +81,11 @@ def _set_extent(self, shape):
 GeoAxesSubplot._set_extent = GeoAxesSubplot.set_extent
 GeoAxesSubplot.set_extent = _set_extent
 
+
 def _point(self):
     point = PointMixin()
-    (point.longitude, ), (point.latitude, ) = self.shape.centroid.xy
+    (point.longitude,), (point.latitude,) = self.shape.centroid.xy
     return point
 
-setattr(Nominatim, 'point', property(_point))
+
+setattr(Nominatim, "point", property(_point))
