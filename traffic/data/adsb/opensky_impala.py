@@ -84,7 +84,8 @@ class Impala(object):
                     s.write("\n")
             if count > 0:
                 s.seek(0)
-                df = pd.read_csv(s)
+                # otherwise pandas would parse 1234e5 as 123400000.0
+                df = pd.read_csv(s, dtype={'icao24': str})
                 return df
 
         return None
@@ -461,6 +462,7 @@ class Impala(object):
             df.icao24 = df.icao24.apply(
                 lambda x: "{:0>6}".format(hex(int(str(x), 16))[2:])
             )
+            df.altitude = df.altitude.astype(float) * 0.3048
 
             cumul.append(df)
 
