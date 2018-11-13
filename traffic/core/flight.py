@@ -225,7 +225,18 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         """Extend data with extra columns from EHS."""
         from ..data import opensky, ModeS_Decoder
 
+        def failure():
+            """Called when nothing can be added to data."""
+            id_ = self.flight_id
+            if id_ is None:
+                id_ = self.callsign
+            logging.warn(f"No data on Impala for flight {id_}.")
+            return self
+
         df = opensky.extended(self.start, self.stop, icao24=self.icao24)
+
+        if df is None:
+            return failure()
 
         timestamped_df = df.sort_values("mintime").assign(
             timestamp=lambda df: df.mintime.apply(
@@ -268,13 +279,20 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
                 alt=line.alt,
             )
 
+        if decoder.traffic is None:
+            return failure()
+
         t = decoder.traffic[self.icao24] + self
         if "flight_id" in self.data.columns:
             t.data.flight_id = self.flight_id
 
         # sometimes weird callsigns are decoded and should be discarded
         # so it seems better to filter on callsign rather than on icao24
-        return t[self.callsign]
+        flight = t[self.callsign]
+        if flight is None:
+            return failure()
+
+        return flight.sort_values('timestamp')
 
     def guess_takeoff_airport(self) -> DistanceAirport:
         data = self.data.sort_values("timestamp")
