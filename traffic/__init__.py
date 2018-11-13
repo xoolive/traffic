@@ -20,7 +20,7 @@ cache_dir = Path(user_cache_dir("traffic"))
 config_file = config_dir / "traffic.conf"
 
 if not config_dir.exists():
-    config_dir.mkdir()
+    config_dir.mkdir(parents=True)
     with config_file.open("w") as fh:
         fh.write(
             f"""[global]
@@ -33,7 +33,7 @@ enabled_plugins = Bluesky, CesiumJS
         )
 
 if not cache_dir.exists():
-    cache_dir.mkdir()
+    cache_dir.mkdir(parents=True)
 
 config = configparser.ConfigParser()
 config.read(config_file.as_posix())
