@@ -24,24 +24,22 @@ from ...drawing.ipywidgets import TrafficWidget
 # fmt: on
 
 if pkg_resources.get_distribution("pyModeS").version < "2.0":
-    warnings.warn(
-        "Install pyModeS>=2.0 from https://github.com/junzis/pyModeS"
-    )
+    warnings.warn("Install pyModeS>=2.0 from https://github.com/junzis/pyModeS")
 
 
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
     regularly for the to_be_stopped() condition."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.daemon = True  # is it redundant?
         self._stop_event = threading.Event()
 
-    def stop(self):
+    def stop(self) -> None:
         self._stop_event.set()
 
-    def to_be_stopped(self):
+    def to_be_stopped(self) -> bool:
         return self._stop_event.is_set()
 
 
@@ -430,7 +428,7 @@ class Decoder:
         cls,
         filename: Union[str, Path],
         reference: Union[str, Airport, Tuple[float, float]],
-    ):
+    ) -> "Decoder":
 
         if isinstance(filename, str):
             filename = Path(filename)
@@ -458,7 +456,7 @@ class Decoder:
         reference: Union[str, Airport, Tuple[float, float]],
         dump1090: bool = False,
         fh: Optional[TextIO] = None,
-    ):
+    ) -> "Decoder":
 
         decoder = cls(reference)
 
@@ -525,7 +523,9 @@ class Decoder:
         self.stop()
 
     @classmethod
-    def from_dump1090(cls, reference: Union[str, Airport, Tuple[float, float]]):
+    def from_dump1090(
+        cls, reference: Union[str, Airport, Tuple[float, float]]
+    ) -> "Decoder":
         now = datetime.now(timezone.utc)
         filename = now.strftime("~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv")
         today = os.path.expanduser(filename)
@@ -540,7 +540,7 @@ class Decoder:
         host: str,
         port: int,
         reference: Union[str, Airport, Tuple[float, float]],
-    ):
+    ) -> 'Decoder':
         now = datetime.now(timezone.utc)
         filename = now.strftime(f"~/ADSB_EHS_RAW_%Y%m%d_{host}.csv")
         today = os.path.expanduser(filename)
@@ -564,7 +564,7 @@ class Decoder:
                 sum(a[0] for a in pos) / n, sum(a[1] for a in pos) / n
             )
 
-    def process_msgs(self, msgs: Iterable[Tuple[datetime, str]]):
+    def process_msgs(self, msgs: Iterable[Tuple[datetime, str]]) -> None:
 
         for i, (time, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
             if i & 127 == 127:
@@ -700,7 +700,7 @@ class Decoder:
                 return
 
     @property
-    def aircraft(self):
+    def aircraft(self) -> List[Dict[str, Any]]:
         return sorted(
             (
                 dict(
@@ -722,27 +722,32 @@ class Decoder:
         )
 
     @property
-    def traffic(self):
+    def traffic(self) -> Optional[Traffic]:
         return Traffic.from_flights(
-            [self[elt["icao24"]] for elt in self.aircraft]
+            self[elt["icao24"]] for elt in self.aircraft
         )
 
     @property
-    def widget(self):
+    def widget(self) -> 'DecoderWidget':
         return DecoderWidget(self)
 
-    def __getitem__(self, icao):
+    def __getitem__(self, icao: str) -> Optional[Flight]:
         return self.acs[icao].flight
 
 
 class DecoderWidget(TrafficWidget):
     def __init__(self, decoder: Decoder, *args, **kwargs) -> None:
         self.decoder = decoder
-        super().__init__(decoder.traffic, *args, **kwargs)
+        traffic = decoder.traffic
+        if traffic is None:
+            raise ValueError("traffic is None")
+        super().__init__(traffic, *args, **kwargs)
 
     @property
     def traffic(self) -> Traffic:
-        self._traffic = self.decoder.traffic
+        traffic = self.decoder.traffic
+        assert traffic is not None
+        self._traffic = traffic
         self.t_view = self._traffic
         self.set_time_range()
         return self._traffic

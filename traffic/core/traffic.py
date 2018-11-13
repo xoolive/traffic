@@ -24,10 +24,10 @@ class Traffic(DataFrameMixin, GeographyMixin):
     _parse_extension: Dict[str, Callable[..., pd.DataFrame]] = dict()
 
     @classmethod
-    def from_flights(cls, flights: Iterable[Flight]):
+    def from_flights(cls, flights: Iterable[Optional[Flight]]) -> "Traffic":
         cumul = [f.data for f in flights if f is not None]
         if len(cumul) == 0:
-            return None
+            raise ValueError("empty traffic")
         return cls(pd.concat(cumul, sort=False))
 
     @classmethod
