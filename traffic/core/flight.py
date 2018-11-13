@@ -225,6 +225,9 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         """Extend data with extra columns from EHS."""
         from ..data import opensky, ModeS_Decoder
 
+        if not isinstance(self.icao24, str):
+            raise RuntimeError("Several icao24 for this flight")
+
         def failure():
             """Called when nothing can be added to data."""
             id_ = self.flight_id
