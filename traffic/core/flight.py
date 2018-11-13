@@ -4,6 +4,7 @@ import logging
 import re
 from datetime import datetime, timedelta
 from typing import (TYPE_CHECKING, Callable, Iterable, Iterator, List,
+        Generator,
                     NamedTuple, Optional, Set, Tuple, Union, cast)
 
 import numpy as np
@@ -295,7 +296,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         if flight is None:
             return failure()
 
-        return flight.sort_values('timestamp')
+        return flight.sort_values("timestamp")
 
     def guess_takeoff_airport(self) -> DistanceAirport:
         data = self.data.sort_values("timestamp")
@@ -653,10 +654,10 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
 
     def extent(self) -> Tuple[float, float, float, float]:
         return (
-            self.data.longitude.min() - .1,
-            self.data.longitude.max() + .1,
-            self.data.latitude.min() - .1,
-            self.data.latitude.max() + .1,
+            self.data.longitude.min() - 0.1,
+            self.data.longitude.max() + 0.1,
+            self.data.latitude.min() - 0.1,
+            self.data.latitude.max() + 0.1,
         )
 
     def intersects(self, airspace: "Airspace") -> bool:
@@ -664,9 +665,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         # given here for consistency in types
         raise NotImplementedError
 
-    def clip(
-        self, shape: base.BaseGeometry
-    ) -> Union[None, "Flight", Iterator["Flight"]]:
+    def clip(self, shape: base.BaseGeometry) -> Optional["Flight"]:
 
         linestring = LineString(list(self.airborne().xy_time))
         intersection = linestring.intersection(shape)
@@ -679,27 +678,20 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
                 datetime.fromtimestamp(t)
                 for t in np.stack(intersection.coords)[:, 2]
             )
-            return self.__class__(
-                self.data[
-                    (self.data.timestamp >= min(times))
-                    & (self.data.timestamp <= max(times))
-                ]
-            )
+            return self.between(min(times), max(times))
 
-        def _clip_generator():
+        def _clip_generator() -> Generator[
+            Tuple[pd.Timestamp, pd.Timestamp], None, None
+        ]:
             for segment in intersection:
                 times = list(
                     datetime.fromtimestamp(t)
                     for t in np.stack(segment.coords)[:, 2]
                 )
-                yield self.__class__(
-                    self.data[
-                        (self.data.timestamp >= min(times))
-                        & (self.data.timestamp <= max(times))
-                    ]
-                )
+                yield min(times), max(times)
 
-        return (leg for leg in _clip_generator())
+        times = list(_clip_generator())
+        return self.between(min(t for t, _ in times), max(t for _, t in times))
 
     # -- Visualisation --
 
