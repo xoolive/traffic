@@ -723,9 +723,12 @@ class Decoder:
 
     @property
     def traffic(self) -> Optional[Traffic]:
-        return Traffic.from_flights(
-            self[elt["icao24"]] for elt in self.aircraft
-        )
+        try:
+            return Traffic.from_flights(
+                self[elt["icao24"]] for elt in self.aircraft
+            )
+        except ValueError:
+            return None
 
     @property
     def widget(self) -> 'DecoderWidget':
