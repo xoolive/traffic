@@ -3,9 +3,8 @@
 import logging
 import re
 from datetime import datetime, timedelta
-from typing import (TYPE_CHECKING, Callable, Iterable, Iterator, List,
-        Generator,
-                    NamedTuple, Optional, Set, Tuple, Union, cast)
+from typing import (TYPE_CHECKING, Callable, Generator, Iterable, Iterator,
+                    List, NamedTuple, Optional, Set, Tuple, Union, cast)
 
 import numpy as np
 from matplotlib.artist import Artist
@@ -297,6 +296,15 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
             return failure()
 
         return flight.sort_values("timestamp")
+
+    def compute_wind(self) -> "Flight":
+        df = self.data
+        return self.assign(
+            wind_u=df.groundspeed * np.sin(np.radians(df.track))
+            - df.TAS * np.sin(np.radians(df.heading)),
+            wind_v=df.groundspeed * np.cos(np.radians(df.track))
+            - df.TAS * np.cos(np.radians(df.heading)),
+        )
 
     def guess_takeoff_airport(self) -> DistanceAirport:
         data = self.data.sort_values("timestamp")
