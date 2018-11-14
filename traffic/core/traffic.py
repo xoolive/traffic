@@ -284,6 +284,5 @@ class Traffic(DataFrameMixin, GeographyMixin):
         """
         cumul = []
         for flight in self:
-            for subflight in flight.split(*kernel):
-                cumul.append(subflight.resample(rule))
+            cumul.append(flight.resample(rule))
         return self.__class__.from_flights(cumul)
