@@ -53,7 +53,7 @@ def compute_cpa(
 ) -> pd.DataFrame:
 
     cpadict: Dict[datetime, CPADict] = defaultdict(CPADict)
-    total = (traffic.end_time - traffic.start_time).seconds + 1
+    #total = (traffic.end_time - traffic.start_time).seconds + 1
     altitude = (
         "baro_altitude"
         if "baro_altitude" in traffic.data.columns
@@ -64,9 +64,10 @@ def compute_cpa(
         traffic = traffic.compute_xy()
 
     # TODO bugfix
-    traffic = Traffic(traffic.data.reset_index())
-
-    for ts, d in progressbar(traffic.groupby("timestamp"), total=total):
+    #traffic = Traffic(traffic.data.reset_index())
+    	
+    g = traffic.groupby("timestamp")
+    for ts, d in progressbar(g, total=len(g)):
 
         cpa = cpadict[round_time(ts, by=rounding_time)]
 
@@ -103,7 +104,7 @@ def compute_cpa(
                 x2.latitude,
                 x2.longitude,
             )
-
+            
     return pd.concat(
         [
             pd.DataFrame.from_records(
