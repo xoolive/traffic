@@ -315,6 +315,8 @@ pretreated with a cascade of median filters. All timestamps are plotted
 in UTC.
 
 .. code:: python
+
+
     %matplotlib inline
     import matplotlib.pyplot as plt
 

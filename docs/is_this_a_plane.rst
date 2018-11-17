@@ -209,7 +209,7 @@ information confirming we were properly separated (1000ft). That is only
 300m of altitude difference: it really felt we were flying the same
 altitude though.
 
-.. code:: ipython3
+.. code:: python
 
     
     from traffic.drawing import Lambert93, countries, rivers, location
