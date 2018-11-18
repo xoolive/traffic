@@ -158,3 +158,8 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+
+def setup(app):
+    app.add_javascript("https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js")
+    app.add_javascript("https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js")
+
