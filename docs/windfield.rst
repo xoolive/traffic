@@ -108,7 +108,7 @@ FL200 and above on June 13rd 2017.
 
     from ipyleaflet import Map, Velocity, basemaps
 
-    # t_extended = Traffic.from_file("wind_demo.pkl")
+    # t_extended = Traffic.from_file("wind_backup.pkl")
 
     map_ = Map(
         center=(51, 5),
