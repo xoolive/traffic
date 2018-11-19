@@ -9,9 +9,27 @@ configuration file.
 
     airac_path =
 
-When you first ask for an airspace, the proper files get parsed. A lot
-of caching is involved so all what is compute once is very fast to
-access the next time you call it.
+
+You can check the path to your configuration file here. The path is
+different according to OS versions so do not assume anything and check
+the contents of the variable.
+
+.. code:: python
+
+    import traffic
+    traffic.config_file
+
+
+
+
+.. parsed-literal::
+
+    PosixPath('/home/xo/.config/traffic/traffic.conf')
+
+
+A note about performance: When you first ask for an airspace, the proper files
+get parsed. A lot of caching is involved so all what is compute once is very
+fast to access the next time you call it.
 
 Basic usage
 ~~~~~~~~~~~
