@@ -13,7 +13,7 @@ the same Kenneth Reitz for parsing dates written in a human-friendly format.
 Python, giving access to SSH connection independently of the operating system.
 
 The `cartotools <https://github.com/xoolive/cartotools>`_ library is also
-recommended for an access to some more projections and for getting data from
+required for an access to some more projections and for getting data from
 OpenStreetMap. The great `tqdm <https://github.com/tqdm/tqdm>`_ provides the
 progress bars.
 
