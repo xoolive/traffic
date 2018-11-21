@@ -4,7 +4,8 @@ import logging
 import re
 from datetime import datetime, timedelta
 from typing import (TYPE_CHECKING, Callable, Generator, Iterable, Iterator,
-                    List, NamedTuple, Optional, Set, Tuple, Union, cast)
+                    List, NamedTuple, Optional, Set, Tuple, Type, TypeVar,
+                    Union, cast)
 
 import numpy as np
 from matplotlib.artist import Artist
@@ -18,6 +19,7 @@ from shapely.geometry import LineString, base
 from tqdm.autonotebook import tqdm
 
 from . import geodesy as geo
+from ..algorithms.douglas_peucker import douglas_peucker
 from ..core.time import time_or_delta, timelike, to_datetime
 from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
                        guess_airport)
@@ -40,6 +42,11 @@ def _split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
 
 class Position(PointMixin, pd.core.series.Series):
     pass
+
+
+# Typing for Douglas-Peucker
+# It is comfortable to be able to return a Flight or a mask
+Mask = TypeVar("Mask", "Flight", np.ndarray)
 
 
 class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
@@ -659,6 +666,38 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return self.__class__(self.data.iloc[index])
 
     # -- Geometry operations --
+
+    def simplify(
+        self,
+        tolerance: float,
+        altitude: Optional[str] = None,
+        z_factor: float = 3.048,
+        return_type: Type[Mask] = Type['Flight'],
+    ) -> Mask:
+        """Simplifies a trajectory with Douglas-Peucker algorithm.
+
+        The method uses latitude and longitude, projects the trajectory to a
+        conformal projection and applies the algorithm. By default, a 2D version
+        is called, unless you pass a column name for altitude (z parameter). You
+        may scale the z-axis for more relevance (z_factor); the default value
+        works well in most situations.
+
+        The method returns a Flight unless you specify a np.ndarray[bool] as
+        return_type for getting a mask.
+        """
+        # returns a mask
+        mask = douglas_peucker(
+            df=self.data,
+            tolerance=tolerance,
+            lat="latitude",
+            lon="longitude",
+            z=altitude,
+            z_factor=z_factor,
+        )
+        if return_type == Type['Flight']:
+            return self.__class__(self.data.loc[mask])
+        else:
+            return mask
 
     def extent(self) -> Tuple[float, float, float, float]:
         return (

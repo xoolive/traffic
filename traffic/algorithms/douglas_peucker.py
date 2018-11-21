@@ -44,9 +44,9 @@ def _douglas_peucker_rec_3d(x: np.ndarray, y: np.ndarray, z: np.ndarray,
                             mask[arg+1:], tolerance)
 
 
-def douglas_peucker(*args, df: pd.DataFrame=None, tolerance:float,
+def douglas_peucker(*args, df: pd.DataFrame=None, tolerance: float,
                     x='x', y='y', z=None, z_factor: float = 3.048,
-                    lat=None, lon=None):
+                    lat=None, lon=None) -> np.ndarray:
     """Ramer-Douglas-Peucker algorithm for 2D/3D trajectories.
 
     Simplify a trajectory by keeping the points further away from the straight
