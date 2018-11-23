@@ -12,6 +12,7 @@ from cartopy.mpl.geoaxes import GeoAxesSubplot
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
 from .mixins import DataFrameMixin, GeographyMixin
+from .sv import StateVectors
 
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
@@ -148,11 +149,16 @@ class Traffic(DataFrameMixin, GeographyMixin):
         return rep + styler._repr_html_()
 
     def subset(self, callsigns: Iterable[str]) -> "Traffic":
-        return Traffic.from_flights(
-            flight
-            for flight in self
-            if flight.callsign in callsigns  # type: ignore
-        )
+        if "flight_id" in self.data.columns:
+            return Traffic.from_flights(
+                flight for flight in self if flight.flight_id in callsigns
+            )
+        else:
+            return Traffic.from_flights(
+                flight
+                for flight in self
+                if flight.callsign in callsigns  # type: ignore
+            )
 
     # --- Properties ---
 
@@ -184,14 +190,17 @@ class Traffic(DataFrameMixin, GeographyMixin):
 
     # --- Easy work ---
 
-    def at(self, time: timelike) -> "Traffic":
-        time = to_datetime(time)
-        list_flights = [
-            flight.at(time)
-            for flight in self
-            if flight.start <= time <= flight.stop
-        ]
-        return Traffic(
+    def at(self, time: Optional[timelike] = None) -> "StateVectors":
+        if time is not None:
+            time = to_datetime(time)
+            list_flights = [
+                flight.at(time)
+                for flight in self
+                if flight.start <= time <= flight.stop
+            ]
+        else:
+            list_flights = [flight.at() for flight in self]
+        return StateVectors(
             pd.DataFrame.from_records(
                 [s for s in list_flights if s is not None]
             ).assign(
