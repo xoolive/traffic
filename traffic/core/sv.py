@@ -6,10 +6,10 @@ import pandas as pd
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 
-from .mixins import DataFrameMixin, GeographyMixin
+from .mixins import GeographyMixin
 
 
-class StateVectors(DataFrameMixin, GeographyMixin):
+class StateVectors(GeographyMixin):
     """Plots the state vectors returned by OpenSky REST API."""
 
     def __init__(self, data: pd.DataFrame) -> None:
