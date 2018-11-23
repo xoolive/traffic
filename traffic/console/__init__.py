@@ -11,7 +11,7 @@ def dispatch_open(filename: Path):
     if sys.platform.startswith("darwin"):
         subprocess.call(("open", filename))
     elif os.name == "nt":  # For Windows
-        os.startfile(filename)
+        os.startfile(filename)  # type: ignore
     elif os.name == "posix":  # For Linux, Mac, etc.
         subprocess.call(("xdg-open", filename))
 

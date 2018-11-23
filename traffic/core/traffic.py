@@ -11,7 +11,7 @@ from cartopy.mpl.geoaxes import GeoAxesSubplot
 
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
-from .mixins import DataFrameMixin, GeographyMixin
+from .mixins import GeographyMixin
 from .sv import StateVectors
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 # fmt: on
 
 
-class Traffic(DataFrameMixin, GeographyMixin):
+class Traffic(GeographyMixin):
 
     _parse_extension: Dict[str, Callable[..., pd.DataFrame]] = dict()
 
@@ -151,7 +151,11 @@ class Traffic(DataFrameMixin, GeographyMixin):
     def subset(self, callsigns: Iterable[str]) -> "Traffic":
         if "flight_id" in self.data.columns:
             return Traffic.from_flights(
-                flight for flight in self if flight.flight_id in callsigns
+                flight
+                for flight in self
+                # should not be necessary but for type consistency
+                if flight.flight_id is not None
+                and flight.flight_id in callsigns
             )
         else:
             return Traffic.from_flights(

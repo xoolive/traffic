@@ -159,10 +159,8 @@ class ShapelyMixin(object):
         )
 
 
-class GeographyMixin(object):
+class GeographyMixin(DataFrameMixin):
     """Adds Euclidean coordinates to a latitude/longitude DataFrame."""
-
-    data: pd.DataFrame
 
     def compute_xy(self, projection: pyproj.Proj = None):
         """Computes x and y columns from latitudes and longitudes.

@@ -23,7 +23,7 @@ from ..algorithms.douglas_peucker import douglas_peucker
 from ..core.time import time_or_delta, timelike, to_datetime
 from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
                        guess_airport)
-from .mixins import DataFrameMixin, GeographyMixin, PointMixin, ShapelyMixin
+from .mixins import GeographyMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
@@ -49,7 +49,7 @@ class Position(PointMixin, pd.core.series.Series):
 Mask = TypeVar("Mask", "Flight", np.ndarray)
 
 
-class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
+class Flight(GeographyMixin, ShapelyMixin):
     """Flight is the basic class associated to an aircraft itinerary.
 
     A Flight is supposed to start at takeoff and end after landing, taxiing and
@@ -169,7 +169,7 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         return tmp
 
     @property
-    def flight_id(self) -> Optional[Union[str, Set[str]]]:
+    def flight_id(self) -> Optional[str]:
         """Returns the unique flight_id value(s) of the DataFrame.
 
         If you know how to split flights, you may want to append such a column
@@ -178,10 +178,9 @@ class Flight(DataFrameMixin, ShapelyMixin, GeographyMixin):
         if "flight_id" not in self.data.columns:
             return None
         tmp = set(self.data.flight_id)
-        if len(tmp) == 1:
-            return tmp.pop()
-        logging.warn("Several ids for one flight, consider splitting")
-        return tmp
+        if len(tmp) != 1:
+            logging.warn("Several ids for one flight, consider splitting")
+        return tmp.pop()
 
     @property
     def squawk(self) -> Set[str]:
