@@ -10,7 +10,7 @@ from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 from typing import Optional, Set, Tuple, Union
 
-from ...core import Flight
+from ...core import Flight, StateVectors as SVMixin
 from ...core.mixins import PointMixin, ShapelyMixin
 from ...core.time import round_time, timelike, to_datetime
 from ..basic.airport import Airport
@@ -43,39 +43,18 @@ class Coverage(object):
         )
 
 
-class StateVectors(object):
+class StateVectors(SVMixin):
     """Plots the state vectors returned by OpenSky REST API."""
 
     def __init__(self, data: pd.DataFrame, opensky: "OpenSky") -> None:
-        self.data = data
+        super().__init__(data)
         self.opensky = opensky
-
-    def _ipython_key_completions_(self) -> Set[str]:
-        return {*self.aircraft, *self.callsigns}
-
-    @property
-    def aircraft(self):
-        return set(self.data.icao24)
-
-    @property
-    def callsigns(self):
-        return set(self.data.callsign)
 
     def __getitem__(self, identifier: str):
         icao24 = self.data.query(
             "callsign == @identifier or icao24 == @identifier"
         ).icao24.item()
         return self.opensky.api_tracks(icao24)
-
-    def plot(self, ax: GeoAxesSubplot, s: int = 10, **kwargs) -> Artist:
-        """Plotting function. All arguments are passed to ax.scatter"""
-        return ax.scatter(
-            self.data.longitude,
-            self.data.latitude,
-            s=s,
-            transform=PlateCarree(),
-            **kwargs,
-        )
 
 
 class SensorRange(ShapelyMixin):
