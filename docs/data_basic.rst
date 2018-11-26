@@ -107,43 +107,6 @@ structure with aircraft models.
 .. raw:: html
 
     <div>
-    <style scoped>
-        table {
-            border-collapse: collapse;
-            border-spacing: 0;
-            font-size: 85%;
-            margin-bottom: 1em;
-            line-height: 1.6;
-            table-layout: fixed;
-        }
-        thead {
-            border-bottom: 1px solid #bdbdbd;
-            vertical-align: bottom;
-        }
-        tbody td, tr, th {
-            text-align: right;
-            vertical-align: middle;
-            padding: 0.5em 0.5em;
-            line-height: normal;
-            white-space: normal;
-            max-width: none;
-            border: none;
-        }
-        tbody tr:nth-child(2n) {
-            background: #f5f5f5;
-        }
-        .dataframe tbody tr th:only-of-type {
-            vertical-align: middle;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    
-        .dataframe thead th {
-            text-align: right;
-        }
-    </style>
     <table border="0" class="dataframe">
       <thead>
         <tr style="text-align: right;">

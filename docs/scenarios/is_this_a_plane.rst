@@ -2,7 +2,7 @@
 Is this a plane?
 ----------------
 
-.. figure:: _static/aircraft.jpg
+.. figure:: images/aircraft.jpg
    :alt: View from my seat
    :align: center
 
@@ -61,30 +61,6 @@ came around.
 .. raw:: html
 
     <b>Traffic with 10 identifiers</b><style  type="text/css" >
-        table {
-            border-collapse: collapse;
-            border-spacing: 0;
-            font-size: 85%;
-            margin-bottom: 1em;
-            line-height: 1.6;
-            table-layout: fixed;
-        }
-        thead {
-            border-bottom: 1px solid #bdbdbd;
-            vertical-align: bottom;
-        }
-        tbody td, tr, th {
-            text-align: right;
-            vertical-align: middle;
-            padding: 0.5em 0.5em;
-            line-height: normal;
-            white-space: normal;
-            max-width: none;
-            border: none;
-        }
-        tbody tr:nth-child(2n) {
-            background: #f5f5f5;
-        }
         #T_465825f8_eab9_11e8_8ffc_a45e60ccda45row0_col0 {
                 width:  10em;
                  height:  80%;
@@ -198,7 +174,7 @@ Tunis). Let's plot their lateral distance vs. time.
 
 
 
-.. image:: _static/aircraft_distance.png
+.. image:: images/aircraft_distance.png
    :scale: 70%
    :alt: Lateral distance
    :align: center
@@ -249,7 +225,7 @@ altitude though.
 
 
 
-.. image:: _static/aircraft_map.png
+.. image:: images/aircraft_map.png
    :scale: 70%
    :alt: Situational map
    :align: center

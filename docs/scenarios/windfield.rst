@@ -1,5 +1,5 @@
 .. raw:: html
-    :file: embed_widgets/windfield.html
+    :file: ../embed_widgets/windfield.html
 
 Building a wind field from Mode S data
 --------------------------------------
@@ -142,6 +142,9 @@ FL200 and above on June 13rd 2017.
    </script>
 
 
-.. [1] Hurter, C., R. Alligier, D. Gianazza, S. Puechmorel, G. Andrienko, et N. Andrienko. « Wind Parameters Extraction from Aircraft Trajectories ». Computers, Environment and Urban Systems 47 (2014): 28‑43. https://doi.org/10.1016/j.compenvurbsys.2014.01.005.
+.. [1] | Hurter, C., R. Alligier, D. Gianazza, S. Puechmorel, G. Andrienko, and N. Andrienko.
+       | « Wind Parameters Extraction from Aircraft Trajectories ». Computers, Environment and Urban Systems 47 (2014): 28‑43.
+       | https://doi.org/10.1016/j.compenvurbsys.2014.01.005.
 
-.. [2] Sun, Junzi, Huy Vu, Joost Ellerbroek, et Jacco Hoekstra. « Ground-Based Wind Field Construction from Mode-S and ADS-B Data with a Novel Gas Particle Model », 2017, 9.
+.. [2] | Sun, Junzi, Huy Vu, Joost Ellerbroek, and Jacco Hoekstra.
+       | « Ground-Based Wind Field Construction from Mode-S and ADS-B Data with a Novel Gas Particle Model », 2017, 9.
