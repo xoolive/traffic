@@ -335,12 +335,12 @@ errors.
         return errors, loss_evolution
 
 
+Now we apply the anomaly detection on the preprocessed data and analyse
+the distribution as explained in the paper.
+
 .. code:: python
 
     errors, loss_evolution = anomalies(t_clip)
-
-
-.. code:: python
 
     with plt.style.context("traffic"):
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 21))
