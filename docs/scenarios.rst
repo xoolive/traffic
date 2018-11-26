@@ -4,5 +4,5 @@ Scenarios
 .. toctree::
     :maxdepth: 1
 
-    is_this_a_plane
-    windfield
+    scenarios/is_this_a_plane
+    scenarios/windfield
