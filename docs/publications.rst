@@ -10,7 +10,8 @@ Publications
   | `(notebook) <paper/runway_excursion.html>`__
 
 - | X. Olive and J. Morio.
-  | **Trajectory clustering of air traffic flows around airports**. *Aerospace Science and Technology*, 2018. https://doi.org/10.1016/j.ast.2018.11.031
+  | **Trajectory clustering of air traffic flows around airports**. *Aerospace Science and Technology* 84, 2019, pp. 776--781.
+  | https://doi.org/10.1016/j.ast.2018.11.031
 
 Links
 -----
