@@ -524,10 +524,12 @@ class Decoder:
 
     @classmethod
     def from_dump1090(
-        cls, reference: Union[str, Airport, Tuple[float, float]]
+        cls,
+        reference: Union[str, Airport, Tuple[float, float]],
+        file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
     ) -> "Decoder":
         now = datetime.now(timezone.utc)
-        filename = now.strftime("~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv")
+        filename = now.strftime(file_pattern)
         today = os.path.expanduser(filename)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(("localhost", 30005))
@@ -540,9 +542,10 @@ class Decoder:
         host: str,
         port: int,
         reference: Union[str, Airport, Tuple[float, float]],
-    ) -> 'Decoder':
+        file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_tcp.csv",
+    ) -> "Decoder":
         now = datetime.now(timezone.utc)
-        filename = now.strftime(f"~/ADSB_EHS_RAW_%Y%m%d_{host}.csv")
+        filename = now.strftime(file_pattern)
         today = os.path.expanduser(filename)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
@@ -731,7 +734,7 @@ class Decoder:
             return None
 
     @property
-    def widget(self) -> 'DecoderWidget':
+    def widget(self) -> "DecoderWidget":
         return DecoderWidget(self)
 
     def __getitem__(self, icao: str) -> Optional[Flight]:
