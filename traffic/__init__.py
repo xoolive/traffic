@@ -28,7 +28,7 @@ airac_path =
 opensky_username =
 opensky_password =
 [plugins]
-enabled_plugins = Bluesky, CesiumJS
+enabled_plugins = Bluesky, CesiumJS, Leaflet
 """
         )
 
