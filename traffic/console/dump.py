@@ -5,12 +5,18 @@ import signal
 import sys
 from pathlib import Path
 
+description = """
+Get data from Radarcape or dump1090. Timestamp each message and dump it to a
+file. The reference parameter is first taken for the [decoders] section in the
+configuration file. If no such parameters exists, then we search for a dump1090
+output on localhost:30005 and set the reference airport as reference.
+"""
+
 
 def main(args):
 
     parser = argparse.ArgumentParser(
-        prog="traffic dump",
-        description="Get data from a TCP port, timestamp and dump it to a file",
+        prog="traffic dump", description=description
     )
     parser.add_argument(
         "-o",
@@ -18,7 +24,7 @@ def main(args):
         dest="output",
         type=Path,
         default="output.pkl",
-        help="destination file for pickled traffic; (default: output.pkl)",
+        help="destination file (default: output.pkl)",
     )
     parser.add_argument(
         "-v",
@@ -28,8 +34,7 @@ def main(args):
         help="display logging messages",
     )
     parser.add_argument(
-        "reference",
-        help="handle in configuration file or IATA/ICAO code for dump1090",
+        "reference", help="configuration name or IATA/ICAO code for dump1090"
     )
 
     args = parser.parse_args(args)
@@ -48,8 +53,10 @@ def main(args):
         host_port, reference = address.split("/")
         host, port = host_port.split(":")
         decoder = ModeS_Decoder.from_address(
-            host, int(port), reference,
-            args.output.with_suffix(".csv").as_posix()
+            host,
+            int(port),
+            reference,
+            args.output.with_suffix(".csv").as_posix(),
         )
     except Exception:
         logging.info("fallback to dump1090")
