@@ -6,13 +6,19 @@ from pathlib import Path
 def opensky_data(start, stop, output_file, **kwargs):
 
     from ..data import airac, opensky
+    from ..drawing import location
 
     if kwargs["bounds"] is not None:
         bounds = kwargs["bounds"]
         if "," in bounds:
             kwargs["bounds"] = tuple(float(f) for f in bounds.split(","))
         else:
-            kwargs["bounds"] = airac[bounds]
+            sector = airac[bounds]
+            if sector is not None:
+                kwargs["bounds"] = sector
+            else:
+                # ask OpenStreetMap
+                kwargs["bounds"] = location(bounds)
 
     if "verbose" in kwargs:
         del kwargs["verbose"]
