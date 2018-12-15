@@ -36,8 +36,8 @@ pip install git+https://github.com/xoolive/traffic
 
 The `traffic` tool scripts around the library for common usecases.
 
-You may download data from OpenSky Impala shell (add the verbosity `-v` flag to
-get messages if the connection fails or stalls):
+You may download data from OpenSky Impala shell (check the help with option
+`-h`):
 
 ```
 traffic opensky 2018-01-01T06:00 -s 2018-01-01T08:00 -b Andorra -o andorra.pkl
