@@ -145,10 +145,7 @@ class Impala(object):
         total = ""
         while len(total) == 0 or total[-10:] != ":21000] > ":
             b = self.shell.recv(256)
-            print("HERE:",b)
             total += b.decode()
-            print("THERE:",total)
-        print("DONE THIS BIT")
 
     def _impala(
         self, request: str, cached: bool = True
