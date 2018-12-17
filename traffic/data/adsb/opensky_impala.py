@@ -142,7 +142,8 @@ class Impala(object):
         )
         self.shell = client.invoke_shell()
         self.connected = True
-        total = ""while len(total) == 0 or total[-10:] != ":21000] > ":
+        total = ""
+        while len(total) == 0 or total[-10:] != ":21000] > ":
             b = self.shell.recv(256)
             print("HERE:",b)
             total += b.decode()
