@@ -143,7 +143,7 @@ class Impala(object):
         self.shell = client.invoke_shell()
         self.connected = True
         total = ""
-        while len(total) == 0 or total[-19:] != "[hadoop-1:21000] > ":
+        while len(total) == 0 or total[-10:] != ":21000] > ":
             b = self.shell.recv(256)
             total += b.decode()
 
@@ -164,7 +164,7 @@ class Impala(object):
             logging.info("Sending request: {}".format(request))
             self.shell.send(request + ";\n")
             total = ""
-            while len(total) == 0 or total[-19:] != "[hadoop-1:21000] > ":
+            while len(total) == 0 or total[-10:] != ":21000] > ":
                 b = self.shell.recv(256)
                 total += b.decode()
             with cachename.open("w") as fh:
