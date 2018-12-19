@@ -181,7 +181,7 @@ class OpenSky(Impala):
             except AttributeError:
                 west, south, east, north = bounds
 
-            what += f"&lamin={south}&lamax={north}&lomin={west}&lomax={east}"
+            what += f"?lamin={south}&lamax={north}&lomin={west}&lomax={east}"
 
         c = requests.get(
             f"https://opensky-network.org/api/states/{what}", auth=self.auth
