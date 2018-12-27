@@ -13,10 +13,13 @@ def opensky_data(start, stop, output_file, **kwargs):
         if "," in bounds:
             kwargs["bounds"] = tuple(float(f) for f in bounds.split(","))
         else:
-            sector = airac[bounds]
-            if sector is not None:
-                kwargs["bounds"] = sector
-            else:
+            try:
+                sector = airac[bounds]
+                if sector is not None:
+                    kwargs["bounds"] = sector
+                else:
+                    raise Exception
+            except:
                 # ask OpenStreetMap
                 kwargs["bounds"] = location(bounds)
 
