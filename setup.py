@@ -41,6 +41,7 @@ setup(
         "maya",  # human-friendly datetimes
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
+        "pyproj",  # not necessarily pulled by Cartopy...
         "PyQt5",
         "ipywidgets",  # IPython widgets for traffic
         "tornado",  # dependency for matplotlib with WebAgg
