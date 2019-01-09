@@ -3,6 +3,7 @@ import logging
 import os
 import signal
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 description = """
@@ -48,28 +49,29 @@ def main(args):
     from traffic import config
     from traffic.data import ModeS_Decoder
 
+    now = datetime.now(timezone.utc)
+    filename = Path(now.strftime(args.output.as_posix()))
+
     try:
         address = config.get("decoders", args.reference)
         host_port, reference = address.split("/")
         host, port = host_port.split(":")
         decoder = ModeS_Decoder.from_address(
-            host,
-            int(port),
-            reference,
-            args.output.with_suffix(".csv").as_posix(),
+            host, int(port), reference, filename.with_suffix(".csv").as_posix()
         )
     except Exception:
         logging.info("fallback to dump1090")
         decoder = ModeS_Decoder.from_dump1090(
-            args.reference, args.output.with_suffix(".csv").as_posix()
+            args.reference, filename.with_suffix(".csv").as_posix()
         )
 
     def signal_handler(sig, frame):
         logging.info("Interruption signal caught")
         t = decoder.traffic
         if t is not None:
-            t.to_pickle(os.path.expanduser(args.output.with_suffix(".pkl")))
-            logging.info(f"Traffic saved to {args.output}")
+            pkl_file = filename.with_suffix(".pkl")
+            t.to_pickle(os.path.expanduser(pkl_file))
+            logging.info(f"Traffic saved to {pkl_file}")
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
