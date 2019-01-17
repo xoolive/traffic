@@ -30,7 +30,7 @@ def _douglas_peucker_rec_3d(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     start = np.array([x[0], y[0], z[0]])
     end = np.array([x[-1], y[-1], z[-1]])
     point = np.dstack([x[1:], y[1:], z[1:]])[0] - start
-    d = np.cross(point/np.linalg.norm(point), start-end)
+    d = np.cross(point, (start-end)/np.linalg.norm(start-end))
     d = np.sqrt(np.sum(d*d, axis=1))
 
     if np.max(d) < tolerance:
