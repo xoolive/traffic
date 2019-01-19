@@ -104,8 +104,18 @@ class Traffic(GeographyMixin):
 
         # if no such index as flight_id or no flight_id column
         try:
+            # If the index can be interpreted as an hexa, it is most likely an
+            # icao24 address. However some callsigns may look like an icao24.
+            # Tie-breaker:
+            #     - if it starts by 0x, priority goes to the icao24;
+            #     - if it is in capital letters, priority goes to the callsign
             value16 = int(index, 16)  # noqa: F841 (unused value16)
-            data = self.data.query("icao24 == @index")
+            if index.startswith("0x"):
+                data = self.data.query("icao24 == @index[2:]")
+            if index.isupper():
+                data = self.data.query("callsign == @index")
+            if data.shape[0] == 0:
+                data = self.data.query("icao24 == @index")
         except ValueError:
             data = self.data.query("callsign == @index")
 
