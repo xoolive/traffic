@@ -16,6 +16,10 @@ from ...core.time import round_time, split_times, timelike, to_datetime
 from ..basic.airport import Airport
 
 
+class ImpalaError(Exception):
+    pass
+
+
 class Impala(object):
 
     _impala_columns = [
@@ -87,6 +91,12 @@ class Impala(object):
                 # otherwise pandas would parse 1234e5 as 123400000.0
                 df = pd.read_csv(s, dtype={'icao24': str})
                 return df
+
+        with cachename.open("r") as fh:
+            output = fh.readlines()
+            if any(elt.startswith('ERROR:') for elt in output):
+                msg = "".join(output[:-1])
+                raise ImpalaError(msg)
 
         return None
 
