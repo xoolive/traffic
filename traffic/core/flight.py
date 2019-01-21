@@ -372,6 +372,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         if ac.shape[0] != 1:
             return self.icao24
         else:
+            # TODO return Aircraft and redirect this to __repr__
             return f"{self.icao24} / {ac.iloc[0].regid} ({ac.iloc[0].mdl})"
 
     @property
@@ -572,12 +573,35 @@ class Flight(GeographyMixin, ShapelyMixin):
         for data in _split(self.data, value, unit):
             yield self.__class__(data)
 
+    def _handle_last_position(self) -> "Flight":
+        # The following is True for all data coming from the Impala shell.
+        # The following is an attempt to fix #7
+        # Note the fun/fast way to produce 1 or trigger NaN (division by zero)
+        if "last_position" in self.data.columns:
+            data = (
+                self.data.assign(
+                    _mark=lambda df: df.last_position
+                    != df.shift(1).last_position
+                )
+                .assign(
+                    latitude=lambda df: df.latitude * df._mark / df._mark,
+                    longitude=lambda df: df.longitude * df._mark / df._mark,
+                    altitude=lambda df: df.altitude * df._mark / df._mark,
+                )
+                .drop(columns="_mark")
+            )
+        else:
+            data = self.data
+
+        return self.__class__(data)
+
     def resample(self, rule: Union[str, int] = "1s") -> "Flight":
         """Resamples a Flight at a one point per second rate."""
 
         if isinstance(rule, str):
             data = (
-                self.data.assign(start=self.start, stop=self.stop)
+                self.data._handle_last_position()
+                .assign(start=self.start, stop=self.stop)
                 .set_index("timestamp")
                 .resample(rule)
                 .min()
@@ -587,7 +611,8 @@ class Flight(GeographyMixin, ShapelyMixin):
             )
         elif isinstance(rule, int):
             data = (
-                self.data.set_index("timestamp")
+                self.data._handle_last_position()
+                .set_index("timestamp")
                 .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
                 .reset_index()
             )
@@ -671,7 +696,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         tolerance: float,
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
-        return_type: Type[Mask] = Type['Flight'],
+        return_type: Type[Mask] = Type["Flight"],
     ) -> Mask:
         """Simplifies a trajectory with Douglas-Peucker algorithm.
 
@@ -693,7 +718,7 @@ class Flight(GeographyMixin, ShapelyMixin):
             z=altitude,
             z_factor=z_factor,
         )
-        if return_type == Type['Flight']:
+        if return_type == Type["Flight"]:
             return self.__class__(self.data.loc[mask])
         else:
             return mask
