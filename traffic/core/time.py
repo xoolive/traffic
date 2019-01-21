@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from numbers import Number
 from typing import Iterator, Tuple, Union
 
@@ -20,7 +20,7 @@ def to_datetime(time: timelike) -> datetime:
     if isinstance(time, maya.core.MayaDT):  # type: ignore
         time = time.epoch
     if isinstance(time, Number):
-        time = datetime.fromtimestamp(time)  # type: ignore
+        time = datetime.fromtimestamp(time, timezone.utc)  # type: ignore
     return time  # type: ignore
 
 
@@ -31,7 +31,10 @@ def round_time(
     dt = to_datetime(time)
 
     round_to = by.total_seconds()
-    seconds = (dt - dt.min).seconds
+    if dt.tzinfo is None:
+        seconds = (dt - dt.min).seconds
+    else:
+        seconds = (dt - dt.min.replace(tzinfo=timezone.utc)).seconds
 
     if how == "after":
         rounding = (seconds + round_to) // round_to * round_to
@@ -48,7 +51,7 @@ def split_times(
 ) -> Iterator[timetuple]:
 
     before_hour = round_time(before, by=by)
-    seq = np.arange(before_hour, after + by, by).astype(datetime)
+    seq = np.arange(before_hour, after + by, by, dtype=datetime)
 
     for bh, ah in zip(seq[:-1], seq[1:]):
         yield (before, after, bh, ah)
