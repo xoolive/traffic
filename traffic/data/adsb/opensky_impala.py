@@ -1,7 +1,7 @@
 import hashlib
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import StringIO
 from pathlib import Path
 from typing import Callable, Iterable, Optional, Tuple, Union, cast
@@ -125,12 +125,14 @@ class Impala(object):
             if "vertical_rate" in df.columns:
                 df.vertical_rate = df.vertical_rate / 0.3048 * 60
 
-        df.timestamp = df.timestamp.apply(datetime.fromtimestamp)
+        df.timestamp = df.timestamp.apply(
+            lambda x: datetime.fromtimestamp(x, timezone.utc)
+        )
 
         if "last_position" in df.columns:
             df = df.query("last_position == last_position").assign(
                 last_position=lambda df: df.last_position.apply(
-                    datetime.fromtimestamp
+                    lambda x: datetime.fromtimestamp(x, timezone.utc)
                 )
             )
 
@@ -466,7 +468,9 @@ class Impala(object):
 
             for column_name in ["mintime", "maxtime"]:
                 df[column_name] = (
-                    df[column_name].astype(float).apply(datetime.fromtimestamp)
+                    df[column_name]
+                    .astype(float)
+                    .apply(lambda x: datetime.fromtimestamp(x, timezone.utc))
                 )
 
             df.icao24 = df.icao24.apply(

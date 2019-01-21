@@ -440,7 +440,7 @@ class Decoder:
                 list(
                     (
                         datetime.fromtimestamp(
-                            float(line.strip().split(",")[0])
+                            float(line.strip().split(",")[0]), timezone.utc
                         ),
                         cast(str, line.strip().split(",")[1][18:]),
                     )
