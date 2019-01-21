@@ -89,12 +89,12 @@ class Impala(object):
             if count > 0:
                 s.seek(0)
                 # otherwise pandas would parse 1234e5 as 123400000.0
-                df = pd.read_csv(s, dtype={'icao24': str})
+                df = pd.read_csv(s, dtype={"icao24": str})
                 return df
 
         with cachename.open("r") as fh:
             output = fh.readlines()
-            if any(elt.startswith('ERROR:') for elt in output):
+            if any(elt.startswith("ERROR:") for elt in output):
                 msg = "".join(output[:-1])
                 raise ImpalaError(msg)
 
