@@ -542,8 +542,8 @@ class Flight(GeographyMixin, ShapelyMixin):
         start = max(self.airborne().start, other.airborne().start)
         stop = min(self.airborne().stop, other.airborne().stop)
         f1, f2 = (
-            self.between(start, stop).resample("1s"),
-            other.between(start, stop).resample("1s"),
+            self.resample('1s').between(start, stop),
+            other.resample('1s').between(start, stop),
         )
 
         cols = ["timestamp", "latitude", "longitude", "altitude"]
