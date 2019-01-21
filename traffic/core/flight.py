@@ -550,9 +550,6 @@ class Flight(GeographyMixin, ShapelyMixin):
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
         return table.assign(
-            timestamp=lambda df: df.timestamp.dt.tz_localize(
-                datetime.now().astimezone().tzinfo
-            ).dt.tz_convert("utc"),
             d_horz=geo.distance(
                 table.latitude_x.values,
                 table.longitude_x.values,
@@ -600,7 +597,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         if isinstance(rule, str):
             data = (
-                self.data._handle_last_position()
+                self._handle_last_position().data
                 .assign(start=self.start, stop=self.stop)
                 .set_index("timestamp")
                 .resample(rule)
@@ -611,7 +608,7 @@ class Flight(GeographyMixin, ShapelyMixin):
             )
         elif isinstance(rule, int):
             data = (
-                self.data._handle_last_position()
+                self._handle_last_position().data
                 .set_index("timestamp")
                 .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
                 .reset_index()
