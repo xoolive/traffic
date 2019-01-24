@@ -32,6 +32,11 @@ class Aircraft(object):
         ]
         return table
 
+    def reset_cache(self) -> None:
+        self.cache.unlink()
+        new_instance = self.__class__()
+        self.aircraft = new_instance.aircraft
+
     def operator(self, name: str) -> pd.DataFrame:
         table = self.aircraft[
             self.aircraft.operator.astype(str).str.contains(name)
