@@ -541,10 +541,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         start = max(self.airborne().start, other.airborne().start)
         stop = min(self.airborne().stop, other.airborne().stop)
-        f1, f2 = (
-            self.resample('1s').between(start, stop),
-            other.resample('1s').between(start, stop),
-        )
+        f1, f2 = (self.between(start, stop), other.between(start, stop))
 
         cols = ["timestamp", "latitude", "longitude", "altitude"]
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
@@ -597,8 +594,8 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         if isinstance(rule, str):
             data = (
-                self._handle_last_position().data
-                .assign(start=self.start, stop=self.stop)
+                self._handle_last_position()
+                .data.assign(start=self.start, stop=self.stop)
                 .set_index("timestamp")
                 .resample(rule)
                 .min()
@@ -608,8 +605,8 @@ class Flight(GeographyMixin, ShapelyMixin):
             )
         elif isinstance(rule, int):
             data = (
-                self._handle_last_position().data
-                .set_index("timestamp")
+                self._handle_last_position()
+                .data.set_index("timestamp")
                 .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
                 .reset_index()
             )
