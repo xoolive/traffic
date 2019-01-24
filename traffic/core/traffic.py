@@ -9,6 +9,9 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
 import pandas as pd
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 
+from tqdm.autonotebook import tqdm
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
 from .mixins import GeographyMixin
@@ -299,13 +302,19 @@ class Traffic(GeographyMixin):
 
     # --- Real work ---
 
-    def resample(self, rule="1s", kernel=(10, "m")):
+    def resample(self, rule: str = "1s", max_workers: int = 4):
         """Resamples all trajectories, flight by flight.
 
         `rule` defines the desired sample rate (default: 1s)
-        `kernel` defines how to iter on flights (see `Flight.split`)
         """
-        cumul = []
-        for flight in self:
-            cumul.append(flight.resample(rule))
+
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            cumul = []
+            tasks = {
+                executor.submit(flight.resample, rule): flight
+                for flight in self
+            }
+            for future in tqdm(as_completed(tasks), total=len(tasks)):
+                cumul.append(future.result())
+
         return self.__class__.from_flights(cumul)
