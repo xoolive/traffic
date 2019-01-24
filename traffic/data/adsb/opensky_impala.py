@@ -84,8 +84,18 @@ class Impala(object):
             for line in fh.readlines():
                 if re.match("\|.*\|", line):
                     count += 1
+                    if "," in line:  # this may happen on 'describe table'
+                        return_df = False
+                        break
                     s.write(re.sub(" *\| *", ",", line)[1:-2])
                     s.write("\n")
+            else:
+                return_df = True
+
+            if not return_df:
+                fh.seek(0)
+                return "".join(fh.readlines())
+
             if count > 0:
                 s.seek(0)
                 # otherwise pandas would parse 1234e5 as 123400000.0
@@ -96,6 +106,7 @@ class Impala(object):
             output = fh.readlines()
             if any(elt.startswith("ERROR:") for elt in output):
                 msg = "".join(output[:-1])
+                cachename.unlink()
                 raise ImpalaError(msg)
 
         return None
@@ -166,7 +177,7 @@ class Impala(object):
         digest = hashlib.md5(request.encode("utf8")).hexdigest()
         cachename = self.cache_dir / digest
 
-        if not cached:
+        if cachename.exists() and not cached:
             cachename.unlink()
 
         if not cachename.exists():
@@ -174,6 +185,8 @@ class Impala(object):
                 self._connect()
 
             logging.info("Sending request: {}".format(request))
+            # bug fix for when we write a request with """ starting with \n
+            request = request.replace("\n", " ")
             self.shell.send(request + ";\n")
             total = ""
             while len(total) == 0 or total[-10:] != ":21000] > ":
