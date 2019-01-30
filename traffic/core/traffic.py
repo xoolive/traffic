@@ -1,6 +1,8 @@
 # fmt: off
 
 import logging
+import warnings
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import lru_cache
 from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
@@ -8,9 +10,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
 
 import pandas as pd
 from cartopy.mpl.geoaxes import GeoAxesSubplot
-
 from tqdm.autonotebook import tqdm
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
@@ -114,12 +114,15 @@ class Traffic(GeographyMixin):
             #     - if it is in capital letters, priority goes to the callsign
             value16 = int(index, 16)  # noqa: F841 (unused value16)
             if index.startswith("0x"):
+                index = index.lower()
                 data = self.data.query("icao24 == @index[2:]")
             if index.isupper():
                 data = self.data.query("callsign == @index")
             if data.shape[0] == 0:
+                index = index.lower()
                 data = self.data.query("icao24 == @index")
         except ValueError:
+            index = index.upper()
             data = self.data.query("callsign == @index")
 
         if data.shape[0] > 0:
@@ -161,7 +164,13 @@ class Traffic(GeographyMixin):
         rep = f"<b>Traffic with {shape} identifiers</b>"
         return rep + styler._repr_html_()
 
+    def filter_if(self, criterion: Callable[[Flight], bool]) -> "Traffic":
+        return Traffic.from_flights(
+            flight for flight in self if criterion(flight)
+        )
+
     def subset(self, callsigns: Iterable[str]) -> "Traffic":
+        warnings.warn("Use filter_if instead", DeprecationWarning)
         if "flight_id" in self.data.columns:
             return Traffic.from_flights(
                 flight
