@@ -2,6 +2,7 @@
 
 import logging
 import re
+from functools import lru_cache
 from datetime import datetime, timedelta
 from typing import (TYPE_CHECKING, Callable, Generator, Iterable, Iterator,
                     List, NamedTuple, Optional, Set, Tuple, Type, TypeVar,
@@ -122,15 +123,26 @@ class Flight(GeographyMixin, ShapelyMixin):
         """Iterates the timestamp column of the DataFrame."""
         yield from self.data.timestamp
 
-    @property
+    # https://github.com/python/mypy/issues/1362
+    @property  # type: ignore
+    @lru_cache()
     def start(self) -> pd.Timestamp:
         """Returns the minimum timestamp value of the DataFrame."""
-        return min(self.timestamp)
+        return self.data.timestamp.min()
 
-    @property
+    # https://github.com/python/mypy/issues/1362
+    @property  # type: ignore
+    @lru_cache()
     def stop(self) -> pd.Timestamp:
-        """Returns the maximum timestamp value of the DataFrame."""
-        return max(self.timestamp)
+        return self.data.timestamp.max()
+
+    @lru_cache()
+    def min(self, feature: str):
+        return self.data[feature].min()
+
+    @lru_cache()
+    def max(self, feature: str):
+        return self.data[feature].max()
 
     @property
     def callsign(self) -> Union[str, Set[str], None]:
@@ -544,6 +556,10 @@ class Flight(GeographyMixin, ShapelyMixin):
         f1, f2 = (self.between(start, stop), other.between(start, stop))
 
         cols = ["timestamp", "latitude", "longitude", "altitude"]
+        if 'flight_id' in f1.data.columns:
+            cols.append('flight_id')
+        else:
+            cols += ['icao24', 'callsign']
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
         return table.assign(
@@ -679,9 +695,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         else:
             after = to_datetime(after)
 
-        t: np.ndarray = np.stack(self.timestamp)
-        index = np.where((before < t) & (t < after))
-        return self.__class__(self.data.iloc[index])
+        # full call is necessary to keep @before and @after as local variables
+        # return self.query('@before < timestamp < @after')  => not valid
+        return self.__class__(self.data.query('@before < timestamp < @after'))
 
     # -- Geometry operations --
 
