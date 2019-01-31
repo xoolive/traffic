@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
                     Optional, Set, Tuple, Union)
 
+from datetime import timedelta
 import pandas as pd
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from tqdm.autonotebook import tqdm
@@ -188,11 +189,15 @@ class Traffic(GeographyMixin):
 
     # --- Properties ---
 
-    @property
+    # https://github.com/python/mypy/issues/1362
+    @property  # type: ignore
+    @lru_cache()
     def start_time(self) -> pd.Timestamp:
         return self.data.timestamp.min()
 
-    @property
+    # https://github.com/python/mypy/issues/1362
+    @property  # type: ignore
+    @lru_cache()
     def end_time(self) -> pd.Timestamp:
         return self.data.timestamp.max()
 
@@ -236,15 +241,21 @@ class Traffic(GeographyMixin):
         )
 
     def before(self, ts: timelike) -> "Traffic":
-        return Traffic.from_flights(flight.before(ts) for flight in self)
+        return self.between(self.start_time, ts)
 
     def after(self, ts: timelike) -> "Traffic":
-        return Traffic.from_flights(flight.after(ts) for flight in self)
+        return self.between(ts, self.end_time)
 
     def between(self, before: timelike, after: time_or_delta) -> "Traffic":
-        return Traffic.from_flights(
-            flight.between(before, after) for flight in self
-        )
+        before = to_datetime(before)
+        if isinstance(after, timedelta):
+            after = before + after
+        else:
+            after = to_datetime(after)
+
+        # full call is necessary to keep @before and @after as local variables
+        # return self.query('@before < timestamp < @after')  => not valid
+        return self.__class__(self.data.query('@before < timestamp < @after'))
 
     @lru_cache()
     def stats(self) -> pd.DataFrame:
