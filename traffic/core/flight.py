@@ -461,21 +461,15 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         The airborne part is determined by null values on the altitude column.
         """
-        return self.__class__(self.data[self.data["altitude"].notnull()])
+        return self.query("altitude == altitude")
 
     def first(self, **kwargs) -> "Flight":
-        return Flight(
-            self.data[
-                np.stack(self.timestamp) - self.start < timedelta(**kwargs)
-            ]
-        )
+        delta = timedelta(**kwargs)  # noqa: F841 => delta is used in the query
+        return self.__class__(self.data.query('timestamp < start + @delta'))
 
     def last(self, **kwargs) -> "Flight":
-        return Flight(
-            self.data[
-                self.stop - np.stack(self.timestamp) < timedelta(**kwargs)
-            ]
-        )
+        delta = timedelta(**kwargs)  # noqa: F841 => delta is used in the query
+        return self.__class__(self.data.query('timestamp > stop - @delta'))
 
     def filter(
         self,
@@ -556,10 +550,10 @@ class Flight(GeographyMixin, ShapelyMixin):
         f1, f2 = (self.between(start, stop), other.between(start, stop))
 
         cols = ["timestamp", "latitude", "longitude", "altitude"]
-        if 'flight_id' in f1.data.columns:
-            cols.append('flight_id')
+        if "flight_id" in f1.data.columns:
+            cols.append("flight_id")
         else:
-            cols += ['icao24', 'callsign']
+            cols += ["icao24", "callsign"]
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
         return table.assign(
@@ -623,7 +617,10 @@ class Flight(GeographyMixin, ShapelyMixin):
             data = (
                 self._handle_last_position()
                 .data.set_index("timestamp")
-                .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
+                .asfreq(
+                    (self.stop - self.start) / (rule - 1),  # type: ignore
+                    method="nearest",
+                )
                 .reset_index()
             )
         else:
@@ -697,7 +694,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         # full call is necessary to keep @before and @after as local variables
         # return self.query('@before < timestamp < @after')  => not valid
-        return self.__class__(self.data.query('@before < timestamp < @after'))
+        return self.__class__(self.data.query("@before < timestamp < @after"))
 
     # -- Geometry operations --
 
