@@ -303,7 +303,19 @@ class Flight(GeographyMixin, ShapelyMixin):
         if decoder.traffic is None:
             return failure()
 
-        t = decoder.traffic[self.icao24] + self
+        extended = decoder.traffic[self.icao24]
+        if extended is None:
+            return failure()
+
+        # fix for https://stackoverflow.com/q/53657210/1595335
+        if "last_position" in self.data.columns:
+            extended = extended.assign(last_position=pd.NaT)
+        if "start" in self.data.columns:
+            extended = extended.assign(start=pd.NaT)
+        if "stop" in self.data.columns:
+            extended = extended.assign(stop=pd.NaT)
+
+        t = extended + self
         if "flight_id" in self.data.columns:
             t.data.flight_id = self.flight_id
 
@@ -465,11 +477,11 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     def first(self, **kwargs) -> "Flight":
         delta = timedelta(**kwargs)  # noqa: F841 => delta is used in the query
-        return self.__class__(self.data.query('timestamp < start + @delta'))
+        return self.__class__(self.data.query("timestamp < start + @delta"))
 
     def last(self, **kwargs) -> "Flight":
         delta = timedelta(**kwargs)  # noqa: F841 => delta is used in the query
-        return self.__class__(self.data.query('timestamp > stop - @delta'))
+        return self.__class__(self.data.query("timestamp > stop - @delta"))
 
     def filter(
         self,
@@ -557,14 +569,14 @@ class Flight(GeographyMixin, ShapelyMixin):
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
         return table.assign(
-            d_horz=geo.distance(
+            lateral=geo.distance(
                 table.latitude_x.values,
                 table.longitude_x.values,
                 table.latitude_y.values,
                 table.longitude_y.values,
             )
             / 1852,
-            d_vert=(table.altitude_x - table.altitude_y).abs(),
+            vertical=(table.altitude_x - table.altitude_y).abs(),
         )
 
     # -- Interpolation and resampling --
