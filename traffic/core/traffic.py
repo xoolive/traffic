@@ -5,10 +5,9 @@ import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import timedelta
 from functools import lru_cache
-from itertools import combinations
 from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-                    Optional, Set, Tuple, Union, cast)
+                    List, Optional, Set, Tuple, Union, overload)
 
 import pandas as pd
 import pyproj
@@ -23,6 +22,7 @@ from .sv import StateVectors
 
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
+    from ..algorithms.cpa import CPA  # noqa: F401
 
 # fmt: on
 
@@ -102,12 +102,39 @@ class Traffic(GeographyMixin):
     def __radd__(self, other) -> "Traffic":
         return self + other
 
+    @overload
     def __getitem__(self, index: str) -> Optional[Flight]:
+        ...
+
+    # TODO Iterable[str] would be more appropriate but it overlaps with str
+    @overload  # noqa: F811
+    def __getitem__(
+        self, index: Union[List[str], Set[str]]
+    ) -> Optional["Traffic"]:
+        ...
+
+    def __getitem__(self, index):  # noqa: F811
+
+        data = self.data  # should be useless except in some cornercase
+
+        if not isinstance(index, str):
+            logging.debug("Selecting flights from a list of identifiers")
+            subset = list(index)  # noqa: F841
+            if "flight_id" in self.data.columns:
+                return self.__class__(
+                    self.data.loc[self.data.flight_id.isin(subset)]
+                )
+            else:
+                return self.__class__(
+                    self.data.loc[self.data.callsign.isin(subset)]
+                )
 
         if self.flight_ids is not None:
-            data = self.data[self.data.flight_id == index]
+            data = data[data.flight_id == index]
             if data.shape[0] > 0:
                 return Flight(data)
+
+        logging.debug("Fallbacking to icao24/callsign")
 
         # if no such index as flight_id or no flight_id column
         try:
@@ -119,15 +146,19 @@ class Traffic(GeographyMixin):
             value16 = int(index, 16)  # noqa: F841 (unused value16)
             if index.startswith("0x"):
                 index = index.lower()
-                data = self.data.query("icao24 == @index[2:]")
+                logging.debug("Selecting an icao24")
+                data = self.data.loc[self.data.icao24 == index[2:]]
             if index.isupper():
-                data = self.data.query("callsign == @index")
+                logging.debug("Selecting a callsign")
+                data = self.data.loc[self.data.callsign == index]
             if data.shape[0] == 0:
                 index = index.lower()
-                data = self.data.query("icao24 == @index")
+                logging.debug("Selecting an icao24")
+                data = self.data.loc[self.data.icao24 == index]
         except ValueError:
             index = index.upper()
-            data = self.data.query("callsign == @index")
+            logging.debug("Selecting a callsign")
+            data = self.data.loc[self.data.callsign == index]
 
         if data.shape[0] > 0:
             return Flight(data)
@@ -356,7 +387,7 @@ class Traffic(GeographyMixin):
         projection: Union[pyproj.Proj, crs.Projection, None] = None,
         round_t: str = "d",
         max_workers: int = 4,
-    ) -> pd.DataFrame:
+    ) -> 'CPA':
         """
         Computes a CPA dataframe for all pairs of trajectories candidates for
         being separated by less than lateral_separation in vertical_separation.
@@ -382,102 +413,13 @@ class Traffic(GeographyMixin):
 
         """
 
-        if projection is None:
-            logging.warn("Defaulting to projection EuroPP()")
-            projection = crs.EuroPP()
+        from ..algorithms.cpa import closest_point_of_approach
 
-        if isinstance(projection, crs.Projection):
-            projection = pyproj.Proj(projection.proj4_init)
-
-        def yield_pairs(t_chunk: Traffic):
-            """
-            This function yields all pairs of possible candidates for a CPA
-            calculation.
-            """
-
-            # combinations types Iterator[Tuple[T, ...]]
-            for first, second in cast(
-                Iterator[Tuple[Flight, Flight]], combinations(t_chunk, 2)
-            ):
-                # cast are necessary because of the lru_cache × property bug
-                if (
-                    cast(pd.Timestamp, first.start)
-                    > cast(pd.Timestamp, second.stop)
-                ) or (
-                    cast(pd.Timestamp, second.start)
-                    > cast(pd.Timestamp, first.stop)
-                ):
-                    # Flights must fly at the same time
-                    continue
-                if (
-                    first.min("altitude")
-                    > second.max("altitude") + vertical_separation
-                ):
-                    # Bounding boxes in altitude must cross
-                    continue
-                if (
-                    second.min("altitude")
-                    > first.max("altitude") + vertical_separation
-                ):
-                    # Bounding boxes in altitude must cross
-                    continue
-                if first.min("x") > second.max("x") + lateral_separation:
-                    # Bounding boxes in x must cross
-                    continue
-                if second.min("x") > first.max("x") + lateral_separation:
-                    # Bounding boxes in x must cross
-                    continue
-                if first.min("y") > second.max("y") + lateral_separation:
-                    # Bounding boxes in y must cross
-                    continue
-                if second.min("y") > first.max("y") + lateral_separation:
-                    # Bounding boxes in y must cross
-                    continue
-
-                # Next step is to check the 2D footprint of the trajectories
-                # intersect. Before computing the intersection we bufferize the
-                # trajectories by half the requested separation.
-
-                first_shape = first.project_shape(projection)
-                second_shape = second.project_shape(projection)
-                if first_shape is None or second_shape is None:
-                    continue
-
-                first_shape = first_shape.simplify(1e3).buffer(
-                    lateral_separation / 2
-                )
-                second_shape = first_shape.simplify(1e3).buffer(
-                    lateral_separation / 2
-                )
-
-                if first_shape.intersects(second_shape):
-                    yield first, second
-
-        t_xyt = (
-            self.airborne()
-            .compute_xy(projection)
-            .assign(round_t=lambda df: df.timestamp.dt.round(round_t))
+        return closest_point_of_approach(
+            self,
+            lateral_separation,
+            vertical_separation,
+            projection,
+            round_t,
+            max_workers,
         )
-
-        cumul = list()
-
-        # Multiprocessing is implemented on each timerange slot only.
-        # TODO: it would probably be more efficient to multiprocess over each
-        # t_chunk rather than multiprocess the distance computation.
-
-        for _, t_chunk in tqdm(
-            t_xyt.groupby("round_t"), total=len(set(t_xyt.data.round_t))
-        ):
-            with ProcessPoolExecutor(max_workers=max_workers) as executor:
-                tasks = {
-                    executor.submit(first.distance, second): (
-                        first.flight_id,
-                        second.flight_id,
-                    )
-                    for (first, second) in yield_pairs(Traffic(t_chunk))
-                }
-
-                for future in as_completed(tasks):
-                    cumul.append(future.result())
-
-        return pd.concat(cumul, sort=True)

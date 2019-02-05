@@ -69,6 +69,9 @@ class DataFrameMixin(object):
     def query(self: T, query: str) -> T:
         return self.__class__(self.data.query(query))
 
+    def drop(self: T, *args, **kwargs) -> T:
+        return self.__class__(self.data.drop(*args, **kwargs))
+
     def groupby(self, *args, **kwargs):
         return self.data.groupby(*args, **kwargs)
 
