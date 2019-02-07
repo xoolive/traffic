@@ -125,7 +125,8 @@ class Impala(object):
 
         """
 
-        df.callsign = df.callsign.str.strip()
+        if "callsign" in df.columns and df.callsign.dtype == object:
+            df.callsign = df.callsign.str.strip()
 
         if nautical_units:
             df.altitude = df.altitude / 0.3048
