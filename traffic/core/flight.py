@@ -3,7 +3,7 @@
 import logging
 import re
 from functools import lru_cache
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import (TYPE_CHECKING, Callable, Generator, Iterable, Iterator,
                     List, NamedTuple, Optional, Set, Tuple, Type, TypeVar,
                     Union, cast)
@@ -128,13 +128,17 @@ class Flight(GeographyMixin, ShapelyMixin):
     @lru_cache()
     def start(self) -> pd.Timestamp:
         """Returns the minimum timestamp value of the DataFrame."""
-        return self.data.timestamp.min()
+        start = self.data.timestamp.min()
+        self.data = self.data.assign(start=start)
+        return start
 
     # https://github.com/python/mypy/issues/1362
     @property  # type: ignore
     @lru_cache()
     def stop(self) -> pd.Timestamp:
-        return self.data.timestamp.max()
+        stop = self.data.timestamp.max()
+        self.data = self.data.assign(stop=stop)
+        return stop
 
     @lru_cache()
     def min(self, feature: str):
@@ -476,12 +480,14 @@ class Flight(GeographyMixin, ShapelyMixin):
         return self.query("altitude == altitude")
 
     def first(self, **kwargs) -> "Flight":
-        delta = timedelta(**kwargs)  # noqa: F841 => delta is used in the query
-        return self.__class__(self.data.query("timestamp < start + @delta"))
+        delta = timedelta(**kwargs)
+        bound = self.start + delta  # noqa: F841 => used in the query
+        return self.__class__(self.data.query("timestamp < @bound"))
 
     def last(self, **kwargs) -> "Flight":
-        delta = timedelta(**kwargs)  # noqa: F841 => delta is used in the query
-        return self.__class__(self.data.query("timestamp > stop - @delta"))
+        delta = timedelta(**kwargs)
+        bound = self.stop - delta  # noqa: F841 => used in the query
+        return self.__class__(self.data.query("timestamp > @bound"))
 
     def filter(
         self,
@@ -765,7 +771,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         if isinstance(intersection, LineString):
             times = list(
-                datetime.fromtimestamp(t)
+                datetime.fromtimestamp(t, timezone.utc)
                 for t in np.stack(intersection.coords)[:, 2]
             )
             return self.between(min(times), max(times))
@@ -775,7 +781,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         ]:
             for segment in intersection:
                 times = list(
-                    datetime.fromtimestamp(t)
+                    datetime.fromtimestamp(t, timezone.utc)
                     for t in np.stack(segment.coords)[:, 2]
                 )
                 yield min(times), max(times)

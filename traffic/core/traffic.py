@@ -144,14 +144,18 @@ class Traffic(GeographyMixin):
             #     - if it starts by 0x, priority goes to the icao24;
             #     - if it is in capital letters, priority goes to the callsign
             value16 = int(index, 16)  # noqa: F841 (unused value16)
+            default_icao24 = True
             if index.startswith("0x"):
                 index = index.lower()
                 logging.debug("Selecting an icao24")
                 data = self.data.loc[self.data.icao24 == index[2:]]
+                default_icao24 = False
             if index.isupper():
                 logging.debug("Selecting a callsign")
                 data = self.data.loc[self.data.callsign == index]
-            if data.shape[0] == 0:
+                if data.shape[0] > 0:
+                    default_icao24 = False
+            if default_icao24:
                 index = index.lower()
                 logging.debug("Selecting an icao24")
                 data = self.data.loc[self.data.icao24 == index]
