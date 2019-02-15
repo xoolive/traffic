@@ -2,7 +2,8 @@
 
 import warnings
 from calendar import timegm
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
@@ -26,7 +27,7 @@ from ...core.time import time_or_delta, timelike, to_datetime
 
 def time(int_: int) -> datetime:
     ts = timegm((2000 + int_ // 10000, int_ // 100 % 100, int_ % 100, 0, 0, 0))
-    return datetime.fromtimestamp(ts)
+    return datetime.fromtimestamp(ts, timezone.utc)
 
 
 def hour(int_: int) -> timedelta:
@@ -40,8 +41,15 @@ class Flight(FlightMixin):
         super().__init__(data)
         self.interpolator: Dict = dict()
 
+    def __add__(self, other):
+        if other == 0:
+            # useful for compatibility with sum() function
+            return self
+
+        return SO6(pd.concat([self.data, other.data], sort=False))
+
     @property
-    def timestamp(self) -> Iterator[pd.datetime]:
+    def timestamp(self) -> Iterator[pd.Timestamp]:
         if self.data.shape[0] == 0:
             return
         for _, s in self.data.iterrows():
@@ -51,6 +59,16 @@ class Flight(FlightMixin):
     @property
     def aircraft(self) -> str:
         return self.data.iloc[0].aircraft
+
+    @property  # type: ignore
+    @lru_cache()
+    def start(self) -> pd.Timestamp:
+        return min(self.timestamp)
+
+    @property  # type: ignore
+    @lru_cache()
+    def stop(self) -> pd.Timestamp:
+        return max(self.timestamp)
 
     @property
     def registration(self) -> None:
@@ -160,7 +178,7 @@ class Flight(FlightMixin):
     def clip(self, shape: base.BaseGeometry) -> "Flight":
         coords = np.stack(self.linestring.intersection(shape).coords)
         times = list(
-            datetime.fromtimestamp(t)
+            datetime.fromtimestamp(t, timezone.utc)
             for t in np.stack(
                 LineString(list(self.xy_time)).intersection(shape).coords
             )[:, 2]
@@ -281,6 +299,15 @@ class SO6(DataFrameMixin):
     def _ipython_key_completions_(self):
         return {*self.flight_ids, *self.callsigns}
 
+    def __add__(self, other) -> "SO6":
+        # useful for compatibility with sum() function
+        if other == 0:
+            return self
+        return self.__class__(pd.concat([self.data, other.data], sort=False))
+
+    def __radd__(self, other) -> "SO6":
+        return self + other
+
     def get(self, callsign: str) -> Iterable[Tuple[int, Flight]]:
         all_flights = self.data.groupby("callsign").get_group(callsign)
         for flight_id, flight in all_flights.groupby("flight_id"):
@@ -301,6 +328,36 @@ class SO6(DataFrameMixin):
     @property
     def flight_ids(self) -> Set[int]:
         return set(self.data.flight_id)
+
+    @lru_cache()
+    def stats(self) -> pd.DataFrame:
+        """Statistics about flights contained in the structure.
+        Useful for a meaningful representation.
+        """
+        cumul = []
+        for f in self:
+            info = {
+                "flight_id": f.flight_id,
+                "callsign": f.callsign,
+                "origin": f.origin,
+                "destination": f.destination,
+                "duration": f.stop - f.start  # type: ignore
+            }
+            cumul.append(info)
+
+        return (
+            pd.DataFrame.from_records(cumul)
+            .set_index("flight_id")
+            .sort_values("duration", ascending=False)
+        )
+
+    def __repr__(self) -> str:
+        stats = self.stats()
+        return stats.__repr__()
+
+    def _repr_html_(self) -> str:
+        stats = self.stats()
+        return stats._repr_html_()
 
     @classmethod
     def from_so6(self, filename: Union[str, Path, StringIO]) -> "SO6":
