@@ -6,21 +6,22 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from io import StringIO
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 
 import numpy as np
-
 import pandas as pd
 import pyproj
 from cartopy.crs import PlateCarree
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString, base
 
-from ...core import Airspace
+from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
+
 from ...core import Flight as FlightMixin
+from ...core import Airspace
 from ...core.flight import Position
 from ...core.mixins import DataFrameMixin
 from ...core.time import time_or_delta, timelike, to_datetime
+
 
 # fmt: on
 
@@ -135,26 +136,26 @@ class Flight(FlightMixin):
             pd.Series(res[0], index=["longitude", "latitude", "altitude"])
         )
 
-    def between(self, before: timelike, after: time_or_delta) -> "Flight":
-        before = to_datetime(before)
-        if isinstance(after, timedelta):
-            after = before + after
+    def between(self, start: timelike, stop: time_or_delta) -> "Flight":
+        start = to_datetime(start)
+        if isinstance(stop, timedelta):
+            stop = start + stop
         else:
-            after = to_datetime(after)
+            stop = to_datetime(stop)
 
         t: np.ndarray = np.stack(self.timestamp)
-        index = np.where((before < t) & (t < after))
+        index = np.where((start < t) & (t < stop))
 
         new_data: np.ndarray = np.stack(self.coords)[index]
-        time1: List[datetime] = [before, *t[index]]
-        time2: List[datetime] = [*t[index], after]
+        time1: List[datetime] = [start, *t[index]]
+        time2: List[datetime] = [*t[index], stop]
 
-        if before > t[0]:
-            new_data = np.vstack([self.at(before), new_data])
+        if start > t[0]:
+            new_data = np.vstack([self.at(start), new_data])
         else:
             time1, time2 = time1[1:], time2[1:]
-        if after < t[-1]:
-            new_data = np.vstack([new_data, self.at(after)])
+        if stop < t[-1]:
+            new_data = np.vstack([new_data, self.at(stop)])
         else:
             time1, time2 = time1[:-1], time2[:-1]
 
@@ -175,30 +176,30 @@ class Flight(FlightMixin):
 
         return Flight(df)
 
-    def clip(self, shape: base.BaseGeometry) -> "Flight":
-        coords = np.stack(self.linestring.intersection(shape).coords)
-        times = list(
-            datetime.fromtimestamp(t, timezone.utc)
-            for t in np.stack(
-                LineString(list(self.xy_time)).intersection(shape).coords
-            )[:, 2]
-        )
+    def clip(self, shape: base.BaseGeometry) -> Optional["Flight"]:
+        linestring = LineString(list(self.xy_time))
+        intersection = linestring.intersection(shape)
+        begin: Optional[datetime] = None
 
-        df: pd.DataFrame = (
-            pd.DataFrame.from_records(
-                np.c_[coords[:-1, :], coords[1:, :]],
-                columns=["lon1", "lat1", "alt1", "lon2", "lat2", "alt2"],
-            ).assign(
-                time1=times[:-1],
-                time2=times[1:],
-                origin=self.origin,
-                destination=self.destination,
-                aircraft=self.aircraft,
-                flight_id=self.flight_id,
-                callsign=self.callsign,
+        if intersection.is_empty:
+            return None
+
+        if isinstance(intersection, LineString):
+            begin, *_, end = list(
+                datetime.fromtimestamp(t, timezone.utc)
+                for t in np.stack(intersection.coords)[:, 2]
             )
-        )
-        return Flight(df)
+
+        else:
+            for x in LineString(list(self.xy_time)).intersection(shape):
+                begin_, *_, end = list(
+                    datetime.fromtimestamp(t, timezone.utc)
+                    for t in np.stack(x.coords)[:, 2]
+                )
+                if begin is None:
+                    begin = begin_
+
+        return self.between(begin, end)
 
     def clip_altitude(self, min_: int, max_: int) -> Iterator["Flight"]:
         def buffer_to_iter(proj, buffer):
@@ -299,13 +300,13 @@ class SO6(DataFrameMixin):
     def _ipython_key_completions_(self):
         return {*self.flight_ids, *self.callsigns}
 
-    def __add__(self, other) -> "SO6":
+    def __add__(self, other: Union[Flight, "SO6"]) -> "SO6":
         # useful for compatibility with sum() function
         if other == 0:
             return self
         return self.__class__(pd.concat([self.data, other.data], sort=False))
 
-    def __radd__(self, other) -> "SO6":
+    def __radd__(self, other: Union[Flight, "SO6"]) -> "SO6":
         return self + other
 
     def get(self, callsign: str) -> Iterable[Tuple[int, Flight]]:
@@ -341,7 +342,7 @@ class SO6(DataFrameMixin):
                 "callsign": f.callsign,
                 "origin": f.origin,
                 "destination": f.destination,
-                "duration": f.stop - f.start  # type: ignore
+                "duration": f.stop - f.start,  # type: ignore
             }
             cumul.append(info)
 
@@ -451,14 +452,14 @@ class SO6(DataFrameMixin):
             self.data[(self.data.time1 <= time) & (self.data.time2 > time)]
         )
 
-    def between(self, before: timelike, after: time_or_delta) -> "SO6":
-        before = to_datetime(before)
-        if isinstance(after, timedelta):
-            after = before + after
+    def between(self, start: timelike, stop: time_or_delta) -> "SO6":
+        start = to_datetime(start)
+        if isinstance(stop, timedelta):
+            stop = start + stop
         else:
-            after = to_datetime(after)
+            stop = to_datetime(stop)
         return SO6(
-            self.data[(self.data.time1 <= after) & (self.data.time2 >= before)]
+            self.data[(self.data.time1 <= stop) & (self.data.time2 >= start)]
         )
 
     def intersects(self, sector: Airspace) -> "SO6":
