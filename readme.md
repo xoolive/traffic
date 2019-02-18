@@ -15,8 +15,8 @@ sources of ADS-B traffic like the [OpenSky Network](https://opensky-network.org/
 or Eurocontrol DDR files. It is designed to be easily extendable to other
 sources of data.
 
-Eventually, static and dynamic output are available for Matplotlib, Google
-Earth (kmz) and CesiumJS (czml).
+Eventually, static and dynamic output are available for Matplotlib, Leaflet,
+Google Earth (kmz) and CesiumJS (czml).
 
 ## Installation
 
