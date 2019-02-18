@@ -64,3 +64,27 @@ More details in the [documentation](https://airtraffic.readthedocs.io/).
 ## Documentation
 
 Documentation available [here](https://airtraffic.readthedocs.io/)
+
+## Frequently asked questions
+
+- Something doesn't work. What should I do?
+
+Please file an [issue](https://github.com/xoolive/traffic/issues/new) but
+activating the `DEBUG` messages first may be helpful:
+
+```python
+from traffic.core.logging import loglevel
+loglevel('DEBUG')
+```
+
+- I want to know more about AIRAC files
+
+When you import `airac` from `traffic.data`, you need to set a path to a
+directory containing AIRAC files. These are XML files following the
+[AIXM](http://aixm.aero/) standard and produced by Eurocontrol. We download
+those files from a Eurocontrol [Network Manager B2B web
+service](https://eurocontrol.int/service/network-manager-business-business-b2b-web-services).
+You may not be entitled access to those data.
+
+Should you not have such access, basic FIRs are provided in `eurofirs` from
+`traffic.data`.
