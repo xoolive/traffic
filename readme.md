@@ -77,6 +77,15 @@ from traffic.core.logging import loglevel
 loglevel('DEBUG')
 ```
 
+- I encountered this issue, here is how to fix it.
+
+First of all, thank you. All kinds of corrections are welcome.
+
+I can include your fix in the code and push it. But since you did the job, you
+may want to file a [PR](https://yangsu.github.io/pull-request-tutorial/) and
+keep the authorship. It is also easier for me to keep track of corrections and
+remember why things are the way they are.
+
 - I want to know more about AIRAC files
 
 When you import `airac` from `traffic.data`, you need to set a path to a
