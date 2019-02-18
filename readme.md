@@ -91,9 +91,9 @@ remember why things are the way they are.
 When you import `airac` from `traffic.data`, you need to set a path to a
 directory containing AIRAC files. These are XML files following the
 [AIXM](http://aixm.aero/) standard and produced by Eurocontrol. We download
-those files from a Eurocontrol [Network Manager B2B web
+those files from  Eurocontrol [Network Manager B2B web
 service](https://eurocontrol.int/service/network-manager-business-business-b2b-web-services).
 You may not be entitled access to those data.
 
-Should you not have such access, basic FIRs are provided in `eurofirs` from
+Should you have no such access, basic FIRs are provided in `eurofirs` from
 `traffic.data`.
