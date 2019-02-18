@@ -703,16 +703,16 @@ class Flight(GeographyMixin, ShapelyMixin):
     def after(self, ts: timelike) -> "Flight":
         return self.between(ts, self.stop)
 
-    def between(self, before: timelike, after: time_or_delta) -> "Flight":
-        before = to_datetime(before)
-        if isinstance(after, timedelta):
-            after = before + after
+    def between(self, start: timelike, stop: time_or_delta) -> "Flight":
+        start = to_datetime(start)
+        if isinstance(stop, timedelta):
+            stop = start + stop
         else:
-            after = to_datetime(after)
+            stop = to_datetime(stop)
 
-        # full call is necessary to keep @before and @after as local variables
-        # return self.query('@before < timestamp < @after')  => not valid
-        return self.__class__(self.data.query("@before < timestamp < @after"))
+        # full call is necessary to keep @start and @stop as local variables
+        # return self.query('@start < timestamp < @stop')  => not valid
+        return self.__class__(self.data.query("@start < timestamp < @stop"))
 
     # -- Geometry operations --
 
