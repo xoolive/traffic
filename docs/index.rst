@@ -28,6 +28,7 @@ sources of data.
    installation
    quickstart
    data
+   gui
    architecture
    scenarios
    publications
