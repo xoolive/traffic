@@ -437,7 +437,10 @@ class MainScreen(QMainWindow):
                 self.map_plot.default_plot(self._tview)
             else:
                 location(self.area_input.text()).plot(
-                    self.map_plot.ax, color="grey", linestyle="dashed"
+                    self.map_plot.ax,
+                    color="#524c50",
+                    linestyle="dotted",
+                    linewidth=.5,
                 )
         else:
             if self.airac_ready:
