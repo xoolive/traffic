@@ -194,6 +194,7 @@ class MapCanvas(FigureCanvasQTAgg):
                 )
             )
             if projection_name in ["Lambert93", "GaussKruger", "Amersfoort"]:
+                # Hardcoded projection list?! :o/
                 self.ax.add_feature(rivers())
 
             self.fig.set_tight_layout(True)
