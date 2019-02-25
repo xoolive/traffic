@@ -43,7 +43,7 @@ You may download data from OpenSky Impala shell (check the help with option
 traffic opensky 2018-01-01T06:00 -s 2018-01-01T08:00 -b Andorra -o andorra.pkl
 ```
 
-You may quickly inspect the contents of the file:
+You may inspect the contents of the file:
 
 ```
 $ traffic show andorra.pkl
@@ -60,6 +60,13 @@ icao24 callsign
 ```
 
 More details in the [documentation](https://airtraffic.readthedocs.io/).
+
+## Graphical user interface
+
+A Qt application is provided for exploring and recording data.  
+More details in the [GUI section of the documentation](https://airtraffic.readthedocs.io/en/latest/gui.html).
+
+![GUI screenshot](docs/_static/gui_start.png)
 
 ## Documentation
 
