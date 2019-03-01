@@ -31,6 +31,11 @@ if TYPE_CHECKING:
 
 # fmt: on
 
+# fix https://github.com/xoolive/traffic/issues/12
+# if pd.__version__ <= "0.24.1":
+from pandas.core.internals import Block, DatetimeTZBlock
+DatetimeTZBlock.interpolate = Block.interpolate
+
 
 def _split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
     diff = data.timestamp.diff().values
