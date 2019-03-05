@@ -172,6 +172,8 @@ class Flight(GeographyMixin, ShapelyMixin):
         """Returns the unique number value(s) of the DataFrame."""
         if "number" not in self.data.columns:
             return None
+        if all(self.data.number.isna()):
+            return None
         tmp = set(self.data.number)
         if len(tmp) == 1:
             return tmp.pop()
@@ -592,6 +594,32 @@ class Flight(GeographyMixin, ShapelyMixin):
             / 1852,
             vertical=(table.altitude_x - table.altitude_y).abs(),
         )
+
+    def cumulative_distance(
+        self, cumulative_groundspeed: bool = False
+    ) -> "Flight":
+
+        coords = self.data[["timestamp", "latitude", "longitude"]]
+        delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
+        delta_1 = delta.iloc[1:]
+        d = geo.distance(
+            delta_1.latitude.values,
+            delta_1.longitude.values,
+            (delta_1.latitude + delta_1.latitude_1).values,
+            (delta_1.longitude + delta_1.longitude_1).values,
+        )
+
+        res = self.assign(cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant"))
+
+        if cumulative_groundspeed:
+            res = res.assign(
+                gs=np.pad(
+                    d / delta.timestamp_1.dt.total_seconds() * 3600 / 1852,
+                    (1, 0),
+                    "constant",
+                )
+            )
+        return res
 
     # -- Interpolation and resampling --
 
