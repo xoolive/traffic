@@ -274,9 +274,7 @@ class Flight(GeographyMixin, ShapelyMixin):
             return failure()
 
         timestamped_df = df.sort_values("mintime").assign(
-            timestamp=lambda df: df.mintime.apply(
-                lambda x: x.replace(microsecond=0)
-            )
+            timestamp=lambda df: df.mintime.dt.round("s")
         )
 
         referenced_df = (
@@ -429,9 +427,9 @@ class Flight(GeographyMixin, ShapelyMixin):
     ) -> Iterator[Tuple[float, float, float, float]]:
         data = self.data[self.data.longitude.notnull()]
         if delta_t:
-            time = (data["timestamp"] - data["timestamp"].min()).apply(
-                lambda x: x.total_seconds()
-            )
+            time = (
+                data["timestamp"] - data["timestamp"].min()
+            ).dt.total_seconds()
         else:
             time = data["timestamp"]
 
@@ -662,7 +660,7 @@ class Flight(GeographyMixin, ShapelyMixin):
                 .data.assign(start=self.start, stop=self.stop)
                 .set_index("timestamp")
                 .resample(rule)
-                .min()
+                .first()  # better performance than min() for duplicate index
                 .interpolate()
                 .reset_index()
                 .fillna(method="pad")

@@ -25,14 +25,16 @@ class DataFrameMixin(object):
         self.data: pd.DataFrame = data
 
     @classmethod
-    def from_file(cls, filename: Union[Path, str]):
+    def from_file(cls, filename: Union[Path, str], *args, **kwargs):
         path = Path(filename)
         if path.suffixes in [[".pkl"], [".pkl", ".gz"]]:
-            return cls(pd.read_pickle(path))
+            return cls(pd.read_pickle(path, *args, **kwargs))
+        if path.suffixes in [[".parquet"], [".parquet", ".gz"]]:
+            return cls(pd.read_parquet(path, *args, **kwargs))
         if path.suffixes == [".csv"]:
-            return cls(pd.read_csv(path))
+            return cls(pd.read_csv(path, *args, **kwargs))
         if path.suffixes == [".h5"]:
-            return cls(pd.read_hdf(path))
+            return cls(pd.read_hdf(path, *args, **kwargs))
         return None
 
     # --- Special methods ---
@@ -60,6 +62,9 @@ class DataFrameMixin(object):
     def to_json(self, filename: Union[str, Path]) -> None:
         self.data.to_json(filename)
 
+    def to_parquet(self, filename: Union[str, Path]) -> None:
+        self.data.to_parquet(filename)
+
     def to_excel(self, filename: Union[str, Path]) -> None:
         self.data.to_excel(filename)
 
@@ -71,6 +76,9 @@ class DataFrameMixin(object):
 
     def drop(self: T, *args, **kwargs) -> T:
         return self.__class__(self.data.drop(*args, **kwargs))
+
+    def fillna(self: T, *args, **kwargs) -> T:
+        return self.__class__(self.data.fillna(*args, **kwargs))
 
     def groupby(self, *args, **kwargs):
         return self.data.groupby(*args, **kwargs)
