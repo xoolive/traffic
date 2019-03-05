@@ -7,7 +7,7 @@ from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-                    List, Optional, Set, Tuple, Union, overload)
+                    List, Optional, Set, Tuple, Type, TypeVar, Union, overload)
 
 import pandas as pd
 import pyproj
@@ -26,8 +26,13 @@ if TYPE_CHECKING:
 
 # fmt: on
 
+# https://github.com/python/mypy/issues/2511
+TrafficTypeVar = TypeVar('TrafficTypeVar', bound='Traffic')
+
 
 class Traffic(GeographyMixin):
+
+    __slots__ = ("data",)
 
     _parse_extension: Dict[str, Callable[..., pd.DataFrame]] = dict()
 
@@ -40,8 +45,8 @@ class Traffic(GeographyMixin):
 
     @classmethod
     def from_file(
-        cls, filename: Union[Path, str], **kwargs
-    ) -> Optional["Traffic"]:
+        cls: Type[TrafficTypeVar], filename: Union[Path, str], **kwargs
+    ) -> Optional[TrafficTypeVar]:
 
         tentative = super().from_file(filename)
 
@@ -391,7 +396,7 @@ class Traffic(GeographyMixin):
         projection: Union[pyproj.Proj, crs.Projection, None] = None,
         round_t: str = "d",
         max_workers: int = 4,
-    ) -> 'CPA':
+    ) -> "CPA":
         """
         Computes a CPA dataframe for all pairs of trajectories candidates for
         being separated by less than lateral_separation in vertical_separation.

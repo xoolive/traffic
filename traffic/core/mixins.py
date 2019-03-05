@@ -1,7 +1,7 @@
 from datetime import datetime
 from functools import lru_cache, partial
 from pathlib import Path
-from typing import List, Tuple, TypeVar, Union
+from typing import List, Optional, Tuple, Type, TypeVar, Union
 
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
@@ -21,20 +21,24 @@ class DataFrameMixin(object):
 
     """
 
+    __slots__ = ()
+
     def __init__(self, data: pd.DataFrame) -> None:
         self.data: pd.DataFrame = data
 
     @classmethod
-    def from_file(cls, filename: Union[Path, str], *args, **kwargs):
+    def from_file(
+        cls: Type[T], filename: Union[Path, str], **kwargs
+    ) -> Optional[T]:
         path = Path(filename)
         if path.suffixes in [[".pkl"], [".pkl", ".gz"]]:
-            return cls(pd.read_pickle(path, *args, **kwargs))
+            return cls(pd.read_pickle(path, **kwargs))
         if path.suffixes in [[".parquet"], [".parquet", ".gz"]]:
-            return cls(pd.read_parquet(path, *args, **kwargs))
+            return cls(pd.read_parquet(path, **kwargs))
         if path.suffixes == [".csv"]:
-            return cls(pd.read_csv(path, *args, **kwargs))
+            return cls(pd.read_csv(path, **kwargs))
         if path.suffixes == [".h5"]:
-            return cls(pd.read_hdf(path, *args, **kwargs))
+            return cls(pd.read_hdf(path, **kwargs))
         return None
 
     # --- Special methods ---
@@ -95,6 +99,8 @@ class ShapelyMixin(object):
     However no plot method is provided at this level because it depends on the
     nature of the shape.
     """
+
+    __slots__ = ()
 
     shape: base.BaseGeometry
 
@@ -209,6 +215,7 @@ class PointMixin(object):
     longitude: float
     altitude: float
     timestamp: datetime
+    name: str
 
     def plot(
         self, ax: Axes, text_kw=None, shift=dict(units="dots", x=15), **kwargs

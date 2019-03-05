@@ -68,6 +68,8 @@ class Flight(GeographyMixin, ShapelyMixin):
     raised.
     """
 
+    __slots__ = ("data",)
+
     def __add__(self, other):
         """Concatenates two Flight objects in the same Traffic structure."""
         if other == 0:
@@ -489,12 +491,16 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     def first(self, **kwargs) -> "Flight":
         delta = timedelta(**kwargs)
-        bound = self.start + delta  # noqa: F841 => used in the query
+        bound = (
+            cast(pd.Timestamp, self.start) + delta
+        )  # noqa: F841 => used in the query
         return self.__class__(self.data.query("timestamp < @bound"))
 
     def last(self, **kwargs) -> "Flight":
         delta = timedelta(**kwargs)
-        bound = self.stop - delta  # noqa: F841 => used in the query
+        bound = (
+            cast(pd.Timestamp, self.stop) - delta
+        )  # noqa: F841 => used in the query
         return self.__class__(self.data.query("timestamp > @bound"))
 
     def filter(
