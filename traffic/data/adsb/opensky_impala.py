@@ -137,15 +137,13 @@ class Impala(object):
             if "vertical_rate" in df.columns:
                 df.vertical_rate = df.vertical_rate / 0.3048 * 60
 
-        df.timestamp = df.timestamp.apply(
-            lambda x: datetime.fromtimestamp(x, timezone.utc)
-        )
+        df.timestamp = pd.to_datetime(df.timestamp * 1e9).dt.tz_localize("utc")
 
         if "last_position" in df.columns:
             df = df.query("last_position == last_position").assign(
-                last_position=lambda df: df.last_position.apply(
-                    lambda x: datetime.fromtimestamp(x, timezone.utc)
-                )
+                last_position=pd.to_datetime(
+                    df.last_position * 1e9
+                ).dt.tz_localize("utc")
             )
 
         return df.sort_values("timestamp")
@@ -221,8 +219,11 @@ class Impala(object):
         for column_name in ["time", "hour"]:
             df[column_name] = df[column_name].astype(int)
 
-        df.icao24 = df.icao24.apply(
-            lambda x: "{:0>6}".format(hex(int(str(x), 16))[2:])
+        df.icao24 = (
+            df.icao24.apply(int, base=16)
+            .apply(hex)
+            .str.slice(2)
+            .str.pad(6, fillchar="0")
         )
 
         if df.onground.dtype != bool:
@@ -482,13 +483,16 @@ class Impala(object):
 
             for column_name in ["mintime", "maxtime"]:
                 df[column_name] = (
-                    df[column_name]
-                    .astype(float)
-                    .apply(lambda x: datetime.fromtimestamp(x, timezone.utc))
+                    pd.to_datetime(
+                        df[column_name].astype(float) * 1e9
+                    ).dt.tz_localize("utc")
                 )
 
-            df.icao24 = df.icao24.apply(
-                lambda x: "{:0>6}".format(hex(int(str(x), 16))[2:])
+            df.icao24 = (
+                df.icao24.apply(int, base=16)
+                .apply(hex)
+                .str.slice(2)
+                .str.pad(6, fillchar="0")
             )
             df.altitude = df.altitude.astype(float) * 0.3048
 
