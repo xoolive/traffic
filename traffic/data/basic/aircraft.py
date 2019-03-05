@@ -33,6 +33,7 @@ class Aircraft(object):
         return table
 
     def reset_cache(self) -> None:
+        assert self.cache is not None
         self.cache.unlink()
         new_instance = self.__class__()
         self.aircraft = new_instance.aircraft

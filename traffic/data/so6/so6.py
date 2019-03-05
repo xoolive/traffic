@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from io import StringIO
 from pathlib import Path
+from typing import (Dict, Iterable, Iterator, List, Optional, Set, Tuple, Type,
+                    TypeVar, Union)
 
 import numpy as np
 import pandas as pd
@@ -14,16 +16,16 @@ from cartopy.crs import PlateCarree
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString, base
 
-from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
-
-from ...core import Flight as FlightMixin
 from ...core import Airspace
+from ...core import Flight as FlightMixin
 from ...core.flight import Position
 from ...core.mixins import DataFrameMixin
 from ...core.time import time_or_delta, timelike, to_datetime
 
-
 # fmt: on
+
+# https://github.com/python/mypy/issues/2511
+SO6TypeVar = TypeVar("SO6TypeVar", bound="SO6")
 
 
 def time(int_: int) -> datetime:
@@ -282,6 +284,8 @@ class Flight(FlightMixin):
 
 class SO6(DataFrameMixin):
 
+    __slots__ = ("data",)
+
     identifier = Union[int, str]
 
     def __getitem__(self, _id: identifier) -> Flight:
@@ -361,7 +365,9 @@ class SO6(DataFrameMixin):
         return stats._repr_html_()
 
     @classmethod
-    def from_so6(self, filename: Union[str, Path, StringIO]) -> "SO6":
+    def from_so6(
+        cls: Type[SO6TypeVar], filename: Union[str, Path, StringIO]
+    ) -> SO6TypeVar:
         so6 = pd.read_csv(
             filename,
             sep=" ",
@@ -414,10 +420,12 @@ class SO6(DataFrameMixin):
         ):
             del so6[col]
 
-        return SO6(so6)
+        return cls(so6)
 
     @classmethod
-    def from_so6_7z(self, filename: Union[str, Path]) -> "SO6":
+    def from_so6_7z(
+        cls: Type[SO6TypeVar], filename: Union[str, Path]
+    ) -> SO6TypeVar:
         from libarchive.public import memory_reader
 
         with open(filename, "rb") as fh:
@@ -427,7 +435,7 @@ class SO6(DataFrameMixin):
                     for block in file.get_blocks():
                         s.write(block.decode())
                 s.seek(0)
-                so6 = SO6.from_so6(s)
+                so6 = cls.from_so6(s)
                 s.close()
                 return so6
 
@@ -437,14 +445,16 @@ class SO6(DataFrameMixin):
         return cls.from_file(filename)
 
     @classmethod
-    def from_file(cls, filename: Union[Path, str]) -> Optional["SO6"]:
+    def from_file(
+        cls: Type[SO6TypeVar], filename: Union[Path, str], **kwargs
+    ) -> Optional[SO6TypeVar]:
         path = Path(filename)
         if path.suffixes == [".so6", ".7z"]:
-            return SO6.from_so6_7z(filename)
+            return cls.from_so6_7z(filename)
         if path.suffixes == [".so6"]:
-            return SO6.from_so6(filename)
+            return cls.from_so6(filename)
         holder = DataFrameMixin.from_file(filename)
-        return SO6(holder.data) if holder is not None else None
+        return cls(holder.data) if holder is not None else None
 
     def at(self, time: timelike) -> "SO6":
         time = to_datetime(time)

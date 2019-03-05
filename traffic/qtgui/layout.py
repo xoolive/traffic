@@ -9,14 +9,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Set, cast
 
+import pandas as pd
+from cartopy.crs import PlateCarree
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QApplication, QComboBox, QFileDialog, QGridLayout,
                              QHBoxLayout, QInputDialog, QLabel, QLineEdit,
                              QListWidget, QMainWindow, QMessageBox,
                              QPushButton, QSlider, QTabWidget, QVBoxLayout,
                              QWidget)
-
-from cartopy.crs import PlateCarree
 
 from .. import config
 from ..core import Flight, Traffic
@@ -557,14 +557,14 @@ class MainScreen(QMainWindow):
     def set_time_range(self) -> None:
         assert self._traffic is not None
         self.time_slider.setEnabled(True)
+        start_time = cast(pd.Timestamp, self._traffic.start_time)
+        end_time = cast(pd.Timestamp, self._traffic.end_time)
         self.dates = [
-            self._traffic.start_time
-            + i * (self._traffic.end_time - self._traffic.start_time) / 99
-            for i in range(100)
+            start_time + i * (end_time - start_time) / 99 for i in range(100)
         ]
 
         tz_now = datetime.now().astimezone().tzinfo
-        if self._traffic.start_time.tzinfo is not None:
+        if cast(pd.Timestamp, self._traffic.start_time).tzinfo is not None:
             self.date_options = [
                 t.tz_convert("utc").strftime("%H:%M") for t in self.dates
             ]

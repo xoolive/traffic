@@ -6,18 +6,18 @@ from datetime import datetime
 from typing import Any, Dict, List, Set, Union, cast
 
 import matplotlib.pyplot as plt
+import pandas as pd
 from IPython import get_ipython
 from IPython.display import clear_output
+from ipywidgets import (Button, Dropdown, HBox, Output, SelectionRangeSlider,
+                        SelectMultiple, Tab, Text, VBox)
 from matplotlib.artist import Artist
 from matplotlib.figure import Figure
 
-from ipywidgets import (Button, Dropdown, HBox, Output, SelectionRangeSlider,
-                        SelectMultiple, Tab, Text, VBox)
-
-from . import *  # noqa: F401, F403, type: ignore
 from ..core import Traffic
 from ..drawing import (EuroPP, PlateCarree, Projection,  # type: ignore
                        countries, location, rivers)
+from . import *  # noqa: F401, F403, type: ignore
 
 # fmt: on
 
@@ -166,12 +166,13 @@ class TrafficWidget(object):
     def set_time_range(self) -> None:
         with self.output:
             tz_now = datetime.now().astimezone().tzinfo
+            start_time = cast(pd.Timestamp, self._traffic.start_time)
+            end_time = cast(pd.Timestamp, self._traffic.end_time)
             self.dates = [
-                self._traffic.start_time
-                + i * (self._traffic.end_time - self._traffic.start_time) / 99
+                start_time + i * (end_time - start_time) / 99
                 for i in range(100)
             ]
-            if self._traffic.start_time.tzinfo is not None:
+            if cast(pd.Timestamp, self._traffic.start_time).tzinfo is not None:
                 options = [
                     t.tz_convert("utc").strftime("%H:%M") for t in self.dates
                 ]

@@ -68,7 +68,8 @@ def to_bluesky(
         is_created: List[str] = []
         is_deleted: List[str] = []
 
-        fh.write(f"00:00:00> TIME {traffic.start_time.time()}\n")
+        start_time = cast(pd.Timestamp, traffic.start_time).time()
+        fh.write(f"00:00:00> TIME {start_time}\n")
 
         # Add some bluesky command for the visualisation
         # fh.write("00:00:00>trail on\n")
