@@ -66,7 +66,7 @@ More details in the [documentation](https://airtraffic.readthedocs.io/).
 A Qt application is provided for exploring and recording data.  
 More details in the [GUI section of the documentation](https://airtraffic.readthedocs.io/en/latest/gui.html).
 
-![GUI screenshot](docs/_static/gui_start.png)
+![GUI screenshot](https://raw.githubusercontent.com/xoolive/traffic/master/docs/_static/gui_start.png)
 
 ## Documentation
 
