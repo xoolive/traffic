@@ -33,11 +33,14 @@ if TYPE_CHECKING:
 
 # fix https://github.com/xoolive/traffic/issues/12
 # if pd.__version__ <= "0.24.1":
-from pandas.core.internals import Block, DatetimeTZBlock
+from pandas.core.internals import Block, DatetimeTZBlock  # noqa: E402
+
 DatetimeTZBlock.interpolate = Block.interpolate
 
 
 def _split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
+    if data.shape[0] < 2:
+        return
     diff = data.timestamp.diff().values
     if diff.max() > np.timedelta64(value, unit):
         yield from _split(data.iloc[: diff.argmax()], value, unit)
