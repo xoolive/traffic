@@ -600,7 +600,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         )
 
     def cumulative_distance(
-        self, cumulative_groundspeed: bool = False
+        self, compute_groundspeed: bool = False
     ) -> "Flight":
 
         coords = self.data[["timestamp", "latitude", "longitude"]]
@@ -615,9 +615,9 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         res = self.assign(cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant"))
 
-        if cumulative_groundspeed:
+        if compute_groundspeed:
             res = res.assign(
-                gs=np.pad(
+                compute_gs=np.pad(
                     d / delta.timestamp_1.dt.total_seconds() * 3600 / 1852,
                     (1, 0),
                     "constant",
