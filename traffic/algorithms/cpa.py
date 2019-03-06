@@ -202,6 +202,7 @@ def closest_point_of_approach(
     ):
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             tasks = {
+                # TODO submit(Flight.distance, first, second)
                 executor.submit(first.distance, second): (
                     first.flight_id,
                     second.flight_id,

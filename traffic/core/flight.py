@@ -491,16 +491,16 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     def first(self, **kwargs) -> "Flight":
         delta = timedelta(**kwargs)
-        bound = (
+        bound = (  # noqa: F841 => used in the query
             cast(pd.Timestamp, self.start) + delta
-        )  # noqa: F841 => used in the query
+        )
         return self.__class__(self.data.query("timestamp < @bound"))
 
     def last(self, **kwargs) -> "Flight":
         delta = timedelta(**kwargs)
-        bound = (
+        bound = (  # noqa: F841 => used in the query
             cast(pd.Timestamp, self.stop) - delta
-        )  # noqa: F841 => used in the query
+        )
         return self.__class__(self.data.query("timestamp > @bound"))
 
     def filter(
