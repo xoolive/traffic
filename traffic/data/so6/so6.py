@@ -453,8 +453,7 @@ class SO6(DataFrameMixin):
             return cls.from_so6_7z(filename)
         if path.suffixes == [".so6"]:
             return cls.from_so6(filename)
-        holder = DataFrameMixin.from_file(filename)
-        return cls(holder.data) if holder is not None else None
+        return super().from_file(filename)
 
     def at(self, time: timelike) -> "SO6":
         time = to_datetime(time)

@@ -81,6 +81,9 @@ class DataFrameMixin(object):
     def drop(self: T, *args, **kwargs) -> T:
         return self.__class__(self.data.drop(*args, **kwargs))
 
+    def rename(self: T, *args, **kwargs) -> T:
+        return self.__class__(self.data.rename(*args, **kwargs))
+
     def fillna(self: T, *args, **kwargs) -> T:
         return self.__class__(self.data.fillna(*args, **kwargs))
 
