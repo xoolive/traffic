@@ -222,6 +222,7 @@ def _traffic_inside_bbox(
 
     west, south, east, north = bounds
 
+    # operator precedence is ok with & and 'and' in numexpr
     query = "{0} <= longitude <= {2} & {1} <= latitude <= {3}"
     query = query.format(west, south, east, north)
 
