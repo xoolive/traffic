@@ -78,11 +78,7 @@ class Traffic(GeographyMixin):
                 # for retrocompatibility
                 rename_columns["altitude"] = "geoaltitude"
 
-            tentative.data = tentative.data.rename(
-                # tentative rename of columns for compatibility
-                columns=rename_columns
-            )
-            return cls(tentative.data)
+            return tentative.rename(columns=rename_columns)
 
         path = Path(filename)
         method = cls._parse_extension.get("".join(path.suffixes), None)
