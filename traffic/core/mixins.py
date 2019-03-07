@@ -9,6 +9,7 @@ from matplotlib.axes._subplots import Axes
 
 import pandas as pd
 import pyproj
+from cartopy import crs
 from shapely.geometry import Point, base
 from shapely.ops import transform
 
@@ -152,7 +153,7 @@ class ShapelyMixin(object):
 
     @lru_cache()
     def project_shape(
-        self, projection: pyproj.Proj = None
+        self, projection: Union[pyproj.Proj, crs.Projection, None] = None
     ) -> base.BaseGeometry:
         """Projection for a decent representation of the structure.
 
@@ -163,14 +164,17 @@ class ShapelyMixin(object):
         if self.shape is None:
             return None
 
+        if isinstance(projection, crs.Projection):
+            projection = pyproj.Proj(projection.proj4_init)
+
         if projection is None:
             bounds = self.bounds
             projection = pyproj.Proj(
                 proj="aea",  # equivalent projection
-                lat1=bounds[1],
-                lat2=bounds[3],
-                lon1=bounds[0],
-                lon2=bounds[2],
+                lat_1=bounds[1],
+                lat_2=bounds[3],
+                lat_0=(bounds[1] + bounds[3]) / 2,
+                lon_0=(bounds[0] + bounds[2]) / 2,
             )
         projected_shape = transform(
             partial(
@@ -187,7 +191,9 @@ class ShapelyMixin(object):
 class GeographyMixin(DataFrameMixin):
     """Adds Euclidean coordinates to a latitude/longitude DataFrame."""
 
-    def compute_xy(self, projection: pyproj.Proj = None):
+    def compute_xy(
+        self, projection: Union[pyproj.Proj, crs.Projection, None] = None
+    ):
         """Computes x and y columns from latitudes and longitudes.
 
         The source projection is WGS84 (EPSG 4326).
@@ -198,6 +204,9 @@ class GeographyMixin(DataFrameMixin):
         is returned.
 
         """
+        if isinstance(projection, crs.Projection):
+            projection = pyproj.Proj(projection.proj4_init)
+
         if projection is None:
             projection = pyproj.Proj(
                 proj="lcc",
