@@ -19,7 +19,7 @@ def opensky_data(start, stop, output_file, **kwargs):
                     kwargs["bounds"] = sector
                 else:
                     raise Exception
-            except:
+            except Exception:
                 # ask OpenStreetMap
                 kwargs["bounds"] = location(bounds)
 
