@@ -2,7 +2,7 @@ import warnings
 from datetime import datetime
 from functools import lru_cache, partial
 from pathlib import Path
-from typing import List, Optional, Tuple, Type, TypeVar, Union
+from typing import Callable, List, Optional, Tuple, Type, TypeVar, Union
 
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
@@ -85,6 +85,9 @@ class DataFrameMixin(object):
 
     def rename(self: T, *args, **kwargs) -> T:
         return self.__class__(self.data.rename(*args, **kwargs))
+
+    def pipe(self: T, func: Callable[..., T], *args, **kwargs) -> T:
+        return func(self, *args, **kwargs)
 
     def fillna(self: T, *args, **kwargs) -> T:
         return self.__class__(self.data.fillna(*args, **kwargs))
