@@ -59,7 +59,7 @@ class Airways(object):
             fields = line.split()
             if len(fields) < 10:
                 continue
-            if not re.match("^[\d.]*$", fields[1]):
+            if not re.match("^[\d.]*$", fields[1]):  # noqa: W605
                 continue
 
             for id_ in fields[-1].split("-"):
