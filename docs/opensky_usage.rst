@@ -581,129 +581,11 @@ Advanced usage: Extended Mode-S (EHS)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 EHS messages are not automatically decoded for your on the OpenSky
-Database but you may access them and decode them aside. (better
-integration to come)
+Database but you may access them and decode them from your computer.
 
 .. code:: python
 
-    df = opensky.extended(
-        flight.start, flight.stop,
-        icao24=flight.icao24
-    )
-    df.head()
-
-
-
-
-.. raw:: html
-
-    <div>
-    <style scoped>
-        .dataframe tbody tr th:only-of-type {
-            vertical-align: middle;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    
-        .dataframe thead th {
-            text-align: right;
-        }
-    </style>
-    <table border="0" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th></th>
-          <th>mintime</th>
-          <th>maxtime</th>
-          <th>rawmsg</th>
-          <th>msgcount</th>
-          <th>icao24</th>
-          <th>hour</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>1530</th>
-          <td>2018-06-11 17:34:24.774</td>
-          <td>2018-06-11 17:34:24.853</td>
-          <td>a0000132fa81c1000000007f158d</td>
-          <td>1</td>
-          <td>484cb8</td>
-          <td>1528729200</td>
-        </tr>
-        <tr>
-          <th>2538</th>
-          <td>2018-06-11 17:34:28.603</td>
-          <td>2018-06-11 17:34:28.639</td>
-          <td>a00001398db000307c00007b6429</td>
-          <td>2</td>
-          <td>484cb8</td>
-          <td>1528729200</td>
-        </tr>
-        <tr>
-          <th>461</th>
-          <td>2018-06-11 17:34:28.629</td>
-          <td>2018-06-11 17:34:28.629</td>
-          <td>a8000800f259250e22a4587818e7</td>
-          <td>1</td>
-          <td>484cb8</td>
-          <td>1528729200</td>
-        </tr>
-        <tr>
-          <th>1048</th>
-          <td>2018-06-11 17:34:28.629</td>
-          <td>2018-06-11 17:34:28.629</td>
-          <td>a8000800580b91187452aefda6f2</td>
-          <td>1</td>
-          <td>484cb8</td>
-          <td>1528729200</td>
-        </tr>
-        <tr>
-          <th>1020</th>
-          <td>2018-06-11 17:34:32.447</td>
-          <td>2018-06-11 17:34:32.513</td>
-          <td>a00001908db000307c0000bbf321</td>
-          <td>2</td>
-          <td>484cb8</td>
-          <td>1528729200</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
-
-
-
-.. code:: python
-
-    from datetime import timedelta
-    from tqdm.autonotebook import tqdm
-    
-    from traffic.core.time import round_time
-    from traffic.data.adsb.decode import Decoder
-    
-    lon0, lat0, _ = next(iter(flight.shape.coords))
-    
-    decoder = Decoder((lat0, lon0))  # create a decoder
-    rs = flight.resample()  # resample the flight at 1 Hz
-    
-    for _, line in tqdm(df.iterrows(), total=df.shape[0]):
-        ts = round_time(line.mintime, 'before', timedelta(minutes=1))
-        if ts >= rs.start:
-            data = rs.at(ts)
-            if flight.icao24 in decoder.acs and data is not None:
-                ac = decoder.acs[flight.icao24]
-                ac.spd = data.groundspeed
-                ac.trk = data.track
-                ac.alt = data.altitude
-        decoder.process(line.mintime, line.rawmsg)
-
-
-.. code:: python
-
-    t = decoder.traffic['KLM1308'] + flight
-    ext_flight = t['KLM1308']
+    ehs_flight = t['KLM1308'].query_ehs()
 
 .. code:: python
 
@@ -712,11 +594,11 @@ integration to come)
     with plt.style.context('traffic'):
         fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(15, 8))
     
-        ext_flight.filter().filter(groundspeed=53, tas=53, ias=53).plot_time(
+        ehs_flight.filter().filter(groundspeed=53, tas=53, ias=53).plot_time(
             ax1, ['groundspeed', 'ias', 'tas'],
         )
         
-        ext_flight.filter().filter(heading=53, track=53).assign(
+        ehs_flight.filter().filter(heading=53, track=53).assign(
             heading=lambda x: np.degrees(np.unwrap(np.radians(x.heading))),
             track=lambda x: np.degrees(np.unwrap(np.radians(x.track)))
         ).plot_time(
