@@ -243,6 +243,9 @@ class PointMixin(object):
 
         if text_kw is None:
             text_kw = {}
+        else:
+            # since we may modify it, let's make a copy
+            text_kw = {**text_kw}
 
         if "projection" in ax.__dict__ and "transform" not in kwargs:
             from cartopy.crs import PlateCarree
@@ -256,7 +259,10 @@ class PointMixin(object):
             kwargs["color"] = "black"
 
         if "s" not in text_kw:
-            text_kw["s"] = getattr(self, "callsign", "")
+            if hasattr(self, "callsign"):
+                text_kw["s"] = getattr(self, "callsign")
+            if hasattr(self, "name"):
+                text_kw["s"] = getattr(self, "name")
 
         cumul: List[Artist] = []
         cumul.append(ax.scatter(self.longitude, self.latitude, **kwargs))
