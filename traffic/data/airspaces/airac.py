@@ -231,12 +231,12 @@ class AirspaceParser(object):
             upper = block.find("aixm:upperLimit", self.ns)
             lower = block.find("aixm:lowerLimit", self.ns)
 
-            upper = (
+            upper = (  # noqa: W605
                 float(upper.text)
                 if upper is not None and re.match("\d{3}", upper.text)
                 else float("inf")
             )
-            lower = (
+            lower = (  # noqa: W605
                 float(lower.text)
                 if lower is not None and re.match("\d{3}", lower.text)
                 else float("-inf")
