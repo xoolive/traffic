@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 from typing import List, NamedTuple, Optional
 
+import pandas as pd
 import requests
 
 from ...core.mixins import PointMixin
@@ -25,6 +26,8 @@ class NavaidTuple(NamedTuple):
     def __setstate__(self, d):
         self.__dict__.update(d)
 
+
+class Navaid(NavaidTuple, PointMixin):
     def __getattr__(self, name):
         if name == "latitude":
             return self.lat
@@ -33,8 +36,6 @@ class NavaidTuple(NamedTuple):
         if name == "altitude":
             return self.alt
 
-
-class Navaid(NavaidTuple, PointMixin):
     def __repr__(self):
         if self.type == "FIX":
             return f"{self.name} ({self.type}): {self.lat} {self.lon}"
@@ -68,6 +69,12 @@ class NavaidParser(object):
     def __getitem__(self, name: str) -> Optional[Navaid]:
         return next(
             (pt for pt in self.navaids if (pt.name == name.upper())), None
+        )
+
+    @property
+    def df(self) -> pd.DataFrame:
+        return pd.DataFrame.from_records(
+            self.navaids, columns=NavaidTuple._fields
         )
 
     def search(self, name: str) -> List[Navaid]:

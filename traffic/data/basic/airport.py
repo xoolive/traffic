@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple, Optional
 
+import pandas as pd
 import requests
 from cartopy.crs import PlateCarree
 
@@ -94,6 +95,7 @@ class Airport(AirportNamedTuple, ShapelyMixin):
         p = PointMixin()
         p.latitude = self.latitude
         p.longitude = self.longitude
+        p.name = self.icao
         return p
 
 
@@ -116,6 +118,12 @@ class AirportParser(object):
             if self.cache is not None:
                 with open(self.cache, "wb") as fh:
                     pickle.dump(self.airports, fh)
+
+    @property
+    def df(self) -> pd.DataFrame:
+        return pd.DataFrame.from_records(
+            self.airports, columns=AirportNamedTuple._fields
+        )
 
     def __getitem__(self, name: str):
         return next(
