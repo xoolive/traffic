@@ -6,7 +6,7 @@ from functools import lru_cache
 from datetime import datetime, timedelta, timezone
 from typing import (TYPE_CHECKING, Callable, Generator, Iterable, Iterator,
                     List, NamedTuple, Optional, Set, Tuple, Type, TypeVar,
-                    Union, cast)
+                    Union, cast, overload)
 
 import numpy as np
 from matplotlib.artist import Artist
@@ -38,11 +38,17 @@ from pandas.core.internals import Block, DatetimeTZBlock  # noqa: E402
 DatetimeTZBlock.interpolate = Block.interpolate
 
 
-def _split(data: pd.DataFrame, value, unit) -> Iterator[pd.DataFrame]:
+def _split(
+    data: pd.DataFrame, value: Union[str, int], unit: Optional[str]
+) -> Iterator[pd.DataFrame]:
     if data.shape[0] < 2:
         return
     diff = data.timestamp.diff().values
-    if diff.max() > np.timedelta64(value, unit):
+    if unit is None:
+        delta = pd.Timedelta(value).to_timedelta64()
+    else:
+        delta = np.timedelta64(value, unit)
+    if diff.max() > delta:
         yield from _split(data.iloc[: diff.argmax()], value, unit)
         yield from _split(data.iloc[diff.argmax() :], value, unit)  # noqa
     else:
@@ -383,7 +389,9 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         avg_track = subset.data.track.tail(10).mean()
         # TODO compute rwy track in the data module
-        rwy_track = 10 * int(next(re.finditer("\d+", candidate.name)).group())
+        rwy_track = 10 * int(  # noqa: W605
+            next(re.finditer("\d+", candidate.name)).group()
+        )
 
         if abs(avg_track - rwy_track) > 20:
             logging.warn(
@@ -575,7 +583,27 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         return self.__class__(strategy(new_data))
 
+    @overload
+    def distance(self, other: PointMixin) -> "Flight":
+        ...
+
+    @overload  # noqa: F811
     def distance(self, other: "Flight") -> pd.DataFrame:
+        ...
+
+    def distance(self, other):  # noqa: F811
+
+        if isinstance(other, PointMixin):
+            size = len(self)
+            return self.assign(
+                distance=geo.distance(
+                    self.data.latitude.values,
+                    self.data.longitude.values,
+                    other.lat * np.ones(size),
+                    other.lon * np.ones(size),
+                )
+                / 1852
+            )
 
         start = max(self.airborne().start, other.airborne().start)
         stop = min(self.airborne().stop, other.airborne().stop)
@@ -627,11 +655,23 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     # -- Interpolation and resampling --
 
-    def split(self, value: int = 10, unit: str = "m") -> Iterator["Flight"]:
+    @overload
+    def split(self, value: int, unit: str) -> Iterator["Flight"]:
+        ...
+
+    @overload  # noqa: F811
+    def split(self, value: str, unit: None) -> Iterator["Flight"]:
+        ...
+
+    def split(self, value=10, unit=None):  # noqa: F811
         """Splits Flights in several legs.
 
         By default, Flights are split if no value is given during 10 minutes.
         """
+        if type(value) == int and unit is None:
+            # default value is 10 m
+            unit = "m"
+
         for data in _split(self.data, value, unit):
             yield self.__class__(data)
 
