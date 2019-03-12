@@ -53,6 +53,7 @@ those before an attempt of explanation.
 
         function city_select() {
             var inp = document.getElementById('city_selector');
+            var osm_url = 'http://nominatim.openstreetmap.org/search?format=json&limit=1&q='
             $.getJSON(
                 osm_url + inp.value, function(data) {
                     $.each(
@@ -71,7 +72,6 @@ those before an attempt of explanation.
             scrollWheelZoom: false,
             zoom: 9
         })
-        var osm_url = 'http://nominatim.openstreetmap.org/search?format=json&limit=1&q='
 
         L.tileLayer('http://stamen-tiles-a.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png', {
             maxZoom: 18,
@@ -337,7 +337,6 @@ calibration trajectories from the sample dataset. [3]_
             scrollWheelZoom: false,
             zoom: 8 
         })
-        var osm_url = 'http://nominatim.openstreetmap.org/search?format=json&limit=1&q='
 
         L.tileLayer('http://stamen-tiles-a.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png', {
             maxZoom: 18,
