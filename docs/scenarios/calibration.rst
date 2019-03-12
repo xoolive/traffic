@@ -11,7 +11,6 @@
         integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
         crossorigin=""></script>
 
-    <script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
     <script src="../_static/calibration.geojson"></script>
 
 Calibration flights
