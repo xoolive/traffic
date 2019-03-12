@@ -60,8 +60,24 @@ those before an attempt of explanation.
     <div id="mymap" style="width: 100%; height: 500px; margin-bottom: 1em; margin-top: 1em"></div>
 
     <script>
+        var mymap;
 
-        var mymap = L.map( 'mymap', {
+        function city_select() {
+            var inp = document.getElementById('city_selector');
+            $.getJSON(
+                osm_url + inp.value, function(data) {
+                    $.each(
+                        data, function(key, val) {
+                            mymap.setView([val.lat, val.lon], 9);
+                        }
+                    )
+                }
+            )
+        };
+
+        /* delay the creation of the map after the whole page has been loaded */
+        document.addEventListener("DOMContentLoaded", function(event) {
+        mymap = L.map( 'mymap', {
             center: [43.59601301626894, 1.4321018748075245],
             scrollWheelZoom: false,
             zoom: 9
@@ -78,18 +94,6 @@ those before an attempt of explanation.
             id: 'stamen.terrain'
         }).addTo(mymap);
 
-        function city_select() {
-            var inp = document.getElementById('city_selector');
-            $.getJSON(
-                osm_url + inp.value, function(data) {
-                    $.each(
-                        data, function(key, val) {
-                            mymap.setView([val.lat, val.lon], 9);
-                        }
-                    )
-                }
-            )
-        };
 
         L.geoJson(
             calibration_trajectories,
@@ -105,6 +109,7 @@ those before an attempt of explanation.
               + layer.feature.properties.callsign;
         }).addTo(mymap);
 
+      })
     </script>
 
 You may click on trajectories for more information.
@@ -326,7 +331,19 @@ calibration trajectories from the sample dataset. [3]_
 
     <script>
 
-        var vormap = L.map( 'vormap', {
+        var vormap;
+        var ajo, bub, fun, mga, pea, rab;
+
+        function vor_select() {
+            var inp = document.getElementById('vor_selector');
+            var tab = inp.value.split(' ');
+            vormap.setView([tab[0], tab[1]], tab[2]);
+            eval(tab[3]).openPopup();
+        };
+
+        /* delay the creation of the map after the whole page has been loaded */
+        document.addEventListener("DOMContentLoaded", function(event) {
+        vormap = L.map( 'vormap', {
             center: [41.770528, 8.774667],
             scrollWheelZoom: false,
             zoom: 8 
@@ -343,12 +360,6 @@ calibration trajectories from the sample dataset. [3]_
             id: 'stamen.terrain'
         }).addTo(vormap);
 
-        function vor_select() {
-            var inp = document.getElementById('vor_selector');
-            var tab = inp.value.split(' ');
-            vormap.setView([tab[0], tab[1]], tab[2]);
-            eval(tab[3]).openPopup();
-        };
 
         L.geoJson(
             calibration_trajectories,
@@ -377,26 +388,28 @@ calibration trajectories from the sample dataset. [3]_
             }
         ).addTo(vormap);
 
-        var ajo = L.marker([41.770528, 8.774667]);
+        ajo = L.marker([41.770528, 8.774667]);
         ajo.addTo(vormap);
         ajo.bindPopup('<b>Ajaccio VOR-DME</b>')
-        var bub = L.marker([50.902222, 4.538056]);
+        bub = L.marker([50.902222, 4.538056]);
         bub.addTo(vormap);
         bub.bindPopup('<b>Brussels VOR-DME</b>')
-        var fun = L.marker([32.747039, -16.705686]);
+        fun = L.marker([32.747039, -16.705686]);
         fun.addTo(vormap);
         fun.bindPopup('<b>Madeira VOR-DME</b>')
-        var mga = L.marker([-22.315389, 166.473167]);
+        mga = L.marker([-22.315389, 166.473167]);
         mga.addTo(vormap);
         mga.bindPopup('<b>Ouere VOR-DME</b>')
-        var pea = L.marker([-31.673889, 116.017222]);
+        pea = L.marker([-31.673889, 116.017222]);
         pea.addTo(vormap);
         pea.bindPopup('<b>Pearce TACAN</b>')
-        var rab = L.marker([15.00863889, -90.47033333]);
+        rab = L.marker([15.00863889, -90.47033333]);
         rab.addTo(vormap);
         rab.bindPopup('<b>Rabinal VOR-DME</b>')
 
         ajo.openPopup()
+
+      })
 
     </script>
 
