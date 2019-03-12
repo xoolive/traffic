@@ -1,7 +1,7 @@
 .. raw:: html
     :file: ../embed_widgets/windfield.html
 
-A Mode S based wind-field
+A Mode S based wind field
 -------------------------
 
 ADS-B data broadcasted by aircraft contains information about groundspeed and
