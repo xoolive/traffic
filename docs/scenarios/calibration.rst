@@ -53,7 +53,7 @@ those before an attempt of explanation.
 
         function city_select() {
             var inp = document.getElementById('city_selector');
-            var osm_url = 'http://nominatim.openstreetmap.org/search?format=json&limit=1&q='
+            var osm_url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q='
             $.getJSON(
                 osm_url + inp.value, function(data) {
                     $.each(
