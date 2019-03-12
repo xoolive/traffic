@@ -23,6 +23,7 @@ setup(
     packages=find_packages(),
     package_data={
         "traffic.data.airspaces": ["firs.json"],
+        "traffic.data.samples": ["calibration.pkl.gz"],
         "traffic": [
             os.path.join("..", "icons", f)
             for f in os.listdir(os.path.join("icons"))

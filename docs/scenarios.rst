@@ -6,3 +6,4 @@ Scenarios
 
     scenarios/is_this_a_plane
     scenarios/windfield
+    scenarios/calibration
