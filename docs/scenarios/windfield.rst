@@ -1,8 +1,8 @@
 .. raw:: html
     :file: ../embed_widgets/windfield.html
 
-Building a wind field from Mode S data
---------------------------------------
+A Mode S based wind-field
+-------------------------
 
 ADS-B data broadcasted by aircraft contains information about groundspeed and
 true track angle of its trajectory. When proper requests are sent by a Secondary
@@ -36,6 +36,8 @@ where it should.
         flight
         # download and decode EHS messages (DF 20/21)
         .query_ehs()
+        # TODO fix a weird behaviour with latest version of pandas
+        .drop(columns=["last_position"])
         # resample/interpolate one sample per second
         .resample("1s")
         # median filters
@@ -73,9 +75,9 @@ coordinates to the closest integer and average wind in each resulting cell.
             .query("wind_u == wind_u")
             # prepare coordinates for the 4d-grid, also remove NaN in wind
             .assign(
-                # round coordinates to the closest integer latitude/longitude
-                lat_=lambda df: df.latitude.round(0)
-                lon_=lambda df: df.longitude.round(0)
+                # round coordinates to the closest .33 latitude/longitude
+                lat_=lambda df: (3 * df.latitude.round(0)) / 3,
+                lon_=lambda df: (3 * df.longitude.round(0)) / 3,
                 # This basic version averages on all altitudes/timeranges
                 # but it is easy to use the following fields to display
                 # wind fields in particular time ranges and altitude levels.
@@ -100,9 +102,7 @@ coordinates to the closest integer and average wind in each resulting cell.
         )
 
 
-The following is a basic rendering delegated to ipyleaflet library. The example
-below is wind averaged between -1°W and 12°E and between 48°N and 54°N, from
-FL200 and above on June 13rd 2017.
+The following is a basic rendering delegated to ipyleaflet library.
 
 .. code:: python
 
@@ -111,8 +111,8 @@ FL200 and above on June 13rd 2017.
     # t_extended = Traffic.from_file("wind_backup.pkl")
 
     map_ = Map(
-        center=(51, 5),
-        zoom=5,
+        center=(52, 15),
+        zoom=4,
         interpolation="nearest",
         basemap=basemaps.CartoDB.DarkMatter,
     )
@@ -123,8 +123,8 @@ FL200 and above on June 13rd 2017.
         meridional_speed="v_wind",
         latitude_dimension="lat_",
         longitude_dimension="lon_",
-        velocity_scale=0.005,
-        max_velocity=50,
+        velocity_scale=0.002,
+        max_velocity=150,
     )
 
     map_.add_layer(wind)
@@ -137,10 +137,15 @@ FL200 and above on June 13rd 2017.
    {
        "version_major": 2,
        "version_minor": 0,
-       "model_id": "7b188bae2e744534926f4f2ab0d27daa"
+       "model_id": "c2a6efbadb4442dcbe468a3407ee237b"
    }
    </script>
 
+   <br/>
+
+
+The example above is wind averaged between 25°W and 55°E and between 32°N and
+65°N, from FL200 and above on February 23th 2019, between 14:00 and 16:30 UTC.
 
 .. [1] | Hurter, C., R. Alligier, D. Gianazza, S. Puechmorel, G. Andrienko, and N. Andrienko.
        | « Wind Parameters Extraction from Aircraft Trajectories ». Computers, Environment and Urban Systems 47 (2014): 28‑43.
