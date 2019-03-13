@@ -160,6 +160,8 @@ texinfo_documents = [
 # -- Extension configuration -------------------------------------------------
 
 def setup(app):
+    app.add_stylesheet("https://unpkg.com/leaflet@1.4.0/dist/leaflet.css")
+    app.add_javascript("https://unpkg.com/leaflet@1.4.0/dist/leaflet.js")
     app.add_javascript("https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js")
     app.add_javascript("https://unpkg.com/@jupyter-widgets/html-manager@0.15.0/dist/embed-amd.js")
     app.add_stylesheet("main_stylesheet.css")
