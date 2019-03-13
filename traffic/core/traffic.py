@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 # fmt: on
 
 # https://github.com/python/mypy/issues/2511
-TrafficTypeVar = TypeVar('TrafficTypeVar', bound='Traffic')
+TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
 
 
 class Traffic(GeographyMixin):
@@ -342,7 +342,7 @@ class Traffic(GeographyMixin):
         if sum(1 for _ in zip(range(8), self)) == 8:
             params["color"] = "#aaaaaa"
             params["linewidth"] = 1
-            params["alpha"] = .8
+            params["alpha"] = 0.8
             kwargs = {**params, **kwargs}  # precedence of kwargs over params
         for i, flight in enumerate(self):
             if nb_flights is None or i < nb_flights:
@@ -368,7 +368,12 @@ class Traffic(GeographyMixin):
 
     # --- Real work ---
 
-    def resample(self, rule: str = "1s", max_workers: int = 4) -> "Traffic":
+    def resample(
+        self,
+        value: Union[str, int] = "1s",
+        unit: Optional[str] = None,
+        max_workers: int = 4,
+    ) -> "Traffic":
         """Resamples all trajectories, flight by flight.
 
         `rule` defines the desired sample rate (default: 1s)
@@ -377,7 +382,7 @@ class Traffic(GeographyMixin):
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             cumul = []
             tasks = {
-                executor.submit(flight.resample, rule): flight
+                executor.submit(flight.resample, value, unit): flight
                 for flight in self
             }
             for future in tqdm(as_completed(tasks), total=len(tasks)):
