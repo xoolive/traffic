@@ -2,9 +2,8 @@ from datetime import datetime, timedelta, timezone
 from numbers import Number
 from typing import Iterator, Tuple, Union
 
-import numpy as np
-
 import maya
+import numpy as np
 import pandas as pd
 
 timelike = Union[str, Number, datetime, pd.Timestamp]
@@ -16,12 +15,12 @@ def to_datetime(time: timelike) -> datetime:
     if isinstance(time, pd.Timestamp):
         time = time.to_pydatetime()
     if isinstance(time, str):
-        time = maya.parse(time)  # type: ignore
+        time = maya.parse(time)
     if isinstance(time, maya.core.MayaDT):  # type: ignore
         time = time.epoch
     if isinstance(time, Number):
         time = datetime.fromtimestamp(time, timezone.utc)  # type: ignore
-    return time  # type: ignore
+    return time
 
 
 def round_time(

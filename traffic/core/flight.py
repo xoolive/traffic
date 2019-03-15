@@ -2,26 +2,26 @@
 
 import logging
 import re
-from functools import lru_cache
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from typing import (TYPE_CHECKING, Callable, Generator, Iterable, Iterator,
                     List, NamedTuple, Optional, Set, Tuple, Type, TypeVar,
                     Union, cast, overload)
 
 import numpy as np
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
-
 import pandas as pd
 import scipy.signal
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
+from pandas.core.internals import Block, DatetimeTZBlock
 from shapely.geometry import LineString, base
 from tqdm.autonotebook import tqdm
 
-from . import geodesy as geo
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..core.time import time_or_delta, timelike, to_datetime
+from . import geodesy as geo
 from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
                        guess_airport)
 from .mixins import GeographyMixin, PointMixin, ShapelyMixin
@@ -33,8 +33,6 @@ if TYPE_CHECKING:
 
 # fix https://github.com/xoolive/traffic/issues/12
 # if pd.__version__ <= "0.24.1":
-from pandas.core.internals import Block, DatetimeTZBlock  # noqa: E402
-
 DatetimeTZBlock.interpolate = Block.interpolate
 
 
@@ -660,7 +658,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         ...
 
     @overload  # noqa: F811
-    def split(self, value: str, unit: None) -> Iterator["Flight"]:
+    def split(self, value: str, unit: None = None) -> Iterator["Flight"]:
         ...
 
     def split(self, value=10, unit=None):  # noqa: F811

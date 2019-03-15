@@ -9,8 +9,8 @@ from shapely.geometry import LineString
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import linemerge
 
-from .navaid import Navaid  # type: ignore
 from ...core.mixins import ShapelyMixin
+from .navaid import Navaid
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "ProfHoekstra/bluesky/master/data/navdata"
@@ -19,13 +19,13 @@ BoundsType = Union[BaseGeometry, Tuple[float, float, float, float]]
 
 
 class Airway(ShapelyMixin):
-
     def __init__(self, shape):
         self.shape = shape
 
     def plot(self, ax, **kwargs):
         if "projection" in ax.__dict__:
             from cartopy.crs import PlateCarree
+
             kwargs["transform"] = PlateCarree()
 
         ax.plot(*self.shape.xy, **kwargs)
@@ -42,7 +42,6 @@ class Airways(object):
             else:
                 self.initialize()
                 # self.airways is set in above method
-                self.airways = cast(pd.DataFrame, self.airways)
                 if self.cache is not None:
                     self.airways.to_pickle(self.cache)
         else:
@@ -109,7 +108,6 @@ class Airways(object):
         self.airways = airways
 
     def __getitem__(self, name: str) -> BaseGeometry:
-        self.airways = cast(pd.DataFrame, self.airways)
         return Airway(
             linemerge(self.airways.groupby("id").get_group(name).linestring)
         )
@@ -126,8 +124,7 @@ class Airways(object):
                 return None
             navaid = _navaid
 
-        navaid = cast(Navaid, navaid)
-        self.airways = cast(pd.DataFrame, self.airways)
+        navaid = cast(Navaid, navaid)  # type: ignore
 
         subset = self.airways[
             (
@@ -154,8 +151,7 @@ class Airways(object):
 
         west, south, east, north = bounds
 
-        self.airways = cast(pd.DataFrame, self.airways)
-
+        # TODO query
         candidates = self.airways[
             ((self.airways.west >= west) | (self.airways.east >= west))
             & ((self.airways.west <= east) | (self.airways.east <= east))
@@ -182,7 +178,7 @@ class Airways(object):
             kwargs["linestyle"] = ":"
 
         if "lw" not in kwargs:
-            kwargs["lw"] = .5
+            kwargs["lw"] = 0.5
 
         for line in self.airways.linestring:
             ax.plot(*line.xy, **kwargs)
