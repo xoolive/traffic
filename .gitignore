@@ -6,3 +6,6 @@ __pycache__
 *.pyd
 *.pkl
 traffic.conf
+build/
+dist/
+traffic.egg-info
