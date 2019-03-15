@@ -363,9 +363,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         return guess_airport(data.iloc[-1])
 
     def guess_landing_runway(
-        # TODO Specify a 'Point' trait in place of NamedTuple
-        self,
-        airport: Union[None, str, NamedTuple] = None,
+        self, airport: Union[None, str, PointMixin] = None
     ) -> DistancePointTrajectory:
 
         from ..data import runways

@@ -1,16 +1,15 @@
 from typing import NamedTuple, Optional
 
 import numpy as np
-
 import pandas as pd
 
 from . import geodesy as geo
+from .mixins import PointMixin
 
 
 class DistanceAirport(NamedTuple):
     distance: float
-    # TODO I would like to specify a 'Point' trait in place of NamedTuple
-    airport: NamedTuple
+    airport: PointMixin
 
 
 class DistancePointTrajectory(NamedTuple):
@@ -24,7 +23,7 @@ def closest_point(
     point: Optional[NamedTuple] = None,
     *args,
     latitude: Optional[float] = None,
-    longitude: Optional[float] = None
+    longitude: Optional[float] = None,
 ) -> DistancePointTrajectory:
 
     if point is not None:
@@ -47,7 +46,7 @@ def guess_airport(
     point: Optional[NamedTuple] = None,
     *args,
     latitude: Optional[float] = None,
-    longitude: Optional[float] = None
+    longitude: Optional[float] = None,
 ) -> DistanceAirport:
     from ..data import airports
 
