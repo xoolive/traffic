@@ -1,0 +1,18 @@
+[tool.black]
+line-length = 80
+target_version = ['py36', 'py37', 'py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    __pycache__
+  | \.git
+  | \.mypy_cache
+  | \.tox
+  | \.ipynb_checkpoints
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+line_length = 80

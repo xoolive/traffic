@@ -188,7 +188,7 @@ class TrafficWidget(object):
             self.lock_time_change = False
 
     def create_map(
-        self, projection: Union[str, Projection] = "EuroPP()"  # type: ignore
+        self, projection: Union[str, Projection] = "EuroPP()"
     ) -> None:
         with self.output:
             if isinstance(projection, str):
@@ -441,7 +441,7 @@ class TrafficWidget(object):
             if len(callsigns) != 0:
                 low, up = self.ax_time.get_ylim()
                 if (up - low) / up < 0.05:
-                    self.ax_time.set_ylim(up - .05 * up, up + .05 * up)
+                    self.ax_time.set_ylim(up - 0.05 * up, up + 0.05 * up)
                     self.canvas_time.draw_idle()
 
     def on_filter(self, low, up, t1, t2) -> None:

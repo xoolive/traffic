@@ -7,13 +7,12 @@ from threading import Lock
 from typing import Dict, List, Union
 
 import matplotlib.pyplot as plt
+from cartopy.crs import PlateCarree, Projection
 from matplotlib.artist import Artist
 from matplotlib.backends.backend_qt5agg import (FigureCanvasQTAgg,
                                                 NavigationToolbar2QT)
 from matplotlib.figure import Figure
 from PyQt5.QtWidgets import QSizePolicy
-
-from cartopy.crs import PlateCarree, Projection
 
 from ..core import Traffic
 from ..drawing import *  # noqa: F401, F403, type: ignore
@@ -102,13 +101,13 @@ class TimeCanvas(FigureCanvasQTAgg):
         if len(callsigns) > 0:
             low, up = self.ax.get_ylim()
             if (up - low) / up < 0.05:
-                self.ax.set_ylim(up - .05 * up, up + .05 * up)
+                self.ax.set_ylim(up - 0.05 * up, up + 0.05 * up)
 
         if len(callsigns) > 0 and len(secondary_y) > 0:
             ax2, _ = next(iter(self.ax.get_shared_x_axes()))
             low, up = ax2.get_ylim()
             if (up - low) / up < 0.05:
-                ax2.set_ylim(up - .05 * up, up + .05 * up)
+                ax2.set_ylim(up - 0.05 * up, up + 0.05 * up)
 
         self.draw()
 
@@ -149,10 +148,10 @@ class MapCanvas(FigureCanvasQTAgg):
         if not zoom_in:
             factor = 1.0 / factor
 
-        center_x = .5 * (max_x + min_x)
-        delta_x = .5 * (max_x - min_x)
-        center_y = .5 * (max_y + min_y)
-        delta_y = .5 * (max_y - min_y)
+        center_x = 0.5 * (max_x + min_x)
+        delta_x = 0.5 * (max_x - min_x)
+        center_y = 0.5 * (max_y + min_y)
+        delta_y = 0.5 * (max_y - min_y)
 
         self.ax.axis(
             (
@@ -170,7 +169,7 @@ class MapCanvas(FigureCanvasQTAgg):
         self.draw()
 
     def create_map(
-        self, projection: Union[str, Projection] = "EuroPP()"  # type: ignore
+        self, projection: Union[str, Projection] = "EuroPP()"
     ) -> None:
         if isinstance(projection, str):
             if not projection.endswith(")"):

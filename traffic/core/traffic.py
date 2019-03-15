@@ -181,7 +181,7 @@ class Traffic(GeographyMixin):
                 yield Flight(df)
         else:
             for _, df in self.data.groupby(["icao24", "callsign"]):
-                yield from Flight(df).split()
+                yield from Flight(df).split("10 minutes")
 
     def __len__(self):
         return sum(1 for _ in self)
@@ -320,8 +320,8 @@ class Traffic(GeographyMixin):
         if "flight_id" in self.data.columns:
             return self
         return Traffic.from_flights(
-            Flight(f.data.assign(flight_id=f"{f.callsign}_{id_:>03}"))
-            for id_, f in enumerate(self)
+            flight.assign(flight_id=f"{flight.callsign}_{id_:>03}")
+            for id_, flight in enumerate(self)
         )
 
     def filter(

@@ -474,7 +474,7 @@ class SO6(DataFrameMixin):
     def intersects(self, sector: Airspace) -> "SO6":
         return SO6(
             self.data.groupby("flight_id").filter(
-                lambda flight: Flight(flight).intersects(sector)  # type:ignore
+                lambda flight: Flight(flight).intersects(sector)
             )
         )
 
