@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Set, Tuple, Union
 
 import pandas as pd
 import requests
@@ -8,9 +9,9 @@ from matplotlib.artist import Artist
 from matplotlib.patches import Polygon as MplPolygon
 from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
-from typing import Optional, Set, Tuple, Union
 
-from ...core import Flight, StateVectors as SVMixin
+from ...core import Flight
+from ...core import StateVectors as SVMixin
 from ...core.mixins import PointMixin, ShapelyMixin
 from ...core.time import round_time, timelike, to_datetime
 from ..basic.airport import Airport
@@ -287,7 +288,7 @@ class OpenSky(Impala):
         """
 
         if begin is None:
-            begin = round_time(datetime.now(), by=timedelta(days=1))
+            begin = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
         begin = to_datetime(begin)
         if end is None:
             end = begin + timedelta(days=1)
@@ -315,8 +316,12 @@ class OpenSky(Impala):
                 ]
             ]
             .assign(
-                firstSeen=lambda df: df.firstSeen.apply(datetime.fromtimestamp),
-                lastSeen=lambda df: df.lastSeen.apply(datetime.fromtimestamp),
+                firstSeen=lambda df: pd.to_datetime(
+                    df.firstSeen * 1e9
+                ).dt.tz_localize("utc"),
+                lastSeen=lambda df: pd.to_datetime(
+                    df.lastSeen * 1e9
+                ).dt.tz_localize("utc"),
             )
             .sort_values("lastSeen")
         )
@@ -324,7 +329,7 @@ class OpenSky(Impala):
     @property
     def api_sensors(self) -> Set[str]:
         """The set of sensors serials you own (require authentication)."""
-        today = round_time(datetime.now(), by=timedelta(days=1))
+        today = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
         c = requests.get(
             f"https://opensky-network.org/api/sensor/myStats"
             f"?days={int(today.timestamp())}",
@@ -344,7 +349,7 @@ class OpenSky(Impala):
         """
 
         if date is None:
-            date = round_time(datetime.now(), by=timedelta(days=1))
+            date = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
         else:
             date = to_datetime(date)
         date = int(date.timestamp())
@@ -391,7 +396,7 @@ class OpenSky(Impala):
             airport_code = airport.icao
 
         if begin is None:
-            begin = round_time(datetime.now(), by=timedelta(days=1))
+            begin = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
         begin = to_datetime(begin)
         if end is None:
             end = begin + timedelta(days=1)
@@ -421,8 +426,12 @@ class OpenSky(Impala):
                 ]
             ]
             .assign(
-                firstSeen=lambda df: df.firstSeen.apply(datetime.fromtimestamp),
-                lastSeen=lambda df: df.lastSeen.apply(datetime.fromtimestamp),
+                firstSeen=lambda df: pd.to_datetime(
+                    df.firstSeen * 1e9
+                ).dt.tz_localize("utc"),
+                lastSeen=lambda df: pd.to_datetime(
+                    df.lastSeen * 1e9
+                ).dt.tz_localize("utc"),
             )
             .sort_values("lastSeen")
         )
@@ -456,7 +465,7 @@ class OpenSky(Impala):
             airport_code = airport.icao
 
         if begin is None:
-            begin = round_time(datetime.now(), by=timedelta(days=1))
+            begin = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
         begin = to_datetime(begin)
         if end is None:
             end = begin + timedelta(days=1)
@@ -486,8 +495,12 @@ class OpenSky(Impala):
                 ]
             ]
             .assign(
-                firstSeen=lambda df: df.firstSeen.apply(datetime.fromtimestamp),
-                lastSeen=lambda df: df.lastSeen.apply(datetime.fromtimestamp),
+                firstSeen=lambda df: pd.to_datetime(
+                    df.firstSeen * 1e9
+                ).dt.tz_localize("utc"),
+                lastSeen=lambda df: pd.to_datetime(
+                    df.lastSeen * 1e9
+                ).dt.tz_localize("utc"),
             )
             .sort_values("firstSeen")
         )
