@@ -1,3 +1,5 @@
+.. raw:: html
+    :file: ./embed_widgets/quickstart.html
 
 Quickstart
 ----------
@@ -780,6 +782,45 @@ Notice the use of:
    :scale: 70 %
    :alt: quickstart_instant
    :align: center
+
+Export to Leaflet
+~~~~~~~~~~~~~~~~~
+
+`Leaflet <http://leafletjs.com/>`__ offer a Python `widget
+<https://github.com/jupyter-widgets/ipyleaflet>`__ for Jupyter Lab. Flights and
+Airspaces can easily be plotted into such widgets. The Traffic extracted above
+can be conveniently explored in the following widget.
+
+Just for fun, you can zoom up to the airport level and check the runway used for
+landing.
+
+.. code:: python
+
+    from ipyleaflet import Map, basemaps
+    from ipywidgets import Layout
+
+    map_ = Map(
+        center=(43.5, 1.5),
+        zoom=7,
+        basemap=basemaps.Stamen.Terrain,
+        layout=Layout(width="100%", max_width="800px", height="500px"),
+    )
+
+    map_.add_layer(airac["LFBOTMA"])
+    for flight in demo:
+        map_.add_layer(flight, color="#990000", weight=2)
+
+    map_
+
+.. raw:: html
+
+    <script type="application/vnd.jupyter.widget-view+json">
+    {
+        "version_major": 2,
+        "version_minor": 0,
+        "model_id": "0f287b37251c4aa28883bf0b3daa695b"
+    }
+    </script>
 
 Export to CesiumJS
 ~~~~~~~~~~~~~~~~~~
