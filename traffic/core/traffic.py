@@ -381,7 +381,7 @@ class Traffic(GeographyMixin):
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             cumul = []
             tasks = {
-                executor.submit(flight.resample, value, unit): flight
+                executor.submit(flight.resample, rule): flight
                 for flight in self
             }
             for future in tqdm(as_completed(tasks), total=len(tasks)):
