@@ -36,5 +36,5 @@ may not be available on your system by default.
 Before reporting an issue, please try to use an Anaconda environment. Other
 installations may work but the Anaconda way proved to cause much less issues.
 
-.. parsed-litteral::
+.. parsed-literal::
    conda install cartotools shapely
