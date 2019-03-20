@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -39,7 +39,6 @@ setup(
         "Cartopy",
         "Shapely",
         "requests",
-        "maya",  # human-friendly datetimes
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "pyproj",  # not necessarily pulled by Cartopy...

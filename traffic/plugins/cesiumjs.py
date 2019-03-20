@@ -6,8 +6,8 @@ import random
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Union, cast
 
-import maya
 import pandas as pd
+
 from traffic.core import Flight, Traffic
 from traffic.core.time import timelike, to_datetime
 from traffic.data import SO6
@@ -27,9 +27,7 @@ class _CZML_Params:
 
 
 def format_ts(ts: pd.Timestamp) -> str:
-    return maya.MayaDT(  # type: ignore
-        int(ts.to_pydatetime().timestamp())
-    ).rfc3339()
+    return ts.isoformat() + "Z"
 
 
 def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
@@ -97,10 +95,10 @@ def to_czml(
     """Generates a CesiumJS scenario file."""
 
     if isinstance(traffic, Traffic):
-        if 'baro_altitude' in traffic.data.columns:
-            traffic = traffic.query('baro_altitude == baro_altitude')
-        elif 'altitude' in traffic.data.columns:
-            traffic = traffic.query('altitude == altitude')
+        if "baro_altitude" in traffic.data.columns:
+            traffic = traffic.query("baro_altitude == baro_altitude")
+        elif "altitude" in traffic.data.columns:
+            traffic = traffic.query("altitude == altitude")
 
     if minimum_time is not None:
         minimum_time = to_datetime(minimum_time)
@@ -138,7 +136,6 @@ def to_czml(
 
 
 class CesiumJS(PluginProvider):
-
     def load_plugin(self):
         setattr(Traffic, "to_czml", to_czml)
         setattr(SO6, "to_czml", to_czml)

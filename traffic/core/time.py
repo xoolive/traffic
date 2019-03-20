@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 from numbers import Number
 from typing import Iterator, Tuple, Union
 
-import maya
 import numpy as np
 import pandas as pd
 
@@ -12,12 +11,10 @@ timetuple = Tuple[datetime, datetime, datetime, datetime]
 
 
 def to_datetime(time: timelike) -> datetime:
+    if isinstance(time, str):
+        time = pd.Timestamp(time, tz="utc")
     if isinstance(time, pd.Timestamp):
         time = time.to_pydatetime()
-    if isinstance(time, str):
-        time = maya.parse(time)
-    if isinstance(time, maya.core.MayaDT):  # type: ignore
-        time = time.epoch
     if isinstance(time, Number):
         time = datetime.fromtimestamp(time, timezone.utc)  # type: ignore
     return time
