@@ -675,9 +675,10 @@ class Flight(GeographyMixin, ShapelyMixin):
         # The following is True for all data coming from the Impala shell.
         # The following is an attempt to fix #7
         # Note the fun/fast way to produce 1 or trigger NaN (division by zero)
+        data = self.data.sort_values('timestamp')
         if "last_position" in self.data.columns:
             data = (
-                self.data.assign(
+                data.assign(
                     _mark=lambda df: df.last_position
                     != df.shift(1).last_position
                 )
@@ -688,8 +689,6 @@ class Flight(GeographyMixin, ShapelyMixin):
                 )
                 .drop(columns="_mark")
             )
-        else:
-            data = self.data
 
         return self.__class__(data)
 
