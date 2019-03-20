@@ -2,7 +2,6 @@
 
 [![Documentation Status](https://readthedocs.org/projects/airtraffic/badge/?version=latest)](https://airtraffic.readthedocs.io/en/latest/?badge=latest)
 
-
 The traffic library helps working with common sources of air traffic data.
 
 Its main purpose is to offer basic cumbersome data analysis methods commonly
@@ -15,8 +14,11 @@ sources of ADS-B traffic like the [OpenSky Network](https://opensky-network.org/
 or Eurocontrol DDR files. It is designed to be easily extendable to other
 sources of data.
 
-Eventually, static and dynamic output are available for Matplotlib, Leaflet,
-Google Earth (kmz) and CesiumJS (czml).
+Static visualisation (images) exports are accessible via Matplotlib/Cartopy.
+More dynamic visualisation frameworks are easily accessible in Jupyter
+environments with [ipyleaflet](http://ipyleaflet.readthedocs.io/) and
+[altair](http://altair-viz.github.io/); or through exports to other formats,
+including CesiumJS or Google Earth.
 
 ## Installation
 
@@ -30,6 +32,16 @@ Development version:
 
 ```
 pip install git+https://github.com/xoolive/traffic
+```
+
+**Warning:** `cartotools` and `shapely` have strong dependencies to dynamic
+libraries which may not be available on your system by default.
+
+Before reporting an issue, please try to use an Anaconda environment. Other
+installations may work but the Anaconda way proved to cause much less issues.
+
+```
+conda install cartotools shapely
 ```
 
 ## Command line tool
