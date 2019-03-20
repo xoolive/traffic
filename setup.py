@@ -49,9 +49,7 @@ setup(
         "ipympl",  # interactive matplotlib in notebooks
         "tqdm>=4.28",  # progressbars
         "cartotools==1.0",
-        # restore dependency versionwhen officially released
-        "pyModeS",
-        # "pyModeS==2.0",
+        "pyModeS>=2.0",
     ],
     classifiers=[
         # How mature is this project? Common values are
