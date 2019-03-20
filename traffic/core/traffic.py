@@ -370,8 +370,7 @@ class Traffic(GeographyMixin):
 
     def resample(
         self,
-        value: Union[str, int] = "1s",
-        unit: Optional[str] = None,
+        rule: Union[str, int] = "1s",
         max_workers: int = 4,
     ) -> "Traffic":
         """Resamples all trajectories, flight by flight.
@@ -382,7 +381,7 @@ class Traffic(GeographyMixin):
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             cumul = []
             tasks = {
-                executor.submit(flight.resample, value, unit): flight
+                executor.submit(flight.resample, rule): flight
                 for flight in self
             }
             for future in tqdm(as_completed(tasks), total=len(tasks)):
