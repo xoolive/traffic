@@ -10,7 +10,7 @@ with open(os.path.join(here, "readme.md"), encoding="utf-8") as f:
 
 setup(
     name="traffic",
-    version="1.2",
+    version="1.2.1b0",
     author="Xavier Olive",
     author_email="git@xoolive.org",
     url="https://github.com/xoolive/traffic/",

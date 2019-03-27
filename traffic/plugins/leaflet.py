@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Any, List, Optional
 
 from ipyleaflet import Map, Marker, Polygon, Polyline
+
 from traffic.core import Airspace, Flight
 from traffic.core.mixins import PointMixin
 from traffic.plugins import PluginProvider
@@ -21,11 +22,16 @@ def airspace_leaflet(airspace: Airspace, **kwargs) -> Polygon:
     shape = airspace.flatten()
 
     kwargs = {**dict(weight=3), **kwargs}
+    coords: List[Any] = []
+    if shape.geom_type == "Polygon":
+        coords = list((lat, lon) for (lon, lat) in shape.exterior.coords)
+    else:
+        coords = list(
+            list((lat, lon) for (lon, lat) in piece.exterior.coords)
+            for piece in shape
+        )
 
-    return Polygon(
-        locations=list((lat, lon) for (lon, lat) in shape.exterior.coords),
-        **kwargs
-    )
+    return Polygon(locations=coords, **kwargs)
 
 
 def point_leaflet(point: PointMixin, **kwargs) -> Marker:
