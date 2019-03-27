@@ -54,7 +54,7 @@ def _re_match_ignorecase(x, y):
     return re.match(x, y, re.IGNORECASE)
 
 
-class AirspaceParser(object):
+class AIXMAirspaceParser(object):
 
     ns = {
         "adrext": "http://www.aixm.aero/schema/5.1/extensions/EUR/ADR",

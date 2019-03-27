@@ -1,9 +1,13 @@
+import logging
+import sys
+from functools import lru_cache
 from pathlib import Path
 
-from .. import config, cache_dir, config_file
-from .adsb.opensky import OpenSky
+from .. import cache_dir, config, config_file
 from .adsb.decode import Decoder as ModeS_Decoder  # noqa: F401
-from .airspaces.airac import AirspaceParser
+from .adsb.opensky import OpenSky
+from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
+from .airspaces.eurocontrol_nm import NMAirspaceParser
 from .airspaces.eurofirs import eurofirs
 from .basic.aircraft import Aircraft
 from .basic.airport import AirportParser
@@ -14,27 +18,83 @@ from .so6 import SO6  # noqa: F401
 
 # Parse configuration and input specific parameters in below classes
 
-__all__ = ['aircraft', 'airports', 'airways', 'navaids', 'airac', 'eurofirs',
-           'opensky', ]
+__all__ = [
+    "aircraft",
+    "airports",
+    "airways",
+    "navaids",
+    "aixm_airspaces",
+    "nm_airspaces",
+    "eurofirs",
+    "opensky",
+]
 
 airac_path_str = config.get("global", "airac_path", fallback="")
 if airac_path_str != "":
-    AirspaceParser.airac_path = Path(airac_path_str)
+    logging.warn(
+        "Rename airac_path to aixm_path in your configuration file. "
+        "The old name will not be supported in future versions",
+        DeprecationWarning,
+    )
+    AIXMAirspaceParser.airac_path = Path(airac_path_str)
+
+airac_path_str = config.get("global", "aixm_path", fallback="")
+if airac_path_str != "":
+    AIXMAirspaceParser.airac_path = Path(airac_path_str)
+
+nm_path_str = config.get("global", "nm_path", fallback="")
+if nm_path_str != "":
+    NMAirspaceParser.nm_path = Path(nm_path_str)
 
 Aircraft.cache = cache_dir / "aircraft.pkl"
 AirportParser.cache = cache_dir / "airports.pkl"
 Airways.cache = cache_dir / "airways.pkl"
 NavaidParser.cache = cache_dir / "navaids.pkl"
 Runways.cache = cache_dir / "runways.pkl"
-AirspaceParser.cache_dir = cache_dir
-
-aircraft = Aircraft()
-airports = AirportParser()
-airways = Airways()
-navaids = NavaidParser()
-airac = AirspaceParser(config_file)
-runways = Runways().runways
+AIXMAirspaceParser.cache_dir = cache_dir
 
 opensky_username = config.get("global", "opensky_username", fallback="")
 opensky_password = config.get("global", "opensky_password", fallback="")
-opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
+
+if sys.version_info < (3, 7, 0):
+    aircraft = Aircraft()
+    airports = AirportParser()
+    airways = Airways()
+    navaids = NavaidParser()
+    aixm_airspaces = AIXMAirspaceParser(config_file)
+    nm_airspaces = NMAirspaceParser(config_file)
+    runways = Runways().runways
+    opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
+
+
+@lru_cache()
+def __getattr__(name: str):
+    """This only works for Python >= 3.7, see PEP 562."""
+    logging.info(f"Lazy loading of {name}")
+    if name == "aircraft":
+        return Aircraft()
+    if name == "airports":
+        return AirportParser()
+    if name == "airways":
+        return Airways()
+    if name == "navaids":
+        return NavaidParser()
+    if name == "aixm_airspaces":
+        return AIXMAirspaceParser(config_file)
+    if name == "nm_airspaces":
+        return NMAirspaceParser(config_file)
+    if name == "opensky":
+        return OpenSky(
+            opensky_username, opensky_password, cache_dir / "opensky"
+        )
+    if name == "runways":
+        return Runways().runways
+    if name == "airac":
+        logging.warn(
+            "airac has been renamed into aixm_airspaces. "
+            "Backward compatibility will be removed in future versions.",
+            DeprecationWarning,
+        )
+        return NMAirspaceParser(config_file)
+
+    raise AttributeError(f"module {__name__} has no attribute {name}")

@@ -280,7 +280,7 @@ class TrafficWidget(object):
             if len(search_text) == 0:
                 self.area_select.options = list()
             else:
-                from ..data import airac
+                from ..data import nm_airspaces as airac
 
                 self.area_select.options = list(
                     x.name for x in airac.parse(search_text)
@@ -290,7 +290,7 @@ class TrafficWidget(object):
         with self.output:
             if elt["name"] != "value":
                 return
-            from ..data import airac
+            from ..data import nm_airspaces as airac
 
             self.ax_map.set_extent(airac[elt["new"][0]])
             self.canvas_map.draw_idle()
@@ -303,7 +303,7 @@ class TrafficWidget(object):
                 else:
                     self.ax_map.set_extent(location(self.area_input.value))
             else:
-                from ..data import airac
+                from ..data import nm_airspaces as airac
 
                 self.ax_map.set_extent(airac[self.area_select.value[0]])
 
@@ -348,7 +348,7 @@ class TrafficWidget(object):
                     self.ax_map, color="grey", linestyle="dashed"
                 )
             else:
-                from ..data import airac
+                from ..data import nm_airspaces as airac
 
                 airspace = airac[self.area_select.value[0]]
                 if airspace is not None:
