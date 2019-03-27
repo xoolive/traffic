@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
+from cartopy.crs import TransverseMercator
 
-from traffic.drawing import countries, rivers, lakes, ocean, TransverseMercator
 from traffic.data import eurofirs
+from traffic.drawing import countries, lakes, ocean, rivers
 
 fig = plt.figure(figsize=(15, 10))
 ax = fig.add_subplot(111, projection=TransverseMercator(10, 45))
@@ -14,7 +15,7 @@ ax.add_feature(lakes(scale="50m"))
 ax.add_feature(ocean(scale="50m"))
 
 for key, fir in eurofirs.items():
-    fir.plot(ax, edgecolor="#3a3aaa", lw=2, alpha=.5)
+    fir.plot(ax, edgecolor="#3a3aaa", lw=2, alpha=0.5)
     if key not in ["ENOB", "LPPO", "GCCC"]:
         fir.annotate(
             ax,
