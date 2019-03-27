@@ -31,10 +31,9 @@ __all__ = [
 
 airac_path_str = config.get("global", "airac_path", fallback="")
 if airac_path_str != "":
-    logging.warn(
+    logging.warning(
         "Rename airac_path to aixm_path in your configuration file. "
-        "The old name will not be supported in future versions",
-        DeprecationWarning,
+        "The old name will not be supported in future versions"
     )
     AIXMAirspaceParser.airac_path = Path(airac_path_str)
 
@@ -90,11 +89,15 @@ def __getattr__(name: str):
     if name == "runways":
         return Runways().runways
     if name == "airac":
-        logging.warn(
-            "airac has been renamed into aixm_airspaces. "
-            "Backward compatibility will be removed in future versions.",
-            DeprecationWarning,
+        cache_file = cache_dir / "airac.cache"
+        if cache_file.exists():
+            cache_file.unlink()
+        logging.warning(
+            f"""DEPRECATION WARNING. Please note that:
+            - airac has been renamed into aixm_airspaces.
+            - backward compatibility will be removed in future versions.
+            """
         )
-        return NMAirspaceParser(config_file)
+        return AIXMAirspaceParser(config_file)
 
     raise AttributeError(f"module {__name__} has no attribute {name}")

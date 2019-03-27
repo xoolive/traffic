@@ -83,7 +83,7 @@ class AIXMAirspaceParser(object):
 
         assert self.airac_path.is_dir()
 
-        cache_file = self.cache_dir / "airac.cache"
+        cache_file = self.cache_dir / "aixm.pkl"
         if cache_file.exists():
             with cache_file.open("rb") as fh:
                 self.full_dict, self.all_points, self.tree = pickle.load(fh)
