@@ -105,14 +105,21 @@ may want to file a [PR](https://yangsu.github.io/pull-request-tutorial/) and
 keep the authorship. It is also easier for me to keep track of corrections and
 remember why things are the way they are.
 
-- I want to know more about AIRAC files
+- I want to know more about Eurocontrol NM files
 
-When you import `airac` from `traffic.data`, you need to set a path to a
-directory containing AIRAC files. These are XML files following the
+ We download those files from Eurocontrol [Network Manager DDR2 repository
+ service](https://www.eurocontrol.int/articles/ddr2-web-portal) under Dataset
+ Files > Airspace Environment Datasets. You may not be entitled access to those
+ data.
+
+Should you have no such access, basic FIRs are provided in `eurofirs` from
+`traffic.data`.
+
+- I want to know more about Eurocontrol AIXM files
+
+When you import `aixm_airspaces` from `traffic.data`, you need to set a path to
+a directory containing AIRAC files. These are XML files following the
 [AIXM](http://aixm.aero/) standard and produced by Eurocontrol. We download
 those files from  Eurocontrol [Network Manager B2B web
 service](https://eurocontrol.int/service/network-manager-business-business-b2b-web-services).
 You may not be entitled access to those data.
-
-Should you have no such access, basic FIRs are provided in `eurofirs` from
-`traffic.data`.

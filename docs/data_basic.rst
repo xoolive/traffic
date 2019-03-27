@@ -371,7 +371,7 @@ easily added in background of a Matplotlib representation.
     %matplotlib inline
     import matplotlib.pyplot as plt
     
-    from traffic.data import airac
+    from traffic.data import nm_airspaces
     from traffic.drawing import EuroPP, countries
     
     with plt.style.context('traffic'):
@@ -380,10 +380,10 @@ easily added in background of a Matplotlib representation.
         ax = plt.axes(projection=EuroPP())
     
         ax.add_feature(countries())
-        ax.set_extent(airac['LFBBBDX'])
+        ax.set_extent(nm_airspaces['LFBBBDX'])
     
-        airac['LFBBBDX'].plot(ax, edgecolor="firebrick", lw=2)
-        airways.intersects(airac['LFBBBDX'].flatten(),
+        nm_airspaces['LFBBBDX'].plot(ax, edgecolor="firebrick", lw=2)
+        airways.intersects(nm_airspaces['LFBBBDX'].flatten(),
                            min_upper=400).plot(ax)
         airways['UN859'].plot(ax)
         
