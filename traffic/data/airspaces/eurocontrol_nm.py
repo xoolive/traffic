@@ -30,7 +30,7 @@ class NMAirspaceParser(object):
         self.types: Dict[str, str] = dict()
         self.initialized = False
 
-    def init_readfiles(self):
+    def init_cache(self):
         msg = f"Edit file {self.config_file} with NM directory"
 
         if self.nm_path is None:
@@ -119,7 +119,7 @@ class NMAirspaceParser(object):
     def __getitem__(self, name: str) -> Optional[Airspace]:
 
         if not self.initialized:
-            self.init_readfiles()
+            self.init_cache()
 
         list_names = self.airspaces.get(name, None)
 
@@ -155,7 +155,7 @@ class NMAirspaceParser(object):
     ) -> Iterator[AirspaceInfo]:
 
         if not self.initialized:
-            self.init_readfiles()
+            self.init_cache()
 
         name = pattern
         names = name.split("/")
@@ -175,7 +175,7 @@ class NMAirspaceParser(object):
     ) -> Iterator[Airspace]:
 
         if not self.initialized:
-            self.init_readfiles()
+            self.init_cache()
 
         name = pattern
         names = name.split("/")

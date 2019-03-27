@@ -280,19 +280,19 @@ class TrafficWidget(object):
             if len(search_text) == 0:
                 self.area_select.options = list()
             else:
-                from ..data import nm_airspaces as airac
+                from ..data import nm_airspaces
 
                 self.area_select.options = list(
-                    x.name for x in airac.parse(search_text)
+                    x.name for x in nm_airspaces.parse(search_text)
                 )
 
     def on_area_click(self, elt: Dict[str, Any]) -> None:
         with self.output:
             if elt["name"] != "value":
                 return
-            from ..data import nm_airspaces as airac
+            from ..data import nm_airspaces
 
-            self.ax_map.set_extent(airac[elt["new"][0]])
+            self.ax_map.set_extent(nm_airspaces[elt["new"][0]])
             self.canvas_map.draw_idle()
 
     def on_extent_button(self, elt: Dict[str, Any]) -> None:
@@ -303,9 +303,9 @@ class TrafficWidget(object):
                 else:
                     self.ax_map.set_extent(location(self.area_input.value))
             else:
-                from ..data import nm_airspaces as airac
+                from ..data import nm_airspaces
 
-                self.ax_map.set_extent(airac[self.area_select.value[0]])
+                self.ax_map.set_extent(nm_airspaces[self.area_select.value[0]])
 
             t1, t2 = self.time_slider.index
             low, up = self.altitude_select.value
@@ -348,9 +348,9 @@ class TrafficWidget(object):
                     self.ax_map, color="grey", linestyle="dashed"
                 )
             else:
-                from ..data import nm_airspaces as airac
+                from ..data import nm_airspaces
 
-                airspace = airac[self.area_select.value[0]]
+                airspace = nm_airspaces[self.area_select.value[0]]
                 if airspace is not None:
                     airspace.plot(self.ax_map)
             self.canvas_map.draw_idle()

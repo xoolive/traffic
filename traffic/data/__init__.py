@@ -35,11 +35,11 @@ if airac_path_str != "":
         "Rename airac_path to aixm_path in your configuration file. "
         "The old name will not be supported in future versions"
     )
-    AIXMAirspaceParser.airac_path = Path(airac_path_str)
+    AIXMAirspaceParser.aixm_path = Path(airac_path_str)
 
-airac_path_str = config.get("global", "aixm_path", fallback="")
-if airac_path_str != "":
-    AIXMAirspaceParser.airac_path = Path(airac_path_str)
+aixm_path_str = config.get("global", "aixm_path", fallback="")
+if aixm_path_str != "":
+    AIXMAirspaceParser.aixm_path = Path(aixm_path_str)
 
 nm_path_str = config.get("global", "nm_path", fallback="")
 if nm_path_str != "":
