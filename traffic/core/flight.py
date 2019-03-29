@@ -259,8 +259,18 @@ class Flight(GeographyMixin, ShapelyMixin):
         }
         return opensky.history(**query_params)  # type: ignore
 
-    def query_ehs(self) -> "Flight":
-        """Extend data with extra columns from EHS."""
+    def query_ehs(self, data: Optional[pd.DataFrame] = None) -> "Flight":
+        """Extend data with extra columns from EHS messages.
+
+        By default, raw messages are requested from the OpenSky Impala server.
+
+        Making a lot of small requests can be very inefficient and may look
+        like a denial of service. If you get the raw messages using a different
+        channel, you can provide the resulting dataframe as a parameter.
+
+        The data parameter expect three colmuns: icao24, rawmsg and mintime, in
+        conformance with the OpenSky API.
+        """
         from ..data import opensky, ModeS_Decoder
 
         if not isinstance(self.icao24, str):
@@ -274,7 +284,10 @@ class Flight(GeographyMixin, ShapelyMixin):
             logging.warn(f"No data on Impala for flight {id_}.")
             return self
 
-        df = opensky.extended(self.start, self.stop, icao24=self.icao24)
+        if data is None:
+            df = opensky.extended(self.start, self.stop, icao24=self.icao24)
+        else:
+            df = data.query("icao24 == @self.icao24").sort_values("mintime")
 
         if df is None:
             return failure()
@@ -287,7 +300,12 @@ class Flight(GeographyMixin, ShapelyMixin):
             timestamped_df.merge(self.data, on="timestamp", how="outer")
             .sort_values("timestamp")
             .rename(
-                columns=dict(altitude_y="alt", groundspeed="spd", track="trk")
+                columns=dict(
+                    altitude="alt",
+                    altitude_y="alt",
+                    groundspeed="spd",
+                    track="trk",
+                )
             )[["timestamp", "alt", "spd", "trk"]]
             .ffill()
             .drop_duplicates()  # bugfix! NEVER ERASE THAT LINE!
@@ -675,7 +693,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         # The following is True for all data coming from the Impala shell.
         # The following is an attempt to fix #7
         # Note the fun/fast way to produce 1 or trigger NaN (division by zero)
-        data = self.data.sort_values('timestamp')
+        data = self.data.sort_values("timestamp")
         if "last_position" in self.data.columns:
             data = (
                 data.assign(
