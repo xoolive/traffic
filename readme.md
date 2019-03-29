@@ -41,7 +41,7 @@ Before reporting an issue, please try to use an Anaconda environment. Other
 installations may work but the Anaconda way proved to cause much less issues.
 
 ```
-conda install cartotools shapely
+conda install cartopy shapely
 ```
 
 ## Command line tool
