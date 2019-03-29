@@ -30,11 +30,11 @@ If you are not comfortable with that option, you can install the latest release:
 Warning
 -------
 
-`cartotools` and `shapely` have strong dependencies to dynamic libraries which
+`cartopy` and `shapely` have strong dependencies to dynamic libraries which
 may not be available on your system by default.
 
 Before reporting an issue, please try to use an Anaconda environment. Other
 installations may work but the Anaconda way proved to cause much less issues.
 
 .. parsed-literal::
-   conda install cartotools shapely
+   conda install cartopy shapely
