@@ -3,17 +3,16 @@ import json
 from pathlib import Path
 from typing import List, Optional
 
-
 # Convenient one-liner for getting sector types
 # set(s.type for s in sectors.parse(".*"))
 
 
 def export_json(patterns: List[str], output_file: Optional[Path]):
-    from traffic.data import airac as sectors
+    from traffic.data import nm_airspaces
 
     if output_file is None:
         for pattern in patterns:
-            for sector in sectors.parse(pattern):
+            for sector in nm_airspaces.parse(pattern):
                 print(f"{sector.name}/{sector.type}")
         return
 
@@ -22,7 +21,7 @@ def export_json(patterns: List[str], output_file: Optional[Path]):
             [
                 s.export_json()
                 for pattern in patterns
-                for s in sectors.search(pattern)
+                for s in nm_airspaces.search(pattern)
             ],
             fh,
             sort_keys=False,

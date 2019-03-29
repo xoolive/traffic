@@ -11,7 +11,7 @@ from tqdm import TqdmExperimentalWarning
 from .plugins import PluginProvider
 
 # Silence this warning about autonotebook mode for tqdm
-warnings.simplefilter('ignore', TqdmExperimentalWarning)
+warnings.simplefilter("ignore", TqdmExperimentalWarning)
 
 # -- Configuration management --
 
@@ -24,11 +24,11 @@ if not config_dir.exists():
     with config_file.open("w") as fh:
         fh.write(
             f"""[global]
-airac_path =
+nm_path =
 opensky_username =
 opensky_password =
 [plugins]
-enabled_plugins = Bluesky, CesiumJS, Leaflet
+enabled_plugins = CesiumJS, Leaflet
 """
         )
 

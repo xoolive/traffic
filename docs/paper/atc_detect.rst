@@ -68,7 +68,7 @@ the machine learning method).
     %matplotlib inline
     import matplotlib.pyplot as plt
     
-    from traffic.data import airac, airports, navaids
+    from traffic.data import airports, navaids, nm_airspaces
     from traffic.drawing import EuroPP, PlateCarree
     
     with plt.style.context("traffic"):
@@ -85,7 +85,7 @@ the machine learning method).
         )
     
         # TMA of Toulouse Airport
-        airac["LFBOTMA"].plot(
+        nm_airspaces["LFBOTMA"].plot(
             ax, edgecolor="black", facecolor="#cccccc", alpha=.3, linewidth=2
         )
     

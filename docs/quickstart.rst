@@ -375,8 +375,8 @@ Area (TMA) for Toulouse.
 
 .. code:: python
 
-    from traffic.data import airac
-    airac['LFBOTMA']
+    from traffic.data import nm_airspaces
+    nm_airspaces['LFBOTMA']
 
 
 
@@ -403,7 +403,7 @@ TMA.
     
     t_tma = Traffic.from_flights(
         flight for flight in t
-        if flight.intersects(airac['LFBOTMA'])
+        if flight.intersects(nm_airspaces['LFBOTMA'])
     )
 
 
@@ -524,7 +524,7 @@ TMA.
         ax.set_extent('Occitanie')
     
         # Airspaces can plot their footprint
-        airac['LFBOTMA'].plot(ax, linewidth=2, linestyle='dashed')
+        nm_airspaces['LFBOTMA'].plot(ax, linewidth=2, linestyle='dashed')
         
         t_tma.plot(ax)
 
@@ -664,7 +664,7 @@ Let's limit ourselves to aircraft trajectories coming under 2000ft.
         location('Occitanie').plot(ax, linestyle='dotted')
         ax.set_extent('Occitanie')
     
-        airac['LFBOTMA'].plot(ax, linewidth=2, linestyle='dashed')
+        nm_airspaces['LFBOTMA'].plot(ax, linewidth=2, linestyle='dashed')
         
         t_airport.plot(ax)
 
@@ -694,7 +694,7 @@ trajectory for their plotting.
         location('Occitanie').plot(ax, linestyle='dotted')
         ax.set_extent('Occitanie')
     
-        airac['LFBOTMA'].plot(ax, linewidth=2, linestyle='dashed') 
+        nm_airspaces['LFBOTMA'].plot(ax, linewidth=2, linestyle='dashed') 
         
         for flight in t_airport:
             flight.plot(
@@ -742,8 +742,8 @@ Notice the use of:
         ax.add_feature(rivers(alpha=.2))
         
         # Limit the extent to the TMA
-        ax.set_extent(airac['LFBOTMA'])
-        airac['LFBOTMA'].plot(ax, linestyle='dashed', linewidth=2)
+        ax.set_extent(nm_airspaces['LFBOTMA'])
+        nm_airspaces['LFBOTMA'].plot(ax, linestyle='dashed', linewidth=2)
         
         # Airports get their footprint from OpenStreetMap as well
         airports['LFBO'].plot(ax, color='xkcd:baby poop')
@@ -806,7 +806,7 @@ landing.
         layout=Layout(width="100%", max_width="800px", height="500px"),
     )
 
-    map_.add_layer(airac["LFBOTMA"])
+    map_.add_layer(nm_airspaces["LFBOTMA"])
     for flight in demo:
         map_.add_layer(flight, color="#990000", weight=2)
 

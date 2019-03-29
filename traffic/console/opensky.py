@@ -5,7 +5,7 @@ from pathlib import Path
 
 def opensky_data(start, stop, output_file, **kwargs):
 
-    from ..data import airac, opensky
+    from ..data import nm_airspaces, opensky
     from ..drawing import location
 
     if kwargs["bounds"] is not None:
@@ -14,7 +14,7 @@ def opensky_data(start, stop, output_file, **kwargs):
             kwargs["bounds"] = tuple(float(f) for f in bounds.split(","))
         else:
             try:
-                sector = airac[bounds]
+                sector = nm_airspaces[bounds]
                 if sector is not None:
                     kwargs["bounds"] = sector
                 else:

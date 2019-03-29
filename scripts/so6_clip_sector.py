@@ -3,27 +3,30 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 from tqdm import tqdm
-from traffic.core import Sector  # for typing
-from traffic.data import airac as sectors
+
+from traffic.core import Airspace
+from traffic.data import nm_airspaces
 from traffic.data.so6 import SO6
 
 
-def clip(so6: SO6, sector: Sector) -> SO6:
-    return so6.inside_bbox(sector).intersects(sector)
+def clip(so6: SO6, airspace: Airspace) -> SO6:
+    return so6.inside_bbox(airspace).intersects(airspace)
 
 
 def unpack_and_clip(filename: str, sectorname: str) -> SO6:
-    so6 = SO6.parse_so6(filename)
-    sector = sectors[sectorname]
+    so6 = SO6.from_file(filename)
+    sector = nm_airspaces[sectorname]
     if sector is None:
-        raise ValueError("Sector not found")
+        raise ValueError("Airspace not found")
+    if so6 is None:
+        raise RuntimeError
     return clip(so6, sector)
 
 
 def prepare_all(filename: Path, output_dir: Path, sectorname: str) -> None:
     so6 = unpack_and_clip(filename.as_posix(), sectorname)
     output_name = filename.with_suffix(".pkl").name
-    so6.to_pkl((output_dir / output_name).as_posix())
+    so6.to_pickle((output_dir / output_name).as_posix())
 
 
 def glob_all(

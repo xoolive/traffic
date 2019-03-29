@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Optional
 
 from tqdm import tqdm
-from traffic.data import airac as sectors
+
+from traffic.data import nm_airspaces
 from traffic.data.so6 import SO6
 from traffic.drawing import kml
 
@@ -16,18 +17,24 @@ def so6_to_kml(
     stop_time: Optional[str],
 ) -> None:
 
-    so6 = SO6.parse_file(input_file.as_posix())
+    so6 = SO6.from_file(input_file.as_posix())
+    if so6 is None:
+        raise RuntimeError
 
     if start_time is not None and stop_time is not None:
         so6 = so6.between(start_time, stop_time)
 
     if sector_name is not None:
-        sector = sectors[sector_name]
+        sector = nm_airspaces[sector_name]
+        if sector is None:
+            raise ValueError(f"Unknown airspace {sector_name}")
         so6 = so6.inside_bbox(sector).intersects(sector)
 
     with kml.export(output_file.as_posix()) as doc:
-        if sector_name is not None:
-            doc.append(sector.export_kml(color="blue", alpha=.3))
+        if sector is not None:
+            doc.append(
+                sector.export_kml(color="blue", alpha=0.3)  # type: ignore
+            )
 
         # iterate on so6 yield callsign, flight
         for callsign, flight in tqdm(so6):
