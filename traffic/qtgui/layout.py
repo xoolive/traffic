@@ -14,13 +14,12 @@ from cartopy.crs import PlateCarree
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import (QApplication, QComboBox, QFileDialog, QGridLayout,
                              QHBoxLayout, QInputDialog, QLabel, QLineEdit,
-                             QListWidget, QMainWindow, QMessageBox,
-                             QPushButton, QSlider, QTabWidget, QVBoxLayout,
-                             QWidget)
+                             QListWidget, QMainWindow, QMessageBox, QPushButton,
+                             QSlider, QTabWidget, QVBoxLayout, QWidget)
 
 from .. import config
 from ..core import Flight, Traffic
-from ..data import ModeS_Decoder, airac
+from ..data import ModeS_Decoder, aixm_airspaces
 from ..drawing import location
 from .plot import MapCanvas, NavigationToolbar2QT, TimeCanvas
 
@@ -71,7 +70,7 @@ class UpdateTraffic(QtCore.QThread):
             time.sleep(1)
 
 
-class AiracInitCache(QtCore.QThread):
+class AirspaceInitCache(QtCore.QThread):
     """Initialize cache in background to avoid lag.
     """
 
@@ -81,8 +80,8 @@ class AiracInitCache(QtCore.QThread):
 
     def run(self):
         try:
-            airac.init_cache()
-            self.parent.airac_ready = True
+            aixm_airspaces.init_cache()
+            self.parent.airspace_ready = True
         except Exception:
             pass
 
@@ -100,11 +99,11 @@ class MainScreen(QMainWindow):
         self._tview: Optional[Traffic] = None
         self.decoder: Optional[ModeS_Decoder] = None
         self.updateTraffic: Optional[UpdateTraffic] = None
-        self.airac_ready: bool = False
+        self.airspace_ready: bool = False
         self.last_interact: datetime = datetime.now()
 
-        airac_init = AiracInitCache(self)
-        airac_init.start()
+        airspace_init = AirspaceInitCache(self)
+        airspace_init.start()
 
         self.setWindowTitle("traffic")
         self.setGeometry(10, 10, 920, 720)
@@ -375,9 +374,9 @@ class MainScreen(QMainWindow):
             else:
                 self.map_plot.ax.set_extent(location(self.area_input.text()))
         else:
-            if self.airac_ready:
+            if self.airspace_ready:
                 self.map_plot.ax.set_extent(
-                    airac[self.area_select.item(0).text()]
+                    aixm_airspaces[self.area_select.item(0).text()]
                 )
 
         self.map_plot.draw()
@@ -440,14 +439,14 @@ class MainScreen(QMainWindow):
                     self.map_plot.ax,
                     color="#524c50",
                     linestyle="dotted",
-                    linewidth=.5,
+                    linewidth=0.5,
                 )
         else:
-            if self.airac_ready:
+            if self.airspace_ready:
                 selected = self.area_select.selectedItems()
                 if len(selected) == 0:
                     return
-                airspace = airac[selected[0].text()]
+                airspace = aixm_airspaces[selected[0].text()]
                 if airspace is not None:
                     airspace.plot(self.map_plot.ax)
 
@@ -457,8 +456,8 @@ class MainScreen(QMainWindow):
     def on_area_input(self, text: str, *args, **kwargs) -> None:
         self.last_interact = datetime.now()
         self.area_select.clear()
-        if len(text) > 0 and self.airac_ready:
-            for airspace_info in airac.parse(text):
+        if len(text) > 0 and self.airspace_ready:
+            for airspace_info in aixm_airspaces.parse(text):
                 self.area_select.addItem(airspace_info.name)
 
     @dont_crash
@@ -467,8 +466,8 @@ class MainScreen(QMainWindow):
         selected = self.area_select.selectedItems()
         if len(selected) == 0:
             return
-        if self.airac_ready:
-            airspace = airac[selected[0].text()]
+        if self.airspace_ready:
+            airspace = aixm_airspaces[selected[0].text()]
             if airspace is not None:
                 self.map_plot.ax.set_extent(airspace)
                 self.map_plot.draw()

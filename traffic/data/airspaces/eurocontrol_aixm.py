@@ -54,7 +54,7 @@ def _re_match_ignorecase(x, y):
     return re.match(x, y, re.IGNORECASE)
 
 
-class AirspaceParser(object):
+class AIXMAirspaceParser(object):
 
     ns = {
         "adrext": "http://www.aixm.aero/schema/5.1/extensions/EUR/ADR",
@@ -64,7 +64,7 @@ class AirspaceParser(object):
         "xlink": "http://www.w3.org/1999/xlink",
     }
 
-    airac_path: Optional[Path] = None
+    aixm_path: Optional[Path] = None
     cache_dir: Optional[Path] = None
 
     def __init__(self, config_file: Path) -> None:
@@ -73,17 +73,17 @@ class AirspaceParser(object):
 
     def init_cache(self) -> None:
 
-        msg = f"Edit file {self.config_file} with AIRAC directory"
+        msg = f"Edit file {self.config_file} with AIXM directory"
 
-        if self.airac_path is None or self.cache_dir is None:
+        if self.aixm_path is None or self.cache_dir is None:
             raise RuntimeError(msg)
 
         self.full_dict: Dict[str, Any] = {}
         self.all_points: Dict[str, Point] = {}
 
-        assert self.airac_path.is_dir()
+        assert self.aixm_path.is_dir()
 
-        cache_file = self.cache_dir / "airac.cache"
+        cache_file = self.cache_dir / "aixm.pkl"
         if cache_file.exists():
             with cache_file.open("rb") as fh:
                 self.full_dict, self.all_points, self.tree = pickle.load(fh)
@@ -98,14 +98,14 @@ class AirspaceParser(object):
             "StandardInstrumentArrival.BASELINE",
         ]:
 
-            if ~(self.airac_path / filename).exists():
+            if ~(self.aixm_path / filename).exists():
                 zippath = zipfile.ZipFile(
-                    self.airac_path.joinpath(f"{filename}.zip").as_posix()
+                    self.aixm_path.joinpath(f"{filename}.zip").as_posix()
                 )
-                zippath.extractall(self.airac_path.as_posix())
+                zippath.extractall(self.aixm_path.as_posix())
 
         self.tree = ElementTree.parse(
-            (self.airac_path / "Airspace.BASELINE").as_posix()
+            (self.aixm_path / "Airspace.BASELINE").as_posix()
         )
 
         for airspace in self.tree.findall(
@@ -118,7 +118,7 @@ class AirspaceParser(object):
             self.full_dict[identifier.text] = airspace
 
         points = ElementTree.parse(
-            (self.airac_path / "DesignatedPoint.BASELINE").as_posix()
+            (self.aixm_path / "DesignatedPoint.BASELINE").as_posix()
         )
 
         for point in points.findall(
@@ -155,7 +155,7 @@ class AirspaceParser(object):
             )
 
         points = ElementTree.parse(
-            (self.airac_path / "Navaid.BASELINE").as_posix()
+            (self.aixm_path / "Navaid.BASELINE").as_posix()
         )
 
         for point in points.findall("adrmsg:hasMember/aixm:Navaid", self.ns):
@@ -377,10 +377,10 @@ class AirspaceParser(object):
 
     def airports(self) -> Iterator[Tuple[str, _Airport]]:
 
-        assert self.airac_path is not None
+        assert self.aixm_path is not None
 
         a_tree = ElementTree.parse(
-            (self.airac_path / "AirportHeliport.BASELINE").as_posix()
+            (self.aixm_path / "AirportHeliport.BASELINE").as_posix()
         )
 
         for elt in a_tree.findall(
@@ -437,7 +437,7 @@ class AirspaceParser(object):
         if not self.initialized:
             self.init_cache()
 
-        assert self.airac_path is not None
+        assert self.aixm_path is not None
 
         if isinstance(airport, Airport):
             airport = airport.icao
@@ -447,7 +447,7 @@ class AirspaceParser(object):
         }
 
         tree = ElementTree.parse(
-            (self.airac_path / "StandardInstrumentArrival.BASELINE").as_posix()
+            (self.aixm_path / "StandardInstrumentArrival.BASELINE").as_posix()
         )
 
         for elt in tree.findall(

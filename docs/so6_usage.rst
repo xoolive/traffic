@@ -263,8 +263,8 @@ Each flight can check whether it crosses an airspace:
 
 .. code:: python
 
-    from traffic.data import airac
-    so6['HOP36PP'].intersects(airac['LFBBBDX'])
+    from traffic.data import nm_airspaces
+    so6['HOP36PP'].intersects(nm_airspaces['LFBBBDX'])
 
     True
 
@@ -275,7 +275,7 @@ airspace can be projected to a 2D representation for that purpose:
 
 .. code:: python
 
-    so6['HOP36PP'].clip(airac['LFBBBDX'].flatten())
+    so6['HOP36PP'].clip(nm_airspaces['LFBBBDX'].flatten())
 
 
 
@@ -484,7 +484,7 @@ with time intervals.
 
     (so6['HOP36PP']
      .between("2018/01/01 18:25", timedelta(minutes=30))
-     .intersects(airac['LFBBBDX']))
+     .intersects(nm_airspaces['LFBBBDX']))
 
     True
 
@@ -494,7 +494,7 @@ with time intervals.
 
     (so6['HOP36PP']
      .between("2018/01/01 18:15", timedelta(minutes=5))
-     .intersects(airac['LFBBBDX']))
+     .intersects(nm_airspaces['LFBBBDX']))
 
     False
 
@@ -510,7 +510,7 @@ wisely.
 
     %%time
     # First, filter inside the bounding box (faster than polygon check)
-    bdx_so6 = so6.inside_bbox(airac["LFBBBDX"])
+    bdx_so6 = so6.inside_bbox(nm_airspaces["LFBBBDX"])
 
     CPU times: user 7.11 s, sys: 19.3 ms, total: 7.13 s
     Wall time: 7.14 s
@@ -533,7 +533,7 @@ airspace. Note that this chaining may not be safe for smaller airspaces.
 .. code:: python
 
     %%time
-    bdx_flights = noon.intersects(airac['LFBBBDX'])
+    bdx_flights = noon.intersects(nm_airspaces['LFBBBDX'])
 
     CPU times: user 3.9 s, sys: 0 ns, total: 3.9 s
     Wall time: 3.9 s
@@ -544,8 +544,8 @@ airspace. Note that this chaining may not be safe for smaller airspaces.
     %%time
     bdx_flights = (
         noon
-        .inside_bbox(airac["LFBBBDX"])
-        .intersects(airac["LFBBBDX"])
+        .inside_bbox(nm_airspaces["LFBBBDX"])
+        .intersects(nm_airspaces["LFBBBDX"])
     )
 
     CPU times: user 1.42 s, sys: 8.27 ms, total: 1.43 s
