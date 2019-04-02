@@ -82,12 +82,12 @@ class Impala(object):
             s = StringIO()
             count = 0
             for line in fh.readlines():
-                if re.match("\|.*\|", line):
+                if re.match("\|.*\|", line):  # noqa: W605
                     count += 1
                     if "," in line:  # this may happen on 'describe table'
                         return_df = False
                         break
-                    s.write(re.sub(" *\| *", ",", line)[1:-2])
+                    s.write(re.sub(" *\| *", ",", line)[1:-2])  # noqa: W605
                     s.write("\n")
             else:
                 return_df = True
@@ -449,7 +449,7 @@ class Impala(object):
             columns = "s.serial, s.mintime as time, " + columns
         elif isinstance(serials, str):
             other_tables += ", rollcall_replies_data4.sensors s "
-            other_params += "and s.serial == {} ".format((serials))
+            other_params += "and s.serial = {} ".format((serials))
             columns = "s.serial, s.mintime as time, " + columns
 
         other_params += "and message is not null "
@@ -482,11 +482,9 @@ class Impala(object):
                 df = df[df.hour != "hour"]
 
             for column_name in ["mintime", "maxtime"]:
-                df[column_name] = (
-                    pd.to_datetime(
-                        df[column_name].astype(float) * 1e9
-                    ).dt.tz_localize("utc")
-                )
+                df[column_name] = pd.to_datetime(
+                    df[column_name].astype(float) * 1e9
+                ).dt.tz_localize("utc")
 
             df.icao24 = (
                 df.icao24.apply(int, base=16)
