@@ -259,7 +259,12 @@ class Flight(GeographyMixin, ShapelyMixin):
         }
         return opensky.history(**query_params)  # type: ignore
 
-    def query_ehs(self, data: Optional[pd.DataFrame] = None) -> "Flight":
+    def query_ehs(
+        self,
+        data: Optional[pd.DataFrame] = None,
+        failure_mode: str = "warning",
+        progressbar: Optional[Callable[[Iterable], Iterable]] = None,
+    ) -> "Flight":
         """Extend data with extra columns from EHS messages.
 
         By default, raw messages are requested from the OpenSky Impala server.
@@ -276,13 +281,19 @@ class Flight(GeographyMixin, ShapelyMixin):
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")
 
-        def failure():
+        def fail_warning():
             """Called when nothing can be added to data."""
             id_ = self.flight_id
             if id_ is None:
                 id_ = self.callsign
             logging.warn(f"No data on Impala for flight {id_}.")
             return self
+
+        def fail_silent():
+            return self
+
+        failure_dict = dict(warning=fail_warning, silent=fail_silent)
+        failure = failure_dict[failure_mode]
 
         if data is None:
             df = opensky.extended(self.start, self.stop, icao24=self.icao24)
@@ -321,12 +332,16 @@ class Flight(GeographyMixin, ShapelyMixin):
         )
         # who cares about default lat0, lon0 with EHS
         decoder = ModeS_Decoder((0, 0))
-        for _, line in tqdm(
-            referenced_df.iterrows(),
-            total=referenced_df.shape[0],
-            desc=f"{identifier}:",
-            leave=False,
-        ):
+
+        if progressbar is None:
+            progressbar = lambda x: tqdm(  # noqa: E731
+                x,
+                total=referenced_df.shape[0],
+                desc=f"{identifier}:",
+                leave=False,
+            )
+
+        for _, line in progressbar(referenced_df.iterrows()):
 
             decoder.process(
                 line.timestamp,
