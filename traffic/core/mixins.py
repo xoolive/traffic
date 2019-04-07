@@ -4,12 +4,11 @@ from functools import lru_cache, partial
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Type, TypeVar, Union
 
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
-
 import pandas as pd
 import pyproj
 from cartopy import crs
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
 from shapely.geometry import Point, base
 from shapely.ops import transform
 
@@ -35,7 +34,7 @@ class DataFrameMixin(object):
         path = Path(filename)
         if path.suffixes in [[".pkl"], [".pkl", ".gz"]]:
             return cls(pd.read_pickle(path, **kwargs))
-        if path.suffixes in [[".parquet"], [".parquet", ".gz"]]:
+        if path.suffixes == [".parquet"]:
             return cls(pd.read_parquet(path, **kwargs))
         if path.suffixes == [".csv"]:
             return cls(pd.read_csv(path, **kwargs))
@@ -56,23 +55,23 @@ class DataFrameMixin(object):
 
     # --- Redirected to pandas.DataFrame ---
 
-    def to_pickle(self, filename: Union[str, Path]) -> None:
-        self.data.to_pickle(filename)
+    def to_pickle(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        self.data.to_pickle(filename, *args, **kwargs)
 
-    def to_csv(self, filename: Union[str, Path]) -> None:
-        self.data.to_csv(filename)
+    def to_csv(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        self.data.to_csv(filename, *args, **kwargs)
 
-    def to_hdf(self, filename: Union[str, Path], key: str) -> None:
-        self.data.to_hdf(filename, key)
+    def to_hdf(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        self.data.to_hdf(filename, *args, **kwargs)
 
-    def to_json(self, filename: Union[str, Path]) -> None:
-        self.data.to_json(filename)
+    def to_json(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        self.data.to_json(filename, *args, **kwargs)
 
-    def to_parquet(self, filename: Union[str, Path]) -> None:
-        self.data.to_parquet(filename)
+    def to_parquet(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        self.data.to_parquet(filename, *args, **kwargs)
 
-    def to_excel(self, filename: Union[str, Path]) -> None:
-        self.data.to_excel(filename)
+    def to_excel(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        self.data.to_excel(filename, *args, **kwargs)
 
     def sort_values(self: T, key: str) -> T:
         return self.__class__(self.data.sort_values(key))
@@ -236,6 +235,10 @@ class PointMixin(object):
     altitude: float
     timestamp: datetime
     name: str
+
+    @property
+    def latlon(self) -> Tuple[float, float]:
+        return (self.latitude, self.longitude)
 
     def plot(
         self, ax: Axes, text_kw=None, shift=dict(units="dots", x=15), **kwargs
