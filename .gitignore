@@ -13,5 +13,6 @@ __pycache__/
 build/
 dist/
 
+sandbox/
 docs/*.ipynb
 traffic.conf

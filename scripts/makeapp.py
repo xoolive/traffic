@@ -1,8 +1,8 @@
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 import traffic
 
@@ -24,7 +24,7 @@ Categories=Utility;"""
 
     linux_script = """#!/usr/bin/env bash
 {}
-python -c "from traffic.console import gui; gui.main()"
+python -c "from traffic.console import gui; gui.main(None)"
 """
 
     def detect_environment(self):
@@ -33,7 +33,7 @@ python -c "from traffic.console import gui; gui.main()"
         if hasattr(sys, "real_prefix"):  # ok with virtualenv
             return "source {}/bin/activate".format(sys.exec_prefix)
         for e in sys.path:
-            match = re.match("(.*)/envs/(.*)/lib/python3.\d", e)
+            match = re.match("(.*)/envs/(.*)/lib/python3.\d", e)  # noqa: W605
             if match:
                 prefix = 'export PATH="{}:$PATH"\n'.format(match.group(1))
                 if sys.platform == "linux":
@@ -112,7 +112,7 @@ class DarwinApp:
     darwin_script = """#! /bin/bash
 
 DIR=${0%/*}
-${DIR}/traffic -c "from traffic.console import gui; gui.main()"
+${DIR}/traffic -c "from traffic.console import gui; gui.main(None)"
 """
 
     def make_app(self):
@@ -121,7 +121,8 @@ ${DIR}/traffic -c "from traffic.console import gui; gui.main()"
         if not hasattr(sys, "real_prefix"):  # means no virtualenv
             pythonapp = os.path.join(pythonapp, "Resources")
 
-        if "conda" in sys.version or "Continuum" in sys.version:
+        # if "conda" in sys.version or "Continuum" in sys.version:
+        if (Path(sys.prefix) / "conda-meta").exists():
             pythonapp = sys.executable
         else:
             pythonapp = os.path.join(
@@ -169,7 +170,7 @@ ${DIR}/traffic -c "from traffic.console import gui; gui.main()"
 class WindowsApp:
     windows_batch = """"{}" -x %0 %*    &goto :eof
 from traffic.console import gui;
-gui.main()
+gui.main(None)
 """
 
     def make_app(self):
@@ -195,7 +196,7 @@ gui.main()
         shortcut.save()
 
 
-def main(args):
+def main():
 
     fname = {"linux": LinuxApp(), "darwin": DarwinApp(), "win32": WindowsApp()}
 
