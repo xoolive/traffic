@@ -82,6 +82,11 @@ class Impala(object):
             s = StringIO()
             count = 0
             for line in fh.readlines():
+                if re.search("\t", line):  # noqa: W605
+                    # don't ask why re.match does not work
+                    count += 1
+                    s.write(re.sub(" *\t *", ",", line))  # noqa: W605
+                    s.write("\n")
                 if re.match("\|.*\|", line):  # noqa: W605
                     count += 1
                     if "," in line:  # this may happen on 'describe table'
@@ -162,15 +167,20 @@ class Impala(object):
             allow_agent=False,
             compress=True,
         )
-        self.shell = client.invoke_shell()
+        # self.shell = client.invoke_shell()
+        (
+            self.shell_stdin_,
+            self.shell_stdout_,
+            self.shell_stderr_,
+        ) = client.exec_command("-B", bufsize=-1, get_pty=True)
         self.connected = True
         total = ""
         while len(total) == 0 or total[-10:] != ":21000] > ":
-            b = self.shell.recv(256)
+            b = self.shell_stdout_.channel.recv(256)
             total += b.decode()
 
     def _impala(
-        self, request: str, cached: bool = True
+        self, request: str, cached: bool = True, columns: Optional[str] = None
     ) -> Optional[pd.DataFrame]:
 
         digest = hashlib.md5(request.encode("utf8")).hexdigest()
@@ -186,12 +196,15 @@ class Impala(object):
             logging.info("Sending request: {}".format(request))
             # bug fix for when we write a request with """ starting with \n
             request = request.replace("\n", " ")
-            self.shell.send(request + ";\n")
+            self.shell_stdin_.channel.send(request + ";\n")
             total = ""
             while len(total) == 0 or total[-10:] != ":21000] > ":
-                b = self.shell.recv(256)
+                b = self.shell_stdout_.channel.recv(256)
                 total += b.decode()
             with cachename.open("w") as fh:
+                if columns is not None:
+                    fh.write(re.sub(", ", "\t", columns))
+                    fh.write("\n")
                 fh.write(total)
 
         return self._read_cache(cachename)
@@ -359,7 +372,10 @@ class Impala(object):
                 other_params=other_params,
             )
 
-            df = self._impala(request, cached)
+            # TODO not enough for all options, we should probably prepare a
+            # different "columns" parameter, or at least ensure we won't miss
+            # anything...  sounds unsafe for now
+            df = self._impala(request, cached, columns=columns)
 
             if df is None:
                 continue
@@ -418,16 +434,19 @@ class Impala(object):
         """
 
         _request = (
-            "select {columns} from rollcall_replies_data4 {other_tables} "
+            "select {columns} from rollcall_replies_data4 r {other_tables} "
             "where hour>={before_hour} and hour<{after_hour} "
-            "and rollcall_replies_data4.mintime>={before_time} "
-            "and rollcall_replies_data4.maxtime<{after_time} "
+            "and r.mintime>={before_time} and r.mintime<{after_time} "
             "{other_params}"
         )
 
         columns = (
-            "rollcall_replies_data4.mintime, "
-            "rollcall_replies_data4.maxtime, "
+            "r.mintime, r.maxtime, "
+            "rawmsg, msgcount, icao24, message, altitude, identity, hour"
+        )
+
+        parse_columns = (
+            "mintime, maxtime, "
             "rawmsg, msgcount, icao24, message, altitude, identity, hour"
         )
 
@@ -473,7 +492,10 @@ class Impala(object):
                 other_params=other_params,
             )
 
-            df = self._impala(request, cached)
+            # TODO not enough for all options, we should probably prepare a
+            # different "columns" parameter, or at least ensure we won't miss
+            # anything...  sounds unsafe for now
+            df = self._impala(request, cached, columns=parse_columns)
 
             if df is None:
                 continue
@@ -536,7 +558,7 @@ class Impala(object):
         )
 
         logging.info(f"Sending request: {query}")
-        df = self._impala(query)
+        df = self._impala(query, columns="icao24, callsign, serial, count")
         if df is None:
             return None
 
@@ -594,7 +616,7 @@ class Impala(object):
             other_params=other_params,
         )
 
-        df = self._impala(request)
+        df = self._impala(request, columns="count, serial, icao24, callsign")
 
         if (
             df is not None
