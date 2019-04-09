@@ -50,7 +50,9 @@ class Impala(object):
         "{other_params}"
     )
 
-    shell: paramiko.Channel
+    stdin: paramiko.ChannelFile
+    stdout: paramiko.ChannelFile
+    stderr: paramiko.ChannelFile  # actually ChannelStderrFile
 
     def __init__(self, username: str, password: str, cache_dir: Path) -> None:
 
@@ -82,6 +84,13 @@ class Impala(object):
             s = StringIO()
             count = 0
             for line in fh.readlines():
+                # -- no pretty-print style cache (option -B)
+                if re.search("\t", line):  # noqa: W605
+                    # don't ask why re.match does not work
+                    count += 1
+                    s.write(re.sub(" *\t *", ",", line))  # noqa: W605
+                    s.write("\n")
+                # -- pretty-print style cache
                 if re.match("\|.*\|", line):  # noqa: W605
                     count += 1
                     if "," in line:  # this may happen on 'describe table'
@@ -100,7 +109,8 @@ class Impala(object):
                 s.seek(0)
                 # otherwise pandas would parse 1234e5 as 123400000.0
                 df = pd.read_csv(s, dtype={"icao24": str})
-                return df
+                if df.shape[0] > 0:
+                    return df
 
         with cachename.open("r") as fh:
             output = fh.readlines()
@@ -162,15 +172,17 @@ class Impala(object):
             allow_agent=False,
             compress=True,
         )
-        self.shell = client.invoke_shell()
+        self.stdin, self.stdout, self.stderr = client.exec_command(
+            "-B", bufsize=-1, get_pty=True
+        )
         self.connected = True
         total = ""
         while len(total) == 0 or total[-10:] != ":21000] > ":
-            b = self.shell.recv(256)
+            b = self.stdout.channel.recv(256)
             total += b.decode()
 
     def _impala(
-        self, request: str, cached: bool = True
+        self, request: str, columns: str, cached: bool = True
     ) -> Optional[pd.DataFrame]:
 
         digest = hashlib.md5(request.encode("utf8")).hexdigest()
@@ -186,12 +198,15 @@ class Impala(object):
             logging.info("Sending request: {}".format(request))
             # bug fix for when we write a request with """ starting with \n
             request = request.replace("\n", " ")
-            self.shell.send(request + ";\n")
+            self.stdin.channel.send(request + ";\n")
             total = ""
             while len(total) == 0 or total[-10:] != ":21000] > ":
-                b = self.shell.recv(256)
+                b = self.stdout.channel.recv(256)
                 total += b.decode()
             with cachename.open("w") as fh:
+                if columns is not None:
+                    fh.write(re.sub(", ", "\t", columns))
+                    fh.write("\n")
                 fh.write(total)
 
         return self._read_cache(cachename)
@@ -336,10 +351,12 @@ class Impala(object):
         cumul = []
         sequence = list(split_times(start, stop, date_delta))
         columns = ", ".join(self._impala_columns)
+        parse_columns = ", ".join(self._impala_columns)
 
         if count is True:
             other_params += "group by " + columns
             columns = "count(*) as count, " + columns
+            parse_columns = "count, " + parse_columns
             other_tables += ", state_vectors_data4.serials s"
 
         for bt, at, bh, ah in progressbar(sequence):
@@ -359,7 +376,7 @@ class Impala(object):
                 other_params=other_params,
             )
 
-            df = self._impala(request, cached)
+            df = self._impala(request, columns=parse_columns, cached=cached)
 
             if df is None:
                 continue
@@ -388,7 +405,7 @@ class Impala(object):
         *args,  # more reasonable to be explicit about arguments
         date_delta: timedelta = timedelta(hours=1),
         icao24: Union[None, str, Iterable[str]] = None,
-        serials: Union[None, str, Iterable[str]] = None,
+        serials: Union[None, int, Iterable[int]] = None,
         other_tables: str = "",
         other_params: str = "",
         progressbar: Callable[[Iterable], Iterable] = iter,
@@ -407,7 +424,7 @@ class Impala(object):
             date_delta (optional): how to split the requests (default: one day)
             icao24 (optional): a string or a list of strings identifying the
             transponder code of the aircraft (default: empty)
-            serials (optional): a string or a list of strings identifying the
+            serials (optional): an int or a list of int identifying the
             sensors receiving the data. (default: empty)
             cached (boolean): whether to look first whether the request has been
             cached (default: True)
@@ -418,16 +435,19 @@ class Impala(object):
         """
 
         _request = (
-            "select {columns} from rollcall_replies_data4 {other_tables} "
+            "select {columns} from rollcall_replies_data4 r {other_tables} "
             "where hour>={before_hour} and hour<{after_hour} "
-            "and rollcall_replies_data4.mintime>={before_time} "
-            "and rollcall_replies_data4.maxtime<{after_time} "
+            "and r.mintime>={before_time} and r.mintime<{after_time} "
             "{other_params}"
         )
 
         columns = (
-            "rollcall_replies_data4.mintime, "
-            "rollcall_replies_data4.maxtime, "
+            "r.mintime, r.maxtime, "
+            "rawmsg, msgcount, icao24, message, altitude, identity, hour"
+        )
+
+        parse_columns = (
+            "mintime, maxtime, "
             "rawmsg, msgcount, icao24, message, altitude, identity, hour"
         )
 
@@ -447,10 +467,12 @@ class Impala(object):
             other_tables += ", rollcall_replies_data4.sensors s "
             other_params += "and s.serial in {} ".format(tuple(serials))
             columns = "s.serial, s.mintime as time, " + columns
-        elif isinstance(serials, str):
+            parse_columns = "serial, time, " + parse_columns
+        elif isinstance(serials, int):
             other_tables += ", rollcall_replies_data4.sensors s "
             other_params += "and s.serial = {} ".format((serials))
             columns = "s.serial, s.mintime as time, " + columns
+            parse_columns = "serial, time, " + parse_columns
 
         other_params += "and message is not null "
         sequence = list(split_times(start, stop, date_delta))
@@ -473,7 +495,7 @@ class Impala(object):
                 other_params=other_params,
             )
 
-            df = self._impala(request, cached)
+            df = self._impala(request, columns=parse_columns, cached=cached)
 
             if df is None:
                 continue
@@ -536,7 +558,7 @@ class Impala(object):
         )
 
         logging.info(f"Sending request: {query}")
-        df = self._impala(query)
+        df = self._impala(query, columns="icao24, callsign, serial, count")
         if df is None:
             return None
 
@@ -594,7 +616,7 @@ class Impala(object):
             other_params=other_params,
         )
 
-        df = self._impala(request)
+        df = self._impala(request, columns="count, serial, icao24, callsign")
 
         if (
             df is not None
