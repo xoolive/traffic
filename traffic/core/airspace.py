@@ -3,14 +3,13 @@
 import json
 from collections import defaultdict
 from pathlib import Path
-from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set,
-                    Tuple, Union)
+from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple,
+                    Union)
 
 import numpy as np
-from matplotlib.patches import Polygon as MplPolygon
-
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+from matplotlib.patches import Polygon as MplPolygon
 from shapely.geometry import Polygon, base, mapping, shape
 from shapely.ops import cascaded_union
 
@@ -57,8 +56,14 @@ class Airspace(ShapelyMixin):
         return self.elements.__getitem__(*args)
 
     def __add__(self, other: "Airspace") -> "Airspace":
+        if other == 0:
+            # useful for compatibility with sum() function
+            return self
         union = cascaded_union_with_alt(list(self) + list(other))
         return Airspace(f"{self.name}+{other.name}", union)
+
+    def __radd__(self, other):
+        return self + other
 
     def __iter__(self) -> Iterator[ExtrudedPolygon]:
         return self.elements.__iter__()
@@ -139,14 +144,14 @@ class Airspace(ShapelyMixin):
         return Airspace(
             self.name,
             list(c for c in self.elements if c.upper >= level),
-            type_=self.type
+            type_=self.type,
         )
 
     def below(self, level: int) -> "Airspace":
         return Airspace(
             self.name,
             list(c for c in self.elements if c.lower <= level),
-            type_=self.type
+            type_=self.type,
         )
 
     def export_json(self) -> Dict[str, Any]:
@@ -181,7 +186,7 @@ class Airspace(ShapelyMixin):
     @classmethod
     def from_file(cls, filename: Union[Path, str]):
         path = Path(filename)
-        with path.open('r') as fh:
+        with path.open("r") as fh:
             return cls.from_json(json.load(fh))
 
 
