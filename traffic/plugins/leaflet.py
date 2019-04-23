@@ -49,7 +49,9 @@ _old_add_layer = Map.add_layer
 
 def map_add_layer(_map, elt, **kwargs):
     if any(isinstance(elt, c) for c in (Flight, Airspace, PointMixin)):
-        return _old_add_layer(_map, elt.leaflet(**kwargs))
+        layer = elt.leaflet(**kwargs)
+        _old_add_layer(_map, layer)
+        return layer
     return _old_add_layer(_map, elt)
 
 
