@@ -14,5 +14,6 @@ build/
 dist/
 
 sandbox/
+stubs/
 docs/*.ipynb
 traffic.conf
