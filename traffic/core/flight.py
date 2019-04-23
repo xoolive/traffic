@@ -8,6 +8,7 @@ from typing import (TYPE_CHECKING, Callable, Generator, Iterable, Iterator,
                     List, NamedTuple, Optional, Set, Tuple, Type, TypeVar,
                     Union, cast, overload)
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import scipy.signal
@@ -906,6 +907,46 @@ class Flight(GeographyMixin, ShapelyMixin):
         if self.shape is not None:
             return ax.plot(*self.shape.xy, **kwargs)
         return []
+
+    def chart(
+        self, feature_name: Union[str, List[str]], encode_dict: dict = dict()
+    ) -> alt.Chart:
+        feature_list = ["timestamp"]
+        if "flight_id" in self.data.columns:
+            feature_list.append("flight_id")
+        if "callsign" in self.data.columns:
+            feature_list.append("callsign")
+        if "icao24" in self.data.columns:
+            feature_list.append("icao24")
+        if isinstance(feature_name, str):
+            feature_list.append(feature_name)
+            data = self.data.query(f"{feature_name} == {feature_name}")
+            default_encode = dict(
+                x="timestamp:T",
+                y=alt.Y(feature_name, title=feature_name),
+                color=alt.Color(
+                    "flight_id"
+                    if "flight_id" in data.columns
+                    else (
+                        "callsign" if "callsign" in data.columns else "icao24"
+                    )
+                ),
+            )
+        else:
+            feature_list += feature_name
+            data = self.data.melt("timestamp", feature_name).query(
+                "value == value"
+            )
+            default_encode = dict(x="timestamp:T", y="value", color="variable")
+
+        return (
+            alt.Chart(data)
+            .mark_line(interpolate="bundle")
+            .encode(**{**default_encode, **encode_dict})
+            .transform_timeunit(
+                timestamp="utcyearmonthdatehoursminutesseconds(timestamp)"
+            )
+        )
 
     def plot_time(
         self,
