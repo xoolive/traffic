@@ -920,7 +920,9 @@ class Flight(GeographyMixin, ShapelyMixin):
             feature_list.append("icao24")
         if isinstance(feature_name, str):
             feature_list.append(feature_name)
-            data = self.data.query(f"{feature_name} == {feature_name}")
+            data = self.data[feature_list].query(
+                f"{feature_name} == {feature_name}"
+            )
             default_encode = dict(
                 x="timestamp:T",
                 y=alt.Y(feature_name, title=feature_name),
@@ -934,8 +936,10 @@ class Flight(GeographyMixin, ShapelyMixin):
             )
         else:
             feature_list += feature_name
-            data = self.data.melt("timestamp", feature_name).query(
-                "value == value"
+            data = (
+                self.data[feature_list]
+                .melt("timestamp", feature_name)
+                .query("value == value")
             )
             default_encode = dict(x="timestamp:T", y="value", color="variable")
 
