@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 
 from setuptools import find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
+sample_dir = Path("traffic") / "data" / "samples"
 
 # Get the long description from the README file
 with open(os.path.join(here, "readme.md"), encoding="utf-8") as f:
@@ -23,7 +25,10 @@ setup(
     packages=find_packages(),
     package_data={
         "traffic.data.airspaces": ["firs.json"],
-        "traffic.data.samples": ["calibration.pkl.gz"],
+        "traffic.data.samples": list(
+            file.relative_to(sample_dir)
+            for file in sample_dir.glob("**/*.json.gz")
+        ),
         "traffic": [
             os.path.join("..", "icons", f)
             for f in os.listdir(os.path.join("icons"))

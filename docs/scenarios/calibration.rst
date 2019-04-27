@@ -158,12 +158,10 @@ radials. There must be a VOR around, we can search in the navaid database:
 
 .. code:: python
 
-   from traffic.data.samples import calibration
+   from traffic.data.samples.calibration import ajaccio
    from traffic.data import navaids
 
-   flight = calibration["ajaccio00"]
-
-   west, east, south, north = flight.extent()
+   west, east, south, north = ajaccio.extent()
    navaids.df.query(
        f"{west} < lon < {east} and {south} < lat < {north} and type=='VOR'"
    )
@@ -222,8 +220,8 @@ bearing (radials) to the VOR.
    # (many VORs may have the same three letter identifier)
    vor = navaids.search("AJACCIO VOR-DME")[0]
 
-   flight = (
-       flight.distance(vor)  # add a distance column (in nm) w.r.t the VOR
+   ajaccio = (
+       ajaccio.distance(vor)  # add a distance column (in nm) w.r.t the VOR
        .assign(
            # this mimics the implementation of Flight.distance for bearing
            bearing=lambda df: geo.bearing(
@@ -268,10 +266,10 @@ We have all we need to enhance the interesting parts of the trajectory now:
        vor.plot(ax, marker="h", shift=shift_vor, **point_params)
 
        # background with the full trajectory
-       flight.plot(ax, color="#aaaaaa", linestyle="--")
+       ajaccio.plot(ax, color="#aaaaaa", linestyle="--")
 
        # plot large circles in red
-       for segment in flight.query("distance_diff < .02").split("1 minute"):
+       for segment in ajaccio.query("distance_diff < .02").split("1 minute"):
            # only print the segment if it is long enough
            if segment.stop - segment.start > pd.Timedelta("3 minutes"):
                segment.plot(ax, color="crimson")
@@ -283,7 +281,7 @@ We have all we need to enhance the interesting parts of the trajectory now:
                    text_kw=dict(s=f"{distance_vor:.1f} nm", bbox=box_params)
                )
 
-       for segment in flight.query("bearing_diff < .01").split("1 minute"):
+       for segment in ajaccio.query("bearing_diff < .01").split("1 minute"):
            # only print the segment if it is long enough
            if segment.stop - segment.start > pd.Timedelta("3 minutes"):
                segment.plot(ax, color="forestgreen")
@@ -422,6 +420,7 @@ of the writing, so we added them manually.
 
 .. code:: python
 
+    from traffic.data.samples.calibration import traffic as calibration
     from traffic.data import aircraft
 
     # aircraft not in junzis database
@@ -467,52 +466,52 @@ of the writing, so we added them manually.
        <tr>
          <th>9M-FCL (LJ60)</th>
          <th>750093</th>
-         <td>kota18 (2017-03-08)</td>
+         <td>kota_kinabalu (2017-03-08)</td>
        </tr>
        <tr>
          <th>C-GFIO (CRJ2)</th>
          <th>c052bb</th>
-         <td>kelowna04 (2018-10-06)</td>
+         <td>vancouver (2018-10-06)</td>
        </tr>
        <tr>
          <th>C-GNVC (CRJ2)</th>
          <th>c06921</th>
-         <td>montreal12 (2018-12-11)</td>
+         <td>montreal (2018-12-11)</td>
        </tr>
        <tr>
          <th>D-CFMD (B350)</th>
          <th>3cce6f</th>
-         <td>vienna06 (2018-11-20), munich17 (2019-03-04)</td>
+         <td>munich (2019-03-04), vienna (2018-11-20)</td>
        </tr>
        <tr>
          <th>F-HNAV (BE20)</th>
          <th>39b415</th>
-         <td>toulouse19 (2017-06-16), ajaccio00 (2018-01-12), monastir07 (2018-11-21), ...</td>
+         <td>ajaccio (2018-01-12), monastir (2018-11-21), toulouse (2017-06-16), ...</td>
        </tr>
        <tr>
          <th>G-GBAS (DA62)</th>
          <th>4070f4</th>
-         <td>london01 (2018-01-12), lisbon05 (2018-11-13), funchal08 (2018-11-23)</td>
+         <td>london_heathrow (2018-01-12), lisbon (2018-11-13), funchal (2018-11-23)</td>
        </tr>
        <tr>
          <th>G-TACN (DA62)</th>
          <th>4076f1</th>
-         <td>cardiff15 (2019-02-15), london16 (2019-02-28)</td>
+         <td>cardiff (2019-02-15), london_gatwick (2019-02-28)</td>
        </tr>
        <tr>
          <th>SE-LKY (BE20)</th>
          <th>4ab179</th>
-         <td>bornholm09 (2018-11-26), kiruna14 (2019-01-30)</td>
+         <td>bornholm (2018-11-26), kiruna (2019-01-30)</td>
        </tr>
        <tr>
          <th>VH-FIZ (B350)</th>
          <th>7c1a89</th>
-         <td>noumea20 (2017-11-05), perth13 (2019-01-22)</td>
+         <td>noumea (2017-11-05), perth (2019-01-22)</td>
        </tr>
        <tr>
          <th>YS-111-N (BE20)</th>
          <th>0b206f</th>
-         <td>guatemala02 (2018-03-26), kingston03 (2018-06-26)</td>
+         <td>guatemala (2018-03-26), kingston (2018-06-26)</td>
        </tr>
      </tbody>
    </table>
