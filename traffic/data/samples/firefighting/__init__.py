@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .. import _assign, get_flight
+from .. import assign_id, get_flight
 
 _current_dir = Path(__file__).parent
 __all__ = list(f.stem[:-5] for f in _current_dir.glob("*.json.gz"))
@@ -13,6 +13,6 @@ def __getattr__(name: str):
 
 
 traffic = sum(
-    get_flight(name, _current_dir).pipe(lambda x: _assign(x, name))
+    get_flight(name, _current_dir).pipe(lambda x: assign_id(x, name))
     for name in __all__
 )

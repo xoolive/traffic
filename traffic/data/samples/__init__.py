@@ -19,7 +19,7 @@ def get_flight(filename: str, directory: Path) -> Union[Flight, Traffic]:
     )
 
 
-def _assign(t: Union[Traffic, Flight], name: str) -> Union[Traffic, Flight]:
+def assign_id(t: Union[Traffic, Flight], name: str) -> Union[Traffic, Flight]:
     if "flight_id" in t.data.columns:
         return t
     if isinstance(t, Traffic):
