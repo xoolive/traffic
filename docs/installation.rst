@@ -13,8 +13,8 @@ the operating system.
 Static visualisation tools are accessible with Matplotlib through the
 `cartotools <https://github.com/xoolive/cartotools>`_ library, which leverages
 access to more projections and to data from OpenStreetMap. More dynamic
-visualisations in Jupyter Lab are accessible thanks to the `ipyleaflet
-<http://ipyleaflet.readthedocs.io/>`_ plugin; other exports to various formats
+visualisations in Jupyter Lab are accessible thanks to the `altair <https://altair-viz.github.io/>`_ and `ipyleaflet
+<http://ipyleaflet.readthedocs.io/>`_ libraries; other exports to various formats
 (including CesiumJS or Google Earth) are also available.
 
 We recommend cloning the latest version from the repository before installing it.

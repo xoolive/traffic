@@ -34,11 +34,11 @@ class DataFrameMixin(object):
         path = Path(filename)
         if path.suffixes in [[".pkl"], [".pkl", ".gz"]]:
             return cls(pd.read_pickle(path, **kwargs))
-        if path.suffixes == [".parquet"]:
+        if path.suffixes in [[".parquet"], [".parquet", ".gz"]]:
             return cls(pd.read_parquet(path, **kwargs))
         if path.suffixes in [[".json"], [".json", ".gz"]]:
             return cls(pd.read_json(path, **kwargs))
-        if path.suffixes == [".csv"]:
+        if path.suffixes in [[".csv"], [".csv", ".gz"]]:
             return cls(pd.read_csv(path, **kwargs))
         if path.suffixes == [".h5"]:
             return cls(pd.read_hdf(path, **kwargs))
