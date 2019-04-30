@@ -514,7 +514,7 @@ class Impala(object):
                 .str.slice(2)
                 .str.pad(6, fillchar="0")
             )
-            df.altitude = df.altitude.astype(float) * 0.3048
+            df.altitude = df.altitude.astype(float) / 0.3048
 
             cumul.append(df)
 
