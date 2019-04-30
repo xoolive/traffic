@@ -908,24 +908,28 @@ class Flight(GeographyMixin, ShapelyMixin):
             return ax.plot(*self.shape.xy, **kwargs)
         return []
 
-    def chart(
-        self, feature_name: Union[str, List[str]], encode_dict: dict = dict()
+    def encode(
+        self,
+        y: Union[str, List[str], alt.vegalite.v2.schema.channels.Y],
+        **kwargs,
     ) -> alt.Chart:
         feature_list = ["timestamp"]
+        alt_y: Optional[alt.vegalite.v2.schema.channels.Y] = None
         if "flight_id" in self.data.columns:
             feature_list.append("flight_id")
         if "callsign" in self.data.columns:
             feature_list.append("callsign")
         if "icao24" in self.data.columns:
             feature_list.append("icao24")
-        if isinstance(feature_name, str):
-            feature_list.append(feature_name)
-            data = self.data[feature_list].query(
-                f"{feature_name} == {feature_name}"
-            )
+        if isinstance(y, alt.vegalite.v2.schema.channels.Y):
+            alt_y = y
+            y = y.shorthand
+        if isinstance(y, str):
+            feature_list.append(y)
+            data = self.data[feature_list].query(f"{y} == {y}")
             default_encode = dict(
                 x="timestamp:T",
-                y=alt.Y(feature_name, title=feature_name),
+                y=alt_y if alt_y is not None else alt.Y(y, title=y),
                 color=alt.Color(
                     "flight_id"
                     if "flight_id" in data.columns
@@ -935,10 +939,10 @@ class Flight(GeographyMixin, ShapelyMixin):
                 ),
             )
         else:
-            feature_list += feature_name
+            feature_list += y
             data = (
                 self.data[feature_list]
-                .melt("timestamp", feature_name)
+                .melt("timestamp", y)
                 .query("value == value")
             )
             default_encode = dict(x="timestamp:T", y="value", color="variable")
@@ -946,7 +950,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         return (
             alt.Chart(data)
             .mark_line(interpolate="bundle")
-            .encode(**{**default_encode, **encode_dict})
+            .encode(**{**default_encode, **kwargs})
             .transform_timeunit(
                 timestamp="utcyearmonthdatehoursminutesseconds(timestamp)"
             )
