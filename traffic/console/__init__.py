@@ -11,7 +11,7 @@ def dispatch_open(filename: Path):
     if sys.platform.startswith("darwin"):
         subprocess.call(("open", filename))
     elif os.name == "nt":  # For Windows
-        os.startfile(filename)  # type: ignore
+        os.startfile(filename)
     elif os.name == "posix":  # For Linux, Mac, etc.
         subprocess.call(("xdg-open", filename))
 
@@ -43,9 +43,7 @@ def main():
         epilog="For specific help about each command, type traffic command -h",
     )
 
-    parser.add_argument(
-        "command", help=f"among: {', '.join(cmd.keys())}"
-    )
+    parser.add_argument("command", help=f"among: {', '.join(cmd.keys())}")
     parser.add_argument(
         "args",
         nargs=argparse.REMAINDER,

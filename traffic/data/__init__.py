@@ -45,7 +45,7 @@ nm_path_str = config.get("global", "nm_path", fallback="")
 if nm_path_str != "":
     NMAirspaceParser.nm_path = Path(nm_path_str)
 
-Aircraft.cache = cache_dir / "aircraft.pkl"
+Aircraft.cache_dir = cache_dir
 AirportParser.cache = cache_dir / "airports.pkl"
 Airways.cache = cache_dir / "airways.pkl"
 NavaidParser.cache = cache_dir / "navaids.pkl"
@@ -69,7 +69,6 @@ if sys.version_info < (3, 7, 0):
 @lru_cache()
 def __getattr__(name: str):
     """This only works for Python >= 3.7, see PEP 562."""
-    logging.info(f"Lazy loading of {name}")
     if name == "aircraft":
         return Aircraft()
     if name == "airports":

@@ -1,9 +1,8 @@
 import argparse
+import logging
 
 
 def main(args):
-
-    from ..data import airports, aircraft, navaids
 
     parser = argparse.ArgumentParser(
         prog="traffic data",
@@ -47,9 +46,25 @@ def main(args):
         help="followed by the name of the operator (stats of all aircraft)",
     )
 
+    parser.add_argument(
+        "-v",
+        dest="verbose",
+        action="count",
+        default=0,
+        help="display logging messages",
+    )
+
     parser.add_argument("args", nargs=argparse.REMAINDER)
 
     args = parser.parse_args(args)
+
+    logger = logging.getLogger()
+    if args.verbose == 1:
+        logger.setLevel(logging.INFO)
+    elif args.verbose >= 2:
+        logger.setLevel(logging.DEBUG)
+
+    from ..data import airports, aircraft, navaids
 
     if args.aircraft:
         for arg in args.args:
