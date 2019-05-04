@@ -42,8 +42,14 @@ def to_bluesky(
         else "altitude"
     )
 
-    if "mdl" not in traffic.data.columns:
-        traffic = aircraft.merge(traffic)
+    if "typecode" not in traffic.data.columns:
+        traffic = Traffic(
+            traffic.data.merge(
+                aircraft.data[["icao24", "typecode"]].drop_duplicates("icao24"),
+                on="icao24",
+                how="inner",
+            )
+        )
 
     if "cas" not in traffic.data.columns:
         traffic = Traffic(
@@ -90,7 +96,7 @@ def to_bluesky(
                 # If the object is not created then create it
                 is_created.append(v.flight_id)
                 fh.write(
-                    f"{v.timedelta}> CRE {v.callsign} {v.mdl} "
+                    f"{v.timedelta}> CRE {v.callsign} {v.typecode} "
                     f"{v.latitude} {v.longitude} {v.track} "
                     f"{v[altitude]} {v.cas}\n"
                 )
