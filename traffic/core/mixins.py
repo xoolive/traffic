@@ -4,12 +4,13 @@ from functools import lru_cache, partial
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Type, TypeVar, Union
 
+import altair as alt
 import pandas as pd
 import pyproj
 from cartopy import crs
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
-from shapely.geometry import Point, base
+from shapely.geometry import Point, base, mapping
 from shapely.ops import transform
 
 T = TypeVar("T", bound="DataFrameMixin")
@@ -155,6 +156,14 @@ class ShapelyMixin(object):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return no_wrap_div.format(self._repr_svg_())
 
+    def geojson(self):
+        return mapping(self.shape)
+
+    def geoencode(self) -> alt.vegalite.v2.api.Chart:
+        return alt.Chart(alt.Data(values=self.geojson())).mark_geoshape(
+            stroke="#aaaaaa", strokeWidth=1
+        )
+
     @lru_cache()
     def project_shape(
         self, projection: Union[pyproj.Proj, crs.Projection, None] = None
@@ -228,6 +237,17 @@ class GeographyMixin(DataFrameMixin):
         )
 
         return self.__class__(self.data.assign(x=x, y=y))
+
+    def geoencode(self) -> alt.vegalite.v2.api.Chart:
+        return (
+            alt.Chart(
+                self.data.query(
+                    "latitude == latitude and longitude == longitude"
+                )[["latitude", "longitude"]]
+            )
+            .encode(latitude="latitude", longitude="longitude")
+            .mark_line()
+        )
 
 
 class PointMixin(object):

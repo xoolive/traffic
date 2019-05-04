@@ -5,6 +5,7 @@ from typing import NamedTuple, Optional
 import pandas as pd
 import requests
 from cartopy.crs import PlateCarree
+from shapely.geometry import mapping
 
 from ...core.mixins import PointMixin, ShapelyMixin
 
@@ -54,6 +55,16 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
             ),
             **tags.airport,
         )
+
+    def geojson(self):
+        return [
+            {
+                "geometry": mapping(shape),
+                "properties": info["tags"],
+                "type": "Feature",
+            }
+            for info, shape in self.osm_request().ways.values()
+        ]
 
     @property
     def shape(self):
