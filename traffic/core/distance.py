@@ -3,7 +3,6 @@ from typing import NamedTuple, Optional
 import numpy as np
 import pandas as pd
 
-from ..basic.airport import Airport
 from . import geodesy as geo
 from .mixins import PointMixin
 
@@ -61,4 +60,6 @@ def guess_airport(
         airports.data, latitude=latitude, longitude=longitude
     )
 
-    return DistanceAirport(distance, Airport(**dict(airport)))
+    airport_handle = airports[airport.icao]
+    assert airport_handle is not None
+    return DistanceAirport(distance, airport_handle)
