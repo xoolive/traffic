@@ -30,12 +30,6 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
         )
         return f"{self.icao}/{self.iata}: {short_name}"
 
-    def __str__(self):
-        return (
-            f"{self.icao}/{self.iata}    {self.name.strip()} ({self.country})"
-            f"\n\t{self.lat} {self.lon} altitude: {self.alt}"
-        )
-
     def _repr_html_(self):
         title = f"<b>{self.name.strip()}</b> ({self.country}) "
         title += f"<code>{self.icao}/{self.iata}</code>"
@@ -56,6 +50,7 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
             **tags.airport,
         )
 
+    @lru_cache()
     def geojson(self):
         return [
             {
