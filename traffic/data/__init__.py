@@ -10,7 +10,7 @@ from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
 from .airspaces.eurocontrol_nm import NMAirspaceParser
 from .airspaces.eurofirs import eurofirs
 from .basic.aircraft import Aircraft
-from .basic.airport import AirportParser
+from .basic.airport import Airports
 from .basic.airways import Airways
 from .basic.navaid import NavaidParser
 from .basic.runways import Runways
@@ -46,7 +46,7 @@ if nm_path_str != "":
     NMAirspaceParser.nm_path = Path(nm_path_str)
 
 Aircraft.cache_dir = cache_dir
-AirportParser.cache = cache_dir / "airports.pkl"
+Airports.cache_dir = cache_dir
 Airways.cache = cache_dir / "airways.pkl"
 NavaidParser.cache = cache_dir / "navaids.pkl"
 Runways.cache = cache_dir / "runways.pkl"
@@ -57,7 +57,7 @@ opensky_password = config.get("global", "opensky_password", fallback="")
 
 if sys.version_info < (3, 7, 0):
     aircraft = Aircraft()
-    airports = AirportParser()
+    airports = Airports()
     airways = Airways()
     navaids = NavaidParser()
     aixm_airspaces = AIXMAirspaceParser(config_file)
@@ -72,7 +72,7 @@ def __getattr__(name: str):
     if name == "aircraft":
         return Aircraft()
     if name == "airports":
-        return AirportParser()
+        return Airports()
     if name == "airways":
         return Airways()
     if name == "navaids":

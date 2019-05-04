@@ -1,6 +1,3 @@
-import logging
-import pickle
-import re
 from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple, Optional
@@ -9,45 +6,21 @@ import pandas as pd
 import requests
 from cartopy.crs import PlateCarree
 
-from ...core.mixins import ShapelyMixin, PointMixin
+from ...core.mixins import PointMixin, ShapelyMixin
 
 
 class AirportNamedTuple(NamedTuple):
 
-    alt: int
+    altitude: float
     country: str
     iata: str
     icao: str
-    lat: float
-    lon: float
+    latitude: float
+    longitude: float
     name: str
 
-    # TODO inspect why it fails on some machines...
-    # well then it works on Airport
-    def __getattr__(self, name):
-        if name == "latitude":
-            return self.lat
-        if name == "longitude":
-            return self.lon
-        if name == "altitude":
-            return self.alt
 
-    def __getstate__(self):
-        return self.__dict__
-
-    def __setstate__(self, d):
-        self.__dict__.update(d)
-
-
-class Airport(AirportNamedTuple, ShapelyMixin):
-    def __getattr__(self, name):
-        if name == "latitude":
-            return self.lat
-        if name == "longitude":
-            return self.lon
-        if name == "altitude":
-            return self.alt
-
+class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
     def __repr__(self):
         short_name = (
             self.name.replace("International", "")
@@ -73,7 +46,12 @@ class Airport(AirportNamedTuple, ShapelyMixin):
         from cartotools.osm import request, tags
 
         return request(
-            (self.lon - .06, self.lat - .06, self.lon + .06, self.lat + .06),
+            (
+                self.longitude - 0.06,
+                self.latitude - 0.06,
+                self.longitude + 0.06,
+                self.latitude + 0.06,
+            ),
             **tags.airport,
         )
 
@@ -90,59 +68,55 @@ class Airport(AirportNamedTuple, ShapelyMixin):
         }
         ax.add_geometries(list(self.osm_request()), **params)
 
-    @property
-    def point(self):
-        p = PointMixin()
-        p.latitude = self.latitude
-        p.longitude = self.longitude
-        p.name = self.icao
-        return p
 
+class Airports(object):
 
-class AirportParser(object):
+    cache_dir: Path
 
-    cache: Optional[Path] = None
+    def __init__(self) -> None:
+        self._data: Optional[pd.DataFrame] = None
 
-    def __init__(self):
-        if self.cache is not None and self.cache.exists():
-            with open(self.cache, "rb") as fh:
-                self.airports = pickle.load(fh)
-        else:
-            c = requests.get(
-                "https://www.flightradar24.com/_json/airports.php",
-                headers={"user-agent": "Mozilla/5.0"},
-            )
-            self.airports = list(Airport(**a) for a in c.json()["rows"])
-
-            logging.info("Caching airport list from FlightRadar")
-            if self.cache is not None:
-                with open(self.cache, "wb") as fh:
-                    pickle.dump(self.airports, fh)
-
-    @property
-    def df(self) -> pd.DataFrame:
-        return pd.DataFrame.from_records(
-            self.airports, columns=AirportNamedTuple._fields
+    def download_fr24(self) -> None:
+        c = requests.get(
+            "https://www.flightradar24.com/_json/airports.php",
+            headers={"user-agent": "Mozilla/5.0"},
         )
 
-    def __getitem__(self, name: str):
-        return next(
-            (
-                a
-                for a in self.airports
-                if (a.iata == name.upper()) or (a.icao == name.upper())
-            ),
-            None,
-        )
-
-    def search(self, name: str):
-        return list(
-            (
-                a
-                for a in self.airports
-                if (a.iata == name.upper())
-                or (a.icao == name.upper())
-                or (re.match(name, a.country, flags=re.IGNORECASE))
-                or (re.match(name, a.name, flags=re.IGNORECASE))
+        self._data = (
+            pd.DataFrame.from_records(c.json()["rows"])
+            .assign(name=lambda df: df.name.str.strip())
+            .rename(
+                columns={
+                    "lat": "latitude",
+                    "lon": "longitude",
+                    "alt": "altitude",
+                }
             )
+        )
+        self._data.to_pickle(self.cache_dir / "airports_fr24.pkl")
+
+    @property
+    def data(self) -> pd.DataFrame:
+        if self._data is not None:
+            return self._data
+
+        if not (self.cache_dir / "airports_fr24.pkl").exists():
+            self.download_fr24()
+
+        self._data = pd.read_pickle(self.cache_dir / "airports_fr24.pkl")
+
+        return self._data
+
+    def __getitem__(self, name: str) -> Optional[Airport]:
+        x = self.data.query("iata == @name.upper() or icao == @name.upper()")
+        if x.shape[0] == 0:
+            return None
+        return Airport(**dict(x.iloc[0]))
+
+    def search(self, name: str) -> pd.DataFrame:
+        return self.data.query(
+            "iata == @name.upper() or "
+            "icao.str.contains(@name.upper()) or "
+            "country.str.upper().str.contains(@name.upper()) or "
+            "name.str.upper().str.contains(@name.upper())"
         )

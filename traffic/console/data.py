@@ -78,8 +78,7 @@ def main(args):
 
     if args.airport:
         for arg in args.args:
-            for airport in airports.search(arg):
-                print(airport)
+            print(airports.search(arg))
 
     if args.navaid:
         for arg in args.args:

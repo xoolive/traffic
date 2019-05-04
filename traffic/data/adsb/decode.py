@@ -1,5 +1,6 @@
 # fmt: off
 
+import logging
 import os
 import socket
 import threading
@@ -8,14 +9,13 @@ from collections import UserDict
 from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 from pathlib import Path
-
-import pkg_resources
-
-import pandas as pd
-import pyModeS as pms
-from tqdm.autonotebook import tqdm
 from typing import (Any, Dict, Iterable, Iterator, List, Optional, TextIO,
                     Tuple, Union, cast)
+
+import pandas as pd
+import pkg_resources
+import pyModeS as pms
+from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
 from ...data.basic.airport import Airport
@@ -303,6 +303,7 @@ class Aircraft(object):
                     humidity=pms.commb.hum44(msg),
                     pression=pms.commb.p44(msg),
                     temperature=pms.commb.temp44(msg),
+                    # turbulence=pms.commb.turb44(msg),
                     windspeed=wind[0],
                     winddirection=wind[1],
                 )
@@ -314,6 +315,7 @@ class Aircraft(object):
                         humidity=pms.commb.hum44(msg),
                         pression=pms.commb.p44(msg),
                         temperature=pms.commb.temp44(msg),
+                        # turbulence=pms.commb.turb44(msg),
                         windspeed=wind[0],
                         winddirection=wind[1],
                     )
@@ -408,16 +410,22 @@ class Decoder:
     thread: Optional[StoppableThread]
 
     def __init__(
-        self, reference: Union[str, Airport, Tuple[float, float]]
+        self, reference: Union[None, str, Airport, Tuple[float, float]] = None
     ) -> None:
         if isinstance(reference, str):
             from ...data import airports
 
             reference = airports[reference]
-        if isinstance(reference, Airport):
-            lat0, lon0 = reference.lat, reference.lon
+
+        if reference is None:
+            logging.warn(
+                "No valid reference position provided. Fallback to (0, 0)"
+            )
+            lat0, lon0 = 0.0, 0.0
+        elif isinstance(reference, Airport):
+            lat0, lon0 = reference.latlon
         else:
-            lat0, lon0 = cast(Tuple[float, float], reference)
+            lat0, lon0 = reference
 
         self.acs = AircraftDict()
         self.acs.set_latlon(lat0, lon0)
@@ -480,7 +488,7 @@ class Decoder:
                     if data[1] == 0x34:
                         data = data[23:]
                         continue
-                    it = data.find(0x1a)
+                    it = data.find(0x1A)
                     if it < 1:
                         break
                     data = data[it:]

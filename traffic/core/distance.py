@@ -3,6 +3,7 @@ from typing import NamedTuple, Optional
 import numpy as np
 import pandas as pd
 
+from ..basic.airport import Airport
 from . import geodesy as geo
 from .mixins import PointMixin
 
@@ -56,12 +57,8 @@ def guess_airport(
     if any((longitude is None, latitude is None)):
         raise RuntimeError("latitude or longitude are None")
 
-    airports_df = pd.DataFrame.from_records(
-        a._asdict() for a in airports.airports
-    ).rename(columns={"lat": "latitude", "lon": "longitude"})
-
     distance, _, airport = closest_point(
-        airports_df, latitude=latitude, longitude=longitude
+        airports.data, latitude=latitude, longitude=longitude
     )
 
-    return DistanceAirport(distance, airports[airport.icao])
+    return DistanceAirport(distance, Airport(**dict(airport)))

@@ -372,7 +372,9 @@ class TrafficWidget(object):
             else:
                 from ..data import airports
 
-                airports[self.area_input.value].plot(self.ax_map)
+                airport_handle = airports[self.area_input.value]
+                assert airport_handle is not None
+                airport_handle.plot(self.ax_map)
             self.canvas_map.draw_idle()
 
     def on_id_change(self, change: Dict[str, Any]) -> None:

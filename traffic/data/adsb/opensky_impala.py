@@ -593,10 +593,10 @@ class Impala(object):
             "and baroaltitude<=1000 "
             "group by icao24, callsign"
         ).format(
-            airport_latmax=airport.lat + 0.1,
-            airport_latmin=airport.lat - 0.1,
-            airport_lonmax=airport.lon + 0.1,
-            airport_lonmin=airport.lon - 0.1,
+            airport_latmax=airport.latitude + 0.1,
+            airport_latmin=airport.latitude - 0.1,
+            airport_lonmax=airport.longitude + 0.1,
+            airport_lonmin=airport.longitude - 0.1,
         )
 
         columns = "icao24, callsign"

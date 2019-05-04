@@ -267,7 +267,7 @@ class OpenSky(Impala):
             raise ValueError(c.content.decode())
         json = c.json()
 
-        return tuple(airports[a] for a in json["route"])
+        return tuple(airports[a] for a in json["route"])  # type: ignore
 
     def api_aircraft(
         self,
@@ -391,7 +391,10 @@ class OpenSky(Impala):
         if isinstance(airport, str):
             from .. import airports
 
-            airport_code = airports[airport].icao
+            airport_handle = airports[airport]
+            if airport_handle is None:
+                raise RuntimeError(f"Unknown airport {airport}")
+            airport_code = airport_handle.icao
         else:
             airport_code = airport.icao
 
@@ -460,7 +463,10 @@ class OpenSky(Impala):
         if isinstance(airport, str):
             from .. import airports
 
-            airport_code = airports[airport].icao
+            airport_handle = airports[airport]
+            if airport_handle is None:
+                raise RuntimeError(f"Unknown airport {airport}")
+            airport_code = airport_handle.icao
         else:
             airport_code = airport.icao
 
