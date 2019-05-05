@@ -1,12 +1,14 @@
+from functools import lru_cache
 from pathlib import Path
 from typing import Union
 
 from ...core import Flight, Traffic
 
 
+@lru_cache()
 def get_flight(filename: str, directory: Path) -> Union[Flight, Traffic]:
     flight: Union[None, Flight, Traffic] = Traffic.from_file(
-        directory / f"{filename}.json.gz"
+        directory / f"{filename}.json.gz", dtype={"icao24": str}
     )
     if flight is None:
         raise RuntimeError(f"File {filename}.json.gz not found in {directory}")

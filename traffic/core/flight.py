@@ -1,12 +1,11 @@
 # fmt: off
 
 import logging
-import re
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
-from typing import (TYPE_CHECKING, Callable, Generator, Iterable, Iterator,
-                    List, NamedTuple, Optional, Set, Tuple, Type, TypeVar,
-                    Union, cast, overload)
+from typing import (TYPE_CHECKING, Callable, Dict, Generator, Iterable,
+                    Iterator, List, Optional, Set, Tuple, Type, TypeVar, Union,
+                    cast, overload)
 
 import altair as alt
 import numpy as np
@@ -21,14 +20,15 @@ from shapely.geometry import LineString, base
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
-from ..core.time import time_or_delta, timelike, to_datetime
 from . import geodesy as geo
 from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
                        guess_airport)
 from .mixins import GeographyMixin, PointMixin, ShapelyMixin
+from .time import time_or_delta, timelike, to_datetime
 
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
+    from .airport import Airport  # noqa: F401
 
 # fmt: on
 
@@ -397,17 +397,19 @@ class Flight(GeographyMixin, ShapelyMixin):
         return guess_airport(data.iloc[-1])
 
     def guess_landing_runway(
-        self, airport: Union[None, str, PointMixin] = None
+        self, airport: Union[None, str, "Airport"] = None
     ) -> DistancePointTrajectory:
-
-        from ..data import runways
-        from ..data.basic.airport import Airport
 
         if airport is None:
             airport = self.guess_landing_airport().airport
-        if isinstance(airport, Airport):
-            airport = airport.icao
-        all_runways = runways[airport].values()
+        if isinstance(airport, str):
+            from ..data import airports
+
+            airport = airports[airport]
+
+        all_runways: Dict[str, PointMixin] = dict()
+        for p in airport.runways.list:  # type: ignore
+            all_runways[p.name] = p
 
         subset = (
             self.airborne()
@@ -415,15 +417,12 @@ class Flight(GeographyMixin, ShapelyMixin):
             .last(minutes=10)
             .resample()
         )
-        candidate = subset.closest_point(all_runways)
+        candidate = subset.closest_point(list(all_runways.values()))
 
         avg_track = subset.data.track.tail(10).mean()
-        # TODO compute rwy track in the data module
-        rwy_track = 10 * int(  # noqa: W605
-            next(re.finditer("\d+", candidate.name)).group()
-        )
+        rwy_bearing = all_runways[candidate.name].bearing  # type: ignore
 
-        if abs(avg_track - rwy_track) > 20:
+        if abs(avg_track - rwy_bearing) > 20:
             logging.warn(
                 f"({self.flight_id}) Candidate runway "
                 f"{candidate.name} is not consistent "
@@ -432,10 +431,9 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         return candidate
 
-    def closest_point(self, points: Union[Iterable[NamedTuple], NamedTuple]):
-        # if isinstance(points, NamedTuple):
-        if getattr(points, "_asdict", None) is not None:
-            points = [points]  # type: ignore
+    def closest_point(self, points: Union[List[PointMixin], PointMixin]):
+        if not isinstance(points, list):
+            points = [points]
         return min(closest_point(self.data, point) for point in points)
 
     @property
@@ -445,11 +443,14 @@ class Flight(GeographyMixin, ShapelyMixin):
         from ..data import aircraft as acdb
 
         ac = acdb[self.icao24]
-        if ac.shape[0] != 1:
+        if ac.query('registration != ""').shape[0] == 0:
             return self.icao24
         else:
             # TODO return Aircraft and redirect this to __repr__
-            return f"{self.icao24} / {ac.iloc[0].regid} ({ac.iloc[0].mdl})"
+            return (
+                f"{self.icao24} / {ac.iloc[0].registration} "
+                f"({ac.iloc[0].typecode})"
+            )
 
     @property
     def registration(self) -> Optional[str]:
@@ -458,9 +459,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         if not isinstance(self.icao24, str):
             return None
         ac = acdb[self.icao24]
-        if ac.shape[0] != 1:
+        if ac.query('registration != ""').shape[0] == 0:
             return None
-        return ac.iloc[0].regid
+        return ac.iloc[0].registration
 
     def coords4d(
         self, delta_t: bool = False

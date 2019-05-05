@@ -49,7 +49,7 @@ Aircraft.cache_dir = cache_dir
 Airports.cache_dir = cache_dir
 Airways.cache = cache_dir / "airways.pkl"
 NavaidParser.cache = cache_dir / "navaids.pkl"
-Runways.cache = cache_dir / "runways.pkl"
+Runways.cache_dir = cache_dir
 AIXMAirspaceParser.cache_dir = cache_dir
 
 opensky_username = config.get("global", "opensky_username", fallback="")
@@ -62,7 +62,7 @@ if sys.version_info < (3, 7, 0):
     navaids = NavaidParser()
     aixm_airspaces = AIXMAirspaceParser(config_file)
     nm_airspaces = NMAirspaceParser(config_file)
-    runways = Runways().runways
+    runways = Runways()
     opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
 
 
@@ -86,7 +86,7 @@ def __getattr__(name: str):
             opensky_username, opensky_password, cache_dir / "opensky"
         )
     if name == "runways":
-        return Runways().runways
+        return Runways()
     if name == "airac":
         cache_file = cache_dir / "airac.cache"
         if cache_file.exists():

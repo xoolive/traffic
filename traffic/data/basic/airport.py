@@ -65,6 +65,12 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
     def shape(self):
         return self.osm_request().shape
 
+    @property
+    def runways(self):
+        from .. import runways
+
+        return runways[self.icao]
+
     def plot(self, ax, **kwargs):
         params = {
             "edgecolor": "silver",

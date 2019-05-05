@@ -20,16 +20,16 @@ class DistancePointTrajectory(NamedTuple):
 
 def closest_point(
     data: pd.DataFrame,
-    point: Optional[NamedTuple] = None,
+    point: Optional[PointMixin] = None,
     *args,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
 ) -> DistancePointTrajectory:
 
     if point is not None:
-        latitude = point.latitude  # type: ignore
-        longitude = point.longitude  # type: ignore
-        name = point.name  # type: ignore
+        latitude = point.latitude
+        longitude = point.longitude
+        name = point.name
     else:
         name = "unnamed"
     dist_vect = geo.distance(

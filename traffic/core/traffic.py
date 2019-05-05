@@ -48,7 +48,7 @@ class Traffic(GeographyMixin):
         cls: Type[TrafficTypeVar], filename: Union[Path, str], **kwargs
     ) -> Optional[TrafficTypeVar]:
 
-        tentative = super().from_file(filename)
+        tentative = super().from_file(filename, **kwargs)
 
         if tentative is not None:
             rename_columns = {
@@ -369,9 +369,7 @@ class Traffic(GeographyMixin):
     # --- Real work ---
 
     def resample(
-        self,
-        rule: Union[str, int] = "1s",
-        max_workers: int = 4,
+        self, rule: Union[str, int] = "1s", max_workers: int = 4
     ) -> "Traffic":
         """Resamples all trajectories, flight by flight.
 
