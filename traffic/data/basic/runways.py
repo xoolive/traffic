@@ -60,9 +60,7 @@ class RunwayAirport(ShapelyMixin):
     def shape(self) -> base.BaseGeometry:
         return linemerge(shape(x["geometry"]) for x in self.geojson())
 
-    def geoencode(
-        self, mode: str = "geometry"
-    ) -> Optional[alt.vegalite.v2.api.Chart]:
+    def geoencode(self, mode: str = "geometry") -> Optional[alt.Chart]:
 
         if mode == "geometry":
             return (

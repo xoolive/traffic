@@ -909,20 +909,16 @@ class Flight(GeographyMixin, ShapelyMixin):
             return ax.plot(*self.shape.xy, **kwargs)
         return []
 
-    def encode(
-        self,
-        y: Union[str, List[str], alt.vegalite.v2.schema.channels.Y],
-        **kwargs,
-    ) -> alt.Chart:
+    def encode(self, y: Union[str, List[str], alt.Y], **kwargs) -> alt.Chart:
         feature_list = ["timestamp"]
-        alt_y: Optional[alt.vegalite.v2.schema.channels.Y] = None
+        alt_y: Optional[alt.Y] = None
         if "flight_id" in self.data.columns:
             feature_list.append("flight_id")
         if "callsign" in self.data.columns:
             feature_list.append("callsign")
         if "icao24" in self.data.columns:
             feature_list.append("icao24")
-        if isinstance(y, alt.vegalite.v2.schema.channels.Y):
+        if isinstance(y, alt.Y):
             alt_y = y
             y = y.shorthand
         if isinstance(y, str):

@@ -159,7 +159,7 @@ class ShapelyMixin(object):
     def geojson(self):
         return mapping(self.shape)
 
-    def geoencode(self) -> alt.vegalite.v2.api.Chart:
+    def geoencode(self) -> alt.Chart:
         return alt.Chart(alt.Data(values=self.geojson())).mark_geoshape(
             stroke="#aaaaaa", strokeWidth=1
         )
@@ -238,7 +238,7 @@ class GeographyMixin(DataFrameMixin):
 
         return self.__class__(self.data.assign(x=x, y=y))
 
-    def geoencode(self) -> alt.vegalite.v2.api.Chart:
+    def geoencode(self) -> alt.Chart:
         return (
             alt.Chart(
                 self.data.query(
