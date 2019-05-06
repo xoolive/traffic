@@ -40,15 +40,23 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
     def osm_request(self):
         from cartotools.osm import request, tags
 
-        return request(
-            (
-                self.longitude - 0.06,
-                self.latitude - 0.06,
-                self.longitude + 0.06,
-                self.latitude + 0.06,
-            ),
-            **tags.airport,
-        )
+        if self.runways is not None:
+            lon1, lat1, lon2, lat2 = self.runways.bounds
+            return request(
+                (lon1 - 0.02, lat1 - 0.02, lon2 + 0.02, lat2 + 0.02),
+                **tags.airport,
+            )
+
+        else:
+            return request(
+                (
+                    self.longitude - 0.06,
+                    self.latitude - 0.06,
+                    self.longitude + 0.06,
+                    self.latitude + 0.06,
+                ),
+                **tags.airport,
+            )
 
     @lru_cache()
     def geojson(self):
