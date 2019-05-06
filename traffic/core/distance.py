@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -6,10 +6,13 @@ import pandas as pd
 from . import geodesy as geo
 from .mixins import PointMixin
 
+if TYPE_CHECKING:
+    from ..data.basic.airport import Airport  # noqa: F401
+
 
 class DistanceAirport(NamedTuple):
     distance: float
-    airport: PointMixin
+    airport: "Airport"
 
 
 class DistancePointTrajectory(NamedTuple):
@@ -50,6 +53,7 @@ def guess_airport(
 ) -> DistanceAirport:
     from ..data import airports
 
+    # TODO define a protocol instead of PointMixin
     if point is not None:
         longitude = point.longitude  # type: ignore
         latitude = point.latitude  # type: ignore

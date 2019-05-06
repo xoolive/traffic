@@ -16,3 +16,15 @@ exclude = '''
 
 [tool.isort]
 line_length = 80
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+toxworkdir = /tmp/tox
+envlist = py36, py37
+
+[testenv]
+deps =
+    pytest
+commands = py.test
+"""
