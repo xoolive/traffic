@@ -301,7 +301,7 @@ class Traffic(GeographyMixin):
 
         The airborne part is determined by null values on the altitude column.
         """
-        if "onground" in self.data.columns:
+        if "onground" in self.data.columns and self.data.onground.dtype == bool:
             return self.query("not onground and altitude == altitude")
         else:
             return self.query("altitude == altitude")
