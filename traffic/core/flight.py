@@ -527,7 +527,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         The airborne part is determined by null values on the altitude column.
         """
         if "onground" in self.data.columns:
-            return self.query("onground and altitude == altitude")
+            return self.query("not onground and altitude == altitude")
         else:
             return self.query("altitude == altitude")
 
