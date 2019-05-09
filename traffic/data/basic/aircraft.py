@@ -29,7 +29,7 @@ class Aircraft(object):
         with zipfile.ZipFile(io.BytesIO(f.content)) as zfile:
             with zfile.open("aircraft_db.csv", "r") as dbfile:
                 self._junzis = (
-                    pd.read_csv(dbfile)
+                    pd.read_csv(dbfile, dtype=str)
                     .assign(
                         regid=lambda df: df.regid.str.upper(),
                         mdl=lambda df: df.mdl.str.upper(),
