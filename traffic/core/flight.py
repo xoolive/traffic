@@ -526,7 +526,10 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         The airborne part is determined by null values on the altitude column.
         """
-        return self.query("altitude == altitude")
+        if "onground" in self.data.columns:
+            return self.query("onground and altitude == altitude")
+        else:
+            return self.query("altitude == altitude")
 
     def first(self, **kwargs) -> "Flight":
         delta = timedelta(**kwargs)
