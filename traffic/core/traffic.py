@@ -316,12 +316,50 @@ class Traffic(GeographyMixin):
             .rename(columns={"timestamp": "count"})
         )
 
-    def assign_id(self) -> "Traffic":
-        if "flight_id" in self.data.columns:
+    def clean_invalid(self, threshold: int = 10) -> "Traffic":
+        """Removes irrelevant data from the Traffic DataFrame.
+
+        Data that has been downloaded from the OpenSky Impala shell often
+        contains faulty data, esp. because of faulty callsigns (wrongly decoded?
+        faulty crc?) and of automatically repeated positions (see
+        `last_position`).
+
+        This methods is an attempt to automatically clean this data.
+
+        Data uncleaned could result in the following count of messages
+        associated to aircraft icao24 `02008b` which could be easily removed.
+
+                                   count
+            icao24  callsign
+            02008b  0  221         8
+                    2AM2R1         4
+                    2N D           1
+                    3DYCI          1
+                    3N    I8       1
+                    3Q G9 E        1
+                    6  V X         1
+                    [...]
+
+        """
+        if "last_position" not in self.data.columns:
             return self
+        return self.__class__(
+            self.data.groupby(["icao24", "callsign"]).filter(
+                lambda x: x.drop_duplicates("last_position").count().max()
+                > threshold
+            )
+        )
+
+    def assign_id(self, clean_invalid: bool = True) -> "Traffic":
+        clean_traffic = self
+        if clean_invalid:
+            clean_traffic = self.clean_invalid()
+
+        if "flight_id" in self.data.columns:
+            return clean_traffic
         return Traffic.from_flights(
             flight.assign(flight_id=f"{flight.callsign}_{id_:>03}")
-            for id_, flight in enumerate(self)
+            for id_, flight in enumerate(clean_traffic)
         )
 
     def filter(
