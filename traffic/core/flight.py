@@ -29,6 +29,7 @@ from .time import time_or_delta, timelike, to_datetime
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
     from .airport import Airport  # noqa: F401
+    from .traffic import Traffic  # noqa: F401
 
 # fmt: on
 
@@ -75,20 +76,26 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     __slots__ = ("data",)
 
-    def __add__(self, other):
+    def __add__(self, other) -> "Traffic":
         """Concatenates two Flight objects in the same Traffic structure."""
+        # keep import here to avoid recursion
+        from .traffic import Traffic  # noqa: F811
+
         if other == 0:
             # useful for compatibility with sum() function
-            return self
-
-        # keep import here to avoid recursion
-        from .traffic import Traffic
+            return Traffic(self.data)
 
         return Traffic.from_flights([self, other])
 
-    def __radd__(self, other):
+    def __radd__(self, other) -> "Traffic":
         """Concatenates two Flight objects in the same Traffic structure."""
         return self + other
+
+    def __len__(self) -> int:
+        if "last_position" in self.data.columns:
+            return self.data.drop_duplicates("last_position").shape[0]
+        else:
+            return self.data.shape[0]
 
     def _info_html(self) -> str:
         title = f"<b>Flight {self.callsign}</b>"
@@ -282,6 +289,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")
 
+        if not isinstance(self.callsign, str):
+            raise RuntimeError("Several callsigns for this flight")
+
         def fail_warning():
             """Called when nothing can be added to data."""
             id_ = self.flight_id
@@ -367,13 +377,13 @@ class Flight(GeographyMixin, ShapelyMixin):
         if "stop" in self.data.columns:
             extended = extended.assign(stop=pd.NaT)
 
-        t = extended + self
+        aggregate = extended + self
         if "flight_id" in self.data.columns:
-            t.data.flight_id = self.flight_id
+            aggregate.data.flight_id = self.flight_id
 
         # sometimes weird callsigns are decoded and should be discarded
         # so it seems better to filter on callsign rather than on icao24
-        flight = t[self.callsign]
+        flight = aggregate[self.callsign]
         if flight is None:
             return failure()
 
