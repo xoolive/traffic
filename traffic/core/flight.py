@@ -654,10 +654,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         f1, f2 = (self.between(start, stop), other.between(start, stop))
 
         cols = ["timestamp", "latitude", "longitude", "altitude"]
+        cols += ["icao24", "callsign"]
         if "flight_id" in f1.data.columns:
             cols.append("flight_id")
-        else:
-            cols += ["icao24", "callsign"]
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
         return table.assign(

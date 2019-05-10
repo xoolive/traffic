@@ -1,15 +1,33 @@
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from itertools import combinations
-from typing import Iterator, Set, Tuple, Union, cast
+from typing import Iterator, Set, Tuple, Union
 
 import pandas as pd
 import pyproj
 from cartopy import crs
 from tqdm.autonotebook import tqdm
+
 from traffic.core.mixins import DataFrameMixin
 
 from ..core import Flight, Traffic
+
+
+def combinations(
+    t: Traffic, lateral_separation: float, vertical_separation: float
+) -> Iterator[Tuple[Flight, Flight]]:
+    for flight in tqdm(t, desc="Combinations", leave=False):
+        t = t.query(f'icao24 != "{flight.icao24}"')
+        for second in t.query(
+            f'x >= {flight.min("x")} - {lateral_separation} and '
+            f'x <= {flight.max("x")} + {lateral_separation} and '
+            f'y >= {flight.min("y")} - {lateral_separation} and '
+            f'y <= {flight.max("y")} + {lateral_separation} and '
+            f'altitude >= {flight.min("altitude")} - {vertical_separation} and '
+            f'altitude <= {flight.max("altitude")} + {vertical_separation} and '
+            f'timestamp <= "{flight.stop}" and '
+            f'timestamp >= "{flight.start}" '
+        ):
+            yield flight, second
 
 
 class CPA(DataFrameMixin):
@@ -30,17 +48,8 @@ class CPA(DataFrameMixin):
         )
 
     def min(self, column: str) -> "CPA":
-        def _minimum_column(df):
-            x = df.loc[df[column].idxmin()]
-            if len(x.shape) > 1:
-                x = x.iloc[0]
-            return x
-
         return self.__class__(
-            self.groupby(["flight_id_x", "flight_id_y"])
-            .apply(_minimum_column)
-            .drop(columns=["flight_id_x", "flight_id_y"])
-            .reset_index()
+            self.sort_values(column).groupby(["icao24_x", "icao24_y"]).first()
         )
 
     def _ipython_key_completions_(self) -> Set[str]:
@@ -54,28 +63,42 @@ class CPA(DataFrameMixin):
         if not isinstance(index, str) or index in df.columns:
             return df[index]
 
-        return self.__class__(
-            df.query("flight_id_y == @index").append(
-                df.query("flight_id_x == @index").rename(
-                    columns={
-                        "latitude_x": "latitude_y",
-                        "latitude_y": "latitude_x",
-                        "longitude_x": "longitude_y",
-                        "longitude_y": "longitude_x",
-                        "altitude_x": "altitude_y",
-                        "altitude_y": "altitude_x",
-                        "flight_id_x": "flight_id_y",
-                        "flight_id_y": "flight_id_x",
-                    }
-                ),
+        rename_cols = {
+            "latitude_x": "latitude_y",
+            "latitude_y": "latitude_x",
+            "longitude_x": "longitude_y",
+            "longitude_y": "longitude_x",
+            "altitude_x": "altitude_y",
+            "altitude_y": "altitude_x",
+            "icao24_x": "icao24_y",
+            "icao24_y": "icao24_x",
+            "callsign_x": "callsign_y",
+            "callsign_y": "callsign_x",
+        }
+
+        if "flight_id_x" in self.data.columns:
+            rename_cols["flight_id_x"] = "flight_id_y"
+            rename_cols["flight_id_y"] = "flight_id_x"
+
+            res = df.query("flight_id_y == @index").append(
+                df.query("flight_id_x == @index").rename(columns=rename_cols),
                 sort=False,
             )
+
+            if res.shape[0] > 0:
+                return self.__class__(res)
+
+        res = df.query("icao24_y == @index").append(
+            df.query("icao24_x == @index").rename(columns=rename_cols),
+            sort=False,
         )
+
+        return self.__class__(res)
 
     def _repr_html_(self):
         try:
             return self.data.style.background_gradient(
-                subset=["aggregated"], cmap="bwr_r", low=.9, high=1.
+                subset=["aggregated"], cmap="bwr_r", low=0.9, high=1.0
             )._repr_html_()
         except Exception:
             return super()._repr_html_()
@@ -127,45 +150,11 @@ def closest_point_of_approach(
         calculation.
         """
 
-        # combinations types Iterator[Tuple[T, ...]]
-        for first, second in cast(
-            Iterator[Tuple[Flight, Flight]], combinations(t_chunk, 2)
+        for first, second in combinations(
+            t_chunk,
+            lateral_separation=lateral_separation,
+            vertical_separation=vertical_separation,
         ):
-            # cast are necessary because of the lru_cache × property bug
-            if (
-                cast(pd.Timestamp, first.start)
-                > cast(pd.Timestamp, second.stop)
-            ) or (
-                cast(pd.Timestamp, second.start)
-                > cast(pd.Timestamp, first.stop)
-            ):
-                # Flights must fly at the same time
-                continue
-            if (
-                first.min("altitude")
-                > second.max("altitude") + vertical_separation
-            ):
-                # Bounding boxes in altitude must cross
-                continue
-            if (
-                second.min("altitude")
-                > first.max("altitude") + vertical_separation
-            ):
-                # Bounding boxes in altitude must cross
-                continue
-            if first.min("x") > second.max("x") + lateral_separation:
-                # Bounding boxes in x must cross
-                continue
-            if second.min("x") > first.max("x") + lateral_separation:
-                # Bounding boxes in x must cross
-                continue
-            if first.min("y") > second.max("y") + lateral_separation:
-                # Bounding boxes in y must cross
-                continue
-            if second.min("y") > first.max("y") + lateral_separation:
-                # Bounding boxes in y must cross
-                continue
-
             # Next step is to check the 2D footprint of the trajectories
             # intersect. Before computing the intersection we bufferize the
             # trajectories by half the requested separation.
@@ -173,6 +162,8 @@ def closest_point_of_approach(
             first_shape = first.project_shape(projection)
             second_shape = second.project_shape(projection)
             if first_shape is None or second_shape is None:
+                continue
+            if not first_shape.is_valid or not second_shape.is_valid:
                 continue
 
             first_shape = first_shape.simplify(1e3).buffer(
@@ -202,10 +193,9 @@ def closest_point_of_approach(
     ):
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             tasks = {
-                # TODO submit(Flight.distance, first, second)
-                executor.submit(first.distance, second): (
-                    first.flight_id,
-                    second.flight_id,
+                executor.submit(Flight.distance, first, second): (
+                    first.icao24,
+                    second.icao24,
                 )
                 for (first, second) in yield_pairs(Traffic(t_chunk))
             }
