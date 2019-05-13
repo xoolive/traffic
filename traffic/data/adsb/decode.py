@@ -4,7 +4,6 @@ import logging
 import os
 import socket
 import threading
-import warnings
 from collections import UserDict
 from datetime import datetime, timedelta, timezone
 from operator import itemgetter
@@ -13,18 +12,13 @@ from typing import (Any, Dict, Iterable, Iterator, List, Optional, TextIO,
                     Tuple, Union, cast)
 
 import pandas as pd
-import pkg_resources
 import pyModeS as pms
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
 from ...data.basic.airport import Airport
-from ...drawing.ipywidgets import TrafficWidget
 
 # fmt: on
-
-if pkg_resources.get_distribution("pyModeS").version < "2.0":
-    warnings.warn("Install pyModeS>=2.0 from https://github.com/junzis/pyModeS")
 
 
 class StoppableThread(threading.Thread):
@@ -741,27 +735,5 @@ class Decoder:
         except ValueError:
             return None
 
-    @property
-    def widget(self) -> "DecoderWidget":
-        return DecoderWidget(self)
-
     def __getitem__(self, icao: str) -> Optional[Flight]:
         return self.acs[icao].flight
-
-
-class DecoderWidget(TrafficWidget):
-    def __init__(self, decoder: Decoder, *args, **kwargs) -> None:
-        self.decoder = decoder
-        traffic = decoder.traffic
-        if traffic is None:
-            raise ValueError("traffic is None")
-        super().__init__(traffic, *args, **kwargs)
-
-    @property
-    def traffic(self) -> Traffic:
-        traffic = self.decoder.traffic
-        assert traffic is not None
-        self._traffic = traffic
-        self.t_view = self._traffic
-        self.set_time_range()
-        return self._traffic

@@ -55,11 +55,11 @@ setup(
         "pyproj",  # not necessarily pulled by Cartopy...
         # "typing_extensions",  # sometimes necessary in dev, but not now
         "PyQt5",
+        "altair",  # interactive Vega plots
         "ipywidgets",  # IPython widgets for traffic
-        "tornado",  # dependency for matplotlib with WebAgg
         "ipyleaflet",
         "ipympl",  # interactive matplotlib in notebooks
-        "altair",  # interactive Vega plots
+        "tornado",  # dependency for matplotlib with WebAgg
         "tqdm>=4.28",  # progressbars
         "cartotools==1.0",
         "pyModeS>=2.0",

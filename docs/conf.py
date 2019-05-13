@@ -41,6 +41,25 @@ release = ""
 # ones.
 extensions = ["sphinx.ext.autodoc", "sphinx.ext.githubpages"]
 
+# To avoid installing all dependencies when building doc
+# https://stackoverflow.com/a/15912502/8729698
+autodoc_mock_imports = [
+    "altair",
+    "cartopy",
+    "cartopy.crs",
+    "cartotools",
+    "ipyleaflet",
+    "matplotlib",
+    "pandas",
+    "pyModeS",
+    "pyproj",
+    "scipy",
+    "scipy.signal",
+    "shapely",
+    "shapely.geometry",
+    "tqdm",
+]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -106,7 +125,7 @@ htmlhelp_basename = "trafficdoc"
 
 # -- Options for LaTeX output ------------------------------------------------
 
-latex_elements = {
+latex_elements: dict = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -170,6 +189,7 @@ def setup(app):
         "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
     )
     app.add_javascript(
-        "https://unpkg.com/@jupyter-widgets/html-manager@0.15.0/dist/embed-amd.js"
+        "https://unpkg.com/@jupyter-widgets/html-manager@0.15.0"
+        "/dist/embed-amd.js"
     )
     app.add_stylesheet("main_stylesheet.css")

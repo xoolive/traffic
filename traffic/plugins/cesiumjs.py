@@ -4,7 +4,7 @@ import json
 import logging
 import random
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional, Union, cast
+from typing import Any, Dict, Iterator, Optional, Union
 
 import pandas as pd
 
@@ -102,7 +102,7 @@ def to_czml(
 
     if minimum_time is not None:
         minimum_time = to_datetime(minimum_time)
-        traffic = cast(Traffic, traffic.query(f"timestamp >= '{minimum_time}'"))
+        traffic = traffic.query(f"timestamp >= '{minimum_time}'")
 
     if isinstance(filename, str):
         filename = Path(filename)

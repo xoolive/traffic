@@ -703,7 +703,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         """Computes a comet for a trajectory.
 
         The method uses the last position of a trajectory (method `at()
-        #traffic.core.Flight.at`_) and uses the ``track`` (in degrees),
+        <#traffic.core.Flight.at>`_) and uses the ``track`` (in degrees),
         ``groundspeed`` (in knots) and ``vertical_rate`` (in ft/min) values to
         interpolate the trajectory in a straight line.
 

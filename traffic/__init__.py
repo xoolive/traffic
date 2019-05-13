@@ -49,10 +49,11 @@ _all_plugins = []
 
 for path in _plugin_paths:
     for f in path.glob("[a-zA-Z]*.py"):
-        a = imp.load_source(f.stem, f.as_posix())
-        for name, cls in inspect.getmembers(a, inspect.isclass):
-            if PluginProvider in cls.__mro__:
-                _all_plugins.append(cls())
+        pass
+        # a = imp.load_source(f.stem, f.as_posix())
+        # for name, cls in inspect.getmembers(a, inspect.isclass):
+        #     if PluginProvider in cls.__mro__:
+        #         _all_plugins.append(cls())
 
 for plugin in _all_plugins:
     if plugin.title in _selected:
