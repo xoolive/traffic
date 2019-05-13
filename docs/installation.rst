@@ -27,14 +27,16 @@ If you are not comfortable with that option, you can install the latest release:
 .. parsed-literal::
     pip install traffic
 
-Warning
--------
+.. warning::
+    `cartopy` and `shapely` have strong dependencies to dynamic libraries which
+    may not be available on your system by default.
 
-`cartopy` and `shapely` have strong dependencies to dynamic libraries which
-may not be available on your system by default.
+.. note::
+    Before reporting an issue, please try to use an Anaconda environment. Other
+    installations may work but the Anaconda way proved to cause much less
+    issues.
 
-Before reporting an issue, please try to use an Anaconda environment. Other
-installations may work but the Anaconda way proved to cause much less issues.
+    You may start by installing the following libraries *the conda way*:
 
-.. parsed-literal::
-   conda install cartopy shapely
+    .. parsed-literal::
+       conda install cartopy shapely

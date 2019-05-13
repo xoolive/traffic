@@ -53,6 +53,7 @@ setup(
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "pyproj",  # not necessarily pulled by Cartopy...
+        # "typing_extensions",  # sometimes necessary in dev, but not now
         "PyQt5",
         "ipywidgets",  # IPython widgets for traffic
         "tornado",  # dependency for matplotlib with WebAgg

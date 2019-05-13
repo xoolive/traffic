@@ -4,8 +4,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from typing import (TYPE_CHECKING, Callable, Dict, Generator, Iterable,
-                    Iterator, List, Optional, Set, Tuple, Type, TypeVar, Union,
-                    cast, overload)
+                    Iterator, List, Optional, Set, Tuple, Union, cast, overload)
 
 import altair as alt
 import numpy as np
@@ -41,6 +40,7 @@ DatetimeTZBlock.interpolate = Block.interpolate
 def _split(
     data: pd.DataFrame, value: Union[str, int], unit: Optional[str]
 ) -> Iterator[pd.DataFrame]:
+    # This method helps splitting a flight into several.
     if data.shape[0] < 2:
         return
     diff = data.timestamp.diff().values
@@ -59,25 +59,84 @@ class Position(PointMixin, pd.core.series.Series):
     pass
 
 
-# Typing for Douglas-Peucker
-# It is comfortable to be able to return a Flight or a mask
-Mask = TypeVar("Mask", "Flight", np.ndarray)
-
-
 class Flight(GeographyMixin, ShapelyMixin):
-    """Flight is the basic class associated to an aircraft itinerary.
+    """Flight is the most basic class associated to a trajectory.
+    Flights are the building block of all processing methods, built on top of
+    pandas DataFrame. The minimum set of required features are:
 
-    A Flight is supposed to start at takeoff and end after landing, taxiing and
-    parking.
+    - ``icao24``: the ICAO transponder ID of an aircraft;
+    - ``callsign``: an identifier which may be associated with the
+      registration of an aircraft, with its mission (VOR calibration,
+      firefighting) or with a route (for a commercial aircraft);
+    - ``timestamp``: timezone aware timestamps are preferable.
+      Some methods may work with timezone naive timestamps but the behaviour
+      is not guaranteed;
+    - ``latitude``, ``longitude``: in degrees, WGS84 (EPSG:4326);
+    - ``altitude``: in feet.
 
-    If the current structure seems to contain many flights, warnings may be
-    raised.
+    .. note::
+        The ``flight_id`` (identifier for a trajectory) may be used in place of
+        a pair of (``icao24``, ``callsign``). More features may also be provided
+        for further processing, e.g. ``groundspeed``, ``vertical_rate``,
+        ``track``, ``heading``, ``IAS`` (indicated airspeed) or ``squawk``.
+
+    **Abridged contents:**
+
+        - properties:
+          `callsign <#traffic.core.Flight.callsign>`_,
+          `flight_id <#traffic.core.Flight.flight_id>`_,
+          `icao24 <#traffic.core.Flight.icao24>`_,
+          `number <#traffic.core.Flight.number>`_,
+          `registration <#traffic.core.Flight.registration>`_,
+          `start <#traffic.core.Flight.start>`_,
+          `stop <#traffic.core.Flight.stop>`_,
+          `typecode <#traffic.core.Flight.typecode>`_,
+          ...
+        - time related methods:
+          `after() <#traffic.core.Flight.after>`_,
+          `at() <#traffic.core.Flight.at>`_,
+          `before() <#traffic.core.Flight.before>`_,
+          `between() <#traffic.core.Flight.between>`_,
+          `first() <#traffic.core.Flight.first>`_,
+          `last() <#traffic.core.Flight.last>`_,
+          ...
+        - geometry related methods:
+          `airborne() <#traffic.core.Flight.airborne>`_,
+          `clip() <#traffic.core.Flight.clip>`_,
+          `compute_wind() <#traffic.core.Flight.compute_wind>`_,
+          `compute_xy() <#traffic.core.Flight.compute_xy>`_,
+          `inside_bbox() <#traffic.core.Flight.inside_bbox>`_,
+          `intersects() <#traffic.core.Flight.intersects>`_,
+          `project_shape() <#traffic.core.Flight.project_shape>`_,
+          `simplify() <#traffic.core.Flight.simplify>`_,
+          ...
+        - filtering and resampling methods:
+          `comet() <#traffic.core.Flight.comet>`_,
+          `filter() <#traffic.core.Flight.filter>`_,
+          `resample() <#traffic.core.Flight.resample>`_,
+          ...
+        - visualisation methods:
+          `encode() <#traffic.core.Flight.encode>`_,
+          `geoencode() <#traffic.core.Flight.geoencode>`_,
+          `plot() <#traffic.core.Flight.plot>`_,
+          `plot_time() <#traffic.core.Flight.plot_time>`_,
+          ...
+
+    .. note::
+        Sample flights are provided for testing purposes in module
+        ``traffic.data.samples``
+
     """
 
     __slots__ = ("data",)
 
+    # --- Special methods ---
+
     def __add__(self, other) -> "Traffic":
-        """Concatenates two Flight objects in the same Traffic structure."""
+        """
+        As Traffic is thought as a collection of Flights, the sum of two Flight
+        objects returns a Traffic object
+        """
         # keep import here to avoid recursion
         from .traffic import Traffic  # noqa: F811
 
@@ -88,33 +147,43 @@ class Flight(GeographyMixin, ShapelyMixin):
         return Traffic.from_flights([self, other])
 
     def __radd__(self, other) -> "Traffic":
-        """Concatenates two Flight objects in the same Traffic structure."""
+        """
+        As Traffic is thought as a collection of Flights, the sum of two Flight
+        objects returns a Traffic object
+        """
         return self + other
 
     def __len__(self) -> int:
+        """Number of samples associated to a trajectory.
+
+        The basic behaviour is to return the number of lines in the underlying
+        DataFrame. However in some cases, as positions may be wrongly repeated
+        in some database systems (e.g. OpenSky Impala shell), we take the
+        `last_position` field into account for counting the number of unique
+        detected positions.
+
+        Note that when an aircraft is onground, `last_position` is a more
+        relevant criterion than (`latitude`, `longitude`) since a grounded
+        aircraft may be repeatedly emitting the same position.
+        """
+
         if "last_position" in self.data.columns:
             return self.data.drop_duplicates("last_position").shape[0]
         else:
             return self.data.shape[0]
 
     def _info_html(self) -> str:
-        title = f"<b>Flight {self.callsign}</b>"
-        if self.number is not None:
-            title += f" / {self.number}"
-        if self.flight_id is not None:
-            title += f" ({self.flight_id})"
-
+        title = f"<b>Flight {self.title}</b>"
         title += "<ul>"
         title += f"<li><b>aircraft:</b> {self.aircraft}</li>"
         if self.origin is not None:
-            title += f"<li><b>origin:</b> {self.origin} ({self.start})</li>"
+            title += f"<li><b>from:</b> {self.origin} ({self.start})</li>"
         else:
-            title += f"<li><b>origin:</b> {self.start}</li>"
+            title += f"<li><b>from:</b> {self.start}</li>"
         if self.destination is not None:
-            title += f"<li><b>destination:</b> {self.destination} "
-            title += f"({self.stop})</li>"
+            title += f"<li><b>to:</b> {self.destination} ({self.stop})</li>"
         else:
-            title += f"<li><b>destination:</b> {self.stop}</li>"
+            title += f"<li><b>to:</b> {self.stop}</li>"
         title += "</ul>"
         return title
 
@@ -124,11 +193,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         return title + no_wrap_div.format(self._repr_svg_())
 
     def __repr__(self) -> str:
-        output = f"Flight {self.callsign}"
-        if self.number is not None:
-            output += f" / {self.number}"
-        if self.flight_id is not None:
-            output += f" ({self.flight_id})"
+        output = f"Flight {self.title}"
         output += f"\naircraft: {self.aircraft}"
         if self.origin is not None:
             output += f"\norigin: {self.origin} ({self.start})"
@@ -140,123 +205,859 @@ class Flight(GeographyMixin, ShapelyMixin):
             output += f"\ndestination: {self.stop}"
         return output
 
+    def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:
+        return self if test(self) else None
+
+    # --- Iterators ---
+
     @property
     def timestamp(self) -> Iterator[pd.Timestamp]:
-        """Iterates the timestamp column of the DataFrame."""
         yield from self.data.timestamp
 
-    # https://github.com/python/mypy/issues/1362
-    @property  # type: ignore
-    @lru_cache()
-    def start(self) -> pd.Timestamp:
-        """Returns the minimum timestamp value of the DataFrame."""
-        start = self.data.timestamp.min()
-        self.data = self.data.assign(start=start)
-        return start
+    @property
+    def coords(self) -> Iterator[Tuple[float, float, float]]:
+        data = self.data.query("longitude == longitude")
+        yield from zip(data["longitude"], data["latitude"], data["altitude"])
 
-    # https://github.com/python/mypy/issues/1362
-    @property  # type: ignore
-    @lru_cache()
-    def stop(self) -> pd.Timestamp:
-        stop = self.data.timestamp.max()
-        self.data = self.data.assign(stop=stop)
-        return stop
+    def coords4d(
+        self, delta_t: bool = False
+    ) -> Iterator[Tuple[float, float, float, float]]:
+        data = self.data.query("longitude == longitude")
+        if delta_t:
+            time = (data.timestamp - data.timestamp.min()).dt.total_seconds()
+        else:
+            time = data["timestamp"]
+
+        yield from zip(
+            time, data["longitude"], data["latitude"], data["altitude"]
+        )
+
+    @property
+    def xy_time(self) -> Iterator[Tuple[float, float, float]]:
+        self_filtered = self.query("longitude == longitude")
+        iterator = iter(zip(self_filtered.coords, self_filtered.timestamp))
+        while True:
+            next_ = next(iterator, None)
+            if next_ is None:
+                return
+            coords, time = next_
+            yield (coords[0], coords[1], time.to_pydatetime().timestamp())
+
+    # --- Properties (and alike) ---
 
     @lru_cache()
     def min(self, feature: str):
+        """Returns the minimum value of given feature."""
         return self.data[feature].min()
 
     @lru_cache()
     def max(self, feature: str):
+        """Returns the maximum value of given feature."""
         return self.data[feature].max()
 
     @property
-    def callsign(self) -> Union[str, Set[str], None]:
-        """Returns the unique callsign value(s) of the DataFrame."""
-        if "callsign" not in self.data.columns:
-            return None
-        tmp = set(self.data.callsign)
-        if len(tmp) == 1:
-            return tmp.pop()
-        logging.warn("Several callsigns for one flight, consider splitting")
-        return tmp
+    def start(self) -> pd.Timestamp:
+        """Returns the minimum value of timestamp."""
+        return self.min("timestamp")
 
     @property
-    def number(self) -> Optional[Union[str, Set[str]]]:
-        """Returns the unique number value(s) of the DataFrame."""
-        if "number" not in self.data.columns:
+    def stop(self) -> pd.Timestamp:
+        """Returns the maximum value of timestamp."""
+        return self.max("timestamp")
+
+    @property
+    def duration(self) -> pd.Timedelta:
+        """Returns the duration of the flight."""
+        return self.stop - self.start
+
+    def _get_unique(
+        self, field: str, warn: bool = True
+    ) -> Union[str, Set[str], None]:
+        if field not in self.data.columns:
             return None
-        if all(self.data.number.isna()):
-            return None
-        tmp = set(self.data.number)
+        tmp = self.data[field].unique()
         if len(tmp) == 1:
-            return tmp.pop()
-        logging.warn("Several numbers for one flight, consider splitting")
-        return tmp
+            return tmp[0]
+        if warn:
+            logging.warn(f"Several {field}s for one flight, consider splitting")
+        return set(tmp)
+
+    @property
+    def callsign(self) -> Union[str, Set[str], None]:
+        """Returns the unique callsign value(s) associated to the Flight.
+
+        A callsign is an identifier sent by an aircraft during its flight. It
+        may be associated with the registration of an aircraft, its mission or
+        with a route for a commercial aircraft.
+        """
+        return self._get_unique("callsign")
+
+    @property
+    def number(self) -> Union[str, Set[str], None]:
+        """Returns the unique number value(s) associated to the Flight.
+
+        This field is reserved for the commercial number of the flight, prefixed
+        by the two letter code of the airline.
+        For instance, AFR292 is the callsign and AF292 is the flight number.
+
+        Callsigns are often more complicated as they are designed to limit
+        confusion on the radio: hence DLH02X can be the callsign associated
+        to flight number LH1100.
+        """
+        return self._get_unique("number")
+
+    @property
+    def flight_id(self) -> Union[str, Set[str], None]:
+        """Returns the unique flight_id value(s) of the DataFrame.
+
+        Neither the icao24 (the aircraft) nor the callsign (the route) is a
+        reliable way to identify trajectories. You can either use an external
+        source of data to assign flight ids (for example DDR files by
+        Eurocontrol, identifiers by FlightRadar24, etc.) or assign a flight_id
+        by yourself (see ``Flight.assign_id(name: str)`` method).
+
+        The ``Traffic.assign_id()`` method uses a heuristic based on the
+        timestamps associated to callsign/icao24 pairs to automatically assign a
+        ``flight_id`` and separate flights.
+
+        """
+        return self._get_unique("flight_id")
+
+    @property
+    def title(self) -> str:
+        title = str(self.callsign)
+        number = self.number
+        flight_id = self.flight_id
+
+        if number is not None:
+            title += f" / {number}"
+
+        if flight_id is not None:
+            title += f" ({flight_id})"
+
+        return title
+
+    @property
+    def origin(self) -> Union[str, Set[str], None]:
+        """Returns the unique origin value(s),
+        None if not available in the DataFrame.
+
+        The origin airport is usually represented as a ICAO or a IATA code.
+
+        The ICAO code of an airport is represented by 4 letters (e.g. EHAM for
+        Amsterdam Schiphol International Airport) and the IATA code is
+        represented by 3 letters and more familiar to the public (e.g. AMS for
+        Amsterdam)
+
+        """
+        return self._get_unique("origin")
+
+    @property
+    def destination(self) -> Union[str, Set[str], None]:
+        """Returns the unique destination value(s),
+        None if not available in the DataFrame.
+
+        The destination airport is usually represented as a ICAO or a IATA code.
+
+        The ICAO code of an airport is represented by 4 letters (e.g. EHAM for
+        Amsterdam Schiphol International Airport) and the IATA code is
+        represented by 3 letters and more familiar to the public (e.g. AMS for
+        Amsterdam)
+
+        """
+        return self._get_unique("destination")
+
+    @property
+    def squawk(self) -> Set[str]:
+        """Returns all the unique squawk values in the trajectory.
+
+        A squawk code is a four-digit number assigned by ATC and set on the
+        transponder. Some squawk codes are reserved for specific situations and
+        emergencies, e.g. 7700 for general emergency, 7600 for radio failure or
+        7500 for hijacking.
+        """
+        return set(self.data.squawk.unique())
 
     @property
     def icao24(self) -> Union[str, Set[str], None]:
         """Returns the unique icao24 value(s) of the DataFrame.
 
-        icao24 is a unique identifier associated to a transponder.
+        icao24 (ICAO 24-bit address) is a unique identifier associated to a
+        transponder. These identifiers correlate to the aircraft registration.
+
+        For example icao24 code 'ac82ec' is associated to 'N905NA'.
         """
-        if "icao24" not in self.data.columns:
-            return None
-        tmp = set(self.data.icao24)
-        if len(tmp) == 1:
-            return tmp.pop()
-        logging.warn("Several icao24 for one flight, consider splitting")
-        return tmp
+        return self._get_unique("icao24")
 
     @property
-    def flight_id(self) -> Optional[str]:
-        """Returns the unique flight_id value(s) of the DataFrame.
+    def registration(self) -> Optional[str]:
+        from ..data import aircraft
 
-        If you know how to split flights, you may want to append such a column
-        in the DataFrame.
-        """
-        if "flight_id" not in self.data.columns:
+        if not isinstance(self.icao24, str):
             return None
-        tmp = set(self.data.flight_id)
-        if len(tmp) != 1:
-            logging.warn("Several ids for one flight, consider splitting")
-        return tmp.pop()
+        res = aircraft[self.icao24]
+        res = res.query("registration == registration")
+        if res.shape[0] == 1:
+            return res.iloc[0].registration
+        return None
 
     @property
-    def squawk(self) -> Set[str]:
-        """Returns all the unique squawk values in the trajectory."""
-        return set(self.data.squawk.ffill().bfill())
+    def typecode(self) -> Optional[str]:
+        from ..data import aircraft
+
+        if not isinstance(self.icao24, str):
+            return None
+        res = aircraft[self.icao24]
+        res = res.query("typecode == typecode")
+        if res.shape[0] == 1:
+            return res.iloc[0].typecode
+        return None
 
     @property
-    def origin(self) -> Optional[Union[str, Set[str]]]:
-        """Returns the unique origin value(s) of the DataFrame.
-
-        The origin airport is mostly represented as a ICAO or a IATA code.
-        """
-        if "origin" not in self.data.columns:
+    def aircraft(self) -> Optional[str]:
+        if not isinstance(self.icao24, str):
             return None
-        tmp = set(self.data.origin)
-        if len(tmp) == 1:
-            return tmp.pop()
-        logging.warn("Several origins for one flight, consider splitting")
-        return tmp
+
+        res = str(self.icao24)
+        registration = self.registration
+        typecode = self.typecode
+
+        if registration is not None:
+            res += f" / {registration}"
+
+        if typecode is not None:
+            res += f" ({typecode})"
+
+        return res
+
+    # -- Time handling, splitting, interpolation and resampling --
+
+    def first(self, **kwargs) -> "Flight":
+        """Returns the first n days, hours, minutes or seconds of the Flight.
+
+        The elements passed as kwargs as passed as is to the datetime.timedelta
+        constructor.
+
+        Example usage:
+
+        >>> flight.first(minutes=10)
+        """
+        delta = timedelta(**kwargs)
+        bound = self.start + delta  # noqa: F841 => used in the query
+        # full call is necessary to keep @bound as a local variable
+        return self.__class__(self.data.query("timestamp < @bound"))
+
+    def last(self, **kwargs) -> "Flight":
+        """Returns the last n days, hours, minutes or seconds of the Flight.
+
+        The elements passed as kwargs as passed as is to the datetime.timedelta
+        constructor.
+
+        Example usage:
+
+        >>> flight.last(minutes=10)
+        """
+        delta = timedelta(**kwargs)
+        bound = self.stop - delta  # noqa: F841 => used in the query
+        # full call is necessary to keep @bound as a local variable
+        return self.__class__(self.data.query("timestamp > @bound"))
+
+    def before(self, time: timelike) -> "Flight":
+        """Returns the part of the trajectory flown before a given timestamp.
+
+        - ``time`` can be passed as a string, an epoch, a Python datetime, or
+          a Pandas timestamp.
+        """
+        return self.between(self.start, time)
+
+    def after(self, time: timelike) -> "Flight":
+        """Returns the part of the trajectory flown after a given timestamp.
+
+        - ``time`` can be passed as a string, an epoch, a Python datetime, or
+          a Pandas timestamp.
+        """
+        return self.between(time, self.stop)
+
+    def between(self, start: timelike, stop: time_or_delta) -> "Flight":
+        """Returns the part of the trajectory flown between start and stop.
+
+        - ``start`` and ``stop`` can be passed as a string, an epoch, a Python
+          datetime, or a Pandas timestamp.
+        - ``stop`` can also be passed as a timedelta.
+
+        """
+
+        start = to_datetime(start)
+        if isinstance(stop, timedelta):
+            stop = start + stop
+        else:
+            stop = to_datetime(stop)
+
+        # full call is necessary to keep @start and @stop as local variables
+        # return self.query('@start < timestamp < @stop')  => not valid
+        return self.__class__(self.data.query("@start < timestamp < @stop"))
+
+    def at(self, time: Optional[timelike] = None) -> Optional[Position]:
+        """Returns the position in the trajectory at a given timestamp.
+
+        - ``time`` can be passed as a string, an epoch, a Python datetime, or
+          a Pandas timestamp.
+
+        - If no time is passed (default), the last know position is returned.
+        - If no position is available at the given timestamp, None is returned.
+          If you expect a position at any price, consider `Flight.resample
+          <#traffic.core.Flight.resample>`_
+
+        """
+
+        if time is None:
+            return Position(self.data.ffill().iloc[-1])
+
+        index = to_datetime(time)
+        df = self.data.set_index("timestamp")
+        if index not in df.index:
+            id_ = getattr(self, "flight_id", self.callsign)
+            logging.warn(f"No index {index} for flight {id_}")
+            return None
+        return Position(df.loc[index])
+
+    @overload
+    def split(self, value: int, unit: str) -> Iterator["Flight"]:
+        ...
+
+    @overload  # noqa: F811
+    def split(self, value: str, unit: None = None) -> Iterator["Flight"]:
+        ...
+
+    def split(  # noqa: F811
+        self, value: Union[int, str] = 10, unit: Optional[str] = None
+    ) -> Iterator["Flight"]:
+        """Iterates on legs of a Flight based on the distrution of timestamps.
+
+        By default, the method stops a flight and yields a new one after a gap
+        of 10 minutes without data.
+
+        The length of the gap (here 10 minutes) can be expressed:
+
+        - in the NumPy style: ``Flight.split(10, 'm')`` (see
+          ``np.timedelta64``);
+        - in the pandas style: ``Flight.split('10T')`` (see ``pd.Timedelta``)
+
+        """
+        if type(value) == int and unit is None:
+            # default value is 10 m
+            unit = "m"
+
+        for data in _split(self.data, value, unit):
+            yield self.__class__(data)
+
+    def _handle_last_position(self) -> "Flight":
+        # The following is True for all data coming from the Impala shell.
+        # The following is an attempt to fix #7
+        # Note the fun/fast way to produce 1 or trigger NaN (division by zero)
+        data = self.data.sort_values("timestamp")
+        if "last_position" in self.data.columns:
+            data = (
+                data.assign(
+                    _mark=lambda df: df.last_position
+                    != df.shift(1).last_position
+                )
+                .assign(
+                    latitude=lambda df: df.latitude * df._mark / df._mark,
+                    longitude=lambda df: df.longitude * df._mark / df._mark,
+                    altitude=lambda df: df.altitude * df._mark / df._mark,
+                )
+                .drop(columns="_mark")
+            )
+
+        return self.__class__(data)
+
+    def resample(self, rule: Union[str, int] = "1s") -> "Flight":
+        """Resample the trajectory at a given frequency or number of points.
+
+        If the rule is a string representing a pandas `time series frequency
+        <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliases>`_
+        is passed, then the data is resampled along the timestamp axis, then
+        interpolated.
+
+        If the rule is an integer, the trajectory is resampled to the given
+        number of evenly distributed points per trajectory.
+        """
+
+        if isinstance(rule, str):
+            data = (
+                self._handle_last_position()
+                .data.assign(start=self.start, stop=self.stop)
+                .set_index("timestamp")
+                .resample(rule)
+                .first()  # better performance than min() for duplicate index
+                .interpolate()
+                .reset_index()
+                .fillna(method="pad")
+            )
+        elif isinstance(rule, int):
+            data = (
+                self._handle_last_position()
+                .data.set_index("timestamp")
+                .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
+                .reset_index()
+            )
+        else:
+            raise TypeError("rule must be a str or an int")
+
+        return self.__class__(data)
+
+    def filter(
+        self,
+        strategy: Callable[
+            [pd.DataFrame], pd.DataFrame
+        ] = lambda x: x.bfill().ffill(),
+        **kwargs,
+    ) -> "Flight":
+
+        """Filters the trajectory given features with a median filter.
+
+        The method applies a median filter on each feature of the DataFrame.
+        A default kernel size is applied for a number of features (resp.
+        latitude, longitude, altitude, track, groundspeed, IAS, TAS) but other
+        kernel values may be passed as kwargs parameters.
+
+        Filtered values are replaced by NaN values. A strategy may be applied to
+        fill the Nan values, by default a forward/backward fill. Other
+        strategies may be passed, for instance *do nothing*: ``lambda x: x``; or
+        *interpolate*: ``lambda x: x.interpolate()``.
+
+        .. note::
+            This method if often more efficient when applied several times with
+            different kernel values.
+
+            >>> # this cascade of filters appears to work well on altitude
+            >>> flight.resample().resample(altitude=53)
+        """
+
+        ks_dict = {
+            "altitude": 17,
+            "track": 5,
+            "groundspeed": 5,
+            "longitude": 15,
+            "latitude": 15,
+            "IAS": 5,
+            "TAS": 5,
+            **kwargs,
+        }
+
+        def cascaded_filters(
+            df, feature: str, kernel_size: int, filt=scipy.signal.medfilt
+        ) -> pd.DataFrame:
+            """Produces a mask for data to be discarded.
+
+            The filtering applies a low pass filter (e.g medfilt) to a signal
+            and measures the difference between the raw and the filtered signal.
+
+            The average of the squared differences is then produced (sq_eps) and
+            used as a threashold for filtering.
+
+            Errors may raised if the kernel_size is too large
+            """
+            y = df[feature].astype(float)
+            y_m = filt(y, kernel_size)
+            sq_eps = (y - y_m) ** 2
+            return pd.DataFrame(
+                {
+                    "timestamp": df["timestamp"],
+                    "y": y,
+                    "y_m": y_m,
+                    "sq_eps": sq_eps,
+                    "sigma": np.sqrt(filt(sq_eps, kernel_size)),
+                },
+                index=df.index,
+            )
+
+        new_data = self.data.sort_values(by="timestamp").copy()
+
+        if len(kwargs) == 0:
+            features = [
+                cast(str, feature)
+                for feature in self.data.columns
+                if self.data[feature].dtype
+                in [np.float32, np.float64, np.int32, np.int64]
+            ]
+        else:
+            features = list(kwargs.keys())
+
+        kernels_size = [0 for _ in features]
+        for idx, feature in enumerate(features):
+            kernels_size[idx] = ks_dict.get(feature, 17)
+
+        for feat, ks in zip(features, kernels_size):
+
+            # Prepare each flight for the filtering
+            df = cascaded_filters(new_data[["timestamp", feat]], feat, ks)
+
+            # Decision to accept/reject for all data points in the time series
+            new_data.loc[df.sq_eps > df.sigma, feat] = None
+
+        return self.__class__(strategy(new_data))
+
+    def comet(self, **kwargs) -> "Flight":
+        """Computes a comet for a trajectory.
+
+        The method uses the last position of a trajectory (method `at()
+        #traffic.core.Flight.at`_) and uses the ``track`` (in degrees),
+        ``groundspeed`` (in knots) and ``vertical_rate`` (in ft/min) values to
+        interpolate the trajectory in a straight line.
+
+        The elements passed as kwargs as passed as is to the datetime.timedelta
+        constructor.
+
+        Example usage:
+
+        >>> flight.comet(minutes=10)
+        >>> flight.before("2018-12-24 23:55").comet(minutes=10)  # Merry XMas!
+
+        """
+
+        last_line = self.at()
+        if last_line is None:
+            raise ValueError("Unknown data for this flight")
+        window = self.last(seconds=20)
+        delta = timedelta(**kwargs)
+
+        new_gs = window.data.groundspeed.mean()
+        new_vr = window.data.vertical_rate.mean()
+
+        new_lat, new_lon, _ = geo.destination(
+            last_line.latitude,
+            last_line.longitude,
+            last_line.track,
+            new_gs * delta.total_seconds() * 1852 / 3600,
+        )
+
+        new_alt = last_line.altitude + new_vr * delta.total_seconds() / 60
+
+        return Flight(
+            pd.DataFrame.from_records(
+                [
+                    last_line,
+                    pd.Series(
+                        {
+                            "timestamp": last_line.timestamp + delta,
+                            "latitude": new_lat,
+                            "longitude": new_lon,
+                            "altitude": new_alt,
+                            "groundspeed": new_gs,
+                            "vertical_rate": new_vr,
+                        }
+                    ),
+                ]
+            ).ffill()
+        )
+
+    # -- Air traffic management --
+
+    def assign_id(
+        self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0
+    ) -> "Flight":
+        """Assigns a flight_id to a Flight.
+
+        This method is more generally used by the corresponding Traffic and
+        LazyTraffic methods but works fine on Flight as well.
+        """
+        return self.assign(flight_id=name.format(self=self, idx=idx))
+
+    def airborne(self) -> "Flight":
+        """Returns the airborne part of the Flight.
+
+        The airborne part is determined by an ``onground`` flag or null values
+        in the altitude column.
+        """
+        if "onground" in self.data.columns and self.data.onground.dtype == bool:
+            return self.query("not onground and altitude == altitude")
+        else:
+            return self.query("altitude == altitude")
+
+    def compute_wind(self) -> "Flight":
+        """Computes the wind triangle for each timestamp.
+
+        This method requires ``groundspeed``, ``track``, true airspeed
+        (``TAS``), and ``heading`` features. The groundspeed and the track angle
+        are usually available in ADS-B messages; the heading and the true
+        airspeed may be decoded in EHS messages.
+
+        .. note::
+            Check the `query_ehs() <#traffic.core.Flight.query_ehs>`_ method to
+            find a way to enrich your flight with such features. Note that this
+            data is not necessarily available depending on the location.
+        """
+        df = self.data
+        return self.assign(
+            wind_u=df.groundspeed * np.sin(np.radians(df.track))
+            - df.TAS * np.sin(np.radians(df.heading)),
+            wind_v=df.groundspeed * np.cos(np.radians(df.track))
+            - df.TAS * np.cos(np.radians(df.heading)),
+        )
+
+    def closest_point(self, points: Union[List[PointMixin], PointMixin]):
+        # TODO refactor/rethink return type and documentation
+        if not isinstance(points, list):
+            points = [points]
+        return min(closest_point(self.data, point) for point in points)
+
+    def guess_takeoff_airport(self) -> DistanceAirport:
+        # TODO refactor/rethink return type and documentation
+        data = self.data.sort_values("timestamp")
+        return guess_airport(data.iloc[0])
+
+    def guess_landing_airport(self) -> DistanceAirport:
+        # TODO refactor/rethink return type and documentation
+        data = self.data.sort_values("timestamp")
+        return guess_airport(data.iloc[-1])
+
+    def guess_landing_runway(
+        self, airport: Union[None, str, "Airport"] = None
+    ) -> DistancePointTrajectory:
+        # TODO refactor/rethink return type and documentation
+
+        if airport is None:
+            airport = self.guess_landing_airport().airport
+        if isinstance(airport, str):
+            from ..data import airports
+
+            airport = airports[airport]
+
+        all_runways: Dict[str, PointMixin] = dict()
+        for p in airport.runways.list:  # type: ignore
+            all_runways[p.name] = p
+
+        subset = (
+            self.airborne()
+            .query("vertical_rate < 0")
+            .last(minutes=10)
+            .resample()
+        )
+        candidate = subset.closest_point(list(all_runways.values()))
+
+        avg_track = subset.data.track.tail(10).mean()
+        rwy_bearing = all_runways[candidate.name].bearing  # type: ignore
+
+        if abs(avg_track - rwy_bearing) > 20:
+            logging.warn(
+                f"({self.flight_id}) Candidate runway "
+                f"{candidate.name} is not consistent "
+                f"with average track {avg_track}."
+            )
+
+        return candidate
+
+    # -- Distances --
+
+    @overload
+    def distance(self, other: PointMixin) -> "Flight":
+        ...
+
+    @overload  # noqa: F811
+    def distance(self, other: "Flight") -> pd.DataFrame:
+        ...
+
+    def distance(  # noqa: F811
+        self, other: Union["Flight", PointMixin]
+    ) -> Union["Flight", pd.DataFrame]:
+
+        if isinstance(other, PointMixin):
+            size = len(self)
+            return self.assign(
+                distance=geo.distance(
+                    self.data.latitude.values,
+                    self.data.longitude.values,
+                    other.latitude * np.ones(size),
+                    other.longitude * np.ones(size),
+                )
+                / 1852  # in nautical miles
+            )
+
+        start = max(self.airborne().start, other.airborne().start)
+        stop = min(self.airborne().stop, other.airborne().stop)
+        f1, f2 = (self.between(start, stop), other.between(start, stop))
+
+        cols = ["timestamp", "latitude", "longitude", "altitude"]
+        cols += ["icao24", "callsign"]
+        if "flight_id" in f1.data.columns:
+            cols.append("flight_id")
+        table = f1.data[cols].merge(f2.data[cols], on="timestamp")
+
+        return table.assign(
+            lateral=geo.distance(
+                table.latitude_x.values,
+                table.longitude_x.values,
+                table.latitude_y.values,
+                table.longitude_y.values,
+            )
+            / 1852,  # in nautical miles
+            vertical=(table.altitude_x - table.altitude_y).abs(),
+        )
+
+    def cumulative_distance(
+        self, compute_groundspeed: bool = False
+    ) -> "Flight":
+
+        """ Enrich the structure with new ``cumdist`` column computed from
+        latitude and longitude columns.
+
+        The first ``cumdist`` value is 0, then distances are computed (in
+        **nautical miles**) and summed between consecutive positions. The last
+        value is the total length of the trajectory.
+
+        When the ``compute_groundspeed`` flag is set to True, an additional
+        ``compute_gs`` is also added. This value can be compared with the
+        decoded ``groundspeed`` value in ADSB messages.
+
+        """
+
+        coords = self.data[["timestamp", "latitude", "longitude"]]
+        delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
+        delta_1 = delta.iloc[1:]
+        d = geo.distance(
+            delta_1.latitude.values,
+            delta_1.longitude.values,
+            (delta_1.latitude + delta_1.latitude_1).values,
+            (delta_1.longitude + delta_1.longitude_1).values,
+        )
+
+        res = self.assign(cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant"))
+
+        if compute_groundspeed:
+            gs = d / delta.timestamp_1.dt.total_seconds() * 3600 / 1852
+            res = res.assign(compute_gs=np.pad(gs, (1, 0), "constant"))
+        return res
+
+    # -- Geometry operations --
 
     @property
-    def destination(self) -> Optional[Union[str, Set[str]]]:
-        """Returns the unique destination value(s) of the DataFrame.
-
-        The destination airport is mostly represented as a ICAO or a IATA code.
-        """
-        if "destination" not in self.data.columns:
+    def linestring(self) -> Optional[LineString]:
+        coords = list(self.coords)
+        if len(coords) < 2:
             return None
-        tmp = set(self.data.destination)
-        if len(tmp) == 1:
-            return tmp.pop()
-        logging.warn("Several destinations for one flight, consider splitting")
-        return tmp
+        return LineString(coords)
+
+    @property
+    def shape(self) -> Optional[LineString]:
+        return self.linestring
+
+    @property
+    def point(self) -> Optional[Position]:
+        return self.at()
+
+    def simplify(
+        self,
+        tolerance: float,
+        altitude: Optional[str] = None,
+        z_factor: float = 3.048,
+        return_mask: bool = False,
+    ) -> Union[np.ndarray, "Flight"]:
+        """Simplifies a trajectory with Douglas-Peucker algorithm.
+
+        The method uses latitude and longitude, projects the trajectory to a
+        conformal projection and applies the algorithm. If x and y features are
+        already present in the DataFrame (after a call to `compute_xy()
+        <#traffic.core.Flight.compute_xy>`_ for instance) then this projection
+        is taken into account.
+
+        - By default, a 2D version is called, unless you pass a column name for
+          ``altitude``.
+        - You may scale the z-axis for more relevance (``z_factor``). The
+          default value works well in most situations.
+
+        The method returns a Flight unless you specify ``return_mask=True``.
+        """
+
+        if "x" in self.data.columns and "y" in self.data.columns:
+            kwargs = dict(x="x", y="y")
+        else:
+            kwargs = dict(lat="latitude", lon="longitude")
+
+        mask = douglas_peucker(
+            df=self.data,
+            tolerance=tolerance,
+            z=altitude,
+            z_factor=z_factor,
+            **kwargs,
+        )
+
+        if return_mask:
+            return mask
+        else:
+            return self.__class__(self.data.loc[mask])
+
+    def intersects(self, shape: Union["Airspace", base.BaseGeometry]) -> bool:
+        # implemented and monkey-patched in airspace.py
+        # given here for consistency in types
+        ...
+
+    def clip(
+        self, shape: Union["Airspace", base.BaseGeometry]
+    ) -> Optional["Flight"]:
+        """Clips the trajectory to a given shape.
+
+        For a shapely Geometry, the first time of entry and the last time of
+        exit are first computed before returning the part of the trajectory
+        between the two timestamps.
+
+        Most of the time, aircraft do not repeatedly come out and in an
+        airspace, but computation errors may sometimes give this impression.
+        As a consequence, the clipped trajectory may have points outside the
+        shape.
+
+        .. warning::
+            Altitudes are not taken into account.
+
+        """
+
+        linestring = LineString(list(self.airborne().xy_time))
+        if not isinstance(shape, base.BaseGeometry):
+            shape = shape.flatten()
+
+        intersection = linestring.intersection(shape)
+
+        if intersection.is_empty:
+            return None
+
+        if isinstance(intersection, LineString):
+            times = list(
+                datetime.fromtimestamp(t, timezone.utc)
+                for t in np.stack(intersection.coords)[:, 2]
+            )
+            return self.between(min(times), max(times))
+
+        def _clip_generator() -> Generator[
+            Tuple[pd.Timestamp, pd.Timestamp], None, None
+        ]:
+            for segment in intersection:
+                times = list(
+                    datetime.fromtimestamp(t, timezone.utc)
+                    for t in np.stack(segment.coords)[:, 2]
+                )
+                yield min(times), max(times)
+
+        times = list(_clip_generator())
+        return self.between(min(t for t, _ in times), max(t for _, t in times))
+
+    # -- OpenSky specific methods --
 
     def query_opensky(self) -> Optional["Flight"]:
-        """Return the equivalent Flight from OpenSky History."""
+        """Returns data from the same Flight as stored in OpenSky database.
+
+        This may be useful if you write your own parser for data from a
+        different channel. The method will use the ``callsign`` and ``icao24``
+        attributes to build a request for current Flight in the OpenSky Network
+        database.
+
+        Returns None if no data is found.
+
+        .. note::
+            Read more about access to the OpenSky Network database `here
+            <opensky_usage.html>`_
+        """
+
         from ..data import opensky
 
         query_params = {
@@ -273,16 +1074,23 @@ class Flight(GeographyMixin, ShapelyMixin):
         failure_mode: str = "warning",
         progressbar: Optional[Callable[[Iterable], Iterable]] = None,
     ) -> "Flight":
-        """Extend data with extra columns from EHS messages.
+        """Extends data with extra columns from EHS messages.
 
-        By default, raw messages are requested from the OpenSky Impala server.
+        By default, raw messages are requested from the OpenSky Network
+        database.
 
-        Making a lot of small requests can be very inefficient and may look
-        like a denial of service. If you get the raw messages using a different
-        channel, you can provide the resulting dataframe as a parameter.
+        .. warning::
+            Making a lot of small requests can be very inefficient and may look
+            like a denial of service. If you get the raw messages using a
+            different channel, you can provide the resulting dataframe as a
+            parameter.
 
-        The data parameter expect three colmuns: icao24, rawmsg and mintime, in
-        conformance with the OpenSky API.
+        The data parameter expect three columns: ``icao24``, ``rawmsg`` and
+        ``mintime``, in conformance with the OpenSky API.
+
+        .. note::
+            Read more about access to the OpenSky Network database `here
+            <opensky_usage.html>`_
         """
         from ..data import opensky, ModeS_Decoder
 
@@ -389,531 +1197,27 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         return flight.sort_values("timestamp")
 
-    def compute_wind(self) -> "Flight":
-        df = self.data
-        return self.assign(
-            wind_u=df.groundspeed * np.sin(np.radians(df.track))
-            - df.TAS * np.sin(np.radians(df.heading)),
-            wind_v=df.groundspeed * np.cos(np.radians(df.track))
-            - df.TAS * np.cos(np.radians(df.heading)),
-        )
-
-    def guess_takeoff_airport(self) -> DistanceAirport:
-        data = self.data.sort_values("timestamp")
-        return guess_airport(data.iloc[0])
-
-    def guess_landing_airport(self) -> DistanceAirport:
-        data = self.data.sort_values("timestamp")
-        return guess_airport(data.iloc[-1])
-
-    def guess_landing_runway(
-        self, airport: Union[None, str, "Airport"] = None
-    ) -> DistancePointTrajectory:
-
-        if airport is None:
-            airport = self.guess_landing_airport().airport
-        if isinstance(airport, str):
-            from ..data import airports
-
-            airport = airports[airport]
-
-        all_runways: Dict[str, PointMixin] = dict()
-        for p in airport.runways.list:  # type: ignore
-            all_runways[p.name] = p
-
-        subset = (
-            self.airborne()
-            .query("vertical_rate < 0")
-            .last(minutes=10)
-            .resample()
-        )
-        candidate = subset.closest_point(list(all_runways.values()))
-
-        avg_track = subset.data.track.tail(10).mean()
-        rwy_bearing = all_runways[candidate.name].bearing  # type: ignore
-
-        if abs(avg_track - rwy_bearing) > 20:
-            logging.warn(
-                f"({self.flight_id}) Candidate runway "
-                f"{candidate.name} is not consistent "
-                f"with average track {avg_track}."
-            )
-
-        return candidate
-
-    def closest_point(self, points: Union[List[PointMixin], PointMixin]):
-        if not isinstance(points, list):
-            points = [points]
-        return min(closest_point(self.data, point) for point in points)
-
-    @property
-    def aircraft(self) -> Optional[str]:
-        if not isinstance(self.icao24, str):
-            return None
-        from ..data import aircraft as acdb
-
-        ac = acdb[self.icao24]
-        if ac.query('registration != ""').shape[0] == 0:
-            return self.icao24
-        else:
-            # TODO return Aircraft and redirect this to __repr__
-            return (
-                f"{self.icao24} / {ac.iloc[0].registration} "
-                f"({ac.iloc[0].typecode})"
-            )
-
-    @property
-    def registration(self) -> Optional[str]:
-        from ..data import aircraft as acdb
-
-        if not isinstance(self.icao24, str):
-            return None
-        ac = acdb[self.icao24]
-        if ac.query('registration != ""').shape[0] == 0:
-            return None
-        return ac.iloc[0].registration
-
-    def coords4d(
-        self, delta_t: bool = False
-    ) -> Iterator[Tuple[float, float, float, float]]:
-        data = self.data[self.data.longitude.notnull()]
-        if delta_t:
-            time = (
-                data["timestamp"] - data["timestamp"].min()
-            ).dt.total_seconds()
-        else:
-            time = data["timestamp"]
-
-        yield from zip(
-            time, data["longitude"], data["latitude"], data["altitude"]
-        )
-
-    @property
-    def coords(self) -> Iterator[Tuple[float, float, float]]:
-        """Iterates on longitudes, latitudes and altitudes.
-
-        """
-        data = self.data[self.data.longitude.notnull()]
-        yield from zip(data["longitude"], data["latitude"], data["altitude"])
-
-    @property
-    def xy_time(self) -> Iterator[Tuple[float, float, float]]:
-        """Iterates on longitudes, latitudes and timestamps."""
-        iterator = iter(zip(self.coords, self.timestamp))
-        while True:
-            next_ = next(iterator, None)
-            if next_ is None:
-                return
-            coords, time = next_
-            yield (coords[0], coords[1], time.to_pydatetime().timestamp())
-
-    @property
-    def linestring(self) -> Optional[LineString]:
-        coords = list(self.coords)
-        if len(coords) < 2:
-            return None
-        return LineString(coords)
-
-    @property
-    def shape(self) -> Optional[LineString]:
-        return self.linestring
-
-    @property
-    def point(self) -> Optional[PointMixin]:
-        positions = self.data.query("latitude == latitude")
-        if len(positions) > 0:
-            x = positions.iloc[-1]
-            point = PointMixin()
-            point.latitude = x.latitude
-            point.longitude = x.longitude
-            point.altitude = x.altitude
-            point.timestamp = x.timestamp
-            return point
-        return None
-
-    def airborne(self) -> "Flight":
-        """Returns the airborne part of the Flight.
-
-        The airborne part is determined by null values on the altitude column.
-        """
-        if "onground" in self.data.columns and self.data.onground.dtype == bool:
-            return self.query("not onground and altitude == altitude")
-        else:
-            return self.query("altitude == altitude")
-
-    def first(self, **kwargs) -> "Flight":
-        delta = timedelta(**kwargs)
-        bound = (  # noqa: F841 => used in the query
-            cast(pd.Timestamp, self.start) + delta
-        )
-        return self.__class__(self.data.query("timestamp < @bound"))
-
-    def last(self, **kwargs) -> "Flight":
-        delta = timedelta(**kwargs)
-        bound = (  # noqa: F841 => used in the query
-            cast(pd.Timestamp, self.stop) - delta
-        )
-        return self.__class__(self.data.query("timestamp > @bound"))
-
-    def filter(
-        self,
-        strategy: Callable[
-            [pd.DataFrame], pd.DataFrame
-        ] = lambda x: x.bfill().ffill(),
-        **kwargs,
-    ) -> "Flight":
-
-        ks_dict = {
-            "altitude": 17,
-            "track": 5,
-            "groundspeed": 5,
-            "longitude": 15,
-            "latitude": 15,
-            "IAS": 5,
-            "TAS": 5,
-            **kwargs,
-        }
-
-        def cascaded_filters(
-            df, feature: str, kernel_size: int, filt=scipy.signal.medfilt
-        ) -> pd.DataFrame:
-            """Produces a mask for data to be discarded.
-
-            The filtering applies a low pass filter (e.g medfilt) to a signal
-            and measures the difference between the raw and the filtered signal.
-
-            The average of the squared differences is then produced (sq_eps) and
-            used as a threashold for filtering.
-
-            Errors may raised if the kernel_size is too large
-            """
-            y = df[feature].astype(float)
-            y_m = filt(y, kernel_size)
-            sq_eps = (y - y_m) ** 2
-            return pd.DataFrame(
-                {
-                    "timestamp": df["timestamp"],
-                    "y": y,
-                    "y_m": y_m,
-                    "sq_eps": sq_eps,
-                    "sigma": np.sqrt(filt(sq_eps, kernel_size)),
-                },
-                index=df.index,
-            )
-
-        new_data = self.data.sort_values(by="timestamp").copy()
-
-        if len(kwargs) == 0:
-            features = [
-                cast(str, feature)
-                for feature in self.data.columns
-                if self.data[feature].dtype
-                in [np.float32, np.float64, np.int32, np.int64]
-            ]
-        else:
-            features = list(kwargs.keys())
-
-        kernels_size = [0 for _ in features]
-        for idx, feature in enumerate(features):
-            kernels_size[idx] = ks_dict.get(feature, 17)
-
-        for feat, ks in zip(features, kernels_size):
-
-            # Prepare each flight for the filtering
-            df = cascaded_filters(new_data[["timestamp", feat]], feat, ks)
-
-            # Decision to accept/reject for all data points in the time series
-            new_data.loc[df.sq_eps > df.sigma, feat] = None
-
-        return self.__class__(strategy(new_data))
-
-    @overload
-    def distance(self, other: PointMixin) -> "Flight":
-        ...
-
-    @overload  # noqa: F811
-    def distance(self, other: "Flight") -> pd.DataFrame:
-        ...
-
-    def distance(self, other):  # noqa: F811
-
-        if isinstance(other, PointMixin):
-            size = len(self)
-            return self.assign(
-                distance=geo.distance(
-                    self.data.latitude.values,
-                    self.data.longitude.values,
-                    other.lat * np.ones(size),
-                    other.lon * np.ones(size),
-                )
-                / 1852
-            )
-
-        start = max(self.airborne().start, other.airborne().start)
-        stop = min(self.airborne().stop, other.airborne().stop)
-        f1, f2 = (self.between(start, stop), other.between(start, stop))
-
-        cols = ["timestamp", "latitude", "longitude", "altitude"]
-        cols += ["icao24", "callsign"]
-        if "flight_id" in f1.data.columns:
-            cols.append("flight_id")
-        table = f1.data[cols].merge(f2.data[cols], on="timestamp")
-
-        return table.assign(
-            lateral=geo.distance(
-                table.latitude_x.values,
-                table.longitude_x.values,
-                table.latitude_y.values,
-                table.longitude_y.values,
-            )
-            / 1852,
-            vertical=(table.altitude_x - table.altitude_y).abs(),
-        )
-
-    def cumulative_distance(
-        self, compute_groundspeed: bool = False
-    ) -> "Flight":
-
-        coords = self.data[["timestamp", "latitude", "longitude"]]
-        delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
-        delta_1 = delta.iloc[1:]
-        d = geo.distance(
-            delta_1.latitude.values,
-            delta_1.longitude.values,
-            (delta_1.latitude + delta_1.latitude_1).values,
-            (delta_1.longitude + delta_1.longitude_1).values,
-        )
-
-        res = self.assign(cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant"))
-
-        if compute_groundspeed:
-            res = res.assign(
-                compute_gs=np.pad(
-                    d / delta.timestamp_1.dt.total_seconds() * 3600 / 1852,
-                    (1, 0),
-                    "constant",
-                )
-            )
-        return res
-
-    # -- Interpolation and resampling --
-
-    @overload
-    def split(self, value: int, unit: str) -> Iterator["Flight"]:
-        ...
-
-    @overload  # noqa: F811
-    def split(self, value: str, unit: None = None) -> Iterator["Flight"]:
-        ...
-
-    def split(self, value=10, unit=None):  # noqa: F811
-        """Splits Flights in several legs.
-
-        By default, Flights are split if no value is given during 10 minutes.
-        """
-        if type(value) == int and unit is None:
-            # default value is 10 m
-            unit = "m"
-
-        for data in _split(self.data, value, unit):
-            yield self.__class__(data)
-
-    def _handle_last_position(self) -> "Flight":
-        # The following is True for all data coming from the Impala shell.
-        # The following is an attempt to fix #7
-        # Note the fun/fast way to produce 1 or trigger NaN (division by zero)
-        data = self.data.sort_values("timestamp")
-        if "last_position" in self.data.columns:
-            data = (
-                data.assign(
-                    _mark=lambda df: df.last_position
-                    != df.shift(1).last_position
-                )
-                .assign(
-                    latitude=lambda df: df.latitude * df._mark / df._mark,
-                    longitude=lambda df: df.longitude * df._mark / df._mark,
-                    altitude=lambda df: df.altitude * df._mark / df._mark,
-                )
-                .drop(columns="_mark")
-            )
-
-        return self.__class__(data)
-
-    def resample(self, rule: Union[str, int] = "1s") -> "Flight":
-        """Resamples a Flight at a one point per second rate."""
-
-        if isinstance(rule, str):
-            data = (
-                self._handle_last_position()
-                .data.assign(start=self.start, stop=self.stop)
-                .set_index("timestamp")
-                .resample(rule)
-                .first()  # better performance than min() for duplicate index
-                .interpolate()
-                .reset_index()
-                .fillna(method="pad")
-            )
-        elif isinstance(rule, int):
-            data = (
-                self._handle_last_position()
-                .data.set_index("timestamp")
-                .asfreq(
-                    (self.stop - self.start) / (rule - 1),  # type: ignore
-                    method="nearest",
-                )
-                .reset_index()
-            )
-        else:
-            raise TypeError("rule must be a str or an int")
-
-        return self.__class__(data)
-
-    def comet(self, **kwargs) -> "Flight":
-
-        last_line = self.at()
-        if last_line is None:
-            raise ValueError("Unknown data for this flight")
-        window = self.last(seconds=20)
-        delta = timedelta(**kwargs)
-
-        new_gs = window.data.groundspeed.mean()
-        new_vr = window.data.vertical_rate.mean()
-
-        new_lat, new_lon, _ = geo.destination(
-            last_line.latitude,
-            last_line.longitude,
-            last_line.track,
-            new_gs * delta.total_seconds() * 1852 / 3600,
-        )
-
-        new_alt = last_line.altitude + new_vr * delta.total_seconds() / 60
-
-        return Flight(
-            pd.DataFrame.from_records(
-                [
-                    last_line,
-                    pd.Series(
-                        {
-                            "timestamp": last_line.timestamp + delta,
-                            "latitude": new_lat,
-                            "longitude": new_lon,
-                            "altitude": new_alt,
-                            "groundspeed": new_gs,
-                            "vertical_rate": new_vr,
-                        }
-                    ),
-                ]
-            ).ffill()
-        )
-
-    def at(self, time: Optional[timelike] = None) -> Optional[Position]:
-
-        if time is None:
-            return Position(self.data.ffill().iloc[-1])
-
-        index = to_datetime(time)
-        df = self.data.set_index("timestamp")
-        if index not in df.index:
-            id_ = getattr(self, "flight_id", self.callsign)
-            logging.warn(f"No index {index} for flight {id_}")
-            return None
-        return Position(df.loc[index])
-
-    def before(self, ts: timelike) -> "Flight":
-        return self.between(self.start, ts)
-
-    def after(self, ts: timelike) -> "Flight":
-        return self.between(ts, self.stop)
-
-    def between(self, start: timelike, stop: time_or_delta) -> "Flight":
-        start = to_datetime(start)
-        if isinstance(stop, timedelta):
-            stop = start + stop
-        else:
-            stop = to_datetime(stop)
-
-        # full call is necessary to keep @start and @stop as local variables
-        # return self.query('@start < timestamp < @stop')  => not valid
-        return self.__class__(self.data.query("@start < timestamp < @stop"))
-
-    # -- Geometry operations --
-
-    def simplify(
-        self,
-        tolerance: float,
-        altitude: Optional[str] = None,
-        z_factor: float = 3.048,
-        return_type: Type[Mask] = Type["Flight"],
-    ) -> Mask:
-        """Simplifies a trajectory with Douglas-Peucker algorithm.
-
-        The method uses latitude and longitude, projects the trajectory to a
-        conformal projection and applies the algorithm. By default, a 2D version
-        is called, unless you pass a column name for altitude (z parameter). You
-        may scale the z-axis for more relevance (z_factor); the default value
-        works well in most situations.
-
-        The method returns a Flight unless you specify a np.ndarray[bool] as
-        return_type for getting a mask.
-        """
-        # returns a mask
-        mask = douglas_peucker(
-            df=self.data,
-            tolerance=tolerance,
-            lat="latitude",
-            lon="longitude",
-            z=altitude,
-            z_factor=z_factor,
-        )
-        if return_type == Type["Flight"]:
-            return self.__class__(self.data.loc[mask])
-        else:
-            return mask
-
-    def extent(self) -> Tuple[float, float, float, float]:
-        return (
-            self.data.longitude.min() - 0.1,
-            self.data.longitude.max() + 0.1,
-            self.data.latitude.min() - 0.1,
-            self.data.latitude.max() + 0.1,
-        )
-
-    def intersects(self, airspace: "Airspace") -> bool:
-        # implemented and monkey-patched in airspace.py
-        # given here for consistency in types
-        raise NotImplementedError
-
-    def clip(self, shape: base.BaseGeometry) -> Optional["Flight"]:
-
-        linestring = LineString(list(self.airborne().xy_time))
-        intersection = linestring.intersection(shape)
-
-        if intersection.is_empty:
-            return None
-
-        if isinstance(intersection, LineString):
-            times = list(
-                datetime.fromtimestamp(t, timezone.utc)
-                for t in np.stack(intersection.coords)[:, 2]
-            )
-            return self.between(min(times), max(times))
-
-        def _clip_generator() -> Generator[
-            Tuple[pd.Timestamp, pd.Timestamp], None, None
-        ]:
-            for segment in intersection:
-                times = list(
-                    datetime.fromtimestamp(t, timezone.utc)
-                    for t in np.stack(segment.coords)[:, 2]
-                )
-                yield min(times), max(times)
-
-        times = list(_clip_generator())
-        return self.between(min(t for t, _ in times), max(t for _, t in times))
-
     # -- Visualisation --
 
     def plot(self, ax: GeoAxesSubplot, **kwargs) -> List[Artist]:
+        """Plots the trajectory on a Matplotlib axis.
+
+        The Flight supports Cartopy axis as well with automatic projection. If
+        no projection is provided, a default `PlateCarree
+        <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree>`_
+        is applied.
+
+        Example usage:
+
+        >>> from traffic.drawing import Mercator
+        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
+        >>> flight.plot(ax, alpha=.5)
+
+        .. note::
+            See also `geoencode() <#traffic.core.Flight.geoencode>`_ for the
+            altair equivalent.
+
+        """
 
         if "projection" in ax.__dict__ and "transform" not in kwargs:
             kwargs["transform"] = PlateCarree()
@@ -922,6 +1226,26 @@ class Flight(GeographyMixin, ShapelyMixin):
         return []
 
     def encode(self, y: Union[str, List[str], alt.Y], **kwargs) -> alt.Chart:
+        """Plots the given features according to time.
+
+        The method ensures:
+
+        - only non-NaN data are displayed (no gap in the plot);
+        - the timestamp is naively converted to UTC if not localized.
+
+        Example usage:
+
+        >>> flight.encode('altitude')
+        >>> # or with several comparable features
+        >>> flight.encode(['groundspeed', 'IAS', 'TAS'])
+
+        .. warning::
+            No twin axes are available in altair/Vega charts.
+
+        .. note::
+            See also `plot_time() <#traffic.core.Flight.plot_time>`_ for the
+            Matplotlib equivalent.
+        """
         feature_list = ["timestamp"]
         alt_y: Optional[alt.Y] = None
         if "flight_id" in self.data.columns:
@@ -972,6 +1296,29 @@ class Flight(GeographyMixin, ShapelyMixin):
         secondary_y: Union[None, str, List[str]] = None,
         **kwargs,
     ) -> None:
+        """Plots the given features according to time.
+
+        The method ensures:
+
+        - only non-NaN data are displayed (no gap in the plot);
+        - the timestamp is naively converted to UTC if not localized.
+
+        Example usage:
+
+        >>> ax = plt.axes()
+        >>> # most simple version
+        >>> flight.plot(ax, 'altitude')
+        >>> # or with several comparable features and twin axes
+        >>> flight.plot(
+        ...     ax, ['altitude', 'groundspeed, 'IAS', 'TAS'],
+        ...     secondary_y=['altitude']
+        ... )
+
+        .. note::
+            See also `encode() <#traffic.core.Flight.encode>`_ for the altair
+            equivalent.
+
+        """
         if isinstance(y, str):
             y = [y]
         if isinstance(secondary_y, str):

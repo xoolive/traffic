@@ -4,49 +4,71 @@ import pandas as pd
 import pyproj
 
 
-def _douglas_peucker_rec(x: np.ndarray, y: np.ndarray,
-                         mask: np.ndarray, tolerance: float) -> None:
+def _douglas_peucker_rec(
+    x: np.ndarray, y: np.ndarray, mask: np.ndarray, tolerance: float
+) -> None:
     l = len(x)
-    if l < 3: return
+    if l < 3:
+        return
 
-    v = np.array([[y[len(x)-1]-y[0]], [x[0] - x[len(x) -1]]])
-    d = np.abs(np.dot(np.dstack([x[1:-1]-x[0], y[1:-1]-y[0]])[0],
-                      v/np.sqrt(np.sum(v*v))))
+    v = np.array([[y[len(x) - 1] - y[0]], [x[0] - x[len(x) - 1]]])
+    d = np.abs(
+        np.dot(
+            np.dstack([x[1:-1] - x[0], y[1:-1] - y[0]])[0],
+            v / np.sqrt(np.sum(v * v)),
+        )
+    )
 
     if np.max(d) < tolerance:
-        mask[np.s_[1:l-1]] = 0
+        mask[np.s_[1 : l - 1]] = 0
         return
 
     arg = np.argmax(d)
-    _douglas_peucker_rec(x[:arg+2], y[:arg+2], mask[:arg+2], tolerance)
-    _douglas_peucker_rec(x[arg+1:], y[arg+1:], mask[arg+1:], tolerance)
+    _douglas_peucker_rec(x[: arg + 2], y[: arg + 2], mask[: arg + 2], tolerance)
+    _douglas_peucker_rec(x[arg + 1 :], y[arg + 1 :], mask[arg + 1 :], tolerance)
 
 
-def _douglas_peucker_rec_3d(x: np.ndarray, y: np.ndarray, z: np.ndarray,
-                            mask: np.ndarray, tolerance: float) -> None:
+def _douglas_peucker_rec_3d(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    mask: np.ndarray,
+    tolerance: float,
+) -> None:
     l = len(x)
-    if l < 3: return
+    if l < 3:
+        return
 
     start = np.array([x[0], y[0], z[0]])
     end = np.array([x[-1], y[-1], z[-1]])
     point = np.dstack([x[1:], y[1:], z[1:]])[0] - start
-    d = np.cross(point, (start-end)/np.linalg.norm(start-end))
-    d = np.sqrt(np.sum(d*d, axis=1))
+    d = np.cross(point, (start - end) / np.linalg.norm(start - end))
+    d = np.sqrt(np.sum(d * d, axis=1))
 
     if np.max(d) < tolerance:
-        mask[np.s_[1:l-1]] = 0
+        mask[np.s_[1 : l - 1]] = 0
         return
 
     arg = np.argmax(d)
-    _douglas_peucker_rec_3d(x[:arg+2], y[:arg+2], z[:arg+2],
-                            mask[:arg+2], tolerance)
-    _douglas_peucker_rec_3d(x[arg+1:], y[arg+1:], z[arg+1:],
-                            mask[arg+1:], tolerance)
+    _douglas_peucker_rec_3d(
+        x[: arg + 2], y[: arg + 2], z[: arg + 2], mask[: arg + 2], tolerance
+    )
+    _douglas_peucker_rec_3d(
+        x[arg + 1 :], y[arg + 1 :], z[arg + 1 :], mask[arg + 1 :], tolerance
+    )
 
 
-def douglas_peucker(*args, df: pd.DataFrame=None, tolerance: float,
-                    x='x', y='y', z=None, z_factor: float = 3.048,
-                    lat=None, lon=None) -> np.ndarray:
+def douglas_peucker(
+    *args,
+    df: pd.DataFrame = None,
+    tolerance: float,
+    x="x",
+    y="y",
+    z=None,
+    z_factor: float = 3.048,
+    lat=None,
+    lon=None,
+) -> np.ndarray:
     """Ramer-Douglas-Peucker algorithm for 2D/3D trajectories.
 
     Simplify a trajectory by keeping the points further away from the straight
@@ -84,15 +106,20 @@ def douglas_peucker(*args, df: pd.DataFrame=None, tolerance: float,
         raise ValueError("tolerance must be a positive float")
 
     if df is not None and isinstance(lat, str) and isinstance(lon, str):
-        lat, lon = df[lat].values, df[lon].values
+        lat, lon = df[lat], df[lon]
     if df is not None and lat is not None and lon is not None:
-        lat, lon = np.array(lat), np.array(lon)
+        projection = pyproj.Proj(
+            proj="lcc",
+            ellps="WGS84",
+            lat_1=lat.min(),
+            lat_2=lat.max(),
+            lat_0=lat.mean(),
+            lon_0=lon.mean(),
+        )
+
         x, y = pyproj.transform(
-            pyproj.Proj(init='EPSG:4326'),
-            pyproj.Proj(proj='lcc',
-                        lat0=lat.mean(), lon0=lon.mean(),
-                        lat1=lat.min(), lat2=lat.max(),
-                        ), lon, lat)
+            pyproj.Proj(init="EPSG:4326"), projection, lon.values, lat.values
+        )
     else:
         if df is not None:
             x, y = df[x].values, df[y].values

@@ -362,7 +362,7 @@ class MainScreen(QMainWindow):
                 self.identifier_select.addItem(callsign)
 
         callsigns = cast(Set[str], filtered.callsigns)
-        self.map_plot.default_plot(self._tview.subset(callsigns))
+        self.map_plot.default_plot(self._tview[callsigns])
         self.set_float_columns()
 
     @dont_crash

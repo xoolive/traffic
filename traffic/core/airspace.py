@@ -4,7 +4,7 @@ import json
 from collections import defaultdict
 from pathlib import Path
 from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple,
-                    Union)
+                    TypeVar, Union)
 
 import numpy as np
 from cartopy.crs import PlateCarree
@@ -14,7 +14,8 @@ from shapely.geometry import Polygon, base, mapping, shape
 from shapely.ops import cascaded_union
 
 from . import Flight, Traffic
-from .mixins import PointMixin, ShapelyMixin
+from .lazy import lazy_evaluation
+from .mixins import GeographyMixin, PointMixin, ShapelyMixin  # noqa: F401
 
 # fmt: on
 
@@ -215,9 +216,15 @@ def cascaded_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
 # -- Methods below are placed here because of possible circular imports --
 
 
-def _traffic_inside_bbox(
-    traffic: Traffic, bounds: Union[Airspace, Tuple[float, ...]]
-) -> Traffic:
+T = TypeVar("T", bound="GeographyMixin")
+
+
+def inside_bbox(
+    geography: T,
+    bounds: Union[
+        Airspace, base.BaseGeometry, Tuple[float, float, float, float]
+    ],
+) -> T:
 
     if isinstance(bounds, Airspace):
         bounds = bounds.flatten().bounds
@@ -227,26 +234,28 @@ def _traffic_inside_bbox(
 
     west, south, east, north = bounds
 
-    # operator precedence is ok with & and 'and' in numexpr
-    query = "{0} <= longitude <= {2} & {1} <= latitude <= {3}"
-    query = query.format(west, south, east, north)
+    query = "{0} <= longitude <= {2} and {1} <= latitude <= {3}"
+    query = query.format(*bounds)
 
-    data = traffic.data.query(query)
-
-    return traffic.__class__(data)
+    return geography.query(query)
 
 
-def _traffic_intersects(traffic: Traffic, airspace: Airspace) -> Traffic:
-    return Traffic.from_flights(
-        flight for flight in traffic if flight.intersects(airspace)
-    )
+def _flight_intersects(
+    flight: Flight, shape: Union[Airspace, base.BaseGeometry]
+) -> bool:
+    """Returns True if the trajectory is inside the given shape.
 
+    - If an Airspace is passed, the 3D trajectory is compared to each layers
+      constituting the airspace, with corresponding altitude limits.
+    - If a shapely Geometry is passed, the 2D trajectory alone is considered.
 
-def _flight_intersects(flight: Flight, airspace: Airspace) -> bool:
-    for layer in airspace:
-        linestring = flight.airborne().linestring
-        if linestring is None:
-            return False
+    """
+    linestring = flight.airborne().linestring
+    if linestring is None:
+        return False
+    if isinstance(shape, base.BaseGeometry):
+        return not linestring.intersection(shape).is_empty
+    for layer in shape:
         ix = linestring.intersection(layer.polygon)
         if not ix.is_empty:
             if isinstance(ix, base.BaseMultipartGeometry):
@@ -267,6 +276,7 @@ def _flight_intersects(flight: Flight, airspace: Airspace) -> bool:
 
 # -- The ugly monkey-patching --
 
-setattr(Traffic, "inside_bbox", _traffic_inside_bbox)
-setattr(Traffic, "intersects", _traffic_intersects)
+setattr(Flight, "inside_bbox", inside_bbox)
+setattr(Traffic, "inside_bbox", lazy_evaluation(default=True)(inside_bbox))
+
 setattr(Flight, "intersects", _flight_intersects)

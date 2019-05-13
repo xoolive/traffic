@@ -1,6 +1,5 @@
 import warnings
-from datetime import datetime
-from functools import lru_cache, partial
+from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Type, TypeVar, Union
 
@@ -32,6 +31,26 @@ class DataFrameMixin(object):
     def from_file(
         cls: Type[T], filename: Union[Path, str], **kwargs
     ) -> Optional[T]:
+        """Read data from various formats.
+
+        This class method dispatches the loading of data in various format to
+        the proper ``pandas.read_*`` method based on the extension of the
+        filename.
+
+        - .pkl and .pkl.gz dispatch to ``pandas.read_pickle``;
+        - .parquet and .parquet.gz dispatch to ``pandas.read_parquet``;
+        - .json and .json.gz dispatch to ``pandas.read_json``;
+        - .csv and .csv.gz dispatch to ``pandas.read_csv``;
+        - .h5 dispatch to ``pandas.read_hdf``.
+
+        Other extensions return ``None``.
+        Specific arguments may be passed to the underlying ``pandas.read_*``
+        method with the kwargs argument.
+
+        Example usage:
+
+        >>> t = Traffic.from_file("data/sample_opensky.pkl")
+        """
         path = Path(filename)
         if path.suffixes in [[".pkl"], [".pkl", ".gz"]]:
             return cls(pd.read_pickle(path, **kwargs))
@@ -59,45 +78,125 @@ class DataFrameMixin(object):
     # --- Redirected to pandas.DataFrame ---
 
     def to_pickle(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        """Exports to pickle format.
+
+        Options can be passed to ``pandas.to_pickle``
+        as args and kwargs arguments.
+
+        Read more about export formats in the `Exporting and Storing data
+        <./export.html>`_ section
+        """
         self.data.to_pickle(filename, *args, **kwargs)
 
     def to_csv(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        """Exports to pickle format.
+
+        Options can be passed to ``pandas.to_pickle``
+        as args and kwargs arguments.
+
+        Read more about export formats in the `Exporting and Storing data
+        <./export.html>`_ section
+        """
         self.data.to_csv(filename, *args, **kwargs)
 
     def to_hdf(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        """Exports to pickle format.
+
+        Options can be passed to ``pandas.to_pickle``
+        as args and kwargs arguments.
+
+        Read more about export formats in the `Exporting and Storing data
+        <./export.html>`_ section
+        """
         self.data.to_hdf(filename, *args, **kwargs)
 
     def to_json(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        """Exports to json format.
+
+        Options can be passed to ``pandas.to_json``
+        as args and kwargs arguments.
+
+        Read more about export formats in the `Exporting and Storing data
+        <./export.html>`_ section
+        """
         self.data.to_json(filename, *args, **kwargs)
 
     def to_parquet(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        """Exports to parquet format.
+
+        Options can be passed to ``pandas.to_parquet``
+        as args and kwargs arguments.
+
+        Read more about export formats in the `Exporting and Storing data
+        <./export.html>`_ section
+        """
         self.data.to_parquet(filename, *args, **kwargs)
 
     def to_excel(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        """Exports to Excel format.
+
+        Options can be passed to ``pandas.to_excel``
+        as args and kwargs arguments.
+
+        Read more about export formats in the `Exporting and Storing data
+        <./export.html>`_ section
+        """
         self.data.to_excel(filename, *args, **kwargs)
 
     def sort_values(self: T, key: str) -> T:
+        """
+        Applies the Pandas ``sort_values()`` method to the underlying pandas
+        DataFrame and get the result back in the same structure.
+        """
         return self.__class__(self.data.sort_values(key))
 
-    def query(self: T, query: str) -> T:
-        return self.__class__(self.data.query(query))
+    def query(self: T, query_str: str) -> T:
+        """
+        Applies the Pandas ``query()`` method to the underlying pandas
+        DataFrame and get the result back in the same structure.
+        """
+        return self.__class__(self.data.query(query_str))
 
     def drop(self: T, *args, **kwargs) -> T:
+        """
+        Applies the Pandas ``drop()`` method to the underlying pandas
+        DataFrame and get the result back in the same structure.
+        """
         return self.__class__(self.data.drop(*args, **kwargs))
 
     def rename(self: T, *args, **kwargs) -> T:
+        """
+        Applies the Pandas ``rename()`` method to the underlying pandas
+        DataFrame and get the result back in the same structure.
+        """
         return self.__class__(self.data.rename(*args, **kwargs))
 
     def pipe(self: T, func: Callable[..., T], *args, **kwargs) -> T:
+        """
+        Applies the Pandas ``pipe()`` method to the underlying pandas
+        DataFrame and get the result back in the same structure.
+        """
         return func(self, *args, **kwargs)
 
     def fillna(self: T, *args, **kwargs) -> T:
+        """
+        Applies the Pandas ``fillna()`` method to the underlying pandas
+        DataFrame and get the result back in the same structure.
+        """
         return self.__class__(self.data.fillna(*args, **kwargs))
 
     def groupby(self, *args, **kwargs):
+        """
+        Applies the Pandas ``groupby()`` method to the underlying pandas
+        DataFrame.
+        """
         return self.data.groupby(*args, **kwargs)
 
     def assign(self: T, *args, **kwargs) -> T:
+        """
+        Applies the Pandas ``assign()`` method to the underlying pandas
+        DataFrame and get the result back in the same structure.
+        """
         return self.__class__(self.data.assign(*args, **kwargs))
 
 
@@ -118,31 +217,38 @@ class ShapelyMixin(object):
 
     @property
     def bounds(self) -> Tuple[float, float, float, float]:
-        """Returns the bounds of the shape.
+        """Returns the bounds of the (bounding box of the) shape.
         Bounds are given in the following order in the origin crs:
-        west, south, east, north
+        (west, south, east, north)
         """
         return self.shape.bounds
 
     @property
     def extent(self) -> Tuple[float, float, float, float]:
-        """Returns the extent of the shape.
+        """Returns the extent of the (bounding box of the) shape.
         Extent is given in the following order in the origin crs:
-        west, east, south, north
+        (west, east, south, north)
 
-        This method is convenient for the ax.set_extent method
+        .. note::
+            When plotting with Matplotlib and Cartopy, the extent property is
+            convenient in the following use case:
+
+            >>> ax.set_extent(obj.extent)
         """
         west, south, east, north = self.bounds
         return west, east, south, north
 
     @property
     def centroid(self) -> Point:
-        """Returns the centroid of the shape."""
+        """Returns the centroid of the shape as a shapely Point."""
         return self.shape.centroid
 
     @property
     def area(self) -> float:
-        """Returns the area of the shape, in square meters."""
+        """Returns the area of the shape, in square meters.
+        The shape is projected to an equivalent local projection before
+        computing a value.
+        """
         return self.project_shape().area
 
     # --- Representations ---
@@ -152,26 +258,37 @@ class ShapelyMixin(object):
         if project is not None:
             return project._repr_svg_()
 
-    def _repr_html_(self) -> str:
+    def _repr_html_(self):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return no_wrap_div.format(self._repr_svg_())
 
     def geojson(self):
+        """Returns the GeoJSON representation of the shape as a Dict.
+        The transformation is delegated to shapely ``mapping`` method.
+        """
         return mapping(self.shape)
 
     def geoencode(self) -> alt.Chart:
+        """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
+        shape to be composed in an interactive visualization.
+        """
         return alt.Chart(alt.Data(values=self.geojson())).mark_geoshape(
             stroke="#aaaaaa", strokeWidth=1
         )
 
-    @lru_cache()
     def project_shape(
         self, projection: Union[pyproj.Proj, crs.Projection, None] = None
     ) -> base.BaseGeometry:
-        """Projection for a decent representation of the structure.
+        """Returns a projected representation of the shape.
 
         By default, an equivalent projection is applied. Equivalent projections
         locally respect areas, which is convenient for the area attribute.
+
+        Other valid projections are available:
+
+        - as ``pyproj.Proj`` objects;
+        - as ``cartopy.crs.Projection`` objects.
+
         """
 
         if self.shape is None:
@@ -207,22 +324,26 @@ class GeographyMixin(DataFrameMixin):
     def compute_xy(
         self, projection: Union[pyproj.Proj, crs.Projection, None] = None
     ):
-        """Computes x and y columns from latitudes and longitudes.
+        """Enrich the structure with new x and y columns computed through a
+        projection of the latitude and longitude columns.
 
         The source projection is WGS84 (EPSG 4326).
         The default destination projection is a Lambert Conformal Conical
         projection centered on the data inside the dataframe.
 
-        For consistency reasons with pandas DataFrame, a new Traffic structure
-        is returned.
+        Other valid projections are available:
 
+        - as ``pyproj.Proj`` objects;
+        - as ``cartopy.crs.Projection`` objects.
         """
+
         if isinstance(projection, crs.Projection):
             projection = pyproj.Proj(projection.proj4_init)
 
         if projection is None:
             projection = pyproj.Proj(
                 proj="lcc",
+                ellps="WGS84",
                 lat_1=self.data.latitude.min(),
                 lat_2=self.data.latitude.max(),
                 lat_0=self.data.latitude.mean(),
@@ -239,6 +360,9 @@ class GeographyMixin(DataFrameMixin):
         return self.__class__(self.data.assign(x=x, y=y))
 
     def geoencode(self) -> alt.Chart:
+        """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
+        shape to be composed in an interactive visualization.
+        """
         return (
             alt.Chart(
                 self.data.query(
@@ -255,7 +379,7 @@ class PointMixin(object):
     latitude: float
     longitude: float
     altitude: float
-    timestamp: datetime
+    timestamp: pd.Timestamp
     name: str
 
     @property

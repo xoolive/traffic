@@ -1,6 +1,6 @@
 # A toolbox for manipulating and analysing air traffic data
 
-[![Documentation Status](https://readthedocs.org/projects/airtraffic/badge/?version=latest)](https://airtraffic.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.readthedocs.io/en/latest/?badge=latest)
 
 The traffic library helps working with common sources of air traffic data.
 
@@ -71,18 +71,18 @@ icao24 callsign
 3443d2 VLG7964      85
 ```
 
-More details in the [documentation](https://airtraffic.readthedocs.io/).
+More details in the [documentation](https://traffic-viz.readthedocs.io/).
 
 ## Graphical user interface
 
 A Qt application is provided for exploring and recording data.  
-More details in the [GUI section of the documentation](https://airtraffic.readthedocs.io/en/latest/gui.html).
+More details in the [GUI section of the documentation](https://traffic-viz.readthedocs.io/en/latest/gui.html).
 
 ![GUI screenshot](https://raw.githubusercontent.com/xoolive/traffic/master/docs/_static/gui_start.png)
 
 ## Documentation
 
-Documentation available [here](https://airtraffic.readthedocs.io/)
+Documentation available [here](https://traffic-viz.readthedocs.io/)
 
 ## Frequently asked questions
 

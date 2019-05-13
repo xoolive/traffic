@@ -29,8 +29,8 @@ sources of data.
    quickstart
    data
    export
+   core_structure
    gui
-   architecture
    scenarios
    publications
 

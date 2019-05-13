@@ -63,13 +63,11 @@ class Flight(FlightMixin):
     def aircraft(self) -> str:
         return self.data.iloc[0].aircraft
 
-    @property  # type: ignore
-    @lru_cache()
+    @property
     def start(self) -> pd.Timestamp:
         return min(self.timestamp)
 
-    @property  # type: ignore
-    @lru_cache()
+    @property
     def stop(self) -> pd.Timestamp:
         return max(self.timestamp)
 
@@ -346,7 +344,7 @@ class SO6(DataFrameMixin):
                 "callsign": f.callsign,
                 "origin": f.origin,
                 "destination": f.destination,
-                "duration": f.stop - f.start,  # type: ignore
+                "duration": f.stop - f.start,
             }
             cumul.append(info)
 

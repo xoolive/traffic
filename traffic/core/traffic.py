@@ -1,8 +1,6 @@
 # fmt: off
 
 import logging
-import warnings
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -13,10 +11,11 @@ import pandas as pd
 import pyproj
 from cartopy import crs
 from cartopy.mpl.geoaxes import GeoAxesSubplot
-from tqdm.autonotebook import tqdm
+from shapely.geometry import base
 
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
+from .lazy import lazy_evaluation
 from .mixins import GeographyMixin
 from .sv import StateVectors
 
@@ -29,11 +28,13 @@ if TYPE_CHECKING:
 # https://github.com/python/mypy/issues/2511
 TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
 
+# The thing is that Iterable[str] causes issue sometimes...
+IterStr = Union[List[str], Set[str]]
+
 
 class Traffic(GeographyMixin):
 
     __slots__ = ("data",)
-
     _parse_extension: Dict[str, Callable[..., pd.DataFrame]] = dict()
 
     @classmethod
@@ -107,66 +108,29 @@ class Traffic(GeographyMixin):
     def __getitem__(self, index: str) -> Optional[Flight]:
         ...
 
-    # TODO Iterable[str] would be more appropriate but it overlaps with str
     @overload  # noqa: F811
-    def __getitem__(
-        self, index: Union[List[str], Set[str]]
-    ) -> Optional["Traffic"]:
+    def __getitem__(self, index: IterStr) -> "Traffic":
         ...
 
     def __getitem__(self, index):  # noqa: F811
 
-        data = self.data  # should be useless except in some cornercase
-
         if not isinstance(index, str):
             logging.debug("Selecting flights from a list of identifiers")
-            subset = list(index)  # noqa: F841
+            subset = repr(list(index))
+            query_str = f"callsign in {subset} or icao24 in {subset}"
             if "flight_id" in self.data.columns:
-                return self.__class__(
-                    self.data.loc[self.data.flight_id.isin(subset)]
-                )
+                return self.query(f"flight_id in {subset} or " + query_str)
             else:
-                return self.__class__(
-                    self.data.loc[self.data.callsign.isin(subset)]
-                )
+                return self.query(query_str)
 
-        if self.flight_ids is not None:
-            data = data[data.flight_id == index]
-            if data.shape[0] > 0:
-                return Flight(data)
+        query_str = f"callsign == '{index}' or icao24 == '{index}'"
+        if "flight_id" in self.data.columns:
+            df = self.data.query(f"flight_id == '{index}' or " + query_str)
+        else:
+            df = self.data.query(query_str)
 
-        logging.debug("Fallbacking to icao24/callsign")
-
-        # if no such index as flight_id or no flight_id column
-        try:
-            # If the index can be interpreted as an hexa, it is most likely an
-            # icao24 address. However some callsigns may look like an icao24.
-            # Tie-breaker:
-            #     - if it starts by 0x, priority goes to the icao24;
-            #     - if it is in capital letters, priority goes to the callsign
-            value16 = int(index, 16)  # noqa: F841 (unused value16)
-            default_icao24 = True
-            if index.startswith("0x"):
-                index = index.lower()
-                logging.debug("Selecting an icao24")
-                data = self.data.loc[self.data.icao24 == index[2:]]
-                default_icao24 = False
-            if index.isupper():
-                logging.debug("Selecting a callsign")
-                data = self.data.loc[self.data.callsign == index]
-                if data.shape[0] > 0:
-                    default_icao24 = False
-            if default_icao24:
-                index = index.lower()
-                logging.debug("Selecting an icao24")
-                data = self.data.loc[self.data.icao24 == index]
-        except ValueError:
-            index = index.upper()
-            logging.debug("Selecting a callsign")
-            data = self.data.loc[self.data.callsign == index]
-
-        if data.shape[0] > 0:
-            return Flight(data)
+        if df.shape[0] > 0:
+            return Flight(df)
 
         return None
 
@@ -204,27 +168,89 @@ class Traffic(GeographyMixin):
         rep = f"<b>Traffic with {shape} identifiers</b>"
         return rep + styler._repr_html_()
 
-    def filter_if(self, criterion: Callable[[Flight], bool]) -> "Traffic":
-        return Traffic.from_flights(
-            flight for flight in self if criterion(flight)
-        )
+    # -- Methods for lazy evaluation, delegated to Flight --
 
-    def subset(self, callsigns: Iterable[str]) -> "Traffic":
-        warnings.warn("Use filter_if instead", DeprecationWarning)
-        if "flight_id" in self.data.columns:
-            return Traffic.from_flights(
-                flight
-                for flight in self
-                # should not be necessary but for type consistency
-                if flight.flight_id is not None
-                and flight.flight_id in callsigns
-            )
+    @lazy_evaluation()
+    def filter_if(self, *args, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def resample(self, rule: Union[str, int] = "1s"):
+        ...
+
+    @lazy_evaluation()
+    def filter(
+        self,
+        strategy: Callable[
+            [pd.DataFrame], pd.DataFrame
+        ] = lambda x: x.bfill().ffill(),
+        **kwargs,
+    ):
+        ...
+
+    @lazy_evaluation(idx_name="idx")
+    def assign_id(self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0):
+        ...
+
+    @lazy_evaluation()
+    def clip(self, shape: Union["Airspace", base.BaseGeometry]):
+        ...
+
+    @lazy_evaluation()
+    def intersects(self, shape: Union["Airspace", base.BaseGeometry]) -> bool:
+        ...
+
+    @lazy_evaluation()
+    def simplify(
+        self,
+        tolerance: float,
+        altitude: Optional[str] = None,
+        z_factor: float = 3.048,
+    ):
+        ...
+
+    # -- Methods with a Traffic implementation, otherwise delegated to Flight
+
+    @lazy_evaluation(default=True)
+    def before(self, ts: timelike) -> "Traffic":
+        return self.between(self.start_time, ts)
+
+    @lazy_evaluation(default=True)
+    def after(self, ts: timelike) -> "Traffic":
+        return self.between(ts, self.end_time)
+
+    @lazy_evaluation(default=True)
+    def between(self, before: timelike, after: time_or_delta) -> "Traffic":
+
+        before = to_datetime(before)
+
+        if isinstance(after, timedelta):
+            after = before + after
         else:
-            return Traffic.from_flights(
-                flight
-                for flight in self
-                if flight.callsign in callsigns  # type: ignore
-            )
+            after = to_datetime(after)
+
+        # full call is necessary to keep @before and @after as local variables
+        # return self.query('@before < timestamp < @after')  => not valid
+        return self.__class__(self.data.query("@before < timestamp < @after"))
+
+    @lazy_evaluation(default=True)
+    def airborne(self) -> "Traffic":
+        """Returns the airborne part of the Traffic.
+
+        The airborne part is determined by null values on the altitude column.
+        """
+        if "onground" in self.data.columns and self.data.onground.dtype == bool:
+            return self.query("not onground and altitude == altitude")
+        else:
+            return self.query("altitude == altitude")
+
+    def inside_bbox(
+        self, bounds: Union["Airspace", Tuple[float, ...]]
+    ) -> "Traffic":
+        # TODO
+        # implemented and monkey-patched in airspace.py
+        # given here for consistency in types
+        raise NotImplementedError
 
     # --- Properties ---
 
@@ -246,17 +272,27 @@ class Traffic(GeographyMixin):
     def callsigns(self) -> Set[str]:
         """Return only the most relevant callsigns"""
         sub = self.data.query("callsign == callsign")
-        return set(cs for cs in sub.callsign if len(cs) > 3 and " " not in cs)
+        return set(sub.callsign)
 
-    @property
+    # https://github.com/python/mypy/issues/1362
+    @property  # type: ignore
+    @lru_cache()
     def aircraft(self) -> Set[str]:
         return set(self.data.icao24)
 
-    @property
+    # https://github.com/python/mypy/issues/1362
+    @property  # type: ignore
+    @lru_cache()
     def flight_ids(self) -> Optional[Set[str]]:
         if "flight_id" in self.data.columns:
             return set(self.data.flight_id)
         return None
+
+    @property
+    def widget(self):
+        from ..drawing.ipywidgets import TrafficWidget
+
+        return TrafficWidget(self)
 
     # --- Easy work ---
 
@@ -266,7 +302,7 @@ class Traffic(GeographyMixin):
             list_flights = [
                 flight.at(time)
                 for flight in self
-                if flight.start <= time <= flight.stop  # type: ignore
+                if flight.start <= time <= flight.stop
             ]
         else:
             list_flights = [flight.at() for flight in self]
@@ -279,33 +315,6 @@ class Traffic(GeographyMixin):
             )
         )
 
-    def before(self, ts: timelike) -> "Traffic":
-        return self.between(self.start_time, ts)
-
-    def after(self, ts: timelike) -> "Traffic":
-        return self.between(ts, self.end_time)
-
-    def between(self, before: timelike, after: time_or_delta) -> "Traffic":
-        before = to_datetime(before)
-        if isinstance(after, timedelta):
-            after = before + after
-        else:
-            after = to_datetime(after)
-
-        # full call is necessary to keep @before and @after as local variables
-        # return self.query('@before < timestamp < @after')  => not valid
-        return self.__class__(self.data.query("@before < timestamp < @after"))
-
-    def airborne(self) -> "Traffic":
-        """Returns the airborne part of the Traffic.
-
-        The airborne part is determined by null values on the altitude column.
-        """
-        if "onground" in self.data.columns and self.data.onground.dtype == bool:
-            return self.query("not onground and altitude == altitude")
-        else:
-            return self.query("altitude == altitude")
-
     @lru_cache()
     def stats(self) -> pd.DataFrame:
         """Statistics about flights contained in the structure.
@@ -317,63 +326,6 @@ class Traffic(GeographyMixin):
             .count()
             .sort_values("timestamp", ascending=False)
             .rename(columns={"timestamp": "count"})
-        )
-
-    def clean_invalid(self, threshold: int = 10) -> "Traffic":
-        """Removes irrelevant data from the Traffic DataFrame.
-
-        Data that has been downloaded from the OpenSky Impala shell often
-        contains faulty data, esp. because of faulty callsigns (wrongly decoded?
-        faulty crc?) and of automatically repeated positions (see
-        `last_position`).
-
-        This methods is an attempt to automatically clean this data.
-
-        Data uncleaned could result in the following count of messages
-        associated to aircraft icao24 `02008b` which could be easily removed.
-
-                                   count
-            icao24  callsign
-            02008b  0  221         8
-                    2AM2R1         4
-                    2N D           1
-                    3DYCI          1
-                    3N    I8       1
-                    3Q G9 E        1
-                    6  V X         1
-                    [...]
-
-        """
-        if "last_position" not in self.data.columns:
-            return self
-        return self.__class__(
-            self.data.groupby(["icao24", "callsign"]).filter(
-                lambda x: x.drop_duplicates("last_position").count().max()
-                > threshold
-            )
-        )
-
-    def assign_id(self, clean_invalid: bool = True) -> "Traffic":
-        clean_traffic = self
-        if clean_invalid:
-            clean_traffic = self.clean_invalid()
-
-        if "flight_id" in self.data.columns:
-            return clean_traffic
-        return Traffic.from_flights(
-            flight.assign(flight_id=f"{flight.callsign}_{id_:>03}")
-            for id_, flight in enumerate(clean_traffic)
-        )
-
-    def filter(
-        self,
-        strategy: Callable[
-            [pd.DataFrame], pd.DataFrame
-        ] = lambda x: x.bfill().ffill(),
-        **kwargs,
-    ) -> "Traffic":
-        return Traffic.from_flights(
-            flight.filter(strategy, **kwargs) for flight in self
         )
 
     def plot(
@@ -389,44 +341,44 @@ class Traffic(GeographyMixin):
             if nb_flights is None or i < nb_flights:
                 flight.plot(ax, **kwargs)
 
-    @property
-    def widget(self):
-        from ..drawing.ipywidgets import TrafficWidget
-
-        return TrafficWidget(self)
-
-    def inside_bbox(
-        self, bounds: Union["Airspace", Tuple[float, ...]]
-    ) -> "Traffic":
-        # implemented and monkey-patched in airspace.py
-        # given here for consistency in types
-        raise NotImplementedError
-
-    def intersects(self, airspace: "Airspace") -> "Traffic":
-        # implemented and monkey-patched in airspace.py
-        # given here for consistency in types
-        raise NotImplementedError
-
     # --- Real work ---
 
-    def resample(
-        self, rule: Union[str, int] = "1s", max_workers: int = 4
-    ) -> "Traffic":
-        """Resamples all trajectories, flight by flight.
+    def clean_invalid(self, threshold: int = 10) -> "Traffic":
+        """Removes irrelevant data from the Traffic DataFrame.
 
-        `rule` defines the desired sample rate (default: 1s)
+        Data that has been downloaded from the OpenSky Impala shell often
+        contains faulty data, esp. because of faulty callsigns (wrongly decoded?
+        faulty crc?) and of automatically repeated positions (see
+        `last_position`).
+
+        This methods is an attempt to automatically clean this data.
+
+        Data uncleaned could result in the following count of messages
+        associated to aircraft icao24 `02008b` which could be easily removed.
+
+        >>>
+                                   count
+            icao24  callsign
+            02008b  0  221         8
+                    2AM2R1         4
+                    2N D           1
+                    3DYCI          1
+                    3N    I8       1
+                    3Q G9 E        1
+                    6  V X         1
+                    [...]
+
         """
 
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            cumul = []
-            tasks = {
-                executor.submit(flight.resample, rule): flight
-                for flight in self
-            }
-            for future in tqdm(as_completed(tasks), total=len(tasks)):
-                cumul.append(future.result())
+        if "last_position" not in self.data.columns:
+            return self
 
-        return self.__class__.from_flights(cumul)
+        return self.__class__(
+            self.data.groupby(["icao24", "callsign"]).filter(
+                lambda x: x.drop_duplicates("last_position").count().max()
+                > threshold
+            )
+        )
 
     def closest_point_of_approach(
         self,
@@ -440,24 +392,33 @@ class Traffic(GeographyMixin):
         Computes a CPA dataframe for all pairs of trajectories candidates for
         being separated by less than lateral_separation in vertical_separation.
 
-        In order to be computed efficiently, the method needs the following
-        parameters:
+        Parameters
+        ----------
 
-        - projection: a first filtering is applied on the bounding boxes of
-        trajectories, expressed in meters. You need to provide a decent
-        projection able to approximate distances by Euclide formula.
-        By default, EuroPP() projection is considered, but a non explicit
-        argument will raise a warning.
+        lateral_separation: float (in *meters*)
+            TODO
 
-        - round_t: an additional column will be added in the DataFrame to group
-        trajectories by relevant time frames. Distance computations will be
-        considered only between trajectories flown in the same time frame.
-        By default, the 'd' pandas freq parameter is considered, to group
-        trajectories by day, but other ways of splitting ('h') may be more
-        relevant and impact performance.
+        vertical_separation: float (in ft)
+            TODO
 
-        - max_workers: distance computations are spread over a given number of
-        processors.
+        projection: pyproj.Proj, crs.Projection, None
+            a first filtering is applied on the bounding boxes of trajectories,
+            expressed in meters. You need to provide a decent projection able to
+            approximate distances by Euclide formula. By default, EuroPP()
+            projection is considered, but a non explicit argument will raise a
+            warning.
+
+        round_t: str
+            an additional column will be added in the DataFrame to group
+            trajectories by relevant time frames. Distance computations will be
+            considered only between trajectories flown in the same time frame.
+            By default, the 'd' pandas freq parameter is considered, to group
+            trajectories by day, but other ways of splitting ('h') may be more
+            relevant and impact performance.
+
+        max_workers: int
+            distance computations are spread over a given number of
+            processors.
 
         """
 
