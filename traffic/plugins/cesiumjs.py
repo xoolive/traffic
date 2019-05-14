@@ -8,10 +8,9 @@ from typing import Any, Dict, Iterator, Optional, Union
 
 import pandas as pd
 
-from traffic.core import Flight, Traffic
-from traffic.core.time import timelike, to_datetime
-from traffic.data import SO6
-from traffic.plugins import PluginProvider
+from ..core import Flight, Traffic
+from ..core.time import timelike, to_datetime
+from ..data import SO6
 
 
 class _CZML_Params:
@@ -135,7 +134,6 @@ def to_czml(
     logging.info(f"Scenario file {filename} written")
 
 
-class CesiumJS(PluginProvider):
-    def load_plugin(self):
-        setattr(Traffic, "to_czml", to_czml)
-        setattr(SO6, "to_czml", to_czml)
+def _onload():
+    setattr(Traffic, "to_czml", to_czml)
+    setattr(SO6, "to_czml", to_czml)

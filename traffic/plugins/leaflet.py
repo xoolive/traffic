@@ -2,12 +2,11 @@ from typing import Any, List, Optional
 
 from ipyleaflet import Map, Marker, Polygon, Polyline
 
-from traffic.core import Airspace, Flight
-from traffic.core.mixins import PointMixin
-from traffic.plugins import PluginProvider
+from ..core import Airspace, Flight
+from ..core.mixins import PointMixin
 
 
-def flight_leaflet(flight: Flight, **kwargs) -> Optional[Polyline]:
+def flight_leaflet(flight: "Flight", **kwargs) -> Optional[Polyline]:
     shape = flight.shape
     if shape is None:
         return None
@@ -18,7 +17,7 @@ def flight_leaflet(flight: Flight, **kwargs) -> Optional[Polyline]:
     )
 
 
-def airspace_leaflet(airspace: Airspace, **kwargs) -> Polygon:
+def airspace_leaflet(airspace: "Airspace", **kwargs) -> Polygon:
     shape = airspace.flatten()
 
     kwargs = {**dict(weight=3), **kwargs}
@@ -34,7 +33,7 @@ def airspace_leaflet(airspace: Airspace, **kwargs) -> Polygon:
     return Polygon(locations=coords, **kwargs)
 
 
-def point_leaflet(point: PointMixin, **kwargs) -> Marker:
+def point_leaflet(point: "PointMixin", **kwargs) -> Marker:
 
     default = dict()
     if hasattr(point, "name"):
@@ -55,9 +54,8 @@ def map_add_layer(_map, elt, **kwargs):
     return _old_add_layer(_map, elt)
 
 
-class Leaflet(PluginProvider):
-    def load_plugin(self):
-        setattr(Flight, "leaflet", flight_leaflet)
-        setattr(Airspace, "leaflet", airspace_leaflet)
-        setattr(PointMixin, "leaflet", point_leaflet)
-        setattr(Map, "add_layer", map_add_layer)
+def _onload():
+    setattr(Flight, "leaflet", flight_leaflet)
+    setattr(Airspace, "leaflet", airspace_leaflet)
+    setattr(PointMixin, "leaflet", point_leaflet)
+    setattr(Map, "add_layer", map_add_layer)

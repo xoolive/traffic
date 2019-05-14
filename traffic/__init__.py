@@ -1,14 +1,13 @@
 import configparser
-import imp
-import inspect
+import importlib
 import logging
+import pkgutil
 import warnings
 from pathlib import Path
 
+import pkg_resources
 from appdirs import user_cache_dir, user_config_dir
 from tqdm import TqdmExperimentalWarning
-
-from .plugins import PluginProvider
 
 # Silence this warning about autonotebook mode for tqdm
 warnings.simplefilter("ignore", TqdmExperimentalWarning)
@@ -41,21 +40,30 @@ config.read(config_file.as_posix())
 # -- Plugin management --
 
 _selected = [
-    s.strip()
+    s.strip().lower()
     for s in config.get("plugins", "enabled_plugins", fallback="").split(",")
 ]
-_plugin_paths = [Path(__file__).parent / "plugins", config_dir / "plugins"]
-_all_plugins = []
 
-for path in _plugin_paths:
-    for f in path.glob("[a-zA-Z]*.py"):
-        pass
-        # a = imp.load_source(f.stem, f.as_posix())
-        # for name, cls in inspect.getmembers(a, inspect.isclass):
-        #     if PluginProvider in cls.__mro__:
-        #         _all_plugins.append(cls())
+logging.info(f"Selected plugins: {_selected}")
 
-for plugin in _all_plugins:
-    if plugin.title in _selected:
-        logging.info(f"Loading {plugin.title}")
-        plugin.load_plugin()
+# Plugins embedded in the traffic library
+
+for module_info, name, _ in pkgutil.iter_modules(
+    [Path(__file__).absolute().parent / "plugins"]  # type: ignore
+):
+    if name.lower() in _selected:
+        handle = importlib.import_module("traffic.plugins." + name)
+        logging.info(f"Loading plugin: {handle.__name__}")
+        load = getattr(handle, "_onload", None)
+        if load is not None:
+            load()
+
+# Plugins registering themselves as traffic.plugins
+
+for entry_point in pkg_resources.iter_entry_points("traffic.plugins"):
+    if entry_point.name.lower() in _selected:
+        handle = entry_point.load()
+        logging.info(f"Loading plugin: {handle.__name__}")
+        load = getattr(handle, "_onload", None)
+        if load is not None:
+            load()

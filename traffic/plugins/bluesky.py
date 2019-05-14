@@ -9,7 +9,6 @@ from traffic.core import Traffic
 from traffic.core.aero import vtas2cas
 from traffic.core.time import timelike, to_datetime
 from traffic.data import aircraft
-from traffic.plugins import PluginProvider
 
 
 def fmt_timedelta(x: pd.Timestamp) -> str:
@@ -118,6 +117,5 @@ def to_bluesky(
         logging.info(f"Scenario file {filename} written")
 
 
-class Bluesky(PluginProvider):
-    def load_plugin(self):
-        setattr(Traffic, "to_bluesky", to_bluesky)
+def _onload():
+    setattr(Traffic, "to_bluesky", to_bluesky)
