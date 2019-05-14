@@ -218,6 +218,11 @@ def lazy_evaluation(
         setattr(LazyTraffic, f.__name__, lazy_lambda_f)
 
         if default is True:
+            if f.__doc__ is not None:
+                f.__doc__ += f"""\n        .. note::
+            This method will use the Flight `implementation
+            <traffic.core.flight.html#traffic.core.Flight.{f.__name__}>`_ when
+            stacked for lazy iteration and evaluation.  """
             return f
 
         # Take the method in Flight and create a LazyCollection
@@ -225,7 +230,14 @@ def lazy_evaluation(
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
             return LazyTraffic(wrapped_t, [op_idx])
 
-        lambda_f.__doc__ = getattr(Flight, f.__name__).__doc__
+        if f.__doc__ is not None:
+            lambda_f.__doc__ = f.__doc__
+        else:
+            lambda_f.__doc__ = getattr(Flight, f.__name__).__doc__
+
+        if lambda_f.__doc__ is not None:
+            lambda_f.__doc__ += """\n        .. warning::
+            This method will be stacked for lazy iteration and evaluation.  """
 
         return lambda_f
 

@@ -27,7 +27,14 @@ setup(
     long_description=long_description,
     # https://dustingram.com/articles/2018/03/16/markdown-descriptions-on-pypi
     long_description_content_type="text/markdown",
-    entry_points={"console_scripts": ["traffic=traffic.console:main"]},
+    entry_points={
+        "console_scripts": ["traffic=traffic.console:main"],
+        "traffic.plugins": [
+            "Bluesky = traffic.plugins.bluesky",
+            "CesiumJS = traffic.plugins.cesiumjs",
+            "Leaflet = traffic.plugins.leaflet",
+        ],
+    },
     packages=find_packages(),
     package_data={
         "traffic.data.airspaces": ["firs.json"],

@@ -36,8 +36,11 @@ the configuration file, in the ``[projections]`` section:
     default = EuroPP
     extra = Lambert93; Amersfoort; GaussKruger
 
-| Available projections are default cartopy projections, completed by additional common European projections in the cartotools `dependency module <https://github.com/xoolive/cartotools/tree/master/cartotools/crs>`_ (here `Lambert 93 <https://fr.wikipedia.org/wiki/Projection_conique_conforme_de_Lambert#Lambert_93>`_ is the official projection in France, `Amersfoort <https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten>`_ in the Netherlands and `Gauss-Krüger <https://de.wikipedia.org/wiki/Gau%C3%9F-Kr%C3%BCger-Koordinatensystem>`_ in Germany)
-| You can implement more projections as plugins or file a `PR in cartotools <https://github.com/xoolive/cartotools/>`_.
+.. note::
+    Available projections are default cartopy projections, completed by additional common European projections in the cartotools `dependency module <https://github.com/xoolive/cartotools/tree/master/cartotools/crs>`_ (here `Lambert 93 <https://fr.wikipedia.org/wiki/Projection_conique_conforme_de_Lambert#Lambert_93>`_ is the official projection in France, `Amersfoort <https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten>`_ in the Netherlands and `Gauss-Krüger <https://de.wikipedia.org/wiki/Gau%C3%9F-Kr%C3%BCger-Koordinatensystem>`_ in Germany)
+
+.. tip::
+    You can implement more projections as `plugins <plugins.html>`_.
 
 You can either pan and zoom the map. Zoom is operated by the mouse or trackpad scrool. Note that on MacOS, the trackpad scroll requires clicking.
 
@@ -91,15 +94,16 @@ the airport for reference coordinates of the antenna. The associated latitude
 and longitude coordinates are useful to process ground messages. If several
 airports are in your neighbourhood, choose any of them (the closest one?)
 
-If you use a different decoding device like `radarcape
-<https://wiki.jetvision.de/wiki/Radarcape:Contents>`_, data is broadcasted on a
-different port (usually 10003). You may add the corresponding address (with
-airport) in your configuration file: this will add an option in the dropdown
-menu.
+.. tip::
+    If you use a different decoding device like `radarcape
+    <https://wiki.jetvision.de/wiki/Radarcape:Contents>`_, data is broadcasted
+    on a different port (usually 10003). You may add the corresponding address
+    (with airport) in your configuration file: this will add an option in the
+    dropdown menu.
 
-.. parsed-literal::
-   [decoders]
-   radarcape = xxx.xxx.xxx.xxx:10003/LFBO
+    .. parsed-literal::
+       [decoders]
+       radarcape = xxx.xxx.xxx.xxx:10003/LFBO
 
 .. image:: _static/gui_live.png
    :scale: 25 %

@@ -22,7 +22,7 @@ The question applies to pandas dataframes as well, with many opinions available 
 
 - `Apache Parquet <https://parquet.apache.org/>`_ is another columnar cross platform and cross language standard storage format. Its implementation inside pandas is very fast for both read and write operations and the resulting files are rather compact. Types are respected but all Python structures (like sets, lists and dictionaries) may not be directly exportable. You may need extra dependencies to read and write from this format.
 
-The ``Flight`` and ``Traffic`` structures implement the following methods:
+The `Flight <traffic.core.flight.html>`_ and `Traffic <traffic.core.traffic.html>`_ structures implement the following methods:
 
 .. code:: python
 

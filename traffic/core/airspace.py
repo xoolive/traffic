@@ -225,6 +225,16 @@ def inside_bbox(
         Airspace, base.BaseGeometry, Tuple[float, float, float, float]
     ],
 ) -> T:
+    """Returns the part of the DataFrame with coordinates located within the
+    bounding box of the shape passed in parameter.
+
+    The bounds parameter can be:
+
+    - an Airspace,
+    - a shapely Geometry,
+    - a tuple of floats (west, south, east, north)
+
+    """
 
     if isinstance(bounds, Airspace):
         bounds = bounds.flatten().bounds

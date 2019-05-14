@@ -5,7 +5,7 @@ from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-                    List, Optional, Set, Tuple, Type, TypeVar, Union, overload)
+                    List, Optional, Set, Type, TypeVar, Union, overload)
 
 import pandas as pd
 import pyproj
@@ -33,6 +33,18 @@ IterStr = Union[List[str], Set[str]]
 
 
 class Traffic(GeographyMixin):
+    """Traffic is the abstraction representing a collection of `Flights
+    <traffic.core.flight.html>`_.
+
+    Data is all flattened in one single pandas DataFrame and methods are
+    provided to properly iterate on each Flight in the structure.
+
+    The most remarkable feature in the Traffic structure is the lazy iteration
+    and evaluation mechanism.
+
+
+
+    """
 
     __slots__ = ("data",)
     _parse_extension: Dict[str, Callable[..., pd.DataFrame]] = dict()
@@ -190,6 +202,15 @@ class Traffic(GeographyMixin):
 
     @lazy_evaluation(idx_name="idx")
     def assign_id(self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0):
+        """Assigns a `flight_id` to trajectories present in the structure.
+
+        The heuristics with iterate on flights based on ``flight_id`` (if the
+        feature is present) or of ``icao24``, ``callsign`` and intervals of time
+        without recorded data.
+
+        The flight_id is created according to a pattern passed in parameter,
+        by default based on the callsign and an incremented index.
+        """
         ...
 
     @lazy_evaluation()
@@ -237,20 +258,13 @@ class Traffic(GeographyMixin):
     def airborne(self) -> "Traffic":
         """Returns the airborne part of the Traffic.
 
-        The airborne part is determined by null values on the altitude column.
+        The airborne part is determined by an ``onground`` flag or null values
+        in the altitude column.
         """
         if "onground" in self.data.columns and self.data.onground.dtype == bool:
             return self.query("not onground and altitude == altitude")
         else:
             return self.query("altitude == altitude")
-
-    def inside_bbox(
-        self, bounds: Union["Airspace", Tuple[float, ...]]
-    ) -> "Traffic":
-        # TODO
-        # implemented and monkey-patched in airspace.py
-        # given here for consistency in types
-        raise NotImplementedError
 
     # --- Properties ---
 
@@ -258,19 +272,21 @@ class Traffic(GeographyMixin):
     @property  # type: ignore
     @lru_cache()
     def start_time(self) -> pd.Timestamp:
+        """Returns the earliest timestamp in the DataFrame."""
         return self.data.timestamp.min()
 
     # https://github.com/python/mypy/issues/1362
     @property  # type: ignore
     @lru_cache()
     def end_time(self) -> pd.Timestamp:
+        """Returns the latest timestamp in the DataFrame."""
         return self.data.timestamp.max()
 
     # https://github.com/python/mypy/issues/1362
     @property  # type: ignore
     @lru_cache()
     def callsigns(self) -> Set[str]:
-        """Return only the most relevant callsigns"""
+        """Return all the different callsigns in the DataFrame"""
         sub = self.data.query("callsign == callsign")
         return set(sub.callsign)
 
@@ -278,12 +294,14 @@ class Traffic(GeographyMixin):
     @property  # type: ignore
     @lru_cache()
     def aircraft(self) -> Set[str]:
+        """Return all the different icao24 aircraft ids in the DataFrame"""
         return set(self.data.icao24)
 
     # https://github.com/python/mypy/issues/1362
     @property  # type: ignore
     @lru_cache()
     def flight_ids(self) -> Optional[Set[str]]:
+        """Return all the different flight_id in the DataFrame"""
         if "flight_id" in self.data.columns:
             return set(self.data.flight_id)
         return None
@@ -317,9 +335,6 @@ class Traffic(GeographyMixin):
 
     @lru_cache()
     def stats(self) -> pd.DataFrame:
-        """Statistics about flights contained in the structure.
-        Useful for a meaningful representation.
-        """
         key = ["icao24", "callsign"] if self.flight_ids is None else "flight_id"
         return (
             self.data.groupby(key)[["timestamp"]]
@@ -328,9 +343,26 @@ class Traffic(GeographyMixin):
             .rename(columns={"timestamp": "count"})
         )
 
+    def geoencode(self, *args, **kwargs):
+        raise NotImplementedError
+
     def plot(
         self, ax: GeoAxesSubplot, nb_flights: Optional[int] = None, **kwargs
     ) -> None:
+        """Plots each trajectory on a Matplotlib axis.
+
+        Each Flight supports Cartopy axis as well with automatic projection. If
+        no projection is provided, a default `PlateCarree
+        <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree>`_
+        is applied.
+
+        Example usage:
+
+        >>> from traffic.drawing import EuroPP
+        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=EuroPP())
+        >>> t.plot(ax, alpha=.5)
+
+        """
         params: Dict[str, Any] = {}
         if sum(1 for _ in zip(range(8), self)) == 8:
             params["color"] = "#aaaaaa"
@@ -356,7 +388,7 @@ class Traffic(GeographyMixin):
         Data uncleaned could result in the following count of messages
         associated to aircraft icao24 `02008b` which could be easily removed.
 
-        >>>
+        .. parsed-literal::
                                    count
             icao24  callsign
             02008b  0  221         8
@@ -389,17 +421,21 @@ class Traffic(GeographyMixin):
         max_workers: int = 4,
     ) -> "CPA":
         """
-        Computes a CPA dataframe for all pairs of trajectories candidates for
-        being separated by less than lateral_separation in vertical_separation.
+        Computes a Closest Point of Approach (CPA) dataframe for all pairs of
+        trajectories candidates for being separated by less than
+        lateral_separation in vertical_separation.
 
-        Parameters
-        ----------
+        The problem of iterating over pairs of trajectories is of unreasonable
+        complexity O(n**2). Therefore, instead of computing the CPA between all
+        pairs of trajectory, we do it for all pairs of trajectories coming
+        closer than a given ``lateral_separation`` and ``vertical_separation``.
 
-        lateral_separation: float (in *meters*)
-            TODO
+        lateral_separation: float (in **meters**)
+            Depending on your application, you could start with 10 * 1852 (for
+            10 nautical miles)
 
         vertical_separation: float (in ft)
-            TODO
+            Depending on your application, you could start with 1500 (feet)
 
         projection: pyproj.Proj, crs.Projection, None
             a first filtering is applied on the bounding boxes of trajectories,
@@ -419,6 +455,8 @@ class Traffic(GeographyMixin):
         max_workers: int
             distance computations are spread over a given number of
             processors.
+
+        Returns a CPA DataFrame wrapper.
 
         """
 

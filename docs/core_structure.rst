@@ -13,3 +13,4 @@ The `traffic` library is based on three main core classes for handling:
    :maxdepth: 1
 
    traffic.core.flight
+   traffic.core.traffic

@@ -1,7 +1,5 @@
 import configparser
-import importlib
 import logging
-import pkgutil
 import warnings
 from pathlib import Path
 
@@ -46,19 +44,6 @@ _selected = [
 
 logging.info(f"Selected plugins: {_selected}")
 
-# Plugins embedded in the traffic library
-
-for module_info, name, _ in pkgutil.iter_modules(
-    [Path(__file__).absolute().parent / "plugins"]  # type: ignore
-):
-    if name.lower() in _selected:
-        handle = importlib.import_module("traffic.plugins." + name)
-        logging.info(f"Loading plugin: {handle.__name__}")
-        load = getattr(handle, "_onload", None)
-        if load is not None:
-            load()
-
-# Plugins registering themselves as traffic.plugins
 
 for entry_point in pkg_resources.iter_entry_points("traffic.plugins"):
     if entry_point.name.lower() in _selected:

@@ -31,6 +31,7 @@ sources of data.
    export
    core_structure
    gui
+   plugins
    scenarios
    publications
 
