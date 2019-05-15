@@ -1,5 +1,6 @@
 import configparser
 import logging
+import os
 import warnings
 from pathlib import Path
 
@@ -44,11 +45,11 @@ _selected = [
 
 logging.info(f"Selected plugins: {_selected}")
 
-
-for entry_point in pkg_resources.iter_entry_points("traffic.plugins"):
-    if entry_point.name.lower() in _selected:
-        handle = entry_point.load()
-        logging.info(f"Loading plugin: {handle.__name__}")
-        load = getattr(handle, "_onload", None)
-        if load is not None:
-            load()
+if "TRAFFIC_NOPLUGIN" not in os.environ.keys():
+    for entry_point in pkg_resources.iter_entry_points("traffic.plugins"):
+        if entry_point.name.lower() in _selected:
+            handle = entry_point.load()
+            logging.warning(f"Loading plugin: {handle.__name__}")
+            load = getattr(handle, "_onload", None)
+            if load is not None:
+                load()

@@ -27,4 +27,5 @@ envlist = py36, py37
 deps =
     pytest
 commands = py.test
+setenv = TRAFFIC_NOPLUGIN = ""
 """
