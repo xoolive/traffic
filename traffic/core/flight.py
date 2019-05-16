@@ -782,6 +782,30 @@ class Flight(GeographyMixin, ShapelyMixin):
         else:
             return self.query("altitude == altitude")
 
+    def unwrap(
+        self, features: Union[str, List[str]] = ["track", "heading"]
+    ) -> "Flight":
+        """Unwraps angles in the DataFrame.
+
+        All features representing angles may be unwrapped (through Numpy) to
+        avoid gaps between 359° and 1°.
+
+        The method applies by default to features ``track`` and ``heading``.
+        More or different features may be passed in parameter.
+        """
+        if isinstance(features, str):
+            features = [features]
+
+        result_dict = dict()
+        for feature in features:
+            if feature not in self.data.columns:
+                continue
+            result_dict[f"{feature}_unwrapped"] = np.degrees(
+                np.unwrap(np.radians(self.data[feature]))
+            )
+
+        return self.assign(**result_dict)
+
     def compute_wind(self) -> "Flight":
         """Computes the wind triangle for each timestamp.
 

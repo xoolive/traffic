@@ -201,6 +201,10 @@ class Traffic(GeographyMixin):
     ):
         ...
 
+    @lazy_evaluation()
+    def unwrap(self, features: Union[str, List[str]] = ["track", "heading"]):
+        ...
+
     @lazy_evaluation(idx_name="idx")
     def assign_id(self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0):
         """Assigns a `flight_id` to trajectories present in the structure.
