@@ -106,7 +106,8 @@ class Flight(GeographyMixin, ShapelyMixin):
           `inside_bbox() <#traffic.core.Flight.inside_bbox>`_,
           `intersects() <#traffic.core.Flight.intersects>`_,
           `project_shape() <#traffic.core.Flight.project_shape>`_,
-          `simplify() <#traffic.core.Flight.simplify>`_
+          `simplify() <#traffic.core.Flight.simplify>`_,
+          `unwrap() <#traffic.core.Flight.unwrap>`_
         - filtering and resampling methods:
           `comet() <#traffic.core.Flight.comet>`_,
           `filter() <#traffic.core.Flight.filter>`_,

@@ -4,6 +4,9 @@ from typing import Union
 
 from ...core import Flight, Traffic
 
+_current_dir = Path(__file__).parent
+__all__ = list(f.stem[:-5] for f in _current_dir.glob("**/*.json.gz"))
+
 
 @lru_cache()
 def get_flight(filename: str, directory: Path) -> Union[Flight, Traffic]:
@@ -28,3 +31,12 @@ def assign_id(t: Union[Traffic, Flight], name: str) -> Union[Traffic, Flight]:
         return t.assign_id()
     else:
         return t.assign(flight_id=name)
+
+
+@lru_cache()
+def __getattr__(name: str) -> Union[Flight, Traffic]:
+    filelist = list(_current_dir.glob(f"**/{name}.json.gz"))
+    if len(filelist) == 0:
+        msg = f"File {name}.json.gz not found in available samples"
+        raise RuntimeError(msg)
+    return get_flight(name, filelist[0].parent)
