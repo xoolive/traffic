@@ -27,9 +27,10 @@ sources of data.
 
    installation
    quickstart
+   core_structure
    data
    export
-   core_structure
+   cli
    gui
    plugins
    scenarios

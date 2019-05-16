@@ -1,6 +1,6 @@
 # A toolbox for manipulating and analysing air traffic data
 
-[![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.github.io/)
 
 The traffic library helps working with common sources of air traffic data.
 

@@ -116,6 +116,7 @@ html_static_path = ["_static"]
 #
 # html_sidebars = {}
 
+html_logo = "_static/logo_traffic.png"
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
