@@ -344,6 +344,10 @@ class Traffic(GeographyMixin):
         )
 
     def geoencode(self, *args, **kwargs):
+        """
+        .. warning::
+            This method is not implemented.
+        """
         raise NotImplementedError
 
     def plot(
@@ -473,15 +477,63 @@ class Traffic(GeographyMixin):
 
     def clustering(
         self,
-        method,  # must implement fit and predict
+        method,  # sklearn.base.ClusterMixin
         nb_samples: int,
         projection: Union[crs.Projection, pyproj.Proj],
         altitude: Optional[str] = None,
         max_workers: int = 1,
         return_traffic: bool = True,
-        transform=None,  # must implement fit_transform
+        transform=None,  # sklearn.base.TransformerMixin
         **kwargs,
     ) -> "Traffic":
+        """
+        Computes a clustering of the trajectories, add labels in a column
+        ``cluster``.
+
+        The method:
+
+            - resamples all trajectories with the same number of samples
+              ``nb_samples`` (no default value);
+            - computes x and y coordinates based on ``projection`` through a
+              call to `compute_xy() <#traffic.core.Traffic.compute_xy>`_ (no
+              default value);
+            - if need be, apply a transformer to the resulting `X` matrix.
+              You may want to consider `StandardScaler()
+              <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html>`_;
+            - generates the appropriate structure for a call to the usual
+              `sklearn API
+              <https://scikit-learn.org/stable/modules/clustering.html#clustering>`_
+              that is a class with a ``fit()`` method and a ``predict()`` method
+              or a ``labels_`` attribute;
+            - returns the original Traffic DataFrame with an additional
+              ``cluster`` column.
+
+        Example usage:
+
+        >>> from traffic.core.projection import EuroPP
+        >>> from sklearn.cluster import DBSCAN
+        >>> from sklearn.preprocessing import StandardScaler
+        >>>
+        >>> t_dbscan = traffic.clustering(
+        ...     nb_samples=15,
+        ...     projection=EuroPP(),
+        ...     method=DBSCAN,
+        ...     eps=1.5,
+        ...     min_samples=10,
+        ...     transform=StandardScaler(),
+        ... )
+        >>> t_dbscan.groupby(["cluster"]).agg({"flight_id": "nunique"})
+
+        .. parsed-literal::
+                        flight_id
+            cluster
+            -1          15
+            0           29
+            1           13
+            2           24
+            3           24
+
+        """
         from ..algorithms.clustering import clustering
 
         return clustering(

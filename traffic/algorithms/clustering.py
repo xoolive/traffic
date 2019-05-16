@@ -19,7 +19,7 @@ def clustering(
     return_traffic: bool = True,
     transform=None,  # must implement fit_transform
     **kwargs,
-):
+) -> "Traffic":
 
     if "last_position" in traffic.data.columns:
         traffic = traffic.drop(columns="last_position")

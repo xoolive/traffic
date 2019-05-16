@@ -111,13 +111,13 @@ class Flight(GeographyMixin, ShapelyMixin):
           `comet() <#traffic.core.Flight.comet>`_,
           `filter() <#traffic.core.Flight.filter>`_,
           `resample() <#traffic.core.Flight.resample>`_,
-        - visualisation methods:
+        - visualisation with altair:
           `encode() <#traffic.core.Flight.encode>`_,
           `geoencode() <#traffic.core.Flight.geoencode>`_
-          for altair,
-          `layer() <#traffic.core.Flight.layer>`_ for leaflet,
+        - visualisation with leaflet: `layer() <#traffic.core.Flight.layer>`_
+        - visualisation with Matplotlib:
           `plot() <#traffic.core.Flight.plot>`_,
-          `plot_time() <#traffic.core.Flight.plot_time>`_ for Matplotlib
+          `plot_time() <#traffic.core.Flight.plot_time>`_
 
     .. note::
         Sample flights are provided for testing purposes in module
