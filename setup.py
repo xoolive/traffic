@@ -60,7 +60,7 @@ setup(
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "pyproj",  # not necessarily pulled by Cartopy...
-        # "typing_extensions",  # sometimes necessary in dev, but not now
+        "typing_extensions",
         "PyQt5",
         "altair",  # interactive Vega plots
         "ipywidgets",  # IPython widgets for traffic
