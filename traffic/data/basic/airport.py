@@ -74,6 +74,13 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
         return self.osm_request().shape
 
     @property
+    def point(self):
+        p = PointMixin()
+        p.latitude, p.longitude = self.latlon
+        p.name = self.icao
+        return p
+
+    @property
     def runways(self):
         from .. import runways
 
