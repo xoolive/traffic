@@ -90,16 +90,14 @@ class Flight(GeographyMixin, ShapelyMixin):
           `registration <#traffic.core.Flight.registration>`_,
           `start <#traffic.core.Flight.start>`_,
           `stop <#traffic.core.Flight.stop>`_,
-          `typecode <#traffic.core.Flight.typecode>`_,
-          ...
+          `typecode <#traffic.core.Flight.typecode>`_
         - time related methods:
           `after() <#traffic.core.Flight.after>`_,
           `at() <#traffic.core.Flight.at>`_,
           `before() <#traffic.core.Flight.before>`_,
           `between() <#traffic.core.Flight.between>`_,
           `first() <#traffic.core.Flight.first>`_,
-          `last() <#traffic.core.Flight.last>`_,
-          ...
+          `last() <#traffic.core.Flight.last>`_
         - geometry related methods:
           `airborne() <#traffic.core.Flight.airborne>`_,
           `clip() <#traffic.core.Flight.clip>`_,
@@ -108,19 +106,18 @@ class Flight(GeographyMixin, ShapelyMixin):
           `inside_bbox() <#traffic.core.Flight.inside_bbox>`_,
           `intersects() <#traffic.core.Flight.intersects>`_,
           `project_shape() <#traffic.core.Flight.project_shape>`_,
-          `simplify() <#traffic.core.Flight.simplify>`_,
-          ...
+          `simplify() <#traffic.core.Flight.simplify>`_
         - filtering and resampling methods:
           `comet() <#traffic.core.Flight.comet>`_,
           `filter() <#traffic.core.Flight.filter>`_,
           `resample() <#traffic.core.Flight.resample>`_,
-          ...
         - visualisation methods:
           `encode() <#traffic.core.Flight.encode>`_,
-          `geoencode() <#traffic.core.Flight.geoencode>`_,
+          `geoencode() <#traffic.core.Flight.geoencode>`_
+          for altair,
+          `layer() <#traffic.core.Flight.layer>`_ for leaflet,
           `plot() <#traffic.core.Flight.plot>`_,
-          `plot_time() <#traffic.core.Flight.plot_time>`_,
-          ...
+          `plot_time() <#traffic.core.Flight.plot_time>`_ for Matplotlib
 
     .. note::
         Sample flights are provided for testing purposes in module
@@ -596,11 +593,20 @@ class Flight(GeographyMixin, ShapelyMixin):
                 .fillna(method="pad")
             )
         elif isinstance(rule, int):
+            # ./site-packages/pandas/core/indexes/base.py:2820: FutureWarning:
+            # Converting timezone-aware DatetimeArray to timezone-naive ndarray
+            # with 'datetime64[ns]' dtype. In the future, this will return an
+            # ndarray with 'object' dtype where each element is a
+            # 'pandas.Timestamp' with the correct 'tz'.
+            # To accept the future behavior, pass 'dtype=object'.
+            # To keep the old behavior, pass 'dtype="datetime64[ns]"'.
             data = (
                 self._handle_last_position()
-                .data.set_index("timestamp")
+                .assign(tz_naive=lambda d: d.timestamp.astype("datetime64[ns]"))
+                .data.set_index("tz_naive")
                 .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
                 .reset_index()
+                .drop(columns="tz_naive")
             )
         else:
             raise TypeError("rule must be a str or an int")

@@ -470,3 +470,28 @@ class Traffic(GeographyMixin):
             round_t,
             max_workers,
         )
+
+    def clustering(
+        self,
+        method,  # must implement fit and predict
+        nb_samples: int,
+        projection: Union[crs.Projection, pyproj.Proj],
+        altitude: Optional[str] = None,
+        max_workers: int = 1,
+        return_traffic: bool = True,
+        transform=None,  # must implement fit_transform
+        **kwargs,
+    ) -> "Traffic":
+        from ..algorithms.clustering import clustering
+
+        return clustering(
+            self,
+            method,
+            nb_samples,
+            projection,
+            altitude,
+            max_workers,
+            return_traffic,
+            transform,
+            **kwargs,
+        )

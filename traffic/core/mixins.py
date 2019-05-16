@@ -199,6 +199,13 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.assign(*args, **kwargs))
 
+    def merge(self: T, *args, **kwargs) -> T:
+        """
+        Applies the Pandas ``merge()`` method to the underlying pandas
+        DataFrame and get the result back in the same structure.
+        """
+        return self.__class__(self.data.merge(*args, **kwargs))
+
 
 class ShapelyMixin(object):
 
