@@ -22,6 +22,7 @@ from .sv import StateVectors
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
     from ..algorithms.cpa import CPA  # noqa: F401
+    from ..algorithms.clustering import Transformer, Clustering  # noqa: F401
 
 # fmt: on
 
@@ -477,14 +478,14 @@ class Traffic(GeographyMixin):
 
     def clustering(
         self,
-        method,  # sklearn.base.ClusterMixin
+        clustering: "Clustering",
         nb_samples: int,
-        projection: Union[crs.Projection, pyproj.Proj],
-        altitude: Optional[str] = None,
+        features: List[str] = ["x", "y"],
+        *args,
+        projection: Union[None, crs.Projection, pyproj.Proj] = None,
+        transform: Optional["Transformer"] = None,
         max_workers: int = 1,
         return_traffic: bool = True,
-        transform=None,  # sklearn.base.TransformerMixin
-        **kwargs,
     ) -> "Traffic":
         """
         Computes a clustering of the trajectories, add labels in a column
@@ -494,10 +495,10 @@ class Traffic(GeographyMixin):
 
             - resamples all trajectories with the same number of samples
               ``nb_samples`` (no default value);
-            - computes x and y coordinates based on ``projection`` through a
-              call to `compute_xy() <#traffic.core.Traffic.compute_xy>`_ (no
-              default value);
-            - if need be, apply a transformer to the resulting `X` matrix.
+            - *if need be,* computes x and y coordinates based on ``projection``
+              through a call to `compute_xy()
+              <#traffic.core.Traffic.compute_xy>`_ (no default value);
+            - *if need be,* apply a transformer to the resulting `X` matrix.
               You may want to consider `StandardScaler()
               <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html>`_;
             - generates the appropriate structure for a call to the usual
@@ -517,9 +518,7 @@ class Traffic(GeographyMixin):
         >>> t_dbscan = traffic.clustering(
         ...     nb_samples=15,
         ...     projection=EuroPP(),
-        ...     method=DBSCAN,
-        ...     eps=1.5,
-        ...     min_samples=10,
+        ...     method=DBSCAN(eps=1.5, min_samples=10),
         ...     transform=StandardScaler(),
         ... )
         >>> t_dbscan.groupby(["cluster"]).agg({"flight_id": "nunique"})
@@ -534,16 +533,15 @@ class Traffic(GeographyMixin):
             3           24
 
         """
-        from ..algorithms.clustering import clustering
+        from ..algorithms.clustering import clustering as algo_clustering
 
-        return clustering(
+        return algo_clustering(
             self,
-            method,
+            clustering,
             nb_samples,
-            projection,
-            altitude,
-            max_workers,
-            return_traffic,
-            transform,
-            **kwargs,
+            features,
+            projection=projection,
+            transform=transform,
+            max_workers=max_workers,
+            return_traffic=return_traffic,
         )
