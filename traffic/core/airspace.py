@@ -47,6 +47,7 @@ class Airspace(ShapelyMixin):
         self.type: Optional[str] = type_
 
     def flatten(self) -> Polygon:
+        """Returns the 2D footprint of the airspace."""
         return cascaded_union([p.polygon for p in self])
 
     @property
@@ -228,11 +229,11 @@ def inside_bbox(
     """Returns the part of the DataFrame with coordinates located within the
     bounding box of the shape passed in parameter.
 
-    The bounds parameter can be:
+        The bounds parameter can be:
 
-    - an Airspace,
-    - a shapely Geometry,
-    - a tuple of floats (west, south, east, north)
+        - an Airspace,
+        - a shapely Geometry,
+        - a tuple of floats (west, south, east, north)
 
     """
 
@@ -255,9 +256,10 @@ def _flight_intersects(
 ) -> bool:
     """Returns True if the trajectory is inside the given shape.
 
-    - If an Airspace is passed, the 3D trajectory is compared to each layers
-      constituting the airspace, with corresponding altitude limits.
-    - If a shapely Geometry is passed, the 2D trajectory alone is considered.
+        - If an Airspace is passed, the 3D trajectory is compared to each layers
+          constituting the airspace, with corresponding altitude limits.
+        - If a shapely Geometry is passed, the 2D trajectory alone is
+          considered.
 
     """
     linestring = flight.airborne().linestring
