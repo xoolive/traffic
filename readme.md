@@ -1,6 +1,7 @@
 # A toolbox for manipulating and analysing air traffic data
 
 [![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.github.io/)
+[![Build Status](https://travis-ci.org/xoolive/traffic.svg?branch=master)](https://travis-ci.org/xoolive/traffic)
 
 The traffic library helps working with common sources of air traffic data.
 
