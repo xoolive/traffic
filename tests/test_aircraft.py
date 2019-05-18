@@ -1,3 +1,5 @@
+import pytest
+
 from traffic.data import aircraft
 
 
@@ -10,6 +12,7 @@ def test_getter() -> None:
     assert a.typecode.iloc[0] == "BE20"
 
 
+@pytest.mark.skipif(aircraft.opensky_db is None, reason="OpenSky database")
 def test_operator() -> None:
     df = aircraft.operator("penguin")
     assert df.operator.iloc[0] == "British Antarctic Survey"
@@ -17,6 +20,7 @@ def test_operator() -> None:
     assert df.registration.str.startswith("VP-F").all()
 
 
+@pytest.mark.skipif(aircraft.opensky_db is None, reason="OpenSky database")
 def test_stats() -> None:
     df = aircraft.stats("speedbird")
     # well let's say they must be enough...
