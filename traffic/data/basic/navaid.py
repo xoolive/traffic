@@ -1,12 +1,12 @@
-import pickle
-import re
+import logging
 from pathlib import Path
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional, Tuple, Union
 
 import pandas as pd
 import requests
 
-from ...core.mixins import PointMixin
+from ...core.mixins import DataFrameMixin, PointMixin, ShapelyMixin
+from ...drawing import Nominatim, location
 
 
 class NavaidTuple(NamedTuple):
@@ -42,56 +42,30 @@ class Navaid(NavaidTuple, PointMixin):
         else:
             return (
                 f"{self.name} ({self.type}): {self.lat} {self.lon}"
-                f" {self.alt:.0f}\n"
+                f" {self.alt:.0f} "
                 f"{self.description if self.description is not None else ''}"
                 f" {self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}"
             )
 
 
 __github_url = "https://raw.githubusercontent.com/"
-base_url = __github_url + "ProfHoekstra/bluesky/master/data/navdata"
+base_url = __github_url + "TUDelft-CNS-ATM/bluesky/master/data/navdata"
 
 
-class NavaidParser(object):
+class NavaidParser(DataFrameMixin):
 
-    cache: Optional[Path] = None
+    cache_dir: Path
 
-    def __init__(self) -> None:
-        if self.cache is not None and self.cache.exists():
-            with self.cache.open("rb") as fh:
-                self.navaids = pickle.load(fh)
-        else:
-            self.initialize()
-            if self.cache is not None:
-                with self.cache.open("wb") as fh:
-                    pickle.dump(self.navaids, fh)
+    def __init__(self, data: Optional[pd.DataFrame] = None):
+        self._bluesky: Optional[pd.DataFrame] = data
 
-    def __getitem__(self, name: str) -> Optional[Navaid]:
-        return next(
-            (pt for pt in self.navaids if (pt.name == name.upper())), None
-        )
+    def download_bluesky(self) -> None:
+        """Downloads the latest version of the navaid database by bluesky.
 
-    @property
-    def df(self) -> pd.DataFrame:
-        return pd.DataFrame.from_records(
-            self.navaids, columns=NavaidTuple._fields
-        )
+        url: https://github.com/TUDelft-CNS-ATM/bluesky
+        """
 
-    def search(self, name: str) -> List[Navaid]:
-        return list(
-            (
-                pt
-                for pt in self.navaids
-                if (
-                    pt.description is not None
-                    and (re.match(name, pt.description, re.IGNORECASE))
-                )
-                or (pt.name == name.upper())
-            )
-        )
-
-    def initialize(self):
-        self.navaids = []
+        navaids = []
         c = requests.get(f"{base_url}/fix.dat")
 
         for line in c.iter_lines():
@@ -110,7 +84,7 @@ class NavaidParser(object):
             # Example line:
             #  30.580372 -094.384169 FAREL
             fields = line.split()
-            self.navaids.append(
+            navaids.append(
                 Navaid(
                     fields[2],
                     "FIX",
@@ -179,7 +153,7 @@ class NavaidParser(object):
             except Exception:
                 description = None
 
-            self.navaids.append(
+            navaids.append(
                 Navaid(
                     fields[7],
                     wptype,
@@ -193,3 +167,58 @@ class NavaidParser(object):
                     description,
                 )
             )
+
+        self._bluesky = pd.DataFrame.from_records(
+            navaids, columns=NavaidTuple._fields
+        )
+
+        self._bluesky.to_pickle(self.cache_dir / "bluesky_navaid.pkl")
+
+    @property
+    def data(self) -> pd.DataFrame:
+        if self._bluesky is not None:
+            return self._bluesky
+
+        if not (self.cache_dir / "bluesky_navaid.pkl").exists():
+            self.download_bluesky()
+        else:
+            logging.info("Loading Bluesky navaid database")
+            self._bluesky = pd.read_pickle(
+                self.cache_dir / "bluesky_navaid.pkl"
+            )
+
+        return self._bluesky
+
+    def __getitem__(self, name: str) -> Optional[Navaid]:
+        x = self.data.query(
+            "description == @name.upper() or name == @name.upper()"
+        )
+        if x.shape[0] == 0:
+            return None
+        return Navaid(**dict(x.iloc[0]))
+
+    def search(self, name: str) -> "NavaidParser":
+        return self.__class__(
+            self.data.query(
+                "description == @name.upper() or name == @name.upper()"
+            )
+        )
+
+    def extent(
+        self,
+        extent: Union[
+            str, ShapelyMixin, Nominatim, Tuple[float, float, float, float]
+        ],
+    ) -> "NavaidParser":
+        if isinstance(extent, str):
+            extent = location(extent)
+        if isinstance(extent, ShapelyMixin):
+            extent = extent.extent
+        if isinstance(extent, Nominatim):
+            extent = extent.extent
+
+        west, east, south, north = extent
+
+        return self.query(
+            f"{south} <= lat <= {north} and {west} <= lon <= {east}"
+        )

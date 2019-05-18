@@ -1,4 +1,4 @@
-# A toolbox for manipulating and analysing air traffic data
+# A toolbox for processing and analysing air traffic data
 
 [![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.github.io/)
 [![Build Status](https://travis-ci.org/xoolive/traffic.svg?branch=master)](https://travis-ci.org/xoolive/traffic)
@@ -36,10 +36,11 @@ pip install git+https://github.com/xoolive/traffic
 ```
 
 **Warning:** `cartotools` and `shapely` have strong dependencies to dynamic
-libraries which may not be available on your system by default.
+libraries which may not be available on your system by default. 
 
 Before reporting an issue, please try to use an Anaconda environment. Other
-installations may work but the Anaconda way proved to cause much less issues.
+installations (You may check them in the `.travis.yml` configuration file.)
+should work but the Anaconda way proved to work smoothly.
 
 ```
 conda install cartopy shapely
