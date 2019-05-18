@@ -38,5 +38,5 @@ def __getattr__(name: str) -> Union[Flight, Traffic]:
     filelist = list(_current_dir.glob(f"**/{name}.json.gz"))
     if len(filelist) == 0:
         msg = f"File {name}.json.gz not found in available samples"
-        raise RuntimeError(msg)
+        raise AttributeError(msg)
     return get_flight(name, filelist[0].parent)

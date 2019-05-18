@@ -1,5 +1,5 @@
-Scenarios
-=========
+Scenarios and use cases
+=======================
 
 .. toctree::
     :maxdepth: 1

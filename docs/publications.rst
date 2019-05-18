@@ -10,7 +10,7 @@ Publications
 
 - | X. Olive and P. Bieber.
   | **Quantitative Assessments of Runway Excursion Precursors using Mode S Data**. *Proceedings of the 8th International Conference on Research in Air Transportation*, 2018 (Best paper award)
-  | `(notebook) <paper/runway_excursion.html>`__
+  | `(paper) <https://arxiv.org/abs/1903.11964>`__ `(notebook) <paper/runway_excursion.html>`__
 
 - | X. Olive and J. Morio.
   | **Trajectory clustering of air traffic flows around airports**. *Aerospace Science and Technology* 84, 2019, pp. 776--781.

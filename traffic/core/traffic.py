@@ -34,16 +34,39 @@ IterStr = Union[List[str], Set[str]]
 
 
 class Traffic(GeographyMixin):
-    """Traffic is the abstraction representing a collection of `Flights
-    <traffic.core.flight.html>`_.
+    """
 
-    Data is all flattened in one single pandas DataFrame and methods are
-    provided to properly iterate on each Flight in the structure.
+    Traffic is the abstraction representing a collection of `Flights
+    <traffic.core.flight.html>`_. When Flight objects are summed up, the
+    resulting structure is a Traffic.
 
-    The most remarkable feature in the Traffic structure is the lazy iteration
-    and evaluation mechanism.
+    Data is all flattened into one single pandas DataFrame and methods are
+    provided to properly access (with the bracket notation) and iterate on each
+    Flight in the structure.
 
+    On top of basic methods and properties (`aircraft
+    <traffic.core.Traffic.aircraft>`_, `callsigns
+    <traffic.core.Traffic.callsigns>`_, `flight_ids
+    <traffic.core.Traffic.flight_ids>`_, `start_time
+    <traffic.core.Traffic.start_time>`_, `end_time
+    <traffic.core.Traffic.end_time>`_) and data preprocessing (most methods
+    available on Flight), more complex algorithms like `closest point of
+    approach <#traffic.core.Traffic.closest_point_of_approach>`_ and `clustering
+    <#traffic.core.Traffic.clustering>`_ (more to come) are available.
 
+    .. note::
+
+        When methods need to be chained on each trajectory contained in the
+        collection, **lazy iteration and evaluation** is in place. This means
+        that applying such a method on a Traffic structure will only stack
+        operations without evaluating them.
+
+        .. autoclass:: traffic.core.lazy.LazyTraffic()
+            :members: eval
+
+    .. tip::
+        Sample traffic structures are provided for testing purposes in module
+        ``traffic.data.samples``
 
     """
 
@@ -52,6 +75,10 @@ class Traffic(GeographyMixin):
 
     @classmethod
     def from_flights(cls, flights: Iterable[Optional[Flight]]) -> "Traffic":
+        """
+        Creates a Traffic structure from all flights passed as an
+        iterator or iterable.
+        """
         cumul = [f.data for f in flights if f is not None]
         if len(cumul) == 0:
             raise ValueError("empty traffic")
@@ -350,7 +377,7 @@ class Traffic(GeographyMixin):
 
     def geoencode(self, *args, **kwargs):
         """
-        .. warning::
+        .. danger::
             This method is not implemented.
         """
         raise NotImplementedError
@@ -548,4 +575,30 @@ class Traffic(GeographyMixin):
             transform=transform,
             max_workers=max_workers,
             return_traffic=return_traffic,
+        )
+
+    def centroid(
+        self,
+        nb_samples: int,
+        features: List[str] = ["x", "y"],
+        projection: Union[None, crs.Projection, pyproj.Proj] = None,
+        max_workers: int = 1,
+        *args,
+        **kwargs,
+    ) -> "Flight":
+        """
+        Returns the trajectory in the Traffic that is the closest to all other
+        trajectories.
+
+        .. warning::
+            Remember the time and space complexity of this method is in O(n^2).
+
+        *args and **kwargs are passed as is to `scipy.spatial.pdist
+        <https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html#scipy.spatial.distance.pdist>`_
+
+        """
+        from ..algorithms.clustering import centroid
+
+        return centroid(
+            self, nb_samples, features, projection, max_workers, *args, **kwargs
         )

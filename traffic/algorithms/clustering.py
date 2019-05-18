@@ -4,10 +4,11 @@ import numpy as np
 import pandas as pd
 import pyproj
 from cartopy import crs
+from scipy.spatial.distance import pdist, squareform
 from typing_extensions import Protocol
 
 if TYPE_CHECKING:
-    from ..core import Traffic  # noqa: F401
+    from ..core import Flight, Traffic  # noqa: F401
 
 
 class Transformer(Protocol):
@@ -23,6 +24,35 @@ class Clustering(Protocol):
         ...
 
 
+def prepare_features(
+    traffic: "Traffic",
+    nb_samples: int,
+    features: List[str] = ["x", "y"],
+    projection: Union[None, crs.Projection, pyproj.Proj] = None,
+    max_workers: int = 1,
+) -> np.ndarray:
+    if "last_position" in traffic.data.columns:
+        traffic = traffic.drop(columns="last_position")
+
+    resampled = traffic.resample(nb_samples).eval(max_workers=max_workers)
+
+    if all(
+        [
+            "x" in features,
+            "y" in features,
+            "x" not in resampled.data.columns,
+            "y" not in resampled.data.columns,
+        ]
+    ):
+        if projection is None:
+            raise RuntimeError(
+                "No 'x' and 'y' columns nor projection method passed"
+            )
+        resampled = resampled.compute_xy(projection)
+
+    return np.stack(list(f.data[features].values.ravel() for f in resampled))
+
+
 def clustering(
     traffic: "Traffic",
     clustering: Clustering,
@@ -35,26 +65,7 @@ def clustering(
     return_traffic: bool = True,
 ) -> "Traffic":
 
-    if "last_position" in traffic.data.columns:
-        traffic = traffic.drop(columns="last_position")
-
-    traffic = traffic.resample(nb_samples).eval(max_workers=max_workers)
-
-    if all(
-        [
-            "x" in features,
-            "y" in features,
-            "x" not in traffic.data.columns,
-            "y" not in traffic.data.columns,
-        ]
-    ):
-        if projection is None:
-            raise RuntimeError(
-                "No 'x' and 'y' columns nor projection method passed"
-            )
-        traffic = traffic.compute_xy(projection)
-
-    X = np.stack(list(f.data[features].values.ravel() for f in traffic))
+    X = prepare_features(traffic, nb_samples, features, projection, max_workers)
 
     if transform is not None:
         X = transform.fit_transform(X)
@@ -77,3 +88,29 @@ def clustering(
         return clusters
 
     return traffic.merge(clusters, on="flight_id")
+
+
+def centroid(
+    traffic: "Traffic",
+    nb_samples: int,
+    features: List[str] = ["x", "y"],
+    projection: Union[None, crs.Projection, pyproj.Proj] = None,
+    max_workers: int = 1,
+    *args,
+    **kwargs,
+) -> "Flight":
+    """
+    Returns the trajectory in the Traffic that is the closest to all other
+    trajectories.
+
+    .. warning::
+        Remember the time and space complexity of this method is **quadratic**.
+
+    """
+
+    X = prepare_features(traffic, nb_samples, features, projection, max_workers)
+    ids = list(f.flight_id for f in traffic)
+
+    return traffic[
+        ids[squareform(pdist(X, *args, **kwargs)).mean(axis=1).argmin()]
+    ]

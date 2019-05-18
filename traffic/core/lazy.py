@@ -1,4 +1,5 @@
 import functools
+import inspect
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Callable, List, Optional
@@ -6,6 +7,7 @@ from typing import TYPE_CHECKING, Callable, List, Optional
 from tqdm.autonotebook import tqdm
 
 from .flight import Flight
+from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
     from .traffic import Traffic  # noqa: F401
@@ -62,26 +64,13 @@ def apply(
 
 
 class LazyTraffic:
-    """A LazyTraffic wraps a Traffic and operations to apply to each Flight.
+    """
 
-    This structure is convenient for chaining.
-    Operations are stacked until eval() is called. (see LazyTraffic.eval())
+    In the following example, ``lazy_t`` is not evaluated:
 
-    >>> t = Traffic.from_file("input_file.pkl")
-    >>> t_lazy = t.resample('1s').filter()
+    >>> lazy_t = t.filter().resample('10s')
     >>> type(t_lazy)
     traffic.core.lazy.LazyTraffic
-
-    The underlying Traffic can be accessed after a call to eval().
-    If max_workers is greater than 1, automatic multiprocessing is triggered.
-    >>> t_processed = t_lazy.eval(max_workers=4, desc="processing")
-
-    Backward compatibility is ensured by an automatic call to eval() with
-    default options.
-
-    >>> t_clean.to_pickle("output_file.pkl")
-    WARNING:root:.eval() has been automatically appended for you.
-    Check the documentation for more options.
 
     """
 
@@ -96,37 +85,43 @@ class LazyTraffic:
             + f"Call eval() to apply {len(self.stacked_ops)} stacked operations"
         )
 
-    def query(self, query_str: str) -> "LazyTraffic":
-        """A DataFrame query to apply on each Flight."""
-        # Traffic.query could not be properly decorated and typed
-        op_idx = LazyLambda("query", None, query_str=query_str)
-        return LazyTraffic(self.wrapped_t, self.stacked_ops + [op_idx])
-
     def eval(
         self, max_workers: int = 1, desc: Optional[str] = None
     ) -> "Traffic":
-        """Evaluate all stacked operations.
+        """
 
-        Parameters
-        ----------
+        The result can only be accessed after a call to ``eval()``.
 
         max_workers: int, default: 1
-            The number of processes to launch for evaluating all operations. By
-            default, a regular processing is triggered. Ideally this should be
-            set to a value close to the number of cores of your processor.
-        desc: str, None, default: None
-            If not None, a tqdm progressbar is displayed.
+            Multiprocessing is usually worth it. However, a sequential
+            processing is triggered by default. Keep the value close to the
+            number of cores of your processor. If memory becomes a problem,
+            stick to the default.
 
-        Returns
-        -------
-        Traffic
-            The fully processed Traffic structure.
+        desc: str, default: None
+            If not None, a tqdm progressbar is displayed with this parameter.
 
-        Examples
-        --------
-        >>> t_processed = t_lazy.eval(
-        ...     max_workers=4, desc="processing"
-        ... )  # doctest: +SKIP
+        Example usage:
+            The following call
+
+            >>> t_lazy.eval(max_workers=4, desc="preprocessing")
+
+            is equivalent to the multiprocessed version of
+
+            >>> Traffic.from_flights(
+            ...     flight.filter().resample("10s")
+            ...     for flight in tqdm(t, desc="preprocessing")
+            ... )
+
+        When many operations are stacked, this call is more efficient, esp. on
+        large structures, than as many full iterations on the Traffic structure.
+
+        Backward compatibility is ensured by an automatic call to eval() with
+        default options.
+
+        >>> t_lazy.to_pickle("output_file.pkl")
+        WARNING:root:.eval() has been automatically appended for you.
+        Check the documentation for more options.
 
         """
 
@@ -214,6 +209,12 @@ def lazy_evaluation(
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
             return LazyTraffic(lazy.wrapped_t, lazy.stacked_ops + [op_idx])
 
+        lazy_lambda_f.__annotations__ = getattr(
+            Flight, f.__name__
+        ).__annotations__
+        lazy_lambda_f.__annotations__["self"] = LazyTraffic
+        lazy_lambda_f.__annotations__["return"] = LazyTraffic
+
         # Attach the method to LazyCollection for further chaining
         setattr(LazyTraffic, f.__name__, lazy_lambda_f)
 
@@ -222,7 +223,7 @@ def lazy_evaluation(
                 f.__doc__ += f"""\n        .. note::
             This method will use the Flight `implementation
             <traffic.core.flight.html#traffic.core.Flight.{f.__name__}>`_ when
-            stacked for lazy iteration and evaluation.  """
+            stacked for lazy evaluation.  """
             return f
 
         # Take the method in Flight and create a LazyCollection
@@ -235,10 +236,38 @@ def lazy_evaluation(
         else:
             lambda_f.__doc__ = getattr(Flight, f.__name__).__doc__
 
+        lambda_f.__annotations__ = getattr(Flight, f.__name__).__annotations__
+        lambda_f.__annotations__["return"] = LazyTraffic
+
         if lambda_f.__doc__ is not None:
             lambda_f.__doc__ += """\n        .. warning::
-            This method will be stacked for lazy iteration and evaluation.  """
+            This method will be stacked for lazy evaluation.  """
 
         return lambda_f
 
     return wrapper
+
+
+# All methods coming from DataFrameMixin and GeographyMixin make sense in both
+# Flight and Traffic. However it would give real hard headaches to decorate them
+# all *properly* in the Traffic implementation. The following monkey-patching
+# does it all based on the type annotations (must match (T, ...) -> T)
+
+
+for name, handle in inspect.getmembers(
+    GeographyMixin, predicate=inspect.isfunction
+):
+    annots = handle.__annotations__
+    if name.startswith("_") or "self" not in annots or "return" not in annots:
+        continue
+
+    if annots["self"] is annots["return"]:
+
+        def lazy_lambda_f(lazy: LazyTraffic, *args, **kwargs):
+            op_idx = LazyLambda(name, None, *args, **kwargs)
+            return LazyTraffic(lazy.wrapped_t, lazy.stacked_ops + [op_idx])
+
+        lazy_lambda_f.__doc__ = handle.__doc__
+        # Attach the method to LazyCollection for further chaining
+
+        setattr(LazyTraffic, name, lazy_lambda_f)

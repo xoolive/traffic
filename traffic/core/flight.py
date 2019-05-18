@@ -94,6 +94,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         - time related methods:
           `after() <#traffic.core.Flight.after>`_,
           `at() <#traffic.core.Flight.at>`_,
+          `at_ratio() <#traffic.core.Flight.at_ratio>`_,
           `before() <#traffic.core.Flight.before>`_,
           `between() <#traffic.core.Flight.between>`_,
           `first() <#traffic.core.Flight.first>`_,
@@ -103,6 +104,7 @@ class Flight(GeographyMixin, ShapelyMixin):
           `clip() <#traffic.core.Flight.clip>`_,
           `compute_wind() <#traffic.core.Flight.compute_wind>`_,
           `compute_xy() <#traffic.core.Flight.compute_xy>`_,
+          `distance() <#traffic.core.Flight.distance>`_,
           `inside_bbox() <#traffic.core.Flight.inside_bbox>`_,
           `intersects() <#traffic.core.Flight.intersects>`_,
           `project_shape() <#traffic.core.Flight.project_shape>`_,
@@ -120,7 +122,7 @@ class Flight(GeographyMixin, ShapelyMixin):
           `plot() <#traffic.core.Flight.plot>`_,
           `plot_time() <#traffic.core.Flight.plot_time>`_
 
-    .. note::
+    .. tip::
         Sample flights are provided for testing purposes in module
         ``traffic.data.samples``
 
@@ -518,6 +520,18 @@ class Flight(GeographyMixin, ShapelyMixin):
             logging.warn(f"No index {index} for flight {id_}")
             return None
         return Position(df.loc[index])
+
+    def at_ratio(self, ratio: float = 0.5) -> Optional[Position]:
+        """Returns a position on the trajectory.
+
+        This method is convenient to place a marker on the trajectory in
+        visualisation output.
+
+        - ``Flight.at_ratio(0)`` is the first point in the trajectory.
+        - ``Flight.at_ratio(1)`` is the last point of the trajectory
+          (equivalent to ``Flight.at()``)
+        """
+        return self.between(self.start, self.start + ratio * self.duration).at()
 
     @overload
     def split(self, value: int, unit: str) -> Iterator["Flight"]:

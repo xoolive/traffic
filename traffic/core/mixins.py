@@ -329,8 +329,8 @@ class GeographyMixin(DataFrameMixin):
     """Adds Euclidean coordinates to a latitude/longitude DataFrame."""
 
     def compute_xy(
-        self, projection: Union[pyproj.Proj, crs.Projection, None] = None
-    ):
+        self: T, projection: Union[pyproj.Proj, crs.Projection, None] = None
+    ) -> T:
         """Enrich the structure with new x and y columns computed through a
         projection of the latitude and longitude columns.
 
