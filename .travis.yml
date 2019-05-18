@@ -17,7 +17,12 @@ env:
 addons:
   apt:
     packages:
+      # Shapely
       - libgeos-dev
+      # Cartopy
+      - libproj-dev
+      - proj-bin
+      - proj-data
 
 before_install:
   - python -m pip install -U pip
@@ -25,6 +30,7 @@ before_install:
 
 install:
   - python -m pip install --upgrade coveralls pytest-cov pytest
+  - python -m pip install pyproj  # dependency for cartopy
   - python -m pip install -e .
 
 script:

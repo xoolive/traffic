@@ -54,12 +54,12 @@ setup(
         "scipy",
         "matplotlib",
         "pandas",
+        "pyproj",  # required to build cartopy from source (better be explicit)
         "Cartopy",
         "Shapely",
         "requests",
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
-        "pyproj",  # not necessarily pulled by Cartopy...
         "typing_extensions",
         "PyQt5",
         "altair",  # interactive Vega plots
