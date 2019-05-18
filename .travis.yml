@@ -30,7 +30,7 @@ before_install:
 
 install:
   - python -m pip install --upgrade coveralls pytest-cov pytest
-  - python -m pip install pyproj  # dependency for cartopy
+  - python -m pip install --upgrade numpy pyproj  # dependency for cartopy
   - python -m pip install -e .
 
 script:
