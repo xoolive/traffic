@@ -45,6 +45,6 @@ deploy:
   provider: pages
   skip_cleanup: true
   github_token: $GITHUB_TOKEN
-  repo: git@github.com:traffic-viz/traffic-viz.github.io.git
+  repo: traffic-viz/traffic-viz.github.io
   target_branch: master
   local_dir: docs/_build/html
