@@ -29,12 +29,12 @@ before_install:
   - python -m pip --version
 
 install:
-  - python -m pip install --upgrade coveralls pytest-cov pytest
+  - python -m pip install --upgrade codecov pytest-cov pytest
   - python -m pip install --upgrade numpy pyproj  # dependency for cartopy
   - python -m pip install -e .
 
 script:
-  - python -m pytest --cov shapely --cov-report term-missing
+  - python -m pytest --cov --cov-report term-missing
 
 after_success:
-  - coveralls || echo "!! intermittent coveralls failure"
+  - codecov
