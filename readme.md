@@ -2,7 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.github.io/)
 [![Build Status](https://travis-ci.org/xoolive/traffic.svg?branch=master)](https://travis-ci.org/xoolive/traffic)
-[![Code Coverage](https://codecov.io/gh/xoolive/traffic/branch/master/graph/badge.svg)](https://codecov.io/gh/xoolive/traffic) 
+[![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic) 
 
 
 The traffic library helps working with common sources of air traffic data.
