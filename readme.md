@@ -75,18 +75,18 @@ icao24 callsign
 3443d2 VLG7964      85
 ```
 
-More details in the [documentation](https://traffic-viz.readthedocs.io/).
+More details in the [documentation](https://traffic-viz.github.io/).
 
 ## Graphical user interface
 
 A Qt application is provided for exploring and recording data.  
-More details in the [GUI section of the documentation](https://traffic-viz.readthedocs.io/en/latest/gui.html).
+More details in the [GUI section of the documentation](https://traffic-viz.github.io/en/latest/gui.html).
 
 ![GUI screenshot](https://raw.githubusercontent.com/xoolive/traffic/master/docs/_static/gui_start.png)
 
 ## Documentation
 
-Documentation available [here](https://traffic-viz.readthedocs.io/)
+Documentation available [here](https://traffic-viz.github.io/)
 
 ## Frequently asked questions
 

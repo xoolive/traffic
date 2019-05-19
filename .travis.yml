@@ -31,6 +31,7 @@ before_install:
 install:
   - python -m pip install --upgrade codecov pytest-cov pytest
   - python -m pip install --upgrade numpy pyproj  # dependency for cartopy
+  - python -m pip install --upgrade sphinx sphinx-rtd-theme
   - python -m pip install -e .
 
 script:
@@ -38,3 +39,11 @@ script:
 
 after_success:
   - codecov
+  - cd docs; make html; cd ..
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  repo: git@github.com:traffic-viz/traffic-viz.github.io.git
+  target_branch: master
+  local_dir: docs/_build/html

@@ -79,8 +79,9 @@ class LazyTraffic:
         self.stacked_ops: List[LazyLambda] = stacked_ops
 
     def __repr__(self):
+        assert LazyTraffic.__doc__ is not None
         return (
-            f"{super().__repr__()}\n"
+            f"{super()}\n"
             + LazyTraffic.__doc__
             + f"Call eval() to apply {len(self.stacked_ops)} stacked operations"
         )
@@ -268,6 +269,7 @@ for name, handle in inspect.getmembers(
             return LazyTraffic(lazy.wrapped_t, lazy.stacked_ops + [op_idx])
 
         lazy_lambda_f.__doc__ = handle.__doc__
+        lazy_lambda_f.__annotations__ = handle.__annotations__
         # Attach the method to LazyCollection for further chaining
 
         setattr(LazyTraffic, name, lazy_lambda_f)
