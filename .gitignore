@@ -4,11 +4,13 @@
 *.so
 *.pyd
 *.pkl
+.vscode
 
 *.egg-info/
 __pycache__/
 .ipynb_checkpoints/
 .mypy_cache/
+.pytest_cache/
 
 build/
 dist/

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import NamedTuple, Optional, Tuple, Union
+from typing import Iterator, NamedTuple, Optional, Tuple, Union
 
 import pandas as pd
 import requests
@@ -49,7 +49,7 @@ class Navaid(NavaidTuple, PointMixin):
 
 
 __github_url = "https://raw.githubusercontent.com/"
-base_url = __github_url + "TUDelft-CNS-ATM/bluesky/master/data/navdata"
+base_url = __github_url + "xoolive/traffic/master/data/navdata"
 
 
 class NavaidParser(DataFrameMixin):
@@ -57,16 +57,15 @@ class NavaidParser(DataFrameMixin):
     cache_dir: Path
 
     def __init__(self, data: Optional[pd.DataFrame] = None):
-        self._bluesky: Optional[pd.DataFrame] = data
+        self._data: Optional[pd.DataFrame] = data
 
-    def download_bluesky(self) -> None:
-        """Downloads the latest version of the navaid database by bluesky.
-
-        url: https://github.com/TUDelft-CNS-ATM/bluesky
+    def download_data(self) -> None:
+        """Downloads the latest version of the navaid database from the
+        repository.
         """
 
         navaids = []
-        c = requests.get(f"{base_url}/fix.dat")
+        c = requests.get(f"{base_url}/earth_fix.dat")
 
         for line in c.iter_lines():
 
@@ -97,11 +96,12 @@ class NavaidParser(DataFrameMixin):
                 )
             )
 
-        c = requests.get(f"{base_url}/nav.dat")
+        c = requests.get(f"{base_url}/earth_nav.dat")
 
         for line in c.iter_lines():
 
             line = line.decode(encoding="ascii", errors="ignore").strip()
+
             # Skip empty lines or comments
             if len(line) == 0 or line[0] == "#":
                 continue
@@ -115,7 +115,7 @@ class NavaidParser(DataFrameMixin):
 
             fields = line.split()
 
-            # Valid line starst with integers
+            # Valid line starts with integers
             if not fields[0].isdigit():
                 continue  # Next line
 
@@ -143,13 +143,13 @@ class NavaidParser(DataFrameMixin):
             wptype = wptypedict[itype]
 
             # Select types to read
-            if wptype not in ["NDB", "VOR", "DME", "TACAN"]:
+            if wptype not in ["NDB", "VOR", "ILS", "GS", "DME", "TACAN"]:
                 continue  # Next line
 
             # Find description
             try:
                 idesc = line.index(fields[7]) + len(fields[7])
-                description = line[idesc:].strip().upper()
+                description: Optional[str] = line[idesc:].strip().upper()
             except Exception:
                 description = None
 
@@ -159,35 +159,37 @@ class NavaidParser(DataFrameMixin):
                     wptype,
                     float(fields[1]),
                     float(fields[2]),
-                    float(fields[3]),
+                    float(fields[3][1:])
+                    if fields[3].startswith("0-")
+                    else float(fields[3]),
                     float(fields[4])
                     if wptype == "NDB"
                     else float(fields[4]) / 100,
-                    float(fields[6]) if wptype in ["VOR", "NDB"] else None,
+                    float(fields[6])
+                    if wptype in ["VOR", "NDB", "ILS", "GS"]
+                    else None,
                     description,
                 )
             )
 
-        self._bluesky = pd.DataFrame.from_records(
+        self._data = pd.DataFrame.from_records(
             navaids, columns=NavaidTuple._fields
         )
 
-        self._bluesky.to_pickle(self.cache_dir / "bluesky_navaid.pkl")
+        self._data.to_pickle(self.cache_dir / "traffic_navaid.pkl")
 
     @property
     def data(self) -> pd.DataFrame:
-        if self._bluesky is not None:
-            return self._bluesky
+        if self._data is not None:
+            return self._data
 
-        if not (self.cache_dir / "bluesky_navaid.pkl").exists():
-            self.download_bluesky()
+        if not (self.cache_dir / "traffic_navaid.pkl").exists():
+            self.download_data()
         else:
-            logging.info("Loading Bluesky navaid database")
-            self._bluesky = pd.read_pickle(
-                self.cache_dir / "bluesky_navaid.pkl"
-            )
+            logging.info("Loading navaid database")
+            self._data = pd.read_pickle(self.cache_dir / "traffic_navaid.pkl")
 
-        return self._bluesky
+        return self._data
 
     def __getitem__(self, name: str) -> Optional[Navaid]:
         x = self.data.query(
@@ -196,6 +198,10 @@ class NavaidParser(DataFrameMixin):
         if x.shape[0] == 0:
             return None
         return Navaid(**dict(x.iloc[0]))
+
+    def __iter__(self) -> Iterator[Navaid]:
+        for _, x in self.data.iterrows():
+            yield Navaid(**dict(x.iloc[0]))
 
     def search(self, name: str) -> "NavaidParser":
         return self.__class__(

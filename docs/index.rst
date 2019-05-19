@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-traffic: Air traffic data processing in Python
-==============================================
+traffic – Air traffic data processing in Python
+===============================================
 
 Source code on `github <https://github.com/xoolive/traffic>`_
 
