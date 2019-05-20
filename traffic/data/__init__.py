@@ -47,7 +47,7 @@ if nm_path_str != "":
 
 Aircraft.cache_dir = cache_dir
 Airports.cache_dir = cache_dir
-Airways.cache = cache_dir / "airways.pkl"
+Airways.cache_dir = cache_dir
 NavaidParser.cache_dir = cache_dir
 Runways.cache_dir = cache_dir
 AIXMAirspaceParser.cache_dir = cache_dir

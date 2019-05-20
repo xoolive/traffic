@@ -1,9 +1,11 @@
 import logging
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterator, NamedTuple, Optional, Tuple, Union
 
-import pandas as pd
 import requests
+
+import pandas as pd
 
 from ...core.mixins import DataFrameMixin, PointMixin, ShapelyMixin
 from ...drawing import Nominatim, location
@@ -191,6 +193,7 @@ class NavaidParser(DataFrameMixin):
 
         return self._data
 
+    @lru_cache()
     def __getitem__(self, name: str) -> Optional[Navaid]:
         x = self.data.query(
             "description == @name.upper() or name == @name.upper()"
