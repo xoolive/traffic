@@ -39,7 +39,7 @@ setup(
     package_data={
         "traffic.data.airspaces": ["firs.json"],
         "traffic.data.samples": list(
-            file.relative_to(sample_dir)
+            file.relative_to(sample_dir).as_posix()
             for file in sample_dir.glob("**/*.json.gz")
         ),
         "traffic": [
