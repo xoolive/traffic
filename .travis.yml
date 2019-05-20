@@ -48,3 +48,5 @@ deploy:
   repo: traffic-viz/traffic-viz.github.io
   target_branch: master
   local_dir: docs/_build/html
+  on:
+    condition: $TRAVIS_PYTHON_VERSION = 3.7

@@ -26,17 +26,13 @@ where it should.
 
     from traffic.core import Traffic
 
-    # The process may be long so a progressbar is appreciated
-    from tqdm.autonotebook import tqdm
-
     t = Traffic.from_file("<fill here>")
 
-    t_extended = Traffic.from_flights(
-        # for each flight
-        flight
+    t_extended = (
+        traffic
         # download and decode EHS messages (DF 20/21)
         .query_ehs()
-        # TODO fix a weird behaviour with latest version of pandas
+        # fix for a weird behaviour with latest version of pandas
         .drop(columns=["last_position"])
         # resample/interpolate one sample per second
         .resample("1s")
@@ -48,7 +44,8 @@ where it should.
         .filter(wind_u=53, wind_v=53)
         # resample one sample per minute
         .resample("1T")
-        for flight in tqdm(t)
+        # do not use multiprocessing to avoid denial of service
+        .eval(desc="preprocessing")
     )
 
     # t_extended.to_pickle("wind_backup.pkl")
