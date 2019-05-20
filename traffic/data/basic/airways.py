@@ -65,7 +65,7 @@ class Airways(DataFrameMixin):
     appropriate ATS authority, the lowest safe altitude. (ICAO Annex 11 - Air
     Traffic Services)
 
-    A (deprecated) version of world ATS routes is available as:
+    A (deprecated) database of world ATS routes is available as:
 
     >>> from traffic.data import airways
 

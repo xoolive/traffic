@@ -16,7 +16,7 @@ import pyModeS as pms
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
-from ...data.basic.airport import Airport
+from ...data.basic.airports import Airport
 
 # fmt: on
 

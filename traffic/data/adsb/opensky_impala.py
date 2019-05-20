@@ -13,7 +13,7 @@ from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
 from ...core.time import round_time, split_times, timelike, to_datetime
-from ..basic.airport import Airport
+from ..basic.airports import Airport
 
 
 class ImpalaError(Exception):

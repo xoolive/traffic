@@ -1,6 +1,6 @@
 
-Access to the OpenSky database
-------------------------------
+ADSB data from OpenSky
+----------------------
 
 The first thing to do is to put your credentials in you configuration
 file. Add the following lines to the [global] section of your

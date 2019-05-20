@@ -10,7 +10,7 @@ from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
 from .airspaces.eurocontrol_nm import NMAirspaceParser
 from .airspaces.eurofirs import eurofirs
 from .basic.aircraft import Aircraft
-from .basic.airport import Airports
+from .basic.airports import Airports
 from .basic.airways import Airways
 from .basic.navaid import NavaidParser
 from .basic.runways import Runways

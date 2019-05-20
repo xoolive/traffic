@@ -7,7 +7,7 @@ from . import geodesy as geo
 from .mixins import PointMixin
 
 if TYPE_CHECKING:
-    from ..data.basic.airport import Airport  # noqa: F401
+    from ..data.basic.airports import Airport  # noqa: F401
 
 
 class DistanceAirport(NamedTuple):

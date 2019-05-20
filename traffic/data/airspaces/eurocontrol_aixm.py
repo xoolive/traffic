@@ -18,7 +18,7 @@ from shapely.ops import cascaded_union
 from ...core.airspace import components  # to be moved here TODO
 from ...core.airspace import (Airspace, AirspaceInfo, AirspaceList,
                               ExtrudedPolygon, cascaded_union_with_alt)
-from ...data.basic.airport import Airport
+from ...data.basic.airports import Airport
 
 # fmt: on
 

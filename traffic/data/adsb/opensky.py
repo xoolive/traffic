@@ -14,7 +14,7 @@ from ...core import Flight
 from ...core import StateVectors as SVMixin
 from ...core.mixins import PointMixin, ShapelyMixin
 from ...core.time import round_time, timelike, to_datetime
-from ..basic.airport import Airport
+from ..basic.airports import Airport
 from .opensky_impala import Impala
 
 
