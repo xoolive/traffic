@@ -582,6 +582,7 @@ class Traffic(GeographyMixin):
         nb_samples: int,
         features: List[str] = ["x", "y"],
         projection: Union[None, crs.Projection, pyproj.Proj] = None,
+        transformer: Optional[Transformer] = None,
         max_workers: int = 1,
         *args,
         **kwargs,
@@ -600,5 +601,12 @@ class Traffic(GeographyMixin):
         from ..algorithms.clustering import centroid
 
         return centroid(
-            self, nb_samples, features, projection, max_workers, *args, **kwargs
+            self,
+            nb_samples,
+            features,
+            projection,
+            transformer,
+            max_workers,
+            *args,
+            **kwargs,
         )

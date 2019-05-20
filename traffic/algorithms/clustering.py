@@ -95,6 +95,7 @@ def centroid(
     nb_samples: int,
     features: List[str] = ["x", "y"],
     projection: Union[None, crs.Projection, pyproj.Proj] = None,
+    transform: Optional[Transformer] = None,
     max_workers: int = 1,
     *args,
     **kwargs,
@@ -110,6 +111,9 @@ def centroid(
 
     X = prepare_features(traffic, nb_samples, features, projection, max_workers)
     ids = list(f.flight_id for f in traffic)
+
+    if transform is not None:
+        X = transform.fit_transform(X)
 
     return traffic[
         ids[squareform(pdist(X, *args, **kwargs)).mean(axis=1).argmin()]
