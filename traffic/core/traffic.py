@@ -208,6 +208,22 @@ class Traffic(GeographyMixin):
         rep = f"<b>Traffic with {shape} identifiers</b>"
         return rep + styler._repr_html_()
 
+    def aircraft_data(self) -> "Traffic":
+        """
+        Add registration and aircraft typecode based on the `aircraft database
+        <aircraft.html>`_.
+
+        """
+        from ..data import aircraft
+
+        return self.merge(
+            aircraft.data[["icao24", "registration", "typecode"]]
+            .query('typecode != ""')
+            .drop_duplicates("icao24"),
+            on="icao24",
+            how="left",
+        )
+
     # -- Methods for lazy evaluation, delegated to Flight --
 
     @lazy_evaluation()
@@ -260,6 +276,14 @@ class Traffic(GeographyMixin):
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
     ):
+        ...
+
+    @lazy_evaluation()
+    def query_opensky(self):
+        ...
+
+    @lazy_evaluation()
+    def query_ehs(self, data, failure_mode, propressbar):
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight

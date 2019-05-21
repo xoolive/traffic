@@ -11,6 +11,31 @@ from tqdm.autonotebook import tqdm
 
 
 class Aircraft(object):
+    """
+
+    `@junzis <https://github.com/junzis/>`_'s `database
+    <https://junzisun.com/adb/download>`_ is available by default in the
+    library as:
+
+    >>> from traffic.data import aircraft
+
+    Basic requests can be made by the bracket notation:
+
+    >>> aircraft["F-GFKY"]
+          icao24 registration typecode             model    operator
+    3032  391558       F-GFKY     A320   Airbus A320-211  Air France
+    >>> aircraft["391558"]
+          icao24 registration typecode             model    operator
+    3032  391558       F-GFKY     A320   Airbus A320-211  Air France
+
+    A more comprehensive database can be manually downloaded or upgraded (the
+    operation can take up to five minutes with a slow Internet connection):
+
+    >>> aircraft.download_opensky()
+
+
+
+    """
 
     cache_dir: Path
     basic_columns = ["icao24", "registration", "typecode", "model", "operator"]
@@ -168,7 +193,26 @@ class Aircraft(object):
             ]
 
     def operator(self, name: str) -> pd.DataFrame:
-        """Requests an aircraft by owner or operator (fuzzy match)."""
+        """Requests an aircraft by owner or operator (fuzzy match).
+
+        The query string may match the owner or operator (full name, ICAO
+        code or IATA code)
+
+        >>> aircraft.operator("Speedbird").head()
+                icao24 registration typecode serialnumber           model
+        7041    400409       G-BNLJ     B744        24052  Boeing 747-436
+        7042    40040a       G-BNLK     B744        24053  Boeing 747-436
+        7043    40040d       G-BNLN     B744        24056  Boeing 747-436
+        7044    40040e       G-BNLO     B744        24057  Boeing 747-436
+        7045    40040f       G-BNLP     B744        24058  Boeing 747-436
+                       operator operatoricao            owner
+        7041    British Airways          BAW  British Airways
+        7042    British Airways          BAW  British Airways
+        7043    British Airways          BAW  British Airways
+        7044    British Airways          BAW  British Airways
+        7045    British Airways          BAW  British Airways
+
+        """
         if self.opensky_db is None:
             return self._fmt(self.data.query("operator.str.contains(@name)"))
         else:
@@ -184,7 +228,22 @@ class Aircraft(object):
             )
 
     def stats(self, name: str) -> pd.DataFrame:
-        """Computes stats of owned or operated aircraft (fuzzy match)."""
+        """Computes stats of owned or operated aircraft (fuzzy match).
+
+        >>> aircraft.stats("HOP")
+                              model  icao24
+        typecode
+        AT45             ATR 42-500      13
+        AT75             ATR 72-500       9
+        AT76             ATR 72-600       5
+        CRJ1       Canadair CRJ-100       5
+        CRJ7       Canadair CRJ-700      13
+        CRJX      Canadair CRJ-1000      14
+        E145      Embraer ERJ-145MP      17
+        E170        Embraer ERJ-170      16
+        E190        Embraer ERJ-190      10
+
+        """
         return (
             self.operator(name)
             .drop_duplicates("icao24")
@@ -193,7 +252,22 @@ class Aircraft(object):
         )
 
     def model(self, name: str) -> pd.DataFrame:
-        """Requests an aircraft by model or typecode (fuzzy match)."""
+        """Requests an aircraft by model or typecode (fuzzy match).
+
+        >>> aircraft.model("RJ85").head()
+             icao24 registration typecode serialnumber       model
+        39   0081fb       ZS-ASW     RJ85        E2313   Avro RJ85
+        40   0081fc       ZS-ASX     RJ85        E2314   Avro RJ85
+        41   0081fd       ZS-ASY     RJ85        E2316   Avro RJ85
+        42   0081fe       ZS-ASZ     RJ85        E2318   Avro RJ85
+        240  00b174       ZS-SSH     RJ85        E2285   Avro RJ85
+            operator operatoricao                  owner
+        39   Airlink               South African Airlink
+        40   Airlink               South African Airlink
+        41   Airlink               South African Airlink
+        42   Airlink               South African Airlink
+        240  Airlink               South African Airlink
+        """
         if self.opensky_db is None:
             return self._fmt(
                 self.data.query(
@@ -211,11 +285,44 @@ class Aircraft(object):
             )
 
     def registration(self, name: str) -> pd.DataFrame:
-        """Requests an aircraft by registration (fuzzy match)."""
+        """Requests an aircraft by registration (fuzzy match).
+
+        >>> aircraft.registration("F-ZB").sample(5)
+                icao24 registration typecode serialnumber
+        5617    3b7b77       F-ZBAB     F406     406-0025
+        454188  3b7b6c       F-ZBFX     CL4T         2007
+        94647   3b7ba4       F-ZBPG     EC45         9013
+        245275  3b7b21       F-ZBGP     B350       FL-802
+        5626    3b7ba5       F-ZBPF     EC45         9012
+                                     model operator            owner
+        5617           Reims F406 Vigilant            French Customs
+        454188                    CL-415 T           Securite Civile
+        94647       MBB-BK 117 C-2 (EC145)           Securite Civile
+        245275               King Air B350            French Customs
+        5626    Eurocopter-Kawasaki EC-145           Securite Civile
+
+        """
         return self._fmt(self.data.query("registration.str.contains(@name)"))
 
     def query(self, **kwargs) -> pd.DataFrame:
-        """Combines several requests."""
+        """Combines several requests.
+
+        The keyword arguments correspond to the name of other methods.
+
+        >>> aircraft.query(registration="^F-ZB", model="EC45").head()
+           icao24 registration typecode serialnumber                   model
+        2  3b7b4a       F-ZBQK     EC45         9372  MBB-BK 117 C-2 (EC145)
+        3  3b7b4b       F-ZBQJ     EC45         9323  MBB-BK 117 C-2 (EC145)
+        4  3b7b50       F-ZBQI     EC45         9240  MBB-BK 117 C-2 (EC145)
+        5  3b7b51       F-ZBQH     EC45         9232  MBB-BK 117 C-2 (EC145)
+        6  3b7b52       F-ZBQG     EC45         9217  MBB-BK 117 C-2 (EC145)
+                          operator operatoricao            owner
+        2          Securite Civile               Securite Civile
+        3          Securite Civile               Securite Civile
+        4          Securite Civile               Securite Civile
+        5          Securite Civile               Securite Civile
+        6          Securite Civile               Securite Civile
+        """
         subs = (getattr(self, key)(value) for key, value in kwargs.items())
         res = reduce(lambda a, b: a.merge(b, how="inner"), subs)
         return res

@@ -1,5 +1,5 @@
-Airways a.k.a. ATS routes
--------------------------
+Airways, ATS routes
+-------------------
 
 .. autoclass:: traffic.data.basic.airways.Airways
     :members:

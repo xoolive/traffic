@@ -1,5 +1,5 @@
-Airports
---------
+Airports and runways
+--------------------
 
 .. autoclass:: traffic.data.basic.airports.Airports
     :members:

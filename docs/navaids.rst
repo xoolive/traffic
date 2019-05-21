@@ -1,5 +1,11 @@
-Beacons
--------
+Navigational beacons
+--------------------
+
+.. autoclass:: traffic.data.basic.navaid.Navaid
+    :members:
+    :no-inherited-members:
+    :no-undoc-members:
+
 
 A navaid database (also available in
 `bluesky <https://github.com/ProfHoekstra/bluesky>`__) is provided. All
