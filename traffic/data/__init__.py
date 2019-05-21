@@ -12,7 +12,7 @@ from .airspaces.eurofirs import eurofirs
 from .basic.aircraft import Aircraft
 from .basic.airports import Airports
 from .basic.airways import Airways
-from .basic.navaid import NavaidParser
+from .basic.navaid import Navaids
 from .basic.runways import Runways
 from .so6 import SO6  # noqa: F401
 
@@ -48,7 +48,7 @@ if nm_path_str != "":
 Aircraft.cache_dir = cache_dir
 Airports.cache_dir = cache_dir
 Airways.cache_dir = cache_dir
-NavaidParser.cache_dir = cache_dir
+Navaids.cache_dir = cache_dir
 Runways.cache_dir = cache_dir
 AIXMAirspaceParser.cache_dir = cache_dir
 
@@ -59,7 +59,7 @@ if sys.version_info < (3, 7, 0):
     aircraft = Aircraft()
     airports = Airports()
     airways = Airways()
-    navaids = NavaidParser()
+    navaids = Navaids()
     aixm_airspaces = AIXMAirspaceParser(config_file)
     nm_airspaces = NMAirspaceParser(config_file)
     runways = Runways()
@@ -76,7 +76,7 @@ def __getattr__(name: str):
     if name == "airways":
         return Airways()
     if name == "navaids":
-        return NavaidParser()
+        return Navaids()
     if name == "aixm_airspaces":
         return AIXMAirspaceParser(config_file)
     if name == "nm_airspaces":

@@ -9,6 +9,7 @@ Sources of data
     navaids
     airways
     eurofirs
+    samples
     opensky_usage
     so6_usage
     airac_usage

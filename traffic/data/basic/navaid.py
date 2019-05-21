@@ -1,11 +1,12 @@
+# flake8: noqa
+
 import logging
 from functools import lru_cache
 from pathlib import Path
 from typing import Iterator, NamedTuple, Optional, Tuple, Union
 
-import requests
-
 import pandas as pd
+import requests
 
 from ...core.mixins import DataFrameMixin, PointMixin, ShapelyMixin
 from ...drawing import Nominatim, location
@@ -54,7 +55,22 @@ __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"
 
 
-class NavaidParser(DataFrameMixin):
+class Navaids(DataFrameMixin):
+
+    """
+
+    Navigational beacons.
+
+    A (deprecated) database of world navigational beacons is available as:
+
+    >>> from traffic.data import navaids
+
+    Any navigational beacon can be accessed by the bracket notation:
+
+    >>> navaids['NARAK']
+    NARAK (FIX): 44.29527778 1.74888889
+
+    """
 
     cache_dir: Path
 
@@ -206,7 +222,20 @@ class NavaidParser(DataFrameMixin):
         for _, x in self.data.iterrows():
             yield Navaid(**dict(x.iloc[0]))
 
-    def search(self, name: str) -> "NavaidParser":
+    def search(self, name: str) -> "Navaids":
+        """
+        Selects the subset of airways matching name in the name or description
+        field.
+
+        .. warning::
+            The same name may match several navigational beacons in the world.
+
+        >>> navaids.search("ZUE")
+                name  type  lat       lon       alt     frequency     description
+        272107  ZUE   NDB   30.900000 20.068333 0.0     369.00  0.0   ZUEITINA NDB
+        275948  ZUE   VOR   47.592167 8.817667  1730.0  110.05  2.0   ZURICH EAST VOR-DME
+        290686  ZUE   DME   47.592167 8.817667  1730.0  110.05  NaN   ZURICH EAST VOR-DME
+        """
         return self.__class__(
             self.data.query(
                 "description == @name.upper() or name == @name.upper()"
@@ -218,7 +247,23 @@ class NavaidParser(DataFrameMixin):
         extent: Union[
             str, ShapelyMixin, Nominatim, Tuple[float, float, float, float]
         ],
-    ) -> "NavaidParser":
+    ) -> "Navaids":
+        """
+        Selects the subset of navigational beacons inside the given extent.
+
+        The parameter extent may be passed as:
+
+            - a string to query OSM Nominatim service;
+            - the result of an OSM Nominatim query;
+            - any kind of shape (including airspaces);
+            - extents (west, east, south, north)
+
+        >>> navaids['ZUE']
+        ZUE (NDB): 30.9 20.06833333 0 ZUEITINA NDB 369.0kHz
+        >>> navaids.extent('Switzerland')['ZUE']
+        ZUE (VOR): 47.59216667 8.81766667 1730 ZURICH EAST VOR-DME 110.05MHz
+
+        """
         if isinstance(extent, str):
             extent = location(extent)
         if isinstance(extent, ShapelyMixin):

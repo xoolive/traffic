@@ -29,6 +29,7 @@ easily extendable to other sources of data.
    quickstart
    core_structure
    data
+   algorithms
    export
    cli
    gui

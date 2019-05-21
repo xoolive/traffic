@@ -24,24 +24,6 @@ The question applies to pandas dataframes as well, with many opinions available 
 
 The `Flight <traffic.core.flight.html>`_ and `Traffic <traffic.core.traffic.html>`_ structures implement the following methods:
 
-.. code:: python
 
-    # Automatic dispatch according to file extension
-    Flight.from_file(filename, *args, **kwargs)
-    Traffic.from_file(filename, *args, **kwargs)
-
-    # Export methods
-    Flight.to_csv(filename, *args, **kwargs)
-    Traffic.to_csv(filename, *args, **kwargs)
-
-    Flight.to_json(filename, *args, **kwargs)
-    Traffic.to_json(filename, *args, **kwargs)
-
-    Flight.to_pickle(filename, *args, **kwargs)
-    Traffic.to_pickle(filename, *args, **kwargs)
-
-    Flight.to_hdf(filename, *args, **kwargs)
-    Traffic.to_hdf(filename, *args, **kwargs)
-
-    Flight.to_parquet(filename, *args, **kwargs)
-    Traffic.to_parquet(filename, *args, **kwargs)
+.. autoclass:: traffic.core.mixins.DataFrameMixin()
+  :members: from_file, to_csv, to_json, to_pickle, to_hdf, to_parquet
