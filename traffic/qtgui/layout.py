@@ -543,7 +543,7 @@ class MainScreen(QMainWindow):
         icon_path = Path(__file__).absolute().parent.parent.parent / "icons"
 
         if sys.platform == "linux":
-            icon_full = QtGui.QIcon((icon_path / "travel-white.svg").as_posix())
+            icon_full = QtGui.QIcon((icon_path / "travel-beige.svg").as_posix())
         elif sys.platform == "darwin":
             icon_full = QtGui.QIcon((icon_path / "travel-grey.svg").as_posix())
         else:
