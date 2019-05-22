@@ -24,6 +24,13 @@ def test_properties() -> None:
 
 
 @pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
+def test_emptydata() -> None:
+    airbus_tree: Flight = getattr(featured, "airbus_tree")
+    assert airbus_tree.registration == "F-WWAE"
+    assert airbus_tree.typecode == "A388"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_iterators() -> None:
     flight: Flight = getattr(featured, "belevingsvlucht")
     assert min(flight.timestamp) == flight.start

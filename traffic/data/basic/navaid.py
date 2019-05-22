@@ -58,8 +58,21 @@ base_url = __github_url + "xoolive/traffic/master/data/navdata"
 class Navaids(DataFrameMixin):
 
     """
+    `VOR <https://en.wikipedia.org/wiki/VHF_omnidirectional_range>`_, `DME
+    <https://en.wikipedia.org/wiki/Distance_measuring_equipment>`_ and `NDB
+    <https://en.wikipedia.org/wiki/Non-directional_beacon>`_ are short-range
+    radio navigation systems for aircraft.  They help aircraft with a receiving
+    unit to determine their position and stay on course.
 
-    Navigational beacons.
+    The first airways were designed after the locations of these beacons. Recent
+    progress in GNSS systems helped define more positions by their latitudes and
+    longitudes, referred to as FIX.
+
+    - Read more `here <https://aerosavvy.com/navigation-name-nonsense/>`_ about
+      navigational beacons and how FIX names are decided.
+
+    - Read more `here <scenarios/calibration.html>`_ about calibration of such
+      equipment.
 
     A (deprecated) database of world navigational beacons is available as:
 

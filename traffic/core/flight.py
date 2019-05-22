@@ -396,7 +396,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         if not isinstance(self.icao24, str):
             return None
         res = aircraft[self.icao24]
-        res = res.query("registration == registration")
+        res = res.query("registration == registration and registration != ''")
         if res.shape[0] == 1:
             return res.iloc[0].registration
         return None
@@ -408,7 +408,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         if not isinstance(self.icao24, str):
             return None
         res = aircraft[self.icao24]
-        res = res.query("typecode == typecode")
+        res = res.query("typecode == typecode and typecode != ''")
         if res.shape[0] == 1:
             return res.iloc[0].typecode
         return None
