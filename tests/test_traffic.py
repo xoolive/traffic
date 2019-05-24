@@ -13,7 +13,7 @@ def test_properties() -> None:
     assert f"{switzerland.start_time}" == "2018-08-01 05:00:00+00:00"
     assert f"{switzerland.end_time}" == "2018-08-01 21:59:50+00:00"
 
-    #  TODO change @lru_cache on @property, rename Traffic.aircraft
+    # TODO change @lru_cache on @property, rename Traffic.aircraft
     assert len(switzerland.callsigns) == 1243  # type: ignore
     assert len(switzerland.aircraft) == 842  # type: ignore
 

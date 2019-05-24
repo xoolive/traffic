@@ -1,10 +1,18 @@
 import sys
+import zipfile
 
 import pytest
 
 from traffic.core import Flight
-from traffic.data import eurofirs
+from traffic.data import eurofirs, runways
 from traffic.data.samples import featured
+
+skip_runways = False
+
+try:
+    _ = runways.runways
+except zipfile.BadZipFile:
+    skip_runways = True
 
 
 @pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
@@ -124,7 +132,7 @@ def test_landing_airport() -> None:
     assert airbus_tree.guess_landing_airport().airport.icao == "EDHI"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
+@pytest.mark.skipif(sys.version_info < (3, 7) or skip_runways, reason="py37")
 def test_landing_runway() -> None:
     # TODO refactor/rethink the returned type
     flight: Flight = getattr(featured, "belevingsvlucht")
