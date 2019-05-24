@@ -1,7 +1,7 @@
 [run]
 branch = True
 include = */traffic/*
-omit = *tests*, *plugins*
+omit = *tests*, *plugins*, *drawing*
 
 [report]
 exclude_lines =
@@ -10,5 +10,9 @@ exclude_lines =
     if TYPE_CHECKING:
     def __repr__
     def plot
+    def plot_time
+    def encode
+    def geoencode
     def _repr_html_
+    def _info_html
 ignore_errors = True
