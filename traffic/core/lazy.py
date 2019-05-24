@@ -236,7 +236,6 @@ def lazy_evaluation(
             λf.__doc__ = getattr(Flight, f.__name__).__doc__
 
         λf.__annotations__ = getattr(Flight, f.__name__).__annotations__
-        λf.__annotations__["return"] = LazyTraffic
 
         if λf.__doc__ is not None:
             λf.__doc__ += """\n        .. warning::
