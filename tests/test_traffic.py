@@ -28,7 +28,7 @@ def test_properties() -> None:
     selected = max(switzerland, key=lambda flight: flight.min("altitude"))
     assert selected.flight_id is None
     assert selected.min("altitude") == 47000.0
-    assert selected.aircraft == "aab6c0"
+    assert selected.icao24 == "aab6c0"
 
 
 def high_altitude(flight: Flight) -> bool:
