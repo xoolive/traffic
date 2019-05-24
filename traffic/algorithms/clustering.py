@@ -11,12 +11,12 @@ if TYPE_CHECKING:
     from ..core import Flight, Traffic  # noqa: F401
 
 
-class Transformer(Protocol):
+class TransformerProtocol(Protocol):
     def fit_transform(self, X: np.ndarray) -> np.ndarray:
         ...
 
 
-class Clustering(Protocol):
+class ClusteringProtocol(Protocol):
     def fit(self, X: np.ndarray) -> None:
         ...
 
@@ -53,41 +53,96 @@ def prepare_features(
     return np.stack(list(f.data[features].values.ravel() for f in resampled))
 
 
-def clustering(
-    traffic: "Traffic",
-    clustering: Clustering,
-    nb_samples: int,
-    features: List[str] = ["x", "y"],
-    *args,
-    projection: Union[None, crs.Projection, pyproj.Proj] = None,
-    transform: Optional[Transformer] = None,
-    max_workers: int = 1,
-    return_traffic: bool = True,
-) -> "Traffic":
+class Clustering:
+    def __init__(
+        self,
+        traffic: "Traffic",
+        clustering: ClusteringProtocol,
+        nb_samples: int,
+        features: List[str] = ["x", "y"],
+        *args,
+        projection: Union[None, crs.Projection, pyproj.Proj] = None,
+        transform: Optional[TransformerProtocol] = None,
+    ) -> None:
 
-    X = prepare_features(traffic, nb_samples, features, projection, max_workers)
+        self.traffic = traffic
+        self.clustering = clustering
+        self.nb_samples = nb_samples
+        self.features = features
+        self.projection = projection
+        self.transform = transform
 
-    if transform is not None:
-        X = transform.fit_transform(X)
+    def fit(self, max_workers: int = 1) -> None:
 
-    clustering.fit(X)
+        X = prepare_features(
+            self.traffic,
+            self.nb_samples,
+            self.features,
+            self.projection,
+            max_workers,
+        )
 
-    labels: np.ndarray = (
-        clustering.labels_  # type: ignore
-        if hasattr(clustering, "labels_")
-        else clustering.predict(X)
-    )
+        if self.transform is not None:
+            X = self.transform.fit_transform(X)
 
-    clusters = pd.DataFrame.from_records(
-        [
-            dict(flight_id=f.flight_id, cluster=cluster_id)
-            for f, cluster_id in zip(traffic, labels)
-        ]
-    )
-    if not return_traffic:
-        return clusters
+        self.clustering.fit(X)
 
-    return traffic.merge(clusters, on="flight_id")
+    def predict(self, max_workers: int = 1, return_traffic: bool = True):
+        X = prepare_features(
+            self.traffic,
+            self.nb_samples,
+            self.features,
+            self.projection,
+            max_workers,
+        )
+        if self.transform is not None:
+            X = self.transform.fit_transform(X)
+
+        labels = self.clustering.predict(X)
+
+        clusters = pd.DataFrame.from_records(
+            [
+                dict(flight_id=f.flight_id, cluster=cluster_id)
+                for f, cluster_id in zip(self.traffic, labels)
+            ]
+        )
+        if not return_traffic:
+            return clusters
+
+        return self.traffic.merge(clusters, on="flight_id")
+
+    def fit_predict(
+        self, max_workers: int = 1, return_traffic: bool = True
+    ) -> "Traffic":
+        X = prepare_features(
+            self.traffic,
+            self.nb_samples,
+            self.features,
+            self.projection,
+            max_workers,
+        )
+
+        if self.transform is not None:
+            X = self.transform.fit_transform(X)
+
+        self.clustering.fit(X)
+
+        labels: np.ndarray = (
+            self.clustering.labels_  # type: ignore
+            if hasattr(self.clustering, "labels_")
+            else self.clustering.predict(X)
+        )
+
+        clusters = pd.DataFrame.from_records(
+            [
+                dict(flight_id=f.flight_id, cluster=cluster_id)
+                for f, cluster_id in zip(self.traffic, labels)
+            ]
+        )
+        if not return_traffic:
+            return clusters
+
+        return self.traffic.merge(clusters, on="flight_id")
 
 
 def centroid(
@@ -95,7 +150,7 @@ def centroid(
     nb_samples: int,
     features: List[str] = ["x", "y"],
     projection: Union[None, crs.Projection, pyproj.Proj] = None,
-    transform: Optional[Transformer] = None,
+    transform: Optional[TransformerProtocol] = None,
     max_workers: int = 1,
     *args,
     **kwargs,

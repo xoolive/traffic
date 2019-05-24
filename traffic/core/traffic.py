@@ -22,7 +22,9 @@ from .sv import StateVectors
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
     from ..algorithms.cpa import CPA  # noqa: F401
-    from ..algorithms.clustering import Transformer, Clustering  # noqa: F401
+    from ..algorithms.clustering import (  # noqa: F401
+        ClusteringProtocol, TransformerProtocol, Clustering
+    )
 
 # fmt: on
 
@@ -51,8 +53,9 @@ class Traffic(GeographyMixin):
     <traffic.core.Traffic.start_time>`_, `end_time
     <traffic.core.Traffic.end_time>`_) and data preprocessing (most methods
     available on Flight), more complex algorithms like `closest point of
-    approach <#traffic.core.Traffic.closest_point_of_approach>`_ and `clustering
-    <#traffic.core.Traffic.clustering>`_ (more to come) are available.
+    approach <#traffic.core.Traffic.closest_point_of_approach>`_ and
+    `clustering <#traffic.core.Traffic.clustering>`_ (more to come) are
+    available.
 
     .. note::
 
@@ -533,15 +536,15 @@ class Traffic(GeographyMixin):
 
     def clustering(
         self,
-        clustering: "Clustering",
+        clustering: "ClusteringProtocol",
         nb_samples: int,
         features: List[str] = ["x", "y"],
         *args,
         projection: Union[None, crs.Projection, pyproj.Proj] = None,
-        transform: Optional["Transformer"] = None,
+        transform: Optional["TransformerProtocol"] = None,
         max_workers: int = 1,
         return_traffic: bool = True,
-    ) -> "Traffic":
+    ) -> "Clustering":
         """
         Computes a clustering of the trajectories, add labels in a column
         ``cluster``.
@@ -561,8 +564,9 @@ class Traffic(GeographyMixin):
               <https://scikit-learn.org/stable/modules/clustering.html#clustering>`_
               that is a class with a ``fit()`` method and a ``predict()`` method
               or a ``labels_`` attribute;
-            - returns the original Traffic DataFrame with an additional
-              ``cluster`` column.
+            - returns a Clustering object, on which to call fit(), predict() or
+              fit_predict() methods. Predicting methods return the original
+              Traffic DataFrame with an additional ``cluster`` column.
 
         Example usage:
 
@@ -575,7 +579,7 @@ class Traffic(GeographyMixin):
         ...     projection=EuroPP(),
         ...     method=DBSCAN(eps=1.5, min_samples=10),
         ...     transform=StandardScaler(),
-        ... )
+        ... ).fit_predict()
         >>> t_dbscan.groupby(["cluster"]).agg({"flight_id": "nunique"})
 
         .. parsed-literal::
@@ -588,17 +592,15 @@ class Traffic(GeographyMixin):
             3           24
 
         """
-        from ..algorithms.clustering import clustering as algo_clustering
+        from ..algorithms.clustering import Clustering
 
-        return algo_clustering(
+        return Clustering(
             self,
             clustering,
             nb_samples,
             features,
             projection=projection,
             transform=transform,
-            max_workers=max_workers,
-            return_traffic=return_traffic,
         )
 
     def centroid(
@@ -606,7 +608,7 @@ class Traffic(GeographyMixin):
         nb_samples: int,
         features: List[str] = ["x", "y"],
         projection: Union[None, crs.Projection, pyproj.Proj] = None,
-        transformer: Optional["Transformer"] = None,
+        transformer: Optional["TransformerProtocol"] = None,
         max_workers: int = 1,
         *args,
         **kwargs,
