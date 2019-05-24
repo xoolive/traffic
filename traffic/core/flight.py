@@ -279,7 +279,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         if len(tmp) == 1:
             return tmp[0]
         if warn:
-            logging.warn(f"Several {field}s for one flight, consider splitting")
+            logging.warning(
+                f"Several {field}s for one flight, consider splitting"
+            )
         return set(tmp)
 
     @property
@@ -517,7 +519,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         df = self.data.set_index("timestamp")
         if index not in df.index:
             id_ = getattr(self, "flight_id", self.callsign)
-            logging.warn(f"No index {index} for flight {id_}")
+            logging.warning(f"No index {index} for flight {id_}")
             return None
         return Position(df.loc[index])
 
@@ -887,7 +889,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         rwy_bearing = all_runways[candidate.name].bearing  # type: ignore
 
         if abs(avg_track - rwy_bearing) > 20:
-            logging.warn(
+            logging.warning(
                 f"({self.flight_id}) Candidate runway "
                 f"{candidate.name} is not consistent "
                 f"with average track {avg_track}."
@@ -1151,7 +1153,7 @@ class Flight(GeographyMixin, ShapelyMixin):
             id_ = self.flight_id
             if id_ is None:
                 id_ = self.callsign
-            logging.warn(f"No data on Impala for flight {id_}.")
+            logging.warning(f"No data on Impala for flight {id_}.")
             return self
 
         def fail_silent():

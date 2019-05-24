@@ -12,6 +12,12 @@ def test_getter() -> None:
     assert a.typecode.iloc[0] == "BE20"
 
 
+@pytest.mark.skipif(aircraft.opensky_db is not None, reason="OpenSky database")
+def test_opensky_dl() -> None:
+    aircraft.download_opensky()
+    assert aircraft.opensky_db is not None
+
+
 @pytest.mark.skipif(aircraft.opensky_db is None, reason="OpenSky database")
 def test_operator() -> None:
     df = aircraft.operator("penguin")

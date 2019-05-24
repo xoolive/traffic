@@ -5,8 +5,10 @@ omit = *tests*, *plugins*
 
 [report]
 exclude_lines =
-    if self.debug:
-    pragma: no cover
     raise NotImplementedError
     if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    def __repr__
+    def plot
+    def _repr_html_
 ignore_errors = True
