@@ -1,4 +1,15 @@
-from traffic.data import airports
+import zipfile
+
+import pytest
+
+from traffic.data import airports, runways
+
+skip_runways = False
+
+try:
+    _ = runways.runways
+except zipfile.BadZipFile:
+    skip_runways = True
 
 
 def test_getter() -> None:
@@ -17,6 +28,7 @@ def test_search() -> None:
     assert airports.search("ITALY").data.icao.str.startswith("LI").all()
 
 
+@pytest.mark.skipif(skip_runways, reason="Failed downloading runway data")
 def test_runway_list() -> None:
     airport = airports["TLS"]
     assert airport is not None
@@ -24,6 +36,7 @@ def test_runway_list() -> None:
     assert rwy_list == {"14L", "14R", "32L", "32R"}
 
 
+@pytest.mark.skipif(skip_runways, reason="Failed downloading runway data")
 def test_runway_bearing() -> None:
     for apt_name in ["EHAM", "EDDF", "LFPG", "KLAX", "KSFO", "RJTT"]:
         airport = airports[apt_name]
