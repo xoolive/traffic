@@ -1,5 +1,3 @@
-import sys
-
 import pytest
 
 from traffic.data import aircraft
@@ -14,12 +12,7 @@ def test_getter() -> None:
     assert a.typecode.iloc[0] == "BE20"
 
 
-# Ask the py36 environment to take care of trying to download the DB
-# It's long enough, no need to do it twice...
-@pytest.mark.skipif(
-    sys.version_info >= (3, 7) or aircraft.opensky_db is not None,
-    reason="OpenSky database",
-)
+@pytest.mark.skipif(aircraft.opensky_db is not None, reason="OpenSky database")
 def test_opensky_dl() -> None:
     aircraft.download_opensky()
     assert aircraft.opensky_db is not None

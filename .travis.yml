@@ -5,6 +5,8 @@ language: python
 cache:
   - pip
   - apt
+  directories:
+    - $HOME/.cache/traffic/
 
 python:
   - "3.6"
