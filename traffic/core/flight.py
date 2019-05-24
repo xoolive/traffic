@@ -573,13 +573,14 @@ class Flight(GeographyMixin, ShapelyMixin):
                 data.assign(
                     _mark=lambda df: df.last_position
                     != df.shift(1).last_position
-                )
-                .assign(
+                ).assign(
                     latitude=lambda df: df.latitude * df._mark / df._mark,
                     longitude=lambda df: df.longitude * df._mark / df._mark,
                     altitude=lambda df: df.altitude * df._mark / df._mark,
                 )
-                .drop(columns="_mark")
+                # keeping last_position causes more problems (= Nan) than
+                # anything. Safer to just remove it for now. Like it or not!
+                .drop(columns=["_mark", "last_position"])
             )
 
         return self.__class__(data)
