@@ -206,18 +206,16 @@ def lazy_evaluation(
         if not hasattr(Flight, f.__name__):
             raise TypeError(f"Class Flight does not provide {f.__name__}")
 
-        def lazy_lambda_f(lazy: LazyTraffic, *args, **kwargs):
+        def lazy_λf(lazy: LazyTraffic, *args, **kwargs):
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
             return LazyTraffic(lazy.wrapped_t, lazy.stacked_ops + [op_idx])
 
-        lazy_lambda_f.__annotations__ = getattr(
-            Flight, f.__name__
-        ).__annotations__
-        lazy_lambda_f.__annotations__["self"] = LazyTraffic
-        lazy_lambda_f.__annotations__["return"] = LazyTraffic
+        lazy_λf.__annotations__ = getattr(Flight, f.__name__).__annotations__
+        lazy_λf.__annotations__["self"] = LazyTraffic
+        lazy_λf.__annotations__["return"] = LazyTraffic
 
         # Attach the method to LazyCollection for further chaining
-        setattr(LazyTraffic, f.__name__, lazy_lambda_f)
+        setattr(LazyTraffic, f.__name__, lazy_λf)
 
         if default is True:
             if f.__doc__ is not None:
@@ -228,23 +226,23 @@ def lazy_evaluation(
             return f
 
         # Take the method in Flight and create a LazyCollection
-        def lambda_f(wrapped_t: "Traffic", *args, **kwargs):
+        def λf(wrapped_t: "Traffic", *args, **kwargs):
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
             return LazyTraffic(wrapped_t, [op_idx])
 
         if f.__doc__ is not None:
-            lambda_f.__doc__ = f.__doc__
+            λf.__doc__ = f.__doc__
         else:
-            lambda_f.__doc__ = getattr(Flight, f.__name__).__doc__
+            λf.__doc__ = getattr(Flight, f.__name__).__doc__
 
-        lambda_f.__annotations__ = getattr(Flight, f.__name__).__annotations__
-        lambda_f.__annotations__["return"] = LazyTraffic
+        λf.__annotations__ = getattr(Flight, f.__name__).__annotations__
+        λf.__annotations__["return"] = LazyTraffic
 
-        if lambda_f.__doc__ is not None:
-            lambda_f.__doc__ += """\n        .. warning::
+        if λf.__doc__ is not None:
+            λf.__doc__ += """\n        .. warning::
             This method will be stacked for lazy evaluation.  """
 
-        return lambda_f
+        return λf
 
     return wrapper
 
@@ -264,12 +262,15 @@ for name, handle in inspect.getmembers(
 
     if annots["self"] is annots["return"]:
 
-        def lazy_lambda_f(lazy: LazyTraffic, *args, **kwargs):
-            op_idx = LazyLambda(name, None, *args, **kwargs)
-            return LazyTraffic(lazy.wrapped_t, lazy.stacked_ops + [op_idx])
+        def make_lambda(name: str) -> Callable[..., LazyTraffic]:
+            def lazy_λf(lazy: LazyTraffic, *args, **kwargs):
+                op_idx = LazyLambda(name, None, *args, **kwargs)
+                return LazyTraffic(lazy.wrapped_t, lazy.stacked_ops + [op_idx])
 
-        lazy_lambda_f.__doc__ = handle.__doc__
-        lazy_lambda_f.__annotations__ = handle.__annotations__
+            lazy_λf.__doc__ = handle.__doc__
+            lazy_λf.__annotations__ = handle.__annotations__
+
+            return lazy_λf
+
         # Attach the method to LazyCollection for further chaining
-
-        setattr(LazyTraffic, name, lazy_lambda_f)
+        setattr(LazyTraffic, name, make_lambda(name))
