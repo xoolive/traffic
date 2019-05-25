@@ -9,10 +9,13 @@ exclude_lines =
     if __name__ == .__main__.:
     if TYPE_CHECKING:
     def __repr__
+    def _repr_html_
+    def _repr_svg_
+    def _info_html
+    def _ipython_key_completions_
+    coverage: ignore
     def plot
     def plot_time
     def encode
     def geoencode
-    def _repr_html_
-    def _info_html
 ignore_errors = True

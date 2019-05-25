@@ -77,7 +77,9 @@ class DataFrameMixin(object):
 
     # --- Redirected to pandas.DataFrame ---
 
-    def to_pickle(self, filename: Union[str, Path], *args, **kwargs) -> None:
+    def to_pickle(
+        self, filename: Union[str, Path], *args, **kwargs
+    ) -> None:  # coverage: ignore
         """Exports to pickle format.
 
         Options can be passed to ``pandas.to_pickle``
@@ -88,7 +90,9 @@ class DataFrameMixin(object):
         """
         self.data.to_pickle(filename, *args, **kwargs)
 
-    def to_csv(self, filename: Union[str, Path], *args, **kwargs) -> None:
+    def to_csv(
+        self, filename: Union[str, Path], *args, **kwargs
+    ) -> None:  # coverage: ignore
         """Exports to pickle format.
 
         Options can be passed to ``pandas.to_pickle``
@@ -99,7 +103,9 @@ class DataFrameMixin(object):
         """
         self.data.to_csv(filename, *args, **kwargs)
 
-    def to_hdf(self, filename: Union[str, Path], *args, **kwargs) -> None:
+    def to_hdf(
+        self, filename: Union[str, Path], *args, **kwargs
+    ) -> None:  # coverage: ignore
         """Exports to pickle format.
 
         Options can be passed to ``pandas.to_pickle``
@@ -110,7 +116,9 @@ class DataFrameMixin(object):
         """
         self.data.to_hdf(filename, *args, **kwargs)
 
-    def to_json(self, filename: Union[str, Path], *args, **kwargs) -> None:
+    def to_json(
+        self, filename: Union[str, Path], *args, **kwargs
+    ) -> None:  # coverage: ignore
         """Exports to json format.
 
         Options can be passed to ``pandas.to_json``
@@ -121,7 +129,9 @@ class DataFrameMixin(object):
         """
         self.data.to_json(filename, *args, **kwargs)
 
-    def to_parquet(self, filename: Union[str, Path], *args, **kwargs) -> None:
+    def to_parquet(
+        self, filename: Union[str, Path], *args, **kwargs
+    ) -> None:  # coverage: ignore
         """Exports to parquet format.
 
         Options can be passed to ``pandas.to_parquet``
@@ -132,7 +142,9 @@ class DataFrameMixin(object):
         """
         self.data.to_parquet(filename, *args, **kwargs)
 
-    def to_excel(self, filename: Union[str, Path], *args, **kwargs) -> None:
+    def to_excel(
+        self, filename: Union[str, Path], *args, **kwargs
+    ) -> None:  # coverage: ignore
         """Exports to Excel format.
 
         Options can be passed to ``pandas.to_excel``
@@ -402,7 +414,7 @@ class PointMixin(object):
 
     def plot(
         self, ax: Axes, text_kw=None, shift=dict(units="dots", x=15), **kwargs
-    ) -> List[Artist]:
+    ) -> List[Artist]:  # coverage: ignore
 
         if text_kw is None:
             text_kw = {}
