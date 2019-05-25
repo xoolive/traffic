@@ -19,7 +19,7 @@ except zipfile.BadZipFile:
 
 @pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_properties() -> None:
-    flight: Flight = getattr(samples, "belevingsvlucht")
+    flight: Flight = getattr(featured, "belevingsvlucht")
     assert len(flight) == 16005
     assert flight.min("altitude") == -59  # Welcome to the Netherlands!
     assert flight.max("altitude") == 18025

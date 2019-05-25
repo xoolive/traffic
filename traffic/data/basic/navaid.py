@@ -90,7 +90,7 @@ class Navaids(DataFrameMixin):
     def __init__(self, data: Optional[pd.DataFrame] = None):
         self._data: Optional[pd.DataFrame] = data
 
-    def download_data(self) -> None:
+    def download_data(self) -> None:  # coverage: ignore
         """Downloads the latest version of the navaid database from the
         repository.
         """

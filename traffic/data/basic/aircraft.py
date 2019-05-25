@@ -45,7 +45,7 @@ class Aircraft(object):
         self._opensky: Optional[pd.DataFrame] = None
         self._merged: Optional[pd.DataFrame] = None
 
-    def download_junzis(self) -> None:
+    def download_junzis(self) -> None:  # coverage: ignore
         """Downloads the latest version of the aircraft database by @junzis.
 
         url: https://junzisun.com/adb/download
@@ -85,7 +85,7 @@ class Aircraft(object):
         assert self._junzis is not None
         return self._junzis.fillna("")
 
-    def download_opensky(self):
+    def download_opensky(self):  # coverage: ignore
         """Downloads the latest version of the OpenSky aircraft database.
 
         url: https://opensky-network.org/aircraft-database

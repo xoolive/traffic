@@ -60,7 +60,9 @@ class RunwayAirport(ShapelyMixin):
     def shape(self) -> base.BaseGeometry:
         return linemerge(shape(x["geometry"]) for x in self.geojson())
 
-    def geoencode(self, mode: str = "geometry") -> Optional[alt.Chart]:
+    def geoencode(
+        self, mode: str = "geometry"
+    ) -> Optional[alt.Chart]:  # coverage: ignore
 
         if mode == "geometry":
             return (
@@ -118,7 +120,7 @@ class Runways(object):
             return None
         return RunwayAirport(self.runways[airport.icao])
 
-    def download_bluesky(self) -> None:
+    def download_bluesky(self) -> None:  # coverage: ignore
         self._runways: RunwaysType = dict()
 
         c = requests.get(base_url + "/apt.zip")

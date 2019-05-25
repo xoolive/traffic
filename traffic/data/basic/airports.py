@@ -42,7 +42,7 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
         return title + no_wrap_div.format(self._repr_svg_())
 
     @lru_cache()
-    def osm_request(self) -> Nominatim:
+    def osm_request(self) -> Nominatim:  # coverage: ignore
 
         if self.runways is not None:
             lon1, lat1, lon2, lat2 = self.runways.bounds
@@ -78,7 +78,7 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
         footprint: bool = True,
         runways: bool = False,
         labels: bool = False,
-    ) -> alt.Chart:
+    ) -> alt.Chart:  # coverage: ignoreÖ
         cumul = []
         if footprint:
             cumul.append(super().geoencode())
@@ -109,7 +109,7 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
 
         return runways[self.icao]
 
-    def plot(self, ax, **kwargs):
+    def plot(self, ax, **kwargs):  # coverage: ignore
         params = {
             "edgecolor": "silver",
             "facecolor": "None",
@@ -162,7 +162,7 @@ class Airports(DataFrameMixin):
     def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
         self._data: Optional[pd.DataFrame] = data
 
-    def download_fr24(self) -> None:
+    def download_fr24(self) -> None:  # coverage: ignore
         c = requests.get(
             "https://www.flightradar24.com/_json/airports.php",
             headers={"user-agent": "Mozilla/5.0"},

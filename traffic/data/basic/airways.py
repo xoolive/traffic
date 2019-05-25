@@ -112,7 +112,7 @@ class Airways(DataFrameMixin):
     def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
         self._data = data
 
-    def download_data(self) -> None:
+    def download_data(self) -> None:  # coverage: ignore
         self._data = pd.read_csv(
             base_url + "/earth_awy.dat", sep=" ", header=-1
         )
