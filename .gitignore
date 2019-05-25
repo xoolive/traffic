@@ -8,6 +8,7 @@
 
 *.egg-info/
 __pycache__/
+.coverage
 .ipynb_checkpoints/
 .mypy_cache/
 .pytest_cache/
