@@ -3,9 +3,18 @@ Core structure
 
 The `traffic` library is based on three main core classes for handling:
 
-- aircraft trajectories with `Flight <traffic.core.flight.html>`_
-- collection of aircraft trajectories with `Traffic <traffic.core.traffic.html>`_
-- airspaces and sectors with `Airspace <traffic.core.airspace.html>`_
+- aircraft trajectories are accessible through
+  `traffic.core.Flight <traffic.core.flight.html>`_;
+- collections of aircraft trajectories are
+  `traffic.core.Traffic <traffic.core.traffic.html>`_;
+- airspaces and sectors are represented with
+  `traffic.core.Airspace <traffic.core.airspace.html>`_.
+
+`Flight <traffic.core.flight.html>`_ and `Traffic <traffic.core.traffic.html>`_
+are wrappers around `pandas DataFrames <https://pandas.pydata.org/>`_ with
+relevant efficiently implemented methods for trajectory analysis. Airspaces take
+advantage of `shapely Geometries <https://shapely.readthedocs.io>`_ for
+geometrical analysis.
 
 **Contents**
 
