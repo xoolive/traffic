@@ -1,20 +1,22 @@
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Iterator, Set, Tuple, Union
+from typing import TYPE_CHECKING, Iterator, Set, Tuple, Union
 
 import pandas as pd
 import pyproj
 from cartopy import crs
 from tqdm.autonotebook import tqdm
 
-from traffic.core.mixins import DataFrameMixin
+from ..core import Flight
+from ..core.mixins import DataFrameMixin
 
-from ..core import Flight, Traffic
+if TYPE_CHECKING:
+    from ..core import Traffic
 
 
 def combinations(
-    t: Traffic, lateral_separation: float, vertical_separation: float
-) -> Iterator[Tuple[Flight, Flight]]:
+    t: "Traffic", lateral_separation: float, vertical_separation: float
+) -> Iterator[Tuple["Flight", "Flight"]]:
     for flight in tqdm(t, desc="Combinations", leave=False):
         t = t.query(f'icao24 != "{flight.icao24}"')
         for second in t.query(
@@ -105,7 +107,7 @@ class CPA(DataFrameMixin):
 
 
 def closest_point_of_approach(
-    traffic: Traffic,
+    traffic: "Traffic",
     lateral_separation: float,
     vertical_separation: float,
     projection: Union[pyproj.Proj, crs.Projection, None] = None,
@@ -144,7 +146,7 @@ def closest_point_of_approach(
     if isinstance(projection, crs.Projection):
         projection = pyproj.Proj(projection.proj4_init)
 
-    def yield_pairs(t_chunk: Traffic):
+    def yield_pairs(t_chunk: "Traffic"):
         """
         This function yields all pairs of possible candidates for a CPA
         calculation.
@@ -197,7 +199,7 @@ def closest_point_of_approach(
                     first.icao24,
                     second.icao24,
                 )
-                for (first, second) in yield_pairs(Traffic(t_chunk))
+                for (first, second) in yield_pairs(traffic.__class__(t_chunk))
             }
 
             for future in as_completed(tasks):

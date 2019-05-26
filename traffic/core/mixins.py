@@ -294,7 +294,7 @@ class ShapelyMixin(object):
         """
         return mapping(self.shape)
 
-    def geoencode(self) -> alt.Chart:
+    def geoencode(self) -> alt.Chart:  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         """
@@ -385,7 +385,7 @@ class GeographyMixin(DataFrameMixin):
 
         return self.__class__(self.data.assign(x=x, y=y))
 
-    def geoencode(self) -> alt.Chart:
+    def geoencode(self) -> alt.Chart:  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         """

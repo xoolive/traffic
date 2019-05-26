@@ -1247,7 +1247,9 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     # -- Visualisation --
 
-    def plot(self, ax: GeoAxesSubplot, **kwargs) -> List[Artist]:
+    def plot(
+        self, ax: GeoAxesSubplot, **kwargs
+    ) -> List[Artist]:  # coverage: ignore
         """Plots the trajectory on a Matplotlib axis.
 
         The Flight supports Cartopy axis as well with automatic projection. If
@@ -1273,7 +1275,9 @@ class Flight(GeographyMixin, ShapelyMixin):
             return ax.plot(*self.shape.xy, **kwargs)
         return []
 
-    def encode(self, y: Union[str, List[str], alt.Y], **kwargs) -> alt.Chart:
+    def encode(
+        self, y: Union[str, List[str], alt.Y], **kwargs
+    ) -> alt.Chart:  # coverage: ignore
         """Plots the given features according to time.
 
         The method ensures:
@@ -1343,7 +1347,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         y: Union[str, List[str]],
         secondary_y: Union[None, str, List[str]] = None,
         **kwargs,
-    ) -> None:
+    ) -> None:  # coverage: ignore
         """Plots the given features according to time.
 
         The method ensures:

@@ -30,7 +30,7 @@ __all__ = [
 ]
 
 airac_path_str = config.get("global", "airac_path", fallback="")
-if airac_path_str != "":
+if airac_path_str != "":  # coverage: ignore
     logging.warning(
         "Rename airac_path to aixm_path in your configuration file. "
         "The old name will not be supported in future versions"
@@ -38,11 +38,11 @@ if airac_path_str != "":
     AIXMAirspaceParser.aixm_path = Path(airac_path_str)
 
 aixm_path_str = config.get("global", "aixm_path", fallback="")
-if aixm_path_str != "":
+if aixm_path_str != "":  # coverage: ignore
     AIXMAirspaceParser.aixm_path = Path(aixm_path_str)
 
 nm_path_str = config.get("global", "nm_path", fallback="")
-if nm_path_str != "":
+if nm_path_str != "":  # coverage: ignore
     NMAirspaceParser.nm_path = Path(nm_path_str)
 
 Aircraft.cache_dir = cache_dir
@@ -77,9 +77,9 @@ def __getattr__(name: str):
         return Airways()
     if name == "navaids":
         return Navaids()
-    if name == "aixm_airspaces":
+    if name == "aixm_airspaces":  # coverage: ignore
         return AIXMAirspaceParser(config_file)
-    if name == "nm_airspaces":
+    if name == "nm_airspaces":  # coverage: ignore
         return NMAirspaceParser(config_file)
     if name == "opensky":
         return OpenSky(
@@ -87,7 +87,7 @@ def __getattr__(name: str):
         )
     if name == "runways":
         return Runways()
-    if name == "airac":
+    if name == "airac":  # coverage: ignore
         cache_file = cache_dir / "airac.cache"
         if cache_file.exists():
             cache_file.unlink()

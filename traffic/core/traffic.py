@@ -13,6 +13,8 @@ from cartopy import crs
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from shapely.geometry import base
 
+from ..algorithms.clustering import Clustering, centroid
+from ..algorithms.cpa import closest_point_of_approach
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
 from .lazy import lazy_evaluation
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
     from ..algorithms.cpa import CPA  # noqa: F401
     from ..algorithms.clustering import (  # noqa: F401
-        ClusteringProtocol, TransformerProtocol, Clustering
+        ClusteringProtocol, TransformerProtocol
     )
 
 # fmt: on
@@ -366,7 +368,7 @@ class Traffic(GeographyMixin):
         return None
 
     @property
-    def widget(self):
+    def widget(self):  # coverage: ignore
         from ..drawing.ipywidgets import TrafficWidget
 
         return TrafficWidget(self)
@@ -411,7 +413,7 @@ class Traffic(GeographyMixin):
 
     def plot(
         self, ax: GeoAxesSubplot, nb_flights: Optional[int] = None, **kwargs
-    ) -> None:
+    ) -> None:  # coverage: ignore
         """Plots each trajectory on a Matplotlib axis.
 
         Each Flight supports Cartopy axis as well with automatic projection. If
@@ -523,8 +525,6 @@ class Traffic(GeographyMixin):
 
         """
 
-        from ..algorithms.cpa import closest_point_of_approach
-
         return closest_point_of_approach(
             self,
             lateral_separation,
@@ -544,7 +544,7 @@ class Traffic(GeographyMixin):
         transform: Optional["TransformerProtocol"] = None,
         max_workers: int = 1,
         return_traffic: bool = True,
-    ) -> "Clustering":
+    ) -> Clustering:
         """
         Computes a clustering of the trajectories, add labels in a column
         ``cluster``.
@@ -592,7 +592,6 @@ class Traffic(GeographyMixin):
             3           24
 
         """
-        from ..algorithms.clustering import Clustering
 
         return Clustering(
             self,
@@ -624,7 +623,6 @@ class Traffic(GeographyMixin):
         <https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html#scipy.spatial.distance.pdist>`_
 
         """
-        from ..algorithms.clustering import centroid
 
         return centroid(
             self,

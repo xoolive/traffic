@@ -1,10 +1,9 @@
 from typing import Set
 
-from matplotlib.artist import Artist
-
 import pandas as pd
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+from matplotlib.artist import Artist
 
 from .mixins import GeographyMixin
 
@@ -26,7 +25,9 @@ class StateVectors(GeographyMixin):
     def callsigns(self):
         return set(self.data.callsign)
 
-    def plot(self, ax: GeoAxesSubplot, s: int = 10, **kwargs) -> Artist:
+    def plot(
+        self, ax: GeoAxesSubplot, s: int = 10, **kwargs
+    ) -> Artist:  # coverage: ignore
         """Plotting function. All arguments are passed to ax.scatter"""
         return ax.scatter(
             self.data.longitude,

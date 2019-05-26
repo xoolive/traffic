@@ -18,7 +18,7 @@ from ..basic.airports import Airport
 from .opensky_impala import Impala
 
 
-class Coverage(object):
+class Coverage(object):  # coverage: ignore
     """Plots the output of the coverage json."""
 
     def __init__(self, json):
@@ -44,7 +44,7 @@ class Coverage(object):
         )
 
 
-class StateVectors(SVMixin):
+class StateVectors(SVMixin):  # coverage: ignore
     """Plots the state vectors returned by OpenSky REST API."""
 
     def __init__(self, data: pd.DataFrame, opensky: "OpenSky") -> None:
@@ -58,7 +58,7 @@ class StateVectors(SVMixin):
         return self.opensky.api_tracks(icao24)
 
 
-class SensorRange(ShapelyMixin):
+class SensorRange(ShapelyMixin):  # coverage: ignore
     """Wraps the polygon defining the range of an OpenSky sensor."""
 
     def __init__(self, json):

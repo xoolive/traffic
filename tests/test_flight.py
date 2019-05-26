@@ -1,8 +1,10 @@
 import sys
 import zipfile
 
+import pandas as pd
 import pytest
 
+from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, runways, samples
 from traffic.data.samples import featured
@@ -100,6 +102,9 @@ def test_geometry() -> None:
     xy_length_s = simplified.project_shape().length / 1852
     assert xy_length_s < xy_length
 
+    simplified_3d = flight.simplify(1e3, altitude="altitude")
+    assert len(simplified) < len(simplified_3d) < len(flight)
+
     assert flight.intersects(eurofirs["EHAA"])
     assert flight.intersects(eurofirs["EHAA"].flatten())
     assert not flight.intersects(eurofirs["LFBB"])
@@ -148,3 +153,13 @@ def test_landing_runway() -> None:
 
     airbus_tree: Flight = getattr(samples, "airbus_tree")
     assert airbus_tree.guess_landing_runway().name == "23"
+
+
+def test_douglas_peucker() -> None:
+    # https://github.com/xoolive/traffic/pull/5
+    x = [0, 100, 200]
+    y = [0, 1, 0]
+    z = [0, 0, 0]
+    df3d = pd.DataFrame({"x": x, "y": y, "z": z})
+    res = douglas_peucker(df=df3d, z="z", tolerance=1, z_factor=1)
+    assert all(res)

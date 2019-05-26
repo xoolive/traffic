@@ -87,14 +87,16 @@ class Airspace(ShapelyMixin):
     def __str__(self):
         return f"""Airspace {self.name} with {len(self.elements)} parts"""
 
-    def annotate(self, ax: GeoAxesSubplot, **kwargs) -> None:
+    def annotate(
+        self, ax: GeoAxesSubplot, **kwargs
+    ) -> None:  # coverage: ignore
         if "projection" in ax.__dict__:
             kwargs["transform"] = PlateCarree()
         if "s" not in kwargs:
             kwargs["s"] = self.name
         ax.text(*np.array(self.centroid), **kwargs)
 
-    def plot(self, ax: GeoAxesSubplot, **kwargs) -> None:
+    def plot(self, ax: GeoAxesSubplot, **kwargs) -> None:  # coverage: ignore
         flat = self.flatten()
         if isinstance(flat, base.BaseMultipartGeometry):
             for poly in flat:

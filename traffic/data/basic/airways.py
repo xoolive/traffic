@@ -34,7 +34,7 @@ class Route(ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
-    def plot(self, ax, **kwargs):
+    def plot(self, ax, **kwargs):  # coverage: ignore
         if "color" not in kwargs:
             kwargs["color"] = "#aaaaaa"
         if "alpha" not in kwargs:

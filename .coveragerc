@@ -1,21 +1,17 @@
 [run]
 branch = True
 include = */traffic/*
-omit = *tests*, *plugins*, *drawing*
+omit = *tests*, *plugins*, *drawing*, *eurocontrol_*
 
 [report]
 exclude_lines =
+    coverage: ignore
     raise NotImplementedError
-    if __name__ == .__main__.:
     if TYPE_CHECKING:
     def __repr__
     def _repr_html_
     def _repr_svg_
     def _info_html
     def _ipython_key_completions_
-    coverage: ignore
-    def plot
-    def plot_time
-    def encode
-    def geoencode
+
 ignore_errors = True
