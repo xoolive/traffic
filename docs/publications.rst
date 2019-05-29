@@ -3,6 +3,8 @@ Publications
 
 - | X. Olive and L. Basora
   | **Identifying Anomalies in past en-route Trajectories with Clustering and Anomaly Detection Methods**. *Proceedings of the 13th Air Traffic Management R&D Seminar*, 2019
+  | `(notebook) <paper/sectflow.html>`__
+
 
 - | X. Olive, J. Grignard, T. Dubot and J. Saint-Lot.
   | **Detecting Controllers' Actions in Past Mode S Data by Autoencoder-Based Anomaly Detection**. *Proceedings of the SESAR Innovation Days*, 2018
@@ -16,11 +18,11 @@ Publications
   | **Trajectory clustering of air traffic flows around airports**. *Aerospace Science and Technology* 84, 2019, pp. 776--781.
   | https://doi.org/10.1016/j.ast.2018.11.031
 
-Links
------
+**Links**
 
 .. toctree::
    :maxdepth: 1
 
+   paper/sectflow
    paper/atc_detect
    paper/runway_excursion
