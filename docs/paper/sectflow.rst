@@ -4,7 +4,7 @@ Identifying Anomalies in past en-route Trajectories with Clustering and Anomaly 
 
 Xavier Olive and Luis Basora
 
-| *This notebook comes with the paper publish at ATM Seminar 2019.*
+| *This notebook comes with the paper published at ATM Seminar 2019.*
 | Details are presented in the paper. The following code is provided for
   reproducibility concerns.
 
