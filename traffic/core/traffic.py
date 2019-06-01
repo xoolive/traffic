@@ -367,12 +367,6 @@ class Traffic(GeographyMixin):
             return set(self.data.flight_id)
         return None
 
-    @property
-    def widget(self):  # coverage: ignore
-        from ..drawing.ipywidgets import TrafficWidget
-
-        return TrafficWidget(self)
-
     # --- Easy work ---
 
     def at(self, time: Optional[timelike] = None) -> "StateVectors":

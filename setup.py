@@ -64,9 +64,7 @@ setup(
         "PyQt5",
         "altair",  # interactive Vega plots
         "ipywidgets",  # IPython widgets for traffic
-        "ipyleaflet",
-        "ipympl",  # interactive matplotlib in notebooks
-        "tornado",  # dependency for matplotlib with WebAgg
+        "ipyleaflet",  # Leaflet for notebooks
         "tqdm>=4.28",  # progressbars
         "cartotools==1.0",
         "pyModeS>=2.0",
