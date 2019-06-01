@@ -974,7 +974,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         res = self.assign(cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant"))
 
         if compute_groundspeed:
-            gs = d / delta.timestamp_1.dt.total_seconds() * 3600 / 1852
+            gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
             res = res.assign(compute_gs=np.pad(gs, (1, 0), "constant"))
         return res
 
