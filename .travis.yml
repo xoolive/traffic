@@ -31,7 +31,8 @@ before_install:
   - python -m pip --version
 
 install:
-  - python -m pip install --upgrade codecov pytest-cov pytest
+  # possible bug with pytest 4.6.0
+  - python -m pip install --upgrade codecov pytest-cov pytest==4.5
   - python -m pip install --upgrade numpy pyproj  # dependency for cartopy
   - python -m pip install --upgrade sphinx sphinx-rtd-theme
   - python -m pip install -e .
