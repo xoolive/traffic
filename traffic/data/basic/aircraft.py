@@ -74,7 +74,7 @@ class Aircraft(object):
             (self.cache_dir / "merged_db.pkl").unlink()
 
     @property
-    def junzis_db(self) -> pd.DataFrame:
+    def junzis_db(self) -> pd.DataFrame:  # coverage: ignore
         if self._junzis is None:
             if not (self.cache_dir / "junzis_db.pkl").exists():
                 self.download_junzis()
@@ -138,6 +138,9 @@ class Aircraft(object):
             logging.info("Loading merged aircraft database")
             self._merged = pd.read_pickle(self.cache_dir / "merged_db.pkl")
             return self._merged
+
+        # coverage: ignore
+        # ignore that part below, a correct DB depends on this part anyway
 
         if not (self.cache_dir / "opensky_db.pkl").exists():
             return self.junzis_db
