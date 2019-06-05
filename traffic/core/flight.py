@@ -565,7 +565,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         for data in _split(self.data, value, unit):
             yield self.__class__(data)
 
-    def _handle_last_position(self) -> "Flight":
+    def handle_last_position(self) -> "Flight":
         # The following is True for all data coming from the Impala shell.
         # The following is an attempt to fix #7
         # Note the fun/fast way to produce 1 or trigger NaN (division by zero)
@@ -601,7 +601,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         if isinstance(rule, str):
             data = (
-                self._handle_last_position()
+                self.handle_last_position()
                 .data.assign(start=self.start, stop=self.stop)
                 .set_index("timestamp")
                 .resample(rule)
@@ -619,7 +619,7 @@ class Flight(GeographyMixin, ShapelyMixin):
             # To accept the future behavior, pass 'dtype=object'.
             # To keep the old behavior, pass 'dtype="datetime64[ns]"'.
             data = (
-                self._handle_last_position()
+                self.handle_last_position()
                 .assign(tz_naive=lambda d: d.timestamp.astype("datetime64[ns]"))
                 .data.set_index("tz_naive")
                 .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
@@ -1184,7 +1184,7 @@ class Flight(GeographyMixin, ShapelyMixin):
                     groundspeed="spd",
                     track="trk",
                 )
-            )[["timestamp", "alt", "spd", "trk"]]
+            )[["timestamp", "latitude", "longitude", "alt", "spd", "trk"]]
             .ffill()
             .drop_duplicates()  # bugfix! NEVER ERASE THAT LINE!
             .merge(
@@ -1208,7 +1208,17 @@ class Flight(GeographyMixin, ShapelyMixin):
                 leave=False,
             )
 
+        if isinstance(self.origin, str):
+            from ..data import airports
+
+            airport = airports[self.origin]
+            if airport is not None:
+                decoder.acs.set_latlon(*airport.latlon)
+
         for _, line in progressbar(referenced_df.iterrows()):
+
+            if line.alt < 5000 and line.latitude is not None:
+                decoder.acs.set_latlon(line.latitude, line.longitude)
 
             decoder.process(
                 line.timestamp,
@@ -1242,6 +1252,13 @@ class Flight(GeographyMixin, ShapelyMixin):
         flight = aggregate[self.callsign]
         if flight is None:
             return failure()
+
+        if self.number is not None:
+            flight = flight.assign(number=self.number)
+        if self.origin is not None:
+            flight = flight.assign(origin=self.origin)
+        if self.destination is not None:
+            flight = flight.assign(destination=self.destination)
 
         return flight.sort_values("timestamp")
 

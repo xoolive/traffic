@@ -421,7 +421,7 @@ class Decoder:
         else:
             lat0, lon0 = reference
 
-        self.acs = AircraftDict()
+        self.acs: AircraftDict = AircraftDict()
         self.acs.set_latlon(lat0, lon0)
         self.thread = None
 
