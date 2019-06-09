@@ -292,7 +292,10 @@ class Flight(GeographyMixin, ShapelyMixin):
         may be associated with the registration of an aircraft, its mission or
         with a route for a commercial aircraft.
         """
-        return self._get_unique("callsign")
+        callsign = self._get_unique("callsign")
+        if callsign != callsign:
+            raise ValueError("NaN appearing in callsign field")
+        return callsign
 
     @property
     def number(self) -> Union[str, Set[str], None]:
@@ -389,7 +392,10 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         For example icao24 code 'ac82ec' is associated to 'N905NA'.
         """
-        return self._get_unique("icao24")
+        icao24 = self._get_unique("icao24")
+        if icao24 != icao24:
+            raise ValueError("NaN appearing in icao24 field")
+        return icao24
 
     @property
     def registration(self) -> Optional[str]:

@@ -108,7 +108,7 @@ class Impala(object):
             if count > 0:
                 s.seek(0)
                 # otherwise pandas would parse 1234e5 as 123400000.0
-                df = pd.read_csv(s, dtype={"icao24": str})
+                df = pd.read_csv(s, dtype={"icao24": str, "callsign": str})
                 if df.shape[0] > 0:
                     return df
 
@@ -382,7 +382,13 @@ class Impala(object):
                 continue
 
             df = self._format_history(df)
+
+            if "last_position" in df.columns:
+                if df.query("last_position == last_position").shape[0] == 0:
+                    continue
+
             df = self._format_dataframe(df)
+
             cumul.append(df)
 
         if len(cumul) == 0:
