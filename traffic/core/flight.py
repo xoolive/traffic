@@ -1351,7 +1351,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         return (
             alt.Chart(data)
-            .mark_line(interpolate="bundle")
+            .mark_line(interpolate="monotone")
             .encode(**{**default_encode, **kwargs})
             .transform_timeunit(
                 timestamp="utcyearmonthdatehoursminutesseconds(timestamp)"
