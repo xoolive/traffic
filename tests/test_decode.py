@@ -1,5 +1,7 @@
-# import zipfile
+import sys
 from pathlib import Path
+
+import pytest
 
 from traffic.core import Flight, Traffic
 from traffic.data import opensky
@@ -10,6 +12,7 @@ def long_enough(flight: Flight) -> bool:
     return len(flight) > 100
 
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_decode():
 
     opensky.cache_dir = Path(__file__).parent.parent / "data" / "opensky_cache"
