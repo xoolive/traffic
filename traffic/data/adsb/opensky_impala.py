@@ -4,7 +4,7 @@ import re
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Callable, Iterable, Optional, Tuple, Union, cast
+from typing import Callable, Iterable, Optional, Tuple, Union
 
 import pandas as pd
 import paramiko
@@ -12,8 +12,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
-from ...core.time import round_time, split_times, timelike, to_datetime
-from ..basic.airports import Airport
+from ...core.time import split_times, timelike, to_datetime
 
 
 class ImpalaError(Exception):
@@ -68,7 +67,7 @@ class Impala(object):
         else:
             self.auth = (username, password)
 
-    def clear_cache(self) -> None:
+    def clear_cache(self) -> None:  # coverage: ignore
         """Clear cache files for OpenSky.
 
         The directory containing cache files tends to clog after a while.
@@ -158,7 +157,7 @@ class Impala(object):
 
         return df.sort_values("timestamp")
 
-    def _connect(self) -> None:
+    def _connect(self) -> None:  # coverage: ignore
         if self.username == "" or self.password == "":
             raise RuntimeError("This method requires authentication.")
         client = paramiko.SSHClient()
@@ -183,7 +182,7 @@ class Impala(object):
 
     def _impala(
         self, request: str, columns: str, cached: bool = True
-    ) -> Optional[pd.DataFrame]:
+    ) -> Optional[pd.DataFrame]:  # coverage: ignore
 
         digest = hashlib.md5(request.encode("utf8")).hexdigest()
         cachename = self.cache_dir / digest
@@ -528,110 +527,6 @@ class Impala(object):
             return None
 
         return pd.concat(cumul).sort_values("mintime")
-
-    def within_bounds(
-        self,
-        start: timelike,
-        stop: timelike,
-        bounds: Union[BaseGeometry, Tuple[float, float, float, float]],
-    ) -> Optional[pd.DataFrame]:
-        """EXPERIMENTAL."""
-
-        start = to_datetime(start)
-        stop = to_datetime(stop)
-
-        before_hour = round_time(start, "before")
-        after_hour = round_time(stop, "after")
-
-        try:
-            # thinking of shapely bounds attribute (in this order)
-            # I just don't want to add the shapely dependency here
-            west, south, east, north = bounds.bounds  # type: ignore
-        except AttributeError:
-            west, south, east, north = bounds
-
-        other_params = "and lon>={} and lon<={} ".format(west, east)
-        other_params += "and lat>={} and lat<={} ".format(south, north)
-
-        query = self.basic_request.format(
-            columns="icao24, callsign, s.ITEM as serial, count(*) as count",
-            other_tables=", state_vectors_data4.serials s",
-            before_time=start.timestamp(),
-            after_time=stop.timestamp(),
-            before_hour=before_hour.timestamp(),
-            after_hour=after_hour.timestamp(),
-            other_params=other_params + "group by icao24, callsign, s.ITEM",
-        )
-
-        logging.info(f"Sending request: {query}")
-        df = self._impala(query, columns="icao24, callsign, serial, count")
-        if df is None:
-            return None
-
-        df = df[df["count"] != "count"]
-        df["count"] = df["count"].astype(int)
-
-        return df
-
-    def within_airport(
-        self,
-        start: timelike,
-        stop: timelike,
-        airport: Union[Airport, str],
-        count: bool = False,
-    ) -> Optional[pd.DataFrame]:
-        """EXPERIMENTAL."""
-
-        start = to_datetime(start)
-        stop = to_datetime(stop)
-
-        before_hour = round_time(start, how="before")
-        after_hour = round_time(stop, how="after")
-
-        if isinstance(airport, str):
-            from traffic.data import airports
-
-            airport = cast(Airport, airports[airport])
-
-        other_params = (
-            "and lat<={airport_latmax} and lat>={airport_latmin} "
-            "and lon<={airport_lonmax} and lon>={airport_lonmin} "
-            "and baroaltitude<=1000 "
-            "group by icao24, callsign"
-        ).format(
-            airport_latmax=airport.latitude + 0.1,
-            airport_latmin=airport.latitude - 0.1,
-            airport_lonmax=airport.longitude + 0.1,
-            airport_lonmin=airport.longitude - 0.1,
-        )
-
-        columns = "icao24, callsign"
-        other_tables = ""
-        if count is True:
-            columns = "count(*) as count, s.ITEM as serial, " + columns
-            other_tables += ", state_vectors_data4.serials s"
-            other_params += ", s.ITEM"
-
-        request = self.basic_request.format(
-            columns=columns,
-            before_time=start.timestamp(),
-            after_time=stop.timestamp(),
-            before_hour=before_hour.timestamp(),
-            after_hour=after_hour.timestamp(),
-            other_tables=other_tables,
-            other_params=other_params,
-        )
-
-        df = self._impala(request, columns="count, serial, icao24, callsign")
-
-        if (
-            df is not None
-            and "callsign" in df.columns
-            and df.callsign.dtype == object
-        ):
-            df = df[df.callsign != "callsign"]
-
-        return df
 
 
 # below this line is only helpful references
