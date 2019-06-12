@@ -49,31 +49,22 @@ should work but the Anaconda way proved to work smoothly.
 conda install cartopy shapely
 ```
 
+## Documentation
+
+Documentation available [here](https://traffic-viz.github.io/)
+
 ## Command line tool
 
 The `traffic` tool scripts around the library for common usecases.
 
-You may download data from OpenSky Impala shell (check the help with option
-`-h`):
+The most basic use case revolves around exploring the embedded data. You may check
+the help with `traffic data -h`.
 
 ```
-traffic opensky 2018-01-01T06:00 -s 2018-01-01T08:00 -b Andorra -o andorra.pkl
-```
-
-You may inspect the contents of the file:
-
-```
-$ traffic show andorra.pkl
-Traffic with 7 identifiers
-                 count
-icao24 callsign
-3443d1 VLG242N     123
-392ae7 AFR75SD     123
-3444d2 VLG85VY     122
-344691 VLG8988     117
-4ca574 IBK5358     109
-4ca7f2 IBK5FM      101
-3443d2 VLG7964      85
+traffic data -p Tokyo
+     altitude country iata  icao   latitude   longitude                                name
+3820       21   Japan  HND  RJTT  35.552250  139.779602  Tokyo Haneda International Airport
+3821      135   Japan  NRT  RJAA  35.764721  140.386307  Tokyo Narita International Airport
 ```
 
 More details in the [documentation](https://traffic-viz.github.io/).
@@ -84,10 +75,6 @@ A Qt application is provided for exploring and recording data.
 More details in the [GUI section of the documentation](https://traffic-viz.github.io/gui.html).
 
 ![GUI screenshot](https://raw.githubusercontent.com/xoolive/traffic/master/docs/_static/gui_start.png)
-
-## Documentation
-
-Documentation available [here](https://traffic-viz.github.io/)
 
 ## Frequently asked questions
 

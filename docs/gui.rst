@@ -2,13 +2,16 @@ Graphical user interface
 ========================
 
 The traffic library comes with a Qt Graphical user interface (GUI) designed
-to decode and explore historical and live data. The GUI is accessible through
+to decode and explore historical and live data.
+
+The GUI can be installed as a plugin package and is accessible through
 the following command (clickable application icons are doable and will probably
 be automatically generated in future versions)
 
 
 .. code::
 
+    pip install traffic_qtgui  # first install the plugin
     traffic gui
 
 

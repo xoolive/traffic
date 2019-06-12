@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pkg_resources
+
 
 def dispatch_open(filename: Path):
     if sys.platform.startswith("darwin"):
@@ -31,6 +33,9 @@ def import_submodules(package, recursive=True):
         results[name] = importlib.import_module(full_name)
         if recursive and is_pkg:
             results.update(import_submodules(full_name))
+    for entry_point in pkg_resources.iter_entry_points("traffic.console"):
+        handle = entry_point.load()
+        results[entry_point.name] = handle
     return results
 
 

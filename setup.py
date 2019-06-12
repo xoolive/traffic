@@ -18,7 +18,7 @@ except FileNotFoundError:
 
 setup(
     name="traffic",
-    version="1.2.1b0",
+    version="2.0b0",
     author="Xavier Olive",
     author_email="git@xoolive.org",
     url="https://github.com/xoolive/traffic/",
@@ -61,7 +61,6 @@ setup(
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "typing_extensions",
-        "PyQt5",
         "altair",  # interactive Vega plots
         "ipywidgets",  # IPython widgets for traffic
         "ipyleaflet",  # Leaflet for notebooks
