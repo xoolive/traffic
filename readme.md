@@ -51,7 +51,7 @@ conda install cartopy shapely
 
 ## Documentation
 
-Documentation available [here](https://traffic-viz.github.io/)
+Documentation available at [https://travis-viz.github.io/](https://traffic-viz.github.io/)
 
 ## Command line tool
 

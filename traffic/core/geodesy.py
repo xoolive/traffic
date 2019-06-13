@@ -1,4 +1,4 @@
-from typing import Iterable, Tuple, TypeVar
+from typing import Iterable, List, Tuple, TypeVar
 
 from pyproj import Geod
 
@@ -25,6 +25,11 @@ def destination(
     return lat_, lon_, back_
 
 
-def greatcircle(lat1, lon1, lat2, lon2, *args, **kwargs):
+def greatcircle(
+    lat1: T, lon1: T, lat2: T, lon2: T, *args, **kwargs
+) -> List[Tuple[T, T]]:
     geod = Geod(ellps="WGS84")
-    return geod.npts(lon1, lat1, lon2, lat2, *args, **kwargs)
+    return [
+        (lat, lon)
+        for (lon, lat) in geod.npts(lon1, lat1, lon2, lat2, *args, **kwargs)
+    ]
