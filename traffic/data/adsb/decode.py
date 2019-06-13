@@ -458,7 +458,7 @@ class Decoder:
         reference: Union[str, Airport, Tuple[float, float]],
         dump1090: bool = False,
         fh: Optional[TextIO] = None,
-    ) -> "Decoder":
+    ) -> "Decoder":  # coverage: ignore
 
         decoder = cls(reference)
 
@@ -529,7 +529,7 @@ class Decoder:
         cls,
         reference: Union[str, Airport, Tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
-    ) -> "Decoder":
+    ) -> "Decoder":  # coverage: ignore
         now = datetime.now(timezone.utc)
         filename = now.strftime(file_pattern)
         today = os.path.expanduser(filename)
@@ -545,7 +545,7 @@ class Decoder:
         port: int,
         reference: Union[str, Airport, Tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_tcp.csv",
-    ) -> "Decoder":
+    ) -> "Decoder":  # coverage: ignore
         now = datetime.now(timezone.utc)
         filename = now.strftime(file_pattern)
         today = os.path.expanduser(filename)

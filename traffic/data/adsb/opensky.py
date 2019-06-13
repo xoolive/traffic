@@ -187,9 +187,7 @@ class OpenSky(Impala):
         c = requests.get(
             f"https://opensky-network.org/api/states/{what}", auth=self.auth
         )
-
-        if c.status_code != 200:
-            raise ValueError(c.content.decode())
+        c.raise_for_status()
         r = pd.DataFrame.from_records(
             c.json()["states"], columns=self._json_columns
         )
@@ -237,8 +235,7 @@ class OpenSky(Impala):
         c = requests.get(
             f"https://opensky-network.org/api/tracks/?icao24={icao24}"
         )
-        if c.status_code != 200:
-            raise ValueError(c.content.decode())
+        c.raise_for_status()
         json = c.json()
 
         df = pd.DataFrame.from_records(
@@ -261,10 +258,7 @@ class OpenSky(Impala):
         c = requests.get(
             f"https://opensky-network.org/api/routes?callsign={callsign}"
         )
-        if c.status_code == 404:
-            raise ValueError("Unknown callsign")
-        if c.status_code != 200:
-            raise ValueError(c.content.decode())
+        c.raise_for_status()
         json = c.json()
 
         return tuple(airports[a] for a in json["route"])  # type: ignore
@@ -302,8 +296,7 @@ class OpenSky(Impala):
             f"https://opensky-network.org/api/flights/aircraft"
             f"?icao24={icao24}&begin={begin}&end={end}"
         )
-        if c.status_code != 200:
-            raise ValueError(c.content.decode())
+        c.raise_for_status()
         return (
             pd.DataFrame.from_records(c.json())[
                 [
@@ -335,8 +328,7 @@ class OpenSky(Impala):
             f"?days={int(today.timestamp())}",
             auth=self.auth,
         )
-        if c.status_code != 200:
-            raise ValueError(c.content.decode())
+        c.raise_for_status()
         return set(c.json()[0]["stats"].keys())
 
     def api_range(
@@ -358,14 +350,12 @@ class OpenSky(Impala):
             f"https://opensky-network.org/api/range/days"
             f"?days={date}&serials={serial}"
         )
-        if c.status_code != 200:
-            raise ValueError(c.content.decode())
+        c.raise_for_status()
         return SensorRange(c.json())
 
     def api_global_coverage(self) -> Coverage:
         c = requests.get("https://opensky-network.org/api/range/coverage")
-        if c.status_code != 200:
-            raise ValueError(c.content.decode())
+        c.raise_for_status()
         return Coverage(c.json())
 
     def api_arrival(
@@ -413,9 +403,7 @@ class OpenSky(Impala):
             f"https://opensky-network.org/api/flights/arrival"
             f"?begin={begin}&airport={airport_code}&end={end}"
         )
-
-        if c.status_code != 200:
-            raise ValueError(c.content.decode())
+        c.raise_for_status()
 
         return (
             pd.DataFrame.from_records(c.json())[
@@ -485,9 +473,7 @@ class OpenSky(Impala):
             f"https://opensky-network.org/api/flights/departure"
             f"?begin={begin}&airport={airport_code}&end={end}"
         )
-
-        if c.status_code != 200:
-            raise ValueError(c.content.decode())
+        c.raise_for_status()
 
         return (
             pd.DataFrame.from_records(c.json())[
