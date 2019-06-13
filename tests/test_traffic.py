@@ -1,14 +1,19 @@
 import sys
-
-import pytest
+from pathlib import Path
 
 from traffic.core import Flight, Traffic
-from traffic.data import samples
+from traffic.data.samples import collections, get_flight
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
+def get_sample(module, name: str):
+    if sys.version_info >= (3, 7):
+        return getattr(module, name)
+    path = Path(module.__file__).parent
+    return get_flight(name, path)
+
+
 def test_properties() -> None:
-    switzerland: Traffic = getattr(samples, "switzerland")
+    switzerland: Traffic = get_sample(collections, "switzerland")
     assert len(switzerland) == 1244
     assert f"{switzerland.start_time}" == "2018-08-01 05:00:00+00:00"
     assert f"{switzerland.end_time}" == "2018-08-01 21:59:50+00:00"
@@ -35,9 +40,8 @@ def high_altitude(flight: Flight) -> bool:
     return flight.min("altitude") > 35000
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_chaining() -> None:
-    switzerland: Traffic = getattr(samples, "switzerland")
+    switzerland: Traffic = get_sample(collections, "switzerland")
     sw_filtered = (
         switzerland.assign_id()
         .filter_if(high_altitude)

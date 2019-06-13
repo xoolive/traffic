@@ -1,13 +1,14 @@
 import sys
 import zipfile
+from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from traffic.algorithms.douglas_peucker import douglas_peucker
-from traffic.core import Flight, Traffic
-from traffic.data import eurofirs, runways, samples
-from traffic.data.samples import featured
+from traffic.core import Flight
+from traffic.data import eurofirs, runways
+from traffic.data.samples import featured, get_flight
 
 # This part only serves on travis when the downloaded file is corrupted
 # This shouldn't happen much as caching is now activated.
@@ -19,9 +20,15 @@ except zipfile.BadZipFile:
     skip_runways = True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
+def get_sample(module, name: str):
+    if sys.version_info >= (3, 7):
+        return getattr(module, name)
+    path = Path(module.__file__).parent
+    return get_flight(name, path)
+
+
 def test_properties() -> None:
-    flight: Flight = getattr(featured, "belevingsvlucht")
+    flight: Flight = get_sample(featured, "belevingsvlucht")
     assert len(flight) == 16005
     assert flight.min("altitude") == -59  # Welcome to the Netherlands!
     assert flight.max("altitude") == 18025
@@ -35,22 +42,15 @@ def test_properties() -> None:
     assert flight.aircraft == "484506 / PH-HZO (B738)"
     assert flight.flight_id is None
 
-    traffic: Traffic = getattr(featured, "traffic")
-    flight = traffic["belevingsvlucht"]  # type: ignore
-    assert flight is not None
-    assert flight.flight_id == "belevingsvlucht"
 
-
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_emptydata() -> None:
-    airbus_tree: Flight = getattr(samples, "airbus_tree")
+    airbus_tree: Flight = get_sample(featured, "airbus_tree")
     assert airbus_tree.registration == "F-WWAE"
     assert airbus_tree.typecode == "A388"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_iterators() -> None:
-    flight: Flight = getattr(samples, "belevingsvlucht")
+    flight: Flight = get_sample(featured, "belevingsvlucht")
     assert min(flight.timestamp) == flight.start
     assert max(flight.timestamp) == flight.stop
     assert min(flight.coords)[0] == flight.min("longitude")
@@ -69,9 +69,8 @@ def test_iterators() -> None:
     assert max_xy_time[2] == last_point.timestamp.to_pydatetime().timestamp()
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_time_methods() -> None:
-    flight: Flight = getattr(samples, "belevingsvlucht")
+    flight: Flight = get_sample(featured, "belevingsvlucht")
     assert f"{flight.first(minutes=10).stop}" == "2018-05-30 15:31:37+00:00"
     assert f"{flight.last(minutes=10).start}" == "2018-05-30 20:12:57+00:00"
 
@@ -88,9 +87,8 @@ def test_time_methods() -> None:
     assert (between.at(t) == before_after.at(t)).all()  # type: ignore
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_geometry() -> None:
-    flight: Flight = getattr(samples, "belevingsvlucht")
+    flight: Flight = get_sample(featured, "belevingsvlucht")
     xy_length = flight.project_shape().length / 1852  # in nm
     last_pos = flight.cumulative_distance().at()
     assert last_pos is not None
@@ -109,7 +107,7 @@ def test_geometry() -> None:
     assert flight.intersects(eurofirs["EHAA"].flatten())
     assert not flight.intersects(eurofirs["LFBB"])
 
-    airbus_tree: Flight = getattr(samples, "airbus_tree")
+    airbus_tree: Flight = get_sample(featured, "airbus_tree")
     clip_dk = airbus_tree.clip(eurofirs["EKDK"])
     assert clip_dk is not None
     assert clip_dk.duration < flight.duration
@@ -123,35 +121,22 @@ def test_geometry() -> None:
     assert clip_mm.duration < flight.duration
 
 
-def test_filtering_methods() -> None:
-    # TODO
-    # filter(), resample(freq, nb_points), comet()
-    pass
-
-
-def test_opensky() -> None:
-    # TODO
-    # query_opensky(), query_ehs(),
-    pass
-
-
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_landing_airport() -> None:
     # TODO refactor/rethink the returned type
-    flight: Flight = getattr(samples, "belevingsvlucht")
+    flight: Flight = get_sample(featured, "belevingsvlucht")
     assert flight.guess_landing_airport().airport.icao == "EHAM"
 
-    airbus_tree: Flight = getattr(samples, "airbus_tree")
+    airbus_tree: Flight = get_sample(featured, "airbus_tree")
     assert airbus_tree.guess_landing_airport().airport.icao == "EDHI"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7) or skip_runways, reason="py37")
+@pytest.mark.skipif(skip_runways, reason="no runways")
 def test_landing_runway() -> None:
     # TODO refactor/rethink the returned type
-    flight: Flight = getattr(samples, "belevingsvlucht")
+    flight: Flight = get_sample(featured, "belevingsvlucht")
     assert flight.guess_landing_runway().name == "06"
 
-    airbus_tree: Flight = getattr(samples, "airbus_tree")
+    airbus_tree: Flight = get_sample(featured, "airbus_tree")
     assert airbus_tree.guess_landing_runway().name == "23"
 
 

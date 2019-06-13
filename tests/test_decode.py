@@ -1,18 +1,22 @@
 import sys
 from pathlib import Path
 
-import pytest
-
 from traffic.core import Flight, Traffic
 from traffic.data import opensky
-from traffic.data.samples import collections
+from traffic.data.samples import collections, get_flight
+
+
+def get_sample(module, name: str):
+    if sys.version_info >= (3, 7):
+        return getattr(module, name)
+    path = Path(module.__file__).parent
+    return get_flight(name, path)
 
 
 def long_enough(flight: Flight) -> bool:
     return len(flight) > 100
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py37")
 def test_decode():
 
     opensky.cache_dir = Path(__file__).parent.parent / "data" / "opensky_cache"
@@ -20,7 +24,7 @@ def test_decode():
     # with zipfile.ZipFile(opensky.cache_dir / "opensky_cache.zip") as zfile:
     #     zfile.extractall(path=opensky.cache_dir)
 
-    switzerland: Traffic = getattr(collections, "switzerland")
+    switzerland: Traffic = get_sample(collections, "switzerland")
 
     tap_switzerland = (
         switzerland.query('callsign.str.startswith("TAP127")')
