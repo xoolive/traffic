@@ -8,7 +8,6 @@ exclude_lines =
     coverage: ignore
     raise NotImplementedError
     if TYPE_CHECKING:
-    ...
     def __repr__
     def _repr_html_
     def _repr_svg_
