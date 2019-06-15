@@ -25,6 +25,7 @@ addons:
       - libproj-dev
       - proj-bin
       - proj-data
+      - libarchive-dev
 
 before_install:
   - python -m pip install -U pip
@@ -34,6 +35,7 @@ install:
   # possible bug with pytest 4.6.0
   - python -m pip install --upgrade codecov pytest-cov pytest==4.5
   - python -m pip install --upgrade numpy pyproj  # dependency for cartopy
+  - python -m pip install --upgrade libarchive  # dependency for so6.7z
   - python -m pip install --upgrade sphinx sphinx-rtd-theme
   - python -m pip install -e .
 

@@ -62,8 +62,8 @@ fits a regular webpage width.)
           <td>3.906984</td>
           <td>41.313309</td>
           <td>4.566040</td>
-          <td>2018-01-01 19:10:10</td>
-          <td>2018-01-01 19:35:40</td>
+          <td>2018-01-01 18:10:10+00:00</td>
+          <td>2018-01-01 18:35:40+00:00</td>
         </tr>
         <tr>
           <th>1</th>
@@ -74,8 +74,8 @@ fits a regular webpage width.)
           <td>4.566040</td>
           <td>46.251480</td>
           <td>4.976204</td>
-          <td>2018-01-01 19:35:40</td>
-          <td>2018-01-01 20:17:30</td>
+          <td>2018-01-01 18:35:40+00:00</td>
+          <td>2018-01-01 19:17:30+00:00</td>
         </tr>
         <tr>
           <th>2</th>
@@ -86,8 +86,8 @@ fits a regular webpage width.)
           <td>4.976204</td>
           <td>47.698471</td>
           <td>4.203850</td>
-          <td>2018-01-01 20:17:30</td>
-          <td>2018-01-01 20:30:50</td>
+          <td>2018-01-01 19:17:30+00:00</td>
+          <td>2018-01-01 19:30:50+00:00</td>
         </tr>
         <tr>
           <th>3</th>
@@ -98,8 +98,8 @@ fits a regular webpage width.)
           <td>4.203850</td>
           <td>48.525587</td>
           <td>3.739038</td>
-          <td>2018-01-01 20:30:50</td>
-          <td>2018-01-01 20:39:40</td>
+          <td>2018-01-01 19:30:50+00:00</td>
+          <td>2018-01-01 19:39:40+00:00</td>
         </tr>
         <tr>
           <th>4</th>
@@ -110,8 +110,8 @@ fits a regular webpage width.)
           <td>3.739038</td>
           <td>48.614176</td>
           <td>3.561088</td>
-          <td>2018-01-01 20:39:40</td>
-          <td>2018-01-01 20:41:30</td>
+          <td>2018-01-01 19:39:40+00:00</td>
+          <td>2018-01-01 19:41:30+00:00</td>
         </tr>
       </tbody>
     </table>
@@ -132,7 +132,7 @@ completion on the flight names.
 
 .. raw:: html
 
-    <b>Flight HOP36PP</b> (332206265)<ul><li><b>aircraft:</b> A319</li><li><b>origin:</b> LFML (2018-01-01 19:15:40)</li><li><b>destination:</b> LFBD (2018-01-01 19:58:00)</li></ul><div style="white-space: nowrap"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="-22064.364032842677 4643541.548496112 400649.87556558463 148424.4619210167" preserveAspectRatio="xMinYMin meet"><g transform="matrix(1,0,0,-1,0,9435507.558913242)"><polyline fill="none" stroke="#66cc99" stroke-width="2670.999170437231" points="363746.62725253514,4658380.432776319 93398.87407311927,4754561.883957243 36435.06118046089,4774490.218033796 -7225.479752635839,4777127.126136922" opacity="0.8" /></g></svg></div>
+    <b>Flight HOP36PP</b> (332206265)<ul><li><b>aircraft:</b> A319</li><li><b>origin:</b> LFML (2018-01-01 18:15:40+00:00)</li><li><b>destination:</b> LFBD (2018-01-01 18:58:00+00:00)</li></ul><div style="white-space: nowrap"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="-22064.364032842677 4643541.548496112 400649.87556558463 148424.4619210167" preserveAspectRatio="xMinYMin meet"><g transform="matrix(1,0,0,-1,0,9435507.558913242)"><polyline fill="none" stroke="#66cc99" stroke-width="2670.999170437231" points="363746.62725253514,4658380.432776319 93398.87407311927,4754561.883957243 36435.06118046089,4774490.218033796 -7225.479752635839,4777127.126136922" opacity="0.8" /></g></svg></div>
 
 
 
@@ -172,7 +172,7 @@ from its unique ID.
 
 .. raw:: html
 
-    <b>Flight HOP36PP</b> (332206265)<ul><li><b>aircraft:</b> A319</li><li><b>origin:</b> LFML (2018-01-01 19:15:40)</li><li><b>destination:</b> LFBD (2018-01-01 19:58:00)</li></ul><div style="white-space: nowrap"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="-22064.364032842677 4643541.548496112 400649.87556558463 148424.4619210167" preserveAspectRatio="xMinYMin meet"><g transform="matrix(1,0,0,-1,0,9435507.558913242)"><polyline fill="none" stroke="#66cc99" stroke-width="2670.999170437231" points="363746.62725253514,4658380.432776319 93398.87407311927,4754561.883957243 36435.06118046089,4774490.218033796 -7225.479752635839,4777127.126136922" opacity="0.8" /></g></svg></div>
+    <b>Flight HOP36PP</b> (332206265)<ul><li><b>aircraft:</b> A319</li><li><b>origin:</b> LFML (2018-01-01 18:15:40+00:00)</li><li><b>destination:</b> LFBD (2018-01-01 18:58:00+00:00)</li></ul><div style="white-space: nowrap"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="-22064.364032842677 4643541.548496112 400649.87556558463 148424.4619210167" preserveAspectRatio="xMinYMin meet"><g transform="matrix(1,0,0,-1,0,9435507.558913242)"><polyline fill="none" stroke="#66cc99" stroke-width="2670.999170437231" points="363746.62725253514,4658380.432776319 93398.87407311927,4754561.883957243 36435.06118046089,4774490.218033796 -7225.479752635839,4777127.126136922" opacity="0.8" /></g></svg></div>
 
 
 
@@ -226,8 +226,8 @@ Each flight holds a DataFrame embedded as well.
           <td>4.527325</td>
           <td>44.543555</td>
           <td>1.178150</td>
-          <td>2018-01-01 19:15:40</td>
-          <td>2018-01-01 19:44:50</td>
+          <td>2018-01-01 18:15:40+00:00</td>
+          <td>2018-01-01 18:44:50+00:00</td>
         </tr>
         <tr>
           <th>65795</th>
@@ -238,8 +238,8 @@ Each flight holds a DataFrame embedded as well.
           <td>1.178150</td>
           <td>44.726898</td>
           <td>0.460837</td>
-          <td>2018-01-01 19:44:50</td>
-          <td>2018-01-01 19:52:10</td>
+          <td>2018-01-01 18:44:50+00:00</td>
+          <td>2018-01-01 18:52:10+00:00</td>
         </tr>
         <tr>
           <th>65796</th>
@@ -250,8 +250,8 @@ Each flight holds a DataFrame embedded as well.
           <td>0.460837</td>
           <td>44.751343</td>
           <td>-0.091422</td>
-          <td>2018-01-01 19:52:10</td>
-          <td>2018-01-01 19:58:00</td>
+          <td>2018-01-01 18:52:10+00:00</td>
+          <td>2018-01-01 18:58:00+00:00</td>
         </tr>
       </tbody>
     </table>
@@ -282,7 +282,7 @@ airspace can be projected to a 2D representation for that purpose:
 
 .. raw:: html
 
-    <b>Flight HOP36PP</b> (332206265)<ul><li><b>aircraft:</b> A319</li><li><b>origin:</b> LFML (2018-01-01 19:20:19.612862)</li><li><b>destination:</b> LFBD (2018-01-01 19:58:00)</li></ul><div style="white-space: nowrap"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="-20317.650998594778 4660018.773758144 353488.6236408914 130200.52362473682" preserveAspectRatio="xMinYMin meet"><g transform="matrix(1,0,0,-1,0,9450238.071141025)"><polyline fill="none" stroke="#66cc99" stroke-width="2356.590824272609" points="320078.8013963377,4673110.945004103 93398.87407311927,4754561.883957243 36435.06118046089,4774490.218033796 -7225.479752635839,4777127.126136922" opacity="0.8" /></g></svg></div>
+    <b>Flight HOP36PP</b> (332206265)<ul><li><b>aircraft:</b> A319</li><li><b>origin:</b> LFML (2018-01-01 18:20:19.612862+00:00)</li><li><b>destination:</b> LFBD (2018-01-01 18:58:00+00:00)</li></ul><div style="white-space: nowrap"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" height="300" viewBox="-20317.650998594778 4660018.773758144 353488.6236408914 130200.52362473682" preserveAspectRatio="xMinYMin meet"><g transform="matrix(1,0,0,-1,0,9450238.071141025)"><polyline fill="none" stroke="#66cc99" stroke-width="2356.590824272609" points="320078.8013963377,4673110.945004103 93398.87407311927,4754561.883957243 36435.06118046089,4774490.218033796 -7225.479752635839,4777127.126136922" opacity="0.8" /></g></svg></div>
 
 
 Interpolation and clipping
@@ -304,8 +304,7 @@ functions are provided:
 
 
 You also access interpolation when you clip the trajectory to a given
-timerange. Be careful that even though timestamps are given in UTC,
-Python displays them in your current location timezone.
+timerange.
 
 .. code:: python
 
@@ -354,8 +353,8 @@ Python displays them in your current location timezone.
           <td>43.907649</td>
           <td>1.178150</td>
           <td>44.543555</td>
-          <td>2018-01-01 19:25:00</td>
-          <td>2018-01-01 19:44:50</td>
+          <td>2018-01-01 18:25:00+00:00</td>
+          <td>2018-01-01 18:44:50+00:00</td>
           <td>LFML</td>
           <td>LFBD</td>
           <td>HOP36PP</td>
@@ -366,8 +365,8 @@ Python displays them in your current location timezone.
           <td>44.543555</td>
           <td>0.460837</td>
           <td>44.726898</td>
-          <td>2018-01-01 19:44:50</td>
-          <td>2018-01-01 19:52:10</td>
+          <td>2018-01-01 18:44:50+00:00</td>
+          <td>2018-01-01 18:52:10+00:00</td>
           <td>LFML</td>
           <td>LFBD</td>
           <td>HOP36PP</td>
@@ -378,8 +377,8 @@ Python displays them in your current location timezone.
           <td>44.726898</td>
           <td>0.192597</td>
           <td>44.738771</td>
-          <td>2018-01-01 19:52:10</td>
-          <td>2018-01-01 19:55:00</td>
+          <td>2018-01-01 18:52:10+00:00</td>
+          <td>2018-01-01 18:55:00+00:00</td>
           <td>LFML</td>
           <td>LFBD</td>
           <td>HOP36PP</td>
@@ -399,82 +398,6 @@ For convenience sake, the second parameter can be a timedelta.
     (so6['HOP36PP']
      .between("2018/01/01 18:25", timedelta(minutes=30))
      .data.drop(columns=['alt1', 'alt2', 'aircraft', 'flight_id']))
-
-
-
-
-.. raw:: html
-
-    <div>
-    <style scoped>
-        .dataframe tbody tr th:only-of-type {
-            vertical-align: middle;
-        }
-    
-        .dataframe tbody tr th {
-            vertical-align: top;
-        }
-    
-        .dataframe thead th {
-            text-align: right;
-        }
-    </style>
-    <table border="0" class="dataframe">
-      <thead>
-        <tr style="text-align: right;">
-          <th></th>
-          <th>lon1</th>
-          <th>lat1</th>
-          <th>lon2</th>
-          <th>lat2</th>
-          <th>time1</th>
-          <th>time2</th>
-          <th>origin</th>
-          <th>destination</th>
-          <th>callsign</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>0</th>
-          <td>3.455589</td>
-          <td>43.907649</td>
-          <td>1.178150</td>
-          <td>44.543555</td>
-          <td>2018-01-01 19:25:00</td>
-          <td>2018-01-01 19:44:50</td>
-          <td>LFML</td>
-          <td>LFBD</td>
-          <td>HOP36PP</td>
-        </tr>
-        <tr>
-          <th>1</th>
-          <td>1.178150</td>
-          <td>44.543555</td>
-          <td>0.460837</td>
-          <td>44.726898</td>
-          <td>2018-01-01 19:44:50</td>
-          <td>2018-01-01 19:52:10</td>
-          <td>LFML</td>
-          <td>LFBD</td>
-          <td>HOP36PP</td>
-        </tr>
-        <tr>
-          <th>2</th>
-          <td>0.460837</td>
-          <td>44.726898</td>
-          <td>0.192597</td>
-          <td>44.738771</td>
-          <td>2018-01-01 19:52:10</td>
-          <td>2018-01-01 19:55:00</td>
-          <td>LFML</td>
-          <td>LFBD</td>
-          <td>HOP36PP</td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
-
 
 
 You can combine the previous functionalities, for intersection combined

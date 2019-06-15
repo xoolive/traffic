@@ -1,6 +1,9 @@
 # fmt: off
-
-import warnings
+import json
+import logging
+import os
+import subprocess
+import sys
 from calendar import timegm
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
@@ -23,6 +26,45 @@ from ...core.mixins import DataFrameMixin
 from ...core.time import time_or_delta, timelike, to_datetime
 
 # fmt: on
+
+
+def _prepare_libarchive():
+    """
+    There are some well documented issues in MacOS about libarchive.
+    Let's try to do things ourselves...
+
+    https://github.com/dsoprea/PyEasyArchive
+    """
+
+    if sys.platform != "darwin":
+        return
+
+    if "LA_LIBRARY_FILEPATH" in os.environ:
+        return
+
+    command = ["brew", "info", "--json=v1", "libarchive"]
+
+    try:
+        result = subprocess.check_output(command)
+    except Exception as e:
+        logging.error("Could not lookup 'libarchive' package info", e)
+
+    info = json.loads(result)
+    installed_versions = info[0]["installed"]
+    if len(installed_versions) == 0:
+        logging.warning("libarchive is not currently installed via Brew")
+        return
+
+    version = installed_versions[0]["version"]
+
+    command = ["brew", "--cellar", "libarchive"]
+    package_path = subprocess.check_output(command)[:-1]
+
+    library_path = os.path.join(package_path.decode(), version, "lib")
+    os.environ["LA_LIBRARY_FILEPATH"] = os.path.join(
+        library_path, "libarchive.dylib"
+    )
+
 
 # https://github.com/python/mypy/issues/2511
 SO6TypeVar = TypeVar("SO6TypeVar", bound="SO6")
@@ -99,6 +141,14 @@ class Flight(FlightMixin):
         for _, s in self.data.iterrows():
             yield s.lon1, s.lat1, s.alt1
         yield s.lon2, s.lat2, s.alt2
+
+    @property
+    def xy_time(self) -> Iterator[Tuple[float, float, float]]:
+        if self.data.shape[0] == 0:
+            return
+        for _, s in self.data.iterrows():
+            yield s.lon1, s.lat1, s.time1.to_pydatetime().timestamp()
+        yield s.lon2, s.lat2, s.time2.to_pydatetime().timestamp()
 
     @property
     def linestring(self) -> LineString:
@@ -424,6 +474,7 @@ class SO6(DataFrameMixin):
     def from_so6_7z(
         cls: Type[SO6TypeVar], filename: Union[str, Path]
     ) -> SO6TypeVar:
+        _prepare_libarchive()
         from libarchive.public import memory_reader
 
         with open(filename, "rb") as fh:
@@ -436,11 +487,6 @@ class SO6(DataFrameMixin):
                 so6 = cls.from_so6(s)
                 s.close()
                 return so6
-
-    @classmethod
-    def parse_file(cls, filename: str) -> Optional["SO6"]:
-        warnings.warn("Use SO6.from_file(filename)", DeprecationWarning)
-        return cls.from_file(filename)
 
     @classmethod
     def from_file(
