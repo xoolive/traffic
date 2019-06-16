@@ -12,7 +12,18 @@ the data.
 .. warning::
 
     The dynamic import of trajectories from the `traffic.data.samples` module is
-    only available in Python >= 3.7.
+    only available in Python versions above 3.7.
+
+    .. code:: python
+
+        # Python >= 3.7
+        from traffic.data.samples.featured import belevingsvlucht
+        from traffic.data.samples import belevingsvlucht  # no ambiguity
+
+        # Python >= 3.6
+        from traffic.data.samples import featured, get_sample
+        belevingsvlucht = get_sample(featured, 'belevingsvlucht')
+
 
 .. note::
 

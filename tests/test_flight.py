@@ -1,14 +1,12 @@
-import sys
 import zipfile
-from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from traffic.algorithms.douglas_peucker import douglas_peucker
-from traffic.core import Flight
+from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, runways
-from traffic.data.samples import featured, get_flight
+from traffic.data.samples import featured, get_sample
 
 # This part only serves on travis when the downloaded file is corrupted
 # This shouldn't happen much as caching is now activated.
@@ -18,13 +16,6 @@ try:
     _ = runways.runways
 except zipfile.BadZipFile:
     skip_runways = True
-
-
-def get_sample(module, name: str):
-    if sys.version_info >= (3, 7):
-        return getattr(module, name)
-    path = Path(module.__file__).parent
-    return get_flight(name, path)
 
 
 def test_properties() -> None:
@@ -41,6 +32,9 @@ def test_properties() -> None:
     assert flight.typecode == "B738"
     assert flight.aircraft == "484506 / PH-HZO (B738)"
     assert flight.flight_id is None
+
+    traffic: Traffic = get_sample(featured, "traffic")
+    assert "belevingsvlucht" in traffic.flight_ids  # type: ignore
 
 
 def test_emptydata() -> None:
