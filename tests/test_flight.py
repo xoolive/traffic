@@ -1,3 +1,4 @@
+import sys
 import zipfile
 
 import pandas as pd
@@ -33,6 +34,9 @@ def test_properties() -> None:
     assert flight.aircraft == "484506 / PH-HZO (B738)"
     assert flight.flight_id is None
 
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="py36")
+def test_get_traffic() -> None:
     traffic: Traffic = get_sample(featured, "traffic")
     assert "belevingsvlucht" in traffic.flight_ids  # type: ignore
 
