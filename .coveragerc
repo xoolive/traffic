@@ -1,7 +1,7 @@
 [run]
 branch = True
 include = */traffic/*
-omit = *tests*, *plugins*, *drawing*, *eurocontrol_*
+omit = *tests*, *plugins*, *drawing*, *eurocontrol_*, opensky.py
 
 [report]
 exclude_lines =
