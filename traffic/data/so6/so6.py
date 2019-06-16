@@ -373,10 +373,11 @@ class Flight(FlightMixin):
 
         proj = pyproj.Proj(
             proj="lcc",
-            lat0=data.lat1.mean(),
-            lon0=data.lon1.mean(),
-            lat1=data.lat1.min(),
-            lat2=data.lat1.max(),
+            ellps="WGS84",
+            lat_0=data.lat1.mean(),
+            lon_0=data.lon1.mean(),
+            lat_1=data.lat1.min(),
+            lat_2=data.lat1.max(),
         )
 
         data["x1"], data["y1"] = pyproj.transform(
