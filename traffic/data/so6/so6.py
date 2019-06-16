@@ -28,7 +28,7 @@ from ...core.time import time_or_delta, timelike, to_datetime
 # fmt: on
 
 
-def _prepare_libarchive():
+def _prepare_libarchive():  # coverage: ignore
     """
     There are some well documented issues in MacOS about libarchive.
     Let's try to do things ourselves...
@@ -383,7 +383,7 @@ class SO6(DataFrameMixin):
         return set(self.data.flight_id)
 
     @lru_cache()
-    def stats(self) -> pd.DataFrame:
+    def stats(self) -> pd.DataFrame:  # coverage: ignore
         """Statistics about flights contained in the structure.
         Useful for a meaningful representation.
         """
@@ -491,7 +491,7 @@ class SO6(DataFrameMixin):
     @classmethod
     def from_file(
         cls: Type[SO6TypeVar], filename: Union[Path, str], **kwargs
-    ) -> Optional[SO6TypeVar]:
+    ) -> Optional[SO6TypeVar]:  # coverage: ignore
         path = Path(filename)
         if path.suffixes == [".so6", ".7z"]:
             return cls.from_so6_7z(filename)
@@ -532,16 +532,6 @@ class SO6(DataFrameMixin):
 
         west, south, east, north = bounds
 
-        # Transform coords into intelligible floats
-        # '-2.06 <= lon1 <= 4.50 & 42.36 <= lat1 <= 48.14', instead of
-        #  (-2.066666603088379, 42.366943359375, 4.491666793823242,
-        #   48.13333511352539)
-        # dec = Decimal('0.00')
-        # west = Decimal(west).quantize(dec, rounding=ROUND_DOWN)
-        # east = Decimal(east).quantize(dec, rounding=ROUND_UP)
-        # south = Decimal(south).quantize(dec, rounding=ROUND_DOWN)
-        # north = Decimal(north).quantize(dec, rounding=ROUND_UP)
-
         # the numexpr query is 10% faster than the regular
         # data[data.lat1 >= ...] conjunctions of comparisons
         query = "{0} <= lon1 <= {2} and {1} <= lat1 <= {3}"
@@ -557,9 +547,21 @@ class SO6(DataFrameMixin):
             )
         )
 
-    def select(self, query: Union["SO6", Iterable[str]]) -> "SO6":
+    def select(
+        self, query: Union["SO6", Iterable[str], Iterable[int]]
+    ) -> Optional["SO6"]:
+
         if isinstance(query, SO6):
             # not very natural, but why not...
-            query = query.callsigns
-        select = self.data.callsign.isin(query)
+            query = query.flight_ids
+        list_query = list(query)
+
+        if len(list_query) == 0:
+            return None
+
+        if isinstance(list_query[0], str):
+            select = self.data.callsign.isin(query)
+        else:
+            select = self.data.flight_id.isin(query)
+
         return SO6(self.data[select])

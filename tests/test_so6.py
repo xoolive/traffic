@@ -24,7 +24,19 @@ def test_so6():
 
     clipped = so6["HOP36PP"].clip(eurofirs["LFBB"].flatten())
     assert clipped is not None
-    assert str(clipped.start)[:-13] == "2018-01-01 18:30:20"
+    assert str(clipped.start)[:19] == "2018-01-01 18:30:20"
+    assert str(clipped.stop)[:19] == "2018-01-01 18:52:10"
+
+    assert next(hop36pp.clip_altitude(15000, 20000)).shape[0] == 2
+    assert next(hop36pp.clip_altitude(18000, 20000)).shape[0] == 1
+
+    # This flight is on holding pattern and causes issues with intersection
+    clipped = so6["BAW3TV"].clip(eurofirs["LFBB"].flatten())
+    assert clipped is not None
+    assert str(clipped.start)[:19] == "2018-01-01 14:51:19"
+    assert str(clipped.stop)[:19] == "2018-01-01 16:30:30"
+
+    assert sum(1 for _ in so6["HOP36PP"].coords4d()) == len(so6["HOP36PP"]) + 1
 
     assert 26638 < hop36pp.at("2018/01/01 18:40").altitude < 26639
     assert hop36pp.between(
@@ -39,3 +51,8 @@ def test_so6():
         eurofirs["LFBB"]
     )
     assert len(bdx_flights) == 3
+
+    assert bdx_flights.data.shape[0] == 3
+    select = so6.select(bdx_flights)
+    assert select is not None
+    assert select.data.shape[0] == 28
