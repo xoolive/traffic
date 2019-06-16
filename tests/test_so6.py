@@ -53,6 +53,6 @@ def test_so6():
     assert len(bdx_flights) == 3
 
     assert bdx_flights.data.shape[0] == 3
-    select = so6.select(bdx_flights)
+    select = so6[bdx_flights]
     assert select is not None
     assert select.data.shape[0] == 28

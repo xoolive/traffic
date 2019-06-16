@@ -9,8 +9,8 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from io import StringIO
 from pathlib import Path
-from typing import (Dict, Iterable, Iterator, List, Optional, Set, Tuple, Type,
-                    TypeVar, Union)
+from typing import (Dict, Iterable, Iterator, List, NoReturn, Optional, Set,
+                    Tuple, Type, TypeVar, Union, overload)
 
 import numpy as np
 import pandas as pd
@@ -82,6 +82,87 @@ def hour(int_: int) -> timedelta:
 
 
 class Flight(FlightMixin):
+    """
+
+    SO6 Flight inherit from `traffic.core.Flight </traffic.core.flight.html>`_
+    and implement specificities of the SO6 format.
+
+    .. code:: python
+
+        so6['HOP36PP'].data.drop(
+            columns=['alt1', 'alt2', 'aircraft', 'callsign', 'flight_id']
+        )
+
+
+    .. raw:: html
+
+        <div>
+        <style scoped>
+            .dataframe tbody tr th:only-of-type {
+                vertical-align: middle;
+            }
+            .dataframe tbody tr th {
+                vertical-align: top;
+            }
+            .dataframe thead th {
+                text-align: right;
+            }
+        </style>
+        <table border="0" class="dataframe">
+        <thead>
+            <tr style="text-align: right;">
+            <th></th>
+            <th>origin</th>
+            <th>destination</th>
+            <th>lat1</th>
+            <th>lon1</th>
+            <th>lat2</th>
+            <th>lon2</th>
+            <th>time1</th>
+            <th>time2</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+            <th>65794</th>
+            <td>LFML</td>
+            <td>LFBD</td>
+            <td>43.608398</td>
+            <td>4.527325</td>
+            <td>44.543555</td>
+            <td>1.178150</td>
+            <td>2018-01-01 18:15:40+00:00</td>
+            <td>2018-01-01 18:44:50+00:00</td>
+            </tr>
+            <tr>
+            <th>65795</th>
+            <td>LFML</td>
+            <td>LFBD</td>
+            <td>44.543555</td>
+            <td>1.178150</td>
+            <td>44.726898</td>
+            <td>0.460837</td>
+            <td>2018-01-01 18:44:50+00:00</td>
+            <td>2018-01-01 18:52:10+00:00</td>
+            </tr>
+            <tr>
+            <th>65796</th>
+            <td>LFML</td>
+            <td>LFBD</td>
+            <td>44.726898</td>
+            <td>0.460837</td>
+            <td>44.751343</td>
+            <td>-0.091422</td>
+            <td>2018-01-01 18:52:10+00:00</td>
+            <td>2018-01-01 18:58:00+00:00</td>
+            </tr>
+        </tbody>
+        </table>
+        </div>
+
+
+    """
+
     def __init__(self, data: pd.DataFrame) -> None:
         super().__init__(data)
         self.interpolator: Dict = dict()
@@ -103,6 +184,10 @@ class Flight(FlightMixin):
 
     @property
     def aircraft(self) -> str:
+        return self.data.iloc[0].aircraft
+
+    @property
+    def typecode(self) -> str:
         return self.data.iloc[0].aircraft
 
     @property
@@ -158,11 +243,11 @@ class Flight(FlightMixin):
     def shape(self) -> LineString:
         return self.linestring
 
-    def airborne(self):
+    def airborne(self) -> "Flight":
+        """Identity method, available for consistency"""
         return self
 
     def interpolate(self, times, proj=PlateCarree()) -> np.ndarray:
-        """Interpolates a trajectory in time.  """
         if proj not in self.interpolator:
             self.interpolator[proj] = interp1d(
                 np.stack(t.to_pydatetime().timestamp() for t in self.timestamp),
@@ -175,6 +260,20 @@ class Flight(FlightMixin):
         )
 
     def at(self, time: Optional[timelike] = None) -> Position:
+        """
+        Since DDR files contain few points on their trajectory, interpolation
+        functions are provided:
+
+        .. code:: python
+
+            >>> so6['HOP36PP'].at("2018/01/01 18:40")
+
+            longitude        1.733156
+            latitude        44.388586
+            altitude     26638.857143
+            dtype: float64
+
+        """
         if time is None:
             raise NotImplementedError()
 
@@ -252,6 +351,11 @@ class Flight(FlightMixin):
         return self.between(begin, end)
 
     def clip_altitude(self, min_: int, max_: int) -> Iterator["Flight"]:
+        """
+        Splits a Flight in several segments comprised between altitudes
+        `min_` and `max_`, with proper interpolations where needed.
+        """
+
         def buffer_to_iter(proj, buffer):
             df = pd.DataFrame.from_records(buffer)
 
@@ -326,21 +430,107 @@ class Flight(FlightMixin):
         if len(buffer) > 0:
             yield from buffer_to_iter(proj, buffer)
 
-    def resample(self):
-        raise NotImplementedError("SO6 do not provide a resample method")
+    def resample(self) -> NoReturn:  # type: ignore
+        """
+        The resampling method is not available.
+        """
+        raise NotImplementedError
 
 
 class SO6(DataFrameMixin):
+    """
+    Eurocontrol DDR files provide flight intentions of aircraft for a full
+    day of traffic across Europe. This data cannot be shared so the file
+    included in the repository has actually been generated from OpenSky
+    ADS-B data to match so6 format.
+
+    `SO6 <#traffic.data.SO6>`_ represent a collection of trajectories, the
+    bracket notation yields a `Flight <#traffic.data.so6.so6.Flight>`_
+    structure adapted to the specificities of the SO6 format.
+
+    .. code:: python
+
+        from traffic.data import SO6
+        so6 = SO6.from_file("./data/sample_m3.so6.7z")
+        so6.to_pickle("./data/sample_m3.pkl")
+
+    If you are going to work a lot with data for one day, it is recommended
+    to serialize the data so that it loads faster. The structure holds a
+    DataFrame in the data attribute.
+
+    You can then access data from the so6 file, by flight, with the bracket
+    notation. Interactive environments (IPython, Jupyter notebooks) provide
+    completion on the flight names.
+
+    Callsigns may not be enough to discriminate flights because of same
+    callsigns assigned to a trip with many legs. In general, you can access a
+    Flight from its unique ID or from its callsign
+
+    .. code:: python
+
+        so6[332206265]
+        # here equivalent to: so6['HOP36PP']
+
+    .. raw:: html
+
+        <b>Flight HOP36PP</b> (332206265)<ul>
+        <li><b>aircraft:</b> A319</li>
+        <li><b>origin:</b> LFML (2018-01-01 18:15:40+00:00)</li>
+        <li><b>destination:</b> LFBD (2018-01-01 18:58:00+00:00)</li>
+        </ul>
+        <div style="white-space: nowrap">
+        <svg xmlns="http://www.w3.org/2000/svg"
+         xmlns:xlink="http://www.w3.org/1999/xlink"
+         width="300" height="300"
+         viewBox="-22064.364032842677 4643541.548496112
+         400649.87556558463 148424.4619210167"
+         preserveAspectRatio="xMinYMin meet">
+         <g transform="matrix(1,0,0,-1,0,9435507.558913242)">
+         <polyline fill="none" stroke="#66cc99" stroke-width="2670.999170437231"
+         points="363746.62725253514,4658380.432776319 93398.87407311927,
+         4754561.883957243 36435.06118046089,4774490.218033796
+         -7225.479752635839,4777127.126136922" opacity="0.8" />
+         </g></svg></div>
+
+    """
 
     __slots__ = ("data",)
 
     identifier = Union[int, str]
 
-    def __getitem__(self, _id: identifier) -> Flight:
-        if isinstance(_id, int):
-            return Flight(self.data.groupby("flight_id").get_group(_id))
-        if isinstance(_id, str):
-            return Flight(self.data.groupby("callsign").get_group(_id))
+    @overload
+    def __getitem__(self, index: identifier) -> Flight:
+        ...
+
+    @overload  # noqa: F811
+    def __getitem__(
+        self, index: Union["SO6", Set["str"], Set[int]]
+    ) -> Optional["SO6"]:
+        ...
+
+    def __getitem__(  # noqa: F811
+        self, index: Union[identifier, "SO6", Set["str"], Set[int]]
+    ) -> Union[Flight, "SO6", None]:
+
+        if isinstance(index, int):
+            return Flight(self.data.groupby("flight_id").get_group(index))
+        if isinstance(index, str):
+            return Flight(self.data.groupby("callsign").get_group(index))
+
+        if isinstance(index, SO6):
+            # not very natural, but why not...
+            index = index.flight_ids
+        list_query = list(index)
+
+        if len(list_query) == 0:
+            return None
+
+        if isinstance(list_query[0], str):
+            select = self.data.callsign.isin(list_query)
+        else:
+            select = self.data.flight_id.isin(list_query)
+
+        return SO6(self.data[select])
 
     def __iter__(self) -> Iterator[Flight]:
         for _, flight in self.data.groupby("flight_id"):
@@ -384,9 +574,6 @@ class SO6(DataFrameMixin):
 
     @lru_cache()
     def stats(self) -> pd.DataFrame:  # coverage: ignore
-        """Statistics about flights contained in the structure.
-        Useful for a meaningful representation.
-        """
         cumul = []
         for f in self:
             info = {
@@ -492,6 +679,19 @@ class SO6(DataFrameMixin):
     def from_file(
         cls: Type[SO6TypeVar], filename: Union[Path, str], **kwargs
     ) -> Optional[SO6TypeVar]:  # coverage: ignore
+        """
+        In addition to `usual formats
+        <export.html#traffic.core.mixins.DataFrameMixin>`_, you can parse so6
+        files as text files (.so6 extension) or as 7-zipped text files (.so6.7z
+        extension).
+
+        .. warning::
+
+            You will need the `libarchive
+            <https://github.com/dsoprea/PyEasyArchive>`_ library to be able
+            to parse .so6.7z files on the fly.
+
+        """
         path = Path(filename)
         if path.suffixes == [".so6", ".7z"]:
             return cls.from_so6_7z(filename)
@@ -500,12 +700,21 @@ class SO6(DataFrameMixin):
         return super().from_file(filename)
 
     def at(self, time: timelike) -> "SO6":
+        """Selects all segments of the SO6 dataframe with ``time`` included
+        in the segment interval.
+        """
         time = to_datetime(time)
         return SO6(
             self.data[(self.data.time1 <= time) & (self.data.time2 > time)]
         )
 
     def between(self, start: timelike, stop: time_or_delta) -> "SO6":
+        """Selects all segments of the SO6 dataframe with intervals intersecting
+        [``start``, ``stop``].
+
+        The ``stop`` argument may be also be written as a
+        ``datetime.timedelta``.
+        """
         start = to_datetime(start)
         if isinstance(stop, timedelta):
             stop = start + stop
@@ -516,6 +725,41 @@ class SO6(DataFrameMixin):
         )
 
     def intersects(self, sector: Airspace) -> "SO6":
+        """
+        Selects all Flights intersecting the given airspace.
+
+        .. tip::
+
+            See the impact of calling `.inside_bbox(sector)
+            <#traffic.data.SO6.inside_bbox>`_ to the bounding box
+            before intersecting the airspace. Note that this
+            chaining may not be safe for smaller airspaces.
+
+        .. code:: python
+
+            noon = so6.at("2018/01/01 12:00")
+
+        .. code:: python
+
+            %%time
+            bdx_flights = noon.intersects(nm_airspaces['LFBBBDX'])
+
+            CPU times: user 3.9 s, sys: 0 ns, total: 3.9 s
+            Wall time: 3.9 s
+
+
+        .. code:: python
+
+            %%time
+            bdx_flights = (
+                noon
+                .inside_bbox(nm_airspaces["LFBBBDX"])
+                .intersects(nm_airspaces["LFBBBDX"])
+            )
+
+            CPU times: user 1.42 s, sys: 8.27 ms, total: 1.43 s
+            Wall time: 1.43 s
+        """
         return SO6(
             self.data.groupby("flight_id").filter(
                 lambda flight: Flight(flight).intersects(sector)
@@ -523,6 +767,18 @@ class SO6(DataFrameMixin):
         )
 
     def inside_bbox(self, bounds: Union[Airspace, Tuple[float, ...]]) -> "SO6":
+        """
+        Selects all Flights intersecting the bounding box of the given airspace.
+
+        A tuple (west, south, east, north) is also accepted as a parameter.
+
+        .. code:: python
+
+            >>> bdx_so6 = so6.inside_bbox(nm_airspaces["LFBBBDX"])
+            >>> f"before: {len(so6)} flights, after: {len(bdx_so6)} flights"
+            before: 11043 flights, after: 1548 flights
+
+        """
 
         if isinstance(bounds, Airspace):
             bounds = bounds.flatten().bounds
@@ -546,22 +802,3 @@ class SO6(DataFrameMixin):
                 lambda data: data.iloc[0].callsign in callsigns
             )
         )
-
-    def select(
-        self, query: Union["SO6", Iterable[str], Iterable[int]]
-    ) -> Optional["SO6"]:
-
-        if isinstance(query, SO6):
-            # not very natural, but why not...
-            query = query.flight_ids
-        list_query = list(query)
-
-        if len(list_query) == 0:
-            return None
-
-        if isinstance(list_query[0], str):
-            select = self.data.callsign.isin(query)
-        else:
-            select = self.data.flight_id.isin(query)
-
-        return SO6(self.data[select])
