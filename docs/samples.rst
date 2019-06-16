@@ -9,12 +9,17 @@ All sample trajectories are available in the `traffic.data.samples` module. The
 import automatically dispatch to Flight or Traffic according to the nature of
 the data.
 
-Some of these trajectories are presented on this page although other parts of
-the documentation (see the pages about `calibration flights
-<scenarios/calibration.html>`_ or `trajectory clustering <clustering.html>`_)
-may refer to other available sample trajectories.
+.. warning::
 
+    The dynamic import of trajectories from the `traffic.data.samples` module is
+    only available in Python >= 3.7.
 
+.. note::
+
+    A subset of the sample trajectories are presented on this page. Other parts of
+    the documentation (e.g. `calibration flights
+    <scenarios/calibration.html>`_ or `trajectory clustering <clustering.html>`_)
+    may refer to other available sample trajectories.
 
 .. raw:: html
 

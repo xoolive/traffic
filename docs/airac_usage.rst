@@ -101,7 +101,7 @@ by a trajectory (here from the so6 file)
 .. code:: python
 
     from traffic.data import SO6
-    so6 = SO6.from_file('../data/sample_m3.pkl')
+    so6 = SO6.from_file('../data/sample_m3.so6.7z')
     
     with plt.style.context('traffic'):
         fig = plt.figure()
