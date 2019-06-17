@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.org/xoolive/traffic.svg?branch=master)](https://travis-ci.org/xoolive/traffic)
 [![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic) 
 [![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy.readthedocs.io/)
+![License](https://img.shields.io/pypi/l/traffic.svg)
 
 
 The traffic library helps working with common sources of air traffic data.
@@ -51,6 +52,8 @@ conda install cartopy shapely
 
 ## Documentation
 
+[![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.github.io/)
+
 Documentation available at [https://travis-viz.github.io/](https://traffic-viz.github.io/)
 
 ## Command line tool
@@ -76,26 +79,43 @@ More details in the [GUI section of the documentation](https://traffic-viz.githu
 
 ![GUI screenshot](https://raw.githubusercontent.com/xoolive/traffic/master/docs/_static/gui_start.png)
 
-## Frequently asked questions
+## Feedback and contribution
 
-- Something doesn't work. What should I do?
+Any input, feedback, bug report or contribution is welcome.
 
-Please file an [issue](https://github.com/xoolive/traffic/issues/new) but
-activating the `DEBUG` messages first may be helpful:
+Should you encounter any issue, you may want to file it in the [issue](https://github.com/xoolive/traffic/issues/new) section of this repository. Please first activate the `DEBUG` messages recorded using Python logging mechanism with the following snippet:
 
 ```python
 from traffic.core.logging import loglevel
 loglevel('DEBUG')
 ```
 
-- I encountered this issue, here is how to fix it.
+Bug fixes and improvements in the library are also helpful.
 
-First of all, thank you. All kinds of corrections are welcome.
+If you share a fix together with the issue, I can include it in the code for
+you. But since you did the job, pull requests (PR) let you keep the authorship
+on your additions. For details on creating a PR see GitHub documentation
+[Creating a pull
+request](https://help.github.com/en/articles/creating-a-pull-request). You can
+add more details about your example in the PR such as motivation for the example
+or why you thought it would be a good addition. You will get feed back in the PR
+discussion if anything needs to be changed. To make changes continue to push
+commits made in your local example branch to origin and they will be
+automatically shown in the PR.
 
-I can include your fix in the code and push it. But since you did the job, you
-may want to file a [PR](https://yangsu.github.io/pull-request-tutorial/) and
-keep the authorship. It is also easier for me to keep track of corrections and
-remember why things are the way they are.
+You may find the process troublesome but please keep in mind it is actually
+easier that way to keep track of corrections and to remember why things are the
+way they are.
+
+## Frequently asked questions
+
+- I like your work, it is helpful. How should I cite it in my academic paper?
+
+A proper publication introducting the library is under preparation. Please come
+back here when you are ready to submit. If it is not ready, a word of
+acknowledgement is appreciated. You may also want to consider starring this
+github repository.
+
 
 - I want to know more about Eurocontrol NM files
 

@@ -1,16 +1,8 @@
-import sys
 from pathlib import Path
 
 from traffic.core import Flight, Traffic
 from traffic.data import opensky
-from traffic.data.samples import collections, get_flight
-
-
-def get_sample(module, name: str):
-    if sys.version_info >= (3, 7):
-        return getattr(module, name)
-    path = Path(module.__file__).parent
-    return get_flight(name, path)
+from traffic.data.samples import collections, get_sample
 
 
 def long_enough(flight: Flight) -> bool:
