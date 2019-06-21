@@ -97,7 +97,7 @@ analytics [@schafer_opensky_2019] and machine learning methods
 Several third party users have already been using and contributing feedback to
 the library, mostly as bug reports and minor bug fixes.
 
-We expect to enrich the library with optimisations in processing time, enriched
+We expect to improve the library with optimisations in processing time, enriched
 algorithms and more powerful visualisation capabilities.
 
 # References
