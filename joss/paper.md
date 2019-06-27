@@ -54,9 +54,11 @@ geometrical operations (intersections, inclusion, cascaded joins among others).
 
 The `traffic` library builds trajectories on top of Pandas dataframe and
 airspaces on top of Shapely geometries. It provides key operations for analysing
-trajectories evolving in airspaces. Meaningful methods are efficiently written
-using Pandas and Shapely optimised methods, more obvious operations are directly
-passed to the underlying dataframes.
+trajectories evolving in airspaces. It is particularly useful to programmers and
+researchers needing to compute statistics, performance indicators and building
+datasets for common machine learning tasks. Meaningful methods are efficiently
+written using Pandas and Shapely optimised methods, more obvious operations are
+directly passed to the underlying dataframes.
 
 # Core structure of the library
 
