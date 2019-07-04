@@ -46,19 +46,19 @@ Top performance and expressivity are key expectations for common tasks like
 preprocessing and filtering of data, preparation of trajectory datasets, or
 computation of key performance indicators.
 
-Python is a popular language among academics and data scientists for its active
-community and large catalogue of libraries fitting the needs of most in their
-respective areas of research. Pandas is a natural solution to represent time
-series, Shapely [@shapely_2007] a package of choice to address
-geometrical operations (intersections, inclusion, cascaded joins among others).
+The `traffic` library uses the Python language to reach a large base of
+academics and data scientists users, to serve and benefit its active community
+and to build on top of a large catalogue of libraries. Trajectories are modelled
+on top of Pandas dataframe, a natural solution to represent time series, while
+airspaces leverage Shapely [@shapely_2007] geometries and operations
+(intersections, inclusion, cascaded joins among others).
 
-The `traffic` library builds trajectories on top of Pandas dataframe and
-airspaces on top of Shapely geometries. It provides key operations for analysing
-trajectories evolving in airspaces. It is particularly useful to programmers and
-researchers needing to compute statistics, performance indicators and building
-datasets for common machine learning tasks. Meaningful methods are efficiently
-written using Pandas and Shapely optimised methods, more obvious operations are
-directly passed to the underlying dataframes.
+`traffic` provides key operations for analysing trajectories evolving in
+airspaces. It is particularly useful to programmers and researchers needing to
+compute statistics, performance indicators and building datasets for common
+machine learning tasks. Meaningful methods are efficiently written using Pandas
+and Shapely optimised methods, more obvious operations are directly passed to
+the underlying dataframes.
 
 # Core structure of the library
 
