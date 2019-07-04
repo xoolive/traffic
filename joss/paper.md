@@ -26,16 +26,16 @@ trajectories, flight parameters and geographical descriptions of the airspace
 they fly through.
 
 Trajectories are mathematical objects used to describe the evolution of a moving
-object with a finite list of parameters. The most common features in ATM
-include latitude, longitude, altitude, all indexed by time, which derivate as
+object with a finite list of parameters. The most common features in ATM include
+latitude, longitude, altitude, all indexed by time, with derived ones such as
 ground speed, track angle and vertical rate. Aircraft dynamic models may expect
 pitch, roll and yaw angles, together with indicated, computed or true airspeed,
 Mach number, and more.
 
 Further, airspaces are a key element of aviation: they are regulated by specific
-rules, navigation is allowed to determined types of aircraft meeting strict
-requirements. Such areas assigned to air traffic controllers to ensure the
-safety of flights and proper separation between aircraft are most commonly
+rules, whereby navigation is allowed to determined types of aircraft meeting
+strict requirements. Such volumes, assigned to air traffic controllers to ensure
+the safety of flights and proper separation between aircraft are most commonly
 described as a combination of extruded polygons.
 
 Common operations relevant to trajectories evolving in controlled airspaces
