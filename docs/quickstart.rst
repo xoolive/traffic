@@ -377,7 +377,7 @@ Area (TMA) for Toulouse.
 
     The path to the directory containing the AIRAC files must be set in
     a configuration file, as detailed in the relevant `section
-     </airac_usage.html>`_.
+    </airac_usage.html>`__.
 
 
 .. code:: python
