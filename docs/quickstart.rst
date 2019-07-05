@@ -19,7 +19,7 @@ a number of sample points for each trajectory.
 .. code:: python
 
     from traffic.core import Traffic
-    t = Traffic.from_file('../data/sample_opensky.pkl')
+    t = Traffic.from_file('data/sample_opensky.pkl')
 
 
 .. raw:: html
@@ -833,4 +833,4 @@ http://cesiumjs.org/ page after you open it on your browser.
 
 .. code:: python
 
-    Traffic.from_flights(demo).to_czml('../data/sample_cesium.czml')
+    Traffic.from_flights(demo).to_czml('data/sample_cesium.czml')
