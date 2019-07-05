@@ -373,6 +373,13 @@ If you have access to AIRAC files (published by Eurocontrol), you may
 get information about more complex zones, here the Terminal Maneuvering
 Area (TMA) for Toulouse.
 
+.. warning::
+
+    The path to the directory containing the AIRAC files must be set in
+    a configuration file, as detailed in the relevant `section
+     </airac_usage.html>`_.
+
+
 .. code:: python
 
     from traffic.data import nm_airspaces
