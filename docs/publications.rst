@@ -1,9 +1,31 @@
 Publications
 ============
 
+.. image:: http://joss.theoj.org/papers/10.21105/joss.01518/status.svg
+   :target: https://doi.org/10.21105/joss.01518
+
+If you find this project useful for your research and use it in an academic
+work, you may cite it as:
+
+.. code:: bibtex
+
+    @article{olive2019traffic,
+        author={Xavier {Olive}},
+        journal={Journal of Open Source Software},
+        title={traffic, a toolbox for processing and analysing air traffic data},
+        year={2019},
+        volume={4},
+        pages={1518},
+        doi={10.21105/joss.01518},
+        issn={2475-9066},
+    }
+
+The following list contains publications from research using the traffic
+library:
+
 - | X. Olive and L. Basora
   | **Identifying Anomalies in past en-route Trajectories with Clustering and Anomaly Detection Methods**. *Proceedings of the 13th Air Traffic Management R&D Seminar*, 2019
-  | `(notebook) <paper/sectflow.html>`__
+  | `(paper) <http://www.atmseminarus.org/seminarContent/seminar13/papers/ATM_Seminar_2019_paper_5.pdf>`__ `(notebook) <paper/sectflow.html>`__
 
 
 - | X. Olive, J. Grignard, T. Dubot and J. Saint-Lot.
