@@ -2,8 +2,9 @@ import functools
 import inspect
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import TYPE_CHECKING, Callable, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
+import pandas as pd
 from tqdm.autonotebook import tqdm
 
 from .flight import Flight
@@ -74,9 +75,17 @@ class LazyTraffic:
 
     """
 
-    def __init__(self, wrapped_t: "Traffic", stacked_ops: List[LazyLambda]):
+    def __init__(
+        self,
+        wrapped_t: "Traffic",
+        stacked_ops: List[LazyLambda],
+        iterate_kw: Union[str, pd.DataFrame, None] = None,
+        tqdm_kw: Dict[str, Any] = {},
+    ):
         self.wrapped_t: "Traffic" = wrapped_t
         self.stacked_ops: List[LazyLambda] = stacked_ops
+        self.iterate_kw: Union[str, pd.DataFrame, None] = iterate_kw
+        self.tqdm_kw: Dict[str, Any] = tqdm_kw
 
     def __repr__(self):
         assert LazyTraffic.__doc__ is not None
@@ -127,11 +136,13 @@ class LazyTraffic:
         """
 
         if max_workers < 2:
-            iterator = self.wrapped_t
-            if desc is not None:
-                iterator = tqdm(
-                    iterator, total=len(self.wrapped_t), desc=desc, leave=False
-                )
+            iterator = self.wrapped_t.iterate(self.iterate_kw)
+            if desc is not None or len(self.tqdm_kw) > 0:
+                tqdm_kw = {
+                    **dict(desc=desc, leave=False, total=len(self.wrapped_t)),
+                    **self.tqdm_kw,
+                }
+                iterator = tqdm(iterator, **tqdm_kw)
             cumul = list(
                 apply(self.stacked_ops, idx, flight)
                 for idx, flight in enumerate(iterator)
@@ -139,11 +150,14 @@ class LazyTraffic:
         else:
             cumul = []
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                iterator = self.wrapped_t.iterate(self.iterate_kw)
+                if len(self.tqdm_kw):
+                    iterator = tqdm(iterator, **self.tqdm_kw)
                 tasks = {
                     executor.submit(
                         apply, self.stacked_ops, idx, flight
                     ): flight
-                    for idx, flight in enumerate(self.wrapped_t)
+                    for idx, flight in enumerate(iterator)
                 }
                 tasks_completed = as_completed(tasks)
                 if desc is not None:
@@ -168,6 +182,9 @@ class LazyTraffic:
                 "Check the documentation for more options."
             )
             return getattr(self.eval(), name)
+        raise NotImplementedError(
+            f"Method '{name}' not implemented on Traffic or LazyTraffic"
+        )
 
 
 def lazy_evaluation(
@@ -208,7 +225,12 @@ def lazy_evaluation(
 
         def lazy_λf(lazy: LazyTraffic, *args, **kwargs):
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
-            return LazyTraffic(lazy.wrapped_t, lazy.stacked_ops + [op_idx])
+            return LazyTraffic(
+                lazy.wrapped_t,
+                lazy.stacked_ops + [op_idx],
+                lazy.iterate_kw,
+                lazy.tqdm_kw,
+            )
 
         lazy_λf.__annotations__ = getattr(Flight, f.__name__).__annotations__
         lazy_λf.__annotations__["self"] = LazyTraffic
@@ -264,7 +286,12 @@ for name, handle in inspect.getmembers(
         def make_lambda(name: str) -> Callable[..., LazyTraffic]:
             def lazy_λf(lazy: LazyTraffic, *args, **kwargs):
                 op_idx = LazyLambda(name, None, *args, **kwargs)
-                return LazyTraffic(lazy.wrapped_t, lazy.stacked_ops + [op_idx])
+                return LazyTraffic(
+                    lazy.wrapped_t,
+                    lazy.stacked_ops + [op_idx],
+                    lazy.iterate_kw,
+                    lazy.tqdm_kw,
+                )
 
             lazy_λf.__doc__ = handle.__doc__
             lazy_λf.__annotations__ = handle.__annotations__

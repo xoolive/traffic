@@ -17,7 +17,7 @@ from ..algorithms.clustering import Clustering, centroid
 from ..algorithms.cpa import closest_point_of_approach
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
-from .lazy import lazy_evaluation
+from .lazy import LazyTraffic, lazy_evaluation
 from .mixins import GeographyMixin
 from .sv import StateVectors
 
@@ -149,6 +149,38 @@ class Traffic(GeographyMixin):
     def __radd__(self, other) -> "Traffic":
         return self + other
 
+    def _getSeries(self, index: pd.Series) -> Optional[Flight]:
+
+        p_callsign = hasattr(index, "callsign")
+        p_icao24 = hasattr(index, "icao24")
+
+        if p_callsign or p_icao24:
+            query = []
+            if p_callsign:
+                query.append(f"callsign == '{index.callsign}'")
+            if p_icao24:
+                query.append(f"icao24 == '{index.icao24}'")
+
+            flight = Flight(
+                self.data.query(
+                    query[0] if len(query) == 1 else " and ".join(query)
+                )
+            )
+
+            if hasattr(index, "firstSeen"):  # refers to OpenSky REST API
+                flight = flight.after(index.firstSeen)
+            if hasattr(index, "lastSeen"):  # refers to OpenSky REST API
+                flight = flight.before(index.lastSeen)
+
+            if hasattr(index, "start"):  # more natural
+                flight = flight.after(index.start)
+            if hasattr(index, "stop"):  # more natural
+                flight = flight.before(index.stop)
+
+            return flight
+
+        return None
+
     @overload
     def __getitem__(self, index: str) -> Optional[Flight]:
         ...
@@ -159,7 +191,15 @@ class Traffic(GeographyMixin):
 
     def __getitem__(self, index):  # noqa: F811
 
-        if not isinstance(index, str):
+        if isinstance(index, pd.Series):
+            return self._getSeries(index)
+
+        if isinstance(index, pd.DataFrame):
+            return self.__class__.from_flights(
+                flight for flight in self.iterate(by=index)
+            )
+
+        if not isinstance(index, str):  # List[str], Set[str], Iterable[str]
             logging.debug("Selecting flights from a list of identifiers")
             subset = repr(list(index))
             query_str = f"callsign in {subset} or icao24 in {subset}"
@@ -184,13 +224,70 @@ class Traffic(GeographyMixin):
             return self.flight_ids
         return {*self.aircraft, *self.callsigns}
 
-    def __iter__(self) -> Iterator[Flight]:
+    def iterate(
+        self, by: Union[str, pd.DataFrame, None] = None
+    ) -> Iterator[Flight]:
+        """
+        Iterates over Flights contained in the Traffic structure.
+
+        Default iteration calls this method with default arguments:
+        >>> for flight in t:
+        ...     pass
+
+        is equivalent to:
+        >>> for flight in t.iterate():
+        ...     pass
+
+        However the it may be beneficial to specify the `by` parameter:
+        - as a pandas DataFrame with callsign and or icao24 columns, it
+        defines a subset of Flights to select.
+        - as a a string, `by` defines the minimum time range without
+        data for a flight.
+        """
+
+        if isinstance(by, pd.DataFrame):
+            for _, line in by.iterrows():
+                flight = self[line]
+                if flight is not None:
+                    yield flight
+            return
+
         if self.flight_ids is not None:
             for _, df in self.data.groupby("flight_id"):
                 yield Flight(df)
         else:
             for _, df in self.data.groupby(["icao24", "callsign"]):
-                yield from Flight(df).split("10 minutes")
+                yield from Flight(df).split(
+                    by if by is not None else "10 minutes"
+                )
+
+    def iterate_lazy(
+        self,
+        by: Union[str, pd.DataFrame, None] = None,
+        tqdm_kw: Dict[str, Any] = {},
+    ) -> LazyTraffic:
+        """
+        Triggers a lazy iteration on the Traffic structure.
+
+        Default iteration calls this method with default arguments:
+        >>> t.filter()
+
+        is equivalent to:
+        >>> t.iterate_lazy().filter()
+
+        However the it may be beneficial to specify the `by` parameter:
+        - as a pandas DataFrame with callsign and or icao24 columns, it
+        defines a subset of Flights to select.
+        - as a a string, `by` defines the minimum time range without
+        data for a flight.
+
+        You may also select parameters to pass to a tentative tqdm
+        progressbar.
+        """
+        return LazyTraffic(self, [], iterate_kw=by, tqdm_kw=tqdm_kw)
+
+    def __iter__(self) -> Iterator[Flight]:
+        yield from self.iterate()
 
     def __len__(self):
         return sum(1 for _ in self)
@@ -289,6 +386,14 @@ class Traffic(GeographyMixin):
 
     @lazy_evaluation()
     def query_ehs(self, data, failure_mode, propressbar):
+        ...
+
+    @lazy_evaluation()
+    def first(self, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def last(self, **kwargs):
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
