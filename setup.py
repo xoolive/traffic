@@ -18,14 +18,13 @@ except FileNotFoundError:
 
 setup(
     name="traffic",
-    version="2.0",
+    version="2.1b0",
     author="Xavier Olive",
     author_email="git@xoolive.org",
     url="https://github.com/xoolive/traffic/",
     license="MIT",
     description="A toolbox for manipulating and analysing air traffic data",
     long_description=long_description,
-    # https://dustingram.com/articles/2018/03/16/markdown-descriptions-on-pypi
     long_description_content_type="text/markdown",
     entry_points={
         "console_scripts": ["traffic=traffic.console:main"],
