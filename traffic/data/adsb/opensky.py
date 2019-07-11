@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Optional, Set, Tuple, Union
 
 import pandas as pd
@@ -130,6 +131,10 @@ class OpenSky(Impala):
         "position_source",
     ]
 
+    def __init__(self, username: str, password: str, cache_dir: Path) -> None:
+        super().__init__(username, password, cache_dir)
+        self.session = requests.Session()
+
     def api_states(
         self,
         own: bool = False,
@@ -184,7 +189,7 @@ class OpenSky(Impala):
 
             what += f"?lamin={south}&lamax={north}&lomin={west}&lomax={east}"
 
-        c = requests.get(
+        c = self.session.get(
             f"https://opensky-network.org/api/states/{what}", auth=self.auth
         )
         c.raise_for_status()
@@ -232,7 +237,7 @@ class OpenSky(Impala):
         detailed track information.
 
         """
-        c = requests.get(
+        c = self.session.get(
             f"https://opensky-network.org/api/tracks/?icao24={icao24}"
         )
         c.raise_for_status()
@@ -255,7 +260,7 @@ class OpenSky(Impala):
         """Returns the route associated to a callsign."""
         from .. import airports
 
-        c = requests.get(
+        c = self.session.get(
             f"https://opensky-network.org/api/routes?callsign={callsign}"
         )
         c.raise_for_status()
@@ -292,7 +297,7 @@ class OpenSky(Impala):
         begin = int(begin.timestamp())
         end = int(end.timestamp())
 
-        c = requests.get(
+        c = self.session.get(
             f"https://opensky-network.org/api/flights/aircraft"
             f"?icao24={icao24}&begin={begin}&end={end}"
         )
@@ -323,7 +328,7 @@ class OpenSky(Impala):
     def api_sensors(self) -> Set[str]:
         """The set of sensors serials you own (require authentication)."""
         today = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
-        c = requests.get(
+        c = self.session.get(
             f"https://opensky-network.org/api/sensor/myStats"
             f"?days={int(today.timestamp())}",
             auth=self.auth,
@@ -346,7 +351,7 @@ class OpenSky(Impala):
             date = to_datetime(date)
         date = int(date.timestamp())
 
-        c = requests.get(
+        c = self.session.get(
             f"https://opensky-network.org/api/range/days"
             f"?days={date}&serials={serial}"
         )
@@ -354,7 +359,7 @@ class OpenSky(Impala):
         return SensorRange(c.json())
 
     def api_global_coverage(self) -> Coverage:
-        c = requests.get("https://opensky-network.org/api/range/coverage")
+        c = self.session.get("https://opensky-network.org/api/range/coverage")
         c.raise_for_status()
         return Coverage(c.json())
 
@@ -399,7 +404,7 @@ class OpenSky(Impala):
         begin = int(begin.timestamp())
         end = int(end.timestamp())
 
-        c = requests.get(
+        c = self.session.get(
             f"https://opensky-network.org/api/flights/arrival"
             f"?begin={begin}&airport={airport_code}&end={end}"
         )
@@ -469,7 +474,7 @@ class OpenSky(Impala):
         begin = int(begin.timestamp())
         end = int(end.timestamp())
 
-        c = requests.get(
+        c = self.session.get(
             f"https://opensky-network.org/api/flights/departure"
             f"?begin={begin}&airport={airport_code}&end={end}"
         )
