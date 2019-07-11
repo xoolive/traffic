@@ -435,7 +435,7 @@ class Impala(object):
             cached (default: True)
 
         Returns:
-            a Traffic structure wrapping the dataframe
+            a pandas DataFrame
 
         """
 

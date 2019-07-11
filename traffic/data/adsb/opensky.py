@@ -421,6 +421,7 @@ class OpenSky(Impala):
                     "estArrivalAirport",
                 ]
             ]
+            .query("callsign == callsign")
             .assign(
                 firstSeen=lambda df: pd.to_datetime(
                     df.firstSeen * 1e9
@@ -428,6 +429,7 @@ class OpenSky(Impala):
                 lastSeen=lambda df: pd.to_datetime(
                     df.lastSeen * 1e9
                 ).dt.tz_localize("utc"),
+                callsign=lambda df: df.callsign.str.strip(),
             )
             .sort_values("lastSeen")
         )
@@ -491,6 +493,7 @@ class OpenSky(Impala):
                     "estArrivalAirport",
                 ]
             ]
+            .query("callsign == callsign")
             .assign(
                 firstSeen=lambda df: pd.to_datetime(
                     df.firstSeen * 1e9
@@ -498,6 +501,7 @@ class OpenSky(Impala):
                 lastSeen=lambda df: pd.to_datetime(
                     df.lastSeen * 1e9
                 ).dt.tz_localize("utc"),
+                callsign=lambda df: df.callsign.str.strip(),
             )
             .sort_values("firstSeen")
         )
