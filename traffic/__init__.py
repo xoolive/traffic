@@ -14,7 +14,6 @@ warnings.simplefilter("ignore", TqdmExperimentalWarning)
 # -- Configuration management --
 
 config_dir = Path(user_config_dir("traffic"))
-cache_dir = Path(user_cache_dir("traffic"))
 config_file = config_dir / "traffic.conf"
 
 if not config_dir.exists():
@@ -30,11 +29,19 @@ enabled_plugins = CesiumJS, Leaflet
 """
         )
 
-if not cache_dir.exists():
-    cache_dir.mkdir(parents=True)
-
 config = configparser.ConfigParser()
 config.read(config_file.as_posix())
+
+# Check the config file for a cache directory. If not present
+# then use the system default cache path
+cache_dir = config.get("global", "cache_dir", fallback="")
+if (cache_dir == ""):
+    cache_dir = Path(user_cache_dir("traffic"))
+else:
+    cache_dir = Path(cache_dir)
+
+if not cache_dir.exists():
+    cache_dir.mkdir(parents=True)
 
 # -- Plugin management --
 
