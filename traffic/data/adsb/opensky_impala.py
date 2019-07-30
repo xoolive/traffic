@@ -111,12 +111,15 @@ class Impala(object):
                 if df.shape[0] > 0:
                     return df
 
+        error_msg: Optional[str] = None
         with cachename.open("r") as fh:
             output = fh.readlines()
             if any(elt.startswith("ERROR:") for elt in output):
-                msg = "".join(output[:-1])
-                cachename.unlink()
-                raise ImpalaError(msg)
+                error_msg = "".join(output[:-1])
+
+        if error_msg is not None:
+            cachename.unlink()
+            raise ImpalaError(error_msg)
 
         return None
 
