@@ -607,7 +607,7 @@ class SO6(DataFrameMixin):
         so6 = pd.read_csv(
             filename,
             sep=" ",
-            header=-1,
+            header=None,
             names=[
                 "d1",
                 "origin",
