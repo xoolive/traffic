@@ -13,6 +13,7 @@ from typing import (Dict, Iterable, Iterator, List, NoReturn, Optional, Set,
                     Tuple, Type, TypeVar, Union, overload)
 
 import numpy as np
+
 import pandas as pd
 import pyproj
 from cartopy.crs import PlateCarree
@@ -250,9 +251,11 @@ class Flight(FlightMixin):
     def interpolate(self, times, proj=PlateCarree()) -> np.ndarray:
         if proj not in self.interpolator:
             self.interpolator[proj] = interp1d(
-                np.stack(t.to_pydatetime().timestamp() for t in self.timestamp),
+                np.stack(
+                    [t.to_pydatetime().timestamp() for t in self.timestamp]
+                ),
                 proj.transform_points(
-                    PlateCarree(), *np.stack(self.coords).T
+                    PlateCarree(), *np.stack(list(self.coords)).T
                 ).T,
             )
         return PlateCarree().transform_points(
@@ -292,10 +295,10 @@ class Flight(FlightMixin):
         else:
             stop = to_datetime(stop)
 
-        t: np.ndarray = np.stack(self.timestamp)
+        t: np.ndarray = np.stack(list(self.timestamp))
         index = np.where((start < t) & (t < stop))
 
-        new_data: np.ndarray = np.stack(self.coords)[index]
+        new_data: np.ndarray = np.stack(list(self.coords))[index]
         time1: List[datetime] = [start, *t[index]]
         time2: List[datetime] = [*t[index], stop]
 
@@ -356,7 +359,9 @@ class Flight(FlightMixin):
         `min_` and `max_`, with proper interpolations where needed.
         """
 
-        def buffer_to_iter(proj, buffer):
+        def buffer_to_iter(
+            proj: pyproj.Proj, buffer: List[pd.Series]
+        ) -> Iterator["Flight"]:
             df = pd.DataFrame.from_records(buffer)
 
             df["lon1"], df["lat1"] = pyproj.transform(
@@ -367,7 +372,7 @@ class Flight(FlightMixin):
                 proj, pyproj.Proj(init="EPSG:4326"), df.x2.values, df.y2.values
             )
 
-            yield df.drop(["x1", "x2", "y1", "y2"], axis=1)
+            yield self.__class__(df.drop(["x1", "x2", "y1", "y2"], axis=1))
 
         data = self.data.copy()
 
