@@ -27,8 +27,8 @@ def test_so6():
     assert str(clipped.start)[:19] == "2018-01-01 18:30:20"
     assert str(clipped.stop)[:19] == "2018-01-01 18:52:10"
 
-    assert next(hop36pp.clip_altitude(15000, 20000)).shape[0] == 2
-    assert next(hop36pp.clip_altitude(18000, 20000)).shape[0] == 1
+    assert len(next(hop36pp.clip_altitude(15000, 20000))) == 2
+    assert len(next(hop36pp.clip_altitude(18000, 20000))) == 1
 
     # This flight is on holding pattern and causes issues with intersection
     clipped = so6["BAW3TV"].clip(eurofirs["LFBB"].flatten())

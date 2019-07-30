@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pkg_resources
 from appdirs import user_cache_dir, user_config_dir
+
 from tqdm import TqdmExperimentalWarning
 
 # Silence this warning about autonotebook mode for tqdm
@@ -34,11 +35,11 @@ config.read(config_file.as_posix())
 
 # Check the config file for a cache directory. If not present
 # then use the system default cache path
-cache_dir = config.get("global", "cache_dir", fallback="")
-if (cache_dir == ""):
+cache_dir_cfg = config.get("global", "cache_dir", fallback="")
+if cache_dir_cfg == "":
     cache_dir = Path(user_cache_dir("traffic"))
 else:
-    cache_dir = Path(cache_dir)
+    cache_dir = Path(cache_dir_cfg)
 
 if not cache_dir.exists():
     cache_dir.mkdir(parents=True)
