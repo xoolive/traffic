@@ -280,9 +280,9 @@ class Traffic(GeographyMixin):
         However the it may be beneficial to specify the `by` parameter:
 
         - as a pandas DataFrame with callsign and or icao24 columns, it
-        defines a subset of Flights to select.
+          defines a subset of Flights to select.
         - as a a string, `by` defines the minimum time range without
-        data for a flight.
+          data for a flight.
 
         You may also select parameters to pass to a tentative tqdm
         progressbar.
