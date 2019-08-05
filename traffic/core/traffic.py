@@ -270,12 +270,15 @@ class Traffic(GeographyMixin):
         Triggers a lazy iteration on the Traffic structure.
 
         Default iteration calls this method with default arguments:
+
         >>> t.filter()
 
         is equivalent to:
+
         >>> t.iterate_lazy().filter()
 
         However the it may be beneficial to specify the `by` parameter:
+
         - as a pandas DataFrame with callsign and or icao24 columns, it
         defines a subset of Flights to select.
         - as a a string, `by` defines the minimum time range without
