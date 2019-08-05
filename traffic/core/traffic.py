@@ -231,18 +231,21 @@ class Traffic(GeographyMixin):
         Iterates over Flights contained in the Traffic structure.
 
         Default iteration calls this method with default arguments:
+
         >>> for flight in t:
         ...     pass
 
         is equivalent to:
+
         >>> for flight in t.iterate():
         ...     pass
 
         However the it may be beneficial to specify the `by` parameter:
+
         - as a pandas DataFrame with callsign and or icao24 columns, it
-        defines a subset of Flights to select.
+          defines a subset of Flights to select.
         - as a a string, `by` defines the minimum time range without
-        data for a flight.
+          data for a flight.
         """
 
         if isinstance(by, pd.DataFrame):
