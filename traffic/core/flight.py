@@ -647,22 +647,26 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         """Filters the trajectory given features with a median filter.
 
-        The method applies a median filter on each feature of the DataFrame.
-        A default kernel size is applied for a number of features (resp.
-        latitude, longitude, altitude, track, groundspeed, IAS, TAS) but other
-        kernel values may be passed as kwargs parameters.
+        The method first applies a median filter on each feature of the
+        DataFrame. A default kernel size is applied for a number of features
+        (resp. latitude, longitude, altitude, track, groundspeed, IAS, TAS) but
+        other kernel values may be passed as kwargs parameters.
 
-        Filtered values are replaced by NaN values. A strategy may be applied to
-        fill the Nan values, by default a forward/backward fill. Other
-        strategies may be passed, for instance *do nothing*: ``lambda x: x``; or
-        *interpolate*: ``lambda x: x.interpolate()``.
+        Rather than returning averaged values, the method computes thresholds
+        on sliding windows (as an average of squared differences) and replace
+        unacceptable values with NaNs.
+
+        Then, a strategy may be applied to fill the NaN values, by default a
+        forward/backward fill. Other strategies may be passed, for instance *do
+        nothing*: ``lambda x: x``; or *interpolate*: ``lambda x:
+        x.interpolate()``.
 
         .. note::
             This method if often more efficient when applied several times with
             different kernel values.
 
             >>> # this cascade of filters appears to work well on altitude
-            >>> flight.resample().resample(altitude=53)
+            >>> flight.filter().filter(altitude=53)
         """
 
         ks_dict = {
