@@ -671,12 +671,14 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         ks_dict = {
             "altitude": 17,
-            "track": 5,
+            "selected_mcp": 17,
+            "selected_fms": 17,
+            "IAS": 23,
+            "TAS": 23,
+            "Mach": 23,
             "groundspeed": 5,
-            "longitude": 15,
+            "longitude": 15,  # maybe EKF is a better idea...
             "latitude": 15,
-            "IAS": 5,
-            "TAS": 5,
             **kwargs,
         }
 

@@ -289,7 +289,7 @@ class Aircraft(object):
         wind = wind if wind is not None else (None, None)
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
-            # or squawk from idcode (DF5 or 21)
+            # or squawk from idcode (DF 5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
                 self.cumul[-1] = dict(
@@ -331,7 +331,7 @@ class Aircraft(object):
                     **last_entry,
                     groundspeed=pms.commb.gs50(msg),
                     roll=pms.commb.roll50(msg),
-                    tas=pms.commb.tas50(msg),
+                    TAS=pms.commb.tas50(msg),
                     track=pms.commb.trk50(msg),
                     track_rate=pms.commb.rtrk50(msg),
                 )
@@ -343,7 +343,7 @@ class Aircraft(object):
                         icao24=self.icao24,
                         groundspeed=pms.commb.gs50(msg),
                         roll=pms.commb.roll50(msg),
-                        tas=pms.commb.tas50(msg),
+                        TAS=pms.commb.tas50(msg),
                         track=pms.commb.trk50(msg),
                         track_rate=pms.commb.rtrk50(msg),
                     )
@@ -363,9 +363,9 @@ class Aircraft(object):
             if last_entry is not None and last_entry["timestamp"] == t:
                 self.cumul[-1] = dict(
                     **last_entry,
-                    ias=pms.commb.ias60(msg),
+                    IAS=pms.commb.ias60(msg),
                     heading=pms.commb.hdg60(msg),
-                    mach=pms.commb.mach60(msg),
+                    Mach=pms.commb.mach60(msg),
                     vertical_rate_barometric=pms.commb.vr60baro(msg),
                     vertical_rate_inertial=pms.commb.vr60ins(msg),
                 )
@@ -374,9 +374,9 @@ class Aircraft(object):
                     dict(
                         timestamp=t,
                         icao24=self.icao24,
-                        ias=pms.commb.ias60(msg),
+                        IAS=pms.commb.ias60(msg),
                         heading=pms.commb.hdg60(msg),
-                        mach=pms.commb.mach60(msg),
+                        Mach=pms.commb.mach60(msg),
                         vertical_rate_barometric=pms.commb.vr60baro(msg),
                         vertical_rate_inertial=pms.commb.vr60ins(msg),
                     )
