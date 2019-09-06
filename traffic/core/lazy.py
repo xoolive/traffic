@@ -1,6 +1,7 @@
 import functools
 import inspect
 import logging
+import types
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
@@ -66,13 +67,11 @@ def apply(
 
 class LazyTraffic:
     """
-
     In the following example, ``lazy_t`` is not evaluated:
 
     >>> lazy_t = t.filter().resample('10s')
     >>> type(t_lazy)
     traffic.core.lazy.LazyTraffic
-
     """
 
     def __init__(
@@ -90,8 +89,9 @@ class LazyTraffic:
     def __repr__(self):
         assert LazyTraffic.__doc__ is not None
         return (
-            f"{super()}\n"
+            "class LazyTraffic:\n"
             + LazyTraffic.__doc__
+            + "\n"
             + f"Call eval() to apply {len(self.stacked_ops)} stacked operations"
         )
 
@@ -219,12 +219,29 @@ def lazy_evaluation(
 
     def wrapper(f):
 
+        # Check parameters passed to filter_if are not lambda because those
+        # are not serializable therefore **silently** fail when multiprocessed.
+        msg = """
+filter_if(lambda f: ...) will *silently* fail when evaluated on several cores.
+It should be safe to create a proper named function and pass it to filter_if.
+        """
+
+        def is_lambda(f):
+            return isinstance(f, types.LambdaType) and f.__name__ == "<lambda>"
+
         # Check the decorated method is implemented by A
         if not hasattr(Flight, f.__name__):
             raise TypeError(f"Class Flight does not provide {f.__name__}")
 
         def lazy_λf(lazy: LazyTraffic, *args, **kwargs):
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
+
+            if f.__name__ == "filter_if":
+                if len(args) > 0 and is_lambda(args[0]):
+                    logging.warn(msg)
+                if "test" in kwargs and is_lambda(kwargs["test"]):
+                    logging.warn(msg)
+
             return LazyTraffic(
                 lazy.wrapped_t,
                 lazy.stacked_ops + [op_idx],
@@ -250,6 +267,13 @@ def lazy_evaluation(
         # Take the method in Flight and create a LazyCollection
         def λf(wrapped_t: "Traffic", *args, **kwargs):
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
+
+            if f.__name__ == "filter_if":
+                if len(args) > 0 and is_lambda(args[0]):
+                    logging.warn(msg)
+                if "test" in kwargs and is_lambda(kwargs["test"]):
+                    logging.warn(msg)
+
             return LazyTraffic(wrapped_t, [op_idx])
 
         if f.__doc__ is not None:
