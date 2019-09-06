@@ -24,8 +24,9 @@ It is also possible to benefit from the Altair geographical representation.
 .. code:: python
 
     from traffic.data import airports
+    # see https://traffic-viz.github.io/samples.html if any issue on import
     from traffic.data.samples import belevingsvlucht
-    
+
     (
         airports["EHAM"].geoencode(runways=True, labels=True)
         + belevingsvlucht.first(minutes=1).geoencode().mark_line(color="steelblue")

@@ -158,6 +158,7 @@ radials. There must be a VOR around, we can search in the navaid database:
 
 .. code:: python
 
+   # see https://traffic-viz.github.io/samples.html if any issue on import
    from traffic.data.samples.calibration import ajaccio
    from traffic.data import navaids
 

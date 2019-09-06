@@ -18,7 +18,7 @@ August 1st 2018, cleaned and resampled to one point every five seconds. The data
 is available as a basic import:
 
 .. code:: python
-
+    # see https://traffic-viz.github.io/samples.html if any issue on import
     from traffic.data.samples import switzerland
 
 The full dataset of trajectories can be displayed on a basic Switzerland map.
