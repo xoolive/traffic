@@ -146,3 +146,20 @@ def test_douglas_peucker() -> None:
     df3d = pd.DataFrame({"x": x, "y": y, "z": z})
     res = douglas_peucker(df=df3d, z="z", tolerance=1, z_factor=1)
     assert all(res)
+
+
+def test_resample_unwrapped() -> None:
+    # https://github.com/xoolive/traffic/issues/41
+
+    df = pd.DataFrame.from_records(
+        [
+            (pd.Timestamp("2019-01-01 12:00:00"), 345),
+            (pd.Timestamp("2019-01-01 12:00:30"), 355),
+            (pd.Timestamp("2019-01-01 12:01:00"), 5),
+            (pd.Timestamp("2019-01-01 12:01:30"), 15),
+        ],
+        columns=["timestamp", "track"],
+    )
+
+    resampled = Flight(df).resample("1s")
+    assert len(resampled.query("50 < track < 300")) == 0

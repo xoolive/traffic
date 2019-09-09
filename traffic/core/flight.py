@@ -608,8 +608,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         if isinstance(rule, str):
             data = (
                 self.handle_last_position()
-                .data.assign(start=self.start, stop=self.stop)
-                .set_index("timestamp")
+                .unwrap()  # avoid filled gaps in track and heading
+                .assign(start=self.start, stop=self.stop)
+                .data.set_index("timestamp")
                 .resample(rule)
                 .first()  # better performance than min() for duplicate index
                 .interpolate()
@@ -626,6 +627,7 @@ class Flight(GeographyMixin, ShapelyMixin):
             # To keep the old behavior, pass 'dtype="datetime64[ns]"'.
             data = (
                 self.handle_last_position()
+                .unwrap()  # avoid filled gaps in track and heading
                 .assign(tz_naive=lambda d: d.timestamp.astype("datetime64[ns]"))
                 .data.set_index("tz_naive")
                 .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
@@ -634,6 +636,11 @@ class Flight(GeographyMixin, ShapelyMixin):
             )
         else:
             raise TypeError("rule must be a str or an int")
+
+        if "track_unwrapped" in data.columns:
+            data = data.assign(track=lambda df: df.track_unwrapped % 360)
+        if "heading_unwrapped" in data.columns:
+            data = data.assign(heading=lambda df: df.heading_unwrapped % 360)
 
         return self.__class__(data)
 
