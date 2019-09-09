@@ -20,3 +20,9 @@ def test_extent() -> None:
 
 def test_search() -> None:
     assert navaids.search("GAI").data.shape[0] == 2
+
+
+def test_iter() -> None:
+    extent = (1, 2, 43, 44)
+    short_navaids = navaids.extent(extent)
+    assert sum(1 for n in short_navaids if n.name == "GAI") == 1

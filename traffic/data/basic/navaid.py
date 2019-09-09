@@ -233,7 +233,7 @@ class Navaids(DataFrameMixin):
 
     def __iter__(self) -> Iterator[Navaid]:
         for _, x in self.data.iterrows():
-            yield Navaid(**dict(x.iloc[0]))
+            yield Navaid(**x)
 
     def search(self, name: str) -> "Navaids":
         """
