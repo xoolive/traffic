@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
-from typing import (TYPE_CHECKING, Callable, Dict, Generator, Iterable,
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
                     Iterator, List, Optional, Set, Tuple, Union, cast, overload)
 
 import altair as alt
@@ -255,6 +255,48 @@ class Flight(GeographyMixin, ShapelyMixin):
         """Returns the maximum value of given feature."""
         return self.data[feature].max()
 
+    def feature_gt(self, feature: str, value: Any, strict: bool = True) -> bool:
+        """Returns True if flight.feature is greater than value.
+
+        >>> f.feature_gt("duration", pd.Timedelta('1 minute'))
+        True
+        """
+        attribute = getattr(self, feature, None)
+        if attribute is None:
+            raise RuntimeError(f"Feature {feature} does not exist")
+        if strict:
+            return attribute > value
+        return attribute >= value
+
+    def feature_lt(self, feature: str, value: Any, strict: bool = True) -> bool:
+        """Returns True if flight.feature is less than value.
+
+        >>> f.feature_lt("duration", pd.Timedelta('1 minute'))
+        True
+        """
+        attribute = getattr(self, feature, None)
+        if attribute is None:
+            raise RuntimeError(f"Feature {feature} does not exist")
+        if strict:
+            return attribute < value
+        return attribute <= value
+
+    def shorter_than(
+        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+    ) -> bool:
+        """Returns True if flight duration is shorter than value."""
+        if isinstance(value, str):
+            value = pd.Timedelta(value)
+        return self.feature_lt("duration", value, strict)
+
+    def longer_than(
+        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+    ) -> bool:
+        """Returns True if flight duration is shorter than value."""
+        if isinstance(value, str):
+            value = pd.Timedelta(value)
+        return self.feature_gt("duration", value, strict)
+
     @property
     def start(self) -> pd.Timestamp:
         """Returns the minimum value of timestamp."""
@@ -470,23 +512,25 @@ class Flight(GeographyMixin, ShapelyMixin):
         # full call is necessary to keep @bound as a local variable
         return self.__class__(self.data.query("timestamp > @bound"))
 
-    def before(self, time: timelike) -> "Flight":
+    def before(self, time: timelike, strict: bool = True) -> "Flight":
         """Returns the part of the trajectory flown before a given timestamp.
 
         - ``time`` can be passed as a string, an epoch, a Python datetime, or
           a Pandas timestamp.
         """
-        return self.between(self.start, time)
+        return self.between(self.start, time, strict)
 
-    def after(self, time: timelike) -> "Flight":
+    def after(self, time: timelike, strict: bool = True) -> "Flight":
         """Returns the part of the trajectory flown after a given timestamp.
 
         - ``time`` can be passed as a string, an epoch, a Python datetime, or
           a Pandas timestamp.
         """
-        return self.between(time, self.stop)
+        return self.between(time, self.stop, strict)
 
-    def between(self, start: timelike, stop: time_or_delta) -> "Flight":
+    def between(
+        self, start: timelike, stop: time_or_delta, strict: bool = True
+    ) -> "Flight":
         """Returns the part of the trajectory flown between start and stop.
 
         - ``start`` and ``stop`` can be passed as a string, an epoch, a Python
@@ -503,7 +547,10 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         # full call is necessary to keep @start and @stop as local variables
         # return self.query('@start < timestamp < @stop')  => not valid
-        return self.__class__(self.data.query("@start < timestamp < @stop"))
+        if strict:
+            return self.__class__(self.data.query("@start < timestamp < @stop"))
+
+        return self.__class__(self.data.query("@start <= timestamp <= @stop"))
 
     def at(self, time: Optional[timelike] = None) -> Optional[Position]:
         """Returns the position in the trajectory at a given timestamp.

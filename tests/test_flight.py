@@ -84,6 +84,9 @@ def test_time_methods() -> None:
     t = "2018-05-30 18:30"
     assert (between.at(t) == before_after.at(t)).all()  # type: ignore
 
+    assert flight.longer_than("1 minute")
+    assert flight.shorter_than("1 day")
+
 
 def test_geometry() -> None:
     flight: Flight = get_sample(featured, "belevingsvlucht")

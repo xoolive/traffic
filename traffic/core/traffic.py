@@ -101,6 +101,8 @@ class Traffic(GeographyMixin):
                 "time": "timestamp",
                 "lat": "latitude",
                 "lon": "longitude",
+                "lng": "longitude",
+                "long": "longitude",
                 # speeds
                 "velocity": "groundspeed",
                 "ground_speed": "groundspeed",
@@ -123,6 +125,13 @@ class Traffic(GeographyMixin):
             ):
                 # for retrocompatibility
                 rename_columns["altitude"] = "geoaltitude"
+
+            if (
+                "heading" in tentative.data.columns
+                and "track" not in tentative.data.columns
+            ):
+                # that's a common confusion in data, let's assume that
+                rename_columns["heading"] = "track"
 
             return tentative.rename(columns=rename_columns)
 
@@ -402,18 +411,40 @@ class Traffic(GeographyMixin):
     def last(self, **kwargs):
         ...
 
+    @lazy_evaluation()
+    def feature_gt(self, feature: str, value: Any, strict: bool = True):
+        ...
+
+    @lazy_evaluation()
+    def feature_lt(self, feature: str, value: Any, strict: bool = True):
+        ...
+
+    @lazy_evaluation()
+    def shorter_than(
+        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+    ):
+        ...
+
+    @lazy_evaluation()
+    def longer_than(
+        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+    ):
+        ...
+
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
-    def before(self, ts: timelike) -> "Traffic":
-        return self.between(self.start_time, ts)
+    def before(self, ts: timelike, strict: bool = True) -> "Traffic":
+        return self.between(self.start_time, ts, strict)
 
     @lazy_evaluation(default=True)
-    def after(self, ts: timelike) -> "Traffic":
-        return self.between(ts, self.end_time)
+    def after(self, ts: timelike, strict: bool = True) -> "Traffic":
+        return self.between(ts, self.end_time, strict)
 
     @lazy_evaluation(default=True)
-    def between(self, before: timelike, after: time_or_delta) -> "Traffic":
+    def between(
+        self, before: timelike, after: time_or_delta, strict: bool = True
+    ) -> "Traffic":
 
         before = to_datetime(before)
 
@@ -424,7 +455,10 @@ class Traffic(GeographyMixin):
 
         # full call is necessary to keep @before and @after as local variables
         # return self.query('@before < timestamp < @after')  => not valid
-        return self.__class__(self.data.query("@before < timestamp < @after"))
+        if strict:
+            return self.__class__(self.data.query("@start < timestamp < @stop"))
+
+        return self.__class__(self.data.query("@start <= timestamp <= @stop"))
 
     @lazy_evaluation(default=True)
     def airborne(self) -> "Traffic":
