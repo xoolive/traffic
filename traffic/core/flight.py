@@ -1128,7 +1128,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         else:
             return self.__class__(self.data.loc[mask])
 
-    def intersects(self, shape: Union["Airspace", base.BaseGeometry]) -> bool:
+    def intersects(self, shape: Union[ShapelyMixin, base.BaseGeometry]) -> bool:
         # implemented and monkey-patched in airspace.py
         # given here for consistency in types
         ...

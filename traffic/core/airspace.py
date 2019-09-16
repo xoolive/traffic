@@ -254,7 +254,7 @@ def inside_bbox(
 
 
 def _flight_intersects(
-    flight: Flight, shape: Union[Airspace, base.BaseGeometry]
+    flight: Flight, shape: Union[ShapelyMixin, base.BaseGeometry]
 ) -> bool:
     """Returns True if the trajectory is inside the given shape.
 
@@ -269,6 +269,8 @@ def _flight_intersects(
         return False
     if isinstance(shape, base.BaseGeometry):
         return not linestring.intersection(shape).is_empty
+    if not isinstance(shape, Airspace):  # i.e. ShapelyMixin
+        return not linestring.intersection(shape.shape).is_empty
     for layer in shape:
         ix = linestring.intersection(layer.polygon)
         if not ix.is_empty:
