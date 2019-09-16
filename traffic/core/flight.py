@@ -548,10 +548,10 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         # Corner cases when start or stop are None or NaT
         if start is None or start != start:
-            return self.before(stop)
+            return self.before(stop, strict=strict)
 
         if stop is None or stop != stop:
-            return self.after(start)
+            return self.after(start, strict=strict)
 
         start = to_datetime(start)
         if isinstance(stop, timedelta):

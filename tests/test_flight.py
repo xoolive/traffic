@@ -28,6 +28,8 @@ def test_properties() -> None:
     assert f"{flight.stop}" == "2018-05-30 20:22:56+00:00"
     assert flight.callsign == "TRA051"
     assert flight.title == "TRA051"
+    flight2 = flight.assign(number="FAKE", flight_id="belevingsvlucht")
+    assert flight2.title == "TRA051 / FAKE (belevingsvlucht)"
     assert flight.icao24 == "484506"
     assert flight.registration == "PH-HZO"
     assert flight.typecode == "B738"
@@ -86,10 +88,24 @@ def test_time_methods() -> None:
 
     assert flight.longer_than("1 minute")
     assert flight.shorter_than("1 day")
+    assert not flight.shorter_than(flight.duration)
+    assert not flight.longer_than(flight.duration)
+    assert flight.shorter_than(flight.duration, strict=False)
+    assert flight.longer_than(flight.duration, strict=False)
 
-    shorter = flight.query("altitude < 100").max_split()
+    b = flight.between(None, "2018-05-30 19:00", strict=False)
+    a = flight.between("2018-05-30 18:00", None, strict=False)
+
+    assert a.shorter_than(flight.duration)
+    assert b.shorter_than(flight.duration)
+
+    shorter = flight.query("altitude < 100").max_split(10)
     assert shorter is not None
     assert shorter.duration < pd.Timedelta("6 minutes")
+
+    point = flight.at_ratio(0.5)
+    assert point is not None
+    assert flight.start < point.timestamp < flight.stop
 
 
 def test_geometry() -> None:
@@ -171,6 +187,9 @@ def test_resample_unwrapped() -> None:
     resampled = Flight(df).resample("1s")
     assert len(resampled.query("50 < track < 300")) == 0
 
+    resampled_10 = Flight(df).resample(10)
+    assert len(resampled_10) == 10
+
 
 def test_agg_time() -> None:
     flight: Flight = get_sample(featured, "belevingsvlucht")
@@ -179,3 +198,12 @@ def test_agg_time() -> None:
 
     assert agg.max("groundspeed_mean") <= agg.max("groundspeed")
     assert agg.max("altitude_max") <= agg.max("altitude")
+
+
+def test_comet() -> None:
+    flight: Flight = get_sample(featured, "belevingsvlucht")
+
+    takeoff = next(flight.query("altitude < 300").split("10T"))
+    comet = takeoff.comet(minutes=1)
+
+    assert takeoff.point.altitude + 2000 < comet.point.altitude  # type: ignore
