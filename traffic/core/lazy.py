@@ -219,10 +219,10 @@ def lazy_evaluation(
 
     def wrapper(f):
 
-        # Check parameters passed to filter_if are not lambda because those
+        # Check parameters passed (esp. filter_if) are not lambda because those
         # are not serializable therefore **silently** fail when multiprocessed.
         msg = """
-filter_if(lambda f: ...) will *silently* fail when evaluated on several cores.
+{method}(lambda f: ...) will *silently* fail when evaluated on several cores.
 It should be safe to create a proper named function and pass it to filter_if.
         """
 
@@ -236,11 +236,10 @@ It should be safe to create a proper named function and pass it to filter_if.
         def lazy_λf(lazy: LazyTraffic, *args, **kwargs):
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
-            if f.__name__ == "filter_if":
-                if len(args) > 0 and is_lambda(args[0]):
-                    logging.warn(msg)
-                if "test" in kwargs and is_lambda(kwargs["test"]):
-                    logging.warn(msg)
+            if any(is_lambda(arg) for arg in args):
+                logging.warn(msg.format(method=f.__name__))
+            if any(is_lambda(arg) for arg in kwargs.values()):
+                logging.warn(msg.format(method=f.__name__))
 
             return LazyTraffic(
                 lazy.wrapped_t,
@@ -268,11 +267,10 @@ It should be safe to create a proper named function and pass it to filter_if.
         def λf(wrapped_t: "Traffic", *args, **kwargs):
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
-            if f.__name__ == "filter_if":
-                if len(args) > 0 and is_lambda(args[0]):
-                    logging.warn(msg)
-                if "test" in kwargs and is_lambda(kwargs["test"]):
-                    logging.warn(msg)
+            if any(is_lambda(arg) for arg in args):
+                logging.warn(msg.format(method=f.__name__))
+            if any(is_lambda(arg) for arg in kwargs.values()):
+                logging.warn(msg.format(method=f.__name__))
 
             return LazyTraffic(wrapped_t, [op_idx])
 
