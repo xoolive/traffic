@@ -644,6 +644,45 @@ class Flight(GeographyMixin, ShapelyMixin):
             default=None,
         )
 
+    def agg_time(
+        self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
+    ) -> "Flight":
+        """Aggregate features on time windows.
+
+        The following is performed:
+
+        - a new column `rounded` rounds the timestamp at the given rate;
+        - the groupby/agg is operated with parameters passed in kwargs;
+        - if merge is True, the new column in merged into the Flight,
+          otherwise a pd.DataFrame is returned.
+
+        For example:
+
+        >>> f.agg_time('3T', groundspeed='mean')
+
+        returns a Flight with a new column groundspeed_mean with groundspeed
+        averaged per intervals of 3 minutes.
+
+        """
+
+        if len(kwargs) == 0:
+            raise RuntimeError("No feature provided for aggregation.")
+        temp_flight = self.assign(
+            rounded=lambda df: df.timestamp.dt.round(freq)
+        )
+        agg_data = temp_flight.groupby("rounded").agg(kwargs)
+        if not merge:
+            return agg_data
+        rename_cols = {
+            feature: new_name.format(feature=feature, agg=agg)
+            for feature, agg in kwargs.items()
+        }
+        return temp_flight.merge(
+            agg_data.rename(columns=rename_cols),
+            left_on="rounded",
+            right_index=True,
+        )
+
     def handle_last_position(self) -> "Flight":
         # The following is True for all data coming from the Impala shell.
         # The following is an attempt to fix #7

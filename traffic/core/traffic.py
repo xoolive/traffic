@@ -459,6 +459,12 @@ class Traffic(GeographyMixin):
     ):
         ...
 
+    @lazy_evaluation()
+    def agg_time(
+        self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
+    ):
+        ...
+
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
