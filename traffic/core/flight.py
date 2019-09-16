@@ -3,6 +3,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
+from operator import attrgetter
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
                     Iterator, List, Optional, Set, Tuple, Union, cast, overload)
 
@@ -255,28 +256,34 @@ class Flight(GeographyMixin, ShapelyMixin):
         """Returns the maximum value of given feature."""
         return self.data[feature].max()
 
-    def feature_gt(self, feature: str, value: Any, strict: bool = True) -> bool:
-        """Returns True if flight.feature is greater than value.
+    def feature_gt(
+        self,
+        feature: Callable[["Flight"], Any],
+        value: Any,
+        strict: bool = True,
+    ) -> bool:
+        """Returns True if feature(flight) is greater than value.
 
-        >>> f.feature_gt("duration", pd.Timedelta('1 minute'))
+        >>> f.feature_gt(attrgetter("duration"), pd.Timedelta('1 minute'))
         True
         """
-        attribute = getattr(self, feature, None)
-        if attribute is None:
-            raise RuntimeError(f"Feature {feature} does not exist")
+        attribute = feature(self)
         if strict:
             return attribute > value
         return attribute >= value
 
-    def feature_lt(self, feature: str, value: Any, strict: bool = True) -> bool:
-        """Returns True if flight.feature is less than value.
+    def feature_lt(
+        self,
+        feature: Callable[["Flight"], Any],
+        value: Any,
+        strict: bool = True,
+    ) -> bool:
+        """Returns True if feature(flight) is less than value.
 
-        >>> f.feature_lt("duration", pd.Timedelta('1 minute'))
+        >>> f.feature_lt(attrgetter("duration"), pd.Timedelta('1 minute'))
         True
         """
-        attribute = getattr(self, feature, None)
-        if attribute is None:
-            raise RuntimeError(f"Feature {feature} does not exist")
+        attribute = feature(self)
         if strict:
             return attribute < value
         return attribute <= value
@@ -287,7 +294,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         """Returns True if flight duration is shorter than value."""
         if isinstance(value, str):
             value = pd.Timedelta(value)
-        return self.feature_lt("duration", value, strict)
+        return self.feature_lt(attrgetter("duration"), value, strict)
 
     def longer_than(
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
@@ -295,7 +302,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         """Returns True if flight duration is shorter than value."""
         if isinstance(value, str):
             value = pd.Timedelta(value)
-        return self.feature_gt("duration", value, strict)
+        return self.feature_gt(attrgetter("duration"), value, strict)
 
     @property
     def start(self) -> pd.Timestamp:
@@ -617,6 +624,18 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         for data in _split(self.data, value, unit):
             yield self.__class__(data)
+
+    def max_split(
+        self,
+        value: Union[int, str] = "10T",
+        unit: Optional[str] = None,
+        key: Callable[[Optional["Flight"]], Any] = attrgetter("duration"),
+    ) -> Optional["Flight"]:
+        return max(
+            self.split(value, unit),  # type: ignore
+            key=key,
+            default=None,
+        )
 
     def handle_last_position(self) -> "Flight":
         # The following is True for all data coming from the Impala shell.
@@ -1108,7 +1127,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         ...
 
     def clip(
-        self, shape: Union["Airspace", base.BaseGeometry]
+        self, shape: Union[ShapelyMixin, base.BaseGeometry]
     ) -> Optional["Flight"]:
         """Clips the trajectory to a given shape.
 
@@ -1128,7 +1147,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         linestring = LineString(list(self.airborne().xy_time))
         if not isinstance(shape, base.BaseGeometry):
-            shape = shape.flatten()
+            shape = shape.shape
 
         intersection = linestring.intersection(shape)
 
@@ -1153,7 +1172,14 @@ class Flight(GeographyMixin, ShapelyMixin):
                 yield min(times), max(times)
 
         times = list(_clip_generator())
-        return self.between(min(t for t, _ in times), max(t for _, t in times))
+        clipped_flight = self.between(
+            min(t for t, _ in times), max(t for _, t in times)
+        )
+
+        if clipped_flight.shape is None:
+            return None
+
+        return clipped_flight
 
     # -- OpenSky specific methods --
 

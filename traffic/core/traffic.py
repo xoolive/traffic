@@ -3,6 +3,7 @@
 import logging
 from datetime import timedelta
 from functools import lru_cache
+from operator import attrgetter
 from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
                     List, Optional, Set, Type, TypeVar, Union, overload)
@@ -412,11 +413,21 @@ class Traffic(GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def feature_gt(self, feature: str, value: Any, strict: bool = True):
+    def feature_gt(
+        self,
+        feature: Callable[["Flight"], Any],
+        value: Any,
+        strict: bool = True,
+    ):
         ...
 
     @lazy_evaluation()
-    def feature_lt(self, feature: str, value: Any, strict: bool = True):
+    def feature_lt(
+        self,
+        feature: Callable[["Flight"], Any],
+        value: Any,
+        strict: bool = True,
+    ):
         ...
 
     @lazy_evaluation()
@@ -428,6 +439,15 @@ class Traffic(GeographyMixin):
     @lazy_evaluation()
     def longer_than(
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+    ):
+        ...
+
+    @lazy_evaluation()
+    def max_split(
+        self,
+        value: Union[int, str] = "10T",
+        unit: Optional[str] = None,
+        key: Callable[[Optional["Flight"]], Any] = attrgetter("duration"),
     ):
         ...
 

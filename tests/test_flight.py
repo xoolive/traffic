@@ -87,6 +87,10 @@ def test_time_methods() -> None:
     assert flight.longer_than("1 minute")
     assert flight.shorter_than("1 day")
 
+    shorter = flight.query("altitude < 100").max_split()
+    assert shorter is not None
+    assert shorter.duration < pd.Timedelta("6 minutes")
+
 
 def test_geometry() -> None:
     flight: Flight = get_sample(featured, "belevingsvlucht")
