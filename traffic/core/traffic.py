@@ -118,6 +118,9 @@ class Traffic(GeographyMixin):
                 "baro_altitude": "altitude",
                 "baroaltitude": "altitude",
                 "geo_altitude": "geoaltitude",
+                # synonyms
+                "departure": "origin",
+                "arrival": "destination",
             }
 
             if (
@@ -235,7 +238,9 @@ class Traffic(GeographyMixin):
         return {*self.aircraft, *self.callsigns}
 
     def iterate(
-        self, by: Union[str, pd.DataFrame, None] = None
+        self,
+        by: Union[str, pd.DataFrame, None] = None,
+        nb_flights: Optional[int] = None,
     ) -> Iterator[Flight]:
         """
         Iterates over Flights contained in the Traffic structure.
@@ -259,25 +264,28 @@ class Traffic(GeographyMixin):
         """
 
         if isinstance(by, pd.DataFrame):
-            for _, line in by.iterrows():
-                flight = self[line]
-                if flight is not None:
-                    yield flight
+            for i, (_, line) in enumerate(by.iterrows()):
+                if nb_flights is None or i < nb_flights:
+                    flight = self[line]
+                    if flight is not None:
+                        yield flight
             return
 
-        if self.flight_ids is not None:
-            for _, df in self.data.groupby("flight_id"):
-                yield Flight(df)
+        if "flight_id" in self.data.columns:
+            for i, (_, df) in enumerate(self.data.groupby("flight_id")):
+                if nb_flights is None or i < nb_flights:
+                    yield Flight(df)
         else:
-            for _, df in self.data.groupby(["icao24", "callsign"]):
-                yield from Flight(df).split(
-                    by if by is not None else "10 minutes"
-                )
+            for i, (_, df) in enumerate(
+                self.data.groupby(["icao24", "callsign"])
+            ):
+                if nb_flights is None or i < nb_flights:
+                    yield from Flight(df).split(
+                        by if by is not None else "10 minutes"
+                    )
 
     def iterate_lazy(
-        self,
-        by: Union[str, pd.DataFrame, None] = None,
-        tqdm_kw: Dict[str, Any] = {},
+        self, iterate_kw: Dict[str, Any] = {}, tqdm_kw: Dict[str, Any] = {}
     ) -> LazyTraffic:
         """
         Triggers a lazy iteration on the Traffic structure.
@@ -300,7 +308,7 @@ class Traffic(GeographyMixin):
         You may also select parameters to pass to a tentative tqdm
         progressbar.
         """
-        return LazyTraffic(self, [], iterate_kw=by, tqdm_kw=tqdm_kw)
+        return LazyTraffic(self, [], iterate_kw=iterate_kw, tqdm_kw=tqdm_kw)
 
     def __iter__(self) -> Iterator[Flight]:
         yield from self.iterate()

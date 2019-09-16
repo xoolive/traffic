@@ -3,9 +3,8 @@ import inspect
 import logging
 import types
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
-import pandas as pd
 from tqdm.autonotebook import tqdm
 
 from .flight import Flight
@@ -78,12 +77,12 @@ class LazyTraffic:
         self,
         wrapped_t: "Traffic",
         stacked_ops: List[LazyLambda],
-        iterate_kw: Union[str, pd.DataFrame, None] = None,
+        iterate_kw: Dict[str, Any] = {},
         tqdm_kw: Dict[str, Any] = {},
     ):
         self.wrapped_t: "Traffic" = wrapped_t
         self.stacked_ops: List[LazyLambda] = stacked_ops
-        self.iterate_kw: Union[str, pd.DataFrame, None] = iterate_kw
+        self.iterate_kw: Dict[str, Any] = iterate_kw
         self.tqdm_kw: Dict[str, Any] = tqdm_kw
 
     def __repr__(self):
@@ -136,7 +135,7 @@ class LazyTraffic:
         """
 
         if max_workers < 2:
-            iterator = self.wrapped_t.iterate(self.iterate_kw)
+            iterator = self.wrapped_t.iterate(**self.iterate_kw)
             if desc is not None or len(self.tqdm_kw) > 0:
                 tqdm_kw = {
                     **dict(desc=desc, leave=False, total=len(self.wrapped_t)),
@@ -150,7 +149,7 @@ class LazyTraffic:
         else:
             cumul = []
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
-                iterator = self.wrapped_t.iterate(self.iterate_kw)
+                iterator = self.wrapped_t.iterate(**self.iterate_kw)
                 if len(self.tqdm_kw):
                     iterator = tqdm(iterator, **self.tqdm_kw)
                 tasks = {
