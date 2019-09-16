@@ -170,3 +170,12 @@ def test_resample_unwrapped() -> None:
 
     resampled = Flight(df).resample("1s")
     assert len(resampled.query("50 < track < 300")) == 0
+
+
+def test_agg_time() -> None:
+    flight: Flight = get_sample(featured, "belevingsvlucht")
+
+    agg = flight.agg_time(groundspeed="mean", altitude="max")
+
+    assert agg.max("groundspeed_mean") <= agg.max("groundspeed")
+    assert agg.max("altitude_max") <= agg.max("altitude")
