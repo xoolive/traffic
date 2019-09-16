@@ -546,6 +546,13 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         """
 
+        # Corner cases when start or stop are None or NaT
+        if start is None or start != start:
+            return self.before(stop)
+
+        if stop is None or stop != stop:
+            return self.after(start)
+
         start = to_datetime(start)
         if isinstance(stop, timedelta):
             stop = start + stop
@@ -1144,8 +1151,11 @@ class Flight(GeographyMixin, ShapelyMixin):
             Altitudes are not taken into account.
 
         """
+        list_coords = list(self.airborne().xy_time)
+        if len(list_coords) < 2:
+            return None
 
-        linestring = LineString(list(self.airborne().xy_time))
+        linestring = LineString(list_coords)
         if not isinstance(shape, base.BaseGeometry):
             shape = shape.shape
 
