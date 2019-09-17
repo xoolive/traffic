@@ -75,7 +75,8 @@ def high_altitude(flight: Flight) -> bool:
 def test_chaining() -> None:
     switzerland: Traffic = get_sample(collections, "switzerland")
     sw_filtered = (
-        switzerland.inside_bbox(eurofirs["LSAS"])  # type: ignore
+        switzerland.between("2018-08-01", "2018-08-02")
+        .inside_bbox(eurofirs["LSAS"])
         .assign_id()
         .filter_if(high_altitude)
         .resample("10s")

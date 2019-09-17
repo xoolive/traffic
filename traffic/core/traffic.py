@@ -344,11 +344,11 @@ class Traffic(GeographyMixin):
     # -- Methods for lazy evaluation, delegated to Flight --
 
     @lazy_evaluation()
-    def filter_if(self, *args, **kwargs):
+    def filter_if(self, *args, **kwargs):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def resample(self, rule: Union[str, int] = "1s"):
+    def resample(self, rule: Union[str, int] = "1s"):  # coverage: ignore
         ...
 
     @lazy_evaluation()
@@ -358,15 +358,19 @@ class Traffic(GeographyMixin):
             [pd.DataFrame], pd.DataFrame
         ] = lambda x: x.bfill().ffill(),
         **kwargs,
-    ):
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def unwrap(self, features: Union[str, List[str]] = ["track", "heading"]):
+    def unwrap(
+        self, features: Union[str, List[str]] = ["track", "heading"]
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation(idx_name="idx")
-    def assign_id(self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0):
+    def assign_id(
+        self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0
+    ):  # coverage: ignore
         """Assigns a `flight_id` to trajectories present in the structure.
 
         The heuristics with iterate on flights based on ``flight_id`` (if the
@@ -379,11 +383,15 @@ class Traffic(GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def clip(self, shape: Union["Airspace", base.BaseGeometry]):
+    def clip(
+        self, shape: Union["Airspace", base.BaseGeometry]
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def intersects(self, shape: Union["Airspace", base.BaseGeometry]) -> bool:
+    def intersects(
+        self, shape: Union["Airspace", base.BaseGeometry]
+    ) -> bool:  # coverage: ignore
         ...
 
     @lazy_evaluation()
@@ -392,23 +400,23 @@ class Traffic(GeographyMixin):
         tolerance: float,
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
-    ):
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def query_opensky(self):
+    def query_opensky(self):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def query_ehs(self, data, failure_mode, propressbar):
+    def query_ehs(self, data, failure_mode, propressbar):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def first(self, **kwargs):
+    def first(self, **kwargs):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def last(self, **kwargs):
+    def last(self, **kwargs):  # coverage: ignore
         ...
 
     @lazy_evaluation()
@@ -417,7 +425,7 @@ class Traffic(GeographyMixin):
         feature: Callable[["Flight"], Any],
         value: Any,
         strict: bool = True,
-    ):
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
@@ -426,19 +434,19 @@ class Traffic(GeographyMixin):
         feature: Callable[["Flight"], Any],
         value: Any,
         strict: bool = True,
-    ):
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
     def shorter_than(
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
-    ):
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
     def longer_than(
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
-    ):
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
@@ -447,13 +455,13 @@ class Traffic(GeographyMixin):
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
         key: Callable[[Optional["Flight"]], Any] = attrgetter("duration"),
-    ):
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
     def agg_time(
         self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
-    ):
+    ):  # coverage: ignore
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
