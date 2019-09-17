@@ -225,7 +225,7 @@ T = TypeVar("T", bound="GeographyMixin")
 def inside_bbox(
     geography: T,
     bounds: Union[
-        Airspace, base.BaseGeometry, Tuple[float, float, float, float]
+        ShapelyMixin, base.BaseGeometry, Tuple[float, float, float, float]
     ],
 ) -> T:
     """Returns the part of the DataFrame with coordinates located within the
@@ -242,8 +242,11 @@ def inside_bbox(
     if isinstance(bounds, Airspace):
         bounds = bounds.flatten().bounds
 
-    if isinstance(bounds, base.BaseGeometry):
+    elif isinstance(bounds, base.BaseGeometry):
         bounds = bounds.bounds
+
+    elif hasattr(bounds, "shape"):
+        bounds = bounds.shape.bounds  # type: ignore
 
     west, south, east, north = bounds
 

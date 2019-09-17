@@ -77,7 +77,6 @@ class Traffic(GeographyMixin):
     """
 
     __slots__ = ("data",)
-    _parse_extension: Dict[str, Callable[..., pd.DataFrame]] = dict()
 
     @classmethod
     def from_flights(cls, flights: Iterable[Optional[Flight]]) -> "Traffic":
@@ -140,16 +139,8 @@ class Traffic(GeographyMixin):
             return tentative.rename(columns=rename_columns)
 
         path = Path(filename)
-        method = cls._parse_extension.get("".join(path.suffixes), None)
-        if method is None:
-            logging.warn(f"{path.suffixes} extension is not supported")
-            return None
-
-        data = method(filename, **kwargs)
-        if data is None:
-            return None
-
-        return cls(data)
+        logging.warn(f"{path.suffixes} extension is not supported")
+        return None
 
     # --- Special methods ---
 
@@ -477,15 +468,22 @@ class Traffic(GeographyMixin):
 
     @lazy_evaluation(default=True)
     def between(
-        self, before: timelike, after: time_or_delta, strict: bool = True
+        self, start: timelike, stop: time_or_delta, strict: bool = True
     ) -> "Traffic":
 
-        before = to_datetime(before)
+        # Corner cases when start or stop are None or NaT
+        if start is None or start != start:
+            return self.before(stop, strict=strict)
 
-        if isinstance(after, timedelta):
-            after = before + after
+        if stop is None or stop != stop:
+            return self.after(start, strict=strict)
+
+        start = to_datetime(start)
+
+        if isinstance(stop, timedelta):
+            stop = start + stop
         else:
-            after = to_datetime(after)
+            stop = to_datetime(stop)
 
         # full call is necessary to keep @before and @after as local variables
         # return self.query('@before < timestamp < @after')  => not valid

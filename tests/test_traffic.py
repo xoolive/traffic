@@ -1,4 +1,7 @@
+import pandas as pd
+
 from traffic.core import Flight, Traffic
+from traffic.data import eurofirs
 from traffic.data.samples import collections, get_sample
 
 
@@ -26,6 +29,45 @@ def test_properties() -> None:
     assert selected.icao24 == "aab6c0"
 
 
+def test_index() -> None:
+    switzerland: Traffic = get_sample(collections, "switzerland")
+    df = pd.DataFrame.from_records(
+        [
+            {
+                "icao24": "500142",
+                "callsign": "T7STK",
+                "start": "2018-08-01 15:00",
+                "stop": "2018-08-01 16:00",
+            },
+            {
+                "icao24": "4068cb",
+                "callsign": "EXS33W",
+                "start": None,
+                "stop": None,
+            },
+            {
+                "icao24": "4009f9",
+                "callsign": "BAW585E",
+                "start": None,
+                "stop": "2018-08-01 17:00",
+            },
+        ]
+    )
+
+    assert len(switzerland[df]) == 3
+    assert switzerland[df.iloc[0]] is not None
+    assert len(switzerland[["EXS33W", "4009f9"]]) == 4
+
+
+def test_aircraft() -> None:
+    switzerland: Traffic = get_sample(collections, "switzerland")
+
+    assert set(
+        f.max("typecode")
+        for f in switzerland[["EXS33W", "4009f9"]].aircraft_data()
+    ) == {"A320", "B733"}
+
+
 def high_altitude(flight: Flight) -> bool:
     return flight.min("altitude") > 35000
 
@@ -33,7 +75,8 @@ def high_altitude(flight: Flight) -> bool:
 def test_chaining() -> None:
     switzerland: Traffic = get_sample(collections, "switzerland")
     sw_filtered = (
-        switzerland.assign_id()
+        switzerland.inside_bbox(eurofirs["LSAS"])  # type: ignore
+        .assign_id()
         .filter_if(high_altitude)
         .resample("10s")
         .filter()
@@ -47,6 +90,6 @@ def test_chaining() -> None:
     assert handle is not None
     assert handle.callsign == flight_id.split("_")[0]
     assert len(sw_filtered) == 784
-    assert sw_filtered.data.shape[0] == 86399
-    assert min(len(f) for f in sw_filtered) == 61
+    assert sw_filtered.data.shape[0] > 80000
+    assert min(len(f) for f in sw_filtered) == 60
     assert sw_filtered.data.altitude.max() == 47000.0
