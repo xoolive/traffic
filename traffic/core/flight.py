@@ -3,7 +3,8 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
-from typing import (TYPE_CHECKING, Callable, Dict, Generator, Iterable,
+from operator import attrgetter
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
                     Iterator, List, Optional, Set, Tuple, Union, cast, overload)
 
 import altair as alt
@@ -255,6 +256,54 @@ class Flight(GeographyMixin, ShapelyMixin):
         """Returns the maximum value of given feature."""
         return self.data[feature].max()
 
+    def feature_gt(
+        self,
+        feature: Callable[["Flight"], Any],
+        value: Any,
+        strict: bool = True,
+    ) -> bool:
+        """Returns True if feature(flight) is greater than value.
+
+        >>> f.feature_gt(attrgetter("duration"), pd.Timedelta('1 minute'))
+        True
+        """
+        attribute = feature(self)
+        if strict:
+            return attribute > value
+        return attribute >= value
+
+    def feature_lt(
+        self,
+        feature: Callable[["Flight"], Any],
+        value: Any,
+        strict: bool = True,
+    ) -> bool:
+        """Returns True if feature(flight) is less than value.
+
+        >>> f.feature_lt(attrgetter("duration"), pd.Timedelta('1 minute'))
+        True
+        """
+        attribute = feature(self)
+        if strict:
+            return attribute < value
+        return attribute <= value
+
+    def shorter_than(
+        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+    ) -> bool:
+        """Returns True if flight duration is shorter than value."""
+        if isinstance(value, str):
+            value = pd.Timedelta(value)
+        return self.feature_lt(attrgetter("duration"), value, strict)
+
+    def longer_than(
+        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+    ) -> bool:
+        """Returns True if flight duration is shorter than value."""
+        if isinstance(value, str):
+            value = pd.Timedelta(value)
+        return self.feature_gt(attrgetter("duration"), value, strict)
+
     @property
     def start(self) -> pd.Timestamp:
         """Returns the minimum value of timestamp."""
@@ -470,23 +519,25 @@ class Flight(GeographyMixin, ShapelyMixin):
         # full call is necessary to keep @bound as a local variable
         return self.__class__(self.data.query("timestamp > @bound"))
 
-    def before(self, time: timelike) -> "Flight":
+    def before(self, time: timelike, strict: bool = True) -> "Flight":
         """Returns the part of the trajectory flown before a given timestamp.
 
         - ``time`` can be passed as a string, an epoch, a Python datetime, or
           a Pandas timestamp.
         """
-        return self.between(self.start, time)
+        return self.between(self.start, time, strict)
 
-    def after(self, time: timelike) -> "Flight":
+    def after(self, time: timelike, strict: bool = True) -> "Flight":
         """Returns the part of the trajectory flown after a given timestamp.
 
         - ``time`` can be passed as a string, an epoch, a Python datetime, or
           a Pandas timestamp.
         """
-        return self.between(time, self.stop)
+        return self.between(time, self.stop, strict)
 
-    def between(self, start: timelike, stop: time_or_delta) -> "Flight":
+    def between(
+        self, start: timelike, stop: time_or_delta, strict: bool = True
+    ) -> "Flight":
         """Returns the part of the trajectory flown between start and stop.
 
         - ``start`` and ``stop`` can be passed as a string, an epoch, a Python
@@ -494,6 +545,13 @@ class Flight(GeographyMixin, ShapelyMixin):
         - ``stop`` can also be passed as a timedelta.
 
         """
+
+        # Corner cases when start or stop are None or NaT
+        if start is None or start != start:
+            return self.before(stop, strict=strict)
+
+        if stop is None or stop != stop:
+            return self.after(start, strict=strict)
 
         start = to_datetime(start)
         if isinstance(stop, timedelta):
@@ -503,7 +561,10 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         # full call is necessary to keep @start and @stop as local variables
         # return self.query('@start < timestamp < @stop')  => not valid
-        return self.__class__(self.data.query("@start < timestamp < @stop"))
+        if strict:
+            return self.__class__(self.data.query("@start < timestamp < @stop"))
+
+        return self.__class__(self.data.query("@start <= timestamp <= @stop"))
 
     def at(self, time: Optional[timelike] = None) -> Optional[Position]:
         """Returns the position in the trajectory at a given timestamp.
@@ -570,6 +631,57 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         for data in _split(self.data, value, unit):
             yield self.__class__(data)
+
+    def max_split(
+        self,
+        value: Union[int, str] = "10T",
+        unit: Optional[str] = None,
+        key: Callable[[Optional["Flight"]], Any] = attrgetter("duration"),
+    ) -> Optional["Flight"]:
+        return max(
+            self.split(value, unit),  # type: ignore
+            key=key,
+            default=None,
+        )
+
+    def agg_time(
+        self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
+    ) -> "Flight":
+        """Aggregate features on time windows.
+
+        The following is performed:
+
+        - a new column `rounded` rounds the timestamp at the given rate;
+        - the groupby/agg is operated with parameters passed in kwargs;
+        - if merge is True, the new column in merged into the Flight,
+          otherwise a pd.DataFrame is returned.
+
+        For example:
+
+        >>> f.agg_time('3T', groundspeed='mean')
+
+        returns a Flight with a new column groundspeed_mean with groundspeed
+        averaged per intervals of 3 minutes.
+
+        """
+
+        if len(kwargs) == 0:
+            raise RuntimeError("No feature provided for aggregation.")
+        temp_flight = self.assign(
+            rounded=lambda df: df.timestamp.dt.round(freq)
+        )
+        agg_data = temp_flight.groupby("rounded").agg(kwargs)
+        if not merge:
+            return agg_data
+        rename_cols = {
+            feature: new_name.format(feature=feature, agg=agg)
+            for feature, agg in kwargs.items()
+        }
+        return temp_flight.merge(
+            agg_data.rename(columns=rename_cols),
+            left_on="rounded",
+            right_index=True,
+        )
 
     def handle_last_position(self) -> "Flight":
         # The following is True for all data coming from the Impala shell.
@@ -1055,13 +1167,13 @@ class Flight(GeographyMixin, ShapelyMixin):
         else:
             return self.__class__(self.data.loc[mask])
 
-    def intersects(self, shape: Union["Airspace", base.BaseGeometry]) -> bool:
+    def intersects(self, shape: Union[ShapelyMixin, base.BaseGeometry]) -> bool:
         # implemented and monkey-patched in airspace.py
         # given here for consistency in types
         ...
 
     def clip(
-        self, shape: Union["Airspace", base.BaseGeometry]
+        self, shape: Union[ShapelyMixin, base.BaseGeometry]
     ) -> Optional["Flight"]:
         """Clips the trajectory to a given shape.
 
@@ -1078,10 +1190,13 @@ class Flight(GeographyMixin, ShapelyMixin):
             Altitudes are not taken into account.
 
         """
+        list_coords = list(self.airborne().xy_time)
+        if len(list_coords) < 2:
+            return None
 
-        linestring = LineString(list(self.airborne().xy_time))
+        linestring = LineString(list_coords)
         if not isinstance(shape, base.BaseGeometry):
-            shape = shape.flatten()
+            shape = shape.shape
 
         intersection = linestring.intersection(shape)
 
@@ -1106,7 +1221,14 @@ class Flight(GeographyMixin, ShapelyMixin):
                 yield min(times), max(times)
 
         times = list(_clip_generator())
-        return self.between(min(t for t, _ in times), max(t for _, t in times))
+        clipped_flight = self.between(
+            min(t for t, _ in times), max(t for _, t in times)
+        )
+
+        if clipped_flight.shape is None:
+            return None
+
+        return clipped_flight
 
     # -- OpenSky specific methods --
 

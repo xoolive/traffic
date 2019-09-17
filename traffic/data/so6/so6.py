@@ -13,7 +13,6 @@ from typing import (Dict, Iterable, Iterator, List, NoReturn, Optional, Set,
                     Tuple, Type, TypeVar, Union, overload)
 
 import numpy as np
-
 import pandas as pd
 import pyproj
 from cartopy.crs import PlateCarree
@@ -288,7 +287,12 @@ class Flight(FlightMixin):
             pd.Series(res[0], index=["longitude", "latitude", "altitude"])
         )
 
-    def between(self, start: timelike, stop: time_or_delta) -> "Flight":
+    def between(
+        self, start: timelike, stop: time_or_delta, strict: bool = True
+    ) -> "Flight":
+        """
+        WARNING: strict: bool = True is not taken into account yet.
+        """
         start = to_datetime(start)
         if isinstance(stop, timedelta):
             stop = start + stop

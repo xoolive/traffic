@@ -3,9 +3,8 @@ import inspect
 import logging
 import types
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
-import pandas as pd
 from tqdm.autonotebook import tqdm
 
 from .flight import Flight
@@ -78,12 +77,12 @@ class LazyTraffic:
         self,
         wrapped_t: "Traffic",
         stacked_ops: List[LazyLambda],
-        iterate_kw: Union[str, pd.DataFrame, None] = None,
+        iterate_kw: Dict[str, Any] = {},
         tqdm_kw: Dict[str, Any] = {},
     ):
         self.wrapped_t: "Traffic" = wrapped_t
         self.stacked_ops: List[LazyLambda] = stacked_ops
-        self.iterate_kw: Union[str, pd.DataFrame, None] = iterate_kw
+        self.iterate_kw: Dict[str, Any] = iterate_kw
         self.tqdm_kw: Dict[str, Any] = tqdm_kw
 
     def __repr__(self):
@@ -136,7 +135,7 @@ class LazyTraffic:
         """
 
         if max_workers < 2:
-            iterator = self.wrapped_t.iterate(self.iterate_kw)
+            iterator = self.wrapped_t.iterate(**self.iterate_kw)
             if desc is not None or len(self.tqdm_kw) > 0:
                 tqdm_kw = {
                     **dict(desc=desc, leave=False, total=len(self.wrapped_t)),
@@ -150,7 +149,7 @@ class LazyTraffic:
         else:
             cumul = []
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
-                iterator = self.wrapped_t.iterate(self.iterate_kw)
+                iterator = self.wrapped_t.iterate(**self.iterate_kw)
                 if len(self.tqdm_kw):
                     iterator = tqdm(iterator, **self.tqdm_kw)
                 tasks = {
@@ -219,10 +218,10 @@ def lazy_evaluation(
 
     def wrapper(f):
 
-        # Check parameters passed to filter_if are not lambda because those
+        # Check parameters passed (esp. filter_if) are not lambda because those
         # are not serializable therefore **silently** fail when multiprocessed.
         msg = """
-filter_if(lambda f: ...) will *silently* fail when evaluated on several cores.
+{method}(lambda f: ...) will *silently* fail when evaluated on several cores.
 It should be safe to create a proper named function and pass it to filter_if.
         """
 
@@ -236,11 +235,10 @@ It should be safe to create a proper named function and pass it to filter_if.
         def lazy_λf(lazy: LazyTraffic, *args, **kwargs):
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
-            if f.__name__ == "filter_if":
-                if len(args) > 0 and is_lambda(args[0]):
-                    logging.warn(msg)
-                if "test" in kwargs and is_lambda(kwargs["test"]):
-                    logging.warn(msg)
+            if any(is_lambda(arg) for arg in args):
+                logging.warn(msg.format(method=f.__name__))
+            if any(is_lambda(arg) for arg in kwargs.values()):
+                logging.warn(msg.format(method=f.__name__))
 
             return LazyTraffic(
                 lazy.wrapped_t,
@@ -268,11 +266,10 @@ It should be safe to create a proper named function and pass it to filter_if.
         def λf(wrapped_t: "Traffic", *args, **kwargs):
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
-            if f.__name__ == "filter_if":
-                if len(args) > 0 and is_lambda(args[0]):
-                    logging.warn(msg)
-                if "test" in kwargs and is_lambda(kwargs["test"]):
-                    logging.warn(msg)
+            if any(is_lambda(arg) for arg in args):
+                logging.warn(msg.format(method=f.__name__))
+            if any(is_lambda(arg) for arg in kwargs.values()):
+                logging.warn(msg.format(method=f.__name__))
 
             return LazyTraffic(wrapped_t, [op_idx])
 

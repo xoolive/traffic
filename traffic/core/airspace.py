@@ -225,7 +225,7 @@ T = TypeVar("T", bound="GeographyMixin")
 def inside_bbox(
     geography: T,
     bounds: Union[
-        Airspace, base.BaseGeometry, Tuple[float, float, float, float]
+        ShapelyMixin, base.BaseGeometry, Tuple[float, float, float, float]
     ],
 ) -> T:
     """Returns the part of the DataFrame with coordinates located within the
@@ -242,8 +242,11 @@ def inside_bbox(
     if isinstance(bounds, Airspace):
         bounds = bounds.flatten().bounds
 
-    if isinstance(bounds, base.BaseGeometry):
+    elif isinstance(bounds, base.BaseGeometry):
         bounds = bounds.bounds
+
+    elif hasattr(bounds, "shape"):
+        bounds = bounds.shape.bounds  # type: ignore
 
     west, south, east, north = bounds
 
@@ -254,7 +257,7 @@ def inside_bbox(
 
 
 def _flight_intersects(
-    flight: Flight, shape: Union[Airspace, base.BaseGeometry]
+    flight: Flight, shape: Union[ShapelyMixin, base.BaseGeometry]
 ) -> bool:
     """Returns True if the trajectory is inside the given shape.
 
@@ -269,6 +272,8 @@ def _flight_intersects(
         return False
     if isinstance(shape, base.BaseGeometry):
         return not linestring.intersection(shape).is_empty
+    if not isinstance(shape, Airspace):  # i.e. ShapelyMixin
+        return not linestring.intersection(shape.shape).is_empty
     for layer in shape:
         ix = linestring.intersection(layer.polygon)
         if not ix.is_empty:

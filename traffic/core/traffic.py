@@ -3,6 +3,7 @@
 import logging
 from datetime import timedelta
 from functools import lru_cache
+from operator import attrgetter
 from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
                     List, Optional, Set, Type, TypeVar, Union, overload)
@@ -76,7 +77,6 @@ class Traffic(GeographyMixin):
     """
 
     __slots__ = ("data",)
-    _parse_extension: Dict[str, Callable[..., pd.DataFrame]] = dict()
 
     @classmethod
     def from_flights(cls, flights: Iterable[Optional[Flight]]) -> "Traffic":
@@ -101,6 +101,8 @@ class Traffic(GeographyMixin):
                 "time": "timestamp",
                 "lat": "latitude",
                 "lon": "longitude",
+                "lng": "longitude",
+                "long": "longitude",
                 # speeds
                 "velocity": "groundspeed",
                 "ground_speed": "groundspeed",
@@ -115,6 +117,9 @@ class Traffic(GeographyMixin):
                 "baro_altitude": "altitude",
                 "baroaltitude": "altitude",
                 "geo_altitude": "geoaltitude",
+                # synonyms
+                "departure": "origin",
+                "arrival": "destination",
             }
 
             if (
@@ -124,19 +129,18 @@ class Traffic(GeographyMixin):
                 # for retrocompatibility
                 rename_columns["altitude"] = "geoaltitude"
 
+            if (
+                "heading" in tentative.data.columns
+                and "track" not in tentative.data.columns
+            ):
+                # that's a common confusion in data, let's assume that
+                rename_columns["heading"] = "track"
+
             return tentative.rename(columns=rename_columns)
 
         path = Path(filename)
-        method = cls._parse_extension.get("".join(path.suffixes), None)
-        if method is None:
-            logging.warn(f"{path.suffixes} extension is not supported")
-            return None
-
-        data = method(filename, **kwargs)
-        if data is None:
-            return None
-
-        return cls(data)
+        logging.warn(f"{path.suffixes} extension is not supported")
+        return None
 
     # --- Special methods ---
 
@@ -225,7 +229,9 @@ class Traffic(GeographyMixin):
         return {*self.aircraft, *self.callsigns}
 
     def iterate(
-        self, by: Union[str, pd.DataFrame, None] = None
+        self,
+        by: Union[str, pd.DataFrame, None] = None,
+        nb_flights: Optional[int] = None,
     ) -> Iterator[Flight]:
         """
         Iterates over Flights contained in the Traffic structure.
@@ -249,25 +255,28 @@ class Traffic(GeographyMixin):
         """
 
         if isinstance(by, pd.DataFrame):
-            for _, line in by.iterrows():
-                flight = self[line]
-                if flight is not None:
-                    yield flight
+            for i, (_, line) in enumerate(by.iterrows()):
+                if nb_flights is None or i < nb_flights:
+                    flight = self[line]
+                    if flight is not None:
+                        yield flight
             return
 
-        if self.flight_ids is not None:
-            for _, df in self.data.groupby("flight_id"):
-                yield Flight(df)
+        if "flight_id" in self.data.columns:
+            for i, (_, df) in enumerate(self.data.groupby("flight_id")):
+                if nb_flights is None or i < nb_flights:
+                    yield Flight(df)
         else:
-            for _, df in self.data.groupby(["icao24", "callsign"]):
-                yield from Flight(df).split(
-                    by if by is not None else "10 minutes"
-                )
+            for i, (_, df) in enumerate(
+                self.data.groupby(["icao24", "callsign"])
+            ):
+                if nb_flights is None or i < nb_flights:
+                    yield from Flight(df).split(
+                        by if by is not None else "10 minutes"
+                    )
 
     def iterate_lazy(
-        self,
-        by: Union[str, pd.DataFrame, None] = None,
-        tqdm_kw: Dict[str, Any] = {},
+        self, iterate_kw: Dict[str, Any] = {}, tqdm_kw: Dict[str, Any] = {}
     ) -> LazyTraffic:
         """
         Triggers a lazy iteration on the Traffic structure.
@@ -290,7 +299,7 @@ class Traffic(GeographyMixin):
         You may also select parameters to pass to a tentative tqdm
         progressbar.
         """
-        return LazyTraffic(self, [], iterate_kw=by, tqdm_kw=tqdm_kw)
+        return LazyTraffic(self, [], iterate_kw=iterate_kw, tqdm_kw=tqdm_kw)
 
     def __iter__(self) -> Iterator[Flight]:
         yield from self.iterate()
@@ -335,11 +344,11 @@ class Traffic(GeographyMixin):
     # -- Methods for lazy evaluation, delegated to Flight --
 
     @lazy_evaluation()
-    def filter_if(self, *args, **kwargs):
+    def filter_if(self, *args, **kwargs):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def resample(self, rule: Union[str, int] = "1s"):
+    def resample(self, rule: Union[str, int] = "1s"):  # coverage: ignore
         ...
 
     @lazy_evaluation()
@@ -349,15 +358,19 @@ class Traffic(GeographyMixin):
             [pd.DataFrame], pd.DataFrame
         ] = lambda x: x.bfill().ffill(),
         **kwargs,
-    ):
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def unwrap(self, features: Union[str, List[str]] = ["track", "heading"]):
+    def unwrap(
+        self, features: Union[str, List[str]] = ["track", "heading"]
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation(idx_name="idx")
-    def assign_id(self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0):
+    def assign_id(
+        self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0
+    ):  # coverage: ignore
         """Assigns a `flight_id` to trajectories present in the structure.
 
         The heuristics with iterate on flights based on ``flight_id`` (if the
@@ -370,11 +383,15 @@ class Traffic(GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def clip(self, shape: Union["Airspace", base.BaseGeometry]):
+    def clip(
+        self, shape: Union["Airspace", base.BaseGeometry]
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def intersects(self, shape: Union["Airspace", base.BaseGeometry]) -> bool:
+    def intersects(
+        self, shape: Union["Airspace", base.BaseGeometry]
+    ) -> bool:  # coverage: ignore
         ...
 
     @lazy_evaluation()
@@ -383,48 +400,105 @@ class Traffic(GeographyMixin):
         tolerance: float,
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
-    ):
+    ):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def query_opensky(self):
+    def query_opensky(self):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def query_ehs(self, data, failure_mode, propressbar):
+    def query_ehs(self, data, failure_mode, propressbar):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def first(self, **kwargs):
+    def first(self, **kwargs):  # coverage: ignore
         ...
 
     @lazy_evaluation()
-    def last(self, **kwargs):
+    def last(self, **kwargs):  # coverage: ignore
+        ...
+
+    @lazy_evaluation()
+    def feature_gt(
+        self,
+        feature: Callable[["Flight"], Any],
+        value: Any,
+        strict: bool = True,
+    ):  # coverage: ignore
+        ...
+
+    @lazy_evaluation()
+    def feature_lt(
+        self,
+        feature: Callable[["Flight"], Any],
+        value: Any,
+        strict: bool = True,
+    ):  # coverage: ignore
+        ...
+
+    @lazy_evaluation()
+    def shorter_than(
+        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+    ):  # coverage: ignore
+        ...
+
+    @lazy_evaluation()
+    def longer_than(
+        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+    ):  # coverage: ignore
+        ...
+
+    @lazy_evaluation()
+    def max_split(
+        self,
+        value: Union[int, str] = "10T",
+        unit: Optional[str] = None,
+        key: Callable[[Optional["Flight"]], Any] = attrgetter("duration"),
+    ):  # coverage: ignore
+        ...
+
+    @lazy_evaluation()
+    def agg_time(
+        self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
+    ):  # coverage: ignore
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
-    def before(self, ts: timelike) -> "Traffic":
-        return self.between(self.start_time, ts)
+    def before(self, ts: timelike, strict: bool = True) -> "Traffic":
+        return self.between(self.start_time, ts, strict)
 
     @lazy_evaluation(default=True)
-    def after(self, ts: timelike) -> "Traffic":
-        return self.between(ts, self.end_time)
+    def after(self, ts: timelike, strict: bool = True) -> "Traffic":
+        return self.between(ts, self.end_time, strict)
 
     @lazy_evaluation(default=True)
-    def between(self, before: timelike, after: time_or_delta) -> "Traffic":
+    def between(
+        self, start: timelike, stop: time_or_delta, strict: bool = True
+    ) -> "Traffic":
 
-        before = to_datetime(before)
+        # Corner cases when start or stop are None or NaT
+        if start is None or start != start:
+            return self.before(stop, strict=strict)
 
-        if isinstance(after, timedelta):
-            after = before + after
+        if stop is None or stop != stop:
+            return self.after(start, strict=strict)
+
+        start = to_datetime(start)
+
+        if isinstance(stop, timedelta):
+            stop = start + stop
         else:
-            after = to_datetime(after)
+            stop = to_datetime(stop)
 
         # full call is necessary to keep @before and @after as local variables
         # return self.query('@before < timestamp < @after')  => not valid
-        return self.__class__(self.data.query("@before < timestamp < @after"))
+        if strict:
+            return self.__class__(self.data.query("@start < timestamp < @stop"))
+
+        return self.__class__(self.data.query("@start <= timestamp <= @stop"))
 
     @lazy_evaluation(default=True)
     def airborne(self) -> "Traffic":
