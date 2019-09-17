@@ -3,11 +3,11 @@
 [![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.github.io/)
 [![Build Status](https://travis-ci.org/xoolive/traffic.svg?branch=master)](https://travis-ci.org/xoolive/traffic)
 [![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic) 
+[![Codacy Badge](https://img.shields.io/codacy/grade/eea673ed15304f1b93490726295d6de0)](https://www.codacy.com/manual/xoolive/traffic)
 [![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy.readthedocs.io/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-black.svg)](https://github.com/python/black)
 ![License](https://img.shields.io/pypi/l/traffic.svg)\
 [![JOSS badge](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518)
-
 
 The traffic library helps working with common sources of air traffic data.
 
@@ -32,13 +32,13 @@ including CesiumJS or Google Earth.
 
 Latest release:
 
-```
+```sh
 pip install traffic
 ```
 
 Development version:
 
-```
+```sh
 pip install git+https://github.com/xoolive/traffic
 ```
 
@@ -49,7 +49,7 @@ Before reporting an issue, please try to use an Anaconda environment. Other
 installations (You may check them in the `.travis.yml` configuration file.)
 should work but the Anaconda way proved to work smoothly.
 
-```
+```sh
 conda install cartopy shapely
 ```
 
@@ -79,18 +79,24 @@ work, you may cite it as:
 
 Documentation available at [https://travis-viz.github.io/](https://traffic-viz.github.io/)
 
-## Running tests
+## Tests and code quality
 
 [![Build Status](https://travis-ci.org/xoolive/traffic.svg?branch=master)](https://travis-ci.org/xoolive/traffic)
 [![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic) 
+[![Codacy Badge](https://img.shields.io/codacy/grade/eea673ed15304f1b93490726295d6de0)](https://www.codacy.com/manual/xoolive/traffic)
+[![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy.readthedocs.io/)
 
 Unit and non-regression tests are written in the `tests/` directory. You may run
 `pytest` or `tox` from the root directory. Tests are currently performed with 
 Python 3.6 and 3.7.
 
-Tests are checked on [travis continuous integration](https://travis-ci.com/)
+Tests are checked on [travis continuous integration](https://travis-ci.org/xoolive/traffic)
 platform upon each commit. Latest status and coverage are displayed with standard
 badges hereabove.
+
+In addition, code is checked against static typing with [mypy](https://mypy.readthedocs.io/)
+([pre-commit](https://pre-commit.com/) hooks are available in the repository) and
+extra quality checks performed by [Codacy](https://www.codacy.com/manual/xoolive/traffic).
 
 ## Command line tool
 
@@ -147,10 +153,10 @@ way they are.
 
 - I want to know more about Eurocontrol NM files
 
- We download those files from Eurocontrol [Network Manager DDR2 repository
- service](https://www.eurocontrol.int/articles/ddr2-web-portal) under Dataset
- Files > Airspace Environment Datasets. You may not be entitled access to those
- data.
+We download those files from Eurocontrol [Network Manager DDR2 repository
+service](https://www.eurocontrol.int/articles/ddr2-web-portal) under Dataset
+Files > Airspace Environment Datasets. You may not be entitled access to those
+data.
 
 Should you have no such access, basic FIRs are provided in `eurofirs` from
 `traffic.data`.
