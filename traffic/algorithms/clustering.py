@@ -73,34 +73,39 @@ class Clustering:
         self.features = features
         self.projection = projection
         self.transform = transform
+        self.X = None
 
     def fit(self, max_workers: int = 1) -> None:
 
-        X = prepare_features(
-            self.traffic,
-            self.nb_samples,
-            self.features,
-            self.projection,
-            max_workers,
-        )
+        if self.X is None:
+            self.X = prepare_features(
+                self.traffic,
+                self.nb_samples,
+                self.features,
+                self.projection,
+                max_workers,
+            )
 
-        if self.transform is not None:
-            X = self.transform.fit_transform(X)
+            if self.transform is not None:
+                self.X = self.transform.fit_transform(self.X)
 
-        self.clustering.fit(X)
+        self.clustering.fit(self.X)
 
     def predict(self, max_workers: int = 1, return_traffic: bool = True):
-        X = prepare_features(
-            self.traffic,
-            self.nb_samples,
-            self.features,
-            self.projection,
-            max_workers,
-        )
-        if self.transform is not None:
-            X = self.transform.fit_transform(X)
 
-        labels = self.clustering.predict(X)
+        if self.X is None:
+            self.X = prepare_features(
+                self.traffic,
+                self.nb_samples,
+                self.features,
+                self.projection,
+                max_workers,
+            )
+
+            if self.transform is not None:
+                self.X = self.transform.fit_transform(self.X)
+
+        labels = self.clustering.predict(self.X)
 
         clusters = pd.DataFrame.from_records(
             [
@@ -116,23 +121,25 @@ class Clustering:
     def fit_predict(
         self, max_workers: int = 1, return_traffic: bool = True
     ) -> "Traffic":
-        X = prepare_features(
-            self.traffic,
-            self.nb_samples,
-            self.features,
-            self.projection,
-            max_workers,
-        )
+    
+        if self.X is None:
+            self.X = prepare_features(
+                self.traffic,
+                self.nb_samples,
+                self.features,
+                self.projection,
+                max_workers,
+            )
 
-        if self.transform is not None:
-            X = self.transform.fit_transform(X)
+            if self.transform is not None:
+                self.X = self.transform.fit_transform(self.X)
 
-        self.clustering.fit(X)
+        self.clustering.fit(self.X)
 
         labels: np.ndarray = (
             self.clustering.labels_  # type: ignore
             if hasattr(self.clustering, "labels_")
-            else self.clustering.predict(X)
+            else self.clustering.predict(self.X)
         )
 
         clusters = pd.DataFrame.from_records(
