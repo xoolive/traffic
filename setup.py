@@ -58,6 +58,7 @@ setup(
         "Cartopy",
         "Shapely",
         "requests",
+        "requests_pkcs12",
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "typing_extensions",

@@ -17,6 +17,7 @@ from .eurocontrol.ddr.airspaces import NMAirspaceParser
 from .eurocontrol.ddr.navpoints import NMNavaids
 from .eurocontrol.ddr.routes import NMRoutes
 from .eurocontrol.ddr.so6 import SO6  # noqa: F401
+from .eurocontrol.nmb2b import NMB2B
 
 # Parse configuration and input specific parameters in below classes
 
@@ -70,6 +71,14 @@ proxy_values = dict(
     if value != "<>"
 )
 
+pkcs12_filename = config.get("nmb2b", "pkcs12_filename", fallback="")
+pkcs12_password = config.get("nmb2b", "pkcs12_password", fallback="")
+nmb2b_mode = config.get("nmb2b", "mode", fallback="PREOPS")
+if nmb2b_mode not in ["OPS", "PREOPS"]:
+    raise RuntimeError("mode must be one of OPS or PREOPS")
+nmb2b_version = config.get("nmb2b", "version", fallback="23.0.0")
+
+
 if sys.version_info < (3, 7, 0):
     aircraft = Aircraft()
     airports = Airports()
@@ -83,10 +92,21 @@ if sys.version_info < (3, 7, 0):
     nm_airways = NMRoutes()
 
     opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
-
     if len(proxy_values) > 0:
         opensky.session.proxies.update(proxy_values)
         opensky.session.trust_env = False
+
+    if pkcs12_filename != "" and pkcs12_password != "":
+        logging.debug(f"pcks12_filename: {pkcs12_filename}")
+        nmb2b = NMB2B(
+            getattr(NMB2B, nmb2b_mode),
+            nmb2b_version,
+            pkcs12_filename,
+            pkcs12_password,
+        )
+        if len(proxy_values) > 0:
+            nmb2b.session.proxies.update(proxy_values)
+            nmb2b.session.trust_env = False
 
 
 @lru_cache()
@@ -118,6 +138,19 @@ def __getattr__(name: str):
         return opensky
     if name == "runways":
         return Runways()
+    if name == "nmb2b":
+        if pkcs12_filename != "" and pkcs12_password != "":
+            logging.debug(f"pcks12_filename: {pkcs12_filename}")
+            nmb2b = NMB2B(
+                getattr(NMB2B, nmb2b_mode),
+                nmb2b_version,
+                pkcs12_filename,
+                pkcs12_password,
+            )
+            if len(proxy_values) > 0:
+                nmb2b.session.proxies.update(proxy_values)
+                nmb2b.session.trust_env = False
+            return nmb2b
     if name == "airac":  # coverage: ignore
         cache_file = cache_dir / "airac.cache"
         if cache_file.exists():
