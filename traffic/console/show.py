@@ -29,6 +29,7 @@ def main(args):
 
     args = parser.parse_args(args)
     t = Traffic.from_file(args.filename)
+    assert t is not None
 
     print("Traffic with {} identifiers".format(len(t)))
     print(t)

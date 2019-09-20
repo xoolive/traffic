@@ -36,6 +36,7 @@ def main(args):
         logger.setLevel(logging.DEBUG)
 
     decoder = Decoder.from_file(args.file, args.reference)
+    assert decoder.traffic is not None
     decoder.traffic.to_pickle(
         args.output
         if args.output is not None

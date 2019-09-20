@@ -27,6 +27,7 @@ def opensky_data(start, stop, output_file, **kwargs):
         del kwargs["verbose"]
 
     data = opensky.history(start, stop, **kwargs)
+    assert data is not None
 
     if output_file.suffix == ".pkl":
         data.to_pickle(output_file.as_posix())
