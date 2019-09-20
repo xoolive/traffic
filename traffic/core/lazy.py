@@ -1,17 +1,24 @@
+# fmt: off
+
 import functools
 import inspect
 import logging
 import types
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union,
+                    overload)
 
 from tqdm.autonotebook import tqdm
+
+from typing_extensions import Literal
 
 from .flight import Flight
 from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
     from .traffic import Traffic  # noqa: F401
+
+# fmt: on
 
 
 class LazyLambda:
@@ -186,9 +193,23 @@ class LazyTraffic:
         )
 
 
+@overload
 def lazy_evaluation(
-    idx_name: Optional[str] = None, default: Optional[bool] = False
-) -> Callable[..., LazyTraffic]:
+    default: Literal[None, False] = False, idx_name: Optional[str] = None
+) -> Callable[..., Callable[..., LazyTraffic]]:
+    ...
+
+
+@overload
+def lazy_evaluation(
+    default: Literal[True], idx_name: Optional[str] = None
+) -> Callable[..., Callable[..., "Traffic"]]:
+    ...
+
+
+def lazy_evaluation(
+    default: Optional[bool] = False, idx_name: Optional[str] = None
+) -> Callable[..., Callable[..., Union["Traffic", LazyTraffic]]]:
     """A decorator to delegate methods to Flight in a lazy manner.
 
     Each decorated Traffic method returns a LazyTraffic structure with the
@@ -216,7 +237,7 @@ def lazy_evaluation(
 
     """
 
-    def wrapper(f):
+    def wrapper(f: Callable[..., "Traffic"]):
 
         # Check parameters passed (esp. filter_if) are not lambda because those
         # are not serializable therefore **silently** fail when multiprocessed.

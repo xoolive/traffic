@@ -121,7 +121,7 @@ class Runways(object):
         return RunwayAirport(self.runways[airport.icao])
 
     def download_bluesky(self) -> None:  # coverage: ignore
-        self._runways: RunwaysType = dict()
+        self._runways = dict()
 
         c = requests.get(base_url + "/apt.zip")
 

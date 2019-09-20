@@ -4,8 +4,8 @@ import logging
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from operator import attrgetter
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Generator, Iterable,
-                    Iterator, List, Optional, Set, Tuple, Union, cast, overload)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+                    List, Optional, Set, Tuple, Union, cast, overload)
 
 import altair as alt
 import numpy as np
@@ -1204,23 +1204,21 @@ class Flight(GeographyMixin, ShapelyMixin):
             return None
 
         if isinstance(intersection, LineString):
-            times = list(
+            time_list = list(
                 datetime.fromtimestamp(t, timezone.utc)
                 for t in np.stack(intersection.coords)[:, 2]
             )
-            return self.between(min(times), max(times))
+            return self.between(min(time_list), max(time_list))
 
-        def _clip_generator() -> Generator[
-            Tuple[pd.Timestamp, pd.Timestamp], None, None
-        ]:
+        def _clip_generator() -> Iterable[Tuple[datetime, datetime]]:
             for segment in intersection:
-                times = list(
+                times: List[datetime] = list(
                     datetime.fromtimestamp(t, timezone.utc)
                     for t in np.stack(segment.coords)[:, 2]
                 )
                 yield min(times), max(times)
 
-        times = list(_clip_generator())
+        times: List[Tuple[datetime, datetime]] = list(_clip_generator())
         clipped_flight = self.between(
             min(t for t, _ in times), max(t for _, t in times)
         )
