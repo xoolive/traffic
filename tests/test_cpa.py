@@ -1,4 +1,4 @@
-from cartopy.crs import CH1903p
+from cartotools.crs import CH1903p
 
 from traffic.core import Traffic
 from traffic.data.samples import collections, get_sample
