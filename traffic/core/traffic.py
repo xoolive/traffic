@@ -304,6 +304,7 @@ class Traffic(GeographyMixin):
     def __iter__(self) -> Iterator[Flight]:
         yield from self.iterate()
 
+    @lru_cache()
     def __len__(self):
         return sum(1 for _ in self)
 
@@ -344,11 +345,11 @@ class Traffic(GeographyMixin):
     # -- Methods for lazy evaluation, delegated to Flight --
 
     @lazy_evaluation()
-    def filter_if(self, *args, **kwargs):  # coverage: ignore
+    def filter_if(self, *args, **kwargs):
         ...
 
     @lazy_evaluation()
-    def resample(self, rule: Union[str, int] = "1s"):  # coverage: ignore
+    def resample(self, rule: Union[str, int] = "1s"):
         ...
 
     @lazy_evaluation()
@@ -358,19 +359,15 @@ class Traffic(GeographyMixin):
             [pd.DataFrame], pd.DataFrame
         ] = lambda x: x.bfill().ffill(),
         **kwargs,
-    ):  # coverage: ignore
+    ):
         ...
 
     @lazy_evaluation()
-    def unwrap(
-        self, features: Union[str, List[str]] = ["track", "heading"]
-    ):  # coverage: ignore
+    def unwrap(self, features: Union[str, List[str]] = ["track", "heading"]):
         ...
 
     @lazy_evaluation(idx_name="idx")
-    def assign_id(
-        self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0
-    ):  # coverage: ignore
+    def assign_id(self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0):
         """Assigns a `flight_id` to trajectories present in the structure.
 
         The heuristics with iterate on flights based on ``flight_id`` (if the
@@ -383,15 +380,11 @@ class Traffic(GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def clip(
-        self, shape: Union["Airspace", base.BaseGeometry]
-    ):  # coverage: ignore
+    def clip(self, shape: Union["Airspace", base.BaseGeometry]):
         ...
 
     @lazy_evaluation()
-    def intersects(
-        self, shape: Union["Airspace", base.BaseGeometry]
-    ) -> bool:  # coverage: ignore
+    def intersects(self, shape: Union["Airspace", base.BaseGeometry]) -> bool:
         ...
 
     @lazy_evaluation()
@@ -400,23 +393,23 @@ class Traffic(GeographyMixin):
         tolerance: float,
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
-    ):  # coverage: ignore
+    ):
         ...
 
     @lazy_evaluation()
-    def query_opensky(self):  # coverage: ignore
+    def query_opensky(self):
         ...
 
     @lazy_evaluation()
-    def query_ehs(self, data, failure_mode, propressbar):  # coverage: ignore
+    def query_ehs(self, data, failure_mode, propressbar):
         ...
 
     @lazy_evaluation()
-    def first(self, **kwargs):  # coverage: ignore
+    def first(self, **kwargs):
         ...
 
     @lazy_evaluation()
-    def last(self, **kwargs):  # coverage: ignore
+    def last(self, **kwargs):
         ...
 
     @lazy_evaluation()
@@ -425,7 +418,7 @@ class Traffic(GeographyMixin):
         feature: Callable[["Flight"], Any],
         value: Any,
         strict: bool = True,
-    ):  # coverage: ignore
+    ):
         ...
 
     @lazy_evaluation()
@@ -434,19 +427,19 @@ class Traffic(GeographyMixin):
         feature: Callable[["Flight"], Any],
         value: Any,
         strict: bool = True,
-    ):  # coverage: ignore
+    ):
         ...
 
     @lazy_evaluation()
     def shorter_than(
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
-    ):  # coverage: ignore
+    ):
         ...
 
     @lazy_evaluation()
     def longer_than(
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
-    ):  # coverage: ignore
+    ):
         ...
 
     @lazy_evaluation()
@@ -455,13 +448,13 @@ class Traffic(GeographyMixin):
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
         key: Callable[[Optional["Flight"]], Any] = attrgetter("duration"),
-    ):  # coverage: ignore
+    ):
         ...
 
     @lazy_evaluation()
     def agg_time(
         self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
-    ):  # coverage: ignore
+    ):
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
