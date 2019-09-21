@@ -7,7 +7,11 @@ from traffic.data.samples import collections, get_sample
 def test_cpa() -> None:
     switzerland: Traffic = get_sample(collections, "switzerland")
 
-    smaller = switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")
+    smaller = (
+        switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")
+        .assign_id()
+        .eval()
+    )
 
     cpa = smaller.closest_point_of_approach(
         lateral_separation=10 * 1852,
@@ -24,3 +28,4 @@ def test_cpa() -> None:
 
     callsigns = {*res.data.callsign_x, *res.data.callsign_y}
     assert callsigns == {"BAW2591", "BAW605", "DAH2062", "EZY54UC"}
+    assert len(res.flight_ids()) == 4
