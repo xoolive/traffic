@@ -118,7 +118,7 @@ class NMB2B:
         # There may be several dataset available.
         # For now, we keep the latest one
         latest = max(
-            (chunk for chunk in tree.findall("data/datasetSummaries")),
+            tree.findall("data/datasetSummaries"),
             key=lambda x: x.find("publicationDate").text,  # type: ignore
             default=None,
         )
