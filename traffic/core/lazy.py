@@ -237,7 +237,9 @@ def lazy_evaluation(
 
     """
 
-    def wrapper(f: Callable[..., "Traffic"]):
+    def wrapper(
+        f: Callable[..., "Traffic"]
+    ) -> Callable[..., Union["Traffic", LazyTraffic]]:
 
         # Check parameters passed (esp. filter_if) are not lambda because those
         # are not serializable therefore **silently** fail when multiprocessed.
@@ -246,14 +248,14 @@ def lazy_evaluation(
 It should be safe to create a proper named function and pass it to filter_if.
         """
 
-        def is_lambda(f):
+        def is_lambda(f) -> bool:
             return isinstance(f, types.LambdaType) and f.__name__ == "<lambda>"
 
         # Check the decorated method is implemented by A
         if not hasattr(Flight, f.__name__):
             raise TypeError(f"Class Flight does not provide {f.__name__}")
 
-        def lazy_λf(lazy: LazyTraffic, *args, **kwargs):
+        def lazy_λf(lazy: LazyTraffic, *args, **kwargs) -> LazyTraffic:
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             if any(is_lambda(arg) for arg in args):
@@ -284,7 +286,7 @@ It should be safe to create a proper named function and pass it to filter_if.
             return f
 
         # Take the method in Flight and create a LazyCollection
-        def λf(wrapped_t: "Traffic", *args, **kwargs):
+        def λf(wrapped_t: "Traffic", *args, **kwargs) -> LazyTraffic:
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             if any(is_lambda(arg) for arg in args):
