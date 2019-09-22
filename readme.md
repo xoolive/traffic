@@ -53,6 +53,9 @@ should work but the Anaconda way proved to work smoothly.
 conda install cartopy shapely
 ```
 
+For troubleshootings, refer to the appropriate
+[documentation section](https://traffic-viz.github.io/installation.html#troubleshooting).
+
 ## Credits
 
 [![JOSS badge](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518)
@@ -77,7 +80,7 @@ work, you may cite it as:
 
 [![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.github.io/)
 
-Documentation available at [https://travis-viz.github.io/](https://traffic-viz.github.io/)
+Documentation available at [https://traffic-viz.github.io/](https://traffic-viz.github.io/)
 
 ## Tests and code quality
 
