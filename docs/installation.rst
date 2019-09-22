@@ -17,13 +17,18 @@ visualisations in Jupyter Lab are accessible thanks to the `altair <https://alta
 <http://ipyleaflet.readthedocs.io/>`_ libraries; other exports to various formats
 (including CesiumJS or Google Earth) are also available.
 
+Installation
+------------
+
 We recommend cloning the latest version from the repository before installing
 it.
 
 .. parsed-literal::
+    git clone https://github.com/xoolive/traffic
+    cd traffic/
     python setup.py install
 
-If you are not comfortable with that option, you can install the latest
+If you are not comfortable with that option, you can always install the latest
 release:
 
 .. parsed-literal::
@@ -45,8 +50,8 @@ release:
 Troubleshooting
 ---------------
 
-The following reported problems are not problems with the traffic library per
-se but with limitations set by dependencies.
+The following reported problems are not about the traffic library per
+se but related to limitations set by dependencies.
 
 Python crashes when I try to reproduce plots in the documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
