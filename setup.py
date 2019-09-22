@@ -65,7 +65,7 @@ setup(
         "ipyleaflet",  # Leaflet for notebooks
         "tqdm>=4.28",  # progressbars
         "cartotools==1.0",
-        "pyModeS>=2.0",
+        "pyModeS>=2.2",
     ],
     classifiers=[
         # How mature is this project? Common values are
