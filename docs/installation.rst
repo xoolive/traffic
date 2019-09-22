@@ -87,7 +87,7 @@ If it still does not work, try again with:
 Widgets do not display in Jupyter Lab or Jupyter Notebook
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After executing a cell, you may see one of tthe following output:
+After executing a cell, you may see one of the following output:
 
 .. parsed-literal::
     A Jupyter Widget
