@@ -600,7 +600,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         - ``Flight.at_ratio(1)`` is the last point of the trajectory
           (equivalent to ``Flight.at()``)
         """
-        return self.between(self.start, self.start + ratio * self.duration).at()
+        return self.between(
+            self.start, self.start + ratio * self.duration, strict=False
+        ).at()
 
     @overload
     def split(self, value: int, unit: str) -> Iterator["Flight"]:

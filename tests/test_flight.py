@@ -107,6 +107,14 @@ def test_time_methods() -> None:
     assert point is not None
     assert flight.start < point.timestamp < flight.stop
 
+    point = flight.at_ratio(0)
+    assert point is not None
+    assert point.timestamp == flight.start
+
+    point = flight.at_ratio(1)
+    assert point is not None
+    assert point.timestamp == flight.stop
+
 
 def test_geometry() -> None:
     flight: Flight = get_sample(featured, "belevingsvlucht")
