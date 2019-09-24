@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from functools import lru_cache
 from operator import attrgetter
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
                     List, Optional, Set, Tuple, Union, cast, overload)
@@ -246,14 +245,20 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     # --- Properties (and alike) ---
 
-    @lru_cache()
     def min(self, feature: str):
-        """Returns the minimum value of given feature."""
+        """Returns the minimum value of given feature.
+
+        >>> flight.min('altitude')  # dummy example
+        24000
+        """
         return self.data[feature].min()
 
-    @lru_cache()
     def max(self, feature: str):
-        """Returns the maximum value of given feature."""
+        """Returns the maximum value of given feature.
+
+        >>> flight.max('altitude')  # dummy example
+        35000
+        """
         return self.data[feature].max()
 
     def feature_gt(
