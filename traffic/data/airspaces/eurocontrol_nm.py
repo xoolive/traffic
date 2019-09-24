@@ -30,6 +30,10 @@ class NMAirspaceParser(object):
         self.types: Dict[str, str] = dict()
         self.initialized = False
 
+    def update_path(self, path: Path):
+        self.nm_path = path
+        self.init_cache()
+
     def init_cache(self):
         msg = f"Edit file {self.config_file} with NM directory"
 
