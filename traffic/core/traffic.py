@@ -415,7 +415,7 @@ class Traffic(GeographyMixin):
     @lazy_evaluation()
     def feature_gt(
         self,
-        feature: Callable[["Flight"], Any],
+        feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
         strict: bool = True,
     ):
@@ -424,7 +424,7 @@ class Traffic(GeographyMixin):
     @lazy_evaluation()
     def feature_lt(
         self,
-        feature: Callable[["Flight"], Any],
+        feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
         strict: bool = True,
     ):
@@ -455,6 +455,10 @@ class Traffic(GeographyMixin):
     def agg_time(
         self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
     ):
+        ...
+
+    @lazy_evaluation()
+    def cumulative_distance(self, compute_gs: bool = False, **kwargs):
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight

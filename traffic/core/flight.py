@@ -1,6 +1,7 @@
 # fmt: off
 
 import logging
+import warnings
 from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
@@ -263,15 +264,27 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     def feature_gt(
         self,
-        feature: Callable[["Flight"], Any],
+        feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
         strict: bool = True,
     ) -> bool:
         """Returns True if feature(flight) is greater than value.
 
-        >>> f.feature_gt(attrgetter("duration"), pd.Timedelta('1 minute'))
+        This is fully equivalent to `f.longer_than("1 minute")`:
+
+        >>> f.feature_gt("duration", pd.Timedelta('1 minute'))
         True
+
+        This is equivalent to `f.max('altitude') > 35000`:
+
+        >>> f.feature_gt(lambda f: f.max("altitude"), 35000)
+        True
+
+        The second one can be useful for stacking operations during
+        lazy evaluation.
         """
+        if isinstance(feature, str):
+            feature = attrgetter(feature)
         attribute = feature(self)
         if strict:
             return attribute > value
@@ -279,15 +292,27 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     def feature_lt(
         self,
-        feature: Callable[["Flight"], Any],
+        feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
         strict: bool = True,
     ) -> bool:
         """Returns True if feature(flight) is less than value.
 
-        >>> f.feature_lt(attrgetter("duration"), pd.Timedelta('1 minute'))
+        This is fully equivalent to `f.shorter_than("1 minute")`:
+
+        >>> f.feature_lt("duration", pd.Timedelta('1 minute'))
         True
+
+        This is equivalent to `f.max('altitude') < 35000`:
+
+        >>> f.feature_lt(lambda f: f.max("altitude"), 35000)
+        True
+
+        The second one can be useful for stacking operations during
+        lazy evaluation.
         """
+        if isinstance(feature, str):
+            feature = attrgetter(feature)
         attribute = feature(self)
         if strict:
             return attribute < value
@@ -1083,7 +1108,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         )
 
     def cumulative_distance(
-        self, compute_groundspeed: bool = False
+        self, compute_gs: bool = False, **kwargs
     ) -> "Flight":
 
         """ Enrich the structure with new ``cumdist`` column computed from
@@ -1099,6 +1124,10 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         """
 
+        if "compute_groundspeed" in kwargs:
+            warnings.warn("Use compute_gs argument", DeprecationWarning)
+            compute_gs = kwargs["compute_groundspeed"]
+
         coords = self.data[["timestamp", "latitude", "longitude"]]
         delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
         delta_1 = delta.iloc[1:]
@@ -1111,7 +1140,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         res = self.assign(cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant"))
 
-        if compute_groundspeed:
+        if compute_gs:
             gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
             res = res.assign(compute_gs=np.pad(gs, (1, 0), "constant"))
         return res

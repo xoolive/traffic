@@ -270,7 +270,9 @@ It should be safe to create a proper named function and pass it to filter_if.
                 lazy.tqdm_kw,
             )
 
-        lazy_λf.__annotations__ = getattr(Flight, f.__name__).__annotations__
+        lazy_λf.__annotations__ = dict(  # make a copy!!
+            getattr(Flight, f.__name__).__annotations__
+        )
         lazy_λf.__annotations__["self"] = LazyTraffic
         lazy_λf.__annotations__["return"] = LazyTraffic
 
@@ -301,7 +303,10 @@ It should be safe to create a proper named function and pass it to filter_if.
         else:
             λf.__doc__ = getattr(Flight, f.__name__).__doc__
 
-        λf.__annotations__ = getattr(Flight, f.__name__).__annotations__
+        λf.__annotations__ = dict(  # make a copy!!
+            getattr(Flight, f.__name__).__annotations__
+        )
+        λf.__annotations__["return"] = LazyTraffic
 
         if λf.__doc__ is not None:
             λf.__doc__ += """\n        .. warning::
