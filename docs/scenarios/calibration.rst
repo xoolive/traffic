@@ -272,7 +272,7 @@ We have all we need to enhance the interesting parts of the trajectory now:
        # plot large circles in red
        for segment in ajaccio.query("distance_diff < .02").split("1 minute"):
            # only print the segment if it is long enough
-           if segment.stop - segment.start > pd.Timedelta("3 minutes"):
+           if segment.longer_than("3 minutes"):
                segment.plot(ax, color="crimson")
                distance_vor = segment.data.distance.mean()
 
@@ -284,7 +284,7 @@ We have all we need to enhance the interesting parts of the trajectory now:
 
        for segment in ajaccio.query("bearing_diff < .01").split("1 minute"):
            # only print the segment if it is long enough
-           if segment.stop - segment.start > pd.Timedelta("3 minutes"):
+           if segment.longer_than("3 minutes"):
                segment.plot(ax, color="forestgreen")
 
        ax.set_extent((7.6, 9.9, 41.3, 43.3))

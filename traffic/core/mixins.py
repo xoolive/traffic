@@ -93,9 +93,9 @@ class DataFrameMixin(object):
     def to_csv(
         self, filename: Union[str, Path], *args, **kwargs
     ) -> None:  # coverage: ignore
-        """Exports to pickle format.
+        """Exports to CSV format.
 
-        Options can be passed to ``pandas.to_pickle``
+        Options can be passed to ``pandas.to_csv``
         as args and kwargs arguments.
 
         Read more about export formats in the `Exporting and Storing data
@@ -106,9 +106,9 @@ class DataFrameMixin(object):
     def to_hdf(
         self, filename: Union[str, Path], *args, **kwargs
     ) -> None:  # coverage: ignore
-        """Exports to pickle format.
+        """Exports to HDF format.
 
-        Options can be passed to ``pandas.to_pickle``
+        Options can be passed to ``pandas.to_hdf``
         as args and kwargs arguments.
 
         Read more about export formats in the `Exporting and Storing data
@@ -119,7 +119,7 @@ class DataFrameMixin(object):
     def to_json(
         self, filename: Union[str, Path], *args, **kwargs
     ) -> None:  # coverage: ignore
-        """Exports to json format.
+        """Exports to JSON format.
 
         Options can be passed to ``pandas.to_json``
         as args and kwargs arguments.
