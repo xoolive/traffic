@@ -55,6 +55,16 @@ AIXMAirspaceParser.cache_dir = cache_dir
 opensky_username = config.get("global", "opensky_username", fallback="")
 opensky_password = config.get("global", "opensky_password", fallback="")
 
+# We keep "" for forcing to no proxy
+http_proxy = config.get("proxy", "http", fallback="<>")
+https_proxy = config.get("proxy", "https", fallback="<>")
+
+proxy_values = dict(
+    (key, value)
+    for key, value in [("http", http_proxy), ("https", https_proxy)]
+    if value != "<>"
+)
+
 if sys.version_info < (3, 7, 0):
     aircraft = Aircraft()
     airports = Airports()
@@ -64,6 +74,10 @@ if sys.version_info < (3, 7, 0):
     nm_airspaces = NMAirspaceParser(config_file)
     runways = Runways()
     opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
+
+    if len(proxy_values) > 0:
+        opensky.session.proxies.update(proxy_values)
+        opensky.session.trust_env = False
 
 
 @lru_cache()
@@ -82,9 +96,13 @@ def __getattr__(name: str):
     if name == "nm_airspaces":  # coverage: ignore
         return NMAirspaceParser(config_file)
     if name == "opensky":
-        return OpenSky(
+        opensky = OpenSky(
             opensky_username, opensky_password, cache_dir / "opensky"
         )
+        if len(proxy_values) > 0:
+            opensky.session.proxies.update(proxy_values)
+            opensky.session.trust_env = False
+        return opensky
     if name == "runways":
         return Runways()
     if name == "airac":  # coverage: ignore
