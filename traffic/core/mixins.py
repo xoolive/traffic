@@ -24,7 +24,7 @@ class DataFrameMixin(object):
 
     __slots__ = ()
 
-    def __init__(self, data: pd.DataFrame) -> None:
+    def __init__(self, data: pd.DataFrame, *args, **kwargs) -> None:
         self.data: pd.DataFrame = data
 
     @classmethod
