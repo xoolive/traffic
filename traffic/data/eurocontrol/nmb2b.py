@@ -2,6 +2,7 @@ import io
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Union
+from xml.dom import minidom
 from xml.etree import ElementTree
 
 from requests import Session
@@ -75,7 +76,9 @@ class NMB2B:
             raise RuntimeError("Unexpected error")
 
         if tree.find("status").text != "OK":  # type: ignore
-            raise RuntimeError(ElementTree.tostring(tree).decode())
+            rough_string = ElementTree.tostring(tree)
+            reparsed = minidom.parseString(rough_string)
+            raise RuntimeError(reparsed.toprettyxml(indent="  "))
 
         return tree
 
