@@ -43,6 +43,7 @@ class Airspace(ShapelyMixin):
         type_: Optional[str] = None,
     ) -> None:
         self.elements: List[ExtrudedPolygon] = elements
+        self.designator: str = name
         self.name: str = name
         self.type: Optional[str] = type_
 
@@ -71,7 +72,7 @@ class Airspace(ShapelyMixin):
         return self.elements.__iter__()
 
     def _repr_html_(self):
-        title = f"<b>{self.name} ({self.type})</b>"
+        title = f"<b>{self.name} [{self.designator}] ({self.type})</b>"
         shapes = ""
         title += "<ul>"
         for polygon in self:
@@ -82,7 +83,7 @@ class Airspace(ShapelyMixin):
         return title + no_wrap_div.format(shapes)
 
     def __repr__(self):
-        return f"Airspace {self.name} ({self.type})"
+        return f"Airspace {self.name} [{self.designator}] ({self.type})"
 
     def __str__(self):
         return f"""Airspace {self.name} with {len(self.elements)} parts"""

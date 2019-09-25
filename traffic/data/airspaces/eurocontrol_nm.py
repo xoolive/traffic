@@ -149,6 +149,7 @@ class NMAirspaceParser(object):
 
         components[name] = components_info
         airspace = sum(list_airspaces[1:], list_airspaces[0])
+        airspace.designator = name
         airspace.name = self.description.get(name, name)
         airspace.type = self.types[name]
 
