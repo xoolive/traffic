@@ -692,7 +692,7 @@ class Decoder:
 
         if df == 17 or df == 18:  # ADS-B
 
-            if int(pms.crc(msg, encode=False), 2) != 0:
+            if pms.crc(msg, encode=False) != 0:
                 return
 
             tc = pms.adsb.typecode(msg)
