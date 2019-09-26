@@ -1,0 +1,28 @@
+<fl:FlightListByAerodromeRequest xmlns:fl="eurocontrol/cfmu/b2b/FlightServices" 
+    xmlns:cm="eurocontrol/cfmu/b2b/CommonServices" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns:fw="eurocontrol/cfmu/b2b/FlowServices" 
+    xmlns:as="eurocontrol/cfmu/b2b/AirspaceServices" 
+    xmlns:ns8="http://www.fixm.aero/base/4.0" 
+    xmlns:ns7="http://www.fixm.aero/flight/4.0" 
+    xmlns:ns13="http://www.fixm.aero/nm/1.0" 
+    xmlns:ns9="http://www.fixm.aero/base/4.1" 
+    xmlns:ns12="http://www.fixm.aero/eurextension/4.0" 
+    xmlns:ns11="http://www.w3.org/1999/xlink" 
+    xmlns:ns10="http://www.fixm.aero/flight/4.1" 
+    xmlns:ns14="http://www.fixm.aero/messaging/4.1">
+    <sendTime>{send_time:%Y-%m-%d %H:%M:%S}</sendTime>
+    <dataset>
+        <type>OPERATIONAL</type>
+    </dataset>
+    <includeProposalFlights>false</includeProposalFlights>
+    <includeForecastFlights>true</includeForecastFlights>
+    <trafficType>DEMAND</trafficType>
+    <trafficWindow>
+        <wef>{start:%Y-%m-%d %H:%M}</wef>
+        <unt>{stop:%Y-%m-%d %H:%M}</unt>
+    </trafficWindow>
+    {requestedFlightFields}
+    <aerodrome>{aerodrome}</aerodrome>
+    <aerodromeRole>{aerodromeRole}</aerodromeRole>
+</fl:FlightListByAerodromeRequest>

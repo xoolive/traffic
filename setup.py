@@ -5,6 +5,7 @@ from setuptools import find_packages, setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 sample_dir = Path("traffic") / "data" / "samples"
+xml_dir = Path("traffic") / "data" / "eurocontrol" / "nmb2b" / "xml"
 
 try:
     # Get the long description from the README file
@@ -41,6 +42,10 @@ setup(
         "traffic.data.samples": list(
             file.relative_to(sample_dir).as_posix()
             for file in sample_dir.glob("**/*.json*")  # .json and .json.gz
+        ),
+        "traffic.data.eurocontrol.nmb2b.xml": list(
+            file.relative_to(xml_dir).as_posix()
+            for file in xml_dir.glob("**/*.xml")
         ),
         "traffic": [
             os.path.join("..", "icons", f)
