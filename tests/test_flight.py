@@ -1,3 +1,5 @@
+# fmt: off
+
 import sys
 import zipfile
 
@@ -7,7 +9,10 @@ import pytest
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, runways
-from traffic.data.samples import featured, get_sample
+from traffic.data.samples import (airbus_tree, belevingsvlucht, featured,
+                                  get_sample)
+
+# fmt: on
 
 # This part only serves on travis when the downloaded file is corrupted
 # This shouldn't happen much as caching is now activated.
@@ -20,7 +25,7 @@ except zipfile.BadZipFile:
 
 
 def test_properties() -> None:
-    flight: Flight = get_sample(featured, "belevingsvlucht")
+    flight = belevingsvlucht
     assert len(flight) == 16005
     assert flight.min("altitude") == -59  # Welcome to the Netherlands!
     assert flight.max("altitude") == 18025
@@ -44,13 +49,12 @@ def test_get_traffic() -> None:
 
 
 def test_emptydata() -> None:
-    airbus_tree: Flight = get_sample(featured, "airbus_tree")
     assert airbus_tree.registration == "F-WWAE"
     assert airbus_tree.typecode == "A388"
 
 
 def test_iterators() -> None:
-    flight: Flight = get_sample(featured, "belevingsvlucht")
+    flight = belevingsvlucht
     assert min(flight.timestamp) == flight.start
     assert max(flight.timestamp) == flight.stop
     assert min(flight.coords)[0] == flight.min("longitude")
@@ -70,7 +74,7 @@ def test_iterators() -> None:
 
 
 def test_time_methods() -> None:
-    flight: Flight = get_sample(featured, "belevingsvlucht")
+    flight = belevingsvlucht
     assert f"{flight.first(minutes=10).stop}" == "2018-05-30 15:31:37+00:00"
     assert f"{flight.last(minutes=10).start}" == "2018-05-30 20:12:57+00:00"
 
@@ -162,10 +166,7 @@ def test_landing_airport() -> None:
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_landing_runway() -> None:
     # TODO refactor/rethink the returned type
-    flight: Flight = get_sample(featured, "belevingsvlucht")
-    assert flight.guess_landing_runway().name == "06"
-
-    airbus_tree: Flight = get_sample(featured, "airbus_tree")
+    assert belevingsvlucht.guess_landing_runway().name == "06"
     assert airbus_tree.guess_landing_runway().name == "23"
 
 
@@ -200,7 +201,7 @@ def test_resample_unwrapped() -> None:
 
 
 def test_agg_time() -> None:
-    flight: Flight = get_sample(featured, "belevingsvlucht")
+    flight = belevingsvlucht
 
     agg = flight.agg_time(groundspeed="mean", altitude="max")
 
@@ -209,7 +210,7 @@ def test_agg_time() -> None:
 
 
 def test_comet() -> None:
-    flight: Flight = get_sample(featured, "belevingsvlucht")
+    flight = belevingsvlucht
 
     takeoff = next(flight.query("altitude < 300").split("10T"))
     comet = takeoff.comet(minutes=1)

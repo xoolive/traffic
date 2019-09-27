@@ -1,7 +1,9 @@
 import sys
 from functools import lru_cache
 from pathlib import Path
-from typing import Union
+from typing import Union, cast
+
+import pandas as pd
 
 from ...core import Flight, Traffic
 
@@ -20,6 +22,17 @@ def get_flight(filename: str, directory: Path) -> Union[Flight, Traffic]:
     if len(icao24) == 1:
         # easier way to cast...
         flight = Flight(flight.data)
+    # -- Dealing with time-like features --
+    if "hour" in flight.data.columns:
+        flight = flight.assign(
+            hour=lambda df: pd.to_datetime(df.hour * 1e9).dt.tz_localize("utc")
+        )
+    if "last_position" in flight.data.columns:
+        flight = flight.assign(
+            last_position=lambda df: pd.to_datetime(
+                df.last_position * 1e6
+            ).dt.tz_localize("utc")
+        )
     return flight.assign(
         timestamp=lambda df: df.timestamp.dt.tz_localize("utc")
     )
@@ -48,3 +61,9 @@ def __getattr__(name: str) -> Union[Flight, Traffic]:
         msg = f"File {name}.json.gz not found in available samples"
         raise AttributeError(msg)
     return get_flight(name, filelist[0].parent)
+
+
+airbus_tree = cast(Flight, __getattr__("airbus_tree"))
+belevingsvlucht = cast(Flight, __getattr__("belevingsvlucht"))
+quickstart = cast(Traffic, __getattr__("quickstart"))
+switzerland = cast(Traffic, __getattr__("switzerland"))

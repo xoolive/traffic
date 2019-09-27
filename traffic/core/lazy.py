@@ -9,7 +9,6 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union,
                     overload)
 
 from tqdm.autonotebook import tqdm
-
 from typing_extensions import Literal
 
 from .flight import Flight
@@ -60,7 +59,7 @@ def apply(
 
     Note that the only valid reduce operation is `Traffic.from_flights`.
     """
-    return functools.reduce(  # type: ignore
+    return functools.reduce(
         (
             lambda next_step, fun: fun(idx, next_step)  # type: ignore
             if next_step is not None

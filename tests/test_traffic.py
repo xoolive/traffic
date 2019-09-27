@@ -1,12 +1,11 @@
 import pandas as pd
 
-from traffic.core import Flight, Traffic
+from traffic.core import Flight
 from traffic.data import eurofirs
-from traffic.data.samples import collections, get_sample
+from traffic.data.samples import switzerland
 
 
 def test_properties() -> None:
-    switzerland: Traffic = get_sample(collections, "switzerland")
     assert len(switzerland) == 1244
     assert f"{switzerland.start_time}" == "2018-08-01 05:00:00+00:00"
     assert f"{switzerland.end_time}" == "2018-08-01 21:59:50+00:00"
@@ -30,7 +29,6 @@ def test_properties() -> None:
 
 
 def test_index() -> None:
-    switzerland: Traffic = get_sample(collections, "switzerland")
     df = pd.DataFrame.from_records(
         [
             {
@@ -60,8 +58,6 @@ def test_index() -> None:
 
 
 def test_aircraft() -> None:
-    switzerland: Traffic = get_sample(collections, "switzerland")
-
     assert set(
         f.max("typecode")
         for f in switzerland[["EXS33W", "4009f9"]].aircraft_data()
@@ -73,9 +69,8 @@ def high_altitude(flight: Flight) -> bool:
 
 
 def test_chaining() -> None:
-    switzerland: Traffic = get_sample(collections, "switzerland")
     sw_filtered = (
-        switzerland.between("2018-08-01", "2018-08-02")
+        switzerland.between("2018-08-01", "2018-08-02")  # type: ignore
         .inside_bbox(eurofirs["LSAS"])
         .assign_id()
         .filter_if(high_altitude)

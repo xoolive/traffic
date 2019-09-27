@@ -18,8 +18,7 @@ a number of sample points for each trajectory.
 
 .. code:: python
 
-    from traffic.core import Traffic
-    t = Traffic.from_file('data/sample_opensky.pkl')
+    from traffic.data.samples import quickstart as t
 
 
 .. raw:: html
