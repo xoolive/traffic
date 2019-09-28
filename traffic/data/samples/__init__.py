@@ -5,6 +5,8 @@ from typing import Union, cast
 
 import pandas as pd
 
+from traffic.core import Airspace
+
 from ...core import Flight, Traffic
 
 _current_dir = Path(__file__).parent
@@ -67,3 +69,7 @@ airbus_tree = cast(Flight, __getattr__("airbus_tree"))
 belevingsvlucht = cast(Flight, __getattr__("belevingsvlucht"))
 quickstart = cast(Traffic, __getattr__("quickstart"))
 switzerland = cast(Traffic, __getattr__("switzerland"))
+
+lfbo_tma = Airspace.from_file(
+    Path(__file__).parent / "airspaces" / "LFBOTMA.json"
+)

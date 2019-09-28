@@ -262,6 +262,14 @@ class Flight(GeographyMixin, ShapelyMixin):
         """
         return self.data[feature].max()
 
+    def mean(self, feature: str):
+        """Returns the average value of given feature.
+
+        >>> flight.mean('vertical_rate')  # dummy example
+        -1000
+        """
+        return self.data[feature].mean()
+
     def feature_gt(
         self,
         feature: Union[str, Callable[["Flight"], Any]],

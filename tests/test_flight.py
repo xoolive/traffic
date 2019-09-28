@@ -29,6 +29,7 @@ def test_properties() -> None:
     assert len(flight) == 16005
     assert flight.min("altitude") == -59  # Welcome to the Netherlands!
     assert flight.max("altitude") == 18025
+    assert flight.last(minutes=20).mean("vertical_rate") < -500
     assert f"{flight.start}" == "2018-05-30 15:21:38+00:00"
     assert f"{flight.stop}" == "2018-05-30 20:22:56+00:00"
     assert flight.callsign == "TRA051"

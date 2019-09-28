@@ -3,10 +3,10 @@ from pathlib import Path
 
 from shapely.geometry import shape
 
-from ...core.airspace import ExtrudedPolygon, Airspace
+from ...core.airspace import Airspace, ExtrudedPolygon
 
 with Path(__file__).absolute().with_name("firs.json").open("r") as fh:
-    fir = json.loads("".join(fh.readlines()))
+    fir = json.load(fh)
 
 eurofirs = {
     elt["properties"]["IDENT"]: Airspace(
