@@ -12,7 +12,7 @@ Eurocontrol DDR files
     :no-undoc-members:
     :show-inheritance:
 
-.. autoclass:: traffic.data.so6.so6.Flight
+.. autoclass:: traffic.data.eurocontrol.ddr.so6.Flight
     :members:
     :no-undoc-members:
     :show-inheritance:
