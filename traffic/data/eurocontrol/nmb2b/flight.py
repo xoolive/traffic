@@ -330,6 +330,8 @@ class FlightList(DataFrameMixin, B2BReply):
                 {
                     **{
                         "flightId": elt.find("flightId/id").text  # type: ignore
+                        if elt.find("flightId/id") is not None
+                        else None
                     },
                     **{
                         p.tag: p.text
