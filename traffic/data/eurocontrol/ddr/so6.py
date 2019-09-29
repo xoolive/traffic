@@ -19,11 +19,11 @@ from cartopy.crs import PlateCarree
 from scipy.interpolate import interp1d
 from shapely.geometry import LineString, base
 
-from ...core import Airspace
-from ...core import Flight as FlightMixin
-from ...core.flight import Position
-from ...core.mixins import DataFrameMixin
-from ...core.time import time_or_delta, timelike, to_datetime
+from ....core import Airspace
+from ....core import Flight as FlightMixin
+from ....core.flight import Position
+from ....core.mixins import DataFrameMixin
+from ....core.time import time_or_delta, timelike, to_datetime
 
 # fmt: on
 

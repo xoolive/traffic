@@ -14,7 +14,7 @@ from .basic.airports import Airports
 from .basic.airways import Airways
 from .basic.navaid import Navaids
 from .basic.runways import Runways
-from .so6 import SO6  # noqa: F401
+from .eurocontrol.ddr.so6 import SO6  # noqa: F401
 
 # Parse configuration and input specific parameters in below classes
 
