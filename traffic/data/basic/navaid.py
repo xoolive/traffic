@@ -40,7 +40,7 @@ class Navaid(NavaidTuple, PointMixin):
             return self.alt
 
     def __repr__(self):
-        if self.type == "FIX":
+        if self.type in ["FIX", "DB", "WP"] or self.type != self.type:
             return f"{self.name} ({self.type}): {self.lat} {self.lon}"
         else:
             return (
@@ -229,7 +229,12 @@ class Navaids(DataFrameMixin):
         )
         if x.shape[0] == 0:
             return None
-        return Navaid(**dict(x.iloc[0]))
+        dic = dict(x.iloc[0])
+        if "alt" not in dic:
+            dic["alt"] = None
+            dic["frequency"] = None
+            dic["magnetic_variation"] = None
+        return Navaid(**dic)
 
     def __iter__(self) -> Iterator[Navaid]:
         for _, x in self.data.iterrows():

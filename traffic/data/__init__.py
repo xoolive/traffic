@@ -7,13 +7,14 @@ from .. import cache_dir, config, config_file
 from .adsb.decode import Decoder as ModeS_Decoder  # noqa: F401
 from .adsb.opensky import OpenSky
 from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
-from .airspaces.eurocontrol_nm import NMAirspaceParser
 from .airspaces.eurofirs import eurofirs
 from .basic.aircraft import Aircraft
 from .basic.airports import Airports
 from .basic.airways import Airways
 from .basic.navaid import Navaids
 from .basic.runways import Runways
+from .eurocontrol.ddr.airspaces import NMAirspaceParser
+from .eurocontrol.ddr.navpoints import NMNavaids
 from .eurocontrol.ddr.so6 import SO6  # noqa: F401
 
 # Parse configuration and input specific parameters in below classes
@@ -25,6 +26,7 @@ __all__ = [
     "navaids",
     "aixm_airspaces",
     "nm_airspaces",
+    "nm_navaids",
     "eurofirs",
     "opensky",
 ]
@@ -72,6 +74,8 @@ if sys.version_info < (3, 7, 0):
     navaids = Navaids()
     aixm_airspaces = AIXMAirspaceParser(config_file)
     nm_airspaces = NMAirspaceParser(config_file)
+    if nm_path_str != "":
+        nm_navaids = NMNavaids.from_file(nm_path_str, error=False)
     runways = Runways()
     opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
 
@@ -95,6 +99,8 @@ def __getattr__(name: str):
         return AIXMAirspaceParser(config_file)
     if name == "nm_airspaces":  # coverage: ignore
         return NMAirspaceParser(config_file)
+    if name == "nm_navaids":  # coverage: ignore
+        return NMNavaids.from_file(nm_path_str, error=True)
     if name == "opensky":
         opensky = OpenSky(
             opensky_username, opensky_password, cache_dir / "opensky"

@@ -1,3 +1,5 @@
+# fmt: off
+
 import logging
 import re
 from collections import defaultdict
@@ -7,9 +9,12 @@ from typing import Callable, Dict, Iterator, List, Optional, Set, Tuple
 
 from shapely.geometry import base, shape
 
-from ...core.airspace import Airspace, AirspaceInfo, ExtrudedPolygon, components
+from ....core.airspace import (Airspace, AirspaceInfo, ExtrudedPolygon,
+                               components)
 
 # https://www.nm.eurocontrol.int/HELP/Airspaces.html
+
+# fmt: on
 
 
 def _re_match_ignorecase(x, y):
