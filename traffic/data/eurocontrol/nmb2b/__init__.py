@@ -10,11 +10,12 @@ from requests_pkcs12 import Pkcs12Adapter
 from tqdm.autonotebook import tqdm
 
 from .flight import FlightManagement
+from .flow import Measures
 from .reply import B2BReply
 from .xml import REQUESTS
 
 
-class NMB2B(FlightManagement):
+class NMB2B(FlightManagement, Measures):
 
     PREOPS = {
         "base_url": "https://www.b2b.preops.nm.eurocontrol.int/",
