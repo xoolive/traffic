@@ -225,6 +225,9 @@ class RegulationList(DataFrameMixin, B2BReply):
             ]
         )
 
+        if self.data.empty:
+            return
+
         self.data = self.data.rename(columns=rename_cols)
         self.data = self.data[
             [
