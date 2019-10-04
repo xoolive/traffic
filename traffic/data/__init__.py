@@ -15,6 +15,7 @@ from .basic.navaid import Navaids
 from .basic.runways import Runways
 from .eurocontrol.ddr.airspaces import NMAirspaceParser
 from .eurocontrol.ddr.navpoints import NMNavaids
+from .eurocontrol.ddr.routes import NMRoutes
 from .eurocontrol.ddr.so6 import SO6  # noqa: F401
 
 # Parse configuration and input specific parameters in below classes
@@ -26,6 +27,7 @@ __all__ = [
     "navaids",
     "aixm_airspaces",
     "nm_airspaces",
+    "nm_airways",
     "nm_navaids",
     "eurofirs",
     "opensky",
@@ -46,6 +48,7 @@ if aixm_path_str != "":  # coverage: ignore
 nm_path_str = config.get("global", "nm_path", fallback="")
 if nm_path_str != "":  # coverage: ignore
     NMAirspaceParser.nm_path = Path(nm_path_str)
+    NMRoutes.nm_path = Path(nm_path_str)
 
 Aircraft.cache_dir = cache_dir
 Airports.cache_dir = cache_dir
@@ -72,11 +75,14 @@ if sys.version_info < (3, 7, 0):
     airports = Airports()
     airways = Airways()
     navaids = Navaids()
+    runways = Runways()
+
     aixm_airspaces = AIXMAirspaceParser(config_file)
     nm_airspaces = NMAirspaceParser(config_file)
     if nm_path_str != "":
         nm_navaids = NMNavaids.from_file(nm_path_str, error=False)
-    runways = Runways()
+    nm_airways = NMRoutes()
+
     opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
 
     if len(proxy_values) > 0:
@@ -101,6 +107,8 @@ def __getattr__(name: str):
         return NMAirspaceParser(config_file)
     if name == "nm_navaids":  # coverage: ignore
         return NMNavaids.from_file(nm_path_str, error=True)
+    if name == "nm_airways":
+        return NMRoutes()
     if name == "opensky":
         opensky = OpenSky(
             opensky_username, opensky_password, cache_dir / "opensky"
