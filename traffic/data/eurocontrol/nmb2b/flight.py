@@ -18,6 +18,7 @@ rename_cols = {
     "aerodromeOfDeparture": "origin",
     "aerodromeOfDestination": "destination",
     "estimatedOffBlockTime": "EOBT",
+    "cdmEstimatedOffBlockTime": "cdmEOBT",
     "estimatedTakeOffTime": "ETOT",
     "calculatedTakeOffTime": "CTOT",
     "actualTakeOffTime": "ATOT",
@@ -357,7 +358,16 @@ class FlightList(DataFrameMixin, B2BReply):
 
         self.data = self.data.rename(columns=rename_cols)
 
-        for feat in ["EOBT", "ETOT", "CTOT", "ATOT", "ETOA", "CTOA", "ATOA"]:
+        for feat in [
+            "EOBT",
+            "ETOT",
+            "CTOT",
+            "ATOT",
+            "ETOA",
+            "CTOA",
+            "ATOA",
+            "cdmEOBT",
+        ]:
             if feat in self.data.columns:
                 self.data = self.data.assign(
                     **{
