@@ -1,7 +1,5 @@
-import warnings
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, NoReturn, Optional, Set, Type, TypeVar
-from xml.dom import minidom
+from typing import List, Optional, Set, Type, TypeVar
 from xml.etree import ElementTree
 
 import pandas as pd
@@ -112,13 +110,15 @@ class RegulationInfo(B2BReply):
     def fl_min(self) -> int:
         assert self.reply is not None
         elt = self.reply.find("location/flightLevels/min/level")
-        return int(elt.text) if elt is not None else 0
+        return int(elt.text) if elt is not None and elt.text is not None else 0
 
     @property
     def fl_max(self) -> int:
         assert self.reply is not None
         elt = self.reply.find("location/flightLevels/max/level")
-        return int(elt.text) if elt is not None else 999
+        return (
+            int(elt.text) if elt is not None and elt.text is not None else 999
+        )
 
     def __getattr__(self, name) -> str:
         cls = type(self)
@@ -167,55 +167,53 @@ class RegulationList(DataFrameMixin, B2BReply):
     def build_df(self) -> None:
         assert self.reply is not None
 
+        refloc = "location/referenceLocation-"
+
         self.data = pd.DataFrame.from_records(
             [
                 {
                     **{p.tag: p.text for p in elt if p.text is not None},
-                    **{  # type: ignore
+                    **{
                         p.tag: p.text
                         for p in elt.find("location")  # type: ignore
                         if p.text is not None
                     },
-                    **{  # type: ignore
+                    **{
                         "start": elt.find(  # type: ignore
                             "applicability/wef"
-                        ).text  # type: ignore
+                        ).text
                         if elt.find("applicability") is not None
                         else None,
                         "stop": elt.find(  # type: ignore
                             "applicability/unt"
-                        ).text  # type: ignore
+                        ).text
                         if elt.find("applicability") is not None
                         else None,
                     },
-                    **{  # type: ignore
+                    **{
                         "airspace": elt.find(  # type: ignore
-                            "location/referenceLocation-ReferenceLocationAirspace/id"
-                        ).text  # type: ignore
-                        if elt.find(
-                            "location/referenceLocation-ReferenceLocationAirspace"
-                        )
+                            refloc + "ReferenceLocationAirspace/id"
+                        ).text
+                        if elt.find(refloc + "ReferenceLocationAirspace")
                         is not None
                         else None,
                         "aerodrome": elt.find(  # type: ignore
-                            "location/referenceLocation-ReferenceLocationAerodrome/id"
-                        ).text  # type: ignore
-                        if elt.find(
-                            "location/referenceLocation-ReferenceLocationAerodrome"
-                        )
+                            refloc + "ReferenceLocationAerodrome/id"
+                        ).text
+                        if elt.find(refloc + "ReferenceLocationAerodrome")
                         is not None
                         else None,
                     },
-                    **{  # type: ignore
+                    **{
                         "fl_min": elt.find(  # type: ignore
                             "location/flightLevels/min/level"
-                        ).text  # type: ignore
+                        ).text
                         if elt.find("location/flightLevels/min/level")
                         is not None
                         else 0,
                         "fl_max": elt.find(  # type: ignore
                             "location/flightLevels/max/level"
-                        ).text  # type: ignore
+                        ).text
                         if elt.find("location/flightLevels/max/level")
                         is not None
                         else 999,
