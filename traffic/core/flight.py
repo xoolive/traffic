@@ -989,8 +989,11 @@ class Flight(GeographyMixin, ShapelyMixin):
         for feature in features:
             if feature not in self.data.columns:
                 continue
-            result_dict[f"{feature}_unwrapped"] = np.degrees(
-                np.unwrap(np.radians(self.data[feature]))
+            series = self.data[feature]
+            idx = ~series.isnull()
+            result_dict[f"{feature}_unwrapped"] = pd.Series(
+                np.degrees(np.unwrap(np.radians(series.loc[idx]))),
+                index=series.loc[idx].index,
             )
 
         return self.assign(**result_dict)
