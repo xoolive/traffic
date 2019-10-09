@@ -98,16 +98,23 @@ FIRs.
     from keplergl import KeplerGl
 
     map_ = KeplerGl(height=500)
+
+    # add a Flight or a Traffic
     map_.add_data(belevingsvlucht, name="Belevingsvlucht")
     map_.add_data(demo, name="Quickstart trajectories")
-    map_.add_data(
+    
+    # also other sources of data
+    map_.add_data(  # airports (a subset)
         airports.query('country == "Germany"'),
         name="German airports"
     )
-    map_.add_data(
+    map_.add_data(  # navaids (a subset)
         navaids.extent("Ireland").query("type =='VOR'"),
         name="Irish VORs"
     )
+    map_.add_data(lfbo_tma, "Toulouse airport TMA")
+
+    # you can write your own generator to send data to the widget
     map_.add_data(
         (
             fir for name, fir in eurofirs.items() 
@@ -115,7 +122,7 @@ FIRs.
         ),
         "French FIRs"
     )
-    map_.add_data(lfbo_tma, "Toulouse airport TMA")
+
     map_
 
 .. raw:: html
