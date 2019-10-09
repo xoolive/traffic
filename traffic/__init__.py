@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pkg_resources
 from appdirs import user_cache_dir, user_config_dir
-
 from tqdm import TqdmExperimentalWarning
 
 # Silence this warning about autonotebook mode for tqdm
@@ -26,7 +25,7 @@ nm_path =
 opensky_username =
 opensky_password =
 [plugins]
-enabled_plugins = CesiumJS, Leaflet
+enabled_plugins = CesiumJS, Kepler, Leaflet
 """
         )
 

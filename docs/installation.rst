@@ -110,9 +110,11 @@ You will need to activate the widgets extensions:
     .. parsed-literal::
        jupyter labextension install @jupyter-widgets/jupyterlab-manager
        jupyter labextension install jupyter-leaflet
+       jupyter labextension install keplergl-jupyter
 
 - with Jupyter Notebook:
 
     .. parsed-literal::
        jupyter nbextension enable --py --sys-prefix widgetsnbextension
        jupyter nbextension enable --py --sys-prefix ipyleaflet
+       jupyter nbextension enable --py --sys-prefix keplergl

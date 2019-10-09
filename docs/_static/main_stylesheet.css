@@ -19,7 +19,7 @@ tbody td, tr, th {
     max-width: none;
     border: none;
 }
-tbody tr:nth-child(2n) {
+.dataframe tbody tr:nth-child(2n) {
     background: #f5f5f5;
 }
 .dataframe tbody tr th:only-of-type {

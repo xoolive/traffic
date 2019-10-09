@@ -193,6 +193,7 @@ texinfo_documents = [
 def setup(app):
     app.add_stylesheet("https://unpkg.com/leaflet@1.4.0/dist/leaflet.css")
     app.add_javascript("https://unpkg.com/leaflet@1.4.0/dist/leaflet.js")
+    app.add_javascript("https://unpkg.com/kepler.gl@0.2.2/umd/keplergl.min.js")
     app.add_javascript(
         "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
     )

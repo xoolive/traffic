@@ -31,6 +31,7 @@ setup(
         "traffic.plugins": [
             "Bluesky = traffic.plugins.bluesky",
             "CesiumJS = traffic.plugins.cesiumjs",
+            "Kepler = traffic.plugins.kepler",
             "Leaflet = traffic.plugins.leaflet",
         ],
     },
@@ -63,6 +64,7 @@ setup(
         "altair",  # interactive Vega plots
         "ipywidgets",  # IPython widgets for traffic
         "ipyleaflet",  # Leaflet for notebooks
+        "keplergl",  # Kepler.gl for notebooks
         "tqdm>=4.28",  # progressbars
         "cartotools==1.0",
         "pyModeS>=2.4",
