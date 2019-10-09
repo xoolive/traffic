@@ -191,14 +191,13 @@ texinfo_documents = [
 
 
 def setup(app):
-    app.add_stylesheet("https://unpkg.com/leaflet@1.4.0/dist/leaflet.css")
-    app.add_javascript("https://unpkg.com/leaflet@1.4.0/dist/leaflet.js")
-    app.add_javascript("https://unpkg.com/kepler.gl@0.2.2/umd/keplergl.min.js")
+    app.add_stylesheet("https://unpkg.com/leaflet/dist/leaflet.css")
+    app.add_javascript("https://unpkg.com/leaflet/dist/leaflet.js")
+    app.add_javascript("https://unpkg.com/kepler.gl/umd/keplergl.min.js")
     app.add_javascript(
         "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
     )
     app.add_javascript(
-        "https://unpkg.com/@jupyter-widgets/html-manager@0.15.0"
-        "/dist/embed-amd.js"
+        "https://unpkg.com/@jupyter-widgets/html-manager/dist/embed-amd.js"
     )
     app.add_stylesheet("main_stylesheet.css")
