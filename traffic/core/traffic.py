@@ -203,6 +203,14 @@ class Traffic(GeographyMixin):
                 flight for flight in self.iterate(by=index)
             )
 
+        if isinstance(index, slice):
+            indices = list(range(index.stop)[index])
+            return self.__class__.from_flights(
+                flight
+                for i, flight in enumerate(self.iterate())
+                if i in indices
+            )
+
         if not isinstance(index, str):  # List[str], Set[str], Iterable[str]
             logging.debug("Selecting flights from a list of identifiers")
             subset = repr(list(index))
