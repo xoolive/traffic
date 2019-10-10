@@ -469,6 +469,10 @@ class Traffic(GeographyMixin):
     def cumulative_distance(self, compute_gs: bool = False, **kwargs):
         ...
 
+    @lazy_evaluation()
+    def compute_wind(self):
+        ...
+
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
