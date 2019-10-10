@@ -985,18 +985,20 @@ class Flight(GeographyMixin, ShapelyMixin):
         if isinstance(features, str):
             features = [features]
 
+        reset = self.reset_index(drop=True)
+
         result_dict = dict()
         for feature in features:
-            if feature not in self.data.columns:
+            if feature not in reset.data.columns:
                 continue
-            series = self.data[feature]
+            series = reset.data[feature]
             idx = ~series.isnull()
             result_dict[f"{feature}_unwrapped"] = pd.Series(
                 np.degrees(np.unwrap(np.radians(series.loc[idx]))),
                 index=series.loc[idx].index,
             )
 
-        return self.assign(**result_dict)
+        return reset.assign(**result_dict)
 
     def compute_wind(self) -> "Flight":
         """Computes the wind triangle for each timestamp.
@@ -1011,12 +1013,100 @@ class Flight(GeographyMixin, ShapelyMixin):
             find a way to enrich your flight with such features. Note that this
             data is not necessarily available depending on the location.
         """
-        df = self.data
+
+        if any(w not in self.data.columns for w in ["heading", "TAS"]):
+            raise RuntimeError(
+                "No wind data in trajectory. Consider Flight.query_ehs()"
+            )
+
         return self.assign(
-            wind_u=df.groundspeed * np.sin(np.radians(df.track))
-            - df.TAS * np.sin(np.radians(df.heading)),
-            wind_v=df.groundspeed * np.cos(np.radians(df.track))
-            - df.TAS * np.cos(np.radians(df.heading)),
+            wind_u=self.data.groundspeed * np.sin(np.radians(self.data.track))
+            - self.data.TAS * np.sin(np.radians(self.data.heading)),
+            wind_v=self.data.groundspeed * np.cos(np.radians(self.data.track))
+            - self.data.TAS * np.cos(np.radians(self.data.heading)),
+        )
+
+    def plot_wind(
+        self,
+        ax: GeoAxesSubplot,
+        resolution: Union[int, str, Dict[str, float], None] = "5T",
+        **kwargs,
+    ) -> List[Artist]:  # coverage: ignore
+        """Plots the wind field seen by the aircraft on a Matplotlib axis.
+
+        The Flight supports Cartopy axis as well with automatic projection. If
+        no projection is provided, a default `PlateCarree
+        <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree>`_
+        is applied.
+
+        The `resolution` argument may be:
+
+            - None for a raw plot;
+            - an integer or a string to pass to a .resample() method
+              as a preprocessing before plotting;
+            - or a dictionary of dict(latitude=4, longitude=4) if you
+              want a grid with a resolution of 4 points per latitude and
+              longitude degree.
+
+        Example usage:
+
+        >>> from traffic.drawing import Mercator
+        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
+        >>> (
+        ...     flight
+        ...     .resample("1s")
+        ...     .query('altitude > 10000')
+        ...     .compute_wind()
+        ...     .plot_wind(ax, alpha=.5)
+        ... )
+
+        """
+
+        if "projection" in ax.__dict__ and "transform" not in kwargs:
+            kwargs["transform"] = PlateCarree()
+
+        if any(w not in self.data.columns for w in ["wind_u", "wind_v"]):
+            raise RuntimeError(
+                "No wind data in trajectory. Consider Flight.compute_wind()"
+            )
+
+        data = self.data
+
+        if resolution is not None:
+            filtered = (
+                self.filter(roll=17)
+                .query("roll.abs() < .5")
+                .filter(wind_u=17, wind_v=17)
+            )
+
+            if isinstance(resolution, (int, str)):
+                data = filtered.resample(resolution).data
+
+            if isinstance(resolution, dict):
+                r_lat = resolution.get("latitude", None)
+                r_lon = resolution.get("longitude", None)
+
+                if r_lat is not None and r_lon is not None:
+                    data = (
+                        filtered.assign(
+                            latitude=lambda x: (
+                                (r_lat * x.latitude).round() / r_lat
+                            ),
+                            longitude=lambda x: (
+                                (r_lon * x.longitude).round() / r_lon
+                            ),
+                        )
+                        .groupby(["latitude", "longitude"])
+                        .agg(dict(wind_u="mean", wind_v="mean"))
+                        .reset_index()
+                    )
+
+        return ax.barbs(
+            data.longitude.values,
+            data.latitude.values,
+            data.wind_u.values,
+            data.wind_v.values,
+            **kwargs,
         )
 
     def closest_point(self, points: Union[List[PointMixin], PointMixin]):
