@@ -225,6 +225,13 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.merge(*args, **kwargs))
 
+    def reset_index(self: T, *args, **kwargs) -> T:
+        """
+        Applies the Pandas ``reset_index()`` method to the underlying pandas
+        DataFrame and get the result back in the same structure.
+        """
+        return self.__class__(self.data.reset_index(*args, **kwargs))
+
 
 class ShapelyMixin(object):
 
