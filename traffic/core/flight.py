@@ -1042,16 +1042,17 @@ class Flight(GeographyMixin, ShapelyMixin):
         The `resolution` argument may be:
 
             - None for a raw plot;
-            - an integer or a string to pass to a .resample() method
-              as a preprocessing before plotting;
-            - or a dictionary of dict(latitude=4, longitude=4) if you
+            - an integer or a string to pass to a `Flight.resample()
+              <#traffic.core.Flight.resample>`__ method as a preprocessing
+              before plotting;
+            - or a dictionary, e.g dict(latitude=4, longitude=4), if you
               want a grid with a resolution of 4 points per latitude and
               longitude degree.
 
         Example usage:
 
         >>> from traffic.drawing import Mercator
-        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
+        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator()))
         >>> (
         ...     flight
         ...     .resample("1s")
