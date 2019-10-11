@@ -12,6 +12,7 @@ import pandas as pd
 import pyproj
 from cartopy import crs
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+from matplotlib.artist import Artist
 from shapely.geometry import base
 
 from ..algorithms.clustering import Clustering, centroid
@@ -550,6 +551,14 @@ class Traffic(GeographyMixin):
     @lru_cache()
     def aircraft(self) -> Set[str]:
         """Return all the different icao24 aircraft ids in the DataFrame"""
+        logging.warning("Use .icao24s", DeprecationWarning)
+        return set(self.data.icao24)
+
+    # https://github.com/python/mypy/issues/1362
+    @property  # type: ignore
+    @lru_cache()
+    def icao24s(self) -> Set[str]:
+        """Return all the different icao24 aircraft ids in the DataFrame"""
         return set(self.data.icao24)
 
     # https://github.com/python/mypy/issues/1362
@@ -625,6 +634,88 @@ class Traffic(GeographyMixin):
         for i, flight in enumerate(self):
             if nb_flights is None or i < nb_flights:
                 flight.plot(ax, **kwargs)
+
+    def plot_wind(
+        self,
+        ax: GeoAxesSubplot,
+        resolution: Union[Dict[str, float], None] = dict(
+            latitude=1, longitude=1
+        ),
+        **kwargs,
+    ) -> List[Artist]:  # coverage: ignore
+        """Plots the wind field seen by the aircraft on a Matplotlib axis.
+
+        The Flight supports Cartopy axis as well with automatic projection. If
+        no projection is provided, a default `PlateCarree
+        <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree>`_
+        is applied.
+
+        The `resolution` argument may be:
+
+            - None for a raw plot;
+            - or a dictionary, e.g dict(latitude=4, longitude=4), if you
+              want a grid with a resolution of 4 points per latitude and
+              longitude degree.
+
+        Example usage:
+
+        >>> from traffic.drawing import Mercator
+        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator()))
+        >>> (
+        ...     traffic
+        ...     .resample("1s")
+        ...     .query('altitude > 10000')
+        ...     .compute_wind()
+        ...     .eval()
+        ...     .plot_wind(ax, alpha=.5)
+        ... )
+
+        """
+
+        if "projection" in ax.__dict__ and "transform" not in kwargs:
+            kwargs["transform"] = crs.PlateCarree()
+
+        if any(w not in self.data.columns for w in ["wind_u", "wind_v"]):
+            raise RuntimeError(
+                "No wind data in trajectory. Consider Traffic.compute_wind()"
+            )
+
+        data = self.data
+
+        if resolution is not None:
+            filtered = (
+                self.iterate_lazy()
+                .filter(roll=17)
+                .query("roll.abs() < .5")
+                .filter(wind_u=17, wind_v=17)
+                .eval()
+            )
+
+            r_lat = resolution.get("latitude", None)
+            r_lon = resolution.get("longitude", None)
+
+            if r_lat is not None and r_lon is not None:
+                data = (
+                    filtered.assign(
+                        latitude=lambda x: (
+                            (r_lat * x.latitude).round() / r_lat
+                        ),
+                        longitude=lambda x: (
+                            (r_lon * x.longitude).round() / r_lon
+                        ),
+                    )
+                    .groupby(["latitude", "longitude"])
+                    .agg(dict(wind_u="mean", wind_v="mean"))
+                    .reset_index()
+                )
+
+        return ax.barbs(
+            data.longitude.values,
+            data.latitude.values,
+            data.wind_u.values,
+            data.wind_v.values,
+            **kwargs,
+        )
 
     # --- Real work ---
 
