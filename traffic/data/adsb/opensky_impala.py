@@ -110,7 +110,7 @@ class Impala(object):
                 # otherwise pandas would parse 1234e5 as 123400000.0
                 df = pd.read_csv(s, dtype={"icao24": str, "callsign": str})
                 if df.shape[0] > 0:
-                    return df
+                    return df.drop_duplicates()
 
         error_msg: Optional[str] = None
         with cachename.open("r") as fh:
