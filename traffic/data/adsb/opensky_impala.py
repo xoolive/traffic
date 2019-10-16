@@ -9,6 +9,7 @@ from typing import Callable, Iterable, Optional, Tuple, Union
 import pandas as pd
 import paramiko
 from shapely.geometry.base import BaseGeometry
+
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
@@ -323,6 +324,9 @@ class Impala(object):
         if isinstance(serials, Iterable):
             other_tables += ", state_vectors_data4.serials s "
             other_params += "and s.ITEM in {} ".format(tuple(serials))
+        elif isinstance(serials, int):
+            other_tables += ", state_vectors_data4.serials s "
+            other_params += "and s.ITEM = {} ".format(serials)
 
         if isinstance(icao24, str):
             other_params += "and icao24='{}' ".format(icao24)
@@ -443,14 +447,15 @@ class Impala(object):
         """
 
         _request = (
-            "select {columns} from rollcall_replies_data4 r {other_tables} "
+            "select {columns} from rollcall_replies_data4 {other_tables} "
             "where hour>={before_hour} and hour<{after_hour} "
-            "and r.mintime>={before_time} and r.mintime<{after_time} "
+            "and rollcall_replies_data4.mintime>={before_time} and "
+            "rollcall_replies_data4.mintime<{after_time} "
             "{other_params}"
         )
 
         columns = (
-            "r.mintime, r.maxtime, "
+            "rollcall_replies_data4.mintime, rollcall_replies_data4.maxtime, "
             "rawmsg, msgcount, icao24, message, altitude, identity, hour"
         )
 

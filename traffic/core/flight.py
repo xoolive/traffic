@@ -17,6 +17,7 @@ from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 from pandas.core.internals import Block, DatetimeTZBlock
 from shapely.geometry import LineString, base
+
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
@@ -1397,7 +1398,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         self,
         data: Optional[pd.DataFrame] = None,
         failure_mode: str = "warning",
-        progressbar: Optional[Callable[[Iterable], Iterable]] = None,
+        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
     ) -> "Flight":
         """Extends data with extra columns from EHS messages.
 
@@ -1477,13 +1478,17 @@ class Flight(GeographyMixin, ShapelyMixin):
         # who cares about default lat0, lon0 with EHS
         decoder = ModeS_Decoder((0, 0))
 
-        if progressbar is None:
+        if progressbar is True:
             progressbar = lambda x: tqdm(  # noqa: E731
                 x,
                 total=referenced_df.shape[0],
                 desc=f"{identifier}:",
                 leave=False,
             )
+        elif progressbar is False:
+            progressbar = lambda x: x  # noqa: E731
+
+        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
 
         if isinstance(self.origin, str):
             from ..data import airports
