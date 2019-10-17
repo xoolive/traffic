@@ -3,6 +3,7 @@
 import functools
 import inspect
 import logging
+import traceback
 import types
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union,
@@ -18,6 +19,19 @@ if TYPE_CHECKING:
     from .traffic import Traffic  # noqa: F401
 
 # fmt: on
+
+
+class FaultCatcher:
+    flag: bool = False
+    flight: Optional[Flight] = None
+
+    def __enter__(self):
+        FaultCatcher.flag = True
+        FaultCatcher.flight = None
+
+    def __exit__(self, exc_type, exc_value, tb):
+        FaultCatcher.flag = False
+        traceback.format_tb(tb)
 
 
 class LazyLambda:
@@ -50,7 +64,7 @@ class LazyLambda:
 
 
 def apply(
-    stacked_ops: List[LazyLambda], idx: int, flight: Flight
+    stacked_ops: List[LazyLambda], idx: int, flight: Optional[Flight]
 ) -> Optional["Flight"]:
     """Recursively applies all operations on each Flight.
 
@@ -61,7 +75,7 @@ def apply(
     """
     return functools.reduce(
         (
-            lambda next_step, fun: fun(idx, next_step)  # type: ignore
+            lambda next_step, fun: fun(idx, next_step)
             if next_step is not None
             else None
         ),
@@ -140,7 +154,7 @@ class LazyTraffic:
 
         """
 
-        if max_workers < 2:
+        if max_workers < 2 or FaultCatcher.flag is True:
             iterator = self.wrapped_t.iterate(**self.iterate_kw)
             if desc is not None or len(self.tqdm_kw) > 0:
                 tqdm_kw = {
@@ -148,10 +162,21 @@ class LazyTraffic:
                     **self.tqdm_kw,
                 }
                 iterator = tqdm(iterator, **tqdm_kw)
-            cumul = list(
-                apply(self.stacked_ops, idx, flight)
-                for idx, flight in enumerate(iterator)
-            )
+
+            if FaultCatcher.flag is True:
+                try:
+                    cumul = list()
+                    for idx, flight in enumerate(iterator):
+                        cumul.append(apply(self.stacked_ops, idx, flight))
+                except Exception as e:
+                    FaultCatcher.flight = flight
+                    raise e
+
+            else:
+                cumul = list(
+                    apply(self.stacked_ops, idx, flight)
+                    for idx, flight in enumerate(iterator)
+                )
         else:
             cumul = []
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
