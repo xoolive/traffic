@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 from pathlib import Path
 from typing import (Any, Dict, Iterable, Iterator, List, Optional, TextIO,
-                    Tuple, Union, cast)
+                    Tuple, Union)
 
 import pandas as pd
 import pyModeS as pms
@@ -533,7 +533,7 @@ class Decoder:
                         datetime.fromtimestamp(
                             float(line.strip().split(",")[0]), timezone.utc
                         ),
-                        cast(str, line.strip().split(",")[1][18:]),
+                        line.strip().split(",")[1][18:],
                     )
                     for line in all_lines
                 )
@@ -551,7 +551,7 @@ class Decoder:
 
         decoder = cls(reference)
 
-        def next_msg(s: Any) -> Iterator[str]:
+        def next_msg(s: Any) -> Iterator[List[int]]:
             while True:
                 if decoder.thread is None or decoder.thread.to_be_stopped():
                     s.close()

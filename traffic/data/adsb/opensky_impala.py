@@ -1,3 +1,5 @@
+# fmt: off
+
 import hashlib
 import logging
 import re
@@ -9,11 +11,12 @@ from typing import Callable, Iterable, Optional, Tuple, Union
 import pandas as pd
 import paramiko
 from shapely.geometry.base import BaseGeometry
-
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
 from ...core.time import split_times, timelike, to_datetime
+
+# fmt: on
 
 
 class ImpalaError(Exception):
@@ -268,10 +271,10 @@ class Impala(object):
         start: timelike,
         stop: Optional[timelike] = None,
         *args,  # more reasonable to be explicit about arguments
-        date_delta: timedelta = timedelta(hours=1),
+        date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         callsign: Union[None, str, Iterable[str]] = None,
         icao24: Union[None, str, Iterable[str]] = None,
-        serials: Union[None, str, Iterable[str]] = None,
+        serials: Union[None, int, Iterable[int]] = None,
         bounds: Union[
             BaseGeometry, Tuple[float, float, float, float], None
         ] = None,
@@ -415,7 +418,7 @@ class Impala(object):
         start: timelike,
         stop: Optional[timelike] = None,
         *args,  # more reasonable to be explicit about arguments
-        date_delta: timedelta = timedelta(hours=1),
+        date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         icao24: Union[None, str, Iterable[str]] = None,
         serials: Union[None, int, Iterable[int]] = None,
         other_tables: str = "",
