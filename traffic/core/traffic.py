@@ -3,7 +3,6 @@
 import logging
 from datetime import timedelta
 from functools import lru_cache
-from operator import attrgetter
 from pathlib import Path
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
                     List, Optional, Set, Type, TypeVar, Union, overload)
@@ -18,7 +17,7 @@ from shapely.geometry import base
 from ..algorithms.clustering import Clustering, centroid
 from ..algorithms.cpa import closest_point_of_approach
 from ..core.time import time_or_delta, timelike, to_datetime
-from .flight import Flight
+from .flight import Flight, attrgetter_duration
 from .lazy import LazyTraffic, lazy_evaluation
 from .mixins import GeographyMixin
 from .sv import StateVectors
@@ -285,7 +284,9 @@ class Traffic(GeographyMixin):
                     )
 
     def iterate_lazy(
-        self, iterate_kw: Dict[str, Any] = {}, tqdm_kw: Dict[str, Any] = {}
+        self,
+        iterate_kw: Optional[Dict[str, Any]] = None,
+        tqdm_kw: Optional[Dict[str, Any]] = None,
     ) -> LazyTraffic:
         """
         Triggers a lazy iteration on the Traffic structure.
@@ -308,6 +309,10 @@ class Traffic(GeographyMixin):
         You may also select parameters to pass to a tentative tqdm
         progressbar.
         """
+        if iterate_kw is None:
+            iterate_kw = {}
+        if tqdm_kw is None:
+            tqdm_kw = {}
         return LazyTraffic(self, [], iterate_kw=iterate_kw, tqdm_kw=tqdm_kw)
 
     def __iter__(self) -> Iterator[Flight]:
@@ -372,7 +377,7 @@ class Traffic(GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def unwrap(self, features: Union[str, List[str]] = ["track", "heading"]):
+    def unwrap(self, features: Union[None, str, List[str]] = None):
         ...
 
     @lazy_evaluation(idx_name="idx")
@@ -456,7 +461,7 @@ class Traffic(GeographyMixin):
         self,
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
-        key: Callable[[Optional["Flight"]], Any] = attrgetter("duration"),
+        key: Callable[[Optional["Flight"]], Any] = attrgetter_duration,
     ):
         ...
 
@@ -635,12 +640,40 @@ class Traffic(GeographyMixin):
             if nb_flights is None or i < nb_flights:
                 flight.plot(ax, **kwargs)
 
+    def windfield(
+        self, resolution: Union[Dict[str, float], None] = None
+    ) -> pd.DataFrame:
+
+        if any(w not in self.data.columns for w in ["wind_u", "wind_v"]):
+            raise RuntimeError(
+                "No wind data in trajectory. Consider Traffic.compute_wind()"
+            )
+
+        if resolution is None:
+            resolution = dict(latitude=1, longitude=1)
+
+        r_lat = resolution.get("latitude", None)
+        r_lon = resolution.get("longitude", None)
+
+        if r_lat is not None and r_lon is not None:
+            data = (
+                self.assign(
+                    latitude=lambda x: ((r_lat * x.latitude).round() / r_lat),
+                    longitude=lambda x: ((r_lon * x.longitude).round() / r_lon),
+                )
+                .groupby(["latitude", "longitude"])
+                .agg(dict(wind_u="mean", wind_v="mean", timestamp="count"))
+            )
+            return data
+
+        return data[["latitude", "longitude", "wind_u", "wind_v", "timestamp"]]
+
     def plot_wind(
         self,
         ax: GeoAxesSubplot,
-        resolution: Union[Dict[str, float], None] = dict(
-            latitude=1, longitude=1
-        ),
+        resolution: Union[Dict[str, float], None] = None,
+        threshold: int = 10,
+        filtered: bool = False,
         **kwargs,
     ) -> List[Artist]:  # coverage: ignore
         """Plots the wind field seen by the aircraft on a Matplotlib axis.
@@ -652,10 +685,10 @@ class Traffic(GeographyMixin):
 
         The `resolution` argument may be:
 
-            - None for a raw plot;
-            - or a dictionary, e.g dict(latitude=4, longitude=4), if you
+            - a dictionary, e.g dict(latitude=4, longitude=4), if you
               want a grid with a resolution of 4 points per latitude and
               longitude degree.
+            - None (default) for dict(latitude=1, longitude=1)
 
         Example usage:
 
@@ -680,40 +713,29 @@ class Traffic(GeographyMixin):
                 "No wind data in trajectory. Consider Traffic.compute_wind()"
             )
 
-        data = self.data
-
-        if resolution is not None:
-            filtered = (
+        data = (
+            (
                 self.iterate_lazy()
                 .filter(roll=17)
                 .query("roll.abs() < .5")
                 .filter(wind_u=17, wind_v=17)
-                .eval()
+                .eval(desc="")
             )
+            if filtered
+            else self
+        )
 
-            r_lat = resolution.get("latitude", None)
-            r_lon = resolution.get("longitude", None)
-
-            if r_lat is not None and r_lon is not None:
-                data = (
-                    filtered.assign(
-                        latitude=lambda x: (
-                            (r_lat * x.latitude).round() / r_lat
-                        ),
-                        longitude=lambda x: (
-                            (r_lon * x.longitude).round() / r_lon
-                        ),
-                    )
-                    .groupby(["latitude", "longitude"])
-                    .agg(dict(wind_u="mean", wind_v="mean"))
-                    .reset_index()
-                )
+        windfield = (
+            data.windfield(resolution)
+            .query(f"timestamp > {threshold}")
+            .reset_index()
+        )
 
         return ax.barbs(
-            data.longitude.values,
-            data.latitude.values,
-            data.wind_u.values,
-            data.wind_v.values,
+            windfield.longitude.values,
+            windfield.latitude.values,
+            windfield.wind_u.values,
+            windfield.wind_v.values,
             **kwargs,
         )
 
@@ -817,7 +839,7 @@ class Traffic(GeographyMixin):
         self,
         clustering: "ClusteringProtocol",
         nb_samples: int,
-        features: List[str] = ["x", "y"],
+        features: Optional[List[str]] = None,
         *args,
         projection: Union[None, crs.Projection, pyproj.Proj] = None,
         transform: Optional["TransformerProtocol"] = None,
@@ -872,6 +894,9 @@ class Traffic(GeographyMixin):
 
         """
 
+        if features is None:
+            features = ["x", "y"]
+
         return Clustering(
             self,
             clustering,
@@ -884,7 +909,7 @@ class Traffic(GeographyMixin):
     def centroid(
         self,
         nb_samples: int,
-        features: List[str] = ["x", "y"],
+        features: Optional[List[str]] = None,
         projection: Union[None, crs.Projection, pyproj.Proj] = None,
         transformer: Optional["TransformerProtocol"] = None,
         max_workers: int = 1,
@@ -902,6 +927,9 @@ class Traffic(GeographyMixin):
         <https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html#scipy.spatial.distance.pdist>`_
 
         """
+
+        if features is None:
+            features = ["x", "y"]
 
         return centroid(
             self,

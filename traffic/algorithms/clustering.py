@@ -27,7 +27,7 @@ class ClusteringProtocol(Protocol):
 def prepare_features(
     traffic: "Traffic",
     nb_samples: int,
-    features: List[str] = ["x", "y"],
+    features: List[str],
     projection: Union[None, crs.Projection, pyproj.Proj] = None,
     max_workers: int = 1,
 ) -> np.ndarray:
@@ -59,7 +59,7 @@ class Clustering:
         traffic: "Traffic",
         clustering: ClusteringProtocol,
         nb_samples: int,
-        features: List[str] = ["x", "y"],
+        features: List[str],
         *args,
         projection: Union[None, crs.Projection, pyproj.Proj] = None,
         transform: Optional[TransformerProtocol] = None,
@@ -148,7 +148,7 @@ class Clustering:
 def centroid(
     traffic: "Traffic",
     nb_samples: int,
-    features: List[str] = ["x", "y"],
+    features: List[str],
     projection: Union[None, crs.Projection, pyproj.Proj] = None,
     transform: Optional[TransformerProtocol] = None,
     max_workers: int = 1,

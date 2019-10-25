@@ -17,7 +17,6 @@ from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 from pandas.core.internals import Block, DatetimeTZBlock
 from shapely.geometry import LineString, base
-
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
@@ -55,6 +54,13 @@ def _split(
         yield from _split(data.iloc[diff.argmax() :], value, unit)  # noqa
     else:
         yield data
+
+
+# flake B008
+attrgetter_duration = attrgetter("duration")
+
+# flake B006
+default_angle_features = ["track", "heading"]
 
 
 class Position(PointMixin, pd.core.series.Series):
@@ -677,7 +683,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         self,
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
-        key: Callable[[Optional["Flight"]], Any] = attrgetter("duration"),
+        key: Callable[[Optional["Flight"]], Any] = attrgetter_duration,
     ) -> Optional["Flight"]:
         return max(
             self.split(value, unit),  # type: ignore
@@ -972,9 +978,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         else:
             return self.query("altitude == altitude")
 
-    def unwrap(
-        self, features: Union[str, List[str]] = ["track", "heading"]
-    ) -> "Flight":
+    def unwrap(self, features: Union[None, str, List[str]] = None) -> "Flight":
         """Unwraps angles in the DataFrame.
 
         All features representing angles may be unwrapped (through Numpy) to
@@ -983,6 +987,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         The method applies by default to features ``track`` and ``heading``.
         More or different features may be passed in parameter.
         """
+        if features is None:
+            features = default_angle_features
+
         if isinstance(features, str):
             features = [features]
 
@@ -1031,6 +1038,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         self,
         ax: GeoAxesSubplot,
         resolution: Union[int, str, Dict[str, float], None] = "5T",
+        filtered: bool = False,
         **kwargs,
     ) -> List[Artist]:  # coverage: ignore
         """Plots the wind field seen by the aircraft on a Matplotlib axis.
@@ -1074,15 +1082,17 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         data = self.data
 
-        if resolution is not None:
-            filtered = (
+        if filtered:
+            data = (
                 self.filter(roll=17)
                 .query("roll.abs() < .5")
                 .filter(wind_u=17, wind_v=17)
             )
 
+        if resolution is not None:
+
             if isinstance(resolution, (int, str)):
-                data = filtered.resample(resolution).data
+                data = data.resample(resolution).data
 
             if isinstance(resolution, dict):
                 r_lat = resolution.get("latitude", None)
@@ -1090,7 +1100,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
                 if r_lat is not None and r_lon is not None:
                     data = (
-                        filtered.assign(
+                        data.assign(
                             latitude=lambda x: (
                                 (r_lat * x.latitude).round() / r_lat
                             ),
