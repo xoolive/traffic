@@ -67,6 +67,7 @@ def __getattr__(name: str) -> Union[Flight, Traffic]:
 
 airbus_tree = cast(Flight, __getattr__("airbus_tree"))
 belevingsvlucht = cast(Flight, __getattr__("belevingsvlucht"))
+texas_longhorn = cast(Flight, __getattr__("texas_longhorn"))
 quickstart = cast(Traffic, __getattr__("quickstart"))
 switzerland = cast(Traffic, __getattr__("switzerland"))
 
