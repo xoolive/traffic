@@ -167,6 +167,40 @@ def test_geometry() -> None:
     assert clip_mm.duration < flight.duration
 
 
+def test_clip_point() -> None:
+    records = [
+        {
+            "timestamp": pd.Timestamp("2019-07-02 15:02:30+0000", tz="UTC"),
+            "longitude": -1.3508333333333333,
+            "latitude": 46.5,
+            "altitude": 36000,
+            "callsign": "WZZ1066",
+            "flight_id": "231619151",
+            "icao24": "471f52",
+        },
+        {
+            "timestamp": pd.Timestamp("2019-07-02 15:04:42+0000", tz="UTC"),
+            "longitude": -1.00055555,
+            "latitude": 46.664444450000005,
+            "altitude": 36000,
+            "callsign": "WZZ1066",
+            "flight_id": "231619151",
+            "icao24": "471f52",
+        },
+        {
+            "timestamp": pd.Timestamp("2019-07-02 15:15:52+0000", tz="UTC"),
+            "longitude": 0.5097222166666667,
+            "latitude": 47.71388888333333,
+            "altitude": 36000,
+            "callsign": "WZZ1066",
+            "flight_id": "231619151",
+            "icao24": "471f52",
+        },
+    ]
+    flight = Flight(pd.DataFrame.from_records(records))
+    assert flight.clip(eurofirs["LFBB"]) is None
+
+
 def test_landing_airport() -> None:
     # TODO refactor/rethink the returned type
     flight: Flight = get_sample(featured, "belevingsvlucht")

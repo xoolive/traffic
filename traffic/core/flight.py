@@ -16,7 +16,7 @@ from cartopy.mpl.geoaxes import GeoAxesSubplot
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 from pandas.core.internals import Block, DatetimeTZBlock
-from shapely.geometry import LineString, base
+from shapely.geometry import LineString, Point, base
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
@@ -1363,6 +1363,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         intersection = linestring.intersection(shape)
 
         if intersection.is_empty:
+            return None
+
+        if isinstance(intersection, Point):
             return None
 
         if isinstance(intersection, LineString):
