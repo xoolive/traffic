@@ -32,8 +32,6 @@ where it should.
         traffic
         # download and decode EHS messages (DF 20/21)
         .query_ehs()
-        # fix for a weird behaviour with latest version of pandas
-        .drop(columns=["last_position"])
         # resample/interpolate one sample per second
         .resample("1s")
         # median filters

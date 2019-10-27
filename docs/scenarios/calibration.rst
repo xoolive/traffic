@@ -222,6 +222,24 @@ bearing (radials) to the VOR.
        )
    )
 
+We can write a simple .query() followed by a .split() method to select all
+segments with a constant bearing with respect to the selected VOR.
+
+.. code:: python
+
+    for segment in ajaccio.query('bearing_diff < .01').split('1T'):
+        if segment.longer_than('5 minutes'):
+            print(segment.duration)
+
+    # 0 days 00:05:05
+    # 0 days 00:05:10
+    # 0 days 00:17:20
+    # 0 days 00:22:35
+    # 0 days 00:05:20
+    # 0 days 00:09:40
+    # 0 days 00:08:15
+
+
 We have all we need to enhance the interesting parts of the trajectory now:
 
 .. code:: python

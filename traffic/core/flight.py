@@ -1174,6 +1174,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         return candidate
 
     # -- Distances --
+
     def bearing(self, other: PointMixin) -> "Flight":
         # temporary, should implement full stuff
         size = len(self)
@@ -1184,6 +1185,7 @@ class Flight(GeographyMixin, ShapelyMixin):
                 other.latitude * np.ones(size),
                 other.longitude * np.ones(size),
             )
+            % 360
         )
 
     @overload
