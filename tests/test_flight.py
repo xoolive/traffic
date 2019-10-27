@@ -8,9 +8,9 @@ import pytest
 
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
-from traffic.data import eurofirs, runways
-from traffic.data.samples import (airbus_tree, belevingsvlucht, featured,
-                                  get_sample)
+from traffic.data import eurofirs, navaids, runways
+from traffic.data.samples import (airbus_tree, belevingsvlucht, calibration,
+                                  featured, get_sample)
 
 # fmt: on
 
@@ -119,6 +119,18 @@ def test_time_methods() -> None:
     point = flight.at_ratio(1)
     assert point is not None
     assert point.timestamp == flight.stop
+
+
+def test_bearing() -> None:
+    ajaccio: Flight = get_sample(calibration, "ajaccio")
+
+    vor = navaids.extent(ajaccio)["AJO"]
+    assert vor is not None
+    gen = ajaccio.bearing(vor).query("bearing.diff().abs() < .01").split("1T")
+    assert (
+        sum(1 for chunk in gen if chunk.duration > pd.Timedelta("5 minutes"))
+        == 7
+    )
 
 
 def test_geometry() -> None:

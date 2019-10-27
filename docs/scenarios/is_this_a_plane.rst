@@ -6,12 +6,10 @@ Is this a plane?
    :alt: View from my seat
    :align: center
 
-On my way to the `Opensky Network workshop <https://workshop.opensky-network.org/>`__,
+On my way to the `Opensky Network workshop 2018<https://workshop.opensky-network.org/>`__,
 I could catch a picture of this aircraft which looked really close.
 I wondered how close it came to us considering that the usual separation rule
-between aircraft is of 5 nautical miles (horizontal) and 1000ft (vertical).  
-Since I presented the `traffic <https://github.com/xoolive/traffic>`__ library at the
-workshop, so investigating the situation could be a good way to promote the library.
+between aircraft is of 5 nautical miles (horizontal) and 1000ft (vertical).
 
 First let's get information about the flight I was on.
 

@@ -162,10 +162,7 @@ radials. There must be a VOR around, we can search in the navaid database:
    from traffic.data.samples.calibration import ajaccio
    from traffic.data import navaids
 
-   west, east, south, north = ajaccio.extent()
-   navaids.df.query(
-       f"{west} < lon < {east} and {south} < lat < {north} and type=='VOR'"
-   )
+   navaids.extent(ajaccio).query('type == "VOR"')
 
 .. raw:: html
 
@@ -214,30 +211,14 @@ bearing (radials) to the VOR.
 
 .. code:: python
 
-   import numpy as np
-   from traffic.core import geodesy as geo
-
-   # This is safer than using the bracket notation
-   # (many VORs may have the same three letter identifier)
-   vor = navaids.search("AJACCIO VOR-DME")[0]
+   vor = navaids.extent(ajaccio)['AJO']
 
    ajaccio = (
        ajaccio.distance(vor)  # add a distance column (in nm) w.r.t the VOR
+       .bearing(vor)  # add a bearing column w.r.t the VOR
        .assign(
-           # this mimics the implementation of Flight.distance for bearing
-           bearing=lambda df: geo.bearing(
-               df.latitude.values,
-               df.longitude.values,
-               vor.lat * np.ones(df.shape[0]),
-               vor.lon * np.ones(df.shape[0]),
-           )
-       )
-       .assign(
-           # we are looking for
-           #    - large circle (distance_diff) or
-           #    - long radials (bearing_diff)
-           distance_diff=lambda df: df.distance.diff().abs(),
-           bearing_diff=lambda df: df.bearing.diff().abs(),
+           distance_diff=lambda df: df.distance.diff().abs(),  # large circles
+           bearing_diff=lambda df: df.bearing.diff().abs(),  # long radials
        )
    )
 
