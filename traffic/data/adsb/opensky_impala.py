@@ -6,7 +6,7 @@ import re
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Callable, Iterable, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 import pandas as pd
 import paramiko
@@ -14,7 +14,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
-from ...core.time import split_times, timelike, to_datetime
+from ...core.time import round_time, split_times, timelike, to_datetime
 
 # fmt: on
 
@@ -48,7 +48,7 @@ class Impala(object):
 
     basic_request = (
         "select {columns} from state_vectors_data4 {other_tables} "
-        "where hour>={before_hour} and hour<{after_hour} "
+        "{where_clause} hour>={before_hour} and hour<{after_hour} "
         "and time>={before_time} and time<{after_time} "
         "{other_params}"
     )
@@ -153,16 +153,21 @@ class Impala(object):
             if "vertical_rate" in df.columns:
                 df.vertical_rate = df.vertical_rate / 0.3048 * 60
 
-        df.timestamp = pd.to_datetime(df.timestamp * 1e9).dt.tz_localize("utc")
-
-        if "last_position" in df.columns:
-            df = df.query("last_position == last_position").assign(
-                last_position=pd.to_datetime(
-                    df.last_position * 1e9
+        time_dict: Dict[str, pd.Series] = dict()
+        for colname in [
+            "last_position",
+            "firstseen",
+            "lastseen",
+            "timestamp",
+            "day",
+            "hour",
+        ]:
+            if colname in df.columns:
+                time_dict[colname] = pd.to_datetime(
+                    df[colname] * 1e9
                 ).dt.tz_localize("utc")
-            )
 
-        return df.sort_values("timestamp")
+        return df.assign(**time_dict).sort_values("timestamp")
 
     def _connect(self) -> None:  # coverage: ignore
         if self.username == "" or self.password == "":
@@ -278,10 +283,14 @@ class Impala(object):
         bounds: Union[
             BaseGeometry, Tuple[float, float, float, float], None
         ] = None,
+        arrival_airport: Optional[str] = None,
+        departure_airport: Optional[str] = None,
+        arrival_or_departure_airport: Optional[str] = None,
         cached: bool = True,
         count: bool = False,
         other_tables: str = "",
         other_params: str = "",
+        limit: Optional[int] = None,
         progressbar: Callable[[Iterable], Iterable] = iter,
     ) -> Optional[Union[Traffic, Flight]]:
 
@@ -308,6 +317,7 @@ class Impala(object):
             cached (default: True)
             count (boolean): add a column stating how many sensors received each
             line (default: False)
+            limit (optional, int): maximum number of records (debug)
 
         Returns:
             a Traffic structure wrapping the dataframe
@@ -320,6 +330,9 @@ class Impala(object):
             stop = to_datetime(stop)
         else:
             stop = start + timedelta(days=1)
+
+        # default obvious parameter
+        where_clause = "where"
 
         if progressbar == iter and stop - start > timedelta(hours=1):
             progressbar = tqdm
@@ -357,16 +370,100 @@ class Impala(object):
             other_params += "and lon>={} and lon<={} ".format(west, east)
             other_params += "and lat>={} and lat<={} ".format(south, north)
 
+        airports_params = [
+            arrival_or_departure_airport,
+            departure_airport,
+            arrival_airport,
+        ]
+        count_airports_params = sum(x is not None for x in airports_params)
+        day_min = round_time(start, how="before", by=timedelta(days=1))
+        day_max = round_time(stop, how="after", by=timedelta(days=1))
+
+        if count_airports_params > 1:
+            raise RuntimeWarning(
+                "Only one of arrival_airport, departure_airport or "
+                "arrival_or_departure_airport may be set"
+            )
+        elif count_airports_params == 1:
+            where_clause = (
+                "on sv.icao24 = est.icao24 and "
+                "sv.callsign = est.callsign and "
+                "est.firstseen <= sv.time and "
+                "sv.time <= est.lastseen "
+                "where"
+            )
+
+        if arrival_airport is not None:
+            other_tables += (
+                "as sv join (select icao24, firstseen, estdepartureairport, "
+                "lastseen, estarrivalairport, callsign, day "
+                "from flights_data4 "
+                "where estarrivalairport ='{arrival_airport}' "
+                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
+            ).format(
+                arrival_airport=arrival_airport,
+                day_min=day_min.timestamp(),
+                day_max=day_max.timestamp(),
+            )
+
+        elif departure_airport is not None:
+            other_tables += (
+                "as sv join (select icao24, firstseen, estdepartureairport, "
+                "lastseen, estarrivalairport, callsign, day "
+                "from flights_data4 "
+                "where estdepartureairport ='{departure_airport}' "
+                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
+            ).format(
+                departure_airport=departure_airport,
+                day_min=day_min.timestamp(),
+                day_max=day_max.timestamp(),
+            )
+
+        elif arrival_or_departure_airport is not None:
+            other_tables += (
+                "as sv join (select icao24, firstseen, estdepartureairport, "
+                "lastseen, estarrivalairport, callsign, day "
+                "from flights_data4 "
+                "where (estdepartureairport ='{arrival_or_departure_airport}' "
+                "or estarrivalairport = '{arrival_or_departure_airport}') "
+                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
+            ).format(
+                arrival_or_departure_airport=arrival_or_departure_airport,
+                day_min=day_min.timestamp(),
+                day_max=day_max.timestamp(),
+            )
+
         cumul = []
         sequence = list(split_times(start, stop, date_delta))
         columns = ", ".join(self._impala_columns)
         parse_columns = ", ".join(self._impala_columns)
+
+        if count_airports_params == 1:
+            est_columns = [
+                "firstseen",
+                "estdepartureairport",
+                "lastseen",
+                "estarrivalairport",
+                "day",
+            ]
+            columns = (
+                ", ".join(f"sv.{field}" for field in self._impala_columns)
+                + ", "
+                + ", ".join(f"est.{field}" for field in est_columns)
+            )
+            parse_columns = ", ".join(
+                self._impala_columns
+                + ["firstseen", "origin", "lastseen", "destination", "day"]
+            )
 
         if count is True:
             other_params += "group by " + columns
             columns = "count(*) as count, " + columns
             parse_columns = "count, " + parse_columns
             other_tables += ", state_vectors_data4.serials s"
+
+        if limit is not None:
+            other_params += f"limit {limit}"
 
         for bt, at, bh, ah in progressbar(sequence):
 
@@ -383,6 +480,7 @@ class Impala(object):
                 after_hour=ah.timestamp(),
                 other_tables=other_tables,
                 other_params=other_params,
+                where_clause=where_clause,
             )
 
             df = self._impala(request, columns=parse_columns, cached=cached)
@@ -423,6 +521,7 @@ class Impala(object):
         serials: Union[None, int, Iterable[int]] = None,
         other_tables: str = "",
         other_params: str = "",
+        limit: Optional[int] = None,
         progressbar: Callable[[Iterable], Iterable] = iter,
         cached: bool = True,
     ) -> pd.DataFrame:
@@ -443,6 +542,7 @@ class Impala(object):
             sensors receiving the data. (default: empty)
             cached (boolean): whether to look first whether the request has been
             cached (default: True)
+            limit (optional, int): maximum number of records (debug)
 
         Returns:
             a pandas DataFrame
@@ -494,6 +594,9 @@ class Impala(object):
         sequence = list(split_times(start, stop, date_delta))
         cumul = []
 
+        if limit is not None:
+            other_params += f"limit {limit}"
+
         for bt, at, bh, ah in progressbar(sequence):
 
             logging.info(
@@ -519,7 +622,7 @@ class Impala(object):
             if df.hour.dtype == object:
                 df = df[df.hour != "hour"]
 
-            for column_name in ["mintime", "maxtime"]:
+            for column_name in ["time", "mintime", "maxtime"]:
                 df[column_name] = pd.to_datetime(
                     df[column_name].astype(float) * 1e9
                 ).dt.tz_localize("utc")
