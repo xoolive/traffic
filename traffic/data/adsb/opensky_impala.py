@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import re
+import time
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
@@ -210,6 +211,8 @@ class Impala(object):
             # bug fix for when we write a request with """ starting with \n
             request = request.replace("\n", " ")
             self.stdin.channel.send(request + ";\n")
+            # avoid messing lines in the cache file
+            time.sleep(0.1)
             total = ""
             while len(total) == 0 or total[-10:] != ":21000] > ":
                 b = self.stdout.channel.recv(256)
@@ -622,10 +625,11 @@ class Impala(object):
             if df.hour.dtype == object:
                 df = df[df.hour != "hour"]
 
-            for column_name in ["time", "mintime", "maxtime"]:
-                df[column_name] = pd.to_datetime(
-                    df[column_name].astype(float) * 1e9
-                ).dt.tz_localize("utc")
+            for column_name in ["mintime", "maxtime", "time", "hour"]:
+                if column_name in df.columns:
+                    df[column_name] = pd.to_datetime(
+                        df[column_name].astype(float) * 1e9
+                    ).dt.tz_localize("utc")
 
             df.icao24 = (
                 df.icao24.apply(int, base=16)
