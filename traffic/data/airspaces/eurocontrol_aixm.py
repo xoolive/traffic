@@ -56,14 +56,6 @@ def _re_match_ignorecase(x, y):
 
 class AIXMAirspaceParser(object):
 
-    ns = {
-        "adrext": "http://www.aixm.aero/schema/5.1/extensions/EUR/ADR",
-        "adrmsg": "http://www.eurocontrol.int/cfmu/b2b/ADRMessage",
-        "aixm": "http://www.aixm.aero/schema/5.1",
-        "gml": "http://www.opengis.net/gml/3.2",
-        "xlink": "http://www.w3.org/1999/xlink",
-    }
-
     aixm_path: Optional[Path] = None
     cache_dir: Optional[Path] = None
 
@@ -82,11 +74,17 @@ class AIXMAirspaceParser(object):
         self.all_points: Dict[str, Point] = {}
 
         assert self.aixm_path.is_dir()
+        self.ns: Dict[str, str] = dict()
 
         cache_file = self.cache_dir / "aixm.pkl"
         if cache_file.exists():
             with cache_file.open("rb") as fh:
-                self.full_dict, self.all_points, self.tree = pickle.load(fh)
+                elts = pickle.load(fh)
+                self.full_dict = elts[0]
+                self.all_points = elts[1]
+                self.tree = elts[2]
+                self.ns = elts[3]
+
                 self.initialized = True
                 return
 
@@ -98,11 +96,19 @@ class AIXMAirspaceParser(object):
             "StandardInstrumentArrival.BASELINE",
         ]:
 
-            if ~(self.aixm_path / filename).exists():
+            if not (self.aixm_path / filename).exists():
                 zippath = zipfile.ZipFile(
                     self.aixm_path.joinpath(f"{filename}.zip").as_posix()
                 )
                 zippath.extractall(self.aixm_path.as_posix())
+
+        # The versions for namespaces may be incremented and make everything
+        # fail just for that reason!
+        for _, (key, value) in ElementTree.iterparse(
+            (self.aixm_path / "Airspace.BASELINE").as_posix(),
+            events=["start-ns"],
+        ):
+            self.ns[key] = value
 
         self.tree = ElementTree.parse(
             (self.aixm_path / "Airspace.BASELINE").as_posix()
@@ -188,7 +194,9 @@ class AIXMAirspaceParser(object):
             )
 
         with cache_file.open("wb") as fh:
-            pickle.dump((self.full_dict, self.all_points, self.tree), fh)
+            pickle.dump(
+                (self.full_dict, self.all_points, self.tree, self.ns), fh
+            )
 
         self.initialized = True
 
@@ -334,8 +342,15 @@ class AIXMAirspaceParser(object):
 
                     polygon = self.make_polygon(ts)
                     type_ = ts.find("aixm:type", self.ns).text
+                    name_ = ts.find("aixm:name", self.ns)
                     if len(polygon) > 0:
-                        yield Airspace(designator.text, polygon, type_)
+                        airspace = Airspace(
+                            designator.text if name_ is None else name_.text,
+                            polygon,
+                            type_,
+                        )
+                        airspace.designator = designator.text
+                        yield airspace
                     else:
                         warnings.warn(
                             f"{designator.text} produces an empty airspace",
