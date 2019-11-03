@@ -48,10 +48,10 @@ def airspace_leaflet(airspace: "Airspace", **kwargs) -> Polygon:
     kwargs = {**dict(weight=3), **kwargs}
     coords: List[Any] = []
     if shape.geom_type == "Polygon":
-        coords = list((lat, lon) for (lon, lat) in shape.exterior.coords)
+        coords = list((lat, lon) for (lon, lat, *_) in shape.exterior.coords)
     else:
         coords = list(
-            list((lat, lon) for (lon, lat) in piece.exterior.coords)
+            list((lat, lon) for (lon, lat, *_) in piece.exterior.coords)
             for piece in shape
         )
 
