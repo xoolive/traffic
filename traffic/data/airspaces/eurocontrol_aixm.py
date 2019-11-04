@@ -79,14 +79,18 @@ class AIXMAirspaceParser(object):
         cache_file = self.cache_dir / "aixm.pkl"
         if cache_file.exists():
             with cache_file.open("rb") as fh:
-                elts = pickle.load(fh)
-                self.full_dict = elts[0]
-                self.all_points = elts[1]
-                self.tree = elts[2]
-                self.ns = elts[3]
+                try:
+                    elts = pickle.load(fh)
+                    self.full_dict = elts[0]
+                    self.all_points = elts[1]
+                    self.tree = elts[2]
+                    self.ns = elts[3]
 
-                self.initialized = True
-                return
+                    self.initialized = True
+                    return
+                except Exception:
+                    logging.warning("aixm files: rebuilding cache file")
+                    pass
 
         for filename in [
             "AirportHeliport.BASELINE",
