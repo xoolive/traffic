@@ -533,7 +533,7 @@ class Decoder:
                         datetime.fromtimestamp(
                             float(line.strip().split(",")[0]), timezone.utc
                         ),
-                        line.strip().split(",")[1][18:],
+                        line.strip().split(",")[1][18:].encode(),
                     )
                     for line in all_lines
                 )
@@ -599,7 +599,7 @@ class Decoder:
                 if dump1090 and i & 127 == 127:
                     decoder.redefine_reference(now)
 
-                decoder.process(now, msg[18:])
+                decoder.process(now, msg[18:].encode())
 
         decoder.thread = StoppableThread(target=decode)
         decoder.thread.start()
@@ -658,7 +658,7 @@ class Decoder:
                 sum(a[0] for a in pos) / n, sum(a[1] for a in pos) / n
             )
 
-    def process_msgs(self, msgs: Iterable[Tuple[datetime, str]]) -> None:
+    def process_msgs(self, msgs: Iterable[Tuple[datetime, bytes]]) -> None:
 
         for i, (time, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
             if i & 127 == 127:
@@ -668,7 +668,7 @@ class Decoder:
     def process(
         self,
         time: datetime,
-        msg: str,
+        msg: bytes,
         *args,
         spd: Optional[float] = None,
         trk: Optional[float] = None,
