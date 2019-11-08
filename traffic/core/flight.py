@@ -843,8 +843,10 @@ class Flight(GeographyMixin, ShapelyMixin):
             "TAS": 23,
             "Mach": 23,
             "groundspeed": 5,
-            "longitude": 15,  # maybe EKF is a better idea...
+            "longitude": 15,  # maybe EKF is a better idea... TODO
             "latitude": 15,
+            "compute_gs": 3,
+            "onground": 3,
             **kwargs,
         }
 
@@ -899,7 +901,12 @@ class Flight(GeographyMixin, ShapelyMixin):
             # Decision to accept/reject for all data points in the time series
             new_data.loc[df.sq_eps > df.sigma, feat] = None
 
-        return self.__class__(strategy(new_data))
+        data = strategy(new_data)
+
+        if "onground" in data.columns:
+            data = data.assign(onground=data.onground.astype(bool))
+
+        return self.__class__(data)
 
     def comet(self, **kwargs) -> "Flight":
         """Computes a comet for a trajectory.

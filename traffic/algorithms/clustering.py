@@ -26,7 +26,7 @@ class ClusteringProtocol(Protocol):
 
 def prepare_features(
     traffic: "Traffic",
-    nb_samples: int,
+    nb_samples: Optional[int],
     features: List[str],
     projection: Union[None, crs.Projection, pyproj.Proj] = None,
     max_workers: int = 1,
@@ -34,7 +34,9 @@ def prepare_features(
     if "last_position" in traffic.data.columns:
         traffic = traffic.drop(columns="last_position")
 
-    resampled = traffic.resample(nb_samples).eval(max_workers=max_workers)
+    resampled = traffic
+    if nb_samples is not None:
+        resampled = traffic.resample(nb_samples).eval(max_workers=max_workers)
 
     if all(
         [
@@ -58,7 +60,7 @@ class Clustering:
         self,
         traffic: "Traffic",
         clustering: ClusteringProtocol,
-        nb_samples: int,
+        nb_samples: Optional[int],
         features: List[str],
         *args,
         projection: Union[None, crs.Projection, pyproj.Proj] = None,
@@ -147,7 +149,7 @@ class Clustering:
 
 def centroid(
     traffic: "Traffic",
-    nb_samples: int,
+    nb_samples: Optional[int],
     features: List[str],
     projection: Union[None, crs.Projection, pyproj.Proj] = None,
     transform: Optional[TransformerProtocol] = None,

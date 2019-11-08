@@ -1,6 +1,7 @@
 # fmt: off
 
 import logging
+import warnings
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -19,7 +20,7 @@ from ..algorithms.cpa import closest_point_of_approach
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight, attrgetter_duration
 from .lazy import LazyTraffic, lazy_evaluation
-from .mixins import GeographyMixin
+from .mixins import GeographyMixin, PointMixin
 from .sv import StateVectors
 
 if TYPE_CHECKING:
@@ -204,7 +205,8 @@ class Traffic(GeographyMixin):
             )
 
         if isinstance(index, slice):
-            indices = list(range(index.stop)[index])
+            max_size = index.stop if index.stop is not None else len(self)
+            indices = list(range(max_size)[index])
             return self.__class__.from_flights(
                 flight
                 for i, flight in enumerate(self.iterate())
@@ -479,6 +481,10 @@ class Traffic(GeographyMixin):
     def compute_wind(self):
         ...
 
+    @lazy_evaluation()
+    def distance(self, other: PointMixin):
+        ...
+
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
@@ -631,6 +637,12 @@ class Traffic(GeographyMixin):
 
         """
         params: Dict[str, Any] = {}
+        if nb_flights is not None:
+            warnings.warn(
+                "nb_flights will disappear in future versions. "
+                "Use indexing [:nb_flights] before plotting instead",
+                DeprecationWarning,
+            )
         if sum(1 for _ in zip(range(8), self)) == 8:
             params["color"] = "#aaaaaa"
             params["linewidth"] = 1
@@ -838,7 +850,7 @@ class Traffic(GeographyMixin):
     def clustering(
         self,
         clustering: "ClusteringProtocol",
-        nb_samples: int,
+        nb_samples: Optional[int],
         features: Optional[List[str]] = None,
         *args,
         projection: Union[None, crs.Projection, pyproj.Proj] = None,
@@ -908,7 +920,7 @@ class Traffic(GeographyMixin):
 
     def centroid(
         self,
-        nb_samples: int,
+        nb_samples: Optional[int],
         features: Optional[List[str]] = None,
         projection: Union[None, crs.Projection, pyproj.Proj] = None,
         transformer: Optional["TransformerProtocol"] = None,
