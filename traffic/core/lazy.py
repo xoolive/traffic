@@ -97,13 +97,15 @@ class LazyTraffic:
         self,
         wrapped_t: "Traffic",
         stacked_ops: List[LazyLambda],
-        iterate_kw: Dict[str, Any] = {},
-        tqdm_kw: Dict[str, Any] = {},
+        iterate_kw: Optional[Dict[str, Any]] = None,
+        tqdm_kw: Optional[Dict[str, Any]] = None,
     ):
         self.wrapped_t: "Traffic" = wrapped_t
         self.stacked_ops: List[LazyLambda] = stacked_ops
-        self.iterate_kw: Dict[str, Any] = iterate_kw
-        self.tqdm_kw: Dict[str, Any] = tqdm_kw
+        self.iterate_kw: Dict[str, Any] = (
+            iterate_kw if iterate_kw is not None else {}
+        )
+        self.tqdm_kw: Dict[str, Any] = tqdm_kw if tqdm_kw is not None else {}
 
     def __repr__(self):
         assert LazyTraffic.__doc__ is not None
