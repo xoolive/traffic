@@ -90,7 +90,6 @@ class AIXMAirspaceParser(object):
                     return
                 except Exception:
                     logging.warning("aixm files: rebuilding cache file")
-                    pass
 
         for filename in [
             "AirportHeliport.BASELINE",
