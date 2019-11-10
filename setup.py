@@ -60,7 +60,6 @@ setup(
         "requests",
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
-        "typing_extensions",
         "altair",  # interactive Vega plots
         "ipywidgets",  # IPython widgets for traffic
         "ipyleaflet",  # Leaflet for notebooks

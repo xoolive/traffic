@@ -10,12 +10,12 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union,
                     overload)
 
 from tqdm.autonotebook import tqdm
-from typing_extensions import Literal
 
 from .flight import Flight
 from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
+    from typing_extensions import Literal
     from .traffic import Traffic  # noqa: F401
 
 # fmt: on
@@ -221,14 +221,14 @@ class LazyTraffic:
 
 @overload
 def lazy_evaluation(
-    default: Literal[None, False] = False, idx_name: Optional[str] = None
+    default: "Literal[None, False]" = False, idx_name: Optional[str] = None
 ) -> Callable[..., Callable[..., LazyTraffic]]:
     ...
 
 
 @overload
 def lazy_evaluation(
-    default: Literal[True], idx_name: Optional[str] = None
+    default: "Literal[True]", idx_name: Optional[str] = None
 ) -> Callable[..., Callable[..., "Traffic"]]:
     ...
 
