@@ -683,6 +683,9 @@ class Impala(object):
         *args,  # more reasonable to be explicit about arguments
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         icao24: Union[None, str, Iterable[str]] = None,
+        arrival_airport: Optional[str] = None,
+        departure_airport: Optional[str] = None,
+        airport: Optional[str] = None,
         serials: Union[None, int, Iterable[int]] = None,
         other_tables: str = "",
         other_params: str = "",
@@ -716,14 +719,14 @@ class Impala(object):
 
         _request = (
             "select {columns} from rollcall_replies_data4 {other_tables} "
-            "where hour>={before_hour} and hour<{after_hour} "
+            "{where_clause} hour>={before_hour} and hour<{after_hour} "
             "and rollcall_replies_data4.mintime>={before_time} and "
             "rollcall_replies_data4.mintime<{after_time} "
             "{other_params}"
         )
 
         columns = (
-            "rollcall_replies_data4.mintime, rollcall_replies_data4.maxtime, "
+            "mintime, maxtime, "
             "rawmsg, msgcount, icao24, message, altitude, identity, hour"
         )
 
@@ -732,6 +735,12 @@ class Impala(object):
             "rawmsg, msgcount, icao24, message, altitude, identity, hour"
         )
 
+        # default obvious parameter
+        where_clause = "where"
+
+        airports_params = [airport, departure_airport, arrival_airport]
+        count_airports_params = sum(x is not None for x in airports_params)
+
         start = to_datetime(start)
         if stop is not None:
             stop = to_datetime(stop)
@@ -739,10 +748,14 @@ class Impala(object):
             stop = start + timedelta(days=1)
 
         if isinstance(icao24, str):
-            other_params += "and icao24='{}' ".format(icao24)
+            other_params += "and {}icao24='{}' ".format(
+                "rollcall_replies_data4.", icao24
+            )
         elif isinstance(icao24, Iterable):
             icao24 = ",".join("'{}'".format(c) for c in icao24)
-            other_params += "and icao24 in ({}) ".format(icao24)
+            other_params += "and {}icao24 in ({}) ".format(
+                "rollcall_replies_data4.", icao24
+            )
 
         if isinstance(serials, Iterable):
             other_tables += ", rollcall_replies_data4.sensors s "
@@ -756,6 +769,99 @@ class Impala(object):
             parse_columns = "serial, time, " + parse_columns
 
         other_params += "and message is not null "
+
+        day_min = round_time(start, how="before", by=timedelta(days=1))
+        day_max = round_time(stop, how="after", by=timedelta(days=1))
+
+        if count_airports_params > 0:
+            where_clause = (
+                "on rollcall_replies_data4.icao24 = est.icao24 and "
+                "est.firstseen <= rollcall_replies_data4.mintime and "
+                "rollcall_replies_data4.mintime <= est.lastseen "
+                "where"
+            )
+
+        if arrival_airport is not None and departure_airport is not None:
+            if airport is not None:
+                raise RuntimeError(
+                    "airport may not be set if "
+                    "either arrival_airport or departure_airport is set"
+                )
+            other_tables += (
+                "join (select icao24, firstseen, estdepartureairport, "
+                "lastseen, estarrivalairport, callsign, day "
+                "from flights_data4 "
+                "where estdepartureairport ='{departure_airport}' "
+                "and estarrivalairport ='{arrival_airport}' "
+                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
+            ).format(
+                arrival_airport=arrival_airport,
+                departure_airport=departure_airport,
+                day_min=day_min.timestamp(),
+                day_max=day_max.timestamp(),
+            )
+
+        elif arrival_airport is not None:
+            other_tables += (
+                "join (select icao24, firstseen, estdepartureairport, "
+                "lastseen, estarrivalairport, callsign, day "
+                "from flights_data4 "
+                "where estarrivalairport ='{arrival_airport}' "
+                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
+            ).format(
+                arrival_airport=arrival_airport,
+                day_min=day_min.timestamp(),
+                day_max=day_max.timestamp(),
+            )
+
+        elif departure_airport is not None:
+            other_tables += (
+                "join (select icao24, firstseen, estdepartureairport, "
+                "lastseen, estarrivalairport, callsign, day "
+                "from flights_data4 "
+                "where estdepartureairport ='{departure_airport}' "
+                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
+            ).format(
+                departure_airport=departure_airport,
+                day_min=day_min.timestamp(),
+                day_max=day_max.timestamp(),
+            )
+
+        elif airport is not None:
+            other_tables += (
+                "join (select icao24, firstseen, estdepartureairport, "
+                "lastseen, estarrivalairport, callsign, day "
+                "from flights_data4 "
+                "where (estdepartureairport ='{arrival_or_departure_airport}' "
+                "or estarrivalairport = '{arrival_or_departure_airport}') "
+                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
+            ).format(
+                arrival_or_departure_airport=airport,
+                day_min=day_min.timestamp(),
+                day_max=day_max.timestamp(),
+            )
+
+        if count_airports_params > 1:
+            est_columns = [
+                "firstseen",
+                "estdepartureairport",
+                "lastseen",
+                "estarrivalairport",
+                "day",
+            ]
+            fst_columns = [field.strip() for field in columns.split(",")]
+            columns = (
+                ", ".join(
+                    f"rollcall_replies_data4.{field}" for field in fst_columns
+                )
+                + ", "
+                + ", ".join(f"est.{field}" for field in est_columns)
+            )
+            parse_columns = ", ".join(
+                fst_columns
+                + ["firstseen", "origin", "lastseen", "destination", "day"]
+            )
+
         sequence = list(split_times(start, stop, date_delta))
         cumul = []
 
@@ -777,6 +883,7 @@ class Impala(object):
                 after_hour=ah.timestamp(),
                 other_tables=other_tables,
                 other_params=other_params,
+                where_clause=where_clause,
             )
 
             df = self._impala(request, columns=parse_columns, cached=cached)
@@ -784,21 +891,7 @@ class Impala(object):
             if df is None:
                 continue
 
-            if df.hour.dtype == object:
-                df = df[df.hour != "hour"]
-
-            for column_name in ["mintime", "maxtime", "time", "hour"]:
-                if column_name in df.columns:
-                    df[column_name] = pd.to_datetime(
-                        df[column_name].astype(float) * 1e9
-                    ).dt.tz_localize("utc")
-
-            df.icao24 = (
-                df.icao24.apply(int, base=16)
-                .apply(hex)
-                .str.slice(2)
-                .str.pad(6, fillchar="0")
-            )
+            df = self._format_dataframe(df)
             df.altitude = df.altitude.astype(float) / 0.3048
 
             cumul.append(df)
