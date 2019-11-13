@@ -355,8 +355,11 @@ class Impala(object):
             other_params += "and icao24 in ({}) ".format(icao24)
 
         if isinstance(callsign, str):
-            other_params += "and callsign='{:<8s}' ".format(callsign)
-            return_flight = True
+            if callsign.find('%') > 0 or callsign.find('_') > 0:
+                other_params += "and callsign ilike '{}' ".format(callsign)
+            else:
+                other_params += "and callsign='{:<8s}' ".format(callsign)
+                return_flight = True
 
         elif isinstance(callsign, Iterable):
             callsign = ",".join("'{:<8s}'".format(c) for c in callsign)
