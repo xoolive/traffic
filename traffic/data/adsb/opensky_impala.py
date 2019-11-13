@@ -156,6 +156,8 @@ class Impala(object):
             "lastposition",
             "firstseen",
             "lastseen",
+            "mintime",
+            "maxtime",
             "time",
             "timestamp",
             "day",
