@@ -420,8 +420,12 @@ class PointMixin(object):
         return (self.latitude, self.longitude)
 
     def plot(
-        self, ax: Axes, text_kw=None, shift=dict(units="dots", x=15), **kwargs
+        self, ax: Axes, text_kw=None, shift=None, **kwargs
     ) -> List[Artist]:  # coverage: ignore
+
+        if shift is None:
+            # flake B006
+            shift = dict(units="dots", x=15)
 
         if text_kw is None:
             text_kw = {}
@@ -442,9 +446,9 @@ class PointMixin(object):
 
         if "s" not in text_kw:
             if hasattr(self, "callsign"):
-                text_kw["s"] = getattr(self, "callsign")
+                text_kw["s"] = getattr(self, "callsign")  # noqa: B009
             if hasattr(self, "name"):
-                text_kw["s"] = getattr(self, "name")
+                text_kw["s"] = getattr(self, "name")  # noqa: B009
 
         cumul: List[Artist] = []
         cumul.append(ax.scatter(self.longitude, self.latitude, **kwargs))

@@ -200,6 +200,10 @@ class Flight(GeographyMixin, ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
+    def _repr_svg_(self):
+        # even 25m should be enough to limit the size of resulting notebooks!
+        return super(Flight, self.simplify(25))._repr_svg_()  # type: ignore
+
     def __repr__(self) -> str:
         output = f"Flight {self.title}"
         output += f"\naircraft: {self.aircraft}"
@@ -1424,6 +1428,7 @@ class Flight(GeographyMixin, ShapelyMixin):
             "stop": self.stop,
             "callsign": self.callsign,
             "icao24": self.icao24,
+            "return_flight": True,
         }
         return opensky.history(**query_params)  # type: ignore
 

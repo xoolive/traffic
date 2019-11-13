@@ -129,9 +129,7 @@ class Impala(object):
         return None
 
     @staticmethod
-    def _format_dataframe(
-        df: pd.DataFrame, nautical_units=True
-    ) -> pd.DataFrame:
+    def _format_dataframe(df: pd.DataFrame,) -> pd.DataFrame:
         """
         This function converts types, strips spaces after callsigns and sorts
         the DataFrame by timestamp.
@@ -145,20 +143,20 @@ class Impala(object):
         if "callsign" in df.columns and df.callsign.dtype == object:
             df.callsign = df.callsign.str.strip()
 
-        if nautical_units:
-            df.altitude = df.altitude / 0.3048
-            if "geoaltitude" in df.columns:
-                df.geoaltitude = df.geoaltitude / 0.3048
-            if "groundspeed" in df.columns:
-                df.groundspeed = df.groundspeed / 1852 * 3600
-            if "vertical_rate" in df.columns:
-                df.vertical_rate = df.vertical_rate / 0.3048 * 60
+        df.icao24 = (
+            df.icao24.apply(int, base=16)
+            .apply(hex)
+            .str.slice(2)
+            .str.pad(6, fillchar="0")
+        )
 
         time_dict: Dict[str, pd.Series] = dict()
         for colname in [
-            "last_position",
+            "lastposupdate",
+            "lastposition",
             "firstseen",
             "lastseen",
+            "time",
             "timestamp",
             "day",
             "hour",
@@ -168,7 +166,7 @@ class Impala(object):
                     df[colname] * 1e9
                 ).dt.tz_localize("utc")
 
-        return df.assign(**time_dict).sort_values("timestamp")
+        return df.assign(**time_dict)
 
     def _connect(self) -> None:  # coverage: ignore
         if self.username == "" or self.password == "":
@@ -226,11 +224,14 @@ class Impala(object):
         return self._read_cache(cachename)
 
     @staticmethod
-    def _format_history(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.drop(["lastcontact"], axis=1)
+    def _format_history(df: pd.DataFrame, nautical_units=True) -> pd.DataFrame:
 
-        if df.lat.dtype == object:
+        if "lastcontact" in df.columns:
+            df = df.drop(["lastcontact"], axis=1)
+
+        if "lat" in df.columns and df.lat.dtype == object:
             df = df[df.lat != "lat"]  # header is regularly repeated
+
         # restore all types
         for column_name in [
             "lat",
@@ -240,28 +241,19 @@ class Impala(object):
             "vertrate",
             "baroaltitude",
             "geoaltitude",
-            "lastposupdate",
+            # "lastposupdate",
             # "lastcontact",
         ]:
-            df[column_name] = df[column_name].astype(float)
+            if column_name in df.columns:
+                df[column_name] = df[column_name].astype(float)
 
-        for column_name in ["time", "hour"]:
-            df[column_name] = df[column_name].astype(int)
-
-        df.icao24 = (
-            df.icao24.apply(int, base=16)
-            .apply(hex)
-            .str.slice(2)
-            .str.pad(6, fillchar="0")
-        )
-
-        if df.onground.dtype != bool:
+        if "onground" in df.columns and df.onground.dtype != bool:
             df.onground = df.onground == "true"
             df.alert = df.alert == "true"
             df.spi = df.spi == "true"
 
         # better (to me) formalism about columns
-        return df.rename(
+        df = df.rename(
             columns={
                 "lat": "latitude",
                 "lon": "longitude",
@@ -273,6 +265,153 @@ class Impala(object):
                 "lastposupdate": "last_position",
             }
         )
+
+        if nautical_units:
+            df.altitude = df.altitude / 0.3048
+            if "geoaltitude" in df.columns:
+                df.geoaltitude = df.geoaltitude / 0.3048
+            if "groundspeed" in df.columns:
+                df.groundspeed = df.groundspeed / 1852 * 3600
+            if "vertical_rate" in df.columns:
+                df.vertical_rate = df.vertical_rate / 0.3048 * 60
+
+        return df
+
+    def list_flights(
+        self,
+        start: timelike,
+        stop: Optional[timelike] = None,
+        *args,  # more reasonable to be explicit about arguments
+        arrival_airport: Union[None, str, Iterable[str]] = None,
+        departure_airport: Union[None, str, Iterable[str]] = None,
+        airport: Union[None, str, Iterable[str]] = None,
+        callsign: Union[None, str, Iterable[str]] = None,
+        icao24: Union[None, str, Iterable[str]] = None,
+        cached: bool = True,
+        limit: Optional[int] = None,
+        progressbar: Callable[[Iterable], Iterable] = iter,
+    ) -> pd.DataFrame:
+
+        query_str = (
+            "select {columns} from flights_data4 "
+            "where day >= {before_day} and day <= {after_day} "
+            "{other_params}"
+        )
+        columns = ", ".join(
+            [
+                "icao24",
+                "firstseen",
+                "estdepartureairport",
+                "lastseen",
+                "estarrivalairport",
+                "callsign",
+                "day",
+            ]
+        )
+
+        start = to_datetime(start)
+        if stop is not None:
+            stop = to_datetime(stop)
+        else:
+            stop = start + timedelta(days=1)
+
+        if progressbar == iter and stop - start > timedelta(days=1):
+            progressbar = tqdm
+
+        other_params = ""
+
+        if isinstance(icao24, str):
+            other_params += "and icao24='{}' ".format(icao24)
+
+        elif isinstance(icao24, Iterable):
+            icao24 = ",".join("'{}'".format(c) for c in icao24)
+            other_params += "and icao24 in ({}) ".format(icao24)
+
+        if isinstance(callsign, str):
+            if callsign.find("%") > 0 or callsign.find("_") > 0:
+                other_params += "and callsign ilike '{}' ".format(callsign)
+            else:
+                other_params += "and callsign='{:<8s}' ".format(callsign)
+
+        elif isinstance(callsign, Iterable):
+            callsign = ",".join("'{:<8s}'".format(c) for c in callsign)
+            other_params += "and callsign in ({}) ".format(callsign)
+
+        if departure_airport is not None:
+            other_params += (
+                f"and firstseen >= {start.timestamp()} and "
+                f"firstseen <= {stop.timestamp()} "
+            )
+        else:
+            other_params += (
+                f"and lastseen >= {start.timestamp()} and "
+                f"lastseen <= {stop.timestamp()} "
+            )
+
+        if airport:
+            other_params += (
+                f"and (estarrivalairport = '{airport}' or "
+                f"estdepartureairport = '{airport}') "
+            )
+            if departure_airport is not None or arrival_airport is not None:
+                raise RuntimeError(
+                    "airport may not be set if "
+                    "either arrival_airport or departure_airport is set"
+                )
+        else:
+            if departure_airport:
+                other_params += (
+                    f"and estdepartureairport = '{departure_airport}' "
+                )
+            if arrival_airport:
+                other_params += f"and estarrivalairport = '{arrival_airport}' "
+
+        cumul = []
+        sequence = list(split_times(start, stop, timedelta(days=1)))
+
+        if limit is not None:
+            other_params += f"limit {limit}"
+
+        for bt, at, before_day, after_day in progressbar(sequence):
+
+            logging.info(
+                f"Sending request between time {bt} and {at} "
+                f"and day {before_day} and {after_day}"
+            )
+
+            request = query_str.format(
+                columns=columns,
+                before_day=before_day.timestamp(),
+                after_day=after_day.timestamp(),
+                other_params=other_params,
+            )
+
+            df = self._impala(request, columns=columns, cached=cached)
+
+            if df is None:
+                continue
+
+            df = self._format_dataframe(df)
+
+            cumul.append(df)
+
+        if len(cumul) == 0:
+            return None
+
+        df = (
+            pd.concat(cumul, sort=True)
+            .sort_values(
+                "firstseen" if departure_airport is not None else "lastseen"
+            )
+            .rename(
+                columns=dict(
+                    estarrivalairport="destination",
+                    estdepartureairport="origin",
+                )
+            )
+        )
+
+        return df
 
     def history(
         self,
@@ -288,12 +427,13 @@ class Impala(object):
         ] = None,
         arrival_airport: Optional[str] = None,
         departure_airport: Optional[str] = None,
-        arrival_or_departure_airport: Optional[str] = None,
+        airport: Optional[str] = None,
         cached: bool = True,
         count: bool = False,
         other_tables: str = "",
         other_params: str = "",
         limit: Optional[int] = None,
+        return_flight: bool = False,
         progressbar: Callable[[Iterable], Iterable] = iter,
     ) -> Optional[Union[Traffic, Flight]]:
 
@@ -327,7 +467,6 @@ class Impala(object):
 
         """
 
-        return_flight = False
         start = to_datetime(start)
         if stop is not None:
             stop = to_datetime(stop)
@@ -340,6 +479,9 @@ class Impala(object):
         if progressbar == iter and stop - start > timedelta(hours=1):
             progressbar = tqdm
 
+        airports_params = [airport, departure_airport, arrival_airport]
+        count_airports_params = sum(x is not None for x in airports_params)
+
         if isinstance(serials, Iterable):
             other_tables += ", state_vectors_data4.serials s "
             other_params += "and s.ITEM in {} ".format(tuple(serials))
@@ -348,22 +490,31 @@ class Impala(object):
             other_params += "and s.ITEM = {} ".format(serials)
 
         if isinstance(icao24, str):
-            other_params += "and icao24='{}' ".format(icao24)
+            other_params += "and {}icao24='{}' ".format(
+                "sv." if count_airports_params > 0 else "", icao24
+            )
 
         elif isinstance(icao24, Iterable):
             icao24 = ",".join("'{}'".format(c) for c in icao24)
-            other_params += "and icao24 in ({}) ".format(icao24)
+            other_params += "and {}icao24 in ({}) ".format(
+                "sv." if count_airports_params > 0 else "", icao24
+            )
 
         if isinstance(callsign, str):
-            if callsign.find('%') > 0 or callsign.find('_') > 0:
-                other_params += "and callsign ilike '{}' ".format(callsign)
+            if callsign.find("%") > 0 or callsign.find("_") > 0:
+                other_params += "and {}callsign ilike '{}' ".format(
+                    "sv." if count_airports_params > 0 else "", callsign
+                )
             else:
-                other_params += "and callsign='{:<8s}' ".format(callsign)
-                return_flight = True
+                other_params += "and {}callsign='{:<8s}' ".format(
+                    "sv." if count_airports_params > 0 else "", callsign
+                )
 
         elif isinstance(callsign, Iterable):
             callsign = ",".join("'{:<8s}'".format(c) for c in callsign)
-            other_params += "and callsign in ({}) ".format(callsign)
+            other_params += "and {}callsign in ({}) ".format(
+                "sv." if count_airports_params > 0 else "", callsign
+            )
 
         if bounds is not None:
             try:
@@ -376,21 +527,10 @@ class Impala(object):
             other_params += "and lon>={} and lon<={} ".format(west, east)
             other_params += "and lat>={} and lat<={} ".format(south, north)
 
-        airports_params = [
-            arrival_or_departure_airport,
-            departure_airport,
-            arrival_airport,
-        ]
-        count_airports_params = sum(x is not None for x in airports_params)
         day_min = round_time(start, how="before", by=timedelta(days=1))
         day_max = round_time(stop, how="after", by=timedelta(days=1))
 
-        if count_airports_params > 1:
-            raise RuntimeWarning(
-                "Only one of arrival_airport, departure_airport or "
-                "arrival_or_departure_airport may be set"
-            )
-        elif count_airports_params == 1:
+        if count_airports_params > 0:
             where_clause = (
                 "on sv.icao24 = est.icao24 and "
                 "sv.callsign = est.callsign and "
@@ -399,7 +539,27 @@ class Impala(object):
                 "where"
             )
 
-        if arrival_airport is not None:
+        if arrival_airport is not None and departure_airport is not None:
+            if airport is not None:
+                raise RuntimeError(
+                    "airport may not be set if "
+                    "either arrival_airport or departure_airport is set"
+                )
+            other_tables += (
+                "as sv join (select icao24, firstseen, estdepartureairport, "
+                "lastseen, estarrivalairport, callsign, day "
+                "from flights_data4 "
+                "where estdepartureairport ='{departure_airport}' "
+                "and estarrivalairport ='{arrival_airport}' "
+                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
+            ).format(
+                arrival_airport=arrival_airport,
+                departure_airport=departure_airport,
+                day_min=day_min.timestamp(),
+                day_max=day_max.timestamp(),
+            )
+
+        elif arrival_airport is not None:
             other_tables += (
                 "as sv join (select icao24, firstseen, estdepartureairport, "
                 "lastseen, estarrivalairport, callsign, day "
@@ -425,7 +585,7 @@ class Impala(object):
                 day_max=day_max.timestamp(),
             )
 
-        elif arrival_or_departure_airport is not None:
+        elif airport is not None:
             other_tables += (
                 "as sv join (select icao24, firstseen, estdepartureairport, "
                 "lastseen, estarrivalairport, callsign, day "
@@ -434,7 +594,7 @@ class Impala(object):
                 "or estarrivalairport = '{arrival_or_departure_airport}') "
                 "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
             ).format(
-                arrival_or_departure_airport=arrival_or_departure_airport,
+                arrival_or_departure_airport=airport,
                 day_min=day_min.timestamp(),
                 day_max=day_max.timestamp(),
             )
@@ -444,7 +604,7 @@ class Impala(object):
         columns = ", ".join(self._impala_columns)
         parse_columns = ", ".join(self._impala_columns)
 
-        if count_airports_params == 1:
+        if count_airports_params > 1:
             est_columns = [
                 "firstseen",
                 "estdepartureairport",
@@ -494,13 +654,12 @@ class Impala(object):
             if df is None:
                 continue
 
+            df = self._format_dataframe(df)
             df = self._format_history(df)
 
             if "last_position" in df.columns:
                 if df.query("last_position == last_position").shape[0] == 0:
                     continue
-
-            df = self._format_dataframe(df)
 
             cumul.append(df)
 

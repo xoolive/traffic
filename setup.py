@@ -66,7 +66,7 @@ setup(
         "ipyleaflet",  # Leaflet for notebooks
         "keplergl",  # Kepler.gl for notebooks
         "tqdm>=4.28",  # progressbars
-        "cartotools==1.0",
+        "cartotools>=1.1",
         "pyModeS>=2.4",
     ],
     classifiers=[

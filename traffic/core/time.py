@@ -21,7 +21,9 @@ def to_datetime(time: timelike) -> datetime:
 
 
 def round_time(
-    time: timelike, how: str = "before", by: timedelta = timedelta(hours=1)
+    time: timelike,
+    how: str = "before",
+    by: timedelta = timedelta(hours=1),  # noqa: B008
 ) -> datetime:
 
     dt = to_datetime(time)
@@ -43,7 +45,9 @@ def round_time(
 
 
 def split_times(
-    before: datetime, after: datetime, by: timedelta = timedelta(hours=1)
+    before: datetime,
+    after: datetime,
+    by: timedelta = timedelta(hours=1),  # noqa: B008
 ) -> Iterator[timetuple]:
 
     before_hour = round_time(before, by=by)

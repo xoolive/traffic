@@ -63,7 +63,7 @@ class SensorRange(ShapelyMixin):
     """Wraps the polygon defining the range of an OpenSky sensor."""
 
     def __init__(self, json):
-        for key, value in json.items():
+        for _, value in json.items():
             self.shape = Polygon(
                 [(lon, lat) for (deg, lat, lon) in value[0]["ranges"]]
             )
@@ -199,9 +199,10 @@ class OpenSky(Impala):
         r = r.drop(["origin_country", "spi", "sensors"], axis=1)
         r = r.dropna()
 
-        return StateVectors(
-            self._format_dataframe(r, nautical_units=True), self
-        )
+        r = self._format_dataframe(r)
+        r = self._format_history(r)
+
+        return StateVectors(r, self)
 
     def api_tracks(self, icao24: str) -> Flight:
         """Returns a Flight corresponding to a given aircraft.
@@ -254,7 +255,11 @@ class OpenSky(Impala):
                 "onground",
             ],
         ).assign(icao24=json["icao24"], callsign=json["callsign"])
-        return Flight(self._format_dataframe(df, nautical_units=True))
+
+        df = self._format_dataframe(df)
+        df = self._format_history(df)
+
+        return Flight(df)
 
     def api_routes(self, callsign: str) -> Tuple[Airport, ...]:
         """Returns the route associated to a callsign."""
