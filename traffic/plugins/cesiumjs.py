@@ -26,7 +26,7 @@ class _CZML_Params:
 
 
 def format_ts(ts: pd.Timestamp) -> str:
-    return ts.isoformat() + "Z"
+    return ts.isoformat()[:-6] + "Z"
 
 
 def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
