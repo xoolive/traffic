@@ -2,16 +2,18 @@
 
 import json
 from collections import defaultdict
+from functools import partial
 from pathlib import Path
 from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple,
                     TypeVar, Union)
 
 import numpy as np
+import pyproj
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from matplotlib.patches import Polygon as MplPolygon
 from shapely.geometry import Polygon, base, mapping, shape
-from shapely.ops import cascaded_union
+from shapely.ops import cascaded_union, transform
 
 from . import Flight, Traffic
 from .lazy import lazy_evaluation
@@ -75,11 +77,27 @@ class Airspace(ShapelyMixin):
         title = f"<b>{self.name} [{self.designator}] ({self.type})</b>"
         shapes = ""
         title += "<ul>"
+
+        bounds = self.bounds
+        projection = pyproj.Proj(
+            proj="aea",  # equivalent projection
+            lat_1=bounds[1],
+            lat_2=bounds[3],
+            lat_0=(bounds[1] + bounds[3]) / 2,
+            lon_0=(bounds[0] + bounds[2]) / 2,
+        )
+
         for polygon in self:
+            projected_shape = transform(
+                partial(
+                    pyproj.transform, pyproj.Proj(init="EPSG:4326"), projection
+                ),
+                polygon.polygon,
+            )
             title += f"<li>{polygon.lower}, {polygon.upper}</li>"
-            shapes += polygon.polygon._repr_svg_()
+            shapes += projected_shape.simplify(1e3)._repr_svg_()
         title += "</ul>"
-        no_wrap_div = '<div style="white-space: nowrap">{}</div>'
+        no_wrap_div = '<div style="white-space: nowrap; width: 12%">{}</div>'
         return title + no_wrap_div.format(shapes)
 
     def __repr__(self):
