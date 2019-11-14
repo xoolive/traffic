@@ -279,7 +279,7 @@ class Impala(object):
 
         return df
 
-    def list_flights(
+    def flightlist(
         self,
         start: timelike,
         stop: Optional[timelike] = None,
@@ -685,10 +685,13 @@ class Impala(object):
         *args,  # more reasonable to be explicit about arguments
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         icao24: Union[None, str, Iterable[str]] = None,
+        serials: Union[None, int, Iterable[int]] = None,
+        bounds: Union[
+            BaseGeometry, Tuple[float, float, float, float], None
+        ] = None,
         arrival_airport: Optional[str] = None,
         departure_airport: Optional[str] = None,
         airport: Optional[str] = None,
-        serials: Union[None, int, Iterable[int]] = None,
         other_tables: str = "",
         other_params: str = "",
         limit: Optional[int] = None,
@@ -775,7 +778,7 @@ class Impala(object):
         day_min = round_time(start, how="before", by=timedelta(days=1))
         day_max = round_time(stop, how="after", by=timedelta(days=1))
 
-        if count_airports_params > 0:
+        if count_airports_params > 0 or bounds is not None:
             where_clause = (
                 "on rollcall_replies_data4.icao24 = est.icao24 and "
                 "est.firstseen <= rollcall_replies_data4.mintime and "
@@ -783,7 +786,29 @@ class Impala(object):
                 "where"
             )
 
-        if arrival_airport is not None and departure_airport is not None:
+        if bounds is not None:
+            if count_airports_params > 0:
+                raise RuntimeError(
+                    "Either bounds or airport are supported at the moment."
+                )
+            try:
+                # thinking of shapely bounds attribute (in this order)
+                # I just don't want to add the shapely dependency here
+                west, south, east, north = bounds.bounds  # type: ignore
+            except AttributeError:
+                west, south, east, north = bounds
+
+            other_tables += (
+                "join (select min(time) as firstseen, max(time) as lastseen, "
+                "icao24 from state_vectors_data4 "
+                "where hour>={before_hour} and hour<{after_hour} and "
+                f"time>={start.timestamp()} and time<{stop.timestamp()} and "
+                f"lon>={west} and lon<={east} and "
+                f"lat>={south} and lat<={north} "
+                "group by icao24) as est"
+            )
+
+        elif arrival_airport is not None and departure_airport is not None:
             if airport is not None:
                 raise RuntimeError(
                     "airport may not be set if "
@@ -843,6 +868,8 @@ class Impala(object):
                 day_max=day_max.timestamp(),
             )
 
+        fst_columns = [field.strip() for field in columns.split(",")]
+
         if count_airports_params > 1:
             est_columns = [
                 "firstseen",
@@ -851,7 +878,6 @@ class Impala(object):
                 "estarrivalairport",
                 "day",
             ]
-            fst_columns = [field.strip() for field in columns.split(",")]
             columns = (
                 ", ".join(
                     f"rollcall_replies_data4.{field}" for field in fst_columns
@@ -862,6 +888,20 @@ class Impala(object):
             parse_columns = ", ".join(
                 fst_columns
                 + ["firstseen", "origin", "lastseen", "destination", "day"]
+            )
+        if bounds is not None:
+            columns = (
+                ", ".join(
+                    f"rollcall_replies_data4.{field}" for field in fst_columns
+                )
+                + ", "
+                + ", ".join(
+                    f"est.{field}"
+                    for field in ["firstseen", "lastseen", "icao24"]
+                )
+            )
+            parse_columns = ", ".join(
+                fst_columns + ["firstseen", "lastseen", "icao24_2"]
             )
 
         sequence = list(split_times(start, stop, date_delta))
@@ -877,13 +917,20 @@ class Impala(object):
                 f"and hour {bh} and {ah}"
             )
 
+            if "{before_hour}" in other_tables:
+                _other_tables = other_tables.format(
+                    before_hour=bh.timestamp(), after_hour=ah.timestamp()
+                )
+            else:
+                _other_tables = other_tables
+
             request = _request.format(
                 columns=columns,
                 before_time=int(bt.timestamp()),
                 after_time=int(at.timestamp()),
                 before_hour=bh.timestamp(),
                 after_hour=ah.timestamp(),
-                other_tables=other_tables,
+                other_tables=_other_tables,
                 other_params=other_params,
                 where_clause=where_clause,
             )
