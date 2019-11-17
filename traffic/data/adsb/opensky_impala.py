@@ -441,31 +441,70 @@ class Impala(object):
 
         """Get Traffic from the OpenSky Impala shell.
 
+        You may pass requests based on time ranges, callsigns, aircraft, areas,
+        serial numbers for receivers, or airports of departure or arrival.
+
         The method builds appropriate SQL requests, caches results and formats
         data into a proper pandas DataFrame. Requests are split by hour (by
         default) in case the connection fails.
 
         Args:
-            start: a string, epoch or datetime
-            stop (optional): a string, epoch or datetime, by default, one day
-            after start
-            date_delta (optional): how to split the requests (default: one day)
-            callsign (optional): a string or a list of strings (default: empty)
-            icao24 (optional): a string or a list of strings identifying the
-            transponder code of the aircraft (default: empty)
-            serials (optional): a string or a list of strings identifying the
-            sensors receiving the data. (default: empty)
-            bounds (optional): a shape (requires the bounds attribute) or a
-            tuple of floats (west, south, east, north) to put a geographical
-            limit on the request. (default: empty)
-            cached (boolean): whether to look first whether the request has been
-            cached (default: True)
-            count (boolean): add a column stating how many sensors received each
-            line (default: False)
-            limit (optional, int): maximum number of records (debug)
+            - **start**: a string (default to UTC), epoch or datetime (native
+              Python or pandas)
+            - **stop** (optional): a string (default to UTC), epoch or datetime
+              (native Python or pandas), *by default, one day after start*
+            - **date_delta** (optional): a timedelta representing how to split
+              the requests, *by default: per hour*
 
-        Returns:
-            a Traffic structure wrapping the dataframe
+            More arguments to filter resulting data:
+
+            - **callsign** (optional): a string or a list of strings;
+            - **icao24** (optional): a string or a list of strings identifying i
+              the transponder code of the aircraft;
+            - **serials** (optional): an integer or a list of integers
+              identifying the sensors receiving the data;
+            - **bounds** (optional), sets a geographical footprint. Either
+              an **airspace or shapely shape** (requires the bounds attribute);
+              or a **tuple of float** (west, south, east, north);
+
+            **Airports**
+
+            The following options build more complicated requests by merging
+            information from two tables in the Impala database, resp.
+            `state_vectors_data4` and `flights_data4`.
+
+            - **departure_airport** (optional): a string for the ICAO
+              identifier of the airport. Selects flights departing from the
+              airport between the two timestamps;
+            - **arrival_airport** (optional): a string for the ICAO identifier
+              of the airport. Selects flights arriving at the airport between
+              the two timestamps;
+            - **airport** (optional): a string for the ICAO identifier of the
+              airport. Selects flights departing from or arriving at the
+              airport between the two timestamps;
+
+            .. warning::
+
+                - See `opensky.flightlist
+                  <#traffic.data.adsb.opensky_impala.Impala.flightlist>`__ if
+                  you do not need any trajectory information.
+                - If both departure_airport and arrival_airport are set,
+                  requested timestamps match the arrival time;
+                - If airport is set, departure_airport and
+                  arrival_airport cannot be specified (a RuntimeException is
+                  raised).
+
+            **Useful options for debug**
+
+            - **return_flight** (boolean, default: False): returns a Flight
+              instead of a Traffic structure if switched to True;
+            - **count** (boolean, default: False): add a column stating how
+              many sensors received each record;
+            - **cached** (boolean, default: True): switch to False to force a
+              new request to the database regardless of the cached files;
+              delete previous cache files;
+            - **limit** (optional, int): maximum number of records requested
+              LIMIT keyword in SQL.
 
         """
 

@@ -10,6 +10,7 @@ Sources of data
     airways
     eurofirs
     samples
-    opensky_usage
+    opensky_rest
+    opensky_impala
     so6_usage
     airac_usage
