@@ -164,6 +164,69 @@ Database but you may access them and decode them from your computer.
 
 .. automethod:: traffic.data.adsb.opensky_impala.Impala.extended
 
+Examples of requests
+~~~~~~~~~~~~~~~~~~~~
+
+- based on transponder identifier (icao24):
+
+    .. code:: python
+
+        from traffic.data.samples import belevingsvlucht
+
+        df = opensky.extended(
+            belevingsvlucht.start,
+            belevingsvlucht.stop,
+            icao24=belevingsvlucht.icao24
+        )
+
+        enriched = belevingsvlucht.query_ehs(df)
+
+- based on geographical bounds:
+
+    .. code:: python
+
+        from traffic.data import eurofirs
+        from traffic.data.samples import switzerland
+
+        df = opensky.extended(
+            switzerland.start_time,
+            switzerland.end_time,
+            bounds=eurofirs['LSAS']
+        )
+
+        enriched_ch = (
+            switzerland
+            .filter()
+            .query_ehs(df)
+            .resample('1s')
+            .eval(desc='', max_workers=4)
+        )
+
+- based on airports, together with traffic:
+
+    .. code:: python
+
+        schiphol = opensky.history(
+            "2019-11-11 12:00",
+            "2019-11-11 14:00",
+            airport="EHAM"
+        )
+
+        df = opensky.history(
+            "2019-11-11 12:00",
+            "2019-11-11 14:00",
+            airport="EHAM"
+        )
+
+        enriched_eham = (
+            schiphol
+            .filter()
+            .query_ehs(df)
+            .resample('1s')
+            .eval(desc='', max_workers=4)
+        )
+
+
 Flight list by airport
 ~~~~~~~~~~~~~~~~~~~~~~
 
