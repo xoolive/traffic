@@ -3,6 +3,7 @@
 import logging
 import warnings
 from datetime import datetime, timedelta, timezone
+from functools import partial
 from operator import attrgetter
 from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
                     List, Optional, Set, Tuple, Union, cast, overload)
@@ -10,19 +11,20 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
 import altair as alt
 import numpy as np
 import pandas as pd
+import pyproj
 import scipy.signal
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 from pandas.core.internals import Block, DatetimeTZBlock
-from shapely.geometry import LineString, Point, base
+from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
+from shapely.ops import transform
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
 from . import geodesy as geo
-from .distance import (DistanceAirport, DistancePointTrajectory, closest_point,
-                       guess_airport)
+from .distance import DistanceAirport, closest_point, guess_airport
 from .mixins import GeographyMixin, PointMixin, ShapelyMixin
 from .time import time_or_delta, timelike, to_datetime
 
@@ -1148,42 +1150,6 @@ class Flight(GeographyMixin, ShapelyMixin):
         data = self.data.sort_values("timestamp")
         return guess_airport(data.iloc[-1])
 
-    def guess_landing_runway(
-        self, airport: Union[None, str, "Airport"] = None
-    ) -> DistancePointTrajectory:
-        # TODO refactor/rethink return type and documentation
-
-        if airport is None:
-            airport = self.guess_landing_airport().airport
-        if isinstance(airport, str):
-            from ..data import airports
-
-            airport = airports[airport]
-
-        all_runways: Dict[str, PointMixin] = dict()
-        for p in airport.runways.list:  # type: ignore
-            all_runways[p.name] = p
-
-        subset = (
-            self.airborne()
-            .query("vertical_rate < 0")
-            .last(minutes=10)
-            .resample()
-        )
-        candidate = subset.closest_point(list(all_runways.values()))
-
-        avg_track = subset.data.track.tail(10).mean()
-        rwy_bearing = all_runways[candidate.name].bearing  # type: ignore
-
-        if abs(avg_track - rwy_bearing) > 20:
-            logging.warning(
-                f"({self.flight_id}) Candidate runway "
-                f"{candidate.name} is not consistent "
-                f"with average track {avg_track}."
-            )
-
-        return candidate
-
     # -- Distances --
 
     def bearing(self, other: PointMixin) -> "Flight":
@@ -1200,27 +1166,97 @@ class Flight(GeographyMixin, ShapelyMixin):
         )
 
     @overload
-    def distance(self, other: PointMixin) -> "Flight":
+    def distance(
+        self,
+        other: Union["Airspace", Polygon, PointMixin],
+        column_name: str = "distance",
+    ) -> "Flight":
         ...
 
     @overload  # noqa: F811
-    def distance(self, other: "Flight") -> pd.DataFrame:
+    def distance(
+        self, other: "Flight", column_name: str = "distance"
+    ) -> pd.DataFrame:
         ...
 
     def distance(  # noqa: F811
-        self, other: Union["Flight", PointMixin]
+        self,
+        other: Union["Flight", "Airspace", Polygon, PointMixin],
+        column_name: str = "distance",
     ) -> Union["Flight", pd.DataFrame]:
+
+        """Computes the distance from a Flight to another entity.
+
+        The behaviour is different according to the type of the second
+        element:
+
+        - if the other element is a Flight, the method returns a pandas
+          DataFrame with corresponding data from both flights, aligned
+          with their timestamps, and two new columns with `lateral` and
+          `vertical` distances (resp. in nm and ft) separating them.
+
+        - otherwise, the same Flight is returned enriched with a new
+          column (by default, named "distance") with the distance of each
+          point of the trajectory to the geometrical element.
+
+        .. warning::
+
+            - An Airspace is (currently) considered as its flattened
+              representation
+            - Computing a distance to a polygon is quite slow at the moment.
+              Consider a strict resampling (e.g. one point per minute, "1T")
+              before calling the method.
+
+        """
 
         if isinstance(other, PointMixin):
             size = len(self)
             return self.assign(
-                distance=geo.distance(
-                    self.data.latitude.values,
-                    self.data.longitude.values,
-                    other.latitude * np.ones(size),
-                    other.longitude * np.ones(size),
-                )
-                / 1852  # in nautical miles
+                **{
+                    column_name: geo.distance(
+                        self.data.latitude.values,
+                        self.data.longitude.values,
+                        other.latitude * np.ones(size),
+                        other.longitude * np.ones(size),
+                    )
+                    / 1852  # in nautical miles
+                }
+            )
+
+        from .airspace import Airspace  # noqa: F811
+
+        if isinstance(other, Airspace):
+            other = other.flatten()
+
+        if isinstance(other, Polygon):
+            bounds = other.bounds
+
+            projection = pyproj.Proj(
+                proj="aea",  # equivalent projection
+                lat_1=bounds[1],
+                lat_2=bounds[3],
+                lat_0=(bounds[1] + bounds[3]) / 2,
+                lon_0=(bounds[0] + bounds[2]) / 2,
+            )
+
+            projected_shape = transform(
+                partial(
+                    pyproj.transform, pyproj.Proj(init="EPSG:4326"), projection
+                ),
+                other,
+            )
+            self_xy = self.compute_xy(projection)
+
+            return self.assign(
+                **{
+                    column_name: list(
+                        projected_shape.exterior.distance(p)
+                        * (-1 if projected_shape.contains(p) else 1)
+                        for p in MultiPoint(
+                            list(zip(self_xy.data.x, self_xy.data.y))
+                        )
+                    )
+                }
             )
 
         start = max(self.airborne().start, other.airborne().start)

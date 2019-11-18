@@ -13,7 +13,7 @@ import pyproj
 from cartopy import crs
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from matplotlib.artist import Artist
-from shapely.geometry import base
+from shapely.geometry import Polygon, base
 
 from ..algorithms.clustering import Clustering, centroid
 from ..algorithms.cpa import closest_point_of_approach
@@ -482,7 +482,11 @@ class Traffic(GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def distance(self, other: PointMixin):
+    def distance(
+        self,
+        other: Union["Airspace", Polygon, PointMixin],
+        column_name: str = "distance",
+    ):
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight

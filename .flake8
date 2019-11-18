@@ -15,4 +15,6 @@ ignore =
     # W503 line break before binary operator
     W503,
     # C901 too complex
-    C901
+    C901,
+    # B010 setattr are often just necessary
+    B010
