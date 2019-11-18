@@ -1454,7 +1454,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         .. note::
             Read more about access to the OpenSky Network database `here
-            <opensky_usage.html>`_
+            <opensky_impala.html>`_
         """
 
         from ..data import opensky
@@ -1483,14 +1483,15 @@ class Flight(GeographyMixin, ShapelyMixin):
             Making a lot of small requests can be very inefficient and may look
             like a denial of service. If you get the raw messages using a
             different channel, you can provide the resulting dataframe as a
-            parameter.
+            parameter. See the page about `OpenSky Impala access
+            <opensky_impala.html>`_
 
         The data parameter expect three columns: ``icao24``, ``rawmsg`` and
         ``mintime``, in conformance with the OpenSky API.
 
         .. note::
             Read more about access to the OpenSky Network database `here
-            <opensky_usage.html>`_
+            <opensky_impala.html>`_
         """
         from ..data import opensky, ModeS_Decoder
 
