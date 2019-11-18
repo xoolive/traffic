@@ -280,11 +280,10 @@ def _flight_intersects(
 ) -> bool:
     """Returns True if the trajectory is inside the given shape.
 
-        - If an Airspace is passed, the 3D trajectory is compared to each layers
-          constituting the airspace, with corresponding altitude limits.
-        - If a shapely Geometry is passed, the 2D trajectory alone is
-        considered.
-
+    - If an Airspace is passed, the 3D trajectory is compared to each layers
+      constituting the airspace, with corresponding altitude limits.
+    - If a shapely Geometry is passed, the 2D trajectory alone is
+    considered.
     """
     linestring = flight.airborne().linestring
     if linestring is None:

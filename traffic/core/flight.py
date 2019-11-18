@@ -837,8 +837,10 @@ class Flight(GeographyMixin, ShapelyMixin):
             This method if often more efficient when applied several times with
             different kernel values.
 
-            >>> # this cascade of filters appears to work well on altitude
-            >>> flight.filter().filter(altitude=53)
+            .. code:: python
+
+                # this cascade of filters appears to work well on altitude
+                flight.filter().filter(altitude=53)
         """
 
         ks_dict = {
@@ -927,8 +929,10 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         Example usage:
 
-        >>> flight.comet(minutes=10)
-        >>> flight.before("2018-12-24 23:55").comet(minutes=10)  # Merry XMas!
+        .. code:: python
+
+            flight.comet(minutes=10)
+            flight.before("2018-12-24 23:55").comet(minutes=10)  # Merry XMas!
 
         """
 
@@ -1073,15 +1077,17 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         Example usage:
 
-        >>> from traffic.drawing import Mercator
-        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator()))
-        >>> (
-        ...     flight
-        ...     .resample("1s")
-        ...     .query('altitude > 10000')
-        ...     .compute_wind()
-        ...     .plot_wind(ax, alpha=.5)
-        ... )
+        .. code:: python
+
+            from traffic.drawing import Mercator
+            fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator()))
+            (
+                flight
+                .resample("1s")
+                .query('altitude > 10000')
+                .compute_wind()
+                .plot_wind(ax, alpha=.5)
+            )
 
         """
 
@@ -1633,9 +1639,11 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         Example usage:
 
-        >>> from traffic.drawing import Mercator
-        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
-        >>> flight.plot(ax, alpha=.5)
+        .. code:: python
+
+            from traffic.drawing import Mercator
+            fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
+            flight.plot(ax, alpha=.5)
 
         .. note::
             See also `geoencode() <#traffic.core.Flight.geoencode>`_ for the
@@ -1661,9 +1669,11 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         Example usage:
 
-        >>> flight.encode('altitude')
-        >>> # or with several comparable features
-        >>> flight.encode(['groundspeed', 'IAS', 'TAS'])
+        .. code:: python
+
+            flight.encode('altitude')
+            # or with several comparable features
+            flight.encode(['groundspeed', 'IAS', 'TAS'])
 
         .. warning::
             No twin axes are available in altair/Vega charts.
@@ -1731,14 +1741,16 @@ class Flight(GeographyMixin, ShapelyMixin):
 
         Example usage:
 
-        >>> ax = plt.axes()
-        >>> # most simple version
-        >>> flight.plot(ax, 'altitude')
-        >>> # or with several comparable features and twin axes
-        >>> flight.plot(
-        ...     ax, ['altitude', 'groundspeed, 'IAS', 'TAS'],
-        ...     secondary_y=['altitude']
-        ... )
+        .. code:: python
+
+            ax = plt.axes()
+            # most simple version
+            flight.plot(ax, 'altitude')
+            # or with several comparable features and twin axes
+            flight.plot(
+                ax, ['altitude', 'groundspeed, 'IAS', 'TAS'],
+                secondary_y=['altitude']
+            )
 
         .. note::
             See also `encode() <#traffic.core.Flight.encode>`_ for the altair
