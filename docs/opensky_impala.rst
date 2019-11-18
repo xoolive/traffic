@@ -212,7 +212,7 @@ Examples of requests
             airport="EHAM"
         )
 
-        df = opensky.history(
+        df = opensky.extended(
             "2019-11-11 12:00",
             "2019-11-11 14:00",
             airport="EHAM"
