@@ -5,7 +5,7 @@ from shapely.geometry import shape
 
 from ...core.airspace import Airspace, ExtrudedPolygon
 
-with Path(__file__).absolute().with_name("firs.json").open("r") as fh:
+with Path(__file__).absolute().with_name("eurofirs.json").open("r") as fh:
     fir = json.load(fh)
 
 eurofirs = {
@@ -19,6 +19,8 @@ eurofirs = {
             )
         ],
         type_=elt["properties"]["TYPE"],
+        designator=elt["properties"]["IDENT"],
+        properties=elt["properties"],
     )
     for elt in fir["features"]
 }

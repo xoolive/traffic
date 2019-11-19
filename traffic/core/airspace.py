@@ -43,11 +43,17 @@ class Airspace(ShapelyMixin):
         name: str,
         elements: List[ExtrudedPolygon],
         type_: Optional[str] = None,
+        designator: Optional[str] = None,
+        properties: Optional[Dict[str, Any]] = None,
     ) -> None:
+
         self.elements: List[ExtrudedPolygon] = elements
-        self.designator: str = name
+        self.designator: Optional[str] = designator
         self.name: str = name
         self.type: Optional[str] = type_
+        self.properties: Dict[str, Any] = (
+            properties if properties is not None else {}
+        )
 
     def flatten(self) -> Polygon:
         """Returns the 2D footprint of the airspace."""
@@ -64,8 +70,25 @@ class Airspace(ShapelyMixin):
         if other == 0:
             # useful for compatibility with sum() function
             return self
+
         union = cascaded_union_with_alt(list(self) + list(other))
-        return Airspace(f"{self.name}+{other.name}", union)
+        new_name = (
+            self.name
+            if self.name == other.name
+            else f"{self.name}, {other.name}"
+        )
+        new_designator = (
+            self.designator if self.designator is not None else other.designator
+        )
+        new_type = self.type if self.type is not None else other.type
+
+        return Airspace(
+            name=new_name,
+            elements=union,
+            type_=new_type,
+            designator=new_designator,
+            properties={**self.properties, **other.properties},
+        )
 
     def __radd__(self, other):
         return self + other

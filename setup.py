@@ -37,7 +37,7 @@ setup(
     },
     packages=find_packages(),
     package_data={
-        "traffic.data.airspaces": ["firs.json"],
+        "traffic.data.airspaces": ["eurofirs.json"],
         "traffic.data.samples": list(
             file.relative_to(sample_dir).as_posix()
             for file in sample_dir.glob("**/*.json*")  # .json and .json.gz
@@ -64,7 +64,8 @@ setup(
         "altair",  # interactive Vega plots
         "ipywidgets",  # IPython widgets for traffic
         "ipyleaflet",  # Leaflet for notebooks
-        "keplergl",  # Kepler.gl for notebooks
+        # deactivated for now for dependency issues
+        # "keplergl",  # Kepler.gl for notebooks
         "tqdm>=4.28",  # progressbars
         "cartotools>=1.1",
         "pyModeS>=2.4",

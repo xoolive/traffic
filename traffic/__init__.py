@@ -25,7 +25,7 @@ nm_path =
 opensky_username =
 opensky_password =
 [plugins]
-enabled_plugins = CesiumJS, Kepler, Leaflet
+enabled_plugins = CesiumJS, Leaflet
 """
         )
 

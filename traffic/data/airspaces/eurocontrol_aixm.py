@@ -348,11 +348,13 @@ class AIXMAirspaceParser(object):
                     name_ = ts.find("aixm:name", self.ns)
                     if len(polygon) > 0:
                         airspace = Airspace(
-                            designator.text if name_ is None else name_.text,
-                            polygon,
-                            type_,
+                            name=name_.text if name_ is not None else None,
+                            elements=polygon,
+                            type_=type_,
+                            designator=designator.text
+                            if designator is not None
+                            else None,
                         )
-                        airspace.designator = designator.text
                         yield airspace
                     else:
                         warnings.warn(

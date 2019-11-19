@@ -8,8 +8,8 @@ Sources of data
     aircraft
     navaids
     airways
-    eurofirs
     samples
+    firs
     opensky_rest
     opensky_impala
     so6_usage
