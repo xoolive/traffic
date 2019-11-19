@@ -15,5 +15,5 @@ def test_airspace() -> None:
     assert summed.below(190).area == summed.area
 
     json = summed.export_json()
-    assert json["name"] == "BRUSSELS+AMSTERDAM"
+    assert json["name"] == "BRUSSELS, AMSTERDAM"
     assert Airspace.from_json(json).area == summed.area
