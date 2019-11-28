@@ -3,14 +3,17 @@
 import hashlib
 import logging
 import re
+import shutil
 import time
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
+from tempfile import gettempdir
 from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 import pandas as pd
 import paramiko
+from pandas.errors import ParserError
 from shapely.geometry.base import BaseGeometry
 from tqdm.autonotebook import tqdm
 
@@ -54,6 +57,16 @@ class Impala(object):
         "{other_params}"
     )
 
+    _parseErrorMsg = """
+    Error at parsing the cache file, moved to a temporary directory: {path}.
+    Running the request again may help.
+
+    Consider filing an issue detailing the request if the problem persists:
+    https://github.com/xoolive/traffic/issues
+
+    For more information, find below the error and the buggy line:
+    """
+
     stdin: paramiko.ChannelFile
     stdout: paramiko.ChannelFile
     stderr: paramiko.ChannelFile  # actually ChannelStderrFile
@@ -90,7 +103,6 @@ class Impala(object):
             for line in fh.readlines():
                 # -- no pretty-print style cache (option -B)
                 if re.search("\t", line):  # noqa: W605
-                    # don't ask why re.match does not work
                     count += 1
                     s.write(re.sub(" *\t *", ",", line))  # noqa: W605
                     s.write("\n")
@@ -111,8 +123,22 @@ class Impala(object):
 
             if count > 0:
                 s.seek(0)
-                # otherwise pandas would parse 1234e5 as 123400000.0
-                df = pd.read_csv(s, dtype={"icao24": str, "callsign": str})
+                try:
+                    # otherwise pandas would parse 1234e5 as 123400000.0
+                    df = pd.read_csv(s, dtype={"icao24": str, "callsign": str})
+                except ParserError as error:
+                    for x in re.finditer(r"line (\d)+,", error.args[0]):
+                        line_nb = int(x.group(1))
+                        with cachename.open("r") as fh:
+                            content = fh.readlines()[line_nb - 1]
+
+                    new_path = Path(gettempdir()) / cachename.name
+                    shutil.move(cachename, new_path)
+                    raise ImpalaError(
+                        Impala._parseErrorMsg.format(path=new_path)
+                        + (error + "\n" + content)
+                    )
+
                 if df.shape[0] > 0:
                     return df.drop_duplicates()
 
