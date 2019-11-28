@@ -204,7 +204,13 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     def _repr_svg_(self):
         # even 25m should be enough to limit the size of resulting notebooks!
-        return super(Flight, self.simplify(25))._repr_svg_()  # type: ignore
+        if self.shape is None:
+            return None
+        if len(self.shape.coords) < 1000:
+            return super()._repr_svg_()
+        return super(
+            Flight, self.query("latitude == latitude").simplify(25)
+        )._repr_svg_()
 
     def __repr__(self) -> str:
         output = f"Flight {self.title}"
