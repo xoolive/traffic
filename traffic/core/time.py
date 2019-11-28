@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime, timedelta, timezone
 from numbers import Number
 from typing import Iterator, Tuple, Union
@@ -17,6 +18,14 @@ def to_datetime(time: timelike) -> datetime:
         time = time.to_pydatetime()
     if isinstance(time, Number):
         time = datetime.fromtimestamp(time, timezone.utc)  # type: ignore
+    if time.tzinfo is None:
+        warnings.warn(
+            "This timestamp is tz-naive. Things may not work as expected. "
+            "If you construct your timestamps manually, consider passing a "
+            "string, which defaults to UTC. If you construct your timestamps "
+            "automatically, look at the tzinfo (resp. tz) argument of the "
+            "datetime (resp. pd.Timestamp) constructor."
+        )
     return time
 
 
