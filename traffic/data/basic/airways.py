@@ -34,6 +34,25 @@ class Route(ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
+    def __getitem__(self, elts: Tuple[str, str]) -> "Route":
+        elt1, elt2 = elts
+        idx1, idx2 = self.navaids.index(elt1), self.navaids.index(elt2)
+        if idx1 == -1:
+            raise RuntimeError(f"{elt1} not in {self.navaids}")
+        if idx2 == -1:
+            raise RuntimeError(f"{elt2} not in {self.navaids}")
+        if idx1 == idx2:
+            raise RuntimeError("The two references must be different")
+        if idx1 > idx2:
+            idx2, idx1 = idx1, idx2
+        # fmt: off
+        return Route(
+            LineString(self.shape.coords[idx1: idx2 + 1]),
+            name=self.name + f" between {elt1} and {elt2}",
+            navaids=self.navaids[idx1: idx2 + 1],
+        )
+        # fmt: on
+
     def plot(self, ax, **kwargs):  # coverage: ignore
         if "color" not in kwargs:
             kwargs["color"] = "#aaaaaa"
