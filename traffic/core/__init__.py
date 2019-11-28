@@ -1,5 +1,6 @@
 # flake8: noqa
-from .flight import Flight
-from .traffic import Traffic
 from .airspace import Airspace
+from .flight import Flight
+from .flightplan import FlightPlan
 from .sv import StateVectors
+from .traffic import Traffic
