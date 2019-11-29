@@ -1,15 +1,31 @@
 import re
 import textwrap
 import warnings
-from typing import Any, List, Optional, Union, cast
+from functools import lru_cache
+from typing import Any, Dict, List, Optional, Union, cast
 
+from cartopy.crs import PlateCarree
+from cartopy.mpl.geoaxes import GeoAxesSubplot
+from matplotlib.artist import Artist
 from shapely.geometry import LineString
 from shapely.ops import linemerge
 
 from ..data.basic.airports import Airport
 from ..data.basic.airways import Route
 from ..data.basic.navaid import Navaid
-from .mixins import ShapelyMixin
+from ..drawing import markers
+from .mixins import PointMixin, ShapelyMixin
+
+
+class _Point(PointMixin):
+    def __init__(self, lat: float, lon: float, name: str):
+        super().__init__()
+        self.latitude = lat
+        self.longitude = lon
+        self.name = name
+
+    def __repr__(self):
+        return f"{self.name} ({self.latitude:.4}, {self.longitude:.4})"
 
 
 class _ElementaryBlock:
@@ -303,6 +319,10 @@ class FlightPlan(ShapelyMixin):
 
     @property
     def shape(self) -> LineString:
+        return linemerge([x.shape for x in self._parse() if x is not None])
+
+    @lru_cache()
+    def _parse(self) -> List[Any]:
         cumul: List[Any] = list()  # List[ShapelyMixin] ?
         elts = self.decompose()
 
@@ -354,4 +374,95 @@ class FlightPlan(ShapelyMixin):
                     )
                 )
 
-        return linemerge([x.shape for x in cumul if x is not None])
+        return cumul
+
+    def _points(self, all_points: bool = False) -> Dict[str, _Point]:
+        cumul = dict()
+
+        for elt in self._parse():
+            if elt is not None:
+                first, *args, last = list(zip(elt.shape.coords, elt.navaids))
+                for (lon, lat), name in (first, last):
+                    cumul[name] = _Point(lat, lon, name)
+                if all_points:
+                    for (lon, lat), name in args:
+                        cumul[name] = _Point(lat, lon, name)
+
+        return cumul
+
+    @property
+    def points(self) -> List[_Point]:
+        return list(self._points().values())
+
+    @property
+    def all_points(self) -> List[_Point]:
+        return list(self._points(all_points=True).values())
+
+    # -- Visualisation --
+    def plot(
+        self,
+        ax: GeoAxesSubplot,
+        airports: bool = True,
+        airports_kw: Optional[Dict[str, Any]] = None,
+        labels: Union[None, bool, str] = None,
+        labels_kw: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> List[Artist]:  # coverage: ignore
+        """Plots the trajectory on a Matplotlib axis.
+
+        FlightPlans support Cartopy axis as well with automatic projection. If
+        no projection is provided, a default `PlateCarree
+        <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree>`_
+        is applied.
+
+        Example usage:
+
+        .. code:: python
+
+            from traffic.drawing import Mercator
+            fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
+            flightplan.plot(ax, labels=True, alpha=.5)
+
+        .. note::
+            See also `geoencode() <#traffic.core.Flight.geoencode>`_ for the
+            altair equivalent.
+
+        """
+
+        cumul = []
+        if "projection" in ax.__dict__ and "transform" not in kwargs:
+            kwargs["transform"] = PlateCarree()
+
+        if self.shape is not None:
+            if isinstance(self.shape, LineString):
+                cumul.append(ax.plot(*self.shape.xy, **kwargs))
+            else:
+                for s_ in self.shape:
+                    cumul.append(ax.plot(*s_.xy, **kwargs))
+
+        airports_style = dict(s=50, marker=markers.atc_tower)
+        if airports_kw is not None:
+            airports_style = {**airports_style, **airports_kw}
+
+        labels_style = dict(s=30, marker="^", zorder=3)
+        if labels_kw is not None:
+            labels_style = {**labels_style, **labels_kw}
+
+        if airports and self.origin:
+            from traffic.data import airports as airport_db
+
+            ap = airport_db[self.origin]
+            if ap is not None:
+                cumul.append(ap.point.plot(ax, **airports_style))
+        if airports and self.destination:
+            from traffic.data import airports as airport_db
+
+            ap = airport_db[self.destination]
+            if ap is not None:
+                cumul.append(ap.point.plot(ax, **airports_style))
+
+        if labels:
+            for point in self.all_points if labels == "all" else self.points:
+                cumul.append(point.plot(ax, **labels_style))
+
+        return cumul

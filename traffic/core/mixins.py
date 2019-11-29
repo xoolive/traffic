@@ -452,5 +452,9 @@ class PointMixin(object):
 
         cumul: List[Artist] = []
         cumul.append(ax.scatter(self.longitude, self.latitude, **kwargs))
-        cumul.append(ax.text(self.longitude, self.latitude, **text_kw))
+
+        west, east, south, north = ax.get_extent(PlateCarree())
+        if west <= self.longitude <= east and south <= self.latitude <= north:
+            cumul.append(ax.text(self.longitude, self.latitude, **text_kw))
+
         return cumul
