@@ -1,4 +1,3 @@
-import warnings
 from pathlib import Path
 from typing import Optional, Type, TypeVar, Union
 
@@ -11,21 +10,41 @@ T = TypeVar("T", bound="NMNavaids")
 
 
 class NMNavaids(Navaids):
+    name: str = "nm_navaids"
+    filename: Optional[Path] = None
+
+    @property
+    def available(self) -> bool:
+        if self.filename is None:
+            return False
+        nnpt_file = next(self.filename.glob("AIRAC_*.nnpt"), None)
+        return nnpt_file is not None
+
+    def __init__(self, data: Optional[pd.DataFrame]) -> None:
+        print("constructor")
+        self._data = data
+
+    @property
+    def data(self) -> pd.DataFrame:
+        if self._data is not None:
+            return self._data
+
+        msg = f"No AIRAC_*.nnpt file found in {self.filename}"
+        raise RuntimeError(msg)
+
     @classmethod
     def from_file(
         cls: Type[T], filename: Union[Path, str], **kwargs
     ) -> Optional[T]:
 
-        filename = Path(filename)
+        if filename == "":
+            return cls(None)
 
-        nnpt_file = next(filename.glob("AIRAC_*.nnpt"), None)
+        cls.filename = Path(filename)
+        nnpt_file = next(cls.filename.glob("AIRAC_*.nnpt"), None)
+
         if nnpt_file is None:
-            msg = f"No AIRAC_*.nnpt file found in {filename}"
-            if kwargs.get("error", True):
-                raise RuntimeError(msg)
-            else:
-                warnings.warn(msg)
-            return None
+            return cls(None)
 
         return cls(
             pd.read_csv(

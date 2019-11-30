@@ -133,30 +133,26 @@ class Airway(_ElementaryBlock):
     pattern = r"\w{2,7}$"
 
     def get(self) -> Optional[Route]:
-        from traffic.data import nm_airways, airways
+        from traffic.data import airways
 
-        res = nm_airways[self.elt[0]]
-        if res is not None:
-            return res
-        return airways[self.elt[0]]
+        return airways.global_get(self.elt[0])
 
 
 class Point(_ElementaryBlock):
     pattern = r"\D{2,5}$"
 
     def get(self) -> Optional[Navaid]:
-        from traffic.data import nm_navaids, navaids
+        from traffic.data import navaids
 
-        if nm_navaids is not None:
-            res = nm_navaids[self.elt[0]]
-            if res is not None:
-                return res
-        return navaids[self.elt[0]]
+        return navaids.global_get(self.elt[0])
 
 
 class SID(Airway):
     def get(self, airport: Optional[str] = None) -> Optional[Route]:
         from traffic.data import nm_airways
+
+        if not nm_airways.available:
+            return None
 
         if airport is not None:
             return nm_airways[self.elt[0] + airport]
@@ -176,6 +172,9 @@ class SID(Airway):
 class STAR(Airway):
     def get(self, airport: Optional[str] = None) -> Optional[Route]:
         from traffic.data import nm_airways
+
+        if not nm_airways.available:
+            return None
 
         if airport is not None:
             return nm_airways[self.elt[0] + airport]

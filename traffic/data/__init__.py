@@ -79,8 +79,7 @@ if sys.version_info < (3, 7, 0):
 
     aixm_airspaces = AIXMAirspaceParser(config_file)
     nm_airspaces = NMAirspaceParser(config_file)
-    if nm_path_str != "":
-        nm_navaids = NMNavaids.from_file(nm_path_str, error=False)
+    nm_navaids = NMNavaids.from_file(nm_path_str)
     nm_airways = NMRoutes()
 
     opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
@@ -106,7 +105,7 @@ def __getattr__(name: str):
     if name == "nm_airspaces":  # coverage: ignore
         return NMAirspaceParser(config_file)
     if name == "nm_navaids":  # coverage: ignore
-        return NMNavaids.from_file(nm_path_str, error=True)
+        return NMNavaids.from_file(nm_path_str)
     if name == "nm_airways":
         return NMRoutes()
     if name == "opensky":

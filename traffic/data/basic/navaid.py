@@ -3,7 +3,7 @@
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterator, NamedTuple, Optional, Tuple, Union
+from typing import Dict, Iterator, NamedTuple, Optional, Tuple, Union
 
 import pandas as pd
 import requests
@@ -86,9 +86,23 @@ class Navaids(DataFrameMixin):
     """
 
     cache_dir: Path
+    alternatives: Dict[str, "Navaids"] = dict()
+    name: str = "default"
 
     def __init__(self, data: Optional[pd.DataFrame] = None):
         self._data: Optional[pd.DataFrame] = data
+
+    def __new__(cls, data: Optional[pd.DataFrame] = None) -> None:
+        print("__new__", cls)
+        instance = super().__new__(cls)
+        print("instance", instance.available)
+        if instance.available:
+            Navaids.alternatives[cls.name] = instance
+        return instance
+
+    @property
+    def available(self) -> bool:
+        return True
 
     def download_data(self) -> None:  # coverage: ignore
         """Downloads the latest version of the navaid database from the
@@ -235,6 +249,14 @@ class Navaids(DataFrameMixin):
             dic["frequency"] = None
             dic["magnetic_variation"] = None
         return Navaid(**dic)
+
+    def global_get(self, name) -> Optional[Navaid]:
+        """Search for a navaid from all alternative data sources."""
+        for key, value in self.alternatives.items():
+            alt = value[name]
+            if alt is not None:
+                return alt
+        return None
 
     def __iter__(self) -> Iterator[Navaid]:
         for _, x in self.data.iterrows():

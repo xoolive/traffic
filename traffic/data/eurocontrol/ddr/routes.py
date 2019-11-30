@@ -1,7 +1,8 @@
 # fmt: off
 
+from functools import lru_cache
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Set
 
 import pandas as pd
 
@@ -12,6 +13,15 @@ from ...basic.airways import Airways
 
 class NMRoutes(Airways):
     nm_path: Optional[Path] = None
+    name: str = "nm_airways"
+
+    @lru_cache()
+    def _ipython_key_completions_(self) -> Set[str]:
+        return set(self.data.route)
+
+    @property
+    def available(self) -> bool:
+        return self.nm_path is not None
 
     @property
     def data(self):

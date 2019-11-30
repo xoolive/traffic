@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 from shapely.geometry import LineString
@@ -127,9 +127,17 @@ class Airways(DataFrameMixin):
     """
 
     cache_dir: Path
+    alternatives: Dict[str, "Airways"] = dict()
+    name: str = "default"
 
     def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
         self._data = data
+
+    def __new__(cls, data: Optional[pd.DataFrame] = None) -> None:
+        instance = super().__new__(cls)
+        if instance.available:
+            Airways.alternatives[cls.name] = instance
+        return instance
 
     def download_data(self) -> None:  # coverage: ignore
         self._data = pd.read_csv(
@@ -137,6 +145,10 @@ class Airways(DataFrameMixin):
         )
         self._data.columns = ["route", "id", "navaid", "lat", "lon"]
         self._data.to_pickle(self.cache_dir / "traffic_airways.pkl")
+
+    @property
+    def available(self) -> bool:
+        return True
 
     @property
     def data(self) -> pd.DataFrame:
@@ -159,6 +171,14 @@ class Airways(DataFrameMixin):
             list((x["lon"], x["lat"]) for _, x in output.iterrows())
         )
         return Route(ls, name, list(output.navaid))
+
+    def global_get(self, name) -> Optional[Route]:
+        """Search for a route from all alternative data sources."""
+        for key, value in self.alternatives.items():
+            alt = value[name]
+            if alt is not None:
+                return alt
+        return None
 
     def through(self, name: str) -> List[Route]:
         """Selects all routes going through the given navigational beacon.
