@@ -1,7 +1,7 @@
 # flake8: noqa
+# WARNING!! Don't change order of import in this file
 from .flight import Flight
-from .flightplan import FlightPlan
 from .traffic import Traffic
-# WARNING!! keep airspace as a last import!
 from .airspace import Airspace
 from .sv import StateVectors
+from .flightplan import FlightPlan

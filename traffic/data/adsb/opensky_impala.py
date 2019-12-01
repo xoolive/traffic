@@ -648,8 +648,8 @@ class Impala(object):
 
         if count_airports_params > 0:
             where_clause = (
-                "on sv.icao24 = est.icao24 and "
-                "sv.callsign = est.callsign and "
+                "on sv.icao24 = est.e_icao24 and "
+                "sv.callsign = est.e_callsign and "
                 "est.firstseen <= sv.time and "
                 "sv.time <= est.lastseen "
                 "where"
@@ -662,9 +662,9 @@ class Impala(object):
                     "either arrival_airport or departure_airport is set"
                 )
             other_tables += (
-                "as sv join (select icao24, firstseen, estdepartureairport, "
-                "lastseen, estarrivalairport, callsign, day "
-                "from flights_data4 "
+                "as sv join (select icao24 as e_icao24, firstseen, "
+                "estdepartureairport, lastseen, estarrivalairport, "
+                "callsign as e_callsign, day from flights_data4 "
                 "where estdepartureairport ='{departure_airport}' "
                 "and estarrivalairport ='{arrival_airport}' "
                 "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
@@ -677,9 +677,9 @@ class Impala(object):
 
         elif arrival_airport is not None:
             other_tables += (
-                "as sv join (select icao24, firstseen, estdepartureairport, "
-                "lastseen, estarrivalairport, callsign, day "
-                "from flights_data4 "
+                "as sv join (select icao24 as e_icao24, firstseen, "
+                "estdepartureairport, lastseen, estarrivalairport, "
+                "callsign as e_callsign, day from flights_data4 "
                 "where estarrivalairport ='{arrival_airport}' "
                 "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
             ).format(
@@ -690,9 +690,9 @@ class Impala(object):
 
         elif departure_airport is not None:
             other_tables += (
-                "as sv join (select icao24, firstseen, estdepartureairport, "
-                "lastseen, estarrivalairport, callsign, day "
-                "from flights_data4 "
+                "as sv join (select icao24 as e_icao24, firstseen, "
+                "estdepartureairport, lastseen, estarrivalairport, "
+                "callsign as e_callsign, day from flights_data4 "
                 "where estdepartureairport ='{departure_airport}' "
                 "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
             ).format(
@@ -703,9 +703,9 @@ class Impala(object):
 
         elif airport is not None:
             other_tables += (
-                "as sv join (select icao24, firstseen, estdepartureairport, "
-                "lastseen, estarrivalairport, callsign, day "
-                "from flights_data4 "
+                "as sv join (select icao24 as e_icao24, firstseen, "
+                "estdepartureairport, lastseen, estarrivalairport, "
+                "callsign as e_callsign, day from flights_data4 "
                 "where (estdepartureairport ='{arrival_or_departure_airport}' "
                 "or estarrivalairport = '{arrival_or_departure_airport}') "
                 "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
@@ -935,7 +935,7 @@ class Impala(object):
 
         if count_airports_params > 0 or bounds is not None:
             where_clause = (
-                "on rollcall_replies_data4.icao24 = est.icao24 and "
+                "on rollcall_replies_data4.icao24 = est.e_icao24 and "
                 "est.firstseen <= rollcall_replies_data4.mintime and "
                 "rollcall_replies_data4.mintime <= est.lastseen "
                 "where"
@@ -955,7 +955,7 @@ class Impala(object):
 
             other_tables += (
                 "join (select min(time) as firstseen, max(time) as lastseen, "
-                "icao24 from state_vectors_data4 "
+                "icao24 as e_icao24 from state_vectors_data4 "
                 "where hour>={before_hour} and hour<{after_hour} and "
                 f"time>={start.timestamp()} and time<{stop.timestamp()} and "
                 f"lon>={west} and lon<={east} and "
@@ -970,9 +970,9 @@ class Impala(object):
                     "either arrival_airport or departure_airport is set"
                 )
             other_tables += (
-                "join (select icao24, firstseen, estdepartureairport, "
-                "lastseen, estarrivalairport, callsign, day "
-                "from flights_data4 "
+                "join (select icao24 as e_icao24, firstseen, "
+                "estdepartureairport, lastseen, estarrivalairport, "
+                "callsign, day from flights_data4 "
                 "where estdepartureairport ='{departure_airport}' "
                 "and estarrivalairport ='{arrival_airport}' "
                 "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
@@ -985,9 +985,9 @@ class Impala(object):
 
         elif arrival_airport is not None:
             other_tables += (
-                "join (select icao24, firstseen, estdepartureairport, "
-                "lastseen, estarrivalairport, callsign, day "
-                "from flights_data4 "
+                "join (select icao24 as e_icao24, firstseen, "
+                "estdepartureairport, lastseen, estarrivalairport, "
+                "callsign, day from flights_data4 "
                 "where estarrivalairport ='{arrival_airport}' "
                 "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
             ).format(
@@ -998,9 +998,9 @@ class Impala(object):
 
         elif departure_airport is not None:
             other_tables += (
-                "join (select icao24, firstseen, estdepartureairport, "
-                "lastseen, estarrivalairport, callsign, day "
-                "from flights_data4 "
+                "join (select icao24 as e_icao24, firstseen, "
+                "estdepartureairport, lastseen, estarrivalairport, "
+                "callsign, day from flights_data4 "
                 "where estdepartureairport ='{departure_airport}' "
                 "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
             ).format(
@@ -1011,9 +1011,9 @@ class Impala(object):
 
         elif airport is not None:
             other_tables += (
-                "join (select icao24, firstseen, estdepartureairport, "
-                "lastseen, estarrivalairport, callsign, day "
-                "from flights_data4 "
+                "join (select icao24 as e_icao24, firstseen, "
+                "estdepartureairport, lastseen, estarrivalairport, "
+                "callsign, day from flights_data4 "
                 "where (estdepartureairport ='{arrival_or_departure_airport}' "
                 "or estarrivalairport = '{arrival_or_departure_airport}') "
                 "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
@@ -1052,7 +1052,7 @@ class Impala(object):
                 + ", "
                 + ", ".join(
                     f"est.{field}"
-                    for field in ["firstseen", "lastseen", "icao24"]
+                    for field in ["firstseen", "lastseen", "e_icao24"]
                 )
             )
             parse_columns = ", ".join(
