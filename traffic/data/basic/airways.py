@@ -141,7 +141,7 @@ class Airways(DataFrameMixin):
 
     def download_data(self) -> None:  # coverage: ignore
         self._data = pd.read_csv(
-            base_url + "/earth_awy.dat", sep=" ", header=-1
+            base_url + "/earth_awy.dat", sep=" ", header=None
         )
         self._data.columns = ["route", "id", "navaid", "lat", "lon"]
         self._data.to_pickle(self.cache_dir / "traffic_airways.pkl")
