@@ -1,13 +1,8 @@
 # fmt: off
 
-<<<<<<< HEAD
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, Set
-=======
-from pathlib import Path
-from typing import Optional
->>>>>>> nm_airways
 
 import pandas as pd
 
@@ -18,7 +13,6 @@ from ...basic.airways import Airways
 
 class NMRoutes(Airways):
     nm_path: Optional[Path] = None
-<<<<<<< HEAD
     name: str = "nm_airways"
 
     @lru_cache()
@@ -28,8 +22,6 @@ class NMRoutes(Airways):
     @property
     def available(self) -> bool:
         return self.nm_path is not None
-=======
->>>>>>> nm_airways
 
     @property
     def data(self):
