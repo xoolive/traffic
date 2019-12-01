@@ -13,11 +13,11 @@ from .basic.airports import Airports
 from .basic.airways import Airways
 from .basic.navaid import Navaids
 from .basic.runways import Runways
+from .eurocontrol.b2b import NMB2B
 from .eurocontrol.ddr.airspaces import NMAirspaceParser
 from .eurocontrol.ddr.navpoints import NMNavaids
 from .eurocontrol.ddr.routes import NMRoutes
 from .eurocontrol.ddr.so6 import SO6  # noqa: F401
-from .eurocontrol.nmb2b import NMB2B
 
 # Parse configuration and input specific parameters in below classes
 
@@ -98,15 +98,15 @@ if sys.version_info < (3, 7, 0):
 
     if pkcs12_filename != "" and pkcs12_password != "":
         logging.debug(f"pcks12_filename: {pkcs12_filename}")
-        nmb2b = NMB2B(
+        nm_b2b = NMB2B(
             getattr(NMB2B, nmb2b_mode),
             nmb2b_version,
             pkcs12_filename,
             pkcs12_password,
         )
         if len(proxy_values) > 0:
-            nmb2b.session.proxies.update(proxy_values)
-            nmb2b.session.trust_env = False
+            nm_b2b.session.proxies.update(proxy_values)
+            nm_b2b.session.trust_env = False
 
 
 @lru_cache()
@@ -138,19 +138,19 @@ def __getattr__(name: str):
         return opensky
     if name == "runways":
         return Runways()
-    if name == "nmb2b":
+    if name == "nm_b2b":
         if pkcs12_filename != "" and pkcs12_password != "":
             logging.debug(f"pcks12_filename: {pkcs12_filename}")
-            nmb2b = NMB2B(
+            nm_b2b = NMB2B(
                 getattr(NMB2B, nmb2b_mode),
                 nmb2b_version,
                 pkcs12_filename,
                 pkcs12_password,
             )
             if len(proxy_values) > 0:
-                nmb2b.session.proxies.update(proxy_values)
-                nmb2b.session.trust_env = False
-            return nmb2b
+                nm_b2b.session.proxies.update(proxy_values)
+                nm_b2b.session.trust_env = False
+            return nm_b2b
     if name == "airac":  # coverage: ignore
         cache_file = cache_dir / "airac.cache"
         if cache_file.exists():

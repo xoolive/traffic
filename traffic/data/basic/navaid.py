@@ -93,9 +93,7 @@ class Navaids(DataFrameMixin):
         self._data: Optional[pd.DataFrame] = data
 
     def __new__(cls, data: Optional[pd.DataFrame] = None) -> None:
-        print("__new__", cls)
         instance = super().__new__(cls)
-        print("instance", instance.available)
         if instance.available:
             Navaids.alternatives[cls.name] = instance
         return instance
