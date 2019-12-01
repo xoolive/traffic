@@ -21,7 +21,6 @@ class NMNavaids(Navaids):
         return nnpt_file is not None
 
     def __init__(self, data: Optional[pd.DataFrame]) -> None:
-        print("constructor")
         self._data = data
 
     @property

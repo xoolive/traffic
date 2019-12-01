@@ -178,7 +178,7 @@ class RegulationList(DataFrameMixin, B2BReply):
                         for p in elt.find("location")  # type: ignore
                         if p.text is not None
                     },
-                    **{
+                    **{  # type: ignore
                         "start": elt.find(  # type: ignore
                             "applicability/wef"
                         ).text
@@ -190,7 +190,7 @@ class RegulationList(DataFrameMixin, B2BReply):
                         if elt.find("applicability") is not None
                         else None,
                     },
-                    **{
+                    **{  # type: ignore
                         "airspace": elt.find(  # type: ignore
                             refloc + "ReferenceLocationAirspace/id"
                         ).text
@@ -204,7 +204,7 @@ class RegulationList(DataFrameMixin, B2BReply):
                         is not None
                         else None,
                     },
-                    **{
+                    **{  # type: ignore
                         "fl_min": elt.find(  # type: ignore
                             "location/flightLevels/min/level"
                         ).text

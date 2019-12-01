@@ -1,3 +1,5 @@
+import re
+import textwrap
 import warnings
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, NoReturn, Optional, Set, Type, TypeVar
@@ -6,7 +8,7 @@ from xml.etree import ElementTree
 
 import pandas as pd
 
-from ....core import Flight
+from ....core import Flight, FlightPlan
 from ....core.mixins import DataFrameMixin
 from ....core.time import timelike, to_datetime
 from .reply import B2BReply
@@ -242,6 +244,62 @@ class FlightInfo(B2BReply):
         assert elt.text is not None
         return elt.text
 
+    @property
+    def flight_plan(self) -> FlightPlan:
+        return FlightPlan(
+            self.icaoRoute,
+            self.aerodromeOfDeparture,
+            self.aerodromeOfDestination,
+        )
+
+    @property
+    def callsign(self) -> Optional[str]:
+        if hasattr(self, "aircraftId"):
+            return self.aircraftId
+        return None
+
+    @property
+    def icao24(self) -> Optional[str]:
+        if hasattr(self, "aircraftAddress"):
+            return self.aircraftAddress
+        return None
+
+    def _repr_html_(self):
+        from ....data import aircraft, airports
+
+        title = f"<h4><b>Flight {self.flight_id}</b> "
+        title += f"({self.aerodromeOfDeparture} → "
+        title += f"{self.aerodromeOfDestination})</h4>"
+        if hasattr(self, "aircraftId"):
+            title += f"callsign: {self.aircraftId}<br/>"
+        title += f" from {airports[self.aerodromeOfDeparture]}<br/>"
+        title += f" to {airports[self.aerodromeOfDestination]}<br/><br/>"
+        if hasattr(self, "aircraftAddress"):
+            title += aircraft[self.aircraftAddress.lower()]._repr_html_()
+
+        info = pd.DataFrame.from_dict(
+            [
+                {
+                    "EOBT": self.estimatedOffBlockTime,
+                    "ETOT": self.estimatedTakeOffTime,
+                    "ATOT": self.actualTakeOffTime,
+                    "ETOA": self.estimatedTimeOfArrival,
+                    "ATOA": self.actualTimeOfArrival,
+                }
+            ]
+        ).T.rename(columns={0: self.flight_id})
+
+        no_wrap_div = '<div style="float: left; margin: 10px">{}</div>'
+        fp = self.flight_plan
+        return (
+            title
+            + "<br/><code>"
+            + "<br/>".join(textwrap.wrap(re.sub(r"\s+", " ", fp.repr).strip()))
+            + "</code><br/>"
+            + no_wrap_div.format(fp._repr_svg_())
+            + info._repr_html_()
+        )
+
     def __getattr__(self, name) -> str:
         cls = type(self)
         assert self.reply is not None
@@ -382,7 +440,7 @@ class FlightList(DataFrameMixin, B2BReply):
 
 
 class FlightManagement:
-    def list_flight(
+    def list_flights(
         self,
         start: timelike,
         stop: Optional[timelike] = None,
