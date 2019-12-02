@@ -301,7 +301,10 @@ class FlightPlan(ShapelyMixin):
     def _repr_svg_(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            return super()._repr_svg_()
+            try:
+                return super()._repr_svg_()
+            except Exception:
+                pass
 
     def decompose(self) -> List[Optional[_ElementaryBlock]]:
         parsed: List[Optional[_ElementaryBlock]] = []

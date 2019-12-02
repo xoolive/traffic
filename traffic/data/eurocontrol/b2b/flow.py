@@ -256,7 +256,7 @@ class RegulationList(DataFrameMixin, B2BReply):
 
 
 class Measures:
-    def list_regulation(
+    def list_regulations(
         self,
         start: timelike,
         stop: Optional[timelike] = None,

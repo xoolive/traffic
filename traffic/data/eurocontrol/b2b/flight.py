@@ -280,11 +280,21 @@ class FlightInfo(B2BReply):
         info = pd.DataFrame.from_dict(
             [
                 {
-                    "EOBT": self.estimatedOffBlockTime,
-                    "ETOT": self.estimatedTakeOffTime,
-                    "ATOT": self.actualTakeOffTime,
-                    "ETOA": self.estimatedTimeOfArrival,
-                    "ATOA": self.actualTimeOfArrival,
+                    "EOBT": self.estimatedOffBlockTime
+                    if hasattr(self, "estimatedOffBlockTime")
+                    else None,
+                    "ETOT": self.estimatedTakeOffTime
+                    if hasattr(self, "estimatedTakeOffTime")
+                    else None,
+                    "ATOT": self.actualTakeOffTime
+                    if hasattr(self, "actualTakeOffTime")
+                    else None,
+                    "ETOA": self.estimatedTimeOfArrival
+                    if hasattr(self, "estimatedTimeOfArrival")
+                    else None,
+                    "ATOA": self.actualTimeOfArrival
+                    if hasattr(self, "actualTimeOfArrival")
+                    else None,
                 }
             ]
         ).T.rename(columns={0: self.flight_id})
