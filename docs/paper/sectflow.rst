@@ -134,7 +134,6 @@ The anomaly detection method is based on a stacked autoencoder
     import torch
     from torch import nn, optim, from_numpy, rand
     from torch.autograd import Variable
-    from model import Autoencoder, regularisation_term
     
     from sklearn.preprocessing import minmax_scale
     from tqdm.autonotebook import tqdm
