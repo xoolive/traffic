@@ -11,17 +11,22 @@ from shapely.geometry import base, shape
 from shapely.ops import linemerge
 
 from ...core.geodesy import bearing
-from ...core.mixins import ShapelyMixin
+from ...core.mixins import PointMixin, ShapelyMixin
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "ProfHoekstra/bluesky/master/data/navdata"
 
 
-class Threshold(NamedTuple):
+class ThresholdTuple(NamedTuple):
     latitude: float
     longitude: float
     bearing: float
     name: str
+
+
+class Threshold(ThresholdTuple, PointMixin):
+    def __repr__(self):
+        return f"Runway {self.name}: {self.latlon}"
 
 
 RunwaysType = Dict[str, List[Tuple[Threshold, Threshold]]]

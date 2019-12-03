@@ -208,7 +208,7 @@ class CoordinatePoint(_ElementaryBlock):
             "NDB",
             self.lat,
             self.lon,
-            None,
+            float("nan"),
             None,
             None,
             None,

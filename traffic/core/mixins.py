@@ -407,6 +407,56 @@ class GeographyMixin(DataFrameMixin):
         )
 
 
+class GeoDBMixin(DataFrameMixin):
+    def extent(
+        self: T,
+        extent: Union[str, ShapelyMixin, Tuple[float, float, float, float]],
+        buffer: float = 0.5,
+    ) -> T:
+        """
+        Selects the subset of data inside the given extent.
+
+        The parameter extent may be passed as:
+
+            - a string to query OSM Nominatim service;
+            - the result of an OSM Nominatim query;
+            - any kind of shape (including airspaces);
+            - extents (west, east, south, north)
+
+        This works with databases like airways, airports or navaids.
+
+        >>> airways.extent('Switzerland')
+
+        >>> airports.extent(eurofirs['LFBB'])
+
+        >>> navaids['ZUE']
+        ZUE (NDB): 30.9 20.06833333 0 ZUEITINA NDB 369.0kHz
+        >>> navaids.extent('Switzerland')['ZUE']
+        ZUE (VOR): 47.59216667 8.81766667 1730 ZURICH EAST VOR-DME 110.05MHz
+
+        """
+        from ..drawing import Nominatim, location
+
+        _extent = (0.0, 0.0, 0.0, 0.0)
+
+        if isinstance(extent, str):
+            extent = location(extent)
+        if isinstance(extent, ShapelyMixin):
+            _extent = extent.extent
+        if isinstance(extent, Nominatim):
+            _extent = extent.extent
+        if isinstance(extent, tuple):
+            _extent = extent
+
+        west, east, south, north = _extent
+
+        output = self.query(
+            f"{south - buffer} <= latitude <= {north + buffer} and "
+            f"{west - buffer} <= longitude <= {east + buffer}"
+        )
+        return output
+
+
 class PointMixin(object):
 
     latitude: float

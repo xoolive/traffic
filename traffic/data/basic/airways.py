@@ -6,8 +6,7 @@ import pandas as pd
 from shapely.geometry import LineString
 from shapely.geometry.base import BaseGeometry
 
-from ...core.mixins import DataFrameMixin, ShapelyMixin
-from ...drawing import Nominatim, location
+from ...core.mixins import GeoDBMixin, ShapelyMixin
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"
@@ -70,7 +69,7 @@ class Route(ShapelyMixin):
         ax.plot(*self.shape.xy, **kwargs)
 
 
-class Airways(DataFrameMixin):
+class Airways(GeoDBMixin):
     """
     An ATS route is a specified route designed for channelling the flow of
     traffic as necessary for the provision of air traffic services.
@@ -133,7 +132,7 @@ class Airways(DataFrameMixin):
     def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
         self._data = data
 
-    def __new__(cls, data: Optional[pd.DataFrame] = None) -> None:
+    def __new__(cls, data: Optional[pd.DataFrame] = None) -> "Airways":
         instance = super().__new__(cls)
         if instance.available:
             Airways.alternatives[cls.name] = instance
@@ -143,7 +142,7 @@ class Airways(DataFrameMixin):
         self._data = pd.read_csv(
             base_url + "/earth_awy.dat", sep=" ", header=None
         )
-        self._data.columns = ["route", "id", "navaid", "lat", "lon"]
+        self._data.columns = ["route", "id", "navaid", "latitude", "longitude"]
         self._data.to_pickle(self.cache_dir / "traffic_airways.pkl")
 
     @property
@@ -161,6 +160,11 @@ class Airways(DataFrameMixin):
             logging.info("Loading airways database")
             self._data = pd.read_pickle(self.cache_dir / "traffic_airways.pkl")
 
+        if self._data is not None:
+            self._data = self._data.rename(
+                columns=dict(lat="latitude", lon="longitude")
+            )
+
         return self._data
 
     def __getitem__(self, name) -> Optional[Route]:
@@ -168,13 +172,13 @@ class Airways(DataFrameMixin):
         if output.shape[0] == 0:
             return None
         ls = LineString(
-            list((x["lon"], x["lat"]) for _, x in output.iterrows())
+            list((x["longitude"], x["latitude"]) for _, x in output.iterrows())
         )
         return Route(ls, name, list(output.navaid))
 
     def global_get(self, name) -> Optional[Route]:
         """Search for a route from all alternative data sources."""
-        for key, value in self.alternatives.items():
+        for _key, value in self.alternatives.items():
             alt = value[name]
             if alt is not None:
                 return alt
@@ -215,40 +219,5 @@ class Airways(DataFrameMixin):
         """
         output = self.__class__(
             self.data.query("route == @name.upper() or navaid == @name.upper()")
-        )
-        return output
-
-    def extent(
-        self,
-        extent: Union[
-            str, ShapelyMixin, Nominatim, Tuple[float, float, float, float]
-        ],
-        buffer: float = 0.5,
-    ) -> "Airways":
-        """
-        Selects the subset of airways inside the given extent.
-
-        The parameter extent may be passed as:
-
-            - a string to query OSM Nominatim service;
-            - the result of an OSM Nominatim query;
-            - any kind of shape (including airspaces);
-            - extents (west, east, south, north)
-
-        >>> airways.extent('Switzerland')
-
-        """
-        if isinstance(extent, str):
-            extent = location(extent)
-        if isinstance(extent, ShapelyMixin):
-            extent = extent.extent
-        if isinstance(extent, Nominatim):
-            extent = extent.extent
-
-        west, east, south, north = extent
-
-        output = self.query(
-            f"{south - buffer} <= lat <= {north + buffer} and "
-            f"{west - buffer} <= lon <= {east + buffer}"
         )
         return output

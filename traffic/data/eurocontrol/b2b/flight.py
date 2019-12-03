@@ -206,10 +206,12 @@ class ParseFields:
 
             rep: Dict[str, Any] = {"FIX": pointId.text}
             if self.route is not None:
-                fix = navaids.extent(airways[self.route])[pointId.text]
-                if fix is not None:
-                    rep["latitude"] = fix.latitude
-                    rep["longitude"] = fix.longitude
+                airway = airways[self.route]
+                if airway is not None:
+                    fix = navaids.extent(airway)[pointId.text]
+                    if fix is not None:
+                        rep["latitude"] = fix.latitude
+                        rep["longitude"] = fix.longitude
             return rep
         dbePoint = point.find("nonPublishedPoint-DBEPoint")
         if dbePoint is not None:
@@ -458,7 +460,7 @@ class FlightManagement:
         airport: Optional[str] = None,
         origin: Optional[str] = None,
         destination: Optional[str] = None,
-        fields: List[str] = [],
+        fields: Optional[List[str]] = None,
     ) -> Optional[FlightList]:
 
         start = to_datetime(start)
@@ -475,6 +477,7 @@ class FlightManagement:
         if sum(x is not None for x in query) > 1:
             raise RuntimeError(msg)
 
+        _fields = fields if fields is not None else []
         if airspace is not None:
             data = REQUESTS["FlightListByAirspaceRequest"].format(
                 send_time=datetime.now(timezone.utc),
@@ -482,7 +485,7 @@ class FlightManagement:
                 stop=stop,
                 requestedFlightFields="\n".join(
                     f"<requestedFlightFields>{field}</requestedFlightFields>"
-                    for field in default_flight_fields.union(fields)
+                    for field in default_flight_fields.union(_fields)
                 ),
                 airspace=airspace,
             )
@@ -504,7 +507,7 @@ class FlightManagement:
                 stop=stop,
                 requestedFlightFields="\n".join(
                     f"<requestedFlightFields>{field}</requestedFlightFields>"
-                    for field in default_flight_fields.union(fields)
+                    for field in default_flight_fields.union(_fields)
                 ),
                 aerodrome=airport,
                 aerodromeRole=role,

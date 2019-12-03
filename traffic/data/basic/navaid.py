@@ -8,7 +8,7 @@ from typing import Dict, Iterator, NamedTuple, Optional, Tuple, Union
 import pandas as pd
 import requests
 
-from ...core.mixins import DataFrameMixin, PointMixin, ShapelyMixin
+from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
 from ...drawing import Nominatim, location
 
 
@@ -16,9 +16,9 @@ class NavaidTuple(NamedTuple):
 
     name: str
     type: str
-    lat: float
-    lon: float
-    alt: Optional[float]
+    latitude: float
+    longitude: float
+    altitude: float
     frequency: Optional[float]
     magnetic_variation: Optional[float]
     description: Optional[str]
@@ -32,20 +32,22 @@ class NavaidTuple(NamedTuple):
 
 class Navaid(NavaidTuple, PointMixin):
     def __getattr__(self, name):
-        if name == "latitude":
-            return self.lat
-        if name == "longitude":
-            return self.lon
-        if name == "altitude":
-            return self.alt
+        if name == "lat":
+            return self.latitude
+        if name == "lon":
+            return self.longitude
+        if name == "alt":
+            return self.altitude
 
     def __repr__(self):
         if self.type in ["FIX", "DB", "WP"] or self.type != self.type:
-            return f"{self.name} ({self.type}): {self.lat} {self.lon}"
+            return (
+                f"{self.name} ({self.type}): {self.latitude} {self.longitude}"
+            )
         else:
             return (
-                f"{self.name} ({self.type}): {self.lat} {self.lon}"
-                f" {self.alt:.0f} "
+                f"{self.name} ({self.type}): {self.latitude} {self.longitude}"
+                f" {self.altitude:.0f} "
                 f"{self.description if self.description is not None else ''}"
                 f" {self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}"
             )
@@ -55,7 +57,7 @@ __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"
 
 
-class Navaids(DataFrameMixin):
+class Navaids(GeoDBMixin):
 
     """
     `VOR <https://en.wikipedia.org/wiki/VHF_omnidirectional_range>`_, `DME
@@ -92,7 +94,7 @@ class Navaids(DataFrameMixin):
     def __init__(self, data: Optional[pd.DataFrame] = None):
         self._data: Optional[pd.DataFrame] = data
 
-    def __new__(cls, data: Optional[pd.DataFrame] = None) -> None:
+    def __new__(cls, data: Optional[pd.DataFrame] = None) -> "Navaids":
         instance = super().__new__(cls)
         if instance.available:
             Navaids.alternatives[cls.name] = instance
@@ -132,7 +134,7 @@ class Navaids(DataFrameMixin):
                     "FIX",
                     float(fields[0]),
                     float(fields[1]),
-                    None,
+                    float("nan"),
                     None,
                     None,
                     None,
@@ -232,6 +234,10 @@ class Navaids(DataFrameMixin):
             logging.info("Loading navaid database")
             self._data = pd.read_pickle(self.cache_dir / "traffic_navaid.pkl")
 
+        if self._data is not None:
+            self._data = self._data.rename(
+                columns=dict(alt="altitude", lat="latitude", lon="longitude")
+            )
         return self._data
 
     @lru_cache()
@@ -242,15 +248,15 @@ class Navaids(DataFrameMixin):
         if x.shape[0] == 0:
             return None
         dic = dict(x.iloc[0])
-        if "alt" not in dic:
-            dic["alt"] = None
+        if "altitude" not in dic:
+            dic["altitude"] = None
             dic["frequency"] = None
             dic["magnetic_variation"] = None
         return Navaid(**dic)
 
     def global_get(self, name) -> Optional[Navaid]:
         """Search for a navaid from all alternative data sources."""
-        for key, value in self.alternatives.items():
+        for _key, value in self.alternatives.items():
             alt = value[name]
             if alt is not None:
                 return alt
@@ -278,39 +284,4 @@ class Navaids(DataFrameMixin):
             self.data.query(
                 "description == @name.upper() or name == @name.upper()"
             )
-        )
-
-    def extent(
-        self,
-        extent: Union[
-            str, ShapelyMixin, Nominatim, Tuple[float, float, float, float]
-        ],
-    ) -> "Navaids":
-        """
-        Selects the subset of navigational beacons inside the given extent.
-
-        The parameter extent may be passed as:
-
-            - a string to query OSM Nominatim service;
-            - the result of an OSM Nominatim query;
-            - any kind of shape (including airspaces);
-            - extents (west, east, south, north)
-
-        >>> navaids['ZUE']
-        ZUE (NDB): 30.9 20.06833333 0 ZUEITINA NDB 369.0kHz
-        >>> navaids.extent('Switzerland')['ZUE']
-        ZUE (VOR): 47.59216667 8.81766667 1730 ZURICH EAST VOR-DME 110.05MHz
-
-        """
-        if isinstance(extent, str):
-            extent = location(extent)
-        if isinstance(extent, ShapelyMixin):
-            extent = extent.extent
-        if isinstance(extent, Nominatim):
-            extent = extent.extent
-
-        west, east, south, north = extent
-
-        return self.query(
-            f"{south} <= lat <= {north} and {west} <= lon <= {east}"
         )

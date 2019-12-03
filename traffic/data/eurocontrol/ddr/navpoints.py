@@ -49,7 +49,7 @@ class NMNavaids(Navaids):
             pd.read_csv(
                 nnpt_file,
                 sep=";",
-                names=["name", "type", "lat", "lon", "description"],
+                names=["name", "type", "latitude", "longitude", "description"],
                 skiprows=1,
             )
         )

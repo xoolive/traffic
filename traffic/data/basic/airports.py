@@ -11,7 +11,7 @@ from cartopy.crs import PlateCarree
 from cartotools.osm import request, tags
 from shapely.geometry import mapping
 
-from ...core.mixins import DataFrameMixin, PointMixin, ShapelyMixin
+from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
 from ...drawing import Nominatim
 
 
@@ -119,7 +119,7 @@ class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
         ax.add_geometries(list(self.osm_request()), **params)
 
 
-class Airports(DataFrameMixin):
+class Airports(GeoDBMixin):
     """
     An airport is accessible via its ICAO or IATA code. In case of doubt,
     use the search method.
