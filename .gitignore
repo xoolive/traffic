@@ -20,3 +20,5 @@ sandbox/
 stubs/
 docs/*.ipynb
 traffic.conf
+
+docs/matplotlib.get_configdir/
