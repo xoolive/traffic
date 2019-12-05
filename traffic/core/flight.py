@@ -26,11 +26,11 @@ from ..algorithms.douglas_peucker import douglas_peucker
 from . import geodesy as geo
 from .distance import DistanceAirport, closest_point, guess_airport
 from .mixins import GeographyMixin, PointMixin, ShapelyMixin
+from .structure import Airport  # noqa: F401
 from .time import time_or_delta, timelike, to_datetime
 
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
-    from .airport import Airport  # noqa: F401
     from .traffic import Traffic  # noqa: F401
 
 # fmt: on
@@ -209,7 +209,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         if len(self.shape.coords) < 1000:
             return super()._repr_svg_()
         return super(
-            Flight, self.query("latitude == latitude").simplify(25)
+            Flight,
+            # cast should be useless but return type of simplify() is Union
+            cast(Flight, self.query("latitude == latitude").simplify(25)),
         )._repr_svg_()
 
     def __repr__(self) -> str:

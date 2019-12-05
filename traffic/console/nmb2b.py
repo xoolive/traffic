@@ -33,8 +33,8 @@ def main(args):
         logger.setLevel(logging.DEBUG)
 
     if args.airac is not None:
-        from traffic.data import nmb2b
+        from traffic.data import nm_b2b
 
-        nmb2b.aixm_dataset(args.airac)
+        nm_b2b.aixm_dataset(args.airac)
     else:
         raise RuntimeError("No action requested")

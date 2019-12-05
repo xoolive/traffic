@@ -10,11 +10,9 @@ from matplotlib.artist import Artist
 from shapely.geometry import LineString
 from shapely.ops import linemerge
 
-from ..data.basic.airports import Airport
-from ..data.basic.airways import Route
-from ..data.basic.navaid import Navaid
 from ..drawing import markers
 from .mixins import PointMixin, ShapelyMixin
+from .structure import Airport, Navaid, Route
 
 
 class _Point(PointMixin):

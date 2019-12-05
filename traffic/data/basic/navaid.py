@@ -9,49 +9,8 @@ import pandas as pd
 import requests
 
 from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
+from ...core.structure import Navaid, NavaidTuple
 from ...drawing import Nominatim, location
-
-
-class NavaidTuple(NamedTuple):
-
-    name: str
-    type: str
-    latitude: float
-    longitude: float
-    altitude: float
-    frequency: Optional[float]
-    magnetic_variation: Optional[float]
-    description: Optional[str]
-
-    def __getstate__(self):
-        return self.__dict__
-
-    def __setstate__(self, d):
-        self.__dict__.update(d)
-
-
-class Navaid(NavaidTuple, PointMixin):
-    def __getattr__(self, name):
-        if name == "lat":
-            return self.latitude
-        if name == "lon":
-            return self.longitude
-        if name == "alt":
-            return self.altitude
-
-    def __repr__(self):
-        if self.type in ["FIX", "DB", "WP"] or self.type != self.type:
-            return (
-                f"{self.name} ({self.type}): {self.latitude} {self.longitude}"
-            )
-        else:
-            return (
-                f"{self.name} ({self.type}): {self.latitude} {self.longitude}"
-                f" {self.altitude:.0f} "
-                f"{self.description if self.description is not None else ''}"
-                f" {self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}"
-            )
-
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"

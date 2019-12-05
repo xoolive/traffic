@@ -6,67 +6,13 @@ import pandas as pd
 from shapely.geometry import LineString
 from shapely.geometry.base import BaseGeometry
 
-from ...core.mixins import GeoDBMixin, ShapelyMixin
+from ...core.mixins import GeoDBMixin
+from ...core.structure import Route
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"
 
 BoundsType = Union[BaseGeometry, Tuple[float, float, float, float]]
-
-
-class Route(ShapelyMixin):
-    def __init__(self, shape: BaseGeometry, name: str, navaids: List[str]):
-        self.shape = shape
-        self.name = name
-        self.navaids = navaids
-
-    def __repr__(self):
-        return f"{self.name} ({', '.join(self.navaids)})"
-
-    def _info_html(self) -> str:
-        title = f"<b>Route {self.name}</b><br/>"
-        title += f"flies through {', '.join(self.navaids)}.<br/>"
-        return title
-
-    def _repr_html_(self) -> str:
-        title = self._info_html()
-        no_wrap_div = '<div style="white-space: nowrap">{}</div>'
-        return title + no_wrap_div.format(self._repr_svg_())
-
-    def __getitem__(self, elts: Tuple[str, str]) -> "Route":
-        elt1, elt2 = elts
-        idx1, idx2 = self.navaids.index(elt1), self.navaids.index(elt2)
-        if idx1 == -1:
-            raise RuntimeError(f"{elt1} not in {self.navaids}")
-        if idx2 == -1:
-            raise RuntimeError(f"{elt2} not in {self.navaids}")
-        if idx1 == idx2:
-            raise RuntimeError("The two references must be different")
-        if idx1 > idx2:
-            idx2, idx1 = idx1, idx2
-        # fmt: off
-        return Route(
-            LineString(self.shape.coords[idx1: idx2 + 1]),
-            name=self.name + f" between {elt1} and {elt2}",
-            navaids=self.navaids[idx1: idx2 + 1],
-        )
-        # fmt: on
-
-    def plot(self, ax, **kwargs):  # coverage: ignore
-        if "color" not in kwargs:
-            kwargs["color"] = "#aaaaaa"
-        if "alpha" not in kwargs:
-            kwargs["alpha"] = 0.5
-        if "linewidth" not in kwargs and "lw" not in kwargs:
-            kwargs["linewidth"] = 0.8
-        if "linestyle" not in kwargs and "ls" not in kwargs:
-            kwargs["linestyle"] = "dashed"
-        if "projection" in ax.__dict__:
-            from cartopy.crs import PlateCarree
-
-            kwargs["transform"] = PlateCarree()
-
-        ax.plot(*self.shape.xy, **kwargs)
 
 
 class Airways(GeoDBMixin):
