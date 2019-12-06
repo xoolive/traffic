@@ -156,9 +156,9 @@ class SID(Airway):
             return nm_airways[self.elt[0] + airport]
 
         possible = set(
-            nm_airways.query(
+            nm_airways.data.query(
                 f'route.str.startswith("{self.elt[0]}")'
-            ).data.route
+            ).route
         )
         if len(possible) == 1:
             return nm_airways[possible.pop()]
@@ -178,9 +178,9 @@ class STAR(Airway):
             return nm_airways[self.elt[0] + airport]
 
         possible = set(
-            nm_airways.query(
+            nm_airways.data.query(
                 f'route.str.startswith("{self.elt[0]}")'
-            ).data.route
+            ).route
         )
         if len(possible) == 1:
             return nm_airways[possible.pop()]

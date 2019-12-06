@@ -80,14 +80,16 @@ class Traffic(GeographyMixin):
     __slots__ = ("data",)
 
     @classmethod
-    def from_flights(cls, flights: Iterable[Optional[Flight]]) -> "Traffic":
+    def from_flights(
+        cls, flights: Iterable[Optional[Flight]]
+    ) -> Optional["Traffic"]:
         """
         Creates a Traffic structure from all flights passed as an
         iterator or iterable.
         """
         cumul = [f.data for f in flights if f is not None]
         if len(cumul) == 0:
-            raise ValueError("empty traffic")
+            return None
         return cls(pd.concat(cumul, sort=False))
 
     @classmethod
@@ -140,7 +142,7 @@ class Traffic(GeographyMixin):
             return tentative.rename(columns=rename_columns)
 
         path = Path(filename)
-        logging.warn(f"{path.suffixes} extension is not supported")
+        logging.warning(f"{path.suffixes} extension is not supported")
         return None
 
     # --- Special methods ---
@@ -166,20 +168,24 @@ class Traffic(GeographyMixin):
             if p_icao24:
                 query.append(f"icao24 == '{index.icao24}'")
 
-            flight = Flight(
-                self.data.query(
-                    query[0] if len(query) == 1 else " and ".join(query)
-                )
+            df = self.data.query(
+                query[0] if len(query) == 1 else " and ".join(query)
             )
+            if df.shape[0] == 0:
+                return None
 
-            if hasattr(index, "firstSeen"):  # refers to OpenSky REST API
+            flight: Optional[Flight] = Flight(df)
+
+            if flight is not None and hasattr(index, "firstSeen"):
+                # refers to OpenSky REST API
                 flight = flight.after(index.firstSeen)
-            if hasattr(index, "lastSeen"):  # refers to OpenSky REST API
+            if flight is not None and hasattr(index, "lastSeen"):
+                # refers to OpenSky REST API
                 flight = flight.before(index.lastSeen)
 
-            if hasattr(index, "start"):  # more natural
+            if flight is not None and hasattr(index, "start"):  # more natural
                 flight = flight.after(index.start)
-            if hasattr(index, "stop"):  # more natural
+            if flight is not None and hasattr(index, "stop"):  # more natural
                 flight = flight.before(index.stop)
 
             return flight
@@ -187,14 +193,24 @@ class Traffic(GeographyMixin):
         return None
 
     @overload
+    def __getitem__(self, index: int) -> Optional[Flight]:
+        ...
+
+    @overload  # noqa: F811
     def __getitem__(self, index: str) -> Optional[Flight]:
         ...
 
     @overload  # noqa: F811
-    def __getitem__(self, index: IterStr) -> "Traffic":
+    def __getitem__(self, index: slice) -> Optional["Traffic"]:
         ...
 
-    def __getitem__(self, index):  # noqa: F811
+    @overload  # noqa: F811
+    def __getitem__(self, index: IterStr) -> Optional["Traffic"]:
+        ...
+
+    def __getitem__(  # noqa: F811
+        self, index
+    ) -> Union[None, Flight, "Traffic"]:
 
         if isinstance(index, pd.Series):
             return self._getSeries(index)
@@ -203,6 +219,13 @@ class Traffic(GeographyMixin):
             return self.__class__.from_flights(
                 flight for flight in self.iterate(by=index)
             )
+
+        if isinstance(index, int):
+            for i, flight in enumerate(self.iterate()):
+                if i == index:
+                    return flight
+            else:
+                return None
 
         if isinstance(index, slice):
             max_size = index.stop if index.stop is not None else len(self)
@@ -492,17 +515,17 @@ class Traffic(GeographyMixin):
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
-    def before(self, ts: timelike, strict: bool = True) -> "Traffic":
+    def before(self, ts: timelike, strict: bool = True) -> Optional["Traffic"]:
         return self.between(self.start_time, ts, strict)
 
     @lazy_evaluation(default=True)
-    def after(self, ts: timelike, strict: bool = True) -> "Traffic":
+    def after(self, ts: timelike, strict: bool = True) -> Optional["Traffic"]:
         return self.between(ts, self.end_time, strict)
 
     @lazy_evaluation(default=True)
     def between(
         self, start: timelike, stop: time_or_delta, strict: bool = True
-    ) -> "Traffic":
+    ) -> Optional["Traffic"]:
 
         # Corner cases when start or stop are None or NaT
         if start is None or start != start:
@@ -521,12 +544,17 @@ class Traffic(GeographyMixin):
         # full call is necessary to keep @before and @after as local variables
         # return self.query('@before < timestamp < @after')  => not valid
         if strict:
-            return self.__class__(self.data.query("@start < timestamp < @stop"))
+            df = self.data.query("@start < timestamp < @stop")
+        else:
+            df = self.data.query("@start <= timestamp <= @stop")
 
-        return self.__class__(self.data.query("@start <= timestamp <= @stop"))
+        if df.shape[0] == 0:
+            return None
+
+        return self.__class__(df)
 
     @lazy_evaluation(default=True)
-    def airborne(self) -> "Traffic":
+    def airborne(self) -> Optional["Traffic"]:
         """Returns the airborne part of the Traffic.
 
         The airborne part is determined by an ``onground`` flag or null values
@@ -559,6 +587,8 @@ class Traffic(GeographyMixin):
     def callsigns(self) -> Set[str]:
         """Return all the different callsigns in the DataFrame"""
         sub = self.data.query("callsign == callsign")
+        if sub.shape[0] == 0:
+            return set()
         return set(sub.callsign)
 
     # https://github.com/python/mypy/issues/1362
@@ -566,13 +596,13 @@ class Traffic(GeographyMixin):
     @lru_cache()
     def aircraft(self) -> Set[str]:
         """Return all the different icao24 aircraft ids in the DataFrame"""
-        logging.warning("Use .icao24s", DeprecationWarning)
+        logging.warning("Use .icao24", DeprecationWarning)
         return set(self.data.icao24)
 
     # https://github.com/python/mypy/issues/1362
     @property  # type: ignore
     @lru_cache()
-    def icao24s(self) -> Set[str]:
+    def icao24(self) -> Set[str]:
         """Return all the different icao24 aircraft ids in the DataFrame"""
         return set(self.data.icao24)
 
@@ -801,7 +831,7 @@ class Traffic(GeographyMixin):
         projection: Union[pyproj.Proj, crs.Projection, None] = None,
         round_t: str = "d",
         max_workers: int = 4,
-    ) -> "CPA":
+    ) -> Optional["CPA"]:
         """
         Computes a Closest Point of Approach (CPA) dataframe for all pairs of
         trajectories candidates for being separated by less than

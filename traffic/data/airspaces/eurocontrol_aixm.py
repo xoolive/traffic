@@ -484,12 +484,14 @@ class AIXMAirspaceParser(object):
             )
 
             if star is None:
-                logging.warn("No aixm:StandardInstrumentArrivalTimeSlice found")
+                logging.warning(
+                    "No aixm:StandardInstrumentArrivalTimeSlice found"
+                )
                 continue
 
             handle = star.find("aixm:airportHeliport", self.ns)
             if handle is None:
-                logging.warn("No aixm:airportHeliport found")
+                logging.warning("No aixm:airportHeliport found")
                 continue
 
             airport_id = handle.attrib["{%s}href" % (self.ns["xlink"])]
@@ -501,7 +503,7 @@ class AIXMAirspaceParser(object):
                 )
 
                 if points is None:
-                    logging.warn(
+                    logging.warning(
                         "No aixm:StandardInstrumentArrivalExtension found"
                     )
                     continue

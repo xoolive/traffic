@@ -162,12 +162,15 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.sort_values(key))
 
-    def query(self: T, query_str: str) -> T:
+    def query(self: T, query_str: str) -> Optional[T]:
         """
         Applies the Pandas ``query()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
-        return self.__class__(self.data.query(query_str))
+        df = self.data.query(query_str)
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
 
     def drop(self: T, *args, **kwargs) -> T:
         """
@@ -412,7 +415,7 @@ class GeoDBMixin(DataFrameMixin):
         self: T,
         extent: Union[str, ShapelyMixin, Tuple[float, float, float, float]],
         buffer: float = 0.5,
-    ) -> T:
+    ) -> Optional[T]:
         """
         Selects the subset of data inside the given extent.
 
@@ -455,6 +458,21 @@ class GeoDBMixin(DataFrameMixin):
             f"{west - buffer} <= longitude <= {east + buffer}"
         )
         return output
+
+    def geoencode(self) -> alt.Chart:  # coverage: ignore
+        """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
+        shape to be composed in an interactive visualization.
+        """
+        return (
+            alt.Chart(self.data)
+            .mark_circle()
+            .encode(
+                longitude="longitude:Q",
+                latitude="latitude:Q",
+                size=alt.value(3),
+                color=alt.value("steelblue"),
+            )
+        )
 
 
 class PointMixin(object):

@@ -38,7 +38,7 @@ def airspace_kepler(airspace: "Airspace") -> Dict[str, Any]:
 
 def traffic_kepler(traffic: "Traffic") -> pd.DataFrame:
     if traffic.flight_ids is None:
-        logging.warn("assign_id() has been appended for you")
+        logging.warning("assign_id() has been appended for you")
         traffic = traffic.assign_id().eval()
     return pd.DataFrame.from_records(
         [

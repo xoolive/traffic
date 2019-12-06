@@ -90,7 +90,7 @@ class Aircraft(object):
 
         url: https://opensky-network.org/aircraft-database
         """
-        logging.warn("Downloading OpenSky aircraft database")
+        logging.warning("Downloading OpenSky aircraft database")
         file_url = (
             "https://opensky-network.org/datasets/metadata/aircraftDatabase.csv"
         )

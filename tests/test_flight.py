@@ -29,7 +29,9 @@ def test_properties() -> None:
     assert len(flight) == 16005
     assert flight.min("altitude") == -59  # Welcome to the Netherlands!
     assert flight.max("altitude") == 18025
-    assert flight.last(minutes=20).mean("vertical_rate") < -500
+    last_20min = flight.last(minutes=20)
+    assert last_20min is not None
+    assert last_20min.mean("vertical_rate") < -500
     assert f"{flight.start}" == "2018-05-30 15:21:38+00:00"
     assert f"{flight.stop}" == "2018-05-30 20:22:56+00:00"
     assert flight.callsign == "TRA051"
@@ -76,11 +78,17 @@ def test_iterators() -> None:
 
 def test_time_methods() -> None:
     flight = belevingsvlucht
-    assert f"{flight.first(minutes=10).stop}" == "2018-05-30 15:31:37+00:00"
-    assert f"{flight.last(minutes=10).start}" == "2018-05-30 20:12:57+00:00"
+    first10 = flight.first(minutes=10)
+    last10 = flight.last(minutes=10)
+    assert first10 is not None
+    assert last10 is not None
+    assert f"{first10.stop}" == "2018-05-30 15:31:37+00:00"
+    assert f"{last10.start}" == "2018-05-30 20:12:57+00:00"
 
     # between is a combination of before and after
-    before_after = flight.before("2018-05-30 19:00").after("2018-05-30 18:00")
+    before_after = flight.before("2018-05-30 19:00")
+    assert before_after is not None
+    before_after = before_after.after("2018-05-30 18:00")
     between = flight.between("2018-05-30 18:00", "2018-05-30 19:00")
 
     # flight comparison made by distance computation
@@ -101,10 +109,13 @@ def test_time_methods() -> None:
     b = flight.between(None, "2018-05-30 19:00", strict=False)
     a = flight.between("2018-05-30 18:00", None, strict=False)
 
+    assert a is not None and b is not None
     assert a.shorter_than(flight.duration)
     assert b.shorter_than(flight.duration)
 
-    shorter = flight.query("altitude < 100").max_split(10)
+    low = flight.query("altitude < 100")
+    assert low is not None
+    shorter = low.max_split(10)
     assert shorter is not None
     assert shorter.duration < pd.Timedelta("6 minutes")
 
@@ -123,12 +134,18 @@ def test_time_methods() -> None:
 
 def test_bearing() -> None:
     ajaccio: Flight = get_sample(calibration, "ajaccio")
-
-    vor = navaids.extent(ajaccio)["AJO"]
+    ext_navaids = navaids.extent(ajaccio)
+    assert ext_navaids is not None
+    vor = ext_navaids["AJO"]
     assert vor is not None
-    gen = ajaccio.bearing(vor).query("bearing.diff().abs() < .01").split("1T")
+    subset = ajaccio.bearing(vor).query("bearing.diff().abs() < .01")
+    assert subset is not None
     assert (
-        sum(1 for chunk in gen if chunk.duration > pd.Timedelta("5 minutes"))
+        sum(
+            1
+            for chunk in subset.split("1T")
+            if chunk.duration > pd.Timedelta("5 minutes")
+        )
         == 7
     )
 
@@ -243,7 +260,7 @@ def test_resample_unwrapped() -> None:
     )
 
     resampled = Flight(df).resample("1s")
-    assert len(resampled.query("50 < track < 300")) == 0
+    assert resampled.query("50 < track < 300") is None
 
     resampled_10 = Flight(df).resample(10)
     assert len(resampled_10) == 10
@@ -261,7 +278,9 @@ def test_agg_time() -> None:
 def test_comet() -> None:
     flight = belevingsvlucht
 
-    takeoff = next(flight.query("altitude < 300").split("10T"))
+    subset = flight.query("altitude < 300")
+    assert subset is not None
+    takeoff = next(subset.split("10T"))
     comet = takeoff.comet(minutes=1)
 
     assert takeoff.point.altitude + 2000 < comet.point.altitude  # type: ignore

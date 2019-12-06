@@ -208,10 +208,12 @@ class ParseFields:
             if self.route is not None:
                 airway = airways[self.route]
                 if airway is not None:
-                    fix = navaids.extent(airway)[pointId.text]
-                    if fix is not None:
-                        rep["latitude"] = fix.latitude
-                        rep["longitude"] = fix.longitude
+                    nx = navaids.extent(airway)
+                    if nx is not None:
+                        fix = nx[pointId.text]
+                        if fix is not None:
+                            rep["latitude"] = fix.latitude
+                            rep["longitude"] = fix.longitude
             return rep
         dbePoint = point.find("nonPublishedPoint-DBEPoint")
         if dbePoint is not None:

@@ -54,14 +54,27 @@ def test_index() -> None:
 
     assert len(switzerland[df]) == 3
     assert switzerland[df.iloc[0]] is not None
-    assert len(switzerland[["EXS33W", "4009f9"]]) == 4
+    subset = switzerland[["EXS33W", "4009f9"]]
+    assert subset is not None
+    assert len(subset) == 4
+
+    s_0 = switzerland[0]
+    assert s_0 is not None
+    assert s_0.callsign == "SAA260"
+
+    assert switzerland[2000] is None
+
+    subset = switzerland[:2]
+    assert subset is not None
+    assert subset.callsigns == {"SAA260", "SAA261"}
+    assert subset.icao24 == {"00b0ed"}
 
 
 def test_aircraft() -> None:
-    assert set(
-        f.max("typecode")
-        for f in switzerland[["EXS33W", "4009f9"]].aircraft_data()
-    ) == {"A320", "B733"}
+    subset = switzerland[["EXS33W", "4009f9"]]
+    expected = {"A320", "B733"}
+    assert subset is not None
+    assert set(f.max("typecode") for f in subset.aircraft_data()) == expected
 
 
 def high_altitude(flight: Flight) -> bool:
@@ -89,3 +102,9 @@ def test_chaining() -> None:
     assert sw_filtered.data.shape[0] > 80000
     assert min(len(f) for f in sw_filtered) == 60
     assert sw_filtered.data.altitude.max() == 47000.0
+
+
+def test_none():
+    assert switzerland.query("altitude > 60000") is None
+    assert switzerland.after("2018-08-01").before("2018-08-01") is None
+    assert switzerland.iterate_lazy().query("altitude > 60000").eval() is None

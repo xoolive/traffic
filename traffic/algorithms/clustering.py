@@ -36,7 +36,10 @@ def prepare_features(
 
     resampled = traffic
     if nb_samples is not None:
-        resampled = traffic.resample(nb_samples).eval(max_workers=max_workers)
+        _resampled = traffic.resample(nb_samples).eval(max_workers=max_workers)
+        # TODO LazyTraffic/LazyOptionalTraffic
+        assert _resampled is not None
+        resampled = _resampled
 
     if all(
         [
@@ -121,7 +124,7 @@ class Clustering:
     def fit_predict(
         self, max_workers: int = 1, return_traffic: bool = True
     ) -> "Traffic":
-    
+
         if self.X is None:
             self.X = prepare_features(
                 self.traffic,

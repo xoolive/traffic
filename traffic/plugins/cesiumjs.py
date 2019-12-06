@@ -87,7 +87,7 @@ def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
 
 
 def to_czml(
-    traffic: Union[Traffic, SO6],
+    traffic: Union[None, Traffic, SO6],
     filename: Union[str, Path],
     minimum_time: Optional[timelike] = None,
 ) -> None:
@@ -99,7 +99,7 @@ def to_czml(
         elif "altitude" in traffic.data.columns:
             traffic = traffic.query("altitude == altitude")
 
-    if minimum_time is not None:
+    if traffic is not None and minimum_time is not None:
         minimum_time = to_datetime(minimum_time)
         traffic = traffic.query(f"timestamp >= '{minimum_time}'")
 
@@ -109,6 +109,7 @@ def to_czml(
     if not filename.parent.exists():
         filename.parent.mkdir(parents=True)
 
+    assert traffic is not None
     start = format_ts(traffic.start_time)
     availability = f"{start}/{format_ts(traffic.end_time)}"
     export = [
