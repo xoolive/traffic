@@ -34,19 +34,24 @@ def test_geojson() -> None:
 
     geojson = schiphol.geojson()
 
-    assert set(
-        elt["properties"].get("name", None)
+    # Sweet names for runways at Schiphol
+    assert dict(
+        (
+            elt["properties"].get("ref", None),
+            elt["properties"].get("name", None),
+        )
         for elt in geojson
         if elt["properties"].get("aeroway", None) == "runway"
+        and elt["properties"].get("ref", None) is not None
+        and elt["properties"].get("name", None) is not None
     ) == {
-        "Aalsmeerbaan",
-        "Buitenveldertbaan",
-        "Kaagbaan",
-        "Oostbaan",
-        "Polderbaan",
-        "Zwanenburgbaan",
+        "18L/36R": "Aalsmeerbaan",
+        "04/22": "Oostbaan",
+        "18C/36C": "Zwanenburgbaan",
+        "09/27": "Buitenveldertbaan",
+        "18R/36L": "Polderbaan",
+        "06/24": "Kaagbaan",
     }
-
     assert schiphol.point.name == "EHAM"
 
 
