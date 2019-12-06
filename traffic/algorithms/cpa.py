@@ -1,6 +1,6 @@
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import TYPE_CHECKING, Iterator, Set, Tuple, Union
+from typing import TYPE_CHECKING, Iterator, Optional, Set, Tuple, Union
 
 import pandas as pd
 import pyproj
@@ -18,8 +18,12 @@ def combinations(
     t: "Traffic", lateral_separation: float, vertical_separation: float
 ) -> Iterator[Tuple["Flight", "Flight"]]:
     for flight in tqdm(t, desc="Combinations", leave=False):
-        t = t.query(f'icao24 != "{flight.icao24}"')
-        for second in t.query(
+
+        t_ = t.query(f'icao24 != "{flight.icao24}"')
+        if t_ is None:
+            continue
+
+        clipped = t_.query(
             f'x >= {flight.min("x")} - {lateral_separation} and '
             f'x <= {flight.max("x")} + {lateral_separation} and '
             f'y >= {flight.min("y")} - {lateral_separation} and '
@@ -28,7 +32,11 @@ def combinations(
             f'altitude <= {flight.max("altitude")} + {vertical_separation} and '
             f'timestamp <= "{flight.stop}" and '
             f'timestamp >= "{flight.start}" '
-        ):
+        )
+        if clipped is None:
+            continue
+
+        for second in clipped:
             yield flight, second
 
 
@@ -113,7 +121,7 @@ def closest_point_of_approach(
     projection: Union[pyproj.Proj, crs.Projection, None] = None,
     round_t: str = "d",
     max_workers: int = 4,
-) -> CPA:
+) -> Optional[CPA]:
     """
     Computes a CPA dataframe for all pairs of trajectories candidates for
     being separated by less than lateral_separation in vertical_separation.
@@ -203,6 +211,11 @@ def closest_point_of_approach(
             }
 
             for future in as_completed(tasks):
-                cumul.append(future.result())
+                result = future.result()
+                if result is not None:
+                    cumul.append(result)
+
+    if len(cumul) == 0:
+        return None
 
     return CPA(pd.concat(cumul, sort=False))

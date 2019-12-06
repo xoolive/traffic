@@ -7,7 +7,7 @@ import pandas as pd
 
 from traffic.core import Traffic
 from traffic.core.aero import vtas2cas
-from traffic.core.time import timelike, to_datetime
+from traffic.core.time import timelike
 from traffic.data import aircraft
 
 
@@ -26,8 +26,7 @@ def to_bluesky(
     """Generates a Bluesky scenario file."""
 
     if minimum_time is not None:
-        minimum_time = to_datetime(minimum_time)
-        traffic = traffic.query(f"timestamp >= '{minimum_time}'")
+        traffic = traffic.after(minimum_time)
 
     if isinstance(filename, str):
         filename = Path(filename)

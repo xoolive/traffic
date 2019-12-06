@@ -51,7 +51,7 @@ def assign_id(t: Union[Traffic, Flight], name: str) -> Union[Traffic, Flight]:
     if "flight_id" in t.data.columns:
         return t
     if isinstance(t, Traffic):
-        return t.assign_id().eval()
+        return cast(Traffic, t.assign_id().eval())
     else:
         return t.assign(flight_id=name)
 

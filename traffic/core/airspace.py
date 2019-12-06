@@ -269,7 +269,7 @@ def inside_bbox(
     bounds: Union[
         ShapelyMixin, base.BaseGeometry, Tuple[float, float, float, float]
     ],
-) -> T:
+) -> Optional[T]:
     """Returns the part of the DataFrame with coordinates located within the
     bounding box of the shape passed in parameter.
 
@@ -308,7 +308,7 @@ def _flight_intersects(
     - If a shapely Geometry is passed, the 2D trajectory alone is
     considered.
     """
-    linestring = flight.airborne().linestring
+    linestring = flight.linestring
     if linestring is None:
         return False
     if isinstance(shape, base.BaseGeometry):

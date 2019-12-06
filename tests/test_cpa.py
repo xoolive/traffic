@@ -12,6 +12,7 @@ def test_cpa() -> None:
         .assign_id()
         .eval()
     )
+    assert smaller is not None
 
     cpa = smaller.closest_point_of_approach(
         lateral_separation=10 * 1852,
@@ -20,11 +21,12 @@ def test_cpa() -> None:
         round_t="10T",
     )
 
-    res = (
-        cpa.aggregate(lateral_separation=5, vertical_separation=1000)["0a0075"]
-        .query("aggregated < 1.5")
-        .min("aggregated")
-    )
+    assert cpa is not None
+    separation = dict(lateral_separation=5, vertical_separation=1000)
+    res15 = cpa.aggregate(**separation)["0a0075"].query("aggregated < 1.5")
+
+    assert res15 is not None
+    res = res15.min("aggregated")
 
     callsigns = {*res.data.callsign_x, *res.data.callsign_y}
     assert callsigns == {"BAW2591", "BAW605", "DAH2062", "EZY54UC"}

@@ -118,7 +118,7 @@ class LazyTraffic:
 
     def eval(
         self, max_workers: int = 1, desc: Optional[str] = None
-    ) -> "Traffic":
+    ) -> Optional["Traffic"]:
         """
 
         The result can only be accessed after a call to ``eval()``.
@@ -209,7 +209,7 @@ class LazyTraffic:
 
     def __getattr__(self, name):
         if hasattr(self.wrapped_t, name):
-            logging.warn(
+            logging.warning(
                 ".eval() has been automatically appended for you.\n"
                 "Check the documentation for more options."
             )
@@ -285,9 +285,9 @@ It should be safe to create a proper named function and pass it to filter_if.
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             if any(is_lambda(arg) for arg in args):
-                logging.warn(msg.format(method=f.__name__))
+                logging.warning(msg.format(method=f.__name__))
             if any(is_lambda(arg) for arg in kwargs.values()):
-                logging.warn(msg.format(method=f.__name__))
+                logging.warning(msg.format(method=f.__name__))
 
             return LazyTraffic(
                 lazy.wrapped_t,
@@ -318,9 +318,9 @@ It should be safe to create a proper named function and pass it to filter_if.
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             if any(is_lambda(arg) for arg in args):
-                logging.warn(msg.format(method=f.__name__))
+                logging.warning(msg.format(method=f.__name__))
             if any(is_lambda(arg) for arg in kwargs.values()):
-                logging.warn(msg.format(method=f.__name__))
+                logging.warning(msg.format(method=f.__name__))
 
             return LazyTraffic(wrapped_t, [op_idx])
 
@@ -346,8 +346,8 @@ It should be safe to create a proper named function and pass it to filter_if.
 # All methods coming from DataFrameMixin and GeographyMixin make sense in both
 # Flight and Traffic. However it would give real hard headaches to decorate them
 # all *properly* in the Traffic implementation. The following monkey-patching
-# does it all based on the type annotations (must match (T, ...) -> T)
-
+# does it all based on the type annotations (must match (T, ...) -> T or
+# (T, ...) -> Optional[T])
 
 for name, handle in inspect.getmembers(
     GeographyMixin, predicate=inspect.isfunction
@@ -356,7 +356,10 @@ for name, handle in inspect.getmembers(
     if name.startswith("_") or "self" not in annots or "return" not in annots:
         continue
 
-    if annots["self"] is annots["return"]:
+    if (
+        annots["return"] == annots["self"]
+        or annots["return"] == Optional[annots["self"]]  # includes .query()
+    ):
 
         def make_lambda(name: str) -> Callable[..., LazyTraffic]:
             def lazy_λf(lazy: LazyTraffic, *args, **kwargs):

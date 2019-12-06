@@ -501,7 +501,7 @@ class Decoder:
             reference = airports[reference]
 
         if reference is None:
-            logging.warn(
+            logging.warning(
                 "No valid reference position provided. Fallback to (0, 0)"
             )
             lat0, lon0 = 0.0, 0.0

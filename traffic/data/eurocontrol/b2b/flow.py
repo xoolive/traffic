@@ -178,7 +178,7 @@ class RegulationList(DataFrameMixin, B2BReply):
                         for p in elt.find("location")  # type: ignore
                         if p.text is not None
                     },
-                    **{  # type: ignore
+                    **{
                         "start": elt.find(  # type: ignore
                             "applicability/wef"
                         ).text
@@ -190,7 +190,7 @@ class RegulationList(DataFrameMixin, B2BReply):
                         if elt.find("applicability") is not None
                         else None,
                     },
-                    **{  # type: ignore
+                    **{
                         "airspace": elt.find(  # type: ignore
                             refloc + "ReferenceLocationAirspace/id"
                         ).text
@@ -204,7 +204,7 @@ class RegulationList(DataFrameMixin, B2BReply):
                         is not None
                         else None,
                     },
-                    **{  # type: ignore
+                    **{
                         "fl_min": elt.find(  # type: ignore
                             "location/flightLevels/min/level"
                         ).text
@@ -260,8 +260,8 @@ class Measures:
         self,
         start: timelike,
         stop: Optional[timelike] = None,
-        tvs: List[str] = [],
-        fields: List[str] = [],
+        tvs: Optional[List[str]] = None,
+        fields: Optional[List[str]] = None,
     ) -> Optional[RegulationList]:
 
         start = to_datetime(start)
@@ -269,6 +269,9 @@ class Measures:
             stop = to_datetime(stop)
         else:
             stop = start + timedelta(days=1)
+
+        _tvs = tvs if tvs is not None else []
+        _fields = fields if fields is not None else []
 
         data = REQUESTS["RegulationListRequest"].format(
             send_time=datetime.now(timezone.utc),
@@ -278,13 +281,13 @@ class Measures:
                 "<requestedRegulationFields>"
                 + "\n".join(
                     f"<item>{field}</item>"
-                    for field in default_regulation_fields.union(fields)
+                    for field in default_regulation_fields.union(_fields)
                 )
                 + "</requestedRegulationFields>"
             ),
             tvs=(
                 "<tvs>"
-                + "\n".join(f"<item>{tv}</item>" for tv in tvs)
+                + "\n".join(f"<item>{tv}</item>" for tv in _tvs)
                 + "</tvs>"
             )
             if tvs is not None

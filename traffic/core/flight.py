@@ -154,7 +154,8 @@ class Flight(GeographyMixin, ShapelyMixin):
             # useful for compatibility with sum() function
             return Traffic(self.data)
 
-        return Traffic.from_flights([self, other])
+        # This just cannot return None in this case.
+        return Traffic.from_flights([self, other])  # type: ignore
 
     def __radd__(self, other) -> "Traffic":
         """
@@ -206,12 +207,22 @@ class Flight(GeographyMixin, ShapelyMixin):
         # even 25m should be enough to limit the size of resulting notebooks!
         if self.shape is None:
             return None
-        if len(self.shape.coords) < 1000:
+
+        coords_only = self.query("latitude == latitude")
+        if coords_only is None:
+            return None
+
+        shape = coords_only.shape
+        if shape is None:
+            return None
+
+        if len(shape.coords) < 1000:
             return super()._repr_svg_()
+
         return super(
             Flight,
             # cast should be useless but return type of simplify() is Union
-            cast(Flight, self.query("latitude == latitude").simplify(25)),
+            cast(Flight, coords_only.simplify(25)),
         )._repr_svg_()
 
     def __repr__(self) -> str:
@@ -257,6 +268,8 @@ class Flight(GeographyMixin, ShapelyMixin):
     @property
     def xy_time(self) -> Iterator[Tuple[float, float, float]]:
         self_filtered = self.query("longitude == longitude")
+        if self_filtered is None:
+            return None
         iterator = iter(zip(self_filtered.coords, self_filtered.timestamp))
         while True:
             next_ = next(iterator, None)
@@ -548,7 +561,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     # -- Time handling, splitting, interpolation and resampling --
 
-    def first(self, **kwargs) -> "Flight":
+    def first(self, **kwargs) -> Optional["Flight"]:
         """Returns the first n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -561,9 +574,12 @@ class Flight(GeographyMixin, ShapelyMixin):
         delta = timedelta(**kwargs)
         bound = self.start + delta  # noqa: F841 => used in the query
         # full call is necessary to keep @bound as a local variable
-        return self.__class__(self.data.query("timestamp < @bound"))
+        df = self.data.query("timestamp < @bound")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
 
-    def last(self, **kwargs) -> "Flight":
+    def last(self, **kwargs) -> Optional["Flight"]:
         """Returns the last n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -576,9 +592,12 @@ class Flight(GeographyMixin, ShapelyMixin):
         delta = timedelta(**kwargs)
         bound = self.stop - delta  # noqa: F841 => used in the query
         # full call is necessary to keep @bound as a local variable
-        return self.__class__(self.data.query("timestamp > @bound"))
+        df = self.data.query("timestamp > @bound")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
 
-    def before(self, time: timelike, strict: bool = True) -> "Flight":
+    def before(self, time: timelike, strict: bool = True) -> Optional["Flight"]:
         """Returns the part of the trajectory flown before a given timestamp.
 
         - ``time`` can be passed as a string, an epoch, a Python datetime, or
@@ -586,7 +605,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         """
         return self.between(self.start, time, strict)
 
-    def after(self, time: timelike, strict: bool = True) -> "Flight":
+    def after(self, time: timelike, strict: bool = True) -> Optional["Flight"]:
         """Returns the part of the trajectory flown after a given timestamp.
 
         - ``time`` can be passed as a string, an epoch, a Python datetime, or
@@ -596,7 +615,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     def between(
         self, start: timelike, stop: time_or_delta, strict: bool = True
-    ) -> "Flight":
+    ) -> Optional["Flight"]:
         """Returns the part of the trajectory flown between start and stop.
 
         - ``start`` and ``stop`` can be passed as a string, an epoch, a Python
@@ -621,9 +640,14 @@ class Flight(GeographyMixin, ShapelyMixin):
         # full call is necessary to keep @start and @stop as local variables
         # return self.query('@start < timestamp < @stop')  => not valid
         if strict:
-            return self.__class__(self.data.query("@start < timestamp < @stop"))
+            df = self.data.query("@start < timestamp < @stop")
+        else:
+            df = self.data.query("@start <= timestamp <= @stop")
 
-        return self.__class__(self.data.query("@start <= timestamp <= @stop"))
+        if df.shape[0] == 0:
+            return None
+
+        return self.__class__(df)
 
     def at(self, time: Optional[timelike] = None) -> Optional[Position]:
         """Returns the position in the trajectory at a given timestamp.
@@ -659,9 +683,15 @@ class Flight(GeographyMixin, ShapelyMixin):
         - ``Flight.at_ratio(1)`` is the last point of the trajectory
           (equivalent to ``Flight.at()``)
         """
-        return self.between(
+        if ratio < 0 or ratio > 1:
+            raise RuntimeError("ratio must be comprised between 0 and 1")
+
+        subset = self.between(
             self.start, self.start + ratio * self.duration, strict=False
-        ).at()
+        )
+
+        assert subset is not None
+        return subset.at()
 
     @overload
     def split(self, value: int, unit: str) -> Iterator["Flight"]:
@@ -950,6 +980,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         window = self.last(seconds=20)
         delta = timedelta(**kwargs)
 
+        if window is None:
+            raise RuntimeError("Flight expect at least 20 seconds of data")
+
         new_gs = window.data.groundspeed.mean()
         new_vr = window.data.vertical_rate.mean()
 
@@ -992,7 +1025,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         """
         return self.assign(flight_id=name.format(self=self, idx=idx))
 
-    def airborne(self) -> "Flight":
+    def airborne(self) -> Optional["Flight"]:
         """Returns the airborne part of the Flight.
 
         The airborne part is determined by an ``onground`` flag or null values
@@ -1110,11 +1143,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         data = self.data
 
         if filtered:
-            data = (
-                self.filter(roll=17)
-                .query("roll.abs() < .5")
-                .filter(wind_u=17, wind_v=17)
-            )
+            data = self.filter(roll=17).query("roll.abs() < .5")
+            if data is not None:
+                data = data.filter(wind_u=17, wind_v=17)
 
         if resolution is not None:
 
@@ -1190,14 +1221,14 @@ class Flight(GeographyMixin, ShapelyMixin):
     @overload  # noqa: F811
     def distance(
         self, other: "Flight", column_name: str = "distance"
-    ) -> pd.DataFrame:
+    ) -> Optional[pd.DataFrame]:
         ...
 
     def distance(  # noqa: F811
         self,
         other: Union["Flight", "Airspace", Polygon, PointMixin],
         column_name: str = "distance",
-    ) -> Union["Flight", pd.DataFrame]:
+    ) -> Union[None, "Flight", pd.DataFrame]:
 
         """Computes the distance from a Flight to another entity.
 
@@ -1273,9 +1304,11 @@ class Flight(GeographyMixin, ShapelyMixin):
                 }
             )
 
-        start = max(self.airborne().start, other.airborne().start)
-        stop = min(self.airborne().stop, other.airborne().stop)
+        start = max(self.start, other.start)
+        stop = min(self.stop, other.stop)
         f1, f2 = (self.between(start, stop), other.between(start, stop))
+        if f1 is None or f2 is None:
+            return None
 
         cols = ["timestamp", "latitude", "longitude", "altitude"]
         cols += ["icao24", "callsign"]
@@ -1413,7 +1446,7 @@ class Flight(GeographyMixin, ShapelyMixin):
             Altitudes are not taken into account.
 
         """
-        list_coords = list(self.airborne().xy_time)
+        list_coords = list(self.xy_time)
         if len(list_coords) < 2:
             return None
 
@@ -1448,6 +1481,9 @@ class Flight(GeographyMixin, ShapelyMixin):
         clipped_flight = self.between(
             min(t for t, _ in times), max(t for _, t in times)
         )
+
+        if clipped_flight is None:
+            return None
 
         if clipped_flight.shape is None:
             return None
