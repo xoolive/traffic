@@ -716,7 +716,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         - in the pandas style: ``Flight.split('10T')`` (see ``pd.Timedelta``)
 
         """
-        if type(value) == int and unit is None:
+        if isinstance(value, int) and unit is None:
             # default value is 10 m
             unit = "m"
 

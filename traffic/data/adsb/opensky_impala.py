@@ -1108,32 +1108,29 @@ class Impala(object):
 
 # below this line is only helpful references
 # ------------------------------------------
-
-"""
-[hadoop-1:21000] > describe rollcall_replies_data4;
-+----------------------+-------------------+---------+
-| name                 | type              | comment |
-+----------------------+-------------------+---------+
-| sensors              | array<struct<     |         |
-|                      |   serial:int,     |         |
-|                      |   mintime:double, |         |
-|                      |   maxtime:double  |         |
-|                      | >>                |         |
-| rawmsg               | string            |         |
-| mintime              | double            |         |
-| maxtime              | double            |         |
-| msgcount             | bigint            |         |
-| icao24               | string            |         |
-| message              | string            |         |
-| isid                 | boolean           |         |
-| flightstatus         | tinyint           |         |
-| downlinkrequest      | tinyint           |         |
-| utilitymsg           | tinyint           |         |
-| interrogatorid       | tinyint           |         |
-| identifierdesignator | tinyint           |         |
-| valuecode            | smallint          |         |
-| altitude             | double            |         |
-| identity             | string            |         |
-| hour                 | int               |         |
-+----------------------+-------------------+---------+
-"""
+# [hadoop-1:21000] > describe rollcall_replies_data4;
+# +----------------------+-------------------+---------+
+# | name                 | type              | comment |
+# +----------------------+-------------------+---------+
+# | sensors              | array<struct<     |         |
+# |                      |   serial:int,     |         |
+# |                      |   mintime:double, |         |
+# |                      |   maxtime:double  |         |
+# |                      | >>                |         |
+# | rawmsg               | string            |         |
+# | mintime              | double            |         |
+# | maxtime              | double            |         |
+# | msgcount             | bigint            |         |
+# | icao24               | string            |         |
+# | message              | string            |         |
+# | isid                 | boolean           |         |
+# | flightstatus         | tinyint           |         |
+# | downlinkrequest      | tinyint           |         |
+# | utilitymsg           | tinyint           |         |
+# | interrogatorid       | tinyint           |         |
+# | identifierdesignator | tinyint           |         |
+# | valuecode            | smallint          |         |
+# | altitude             | double            |         |
+# | identity             | string            |         |
+# | hour                 | int               |         |
+# +----------------------+-------------------+---------+

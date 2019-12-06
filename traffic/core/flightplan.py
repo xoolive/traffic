@@ -296,7 +296,7 @@ class FlightPlan(ShapelyMixin):
             try:
                 return super()._repr_svg_()
             except Exception:
-                pass
+                return None
 
     def decompose(self) -> List[Optional[_ElementaryBlock]]:
         parsed: List[Optional[_ElementaryBlock]] = []

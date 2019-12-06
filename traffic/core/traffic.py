@@ -224,8 +224,7 @@ class Traffic(GeographyMixin):
             for i, flight in enumerate(self.iterate()):
                 if i == index:
                     return flight
-            else:
-                return None
+            return None
 
         if isinstance(index, slice):
             max_size = index.stop if index.stop is not None else len(self)

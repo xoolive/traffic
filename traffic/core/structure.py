@@ -200,8 +200,6 @@ class Route(ShapelyMixin):
         if "linestyle" not in kwargs and "ls" not in kwargs:
             kwargs["linestyle"] = "dashed"
         if "projection" in ax.__dict__:
-            from cartopy.crs import PlateCarree
-
             kwargs["transform"] = PlateCarree()
 
         ax.plot(*self.shape.xy, **kwargs)
