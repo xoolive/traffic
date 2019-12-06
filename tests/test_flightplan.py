@@ -1,11 +1,91 @@
 # fmt: off
 from typing import List, cast
 
-from traffic.core.flightplan import (Airway, CoordinatePoint, Direct,
-                                     FlightPlan, Point, SpeedLevel,
-                                     _ElementaryBlock)
+import pandas as pd
+from traffic.core.flightplan import (
+    Airway, CoordinatePoint, Direct, FlightPlan,
+    Point, SpeedLevel, _ElementaryBlock
+)
+from traffic.data.basic.airways import Airways
 
 # fmt: on
+
+
+class ExtraData(Airways):
+    name = "extra_for_test"
+    available = True
+
+    def __init__(self):
+        self._data = pd.DataFrame.from_records(
+            [
+                {
+                    "route": "LACOU5ALFBO",
+                    "navaid": "TOU",
+                    "id": 1,
+                    "latitude": 43.680833333333304,
+                    "longitude": 1.30972222222222,
+                },
+                {
+                    "route": "LACOU5ALFBO",
+                    "navaid": "ALIVA",
+                    "id": 2,
+                    "latitude": 43.933055555555605,
+                    "longitude": 1.14694444444444,
+                },
+                {
+                    "route": "LACOU5ALFBO",
+                    "navaid": "LACOU",
+                    "id": 3,
+                    "latitude": 44.296666666666695,
+                    "longitude": 0.904444444444444,
+                },
+                {
+                    "route": "ROXOG1HEGLL",
+                    "navaid": "ROXOG",
+                    "id": 1,
+                    "latitude": 50.266111111111094,
+                    "longitude": -1.56222222222222,
+                },
+                {
+                    "route": "ROXOG1HEGLL",
+                    "navaid": "AMTOD",
+                    "id": 2,
+                    "latitude": 50.5377777777778,
+                    "longitude": -1.4288888888888898,
+                },
+                {
+                    "route": "ROXOG1HEGLL",
+                    "navaid": "BEGTO",
+                    "id": 3,
+                    "latitude": 50.7625,
+                    "longitude": -1.23555555555556,
+                },
+                {
+                    "route": "ROXOG1HEGLL",
+                    "navaid": "HAZEL",
+                    "id": 4,
+                    "latitude": 51.0052777777778,
+                    "longitude": -0.984444444444444,
+                },
+                {
+                    "route": "ROXOG1HEGLL",
+                    "navaid": "*2LK",
+                    "id": 5,
+                    "latitude": 51.172777777777796,
+                    "longitude": -0.6855555555555559,
+                },
+                {
+                    "route": "ROXOG1HEGLL",
+                    "navaid": "OCK",
+                    "id": 6,
+                    "latitude": 51.305,
+                    "longitude": -0.447222222222222,
+                },
+            ]
+        )
+
+
+extra_data = ExtraData()
 
 flightplans: List[FlightPlan] = [
     # Local flight plan, LFBO to EGLL: easy
@@ -103,3 +183,28 @@ def test_flightplan():
             assert not isinstance(cur_, Airway) or not isinstance(next_, Airway)
             # never two consecutive navaids (coordinate points are ok though)
             assert not isinstance(cur_, Point) or not isinstance(next_, Point)
+
+
+def test_points():
+    one_fp = flightplans[0]
+    main_points = {"TOU", "LACOU", "CNA", "MANAK", "REVTU", "ROXOG", "OCK"}
+    extra_points = {
+        "*2LK",
+        "ADILU",
+        "ALIVA",
+        "AMTOD",
+        "BAKUL",
+        "BEGTO",
+        "BOLRO",
+        "CHALA",
+        "DIXAD",
+        "HAZEL",
+        "NTS",
+        "REN",
+        "TIRAV",
+        "UPALO",
+    }
+    assert set(x.name for x in one_fp.points) == main_points
+    assert set(x.name for x in one_fp.all_points) == main_points.union(
+        extra_points
+    )

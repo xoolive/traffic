@@ -147,21 +147,19 @@ class Point(_ElementaryBlock):
 
 class SID(Airway):
     def get(self, airport: Optional[str] = None) -> Optional[Route]:
-        from traffic.data import nm_airways
-
-        if not nm_airways.available:
-            return None
+        from traffic.data import airways, nm_airways
 
         if airport is not None:
-            return nm_airways[self.elt[0] + airport]
+            return airways.global_get(self.elt[0] + airport)
 
-        possible = set(
-            nm_airways.data.query(
-                f'route.str.startswith("{self.elt[0]}")'
-            ).route
-        )
-        if len(possible) == 1:
-            return nm_airways[possible.pop()]
+        if nm_airways.available:
+            possible = set(
+                nm_airways.data.query(
+                    f'route.str.startswith("{self.elt[0]}")'
+                ).route
+            )
+            if len(possible) == 1:
+                return nm_airways[possible.pop()]
 
         warnings.warn(f"Could not find any corresponding SID for {self.elt[0]}")
         return None
@@ -169,25 +167,21 @@ class SID(Airway):
 
 class STAR(Airway):
     def get(self, airport: Optional[str] = None) -> Optional[Route]:
-        from traffic.data import nm_airways
-
-        if not nm_airways.available:
-            return None
+        from traffic.data import airways, nm_airways
 
         if airport is not None:
-            return nm_airways[self.elt[0] + airport]
+            return airways.global_get(self.elt[0] + airport)
 
-        possible = set(
-            nm_airways.data.query(
-                f'route.str.startswith("{self.elt[0]}")'
-            ).route
-        )
-        if len(possible) == 1:
-            return nm_airways[possible.pop()]
+        if nm_airways.available:
+            possible = set(
+                nm_airways.data.query(
+                    f'route.str.startswith("{self.elt[0]}")'
+                ).route
+            )
+            if len(possible) == 1:
+                return nm_airways[possible.pop()]
 
-        warnings.warn(
-            f"Could not find any corresponding STAR for {self.elt[0]}"
-        )
+        warnings.warn(f"Could not find any corresponding SID for {self.elt[0]}")
         return None
 
 

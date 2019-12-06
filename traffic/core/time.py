@@ -18,7 +18,7 @@ def to_datetime(time: timelike) -> datetime:
         time = time.to_pydatetime()
     if isinstance(time, Number):
         time = datetime.fromtimestamp(time, timezone.utc)  # type: ignore
-    if time.tzinfo is None:
+    if time.tzinfo is None:  # coverage: ignore
         warnings.warn(
             "This timestamp is tz-naive. Things may not work as expected. "
             "If you construct your timestamps manually, consider passing a "
@@ -38,7 +38,7 @@ def round_time(
     dt = to_datetime(time)
 
     round_to = by.total_seconds()
-    if dt.tzinfo is None:
+    if dt.tzinfo is None:  # coverage: ignore
         seconds = (dt - dt.min).seconds
     else:
         seconds = (dt - dt.min.replace(tzinfo=timezone.utc)).seconds
@@ -47,7 +47,7 @@ def round_time(
         rounding = (seconds + round_to) // round_to * round_to
     elif how == "before":
         rounding = seconds // round_to * round_to
-    else:
+    else:  # coverage: ignore
         raise ValueError("parameter how must be `before` or `after`")
 
     return dt + timedelta(0, rounding - seconds, -dt.microsecond)
