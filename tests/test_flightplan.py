@@ -2,6 +2,7 @@
 from typing import List, cast
 
 import pandas as pd
+
 from traffic.core.flightplan import (
     Airway, CoordinatePoint, Direct, FlightPlan,
     Point, SpeedLevel, _ElementaryBlock

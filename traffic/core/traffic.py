@@ -5,8 +5,10 @@ import warnings
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-                    List, Optional, Set, Type, TypeVar, Union, overload)
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+    List, Optional, Set, Type, TypeVar, Union, overload
+)
 
 import pandas as pd
 import pyproj

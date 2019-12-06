@@ -5,8 +5,10 @@ import warnings
 from datetime import datetime, timedelta, timezone
 from functools import partial
 from operator import attrgetter
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-                    List, Optional, Set, Tuple, Union, cast, overload)
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+    List, Optional, Set, Tuple, Union, cast, overload
+)
 
 import altair as alt
 import numpy as np
