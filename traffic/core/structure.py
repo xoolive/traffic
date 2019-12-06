@@ -178,10 +178,6 @@ class Route(ShapelyMixin):
     def __getitem__(self, elts: Tuple[str, str]) -> "Route":
         elt1, elt2 = elts
         idx1, idx2 = self.navaids.index(elt1), self.navaids.index(elt2)
-        if idx1 == -1:
-            raise RuntimeError(f"{elt1} not in {self.navaids}")
-        if idx2 == -1:
-            raise RuntimeError(f"{elt2} not in {self.navaids}")
         if idx1 == idx2:
             raise RuntimeError("The two references must be different")
         if idx1 > idx2:

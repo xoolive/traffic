@@ -28,6 +28,28 @@ def test_search() -> None:
     assert airports.search("ITALY").data.icao.str.startswith("LI").all()
 
 
+def test_geojson() -> None:
+    schiphol = airports["EHAM"]
+    assert schiphol is not None
+
+    geojson = schiphol.geojson()
+
+    assert set(
+        elt["properties"].get("name", None)
+        for elt in geojson
+        if elt["properties"].get("aeroway", None) == "runway"
+    ) == {
+        "Aalsmeerbaan",
+        "Buitenveldertbaan",
+        "Kaagbaan",
+        "Oostbaan",
+        "Polderbaan",
+        "Zwanenburgbaan",
+    }
+
+    assert schiphol.point.name == "EHAM"
+
+
 @pytest.mark.skipif(skip_runways, reason="Failed downloading runway data")
 def test_runway_list() -> None:
     airport = airports["TLS"]
