@@ -16,3 +16,7 @@ exclude = '''
 
 [tool.isort]
 line_length = 80
+multi_line_output = 5
+balanced_wrapping = true
+# known_pandas=numpy,pandas,shapely,altair,pyproj
+# sections=FUTURE,STDLIB,PANDAS,THIRDPARTY,FIRSTPARTY,LOCALFOLDER
