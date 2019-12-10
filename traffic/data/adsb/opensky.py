@@ -176,7 +176,7 @@ class OpenSky(Impala):
 
         - OpenSky users can retrieve data of up to 1 hour in the past. If the
         time parameter has a value t < now−3600 the API will return
-        400 Bad Request.
+        400 Bad Request.
 
         - OpenSky users can retrieve data with a time resultion of 5 seconds.
         That means, if the time parameter was set to t , the API will return
