@@ -1199,17 +1199,21 @@ class Flight(GeographyMixin, ShapelyMixin):
 
     # -- Distances --
 
-    def bearing(self, other: PointMixin) -> "Flight":
+    def bearing(
+        self, other: PointMixin, column_name: str = "bearing"
+    ) -> "Flight":
         # temporary, should implement full stuff
         size = len(self)
         return self.assign(
-            bearing=geo.bearing(
-                self.data.latitude.values,
-                self.data.longitude.values,
-                other.latitude * np.ones(size),
-                other.longitude * np.ones(size),
-            )
-            % 360
+            **{
+                column_name: geo.bearing(
+                    self.data.latitude.values,
+                    self.data.longitude.values,
+                    other.latitude * np.ones(size),
+                    other.longitude * np.ones(size),
+                )
+                % 360
+            }
         )
 
     @overload
