@@ -720,7 +720,7 @@ class Impala(object):
         columns = ", ".join(self._impala_columns)
         parse_columns = ", ".join(self._impala_columns)
 
-        if count_airports_params > 1:
+        if count_airports_params > 0:
             est_columns = [
                 "firstseen",
                 "estdepartureairport",
