@@ -306,6 +306,13 @@ class Flight(GeographyMixin, ShapelyMixin):
         """
         return self.data[feature].mean()
 
+    def diff(self, feature: str) -> pd.Series:
+        """Returns a differential version of a feature.
+
+        >>> flight.cumulative_distance().diff("compute_gs").abs().max()
+        """
+        return self.data[feature].diff()
+
     def feature_gt(
         self,
         feature: Union[str, Callable[["Flight"], Any]],
@@ -1334,7 +1341,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         )
 
     def cumulative_distance(
-        self, compute_gs: bool = False, **kwargs
+        self, compute_gs: bool = True, **kwargs
     ) -> "Flight":
 
         """ Enrich the structure with new ``cumdist`` column computed from
@@ -1344,7 +1351,7 @@ class Flight(GeographyMixin, ShapelyMixin):
         **nautical miles**) and summed between consecutive positions. The last
         value is the total length of the trajectory.
 
-        When the ``compute_groundspeed`` flag is set to True, an additional
+        When the ``compute_gs`` flag is set to True (default), an additional
         ``compute_gs`` is also added. This value can be compared with the
         decoded ``groundspeed`` value in ADSB messages.
 
