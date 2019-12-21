@@ -22,5 +22,4 @@
         <wef>{start:%Y-%m-%d %H:%M}</wef>
         <unt>{stop:%Y-%m-%d %H:%M}</unt>
     </estimatedOffBlockTime>
-    {requestedFlightFields}
 </fl:FlightPlanListRequest>

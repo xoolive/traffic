@@ -12,5 +12,6 @@
         <unt>{stop:%Y-%m-%d %H:%M}</unt>
     </queryPeriod>
    {tvs}
+   {regulations}
    {requestedRegulationFields}
 </fw:RegulationListRequest>

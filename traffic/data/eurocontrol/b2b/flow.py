@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional, Set, Type, TypeVar
+from typing import List, Optional, Set, Type, TypeVar, Union
 from xml.etree import ElementTree
 
 import pandas as pd
@@ -261,6 +261,7 @@ class Measures:
         start: timelike,
         stop: Optional[timelike] = None,
         tvs: Optional[List[str]] = None,
+        regulations: Union[str, List[str]] = None,
         fields: Optional[List[str]] = None,
     ) -> Optional[RegulationList]:
 
@@ -272,6 +273,9 @@ class Measures:
 
         _tvs = tvs if tvs is not None else []
         _fields = fields if fields is not None else []
+        if isinstance(regulations, str):
+            regulations = [regulations]
+        _regulations = regulations if regulations is not None else []
 
         data = REQUESTS["RegulationListRequest"].format(
             send_time=datetime.now(timezone.utc),
@@ -291,6 +295,15 @@ class Measures:
                 + "</tvs>"
             )
             if tvs is not None
+            else "",
+            regulations=(
+                "<regulations>"
+                + "\n".join(
+                    f"<item>{regulation}</item>" for regulation in _regulations
+                )
+                + "</regulations>"
+            )
+            if regulations is not None
             else "",
         )
         rep = self.post(data)  # type: ignore

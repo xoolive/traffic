@@ -369,7 +369,9 @@ class FlightList(DataFrameMixin, B2BReply):
             super().__init__(*args, **kwargs)
 
     @classmethod
-    def fromB2BReply(cls, r: B2BReply):
+    def fromB2BReply(
+        cls: Type[FlightListTypeVar], r: B2BReply
+    ) -> FlightListTypeVar:
         assert r.reply is not None
         return cls.fromET(r.reply)
 
@@ -454,6 +456,25 @@ class FlightList(DataFrameMixin, B2BReply):
 
 
 class FlightManagement:
+    def get_flight(
+        self,
+        eobt: timelike,
+        callsign: Optional[str] = None,
+        origin: Optional[str] = None,
+        destination: Optional[str] = None,
+    ):
+
+        eobt = to_datetime(eobt)
+        data = REQUESTS["FlightRetrievalRequest"].format(
+            send_time=datetime.now(timezone.utc),
+            callsign=callsign,
+            origin=origin,
+            destination=destination,
+            eobt=f"{eobt:%Y-%m-%d %H:%M}",
+        )
+        rep = self.post(data)  # type: ignore
+        return FlightInfo.fromET(rep.reply.find("data"))
+
     def list_flights(
         self,
         start: timelike,
