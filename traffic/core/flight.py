@@ -306,13 +306,6 @@ class Flight(GeographyMixin, ShapelyMixin):
         """
         return self.data[feature].mean()
 
-    def diff(self, feature: str) -> pd.Series:
-        """Returns a differential version of a feature.
-
-        >>> flight.cumulative_distance().diff("compute_gs").abs().max()
-        """
-        return self.data[feature].diff()
-
     def feature_gt(
         self,
         feature: Union[str, Callable[["Flight"], Any]],
@@ -384,6 +377,48 @@ class Flight(GeographyMixin, ShapelyMixin):
         if isinstance(value, str):
             value = pd.Timedelta(value)
         return self.feature_gt(attrgetter("duration"), value, strict)
+
+    def abs(self, features: Union[str, List[str]], **kwargs) -> "Flight":
+        """Assign absolute versions of features to new columns.
+
+        >>> flight.abs("track")
+
+        The two following commands are equivalent:
+
+        >>> flight.abs(["track", "heading"])
+        >>> flight.abs(track="track_abs", heading="heading_abs")
+
+        """
+        assign_dict = dict()
+        if isinstance(features, str):
+            features = [features]
+        if isinstance(features, Iterable):
+            for feature in features:
+                assign_dict[feature + "_abs"] = self.data[feature].abs()
+        for key, value in kwargs.items():
+            assign_dict[value] = self.data[key].abs()
+        return self.assign(**assign_dict)
+
+    def diff(self, features: Union[str, List[str]], **kwargs) -> "Flight":
+        """Assign differential versions of features to new columns.
+
+        >>> flight.diff("track")
+
+        The two following commands are equivalent:
+
+        >>> flight.diff(["track", "heading"])
+        >>> flight.diff(track="track_diff", heading="heading_diff")
+
+        """
+        assign_dict = dict()
+        if isinstance(features, str):
+            features = [features]
+        if isinstance(features, Iterable):
+            for feature in features:
+                assign_dict[feature + "_diff"] = self.data[feature].diff()
+        for key, value in kwargs.items():
+            assign_dict[value] = self.data[key].diff()
+        return self.assign(**assign_dict)
 
     @property
     def start(self) -> pd.Timestamp:
