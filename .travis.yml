@@ -9,8 +9,9 @@ cache:
   - $HOME/.cache/traffic/
 
 python:
-  - "3.6"
-  - "3.7"
+  - 3.6
+  - 3.7
+  - 3.8
 
 env:
   global:
