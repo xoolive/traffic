@@ -53,9 +53,14 @@ def _split(
         delta = pd.Timedelta(value).to_timedelta64()
     else:
         delta = np.timedelta64(value, unit)
-    if diff.max() > delta:
-        yield from _split(data.iloc[: diff.argmax()], value, unit)
-        yield from _split(data.iloc[diff.argmax() :], value, unit)  # noqa
+    # There seems to be a change with numpy >= 1.18
+    # max() now may return NaN, therefore the following fix
+    max_ = np.nanmax(diff)
+    if max_ > delta:
+        # np.nanargmax seems bugged with timestamps
+        argmax = np.where(diff == max_)[0][0]
+        yield from _split(data.iloc[:argmax], value, unit)
+        yield from _split(data.iloc[argmax:], value, unit)  # noqa
     else:
         yield data
 

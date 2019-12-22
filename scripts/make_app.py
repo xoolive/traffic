@@ -23,8 +23,7 @@ Type=Application
 Categories=Utility;"""
 
     linux_script = """#!/usr/bin/env bash
-{}
-python -c "from traffic.console import gui; gui.main(None)"
+{python_exe} -m traffic gui"
 """
 
     def detect_environment(self):
@@ -48,7 +47,7 @@ python -c "from traffic.console import gui; gui.main(None)"
         script_path = os.path.expanduser("~/.local/bin/traffic_gui.sh")
 
         with open(script_path, "w") as fh:
-            fh.write(self.linux_script.format(self.detect_environment()))
+            fh.write(self.linux_script.format(python_exe=sys.executable))
             mode = os.fstat(fh.fileno()).st_mode
             mode |= 0o111
             os.fchmod(fh.fileno(), mode & 0o7777)
@@ -151,7 +150,7 @@ ${DIR}/traffic -c "from traffic.console import gui; gui.main(None)"
             if "conda" in sys.version or "Continuum" in sys.version:
                 linuxapp = LinuxApp()
                 fh.write(
-                    linuxapp.linux_script.format(linuxapp.detect_environment())
+                    linuxapp.linux_script.format(python_exe=sys.executable)
                 )
             else:
                 fh.write(self.darwin_script)
@@ -202,7 +201,7 @@ def main():
 
     app = fname.get(sys.platform, None)
     if app is not None:
-        app.make_app()
+        app.make_app()  # type: ignore
 
 
 if __name__ == "__main__":

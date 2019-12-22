@@ -1,9 +1,11 @@
 Web services from Eurocontrol NM
 --------------------------------
 
-The NM B2B web services is an interface provided by the EUROCONTROL Network
-Manager (NM) for system-to-system access to its services and data, allowing
-users to retrieve and use the information in their own systems.
+The `NM B2B web services
+<https://www.eurocontrol.int/service/network-manager-business-business-b2b-web-services>`_
+is an interface provided by the EUROCONTROL Network Manager (NM) for
+system-to-system access to its services and data, allowing users to
+retrieve and use the information in their own systems.
 
 We provide a basic API for some NM web services. They have been implemented
 on a per need basis: not everything is provided, but functionalities may be
