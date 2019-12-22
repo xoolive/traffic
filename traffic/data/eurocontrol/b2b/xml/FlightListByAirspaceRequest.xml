@@ -23,5 +23,6 @@
         <unt>{stop:%Y-%m-%d %H:%M}</unt>
     </trafficWindow>
     {requestedFlightFields}
+    <calculationType>ENTRY</calculationType>
     <airspace>{airspace}</airspace>
 </fl:FlightListByAirspaceRequest>

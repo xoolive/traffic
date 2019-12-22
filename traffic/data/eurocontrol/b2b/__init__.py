@@ -16,6 +16,31 @@ from .xml import REQUESTS
 
 
 class NMB2B(FlightManagement, Measures):
+    """
+    The main instance of this class is provided as:
+
+    .. code:: python
+
+        from traffic.data import nm_b2b
+
+    A path to your certificate and your password must be set in the
+    configuration file.
+
+    .. code:: python
+
+        >>> import traffic
+        >>> traffic.config_file
+        PosixPath('/home/xo/.config/traffic/traffic.conf')
+
+    Then edit the following line accordingly:
+
+    ::
+
+        [nmb2b]
+        pkcs12_filename =
+        pkcs12_password =
+
+    """
 
     PREOPS = {
         "base_url": "https://www.b2b.preops.nm.eurocontrol.int/",
@@ -71,9 +96,11 @@ class NMB2B(FlightManagement, Measures):
 
         return B2BReply.fromET(tree)
 
-    def get(
-        self, path: str, output_dir: Union[Path, str] = Path("~").expanduser()
-    ) -> None:
+    def get(self, path: str, output_dir: Union[None, Path, str] = None) -> None:
+
+        if output_dir is None:
+            output_dir = Path("~").expanduser()
+
         res = self.session.get(self.mode["file_url"] + path, stream=True)
         res.raise_for_status()
 

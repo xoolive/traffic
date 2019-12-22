@@ -256,22 +256,49 @@ class RegulationList(DataFrameMixin, B2BReply):
 
 
 class Measures:
-    def list_regulations(
+    def regulation_list(
         self,
         start: timelike,
         stop: Optional[timelike] = None,
-        tvs: Optional[List[str]] = None,
+        traffic_volumes: Optional[List[str]] = None,
         regulations: Union[str, List[str]] = None,
         fields: Optional[List[str]] = None,
     ) -> Optional[RegulationList]:
+        """Returns information about a (set of) given regulation(s).
 
-        start = to_datetime(start)
+        By default:
+
+        - the start parameter takes the current time.
+        - the stop parameter is one hour after the start parameter.
+
+        The method must take at least one of:
+        - traffic_volumes: impacted by a given regulation;
+        - regulations: identifiers related to a regulation;
+
+        By default, a set of (arguably) relevant fields are requested. More
+        fields can be requested when passed to the field parameter.
+
+        **Example usage:**
+
+        .. code:: python
+
+            nm_b2b.regulation_list(
+                "2019-12-22 10:00", regulations="LEMDA22A"
+            )
+
+        """
+
+        if start is not None:
+            start = to_datetime(start)
+        else:
+            start = datetime.now(timezone.utc)
+
         if stop is not None:
             stop = to_datetime(stop)
         else:
             stop = start + timedelta(days=1)
 
-        _tvs = tvs if tvs is not None else []
+        _tvs = traffic_volumes if traffic_volumes is not None else []
         _fields = fields if fields is not None else []
         if isinstance(regulations, str):
             regulations = [regulations]
@@ -294,7 +321,7 @@ class Measures:
                 + "\n".join(f"<item>{tv}</item>" for tv in _tvs)
                 + "</tvs>"
             )
-            if tvs is not None
+            if traffic_volumes is not None
             else "",
             regulations=(
                 "<regulations>"

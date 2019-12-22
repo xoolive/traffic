@@ -1,6 +1,6 @@
 
-Eurocontrol DDR files
----------------------
+DDR files from Eurocontrol NM
+-----------------------------
 
 .. tip::
 

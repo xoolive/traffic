@@ -13,7 +13,7 @@
             <airFiled>false</airFiled>
             <aerodromeOfDestination>{destination}</aerodromeOfDestination>
             <nonICAOAerodromeOfDestination>false</nonICAOAerodromeOfDestination>
-            <estimatedOffBlockTime>{eobt}</estimatedOffBlockTime>
+            <estimatedOffBlockTime>{eobt:%Y-%m-%d %H:%M}</estimatedOffBlockTime>
         </keys>
     </flightId>
     <requestedFlightDatasets>flight</requestedFlightDatasets>

@@ -12,5 +12,6 @@ Sources of data
     firs
     opensky_rest
     opensky_impala
-    so6_usage
     airac_usage
+    so6_usage
+    b2b_usage
