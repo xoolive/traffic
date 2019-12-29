@@ -10,7 +10,6 @@ from typing import (
     List, Optional, Set, Tuple, Union, cast, overload
 )
 
-import altair as alt
 import numpy as np
 import pandas as pd
 import pyproj
@@ -22,6 +21,8 @@ from matplotlib.axes._subplots import Axes
 from pandas.core.internals import Block, DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
+
+import altair as alt
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
@@ -746,8 +747,10 @@ class Flight(GeographyMixin, ShapelyMixin):
     def split(self, value: int, unit: str) -> Iterator["Flight"]:
         ...
 
-    @overload  # noqa: F811
-    def split(self, value: str, unit: None = None) -> Iterator["Flight"]:
+    @overload
+    def split(  # noqa: F811
+        self, value: str, unit: None = None
+    ) -> Iterator["Flight"]:
         ...
 
     def split(  # noqa: F811
@@ -1189,17 +1192,24 @@ class Flight(GeographyMixin, ShapelyMixin):
                 "No wind data in trajectory. Consider Flight.compute_wind()"
             )
 
-        data = self.data
+        copy_self: Optional[Flight] = self
 
         if filtered:
-            data = self.filter(roll=17).query("roll.abs() < .5")
-            if data is not None:
-                data = data.filter(wind_u=17, wind_v=17)
+            copy_self = self.filter(roll=17)
+            if copy_self is None:
+                return []
+            copy_self = copy_self.query("roll.abs() < .5")
+            if copy_self is None:
+                return []
+            copy_self = copy_self.filter(wind_u=17, wind_v=17)
+
+        if copy_self is None:
+            return []
 
         if resolution is not None:
 
             if isinstance(resolution, (int, str)):
-                data = data.resample(resolution).data
+                data = copy_self.resample(resolution).data
 
             if isinstance(resolution, dict):
                 r_lat = resolution.get("latitude", None)
@@ -1207,7 +1217,7 @@ class Flight(GeographyMixin, ShapelyMixin):
 
                 if r_lat is not None and r_lon is not None:
                     data = (
-                        data.assign(
+                        copy_self.assign(
                             latitude=lambda x: (
                                 (r_lat * x.latitude).round() / r_lat
                             ),
@@ -1271,8 +1281,8 @@ class Flight(GeographyMixin, ShapelyMixin):
     ) -> "Flight":
         ...
 
-    @overload  # noqa: F811
-    def distance(
+    @overload
+    def distance(  # noqa: F811
         self, other: "Flight", column_name: str = "distance"
     ) -> Optional[pd.DataFrame]:
         ...

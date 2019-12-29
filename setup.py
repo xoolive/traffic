@@ -55,7 +55,7 @@ setup(
     },
     python_requires=">=3.6",
     install_requires=[
-        "numpy",
+        "numpy>=1.18",
         "scipy",
         "matplotlib",
         "pandas",
