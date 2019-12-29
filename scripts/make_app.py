@@ -23,7 +23,7 @@ Type=Application
 Categories=Utility;"""
 
     linux_script = """#!/usr/bin/env bash
-{python_exe} -m traffic gui"
+{python_exe} -m traffic gui
 """
 
     def detect_environment(self):
