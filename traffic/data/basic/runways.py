@@ -4,14 +4,15 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from zipfile import ZipFile
 
-import altair as alt
 import pandas as pd
 import requests
 from shapely.geometry import base, shape
 from shapely.ops import linemerge
 
+import altair as alt
+
 from ...core.geodesy import bearing
-from ...core.mixins import PointMixin, ShapelyMixin
+from ...core.mixins import HBoxMixin, PointMixin, ShapelyMixin
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "ProfHoekstra/bluesky/master/data/navdata"
@@ -32,7 +33,7 @@ class Threshold(ThresholdTuple, PointMixin):
 RunwaysType = Dict[str, List[Tuple[Threshold, Threshold]]]
 
 
-class RunwayAirport(ShapelyMixin):
+class RunwayAirport(HBoxMixin, ShapelyMixin):
     def __init__(self, runways: List[Tuple[Threshold, Threshold]]):
         self._runways = runways
 

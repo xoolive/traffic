@@ -3,7 +3,6 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Type, TypeVar, Union
 
-import altair as alt
 import pandas as pd
 import pyproj
 from cartopy import crs
@@ -11,6 +10,8 @@ from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 from shapely.geometry import Point, base, mapping
 from shapely.ops import transform
+
+import altair as alt
 
 T = TypeVar("T", bound="DataFrameMixin")
 
@@ -526,3 +527,45 @@ class PointMixin(object):
             cumul.append(ax.text(self.longitude, self.latitude, **text_kw))
 
         return cumul
+
+
+class _HBox(object):
+    def __init__(self, *args):
+        self.elts = args
+
+    def _repr_html_(self):
+        return "".join(
+            f"""
+    <div style='
+        margin: 1ex;
+        min-width: 250px;
+        max-width: 300px;
+        display: inline-block;
+        vertical-align: top;'>
+        {elt._repr_html_()}
+    </div>
+    """
+            for elt in self.elts
+        )
+
+    def __or__(self, other) -> "_HBox":
+        if isinstance(other, _HBox):
+            return _HBox(*self.elts, *other.elts)
+        else:
+            return _HBox(*self.elts, other)
+
+    def __ror__(self, other) -> "_HBox":
+        if isinstance(other, _HBox):
+            return _HBox(*other.elts, *self.elts)
+        else:
+            return _HBox(other, *self.elts)
+
+
+class HBoxMixin(object):
+    """Enables a | operator for placing representations next to each other."""
+
+    def __or__(self, other) -> _HBox:
+        if isinstance(other, _HBox):
+            return _HBox(self, *other.elts)
+        else:
+            return _HBox(self, other)

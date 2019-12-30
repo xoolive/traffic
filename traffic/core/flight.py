@@ -28,7 +28,7 @@ from tqdm.autonotebook import tqdm
 from ..algorithms.douglas_peucker import douglas_peucker
 from . import geodesy as geo
 from .distance import DistanceAirport, closest_point, guess_airport
-from .mixins import GeographyMixin, PointMixin, ShapelyMixin
+from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .structure import Airport  # noqa: F401
 from .time import time_or_delta, timelike, to_datetime
 
@@ -77,7 +77,7 @@ class Position(PointMixin, pd.core.series.Series):
     pass
 
 
-class Flight(GeographyMixin, ShapelyMixin):
+class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
     """Flight is the most basic class associated to a trajectory.
     Flights are the building block of all processing methods, built on top of
     pandas DataFrame. The minimum set of required features are:

@@ -22,7 +22,7 @@ from ..algorithms.cpa import closest_point_of_approach
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight, attrgetter_duration
 from .lazy import LazyTraffic, lazy_evaluation
-from .mixins import GeographyMixin, PointMixin
+from .mixins import GeographyMixin, HBoxMixin, PointMixin
 from .sv import StateVectors
 
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
 IterStr = Union[List[str], Set[str]]
 
 
-class Traffic(GeographyMixin):
+class Traffic(HBoxMixin, GeographyMixin):
     """
 
     Traffic is the abstraction representing a collection of `Flights
@@ -198,16 +198,16 @@ class Traffic(GeographyMixin):
     def __getitem__(self, index: int) -> Optional[Flight]:
         ...
 
-    @overload  # noqa: F811
-    def __getitem__(self, index: str) -> Optional[Flight]:
+    @overload
+    def __getitem__(self, index: str) -> Optional[Flight]:  # noqa: F811
         ...
 
-    @overload  # noqa: F811
-    def __getitem__(self, index: slice) -> Optional["Traffic"]:
+    @overload
+    def __getitem__(self, index: slice) -> Optional["Traffic"]:  # noqa: F811
         ...
 
-    @overload  # noqa: F811
-    def __getitem__(self, index: IterStr) -> Optional["Traffic"]:
+    @overload
+    def __getitem__(self, index: IterStr) -> Optional["Traffic"]:  # noqa: F811
         ...
 
     def __getitem__(  # noqa: F811

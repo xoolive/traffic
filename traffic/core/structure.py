@@ -1,14 +1,15 @@
 from functools import lru_cache
 from typing import List, NamedTuple, Optional, Tuple
 
-import altair as alt
 from cartopy.crs import PlateCarree
-from cartotools.osm import request, tags
 from shapely.geometry import LineString, mapping
 from shapely.geometry.base import BaseGeometry
 
+import altair as alt
+from cartotools.osm import request, tags
+
 from ..drawing import Nominatim
-from .mixins import PointMixin, ShapelyMixin
+from .mixins import HBoxMixin, PointMixin, ShapelyMixin
 
 
 class AirportNamedTuple(NamedTuple):
@@ -22,7 +23,7 @@ class AirportNamedTuple(NamedTuple):
     name: str
 
 
-class Airport(AirportNamedTuple, PointMixin, ShapelyMixin):
+class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
     def __repr__(self) -> str:
         short_name = (
             self.name.replace("International", "")
@@ -156,7 +157,7 @@ class Navaid(NavaidTuple, PointMixin):
             )
 
 
-class Route(ShapelyMixin):
+class Route(HBoxMixin, ShapelyMixin):
     def __init__(self, shape: BaseGeometry, name: str, navaids: List[str]):
         self.shape = shape
         self.name = name
