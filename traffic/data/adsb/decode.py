@@ -2,6 +2,7 @@
 
 import logging
 import os
+import signal
 import socket
 import threading
 from collections import UserDict
@@ -20,6 +21,7 @@ from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
 from ...data.basic.airports import Airport
+from .rtlsdr import MyRtlReader
 
 # fmt: on
 
@@ -687,6 +689,26 @@ class Decoder:
         return decoder
 
     @classmethod
+    def from_rtlsdr(
+        cls,
+        reference: Union[str, Airport, Tuple[float, float]],
+        file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
+    ) -> "Decoder":  # coverage: ignore
+        decoder = cls(reference)
+
+        # dump file
+        now = datetime.now(timezone.utc)
+        filename = now.strftime(file_pattern)
+        today = os.path.expanduser(filename)
+        fh = open(today, "a", 1)
+
+        rtlsdr = MyRtlReader(decoder, fh)
+        decoder.thread = StoppableThread(target=rtlsdr.run)
+        signal.signal(signal.SIGINT, rtlsdr.stop)
+        decoder.thread.start()
+        return decoder
+
+    @classmethod
     def from_socket(
         cls,
         socket: socket.socket,
@@ -742,9 +764,6 @@ class Decoder:
         def decode():
             for i, bin_msg in enumerate(next_msg(next_in_socket())):
 
-                if len(bin_msg) < 23:
-                    continue
-
                 msg = "".join(["{:02x}".format(t) for t in bin_msg])
 
                 # Timestamp decoding
@@ -754,7 +773,13 @@ class Decoder:
                 if fh is not None:
                     fh.write("{},{}\n".format(now.timestamp(), msg))
 
-                if i & redefine_freq == redefine_freq:
+                if len(bin_msg) < 23:
+                    continue
+
+                if (
+                    time_fmt != "radarcape"
+                    and i & redefine_freq == redefine_freq
+                ):
                     # if dump1090 and i & 127 == 127:
                     decoder.redefine_reference(now)
 
