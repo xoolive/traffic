@@ -21,7 +21,6 @@ from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
 from ...data.basic.airports import Airport
-from .rtlsdr import MyRtlReader
 
 # fmt: on
 
@@ -694,6 +693,9 @@ class Decoder:
         reference: Union[str, Airport, Tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
     ) -> "Decoder":  # coverage: ignore
+
+        from .rtlsdr import MyRtlReader
+
         decoder = cls(reference)
 
         # dump file
@@ -868,11 +870,15 @@ class Decoder:
 
         if df == 4 or df == 20:
             icao = pms.icao(msg)
+            if isinstance(icao, bytes):
+                icao = icao.decode()
             ac = self.acs[icao.lower()]
             ac.altcode = time, msg
 
         if df == 5 or df == 21:
             icao = pms.icao(msg)
+            if isinstance(icao, bytes):
+                icao = icao.decode()
             ac = self.acs[icao.lower()]
             ac.idcode = time, msg
 
@@ -949,6 +955,8 @@ class Decoder:
 
             bds = pms.bds.infer(msg)
             icao = pms.icao(msg)
+            if isinstance(icao, bytes):
+                icao = icao.decode()
             ac = self.acs[icao.lower()]
 
             if bds == "BDS20":
