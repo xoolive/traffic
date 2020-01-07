@@ -35,8 +35,8 @@ ytick.minor.size: 0
 axes.grid: True
 grid.alpha: 0.3
 grid.linewidth: 0.5
-grid.linestyle: --
-grid.color: black
+grid.linestyle: -
+grid.color: 0e1111
 
 savefig.transparent: True
 savefig.bbox: tight
