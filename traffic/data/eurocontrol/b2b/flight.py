@@ -240,6 +240,25 @@ class ParseFields:
 
 
 class FlightInfo(B2BReply):
+    @classmethod
+    def from_file(cls, filename: str):
+        et = ElementTree.parse(filename)
+        return cls.fromET(et.getroot())
+
+    def to_xml(self, filename: Optional[str] = None) -> None:
+
+        if filename is None:
+            filename = "{id_}_{eobt:%Y-%m-%d}_{callsign}_{from_}_{to}.xml"
+            filename = filename.format(
+                id_=self.flight_id,
+                eobt=self.estimatedOffBlockTime,
+                callsign=self.callsign,
+                from_=self.aerodromeOfDeparture,
+                to=self.aerodromeOfDestination,
+            )
+
+        ElementTree.ElementTree(self.reply).write(filename)
+
     @property
     def flight_id(self) -> str:
         assert self.reply is not None
