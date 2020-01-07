@@ -7,3 +7,4 @@ Scenarios and use cases
     scenarios/is_this_a_plane
     scenarios/windfield
     scenarios/calibration
+    scenarios/geomagnetic_declination

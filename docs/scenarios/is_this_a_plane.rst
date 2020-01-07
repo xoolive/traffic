@@ -164,7 +164,9 @@ Tunis). Let's plot their lateral distance vs. time.
     import matplotlib.pyplot as plt
     
     with plt.style.context('traffic'):
+
         fig, ax = plt.subplots(figsize=(10, 7))
+
         flight.distance(around['AFR1084']).plot(
             ax=ax, x='timestamp', y='d_horz',
             label="Lateral distance between aircraft (in nm)"
@@ -187,41 +189,46 @@ altitude though.
 
     
     from traffic.drawing import Lambert93, countries, rivers, location
-    
-    with plt.style.context('traffic'):
-        
-        fig, ax = plt.subplots(
-            subplot_kw=dict(projection=Lambert93())
-        )
+    from traffic.drawing.markers import rotate_marker, aircraft
+
+    with plt.style.context("traffic"):
+
+        fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
+
         ax.add_feature(countries())
-        ax.add_feature(rivers())
-        
+        ax.add_feature(rivers(linewidth=2.5))
         ax.set_extent((3.9, 6, 44.5, 46))
-        
-        location('Lyon').point.plot(
-            ax, s=5, text_kw=dict(s='Lyon')
+
+        location("Lyon").point.plot(
+            ax, s=50, marker="*", text_kw=dict(s="Lyon")
         )
-        location('Valence, France').point.plot(
-            ax, s=5, text_kw=dict(s='Valence')
+        location("Valence, France").point.plot(
+            ax, s=50, marker="*", text_kw=dict(s="Valence")
         )
-        
-        for cs in ['DLH07F', 'AFR1084']:
-            t1[cs].before("2018-11-15 06:42").last(minutes=5).plot(ax)
-            
-            p = t1[cs].at("2018-11-15 06:42")
+        location("Saint-Étienne").point.plot(
+            ax, s=50, marker="*", text_kw=dict(s="Saint-Étienne")
+        )
+
+        for i, cs in enumerate(["DLH07F", "AFR1084"]):
+            x, *_ = (
+                around[cs].before("2018-11-15 06:42").last(minutes=5).plot(ax, linewidth=2)
+            )
+
+            p = around[cs].at("2018-11-15 06:42")
             p.plot(
-                ax, s=10,
+                ax,
+                s=300,
+                marker=rotate_marker(aircraft, p.track),
+                color=x.get_color(),
                 text_kw=dict(
                     s=f"{cs}\nFL{p.altitude/100:.0f}",
-                    verticalalignment="top" if cs=='DLH07F' else "bottom",
+                    verticalalignment="top" if i % 2 == 0 else "bottom",
+                    color=x.get_color(),
+                    fontweight="bold",
                 ),
             )
-        
+
         ax.outline_patch.set_visible(False)
-       
-        
-
-
 
 .. image:: images/aircraft_map.png
    :scale: 70%
