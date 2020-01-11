@@ -33,7 +33,7 @@ including CesiumJS or Google Earth.
 Latest release:
 
 ```sh
-pip install traffic
+pip install --upgrade traffic
 ```
 
 Development version:
@@ -75,6 +75,8 @@ work, you may cite it as:
     issn={2475-9066},
 }
 ```
+
+Additionally, you may consider adding a star to the repository. This token of appreciation is often interpreted as a positive feedback and improves the visibility of the library.
 
 ## Documentation
 
