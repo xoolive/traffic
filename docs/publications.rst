@@ -31,12 +31,13 @@ library:
   | `(paper) <https://www.sesarju.eu/sites/default/files/documents/sid/2019/papers/SIDs_2019_paper_76.pdf>`__
 
 - | X. Olive and L. Basora.
-  | **Air Traffic Data Processing using Python: Trajectory Clustering**. *Proceedings of the 7th OpenSky Workshop*, 2019.
-  | `(paper) <https://easychair.org/publications/download/BXjT>`__ `(notebook) <https://tinyurl.com/opensky2019>`__
-  | https://doi.org/10.29007/sf1f
+  | **Air Traffic Data Processing using Python: Trajectory Clustering**.
+  | *Proceedings of the 7th OpenSky Workshop*, 2019.
+  | `(paper) <https://easychair.org/publications/download/BXjT>`__ `(notebook) <https://tinyurl.com/opensky2019>`__ https://doi.org/10.29007/sf1f
 
 - | M. Schäfer, X. Olive, M. Strohmeier, M. Smith, I. Martinovic, V. Lenders.
-  | **OpenSky Report 2019: Analysing TCAS in the Real World using Big Data.** *Proceedings of the 38th Digital Avionics Systems Conference* (DASC), 2019
+  | **OpenSky Report 2019: Analysing TCAS in the Real World using Big Data.**
+  | *Proceedings of the 38th Digital Avionics Systems Conference* (DASC), 2019
   | `(paper) <http://www.cs.ox.ac.uk/files/11077/DASC_2019.pdf>`__
 
 - | X. Olive and L. Basora
@@ -45,7 +46,7 @@ library:
 
 
 - | X. Olive, J. Grignard, T. Dubot and J. Saint-Lot.
-  | **Detecting Controllers' Actions in Past Mode S Data by Autoencoder-Based Anomaly Detection**. *Proceedings of the SESAR Innovation Days*, 2018
+  | **Detecting Controllers' Actions in Past Mode S Data by Autoencoder-Based Anomaly Detection**. *Proceedings of the 8th SESAR Innovation Days*, 2018
   | `(paper) <https://www.sesarju.eu/sites/default/files/documents/sid/2018/papers/SIDs_2018_paper_17.pdf>`__ `(notebook) <paper/atc_detect.html>`__
 
 - | X. Olive and P. Bieber.
@@ -53,7 +54,8 @@ library:
   | `(paper) <https://arxiv.org/abs/1903.11964>`__ `(notebook) <paper/runway_excursion.html>`__
 
 - | X. Olive and J. Morio.
-  | **Trajectory clustering of air traffic flows around airports**. *Aerospace Science and Technology* 84, 2019, pp. 776--781.
+  | **Trajectory clustering of air traffic flows around airports**.
+  | *Aerospace Science and Technology* 84, 2019, pp. 776--781.
   | https://doi.org/10.1016/j.ast.2018.11.031
 
 **Links**
