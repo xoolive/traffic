@@ -23,6 +23,22 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | M. Schultz, X. Olive, J. Rosenow, H. Fricke, S. Alam.
+  | **Analysis of airport ground operations based on ADS-B data**. *Proceedings of the 1st conference on Artificial Intelligence and Data Analytics in Air Transportation* (AIDA-AT), 2019
+
+- | M. Schultz, J. Rosenow and X. Olive.
+  | **A-CDM Lite: situation awareness and decision making for small airports based on ADS-B data**. *Proceedings of the 9th SESAR Innovation Days*, 2019.
+  | `(paper) <https://www.sesarju.eu/sites/default/files/documents/sid/2019/papers/SIDs_2019_paper_76.pdf>`__
+
+- | X. Olive and L. Basora.
+  | **Air Traffic Data Processing using Python: Trajectory Clustering**. *Proceedings of the 7th OpenSky Workshop*, 2019.
+  | `(paper) <https://easychair.org/publications/download/BXjT>`__ `(notebook) <https://tinyurl.com/opensky2019>`__
+  | https://doi.org/10.29007/sf1f
+
+- | M. Schäfer, X. Olive, M. Strohmeier, M. Smith, I. Martinovic, V. Lenders.
+  | **OpenSky Report 2019: Analysing TCAS in the Real World using Big Data.** *Proceedings of the 38th Digital Avionics Systems Conference* (DASC), 2019
+  | `(paper) <http://www.cs.ox.ac.uk/files/11077/DASC_2019.pdf>`__
+
 - | X. Olive and L. Basora
   | **Identifying Anomalies in past en-route Trajectories with Clustering and Anomaly Detection Methods**. *Proceedings of the 13th Air Traffic Management R&D Seminar*, 2019
   | `(paper) <http://www.atmseminarus.org/seminarContent/seminar13/papers/ATM_Seminar_2019_paper_5.pdf>`__ `(notebook) <paper/sectflow.html>`__
