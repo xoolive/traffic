@@ -2,8 +2,6 @@ import io
 from hashlib import md5
 from typing import Any, Dict
 
-import requests
-
 from tqdm.autonotebook import tqdm
 
 from ... import cache_dir
@@ -34,8 +32,9 @@ __all__ = list(datasets.keys())
 
 
 def download_data(dataset: Dict[str, str]) -> io.BytesIO:
+    from .. import session
 
-    f = requests.get(dataset["url"], stream=True)
+    f = session.get(dataset["url"], stream=True)
     total = int(f.headers["Content-Length"])
     buffer = io.BytesIO()
     for chunk in tqdm(

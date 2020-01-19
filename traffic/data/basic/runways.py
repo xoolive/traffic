@@ -5,7 +5,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from zipfile import ZipFile
 
 import pandas as pd
-import requests
 from shapely.geometry import base, shape
 from shapely.ops import linemerge
 
@@ -127,9 +126,10 @@ class Runways(object):
         return RunwayAirport(self.runways[airport.icao])
 
     def download_bluesky(self) -> None:  # coverage: ignore
-        self._runways = dict()
+        from .. import session
 
-        c = requests.get(base_url + "/apt.zip")
+        self._runways = dict()
+        c = session.get(base_url + "/apt.zip")
 
         with ZipFile(BytesIO(c.content)).open("apt.dat", "r") as fh:
             for line in fh.readlines():

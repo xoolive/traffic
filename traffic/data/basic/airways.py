@@ -1,4 +1,5 @@
 import logging
+from io import BytesIO
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -85,9 +86,12 @@ class Airways(GeoDBMixin):
         return instance
 
     def download_data(self) -> None:  # coverage: ignore
-        self._data = pd.read_csv(
-            base_url + "/earth_awy.dat", sep=" ", header=None
-        )
+        from .. import session
+
+        c = session.get(base_url + "/earth_awy.dat")
+        c.raise_for_status()
+        b = BytesIO(c.content)
+        self._data = pd.read_csv(b, sep=" ", header=None)
         self._data.columns = ["route", "id", "navaid", "latitude", "longitude"]
         self._data.to_pickle(self.cache_dir / "traffic_airways.pkl")
 

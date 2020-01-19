@@ -4,9 +4,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-import altair as alt
 import pandas as pd
-import requests
+
+import altair as alt
 
 from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
 from ...core.structure import Airport
@@ -56,7 +56,9 @@ class Airports(GeoDBMixin):
         self._data: Optional[pd.DataFrame] = data
 
     def download_fr24(self) -> None:  # coverage: ignore
-        c = requests.get(
+        from .. import session
+
+        c = session.get(
             "https://www.flightradar24.com/_json/airports.php",
             headers={"user-agent": "Mozilla/5.0"},
         )

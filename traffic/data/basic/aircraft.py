@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Optional, Union
 
 import pandas as pd
-import requests
+
 from tqdm.autonotebook import tqdm
 
 
@@ -50,7 +50,9 @@ class Aircraft(object):
 
         url: https://junzisun.com/adb/download
         """
-        f = requests.get("https://junzisun.com/adb/download")
+        from .. import session
+
+        f = session.get("https://junzisun.com/adb/download")
         with zipfile.ZipFile(io.BytesIO(f.content)) as zfile:
             with zfile.open("aircraft_db.csv", "r") as dbfile:
                 self._junzis = (
@@ -90,11 +92,13 @@ class Aircraft(object):
 
         url: https://opensky-network.org/aircraft-database
         """
+        from .. import session
+
         logging.warning("Downloading OpenSky aircraft database")
         file_url = (
             "https://opensky-network.org/datasets/metadata/aircraftDatabase.csv"
         )
-        f = requests.get(file_url, stream=True)
+        f = session.get(file_url, stream=True)
         total = int(f.headers["Content-Length"])
         buffer = io.BytesIO()
         for chunk in tqdm(

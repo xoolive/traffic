@@ -2,7 +2,6 @@ import json
 import logging
 from typing import Dict
 
-import requests
 from shapely.geometry import shape
 
 from ...core.airspace import Airspace, ExtrudedPolygon
@@ -21,10 +20,12 @@ def get_airspaces() -> Dict[str, Airspace]:
         with filename.open("r") as fh:
             json_contents = json.load(fh)
     else:
+        from .. import session
+
         logging.warning(
             f"Downloading data from {website}. Please check terms of use."
         )
-        c = requests.get(json_url)
+        c = session.get(json_url)
         c.raise_for_status()
         json_contents = c.json()
         with filename.open("w") as fh:

@@ -94,6 +94,10 @@ class _ElementaryBlock:
         elif Airway.valid(elt):
             return Airway(elt)
 
+        elif isinstance(previous_elt, Point) and DirectPoint.valid(elt):
+            # EXPERIMENTAL
+            return DirectPoint(elt)
+
         return None
 
 
@@ -135,6 +139,12 @@ class Airway(_ElementaryBlock):
 
         return airways.global_get(self.elt[0])
 
+    @classmethod
+    def valid(cls, elt: str) -> bool:
+        return bool(re.match(cls.pattern, elt)) and any(
+            i.isdigit() for i in elt
+        )
+
 
 class Point(_ElementaryBlock):
     pattern = r"\D{2,5}$"
@@ -143,6 +153,11 @@ class Point(_ElementaryBlock):
         from traffic.data import navaids
 
         return navaids.global_get(self.elt[0])
+
+
+# EXPERIMENTAL
+class DirectPoint(Point):
+    pass
 
 
 class SID(Airway):
@@ -298,6 +313,23 @@ class FlightPlan(ShapelyMixin):
             except Exception:
                 return None
 
+    def skyvector(self) -> Dict[str, Any]:
+        from ..data import session
+
+        c = session.get(
+            "https://skyvector.com/api/routes?dep={}&dst={}".format(
+                self.origin, self.destination
+            )
+        )
+        c.raise_for_status()
+
+        c = session.get(
+            f"https://skyvector.com/api/fpl?cmd=route&route={self.repr}"
+        )
+        c.raise_for_status()
+
+        return c.json()
+
     def decompose(self) -> List[Optional[_ElementaryBlock]]:
         parsed: List[Optional[_ElementaryBlock]] = []
         blocks = repr(self).strip().split()
@@ -345,6 +377,50 @@ class FlightPlan(ShapelyMixin):
                         )
                         continue
 
+            if isinstance(e, DirectPoint):
+                from traffic.data import navaids
+
+                previous, next_ = elts[i - 1], elts[i]
+
+                if previous is None or next_ is None:
+                    warnings.warn(f"Missing information around {elts[i]}")
+                    continue
+
+                if len(cumul) > 0:
+                    # avoid obvious duplicates
+                    elt1, *_, elt2 = cumul[-1].shape.coords
+                    lon1, lat1, *_ = elt1
+                    lon2, lat2, *_ = elt2
+                    lon1, lon2 = min(lon1, lon2), max(lon1, lon2)
+                    lat1, lat2 = min(lat1, lat2), max(lat1, lat2)
+                    buf = 10  # conservative
+                    # this one may return None
+                    # (probably no, but mypy is whining)
+                    n = navaids.extent(
+                        (lon1 - buf, lon2 + buf, lat1 - buf, lat2 + buf,)
+                    )
+                else:
+                    n = None
+
+                if n is None:
+                    n = navaids
+
+                p1, p2 = n[previous.name], n[next_.name]
+                if p1 is None or p2 is None:
+                    warnings.warn(
+                        f"Could not find {previous.name} or {next_.name}"
+                    )
+                    continue
+                coords = [(p1.lon, p1.lat), (p2.lon, p2.lat)]
+                cumul.append(
+                    Route(
+                        LineString(coordinates=coords),
+                        "DCT",
+                        [previous.name, next_.name],
+                    )
+                )
+                continue
+
             if isinstance(e, Direct):
                 from traffic.data import navaids
 
@@ -353,7 +429,26 @@ class FlightPlan(ShapelyMixin):
                     warnings.warn(f"Missing information around {elts[i]}")
                     continue
 
-                p1, p2 = navaids[previous.name], navaids[next_.name]
+                if len(cumul) > 0:
+                    # avoid obvious duplicates
+                    elt1, *_, elt2 = cumul[-1].shape.coords
+                    lon1, lat1, *_ = elt1
+                    lon2, lat2, *_ = elt2
+                    lon1, lon2 = min(lon1, lon2), max(lon1, lon2)
+                    lat1, lat2 = min(lat1, lat2), max(lat1, lat2)
+                    buf = 10  # conservative
+                    # this one may return None
+                    # (probably no, but mypy is whining)
+                    n = navaids.extent(
+                        (lon1 - buf, lon2 + buf, lat1 - buf, lat2 + buf,)
+                    )
+                else:
+                    n = None
+
+                if n is None:
+                    n = navaids
+
+                p1, p2 = n[previous.name], n[next_.name]
                 if p1 is None or p2 is None:
                     warnings.warn(
                         f"Could not find {previous.name} or {next_.name}"

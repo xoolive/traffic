@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, Iterator, NamedTuple, Optional, Tuple, Union
 
 import pandas as pd
-import requests
 
 from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
 from ...core.structure import Navaid, NavaidTuple
@@ -68,8 +67,10 @@ class Navaids(GeoDBMixin):
         repository.
         """
 
+        from .. import session
+
         navaids = []
-        c = requests.get(f"{base_url}/earth_fix.dat")
+        c = session.get(f"{base_url}/earth_fix.dat")
 
         for line in c.iter_lines():
 
@@ -100,7 +101,7 @@ class Navaids(GeoDBMixin):
                 )
             )
 
-        c = requests.get(f"{base_url}/earth_nav.dat")
+        c = session.get(f"{base_url}/earth_nav.dat")
 
         for line in c.iter_lines():
 
