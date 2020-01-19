@@ -161,6 +161,10 @@ class DirectPoint(Point):
 
 
 class SID(Airway):
+    @classmethod
+    def valid(cls, elt: str) -> bool:
+        return bool(re.match(cls.pattern, elt))
+
     def get(self, airport: Optional[str] = None) -> Optional[Route]:
         from traffic.data import airways, nm_airways
 
@@ -181,6 +185,10 @@ class SID(Airway):
 
 
 class STAR(Airway):
+    @classmethod
+    def valid(cls, elt: str) -> bool:
+        return bool(re.match(cls.pattern, elt))
+
     def get(self, airport: Optional[str] = None) -> Optional[Route]:
         from traffic.data import airways, nm_airways
 
