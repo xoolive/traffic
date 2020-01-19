@@ -62,8 +62,9 @@ opensky_username = config.get("global", "opensky_username", fallback="")
 opensky_password = config.get("global", "opensky_password", fallback="")
 
 # We keep "" for forcing to no proxy
-http_proxy = config.get("proxy", "http", fallback="<>")
-https_proxy = config.get("proxy", "https", fallback="<>")
+http_proxy = config.get("network", "http.proxy", fallback="<>")
+https_proxy = config.get("network", "https.proxy", fallback="<>")
+paramiko_proxy = config.get("network", "ssh.proxycommand", fallback="")
 
 proxy_values = dict(
     (key, value)
@@ -91,7 +92,12 @@ if sys.version_info < (3, 7, 0):
     nm_navaids = NMNavaids.from_file(nm_path_str)
     nm_airways = NMRoutes()
 
-    opensky = OpenSky(opensky_username, opensky_password, cache_dir / "opensky")
+    opensky = OpenSky(
+        opensky_username,
+        opensky_password,
+        cache_dir / "opensky",
+        paramiko_proxy,
+    )
     if len(proxy_values) > 0:
         opensky.session.proxies.update(proxy_values)
         opensky.session.trust_env = False
@@ -130,7 +136,10 @@ def __getattr__(name: str):
         return NMRoutes()
     if name == "opensky":
         opensky = OpenSky(
-            opensky_username, opensky_password, cache_dir / "opensky"
+            opensky_username,
+            opensky_password,
+            cache_dir / "opensky",
+            paramiko_proxy,
         )
         if len(proxy_values) > 0:
             opensky.session.proxies.update(proxy_values)
