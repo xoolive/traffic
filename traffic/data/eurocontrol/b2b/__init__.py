@@ -6,6 +6,7 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 
 from requests import Session
+
 from requests_pkcs12 import Pkcs12Adapter
 from tqdm.autonotebook import tqdm
 
@@ -64,12 +65,13 @@ class NMB2B(FlightManagement, Measures):
         self,
         mode: Dict[str, str],
         version: str,
+        session: Session,
         pkcs12_filename: Union[str, Path],
         pkcs12_password: str,
     ) -> None:
         self.mode = mode
         self.version = version
-        self.session = Session()
+        self.session = session
         self.session.mount(
             mode["base_url"],
             Pkcs12Adapter(

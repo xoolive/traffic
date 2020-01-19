@@ -3,6 +3,8 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
+from requests import Session
+
 from .. import cache_dir, config, config_file
 from .adsb.decode import Decoder as ModeS_Decoder  # noqa: F401
 from .adsb.opensky import OpenSky
@@ -72,6 +74,11 @@ proxy_values = dict(
     if value != "<>"
 )
 
+session = Session()
+if len(proxy_values) > 0:
+    session.proxies.update(proxy_values)
+    session.trust_env = False
+
 pkcs12_filename = config.get("nmb2b", "pkcs12_filename", fallback="")
 pkcs12_password = config.get("nmb2b", "pkcs12_password", fallback="")
 nmb2b_mode = config.get("nmb2b", "mode", fallback="PREOPS")
@@ -96,23 +103,19 @@ if sys.version_info < (3, 7, 0):
         opensky_username,
         opensky_password,
         cache_dir / "opensky",
+        session,
         paramiko_proxy,
     )
-    if len(proxy_values) > 0:
-        opensky.session.proxies.update(proxy_values)
-        opensky.session.trust_env = False
 
     if pkcs12_filename != "" and pkcs12_password != "":
         logging.debug(f"pcks12_filename: {pkcs12_filename}")
         nm_b2b = NMB2B(
             getattr(NMB2B, nmb2b_mode),
             nmb2b_version,
+            session,
             pkcs12_filename,
             pkcs12_password,
         )
-        if len(proxy_values) > 0:
-            nm_b2b.session.proxies.update(proxy_values)
-            nm_b2b.session.trust_env = False
 
 
 @lru_cache()
@@ -139,11 +142,9 @@ def __getattr__(name: str):
             opensky_username,
             opensky_password,
             cache_dir / "opensky",
+            session,
             paramiko_proxy,
         )
-        if len(proxy_values) > 0:
-            opensky.session.proxies.update(proxy_values)
-            opensky.session.trust_env = False
         return opensky
     if name == "runways":
         return Runways()
@@ -153,12 +154,10 @@ def __getattr__(name: str):
             nm_b2b = NMB2B(
                 getattr(NMB2B, nmb2b_mode),
                 nmb2b_version,
+                session,
                 pkcs12_filename,
                 pkcs12_password,
             )
-            if len(proxy_values) > 0:
-                nm_b2b.session.proxies.update(proxy_values)
-                nm_b2b.session.trust_env = False
             return nm_b2b
     if name == "airac":  # coverage: ignore
         cache_file = cache_dir / "airac.cache"

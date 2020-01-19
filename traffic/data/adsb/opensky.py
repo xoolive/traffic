@@ -3,11 +3,11 @@ from pathlib import Path
 from typing import Optional, Set, Tuple, Union
 
 import pandas as pd
-import requests
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from matplotlib.artist import Artist
 from matplotlib.patches import Polygon as MplPolygon
+from requests import Session
 from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
@@ -132,10 +132,15 @@ class OpenSky(Impala):
     ]
 
     def __init__(
-        self, username: str, password: str, cache_dir: Path, proxy_command: str
+        self,
+        username: str,
+        password: str,
+        cache_dir: Path,
+        session: Session,
+        proxy_command: str,
     ) -> None:
         super().__init__(username, password, cache_dir, proxy_command)
-        self.session = requests.Session()
+        self.session = session
 
     def api_states(
         self,
