@@ -131,8 +131,10 @@ class OpenSky(Impala):
         "position_source",
     ]
 
-    def __init__(self, username: str, password: str, cache_dir: Path) -> None:
-        super().__init__(username, password, cache_dir)
+    def __init__(
+        self, username: str, password: str, cache_dir: Path, proxy_command: str
+    ) -> None:
+        super().__init__(username, password, cache_dir, proxy_command)
         self.session = requests.Session()
 
     def api_states(

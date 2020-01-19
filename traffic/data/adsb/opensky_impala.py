@@ -12,9 +12,10 @@ from tempfile import gettempdir
 from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 import pandas as pd
-import paramiko
 from pandas.errors import ParserError
 from shapely.geometry.base import BaseGeometry
+
+import paramiko
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
@@ -71,10 +72,13 @@ class Impala(object):
     stdout: paramiko.ChannelFile
     stderr: paramiko.ChannelFile  # actually ChannelStderrFile
 
-    def __init__(self, username: str, password: str, cache_dir: Path) -> None:
+    def __init__(
+        self, username: str, password: str, cache_dir: Path, proxy_command: str
+    ) -> None:
 
         self.username = username
         self.password = password
+        self.proxy_command = proxy_command
         self.connected = False
         self.cache_dir = cache_dir
         if not self.cache_dir.exists():
@@ -201,6 +205,15 @@ class Impala(object):
             raise RuntimeError("This method requires authentication.")
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        extra_args = dict()
+
+        if self.proxy_command != "":
+            # for instance:
+            #    "ssh -W data.opensky-network.org:2230 proxy_machine"
+            # or "connect.exe -H proxy_ip:proxy_port %h %p"
+            logging.info(f"Using ProxyCommand: {self.proxy_command}")
+            extra_args["sock"] = paramiko.ProxyCommand(self.proxy_command)
+
         client.connect(
             "data.opensky-network.org",
             port=2230,
@@ -209,6 +222,7 @@ class Impala(object):
             look_for_keys=False,
             allow_agent=False,
             compress=True,
+            **extra_args,
         )
         self.stdin, self.stdout, self.stderr = client.exec_command(
             "-B", bufsize=-1, get_pty=True
