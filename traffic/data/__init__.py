@@ -3,6 +3,7 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
+from cartotools import session as carto_session
 from requests import Session
 
 from .. import cache_dir, config, config_file
@@ -78,6 +79,9 @@ session = Session()
 if len(proxy_values) > 0:
     session.proxies.update(proxy_values)
     session.trust_env = False
+
+    carto_session.proxies.update(proxy_values)
+    carto_session.trust_env = False
 
 pkcs12_filename = config.get("nmb2b", "pkcs12_filename", fallback="")
 pkcs12_password = config.get("nmb2b", "pkcs12_password", fallback="")
