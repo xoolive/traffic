@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List, NamedTuple, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 from cartopy.crs import PlateCarree
 from shapely.geometry import LineString, mapping
@@ -106,14 +106,34 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
         return runways[self.icao]
 
-    def plot(self, ax, **kwargs):  # coverage: ignore
-        params = {
-            "edgecolor": "silver",
-            "facecolor": "None",
-            "crs": PlateCarree(),
-            **kwargs,
-        }
-        ax.add_geometries(list(self.osm_request()), **params)
+    def plot(  # type: ignore
+        self,
+        ax,
+        footprint: bool = True,
+        runways: Union[bool, Optional[Dict]] = False,
+        labels: Union[bool, Optional[Dict]] = False,
+        **kwargs,
+    ):  # coverage: ignore
+
+        if footprint:
+            params = {
+                "edgecolor": "silver",
+                "facecolor": "None",
+                "crs": PlateCarree(),
+                **kwargs,
+            }
+            ax.add_geometries(list(self.osm_request()), **params)
+
+        if self.runways is None:
+            return
+
+        if runways is not False or labels is not False:
+            self.runways.plot(
+                ax,
+                labels=labels is not False,
+                text_kw=labels if isinstance(labels, dict) else {},
+                **(runways if isinstance(runways, dict) else {}),
+            )
 
 
 class NavaidTuple(NamedTuple):

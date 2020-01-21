@@ -5,12 +5,13 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from zipfile import ZipFile
 
 import pandas as pd
+from cartopy.crs import PlateCarree
 from shapely.geometry import base, shape
 from shapely.ops import linemerge
 
 import altair as alt
 
-from ...core.geodesy import bearing
+from ...core.geodesy import bearing, destination
 from ...core.mixins import HBoxMixin, PointMixin, ShapelyMixin
 
 __github_url = "https://raw.githubusercontent.com/"
@@ -64,6 +65,52 @@ class RunwayAirport(HBoxMixin, ShapelyMixin):
     @property
     def shape(self) -> base.BaseGeometry:
         return linemerge(shape(x["geometry"]) for x in self.geojson())
+
+    def plot(
+        self,
+        ax,
+        *,
+        runways: bool = True,
+        labels: bool = False,
+        shift: int = 300,
+        text_kw: Optional[Dict] = None,
+        **kwargs,
+    ):  # coverage: ignore
+
+        if runways is True:
+            params = {
+                "edgecolor": "#0e1111",
+                "crs": PlateCarree(),
+                "linewidth": 3,
+                **kwargs,
+            }
+            ax.add_geometries([self.shape], **params)
+
+        if labels is True:
+
+            if text_kw is None:
+                text_kw = dict()
+
+            text_kw = {
+                **dict(
+                    transform=PlateCarree(),
+                    fontsize=18,
+                    horizontalalignment="center",
+                    verticalalignment="center",
+                    rotation_mode="anchor",
+                ),
+                **text_kw,
+            }
+
+            for thr in self.list:
+
+                lat, lon, _ = destination(
+                    thr.latitude, thr.longitude, thr.bearing + 180, shift
+                )
+
+                ax.text(
+                    lon, lat, thr.name, rotation=360 - thr.bearing, **text_kw
+                )
 
     def geoencode(
         self, mode: str = "geometry"
