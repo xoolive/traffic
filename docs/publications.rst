@@ -24,7 +24,7 @@ The following list contains publications from research using the traffic
 library:
 
 - | M. Schultz, X. Olive, J. Rosenow, H. Fricke, S. Alam.
-  | **Analysis of airport ground operations based on ADS-B data**. *Proceedings of the 1st conference on Artificial Intelligence and Data Analytics in Air Transportation* (AIDA-AT), 2019
+  | **Analysis of airport ground operations based on ADS-B data**. *Proceedings of the 1st conference on Artificial Intelligence and Data Analytics in Air Transportation* (AIDA-AT), 2020
 
 - | M. Schultz, J. Rosenow and X. Olive.
   | **A-CDM Lite: situation awareness and decision making for small airports based on ADS-B data**. *Proceedings of the 9th SESAR Innovation Days*, 2019.
