@@ -12,7 +12,7 @@ import requests
 import altair as alt
 from tqdm.autonotebook import tqdm
 
-from ... import cache_expiry
+from ... import cache_expiration
 from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
 from ...core.structure import Airport
 
@@ -153,7 +153,7 @@ class Airports(GeoDBMixin):
 
         last_modification = (self.cache_dir / cache_file).lstat().st_mtime
         delta = pd.Timestamp("now") - pd.Timestamp(last_modification * 1e9)
-        if delta > cache_expiry:
+        if delta > cache_expiration:
             try:
                 getattr(self, method_name)()
             except requests.ConnectionError:
