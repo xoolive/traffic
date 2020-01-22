@@ -4,8 +4,10 @@ import os
 import warnings
 from pathlib import Path
 
+import pandas as pd
 import pkg_resources
 from appdirs import user_cache_dir, user_config_dir
+
 from tqdm import TqdmExperimentalWarning
 
 # Silence this warning about autonotebook mode for tqdm
@@ -34,11 +36,60 @@ config.read(config_file.as_posix())
 
 # Check the config file for a cache directory. If not present
 # then use the system default cache path
-cache_dir_cfg = config.get("global", "cache_dir", fallback="")
-if cache_dir_cfg == "":
-    cache_dir = Path(user_cache_dir("traffic"))
-else:
+
+cache_dir = Path(user_cache_dir("traffic"))
+
+cache_dir_cfg = config.get("global", "cache_dir", fallback="").strip()
+if cache_dir_cfg != "":
+    warnings.warn(
+        """Please edit your configuration file:
+
+        # Old style, will soon no longer be supported
+        [global]
+        cache_dir =
+
+        # New style, with extra parameters
+
+        [cache]
+        # path =
+
+        ## number of days, databases will be downloaded again
+        # expiration = 180 days # default value
+
+        ## Save your disk space!
+        ## Impala cache files will be removed after a given number of days
+        ## By default, cache files are left untouched.
+        # purge =
+        """,
+        DeprecationWarning,
+    )
     cache_dir = Path(cache_dir_cfg)
+
+cache_dir_cfg = config.get("cache", "path", fallback="").strip()
+if cache_dir_cfg != "":
+    cache_dir = Path(cache_dir_cfg)
+
+cache_expiry_cfg = config.get("cache", "expiration", fallback="180 days")
+cache_expiry = pd.Timedelta(cache_expiry_cfg)
+
+cache_purge_cfg = config.get("cache", "purge", fallback="")
+if cache_purge_cfg != "":
+    cache_purge = pd.Timedelta(cache_purge_cfg)
+
+    purgeable = list(
+        path
+        for path in cache_dir.glob("opensky/*")
+        if pd.Timestamp("now") - pd.Timestamp(path.lstat().st_mtime * 1e9)
+        > cache_purge
+    )
+
+    if len(purgeable) > 0:
+        logging.warn(
+            f"Removing {len(purgeable)} cache files older than {cache_purge}"
+        )
+        for path in purgeable:
+            path.unlink()
+
 
 if not cache_dir.exists():
     cache_dir.mkdir(parents=True)

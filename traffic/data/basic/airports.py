@@ -1,13 +1,18 @@
 # flake8: noqa
 
+import io
+import time
 from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple, Optional
 
 import pandas as pd
+import requests
 
 import altair as alt
+from tqdm.autonotebook import tqdm
 
+from ... import cache_expiry
 from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
 from ...core.structure import Airport
 
@@ -51,9 +56,69 @@ class Airports(GeoDBMixin):
     """
 
     cache_dir: Path
+    expiration_days: Optional[int]
 
-    def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
+    src_dict = dict(
+        fr24=("airports_fr24.pkl", "download_fr24"),
+        open=("airports_ourairports.pkl", "download_airports"),
+    )
+
+    def __init__(
+        self, data: Optional[pd.DataFrame] = None, src: str = "open"
+    ) -> None:
         self._data: Optional[pd.DataFrame] = data
+        self._src = src
+
+    def download_airports(self) -> None:  # coverage: ignore
+        from .. import session
+
+        f = session.get(
+            "https://ourairports.com/data/airports.csv", stream=True
+        )
+        total = int(f.headers["Content-Length"])
+        buffer = io.BytesIO()
+        for chunk in tqdm(
+            f.iter_content(1024),
+            total=total // 1024 + 1 if total % 1024 > 0 else 0,
+            desc="airports @ourairports.com",
+        ):
+            buffer.write(chunk)
+
+        buffer.seek(0)
+        df = pd.read_csv(buffer)
+
+        f = session.get("https://ourairports.com/data/countries.csv",)
+        buffer = io.BytesIO(f.content)
+        buffer.seek(0)
+        countries = pd.read_csv(buffer)
+
+        self._data = df.rename(
+            columns={
+                "latitude_deg": "latitude",
+                "longitude_deg": "longitude",
+                "elevation_ft": "altitude",
+                "iata_code": "iata",
+                "ident": "icao",
+            }
+        ).merge(
+            countries[["code", "name"]].rename(
+                columns=dict(code="iso_country", name="country")
+            )
+        )[
+            [
+                "name",
+                "iata",
+                "icao",
+                "latitude",
+                "longitude",
+                "country",
+                "altitude",
+                "type",
+                "municipality",
+            ]
+        ]
+
+        self._data.to_pickle(self.cache_dir / "airports_ourairports.pkl")
 
     def download_fr24(self) -> None:  # coverage: ignore
         from .. import session
@@ -81,10 +146,20 @@ class Airports(GeoDBMixin):
         if self._data is not None:
             return self._data
 
-        if not (self.cache_dir / "airports_fr24.pkl").exists():
-            self.download_fr24()
+        cache_file, method_name = self.src_dict[self._src]
 
-        self._data = pd.read_pickle(self.cache_dir / "airports_fr24.pkl")
+        if not (self.cache_dir / cache_file).exists():
+            getattr(self, method_name)()
+
+        last_modification = (self.cache_dir / cache_file).lstat().st_mtime
+        delta = pd.Timestamp("now") - pd.Timestamp(last_modification * 1e9)
+        if delta > cache_expiry:
+            try:
+                getattr(self, method_name)()
+            except requests.ConnectionError:
+                pass
+
+        self._data = pd.read_pickle(self.cache_dir / cache_file)
 
         return self._data
 
@@ -92,7 +167,16 @@ class Airports(GeoDBMixin):
         x = self.data.query("iata == @name.upper() or icao == @name.upper()")
         if x.shape[0] == 0:
             return None
-        return Airport(**dict(x.iloc[0]))
+        p = x.iloc[0]
+        return Airport(
+            p.altitude,
+            p.country,
+            p.iata,
+            p.icao,
+            p.latitude,
+            p.longitude,
+            p["name"],
+        )
 
     def search(self, name: str) -> "Airports":
         """
@@ -105,11 +189,24 @@ class Airports(GeoDBMixin):
         3821      135   Japan  NRT  RJAA  35.764721  140.386307  Tokyo Narita International Airport
 
         """
-        return self.__class__(
-            self.data.query(
-                "iata == @name.upper() or "
-                "icao.str.contains(@name.upper()) or "
-                "country.str.upper().str.contains(@name.upper()) or "
-                "name.str.upper().str.contains(@name.upper())"
+        if "municipality" in self.data.columns:
+            return self.__class__(
+                self.data.query(
+                    "iata == @name.upper() or "
+                    "icao.str.contains(@name.upper()) or "
+                    "country.str.upper().str.contains(@name.upper()) or "
+                    "municipality.str.upper().str.contains(@name.upper()) or "
+                    "name.str.upper().str.contains(@name.upper())"
+                ),
+                src=self._src,
             )
-        )
+        else:
+            return self.__class__(
+                self.data.query(
+                    "iata == @name.upper() or "
+                    "icao.str.contains(@name.upper()) or "
+                    "country.str.upper().str.contains(@name.upper()) or "
+                    "name.str.upper().str.contains(@name.upper())"
+                ),
+                src=self._src,
+            )

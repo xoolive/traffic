@@ -1,5 +1,5 @@
 import warnings
-from functools import partial
+from functools import lru_cache, partial
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Type, TypeVar, Union
 
@@ -290,7 +290,10 @@ class ShapelyMixin(object):
 
     # --- Representations ---
 
+    @lru_cache()
     def _repr_svg_(self):
+        if self.shape.is_empty:
+            return None
         project = self.project_shape()
         if project is not None:
             return project._repr_svg_()

@@ -5,12 +5,15 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from zipfile import ZipFile
 
 import pandas as pd
+import requests
 from cartopy.crs import PlateCarree
 from shapely.geometry import base, shape
 from shapely.ops import linemerge
 
 import altair as alt
+from tqdm.autonotebook import tqdm
 
+from ... import cache_expiry
 from ...core.geodesy import bearing, destination
 from ...core.mixins import HBoxMixin, PointMixin, ShapelyMixin
 
@@ -145,23 +148,27 @@ class Runways(object):
     def __init__(self) -> None:
         self._runways: Optional[RunwaysType] = None
         assert self.cache_dir is not None
-        self._cache = self.cache_dir / "runways_bluesky.pkl"
+        self._cache = self.cache_dir / "runways_ourairports.pkl"
 
     @property
     def runways(self) -> RunwaysType:
         if self._runways is not None:
             return self._runways
 
-        if self._cache.exists():
-            with self._cache.open("rb") as fh:
-                self._runways = pickle.load(fh)
-        else:
-            self.download_bluesky()
-            assert self._runways is not None
-            with self._cache.open("wb") as fh:
-                pickle.dump(self._runways, fh)
+        if not self._cache.exists():
+            self.download_runways()
 
-        return self._runways
+        last_modification = self._cache.lstat().st_mtime
+        delta = pd.Timestamp("now") - pd.Timestamp(last_modification * 1e9)
+        if delta > cache_expiry:
+            try:
+                self.download_runways()
+            except requests.ConnectionError:
+                pass
+
+        with self._cache.open("rb") as fh:
+            self._runways = pickle.load(fh)
+            return self._runways
 
     def __getitem__(self, airport) -> Optional[RunwayAirport]:
         if isinstance(airport, str):
@@ -170,7 +177,56 @@ class Runways(object):
             airport = airports[airport]
         if airport is None:
             return None
-        return RunwayAirport(self.runways[airport.icao])
+        elt = self.runways.get(airport.icao, None)
+        if elt is None:
+            return None
+        return RunwayAirport(elt)
+
+    def download_runways(self) -> None:  # coverage: ignore
+        from .. import session
+
+        self._runways = dict()
+
+        f = session.get("https://ourairports.com/data/runways.csv", stream=True)
+        total = int(f.headers["Content-Length"])
+        buffer = BytesIO()
+        for chunk in tqdm(
+            f.iter_content(1024),
+            total=total // 1024 + 1 if total % 1024 > 0 else 0,
+            desc="runways @ourairports.com",
+        ):
+            buffer.write(chunk)
+
+        buffer.seek(0)
+        df = pd.read_csv(buffer)
+
+        for name, _df in df.groupby("airport_ident"):
+            cur: List[Tuple[Threshold, Threshold]] = list()
+            self._runways[name] = cur
+
+            for _, line in _df.iterrows():
+                lat0 = line.le_latitude_deg
+                lon0 = line.le_longitude_deg
+                name0 = line.le_ident
+                lat1 = line.he_latitude_deg
+                lon1 = line.he_longitude_deg
+                name1 = line.he_ident
+
+                if lat0 != lat0 or lat1 != lat1:
+                    # some faulty records here...
+                    continue
+
+                brng0 = bearing(lat0, lon0, lat1, lon1)
+                brng1 = bearing(lat1, lon1, lat0, lon0)
+                brng0 = brng0 if brng0 > 0 else 360 + brng0
+                brng1 = brng1 if brng1 > 0 else 360 + brng1
+
+                thr0 = Threshold(lat0, lon0, brng0, name0)
+                thr1 = Threshold(lat1, lon1, brng1, name1)
+                cur.append((thr0, thr1))
+
+        with self._cache.open("wb") as fh:
+            pickle.dump(self._runways, fh)
 
     def download_bluesky(self) -> None:  # coverage: ignore
         from .. import session
@@ -192,7 +248,7 @@ class Runways(object):
                 if elems[0] == "1":
                     # Add airport to runway threshold database
                     cur: List[Tuple[Threshold, Threshold]] = list()
-                    self.runways[elems[4]] = cur
+                    self._runways[elems[4]] = cur
 
                 if elems[0] == "100":
                     # Only asphalt and concrete runways
@@ -227,3 +283,6 @@ class Runways(object):
                     thr0 = Threshold(lat0, lon0, brng0, elems[8])
                     thr1 = Threshold(lat1, lon1, brng1, elems[17])
                     cur.append((thr0, thr1))
+
+        with self._cache.open("wb") as fh:
+            pickle.dump(self._runways, fh)
