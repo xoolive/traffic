@@ -50,7 +50,7 @@ def test_geojson() -> None:
             elt["properties"].get("ref", None),
             elt["properties"].get("name", None),
         )
-        for elt in geojson
+        for elt in geojson["features"]
         if elt["properties"].get("aeroway", None) == "runway"
         and elt["properties"].get("ref", None) is not None
         and elt["properties"].get("name", None) is not None
