@@ -24,8 +24,18 @@ def test_getter() -> None:
 
 
 def test_search() -> None:
-    assert airports.search("denmark").data.icao.str.startswith("EK").all()
-    assert airports.search("ITALY").data.icao.str.startswith("LI").all()
+    assert (
+        airports.search("denmark")
+        .query('type == "large_airport"')  # type: ignore
+        .data.icao.str.startswith("EK")
+        .all()
+    )
+    assert (
+        airports.search("ITALY")
+        .query('type == "large_airport"')  # type: ignore
+        .data.icao.str.startswith("LI")
+        .all()
+    )
 
 
 def test_geojson() -> None:

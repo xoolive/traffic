@@ -1,9 +1,10 @@
 from functools import lru_cache
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
 from cartopy.crs import PlateCarree
 from shapely.geometry import LineString, mapping
 from shapely.geometry.base import BaseGeometry
+from shapely.ops import cascaded_union
 
 import altair as alt
 from cartotools.osm import request, tags
@@ -38,6 +39,32 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
+    def __getattr__(self, name) -> Dict[str, Any]:
+        if not name.startswith("osm_"):
+            raise AttributeError(
+                f"'{self.__class__.__name__}' has no attribute '{name}'"
+            )
+        else:
+            values = self.osm_request().ways.values()
+            return {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "geometry": mapping(elt[1]),
+                        "properties": elt[0]["tags"],
+                    }
+                    for elt in values
+                    if elt[0]["tags"]["aeroway"] == name[4:]
+                ],
+            }
+
+    def osm_tags(self) -> Set[str]:
+        return set(
+            elt[0]["tags"]["aeroway"]
+            for elt in self.osm_request().ways.values()
+        )
+
     @lru_cache()
     def osm_request(self) -> Nominatim:  # coverage: ignore
 
@@ -51,31 +78,35 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         else:
             return request(
                 (
-                    self.longitude - 0.06,
-                    self.latitude - 0.06,
-                    self.longitude + 0.06,
-                    self.latitude + 0.06,
+                    self.longitude - 0.01,
+                    self.latitude - 0.01,
+                    self.longitude + 0.01,
+                    self.latitude + 0.01,
                 ),
                 **tags.airport,
             )
 
     @lru_cache()
     def geojson(self):
-        return [
-            {
-                "geometry": mapping(shape),
-                "properties": info["tags"],
-                "type": "Feature",
-            }
-            for info, shape in self.osm_request().ways.values()
-        ]
+        return {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "geometry": mapping(shape),
+                    "properties": info["tags"],
+                    "type": "Feature",
+                }
+                for info, shape in self.osm_request().ways.values()
+                if info["tags"]["aeroway"] != "aerodrome"
+            ],
+        }
 
     def geoencode(
         self,
         footprint: bool = True,
         runways: bool = False,
         labels: bool = False,
-    ) -> alt.Chart:  # coverage: ignoreÖ
+    ) -> alt.Chart:  # coverage: ignore
         cumul = []
         if footprint:
             cumul.append(super().geoencode())
@@ -91,7 +122,16 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
     @property
     def shape(self):
+        # filter out the contour, helps for useful display
+        # list(self.osm_request()),
         return self.osm_request().shape
+        return cascaded_union(
+            list(
+                shape
+                for dic, shape in self.osm_request().ways.values()
+                if dic["tags"]["aeroway"] != "aerodrome"
+            )
+        )
 
     @property
     def point(self):
@@ -104,7 +144,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
     def runways(self):
         from ..data import runways
 
-        return runways[self.icao]
+        return runways[self]
 
     def plot(  # type: ignore
         self,
@@ -122,7 +162,16 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
                 "crs": PlateCarree(),
                 **kwargs,
             }
-            ax.add_geometries(list(self.osm_request()), **params)
+            ax.add_geometries(
+                # filter out the contour, helps for useful display
+                # list(self.osm_request()),
+                list(
+                    shape
+                    for dic, shape in self.osm_request().ways.values()
+                    if dic["tags"]["aeroway"] != "aerodrome"
+                ),
+                **params,
+            )
 
         if self.runways is None:
             return

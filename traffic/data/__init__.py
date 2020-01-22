@@ -3,8 +3,9 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
-from cartotools import session as carto_session
 from requests import Session
+
+from cartotools import session as carto_session
 
 from .. import cache_dir, config, config_file
 from .adsb.decode import Decoder as ModeS_Decoder  # noqa: F401
@@ -127,6 +128,8 @@ def __getattr__(name: str):
     """This only works for Python >= 3.7, see PEP 562."""
     if name == "aircraft":
         return Aircraft()
+    if name == "airports_fr24":
+        return Airports(src="fr24")
     if name == "airports":
         return Airports()
     if name == "airways":
