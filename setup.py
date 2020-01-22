@@ -73,7 +73,7 @@ setup(
         # deactivated for now for dependency issues
         # "keplergl",  # Kepler.gl for notebooks
         "tqdm>=4.28",  # progressbars
-        "cartotools>=1.2",
+        "cartotools>=1.2.1",
         "pyModeS>=2.4",
     ],
     classifiers=[

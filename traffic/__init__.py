@@ -69,8 +69,8 @@ cache_dir_cfg = config.get("cache", "path", fallback="").strip()
 if cache_dir_cfg != "":
     cache_dir = Path(cache_dir_cfg)
 
-cache_expiry_cfg = config.get("cache", "expiration", fallback="180 days")
-cache_expiry = pd.Timedelta(cache_expiry_cfg)
+cache_expiration_cfg = config.get("cache", "expiration", fallback="180 days")
+cache_expiration = pd.Timedelta(cache_expiration_cfg)
 
 cache_purge_cfg = config.get("cache", "purge", fallback="")
 if cache_purge_cfg != "":

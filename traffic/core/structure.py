@@ -9,8 +9,11 @@ from shapely.ops import cascaded_union
 import altair as alt
 from cartotools.osm import request, tags
 
+from .. import cache_expiration
 from ..drawing import Nominatim
 from .mixins import HBoxMixin, PointMixin, ShapelyMixin
+
+request.cache_expiration = cache_expiration
 
 
 class AirportNamedTuple(NamedTuple):

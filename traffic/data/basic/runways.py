@@ -13,7 +13,7 @@ from shapely.ops import linemerge
 import altair as alt
 from tqdm.autonotebook import tqdm
 
-from ... import cache_expiry
+from ... import cache_expiration
 from ...core.geodesy import bearing, destination
 from ...core.mixins import HBoxMixin, PointMixin, ShapelyMixin
 
@@ -160,7 +160,7 @@ class Runways(object):
 
         last_modification = self._cache.lstat().st_mtime
         delta = pd.Timestamp("now") - pd.Timestamp(last_modification * 1e9)
-        if delta > cache_expiry:
+        if delta > cache_expiration:
             try:
                 self.download_runways()
             except requests.ConnectionError:
