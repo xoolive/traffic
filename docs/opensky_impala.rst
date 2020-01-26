@@ -13,13 +13,13 @@ Provided functions are here to help:
 - parse results with pandas and wrap results in appropriate data structures.
 
 The first thing to do is to put your credentials in you configuration
-file. Add the following lines to the [global] section of your
-configuration file.
+file. Edit the following lines to your configuration file.
 
 ::
 
-    opensky_username =
-    opensky_password =
+    [opensky]
+    username =
+    password =
 
 You can check the path to your configuration file here. The path is
 different according to OS versions so do not assume anything and check

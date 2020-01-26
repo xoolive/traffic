@@ -1,5 +1,6 @@
 import logging
 import sys
+import warnings
 from functools import lru_cache
 from pathlib import Path
 
@@ -38,13 +39,12 @@ __all__ = [
     "opensky",
 ]
 
-airac_path_str = config.get("global", "airac_path", fallback="")
-if airac_path_str != "":  # coverage: ignore
-    logging.warning(
-        "Rename airac_path to aixm_path in your configuration file. "
-        "The old name will not be supported in future versions"
-    )
-    AIXMAirspaceParser.aixm_path = Path(airac_path_str)
+Aircraft.cache_dir = cache_dir
+Airports.cache_dir = cache_dir
+Airways.cache_dir = cache_dir
+Navaids.cache_dir = cache_dir
+Runways.cache_dir = cache_dir
+AIXMAirspaceParser.cache_dir = cache_dir
 
 aixm_path_str = config.get("global", "aixm_path", fallback="")
 if aixm_path_str != "":  # coverage: ignore
@@ -55,17 +55,38 @@ if nm_path_str != "":  # coverage: ignore
     NMAirspaceParser.nm_path = Path(nm_path_str)
     NMRoutes.nm_path = Path(nm_path_str)
 
-Aircraft.cache_dir = cache_dir
-Airports.cache_dir = cache_dir
-Airways.cache_dir = cache_dir
-Navaids.cache_dir = cache_dir
-Runways.cache_dir = cache_dir
-AIXMAirspaceParser.cache_dir = cache_dir
+# -- Part to be deprecated --
+# vvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 opensky_username = config.get("global", "opensky_username", fallback="")
 opensky_password = config.get("global", "opensky_password", fallback="")
 
+if opensky_password != "" and opensky_username != "":  # coverage: ignore
+    warnings.warn(
+        """Please edit your configuration file:
+
+        # Old style, will soon no longer be supported
+        [global]
+        opensky_username =
+        opensky_password =
+
+        # New style
+
+        [opensky]
+        username =
+        password =
+
+        """,
+        DeprecationWarning,
+    )
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+opensky_username = config.get("opensky", "username", fallback=opensky_username)
+opensky_password = config.get("opensky", "password", fallback=opensky_password)
+
 # We keep "" for forcing to no proxy
+
 http_proxy = config.get("network", "http.proxy", fallback="<>")
 https_proxy = config.get("network", "https.proxy", fallback="<>")
 paramiko_proxy = config.get("network", "ssh.proxycommand", fallback="")
@@ -166,16 +187,5 @@ def __getattr__(name: str):
                 pkcs12_password,
             )
             return nm_b2b
-    if name == "airac":  # coverage: ignore
-        cache_file = cache_dir / "airac.cache"
-        if cache_file.exists():
-            cache_file.unlink()
-        logging.warning(
-            f"""DEPRECATION WARNING. Please note that:
-            - airac has been renamed into aixm_airspaces.
-            - backward compatibility will be removed in future versions.
-            """
-        )
-        return AIXMAirspaceParser(config_file)
 
     raise AttributeError(f"module {__name__} has no attribute {name}")
