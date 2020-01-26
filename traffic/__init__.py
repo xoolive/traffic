@@ -19,18 +19,9 @@ config_dir = Path(user_config_dir("traffic"))
 config_file = config_dir / "traffic.conf"
 
 if not config_dir.exists():
+    config_template = (Path(__file__).parent / "traffic.conf").read_text()
     config_dir.mkdir(parents=True)
-    with config_file.open("w") as fh:
-        fh.write(
-            f"""[global]
-nm_path =
-[opensky]
-username =
-password =
-[plugins]
-enabled_plugins = CesiumJS, Leaflet
-"""
-        )
+    config_file.write_text(config_template)
 
 config = configparser.ConfigParser()
 config.read(config_file.as_posix())

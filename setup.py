@@ -51,7 +51,8 @@ setup(
             os.path.join("..", "icons", f)
             for f in os.listdir(os.path.join("icons"))
             if f.startswith("travel")
-        ],
+        ]
+        + ["traffic.conf"],
     },
     python_requires=">=3.6",
     install_requires=[
