@@ -86,7 +86,7 @@ On the following map, Air Route Traffic Control Centers (ARTCC) are displayed to
     # just a hack to push walls (i.e. projection limits)
     AlbersUSA.xlimits = property(lambda _: (-3e6, 3e6))
 
-    for airspace in faa.airspaces.values():
+    for airspace in faa.airspace_boundary.values():
 
         if airspace.type == "ARTCC":
             airspace.plot(ax, edgecolor="#3a3aaa", lw=2, alpha=0.5)
