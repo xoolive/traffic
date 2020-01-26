@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from .cartopy import *
 
 _traffic_style = """
-figure.figsize: 10, 10
+figure.figsize: 10, 7
 figure.edgecolor: white
 figure.facecolor: white
 
@@ -47,8 +47,6 @@ config_dir = mpl.get_configdir()
 mpl_style_location = Path(f"{config_dir}/stylelib/traffic.mplstyle")
 if not mpl_style_location.parent.is_dir():
     mpl_style_location.parent.mkdir(parents=True)
-
-with mpl_style_location.open("w") as fh:
-    fh.write(_traffic_style)
+mpl_style_location.write_text(_traffic_style)
 
 plt.style.reload_library()
