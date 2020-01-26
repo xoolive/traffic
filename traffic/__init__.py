@@ -96,10 +96,11 @@ if not cache_dir.exists():
 
 # -- Plugin management --
 
-_selected = [
-    s.strip().lower()
-    for s in config.get("plugins", "enabled_plugins", fallback="").split(",")
-]
+_enabled_plugins_raw = config.get("plugins", "enabled_plugins", fallback="")
+_enabled_list = ",".join(_enabled_plugins_raw.split("\n")).split(",")
+
+_selected = set(s.replace("-", "").strip().lower() for s in _enabled_list)
+_selected -= {""}
 
 logging.info(f"Selected plugins: {_selected}")
 
