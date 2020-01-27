@@ -1,15 +1,19 @@
 from functools import lru_cache
 from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
-import altair as alt
 from cartopy.crs import PlateCarree
-from cartotools.osm import request, tags
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
 from shapely.geometry import LineString, mapping
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
 
+import altair as alt
+from cartotools.osm import request, tags
+
 from .. import cache_expiration
 from ..drawing import Nominatim
+from ..drawing.markers import atc_tower
 from .mixins import HBoxMixin, PointMixin, ShapelyMixin
 
 request.cache_expiration = cache_expiration
@@ -24,6 +28,15 @@ class AirportNamedTuple(NamedTuple):
     latitude: float
     longitude: float
     name: str
+
+
+class AirportPoint(PointMixin):
+    def plot(
+        self, ax: Axes, text_kw=None, shift=None, **kwargs
+    ) -> List[Artist]:  # coverage: ignore
+        return super().plot(
+            ax, text_kw, shift, **{**{"marker": atc_tower, "s": 400}, **kwargs}
+        )
 
 
 class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
@@ -137,7 +150,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
     @property
     def point(self):
-        p = PointMixin()
+        p = AirportPoint()
         p.latitude, p.longitude = self.latlon
         p.name = self.icao
         return p

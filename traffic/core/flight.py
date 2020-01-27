@@ -26,6 +26,8 @@ import altair as alt
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
+from ..drawing.markers import aircraft as aircraft_marker
+from ..drawing.markers import rotate_marker
 from . import geodesy as geo
 from .distance import DistanceAirport, closest_point, guess_airport
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
@@ -74,7 +76,18 @@ default_angle_features = ["track", "heading"]
 
 
 class Position(PointMixin, pd.core.series.Series):
-    pass
+    def plot(
+        self, ax: Axes, text_kw=None, shift=None, **kwargs
+    ) -> List[Artist]:  # coverage: ignore
+
+        visualdict = dict(s=300)
+        if hasattr(self, "track"):
+            visualdict["marker"] = rotate_marker(aircraft_marker, self.track)
+
+        if "s" not in text_kw and hasattr(self, "callsign"):
+            text_kw["s"] = self.callsign
+
+        return super().plot(ax, text_kw, shift, **{**visualdict, **kwargs})
 
 
 class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
