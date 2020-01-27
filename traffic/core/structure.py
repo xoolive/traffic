@@ -1,13 +1,12 @@
 from functools import lru_cache
 from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
+import altair as alt
 from cartopy.crs import PlateCarree
+from cartotools.osm import request, tags
 from shapely.geometry import LineString, mapping
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
-
-import altair as alt
-from cartotools.osm import request, tags
 
 from .. import cache_expiration
 from ..drawing import Nominatim
@@ -216,7 +215,7 @@ class Navaid(NavaidTuple, PointMixin):
             return self.altitude
 
     def __repr__(self):
-        if self.type in ["FIX", "DB", "WP"] or self.type != self.type:
+        if self.type not in {"DME", "NDB", "TACAN", "VOR"}:
             return (
                 f"{self.name} ({self.type}): {self.latitude} {self.longitude}"
             )
