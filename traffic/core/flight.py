@@ -760,8 +760,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
     def split(self, value: int, unit: str) -> Iterator["Flight"]:
         ...
 
-    @overload
-    def split(  # noqa: F811
+    @overload  # noqa: F811
+    def split(
         self, value: str, unit: None = None
     ) -> Iterator["Flight"]:
         ...
@@ -1294,8 +1294,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
     ) -> "Flight":
         ...
 
-    @overload
-    def distance(  # noqa: F811
+    @overload  # noqa: F811
+    def distance(
         self, other: "Flight", column_name: str = "distance"
     ) -> Optional[pd.DataFrame]:
         ...
