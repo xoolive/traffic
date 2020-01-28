@@ -49,7 +49,7 @@ def test_properties() -> None:
 @pytest.mark.skipif(sys.version_info < (3, 7), reason="py36")
 def test_get_traffic() -> None:
     traffic: Traffic = get_sample(featured, "traffic")
-    assert "belevingsvlucht" in traffic.flight_ids  # type: ignore
+    assert "belevingsvlucht" in traffic.flight_ids
 
 
 def test_emptydata() -> None:
@@ -288,6 +288,7 @@ def test_comet() -> None:
 
 
 def test_cumulative_distance() -> None:
+    # https://github.com/xoolive/traffic/issues/61
 
     f1 = (
         belevingsvlucht.before("2018-05-30 20:17:58")
