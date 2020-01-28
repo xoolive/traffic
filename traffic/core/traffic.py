@@ -3,7 +3,6 @@
 import logging
 import warnings
 from datetime import timedelta
-from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
@@ -19,6 +18,7 @@ from shapely.geometry import Polygon, base
 
 from ..algorithms.clustering import Clustering, centroid
 from ..algorithms.cpa import closest_point_of_approach
+from ..core.cache import property_cache
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight, attrgetter_duration
 from .lazy import LazyTraffic, lazy_evaluation
@@ -344,12 +344,15 @@ class Traffic(HBoxMixin, GeographyMixin):
     def __iter__(self) -> Iterator[Flight]:
         yield from self.iterate()
 
-    @lru_cache()
-    def __len__(self):
+    @property_cache
+    def length(self):
         return sum(1 for _ in self)
 
+    def __len__(self):
+        return self.length
+
     def __repr__(self) -> str:
-        stats = self.stats()
+        stats = self.stats
         shape = stats.shape[0]
         if shape > 10:
             # stylers are not efficient on big dataframes...
@@ -357,7 +360,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         return stats.__repr__()
 
     def _repr_html_(self) -> str:
-        stats = self.stats()
+        stats = self.stats
         shape = stats.shape[0]
         if shape > 10:
             # stylers are not efficient on big dataframes...
@@ -568,23 +571,17 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     # --- Properties ---
 
-    # https://github.com/python/mypy/issues/1362
-    @property  # type: ignore
-    @lru_cache()
+    @property_cache
     def start_time(self) -> pd.Timestamp:
         """Returns the earliest timestamp in the DataFrame."""
         return self.data.timestamp.min()
 
-    # https://github.com/python/mypy/issues/1362
-    @property  # type: ignore
-    @lru_cache()
+    @property_cache
     def end_time(self) -> pd.Timestamp:
         """Returns the latest timestamp in the DataFrame."""
         return self.data.timestamp.max()
 
-    # https://github.com/python/mypy/issues/1362
-    @property  # type: ignore
-    @lru_cache()
+    @property_cache
     def callsigns(self) -> Set[str]:
         """Return all the different callsigns in the DataFrame"""
         sub = self.data.query("callsign == callsign")
@@ -592,24 +589,18 @@ class Traffic(HBoxMixin, GeographyMixin):
             return set()
         return set(sub.callsign)
 
-    # https://github.com/python/mypy/issues/1362
-    @property  # type: ignore
-    @lru_cache()
+    @property_cache
     def aircraft(self) -> Set[str]:
         """Return all the different icao24 aircraft ids in the DataFrame"""
         logging.warning("Use .icao24", DeprecationWarning)
         return set(self.data.icao24)
 
-    # https://github.com/python/mypy/issues/1362
-    @property  # type: ignore
-    @lru_cache()
+    @property_cache
     def icao24(self) -> Set[str]:
         """Return all the different icao24 aircraft ids in the DataFrame"""
         return set(self.data.icao24)
 
-    # https://github.com/python/mypy/issues/1362
-    @property  # type: ignore
-    @lru_cache()
+    @property_cache
     def flight_ids(self) -> Optional[Set[str]]:
         """Return all the different flight_id in the DataFrame"""
         if "flight_id" in self.data.columns:
@@ -637,7 +628,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             )
         )
 
-    @lru_cache()
+    @property_cache
     def stats(self) -> pd.DataFrame:
         key = ["icao24", "callsign"] if self.flight_ids is None else "flight_id"
         return (
