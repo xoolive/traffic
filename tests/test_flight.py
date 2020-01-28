@@ -9,8 +9,9 @@ import pytest
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
-from traffic.data.samples import (airbus_tree, belevingsvlucht, calibration,
-                                  featured, get_sample)
+from traffic.data.samples import (
+    airbus_tree, belevingsvlucht, calibration, featured, get_sample
+)
 
 # fmt: on
 
@@ -284,3 +285,29 @@ def test_comet() -> None:
     comet = takeoff.comet(minutes=1)
 
     assert takeoff.point.altitude + 2000 < comet.point.altitude  # type: ignore
+
+
+def test_cumulative_distance() -> None:
+
+    f1 = (
+        belevingsvlucht.before("2018-05-30 20:17:58")
+        .last(minutes=15)  # type: ignore
+        .cumulative_distance()
+        .last(minutes=10)
+        .filter(compute_gs=17)
+        .filter(compute_gs=53)
+    )
+
+    f2 = (
+        belevingsvlucht.before("2018-05-30 20:17:58")
+        .last(minutes=15)  # type: ignore
+        .cumulative_distance(reverse=True)
+        .last(minutes=10)
+        .filter(compute_gs=17)
+        .filter(compute_gs=53)
+    )
+
+    assert f1.diff(["cumdist"]).mean("cumdist_diff") > 0
+    assert f2.diff(["cumdist"]).mean("cumdist_diff") < 0
+    assert f1.diff(["compute_gs"]).mean("compute_gs_diff") < 0
+    assert f2.diff(["compute_gs"]).mean("compute_gs_diff") < 0

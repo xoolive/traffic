@@ -1404,7 +1404,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
         )
 
     def cumulative_distance(
-        self, compute_gs: bool = True, **kwargs
+        self, compute_gs: bool = True, *, reverse: bool = False, **kwargs
     ) -> "Flight":
 
         """ Enrich the structure with new ``cumdist`` column computed from
@@ -1424,7 +1424,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
             warnings.warn("Use compute_gs argument", DeprecationWarning)
             compute_gs = kwargs["compute_groundspeed"]
 
-        coords = self.data[["timestamp", "latitude", "longitude"]]
+        cur_sorted = self.sort_values("timestamp", ascending=not reverse)
+        coords = cur_sorted.data[["timestamp", "latitude", "longitude"]]
+
         delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
         delta_1 = delta.iloc[1:]
         d = geo.distance(
@@ -1434,12 +1436,15 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
             (delta_1.longitude + delta_1.longitude_1).values,
         )
 
-        res = self.assign(cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant"))
+        res = cur_sorted.assign(
+            cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant")
+        )
 
         if compute_gs:
             gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
-            res = res.assign(compute_gs=np.pad(gs, (1, 0), "constant"))
-        return res
+            res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "constant")))
+
+        return res.sort_values("timestamp", ascending=True)
 
     # -- Geometry operations --
 

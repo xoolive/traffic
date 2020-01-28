@@ -156,12 +156,12 @@ class DataFrameMixin(object):
         """
         self.data.to_excel(filename, *args, **kwargs)
 
-    def sort_values(self: T, key: str) -> T:
+    def sort_values(self: T, by: str, **kwargs) -> T:
         """
         Applies the Pandas ``sort_values()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
-        return self.__class__(self.data.sort_values(key))
+        return self.__class__(self.data.sort_values(by, **kwargs))
 
     def query(self: T, query_str: str) -> Optional[T]:
         """
