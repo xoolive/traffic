@@ -797,9 +797,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
             default=None,
         )
 
-    def agg_time(
-        self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
-    ) -> "Flight":
+    def agg_time(self, freq="1T", merge=True, **kwargs) -> "Flight":
         """Aggregate features on time windows.
 
         The following is performed:
@@ -818,23 +816,40 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
 
         """
 
+        def flatten(
+            data: pd.DataFrame, how: Callable = "_".join
+        ) -> pd.DataFrame:
+            data.columns = (
+                [
+                    how(filter(None, map(str, levels)))
+                    for levels in data.columns.values
+                ]
+                if isinstance(data.columns, pd.MultiIndex)
+                else data.columns
+            )
+            return data
+
         if len(kwargs) == 0:
             raise RuntimeError("No feature provided for aggregation.")
         temp_flight = self.assign(
             rounded=lambda df: df.timestamp.dt.round(freq)
         )
-        agg_data = temp_flight.groupby("rounded").agg(kwargs)
+
+        # force the agg_data to be multi-indexed in columns
+        kwargs_modified: Dict["str", List[Any]] = dict(
+            (
+                key,
+                list(value)
+                if any(isinstance(value, x) for x in [list, tuple])
+                else [value],
+            )
+            for key, value in kwargs.items()
+        )
+        agg_data = flatten(temp_flight.groupby("rounded").agg(kwargs_modified))
         if not merge:
             return agg_data
-        rename_cols = {
-            feature: new_name.format(feature=feature, agg=agg)
-            for feature, agg in kwargs.items()
-        }
-        return temp_flight.merge(
-            agg_data.rename(columns=rename_cols),
-            left_on="rounded",
-            right_index=True,
-        )
+
+        return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
 
     def handle_last_position(self) -> "Flight":
         # The following is True for all data coming from the Impala shell.

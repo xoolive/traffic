@@ -312,3 +312,21 @@ def test_cumulative_distance() -> None:
     assert f2.diff(["cumdist"]).mean("cumdist_diff") < 0
     assert f1.diff(["compute_gs"]).mean("compute_gs_diff") < 0
     assert f2.diff(["compute_gs"]).mean("compute_gs_diff") < 0
+
+
+def test_agg_time_colnames() -> None:
+    # https://github.com/xoolive/traffic/issues/66
+
+    cols = belevingsvlucht.agg_time("5T", altitude=("max", "mean")).data.columns
+    assert list(cols)[-3:] == ["rounded", "altitude_max", "altitude_mean"]
+
+    cols = belevingsvlucht.agg_time(
+        "5T", altitude=lambda x: x.sum()
+    ).data.columns
+    assert list(cols)[-3:] == ["altitude", "rounded", "altitude_<lambda>"]
+
+    def shh(x):
+        x.sum()
+
+    cols = belevingsvlucht.agg_time("5T", altitude=shh).data.columns
+    assert list(cols)[-2:] == ["rounded", "altitude_shh"]
