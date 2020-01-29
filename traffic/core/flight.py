@@ -10,6 +10,7 @@ from typing import (
     List, Optional, Set, Tuple, Union, cast, overload
 )
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import pyproj
@@ -21,8 +22,6 @@ from matplotlib.axes._subplots import Axes
 from pandas.core.internals import Block, DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
-
-import altair as alt
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
@@ -761,9 +760,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
         ...
 
     @overload  # noqa: F811
-    def split(
-        self, value: str, unit: None = None
-    ) -> Iterator["Flight"]:
+    def split(self, value: str, unit: None = None) -> Iterator["Flight"]:
         ...
 
     def split(  # noqa: F811
@@ -914,8 +911,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
 
     def filter(
         self,
-        strategy: Callable[
-            [pd.DataFrame], pd.DataFrame
+        strategy: Optional[
+            Callable[[pd.DataFrame], pd.DataFrame]
         ] = lambda x: x.bfill().ffill(),
         **kwargs,
     ) -> "Flight":
@@ -933,33 +930,44 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
 
         Then, a strategy may be applied to fill the NaN values, by default a
         forward/backward fill. Other strategies may be passed, for instance *do
-        nothing*: ``lambda x: x``; or *interpolate*: ``lambda x:
-        x.interpolate()``.
+        nothing*: ``None``; or *interpolate*: ``lambda x: x.interpolate()``.
 
         .. note::
             This method if often more efficient when applied several times with
-            different kernel values.
+            different kernel values.Kernel values may be passed as integers, or
+            list/tuples of integers for cascade of filters:
 
             .. code:: python
 
                 # this cascade of filters appears to work well on altitude
-                flight.filter().filter(altitude=53)
+                flight.filter(altitude=17).filter(altitude=53)
+
+                # this is equivalent to the default value
+                flight.filter(altitude=(17, 53))
+
         """
 
-        ks_dict = {
-            "altitude": 17,
-            "selected_mcp": 17,
-            "selected_fms": 17,
+        ks_dict: Dict[str, Union[int, Iterable[int]]] = {
+            "altitude": (17, 53),
+            "selected_mcp": (17, 53),
+            "selected_fms": (17, 53),
             "IAS": 23,
             "TAS": 23,
             "Mach": 23,
             "groundspeed": 5,
             "longitude": 15,  # maybe EKF is a better idea... TODO
             "latitude": 15,
-            "compute_gs": 3,
+            "compute_gs": (17, 53),
             "onground": 3,
             **kwargs,
         }
+
+        if strategy is None:
+
+            def identity(x):
+                return x  # noqa: E704
+
+            strategy = identity
 
         def cascaded_filters(
             df, feature: str, kernel_size: int, filt=scipy.signal.medfilt
@@ -1000,17 +1008,23 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
         else:
             features = list(kwargs.keys())
 
-        kernels_size = [0 for _ in features]
+        kernels_size: List[Union[int, Iterable[int]]] = [0 for _ in features]
         for idx, feature in enumerate(features):
             kernels_size[idx] = ks_dict.get(feature, 17)
 
-        for feat, ks in zip(features, kernels_size):
+        for feat, ks_list in zip(features, kernels_size):
 
-            # Prepare each flight for the filtering
-            df = cascaded_filters(new_data[["timestamp", feat]], feat, ks)
+            if isinstance(ks_list, int):
+                ks_list = [ks_list]
+            else:
+                ks_list = list(ks_list)
 
-            # Decision to accept/reject for all data points in the time series
-            new_data.loc[df.sq_eps > df.sigma, feat] = None
+            for ks in ks_list:
+                # Prepare each feature for the filtering
+                df = cascaded_filters(new_data[["timestamp", feat]], feat, ks)
+
+                # Decision to accept/reject data points in the time series
+                new_data.loc[df.sq_eps > df.sigma, feat] = None
 
         data = strategy(new_data)
 

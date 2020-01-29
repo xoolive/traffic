@@ -291,8 +291,8 @@ def test_cumulative_distance() -> None:
     # https://github.com/xoolive/traffic/issues/61
 
     f1 = (
-        belevingsvlucht.before("2018-05-30 20:17:58")
-        .last(minutes=15)  # type: ignore
+        belevingsvlucht.before("2018-05-30 20:17:58")  # type: ignore
+        .last(minutes=15)
         .cumulative_distance()
         .last(minutes=10)
         .filter(compute_gs=17)
@@ -300,8 +300,8 @@ def test_cumulative_distance() -> None:
     )
 
     f2 = (
-        belevingsvlucht.before("2018-05-30 20:17:58")
-        .last(minutes=15)  # type: ignore
+        belevingsvlucht.before("2018-05-30 20:17:58")  # type: ignore
+        .last(minutes=15)
         .cumulative_distance(reverse=True)
         .last(minutes=10)
         .filter(compute_gs=17)
