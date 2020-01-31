@@ -10,7 +10,6 @@ from typing import (
     List, Optional, Set, Tuple, Union, cast, overload
 )
 
-import altair as alt
 import numpy as np
 import pandas as pd
 import pyproj
@@ -19,9 +18,11 @@ from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
-from pandas.core.internals import Block, DatetimeTZBlock
+from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
+
+import altair as alt
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
@@ -39,9 +40,12 @@ if TYPE_CHECKING:
 
 # fmt: on
 
-# fix https://github.com/xoolive/traffic/issues/12
-# if pd.__version__ <= "0.24.1":
-DatetimeTZBlock.interpolate = Block.interpolate
+
+def _tz_interpolate(data, *args, **kwargs):
+    return data.astype(int).interpolate(*args, **kwargs).astype(data.dtype)
+
+
+DatetimeTZBlock.interpolate = _tz_interpolate
 
 
 def _split(

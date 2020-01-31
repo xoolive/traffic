@@ -252,10 +252,10 @@ def test_resample_unwrapped() -> None:
 
     df = pd.DataFrame.from_records(
         [
-            (pd.Timestamp("2019-01-01 12:00:00"), 345),
-            (pd.Timestamp("2019-01-01 12:00:30"), 355),
-            (pd.Timestamp("2019-01-01 12:01:00"), 5),
-            (pd.Timestamp("2019-01-01 12:01:30"), 15),
+            (pd.Timestamp("2019-01-01 12:00:00Z"), 345),
+            (pd.Timestamp("2019-01-01 12:00:30Z"), 355),
+            (pd.Timestamp("2019-01-01 12:01:00Z"), 5),
+            (pd.Timestamp("2019-01-01 12:01:30Z"), 15),
         ],
         columns=["timestamp", "track"],
     )
