@@ -1,6 +1,3 @@
-.. raw:: html
-    :file: ./embed_widgets/firs_leaflet.html
-
 Flight Information Regions (FIR)
 --------------------------------
 
