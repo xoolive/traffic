@@ -697,6 +697,11 @@ class Decoder:
 
             tc = pms.adsb.typecode(msg)
             icao = pms.icao(msg)
+
+            # before it's fixed in pyModeS release...
+            if isinstance(icao, bytes):
+                icao = icao.decode()
+
             ac = self.acs[icao.lower()]
 
             if 1 <= tc <= 4:
