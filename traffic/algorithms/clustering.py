@@ -15,6 +15,9 @@ class TransformerProtocol(Protocol):
     def fit_transform(self, X: np.ndarray) -> np.ndarray:
         ...
 
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        ...
+
 
 class ClusteringProtocol(Protocol):
     def fit(self, X: np.ndarray) -> None:
@@ -106,7 +109,7 @@ class Clustering:
             )
 
             if self.transform is not None:
-                self.X = self.transform.fit_transform(self.X)
+                self.X = self.transform.transform(self.X)
 
         labels = self.clustering.predict(self.X)
 
