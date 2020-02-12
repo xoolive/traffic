@@ -34,8 +34,8 @@ def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
             if it < 0:
                 break
             data = data[it:]
-            if len(data) <= 23:
-                continue
+            if len(data) < 23:
+                break
             if data[1] == 0x33:
                 yield data[:23]
                 data = data[23:]
@@ -640,34 +640,6 @@ class Decoder:
                         return
                     yield get
 
-        # def next_msg(fh: BinaryIO) -> Iterator[bytes]:
-        #     data = b""
-        #     while True:
-        #         get = fh.read()
-        #         if len(get) == 0:
-        #             return
-        #         data += get
-        #         while len(data) > 2:
-        #             it = data.find(0x1A)
-        #             if it < 0:
-        #                 break
-        #             data = data[it:]
-        #             if data[1] == 0x33:
-        #                 yield data[:23]
-        #                 data = data[23:]
-        #                 continue
-        #             elif data[1] == 0x32:
-        #                 data = data[16:]
-        #                 continue
-        #             elif data[1] == 0x31:
-        #                 data = data[11:]
-        #                 continue
-        #             elif data[1] == 0x34:
-        #                 data = data[23:]
-        #                 continue
-        #             else:
-        #                 data = data[1:]
-
         for i, bin_msg in tqdm(enumerate(next_msg(next_in_binary(filename)))):
 
             if len(bin_msg) < 23:
@@ -727,41 +699,11 @@ class Decoder:
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
         def next_in_socket() -> Iterator[bytes]:
-            if decoder.thread is None or decoder.thread.to_be_stopped():
-                socket.close()
-                return
-            yield socket.recv(2048)
-
-        # def next_msg(s: Any) -> Iterator[bytes]:
-        #     data = b""
-        #     while True:
-        #         if decoder.thread is None or decoder.thread.to_be_stopped():
-        #             s.close()
-        #             return
-        #         get = s.recv(2048)
-        #         data += get
-        #         while len(data) >= 23:
-        #             it = data.find(0x1A)
-        #             if it < 1:
-        #                 break
-        #             data = data[it:]
-        #             if len(data) <= 23:
-        #                 continue
-        #             if data[1] == 0x33:
-        #                 yield data[:23]
-        #                 data = data[23:]
-        #                 continue
-        #             elif data[1] == 0x32:
-        #                 data = data[16:]
-        #                 continue
-        #             elif data[1] == 0x31:
-        #                 data = data[11:]
-        #                 continue
-        #             elif data[1] == 0x34:
-        #                 data = data[23:]
-        #                 continue
-        #             else:
-        #                 data = data[1:]
+            while True:
+                if decoder.thread is None or decoder.thread.to_be_stopped():
+                    socket.close()
+                    return
+                yield socket.recv(2048)
 
         def decode():
             for i, bin_msg in enumerate(next_msg(next_in_socket())):
@@ -770,7 +712,6 @@ class Decoder:
 
                 # Timestamp decoding
                 now = decode_time_here(msg, time_0)
-                # decode_time_radarcape(msg)
 
                 if fh is not None:
                     fh.write("{},{}\n".format(now.timestamp(), msg))
@@ -782,7 +723,6 @@ class Decoder:
                     time_fmt != "radarcape"
                     and i & redefine_freq == redefine_freq
                 ):
-                    # if dump1090 and i & 127 == 127:
                     decoder.redefine_reference(now)
 
                 decoder.process(now, msg[18:].encode())
