@@ -1,7 +1,10 @@
 from pathlib import Path
 
+import pandas as pd
+import pytest
+
 from traffic.core import Flight, Traffic
-from traffic.data import opensky
+from traffic.data import ModeS_Decoder, opensky
 from traffic.data.samples import collections, get_sample
 
 
@@ -19,7 +22,7 @@ def test_decode():
     switzerland: Traffic = get_sample(collections, "switzerland")
 
     tap_switzerland = (
-        switzerland.query('callsign.str.startswith("TAP127")')
+        switzerland.query('callsign.str.startswith("TAP127")')  # type: ignore
         .filter_if(long_enough)
         .query_opensky()
         .resample("1s")
@@ -44,3 +47,21 @@ def test_decode():
         # An aircraft should turn to the side it is rolling
         f = f.assign(diff_heading=lambda df: df.heading.diff() * df.roll)
         assert sum(f.data.diff_heading + 1 < 0) / len(f) < 1e-3
+
+
+def test_dump1090_bin():
+    filename = Path(__file__).parent.parent / "data" / "sample_dump1090.bin"
+
+    time_0 = pd.Timestamp("2020-02-12 10:07Z")
+    decoder = ModeS_Decoder.from_binary(
+        filename, "LFBO", time_fmt="dump1090", time_0=time_0
+    )
+    t = decoder.traffic
+
+    assert len(t) != 0
+
+
+@pytest.mark.skipif(True, reason="only for local debug")
+def test_rtlsdr():
+    pass
+    # ModeS_Decoder.from

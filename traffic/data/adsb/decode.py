@@ -8,10 +8,13 @@ from collections import UserDict
 from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 from pathlib import Path
-from typing import (Any, Dict, Iterable, Iterator, List, Optional, TextIO,
-                    Tuple, Union)
+from typing import (
+    Any, Callable, Dict, Iterable, Iterator,
+    List, Optional, TextIO, Tuple, Union
+)
 
 import pandas as pd
+
 import pyModeS as pms
 from tqdm.autonotebook import tqdm
 
@@ -19,6 +22,78 @@ from ...core import Flight, Traffic
 from ...data.basic.airports import Airport
 
 # fmt: on
+
+
+def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
+    data = b""
+    for chunk in chunk_it:
+        data += chunk
+        while len(data) >= 23:
+            it = data.find(0x1A)
+            if it < 0:
+                break
+            data = data[it:]
+            if len(data) <= 23:
+                continue
+            if data[1] == 0x33:
+                yield data[:23]
+                data = data[23:]
+                continue
+            elif data[1] == 0x32:
+                data = data[16:]
+                continue
+            elif data[1] == 0x31:
+                data = data[11:]
+                continue
+            elif data[1] == 0x34:
+                data = data[23:]
+                continue
+            else:
+                data = data[1:]
+
+
+def decode_time_default(
+    msg: str, time_0: Optional[datetime] = None
+) -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def decode_time_radarcape(
+    msg: str, time_0: Optional[datetime] = None
+) -> datetime:
+    now = datetime.now(timezone.utc)
+    if time_0 is not None:
+        now = time_0
+    timestamp = int(msg[4:16], 16)
+
+    nanos = timestamp & 0x00003FFFFFFF
+    secs = timestamp >> 30
+    now = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    now += timedelta(seconds=secs, microseconds=nanos / 1000)
+    return now
+
+
+def decode_time_dump1090(
+    msg: str, time_0: Optional[datetime] = None
+) -> datetime:
+    now = datetime.now(timezone.utc)
+    if time_0 is not None:
+        now = time_0
+    else:
+        now = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    timestamp = int(msg[4:16], 16)
+    # dump1090/net_io.c => time (in 12Mhz ticks)
+    now += timedelta(seconds=timestamp / 12e6)
+
+    return now
+
+
+decode_time: Dict[str, Callable[[str, Optional[datetime]], datetime]] = {
+    "radarcape": decode_time_radarcape,
+    "dump1090": decode_time_dump1090,
+    "default": decode_time_default,
+}
 
 
 class StoppableThread(threading.Thread):
@@ -541,43 +616,131 @@ class Decoder:
             return decoder
 
     @classmethod
+    def from_binary(
+        cls,
+        filename: Union[str, Path],
+        reference: Union[str, Airport, Tuple[float, float]],
+        *,
+        time_fmt: str = "dump1090",
+        time_0: Optional[datetime] = None,
+        redefine_mag: int = 10,
+        fh: Optional[TextIO] = None,
+    ):
+
+        decoder = cls(reference)
+        redefine_freq = 2 ** redefine_mag - 1
+        decode_time_here = decode_time.get(time_fmt, decode_time_default)
+
+        def next_in_binary(filename: Union[str, Path]) -> Iterator[bytes]:
+            with Path(filename).open("rb") as fh:
+                while True:
+                    get = fh.read()
+                    if len(get) == 0:
+                        return
+                    yield get
+
+        # def next_msg(fh: BinaryIO) -> Iterator[bytes]:
+        #     data = b""
+        #     while True:
+        #         get = fh.read()
+        #         if len(get) == 0:
+        #             return
+        #         data += get
+        #         while len(data) > 2:
+        #             it = data.find(0x1A)
+        #             if it < 0:
+        #                 break
+        #             data = data[it:]
+        #             if data[1] == 0x33:
+        #                 yield data[:23]
+        #                 data = data[23:]
+        #                 continue
+        #             elif data[1] == 0x32:
+        #                 data = data[16:]
+        #                 continue
+        #             elif data[1] == 0x31:
+        #                 data = data[11:]
+        #                 continue
+        #             elif data[1] == 0x34:
+        #                 data = data[23:]
+        #                 continue
+        #             else:
+        #                 data = data[1:]
+
+        for i, bin_msg in tqdm(enumerate(next_msg(next_in_binary(filename)))):
+
+            if len(bin_msg) < 23:
+                continue
+
+            msg = "".join(["{:02x}".format(t) for t in bin_msg])
+
+            now = decode_time_here(msg, time_0)
+
+            if fh is not None:
+                fh.write("{},{}\n".format(now.timestamp(), msg))
+
+            if i & redefine_freq == redefine_freq:
+                decoder.redefine_reference(now)
+
+            decoder.process(now, msg[18:].encode())
+
+        return decoder
+
+    @classmethod
     def from_socket(
         cls,
         socket: socket.socket,
         reference: Union[str, Airport, Tuple[float, float]],
-        dump1090: bool = False,
+        *,
+        time_fmt: str = "default",
+        time_0: Optional[datetime] = None,
+        redefine_mag: int = 7,
         fh: Optional[TextIO] = None,
     ) -> "Decoder":  # coverage: ignore
 
         decoder = cls(reference)
+        redefine_freq = 2 ** redefine_mag - 1
+        decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
-        def next_msg(s: Any) -> Iterator[List[int]]:
-            while True:
-                if decoder.thread is None or decoder.thread.to_be_stopped():
-                    s.close()
-                    return
-                data = s.recv(2048)
-                while len(data) > 10:
-                    if data[1] == 0x33:
-                        yield data[:23]
-                        data = data[23:]
-                        continue
-                    if data[1] == 0x32:
-                        data = data[16:]
-                        continue
-                    if data[1] == 0x31:
-                        data = data[11:]
-                        continue
-                    if data[1] == 0x34:
-                        data = data[23:]
-                        continue
-                    it = data.find(0x1A)
-                    if it < 1:
-                        break
-                    data = data[it:]
+        def next_in_socket() -> Iterator[bytes]:
+            if decoder.thread is None or decoder.thread.to_be_stopped():
+                socket.close()
+                return
+            yield socket.recv(2048)
+
+        # def next_msg(s: Any) -> Iterator[bytes]:
+        #     data = b""
+        #     while True:
+        #         if decoder.thread is None or decoder.thread.to_be_stopped():
+        #             s.close()
+        #             return
+        #         get = s.recv(2048)
+        #         data += get
+        #         while len(data) >= 23:
+        #             it = data.find(0x1A)
+        #             if it < 1:
+        #                 break
+        #             data = data[it:]
+        #             if len(data) <= 23:
+        #                 continue
+        #             if data[1] == 0x33:
+        #                 yield data[:23]
+        #                 data = data[23:]
+        #                 continue
+        #             elif data[1] == 0x32:
+        #                 data = data[16:]
+        #                 continue
+        #             elif data[1] == 0x31:
+        #                 data = data[11:]
+        #                 continue
+        #             elif data[1] == 0x34:
+        #                 data = data[23:]
+        #                 continue
+        #             else:
+        #                 data = data[1:]
 
         def decode():
-            for i, bin_msg in enumerate(next_msg(socket)):
+            for i, bin_msg in enumerate(next_msg(next_in_socket())):
 
                 if len(bin_msg) < 23:
                     continue
@@ -585,18 +748,14 @@ class Decoder:
                 msg = "".join(["{:02x}".format(t) for t in bin_msg])
 
                 # Timestamp decoding
-                now = datetime.now(timezone.utc)
-                if not dump1090:
-                    timestamp = int(msg[4:16], 16)
-                    nanos = timestamp & 0x00003FFFFFFF
-                    secs = timestamp >> 30
-                    now = now.replace(hour=0, minute=0, second=0, microsecond=0)
-                    now += timedelta(seconds=secs, microseconds=nanos / 1000)
+                now = decode_time_here(msg, time_0)
+                # decode_time_radarcape(msg)
 
                 if fh is not None:
                     fh.write("{},{}\n".format(now.timestamp(), msg))
 
-                if dump1090 and i & 127 == 127:
+                if i & redefine_freq == redefine_freq:
+                    # if dump1090 and i & 127 == 127:
                     decoder.redefine_reference(now)
 
                 decoder.process(now, msg[18:].encode())
@@ -625,7 +784,9 @@ class Decoder:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(("localhost", 30005))
         fh = open(today, "a", 1)
-        return cls.from_socket(s, reference, True, fh)
+        return cls.from_socket(
+            s, reference, time_fmt="dump1090", time_0=now, fh=fh
+        )
 
     @classmethod
     def from_address(
@@ -641,7 +802,7 @@ class Decoder:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
         fh = open(today, "a", 1)
-        return cls.from_socket(s, reference, False, fh)
+        return cls.from_socket(s, reference, time_fmt="radarcape", fh=fh)
 
     def redefine_reference(self, time: datetime) -> None:
         pos = list(
