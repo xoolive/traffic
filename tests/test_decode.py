@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -62,6 +63,12 @@ def test_dump1090_bin():
 
 
 @pytest.mark.skipif(True, reason="only for local debug")
-def test_rtlsdr():
-    pass
-    # ModeS_Decoder.from
+def test_dump1090_stream():
+    decoder = ModeS_Decoder.from_dump1090("LFBO")
+    time.sleep(15)
+    decoder.stop()
+
+    t = decoder.traffic
+
+    assert t is not None
+    assert len(t) != 0
