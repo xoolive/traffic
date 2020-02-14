@@ -10,7 +10,6 @@ from cartotools import session as carto_session
 
 from .. import cache_dir, config, config_file
 from .adsb.decode import Decoder as ModeS_Decoder  # noqa: F401
-from .adsb.raw_helper import RawHelper
 from .adsb.opensky import OpenSky
 from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
 from .airspaces.eurofirs import eurofirs
@@ -38,7 +37,6 @@ __all__ = [
     "nm_navaids",
     "eurofirs",
     "opensky",
-    "raw_helper",
 ]
 
 Aircraft.cache_dir = cache_dir
@@ -127,10 +125,6 @@ if sys.version_info < (3, 7, 0):
     nm_navaids = NMNavaids.from_file(nm_path_str)
     nm_airways = NMRoutes()
 
-    if len(proxy_values) > 0:
-        opensky.session.proxies.update(proxy_values)
-        opensky.session.trust_env = False
-
     opensky = OpenSky(
         opensky_username,
         opensky_password,
@@ -180,15 +174,6 @@ def __getattr__(name: str):
             paramiko_proxy,
         )
         return opensky
-    if name == "raw_helper":
-        raw_helper = RawHelper(
-            opensky_username,
-            opensky_password,
-            cache_dir / "opensky",
-            session,
-            paramiko_proxy,
-        )
-        return raw_helper
     if name == "runways":
         return Runways()
     if name == "nm_b2b":
