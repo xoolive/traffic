@@ -9,7 +9,7 @@ from datetime import timedelta
 from io import StringIO
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Callable, Dict, Iterable, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import pandas as pd
 from pandas.errors import ParserError
@@ -52,9 +52,13 @@ class Impala(object):
     ]
 
     _raw_tables = [
-        "position_data4",
+        "acas_data4",
+        "allcall_replies_data4",
         "identification_data4",
-        "velocity_data4"
+        "operational_status_data4",
+        "position_data4",
+        "rollcall_replies_data4",
+        "velocity_data4",
     ]
 
     basic_request = (
@@ -817,7 +821,7 @@ class Impala(object):
         start: timelike,
         stop: Optional[timelike] = None,
         *args,  # more reasonable to be explicit about arguments
-        table_name: str = "position_data4",
+        table_name: Union[str, List[str], None] = None,
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         icao24: Union[None, str, Iterable[str]] = None,
         serials: Union[None, int, Iterable[int]] = None,
@@ -900,19 +904,16 @@ class Impala(object):
         """
 
         _request = (
-            "select {columns} from {table_name} data4 {other_tables}"
+            "select {columns} from {table_name} {other_tables} "
             "{where_clause} hour>={before_hour} and hour<{after_hour} "
-            "and data4.mintime>={before_time} and data4.mintime<{after_time} "
+            "and {table_name}.mintime>={before_time} and "
+            "{table_name}.mintime<{after_time} "
             "{other_params}"
         )
 
-        columns = (
-            "mintime, maxtime, rawmsg, msgcount, icao24, hour"
-        )
+        columns = "mintime, maxtime, rawmsg, msgcount, icao24, hour"
 
-        parse_columns = (
-            "mintime, maxtime, rawmsg, msgcount, icao24, hour"
-        )
+        parse_columns = "mintime, maxtime, rawmsg, msgcount, icao24, hour"
 
         # default obvious parameter
         where_clause = "where"
@@ -922,10 +923,11 @@ class Impala(object):
 
         start = to_datetime(start)
 
+        if table_name is None:
+            table_name = self._raw_tables
+
         if table_name not in self._raw_tables:
-            raise RuntimeError(
-                    "must be a valid table name"
-                )
+            raise RuntimeError("must be a valid table name")
 
         if stop is not None:
             stop = to_datetime(stop)
@@ -933,22 +935,18 @@ class Impala(object):
             stop = start + timedelta(days=1)
 
         if isinstance(icao24, str):
-            other_params += "and {}icao24='{}' ".format(
-                "data4.", icao24
-            )
+            other_params += f"and {table_name}.icao24='{icao24}' "
         elif isinstance(icao24, Iterable):
             icao24 = ",".join("'{}'".format(c) for c in icao24)
-            other_params += "and {}icao24 in ({}) ".format(
-                "data4.", icao24
-            )
+            other_params += f"and {table_name}.icao24 in ({icao24}) "
 
         if isinstance(serials, Iterable):
-            other_tables += ", data4.sensors s "
+            other_tables += f", {table_name}.sensors s "
             other_params += "and s.serial in {} ".format(tuple(serials))
             columns = "s.serial, s.mintime as time, " + columns
             parse_columns = "serial, time, " + parse_columns
         elif isinstance(serials, int):
-            other_tables += ", data4.sensors s "
+            other_tables += f", {table_name}.sensors s "
             other_params += "and s.serial = {} ".format((serials))
             columns = "s.serial, s.mintime as time, " + columns
             parse_columns = "serial, time, " + parse_columns
@@ -958,14 +956,16 @@ class Impala(object):
         day_min = round_time(start, how="before", by=timedelta(days=1))
         day_max = round_time(stop, how="after", by=timedelta(days=1))
 
-        if (count_airports_params > 0
-                or bounds is not None
-                or callsign is not None):
+        if (
+            count_airports_params > 0
+            or bounds is not None
+            or callsign is not None
+        ):
 
             where_clause = (
-                "on data4.icao24 = est.e_icao24 and "
-                "est.firstseen <= data4.mintime and "
-                "data4.mintime <= est.lastseen "
+                f"on {table_name}.icao24 = est.e_icao24 and "
+                f"est.firstseen <= {table_name}.mintime and "
+                f"{table_name}.mintime <= est.lastseen "
                 "where"
             )
         if callsign is not None:
@@ -973,7 +973,7 @@ class Impala(object):
                 raise RuntimeError(
                     "Either callsign, bounds or airport are "
                     "supported at the moment."
-                            )
+                )
             if isinstance(callsign, str):
                 if callsign.find("%") > 0 or callsign.find("_") > 0:
                     callsigns = "and callsign ilike '{}' ".format(callsign)
@@ -1086,9 +1086,7 @@ class Impala(object):
                 "day",
             ]
             columns = (
-                ", ".join(
-                    f"data4.{field}" for field in fst_columns
-                )
+                ", ".join(f"{table_name}.{field}" for field in fst_columns)
                 + ", "
                 + ", ".join(f"est.{field}" for field in est_columns)
             )
@@ -1098,9 +1096,7 @@ class Impala(object):
             )
         if bounds is not None:
             columns = (
-                ", ".join(
-                    f"data4.{field}" for field in fst_columns
-                )
+                ", ".join(f"{table_name}.{field}" for field in fst_columns)
                 + ", "
                 + ", ".join(
                     f"est.{field}"
@@ -1157,319 +1153,18 @@ class Impala(object):
 
         return pd.concat(cumul).sort_values("mintime")
 
-    def extended(
-        self,
-        start: timelike,
-        stop: Optional[timelike] = None,
-        *args,  # more reasonable to be explicit about arguments
-        date_delta: timedelta = timedelta(hours=1),  # noqa: B008
-        icao24: Union[None, str, Iterable[str]] = None,
-        serials: Union[None, int, Iterable[int]] = None,
-        bounds: Union[
-            BaseGeometry, Tuple[float, float, float, float], None
-        ] = None,
-        departure_airport: Optional[str] = None,
-        arrival_airport: Optional[str] = None,
-        airport: Optional[str] = None,
-        cached: bool = True,
-        limit: Optional[int] = None,
-        other_tables: str = "",
-        other_params: str = "",
-        progressbar: Callable[[Iterable], Iterable] = iter,
-    ) -> pd.DataFrame:
-        """Get EHS message from the OpenSky Impala shell.
-
-        You may pass requests based on time ranges, callsigns, aircraft, areas,
-        serial numbers for receivers, or airports of departure or arrival.
-
-        The method builds appropriate SQL requests, caches results and formats
-        data into a proper pandas DataFrame. Requests are split by hour (by
-        default) in case the connection fails.
-
-        Args:
-            - **start**: a string (default to UTC), epoch or datetime (native
-              Python or pandas)
-            - **stop** (optional): a string (default to UTC), epoch or datetime
-              (native Python or pandas), *by default, one day after start*
-            - **date_delta** (optional): a timedelta representing how to split
-              the requests, *by default: per hour*
-
-            More arguments to filter resulting data:
-
-            - **callsign** (optional): a string or a list of strings (wildcards
-              accepted, _ for any character, % for any sequence of characters);
-            - **icao24** (optional): a string or a list of strings identifying
-              the transponder code of the aircraft;
-            - **serials** (optional): an integer or a list of integers
-              identifying the sensors receiving the data;
-            - **bounds** (optional), sets a geographical footprint. Either
-              an **airspace or shapely shape** (requires the bounds attribute);
-              or a **tuple of float** (west, south, east, north);
-
-            **Airports**
-
-            The following options build more complicated requests by merging
-            information from two tables in the Impala database, resp.
-            `rollcall_replies_data4` and `flights_data4`.
-
-            - **departure_airport** (optional): a string for the ICAO
-              identifier of the airport. Selects flights departing from the
-              airport between the two timestamps;
-            - **arrival_airport** (optional): a string for the ICAO identifier
-              of the airport. Selects flights arriving at the airport between
-              the two timestamps;
-            - **airport** (optional): a string for the ICAO identifier of the
-              airport. Selects flights departing from or arriving at the
-              airport between the two timestamps;
-
-            .. warning::
-
-                - If both departure_airport and arrival_airport are set,
-                  requested timestamps match the arrival time;
-                - If airport is set, departure_airport and
-                  arrival_airport cannot be specified (a RuntimeException is
-                  raised).
-                - It is not possible at the moment to filter both on airports
-                  and on geographical bounds (help welcome!).
-
-            **Useful options for debug**
-
-            - **cached** (boolean, default: True): switch to False to force a
-              new request to the database regardless of the cached files;
-              delete previous cache files;
-            - **limit** (optional, int): maximum number of records requested
-              LIMIT keyword in SQL.
-
-        """
-
-        _request = (
-            "select {columns} from rollcall_replies_data4 {other_tables} "
-            "{where_clause} hour>={before_hour} and hour<{after_hour} "
-            "and rollcall_replies_data4.mintime>={before_time} and "
-            "rollcall_replies_data4.mintime<{after_time} "
-            "{other_params}"
+    def extended(self, *args, **kwargs) -> pd.DataFrame:
+        return self.raw_history(
+            table_name="rollcall_replies_data4", *args, **kwargs
         )
 
-        columns = (
-            "mintime, maxtime, "
-            "rawmsg, msgcount, icao24, message, altitude, identity, hour"
-        )
 
-        parse_columns = (
-            "mintime, maxtime, "
-            "rawmsg, msgcount, icao24, message, altitude, identity, hour"
-        )
-
-        # default obvious parameter
-        where_clause = "where"
-
-        airports_params = [airport, departure_airport, arrival_airport]
-        count_airports_params = sum(x is not None for x in airports_params)
-
-        start = to_datetime(start)
-        if stop is not None:
-            stop = to_datetime(stop)
-        else:
-            stop = start + timedelta(days=1)
-
-        if isinstance(icao24, str):
-            other_params += "and {}icao24='{}' ".format(
-                "rollcall_replies_data4.", icao24
-            )
-        elif isinstance(icao24, Iterable):
-            icao24 = ",".join("'{}'".format(c) for c in icao24)
-            other_params += "and {}icao24 in ({}) ".format(
-                "rollcall_replies_data4.", icao24
-            )
-
-        if isinstance(serials, Iterable):
-            other_tables += ", rollcall_replies_data4.sensors s "
-            other_params += "and s.serial in {} ".format(tuple(serials))
-            columns = "s.serial, s.mintime as time, " + columns
-            parse_columns = "serial, time, " + parse_columns
-        elif isinstance(serials, int):
-            other_tables += ", rollcall_replies_data4.sensors s "
-            other_params += "and s.serial = {} ".format((serials))
-            columns = "s.serial, s.mintime as time, " + columns
-            parse_columns = "serial, time, " + parse_columns
-
-        other_params += "and message is not null "
-
-        day_min = round_time(start, how="before", by=timedelta(days=1))
-        day_max = round_time(stop, how="after", by=timedelta(days=1))
-
-        if count_airports_params > 0 or bounds is not None:
-            where_clause = (
-                "on rollcall_replies_data4.icao24 = est.e_icao24 and "
-                "est.firstseen <= rollcall_replies_data4.mintime and "
-                "rollcall_replies_data4.mintime <= est.lastseen "
-                "where"
-            )
-
-        if bounds is not None:
-            if count_airports_params > 0:
-                raise RuntimeError(
-                    "Either bounds or airport are supported at the moment."
-                )
-            try:
-                # thinking of shapely bounds attribute (in this order)
-                # I just don't want to add the shapely dependency here
-                west, south, east, north = bounds.bounds  # type: ignore
-            except AttributeError:
-                west, south, east, north = bounds
-
-            other_tables += (
-                "join (select min(time) as firstseen, max(time) as lastseen, "
-                "icao24 as e_icao24 from state_vectors_data4 "
-                "where hour>={before_hour} and hour<{after_hour} and "
-                f"time>={start.timestamp()} and time<{stop.timestamp()} and "
-                f"lon>={west} and lon<={east} and "
-                f"lat>={south} and lat<={north} "
-                "group by icao24) as est"
-            )
-
-        elif arrival_airport is not None and departure_airport is not None:
-            if airport is not None:
-                raise RuntimeError(
-                    "airport may not be set if "
-                    "either arrival_airport or departure_airport is set"
-                )
-            other_tables += (
-                "join (select icao24 as e_icao24, firstseen, "
-                "estdepartureairport, lastseen, estarrivalairport, "
-                "callsign, day from flights_data4 "
-                "where estdepartureairport ='{departure_airport}' "
-                "and estarrivalairport ='{arrival_airport}' "
-                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
-            ).format(
-                arrival_airport=arrival_airport,
-                departure_airport=departure_airport,
-                day_min=day_min.timestamp(),
-                day_max=day_max.timestamp(),
-            )
-
-        elif arrival_airport is not None:
-            other_tables += (
-                "join (select icao24 as e_icao24, firstseen, "
-                "estdepartureairport, lastseen, estarrivalairport, "
-                "callsign, day from flights_data4 "
-                "where estarrivalairport ='{arrival_airport}' "
-                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
-            ).format(
-                arrival_airport=arrival_airport,
-                day_min=day_min.timestamp(),
-                day_max=day_max.timestamp(),
-            )
-
-        elif departure_airport is not None:
-            other_tables += (
-                "join (select icao24 as e_icao24, firstseen, "
-                "estdepartureairport, lastseen, estarrivalairport, "
-                "callsign, day from flights_data4 "
-                "where estdepartureairport ='{departure_airport}' "
-                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
-            ).format(
-                departure_airport=departure_airport,
-                day_min=day_min.timestamp(),
-                day_max=day_max.timestamp(),
-            )
-
-        elif airport is not None:
-            other_tables += (
-                "join (select icao24 as e_icao24, firstseen, "
-                "estdepartureairport, lastseen, estarrivalairport, "
-                "callsign, day from flights_data4 "
-                "where (estdepartureairport ='{arrival_or_departure_airport}' "
-                "or estarrivalairport = '{arrival_or_departure_airport}') "
-                "and ({day_min:.0f} <= day and day <= {day_max:.0f})) as est"
-            ).format(
-                arrival_or_departure_airport=airport,
-                day_min=day_min.timestamp(),
-                day_max=day_max.timestamp(),
-            )
-
-        fst_columns = [field.strip() for field in columns.split(",")]
-
-        if count_airports_params > 1:
-            est_columns = [
-                "firstseen",
-                "estdepartureairport",
-                "lastseen",
-                "estarrivalairport",
-                "day",
-            ]
-            columns = (
-                ", ".join(
-                    f"rollcall_replies_data4.{field}" for field in fst_columns
-                )
-                + ", "
-                + ", ".join(f"est.{field}" for field in est_columns)
-            )
-            parse_columns = ", ".join(
-                fst_columns
-                + ["firstseen", "origin", "lastseen", "destination", "day"]
-            )
-        if bounds is not None:
-            columns = (
-                ", ".join(
-                    f"rollcall_replies_data4.{field}" for field in fst_columns
-                )
-                + ", "
-                + ", ".join(
-                    f"est.{field}"
-                    for field in ["firstseen", "lastseen", "e_icao24"]
-                )
-            )
-            parse_columns = ", ".join(
-                fst_columns + ["firstseen", "lastseen", "icao24_2"]
-            )
-
-        sequence = list(split_times(start, stop, date_delta))
-        cumul = []
-
-        if limit is not None:
-            other_params += f"limit {limit}"
-
-        for bt, at, bh, ah in progressbar(sequence):
-
-            logging.info(
-                f"Sending request between time {bt} and {at} "
-                f"and hour {bh} and {ah}"
-            )
-
-            if "{before_hour}" in other_tables:
-                _other_tables = other_tables.format(
-                    before_hour=bh.timestamp(), after_hour=ah.timestamp()
-                )
-            else:
-                _other_tables = other_tables
-
-            request = _request.format(
-                columns=columns,
-                before_time=int(bt.timestamp()),
-                after_time=int(at.timestamp()),
-                before_hour=bh.timestamp(),
-                after_hour=ah.timestamp(),
-                other_tables=_other_tables,
-                other_params=other_params,
-                where_clause=where_clause,
-            )
-
-            df = self._impala(request, columns=parse_columns, cached=cached)
-
-            if df is None:
-                continue
-
-            df = self._format_dataframe(df)
-            df.altitude = df.altitude.astype(float) / 0.3048
-
-            cumul.append(df)
-
-        if len(cumul) == 0:
-            return None
-
-        return pd.concat(cumul).sort_values("mintime")
-
+Impala.extended.__doc__ = Impala.raw_history.__doc__
+Impala.extended.__annotations__ = {
+    key: value
+    for (key, value) in Impala.raw_history.__annotations__.items()
+    if key != "table_name"
+}
 
 # below this line is only helpful references
 # ------------------------------------------
