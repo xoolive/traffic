@@ -821,7 +821,7 @@ class Impala(object):
         start: timelike,
         stop: Optional[timelike] = None,
         *args,  # more reasonable to be explicit about arguments
-        table_name: Union[str, List[str], None] = None,
+        table_name: str = "position_data4",
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         icao24: Union[None, str, Iterable[str]] = None,
         serials: Union[None, int, Iterable[int]] = None,
@@ -835,6 +835,7 @@ class Impala(object):
         cached: bool = True,
         limit: Optional[int] = None,
         other_tables: str = "",
+        other_columns: Union[None, str, List[str]] = None,
         other_params: str = "",
         progressbar: Callable[[Iterable], Iterable] = iter,
     ) -> pd.DataFrame:
@@ -912,8 +913,12 @@ class Impala(object):
         )
 
         columns = "mintime, maxtime, rawmsg, msgcount, icao24, hour"
-
-        parse_columns = "mintime, maxtime, rawmsg, msgcount, icao24, hour"
+        if other_columns is not None:
+            if isinstance(other_columns, str):
+                columns += f", {other_columns}"
+            else:
+                columns += ", " + ", ".join(other_columns)
+        parse_columns = columns
 
         # default obvious parameter
         where_clause = "where"
@@ -923,11 +928,8 @@ class Impala(object):
 
         start = to_datetime(start)
 
-        if table_name is None:
-            table_name = self._raw_tables
-
         if table_name not in self._raw_tables:
-            raise RuntimeError("must be a valid table name")
+            raise RuntimeError(f"{table_name} is not a valid table name")
 
         if stop is not None:
             stop = to_datetime(stop)
