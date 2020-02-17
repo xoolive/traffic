@@ -12,14 +12,14 @@ from tempfile import gettempdir
 from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import pandas as pd
+import paramiko
 from pandas.errors import ParserError
 from shapely.geometry.base import BaseGeometry
-
-import paramiko
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
 from ...core.time import round_time, split_times, timelike, to_datetime
+from .raw_data import RawData
 
 # fmt: on
 
@@ -816,7 +816,7 @@ class Impala(object):
 
         return Traffic(df)
 
-    def raw_history(
+    def rawdata(
         self,
         start: timelike,
         stop: Optional[timelike] = None,
@@ -838,7 +838,7 @@ class Impala(object):
         other_columns: Union[None, str, List[str]] = None,
         other_params: str = "",
         progressbar: Callable[[Iterable], Iterable] = iter,
-    ) -> pd.DataFrame:
+    ) -> Optional[RawData]:
         """Get EHS message from the OpenSky Impala shell.
 
         You may pass requests based on time ranges, callsigns, aircraft, areas,
@@ -1153,18 +1153,18 @@ class Impala(object):
         if len(cumul) == 0:
             return None
 
-        return pd.concat(cumul).sort_values("mintime")
+        return RawData(pd.concat(cumul).sort_values("mintime"))
 
-    def extended(self, *args, **kwargs) -> pd.DataFrame:
-        return self.raw_history(
+    def extended(self, *args, **kwargs) -> Optional[RawData]:
+        return self.rawdata(
             table_name="rollcall_replies_data4", *args, **kwargs
         )
 
 
-Impala.extended.__doc__ = Impala.raw_history.__doc__
+Impala.extended.__doc__ = Impala.rawdata.__doc__
 Impala.extended.__annotations__ = {
     key: value
-    for (key, value) in Impala.raw_history.__annotations__.items()
+    for (key, value) in Impala.rawdata.__annotations__.items()
     if key != "table_name"
 }
 

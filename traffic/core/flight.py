@@ -10,6 +10,7 @@ from typing import (
     List, Optional, Set, Tuple, Union, cast, overload
 )
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import pyproj
@@ -21,8 +22,6 @@ from matplotlib.axes._subplots import Axes
 from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
-
-import altair as alt
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
@@ -1680,7 +1679,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
         failure = failure_dict[failure_mode]
 
         if data is None:
-            df = opensky.extended(self.start, self.stop, icao24=self.icao24)
+            # TODO
+            df_ = opensky.extended(self.start, self.stop, icao24=self.icao24)
+            if df_ is None:
+                return failure()
+            df = df_.data
         else:
             df = data.query("icao24 == @self.icao24").sort_values("mintime")
 
