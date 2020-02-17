@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from typing import (Callable, Dict,)
 
 from pyModeS import adsb
 from pyModeS.decoder.bds.bds08 import callsign
@@ -7,14 +8,20 @@ from pyModeS.decoder.bds.bds08 import callsign
 from ...core.mixins import DataFrameMixin
 
 
-class RawData(DataFrameMixin):
-    @property
-    def _constructor(self):
-        return RawData
+def encode_time_dump1090(times: pd.Series) -> pd.Series:
+    ref_time = times.iloc[0]
+    rel_times = times - ref_time
+    rel_times = rel_times * 12e6
+    rel_times = rel_times.apply(lambda row: hex(int(row))[2:].zfill(12))
+    return rel_times
 
-    @staticmethod
-    def raw_cleaner(data: pd.DataFrame) -> pd.DataFrame:
-        pass
+
+encode_time: Dict[str, Callable[[pd.Series], pd.Series]] = {
+    "dump1090": encode_time_dump1090
+}
+
+
+class RawData(DataFrameMixin):
 
     @staticmethod
     def position_extraction(os_pos, lat_ref=None,
@@ -115,9 +122,10 @@ class RawData(DataFrameMixin):
             [ide, vel, pos], axis=0, sort=False, ignore_index=True
         )
         result.sort_values(by=["mintime", "icao24"], inplace=True)
-        return result
+        return RawData(result)
 
-    def get_type(self, inplace=True):
+    def get_type(self, inplace=False):
+
         def get_typecode(msg):
             tc = adsb.typecode(msg)
             if 9 <= tc <= 18:
@@ -135,134 +143,11 @@ class RawData(DataFrameMixin):
         else:
             return self.data.rawmsg.apply(get_typecode)
 
-    def to_beast(self) -> pd.Series:
-        df_beast = self.data[["timestamp", "rawmsg"]].copy()
-        ref_time = self.data["timestamp"].iloc[0]
-        df_beast["time"] = self.data["timestamp"] - ref_time
-        df_beast.time = df_beast.time.apply(lambda row: row.value) * 12 * 10e6
-        df_beast.time = df_beast.time.apply(
-            lambda row: hex(int(row))[2:].zfill(12)
-        )
+    def to_beast(self, time_fmt: str = "dump1090") -> pd.Series:
+        df_beast = self.data[["mintime", "rawmsg"]].copy()
+        if isinstance(df_beast.mintime.iloc[0], pd.datetime):
+            df_beast.mintime = df_beast.mintime.astype(np.int64) / 10**9
+        encoder = encode_time.get(time_fmt, encode_time_dump1090)
+        df_beast["time"] = encoder(df_beast.mintime)
         df_beast["message"] = "@" + df_beast.time + df_beast.rawmsg
         return df_beast["message"]
-
-    def to_sbs(self: pd.DataFrame) -> pd.DataFrame:
-        """
-        Take a pandas dataframe with flight information and convert it into a
-        pandas dataframe in SBS format.
-
-        Parameters
-        ----------
-        data : pd.DataFrame
-            Must include following data :
-                mintime : time data for each message ;
-                icao24 : aircraft ID ;
-                msg_type : wether pos (3), ide (1) or vel (4) ;
-                callsign ;
-                speed ;
-                altitude ;
-                vertical rate ;
-                longitude ;
-                latitude ;
-                heading ;
-
-        Returns
-        -------
-        sbs_data : pd.DataFrame
-            Return a SBS like pandas dataframe. Call the pd.DataFrame.to_csv()
-            function on it to get your .BST file. Don't forget to set index and
-            header parameter to False.
-
-        """
-
-        sbs_data = self.data.copy(deep=True)
-
-        sbs_data["msg"] = "MSG"
-        sbs_data["msg_type2"] = "3"
-        sbs_data["icao24"] = sbs_data["icao24"].str.upper()
-        sbs_data["icao24_dec"] = sbs_data.icao24.apply(int, base=16)
-
-        sbs_data["icao24_2"] = sbs_data.icao24_dec
-
-        sbs_data["date"] = pd.to_datetime(sbs_data.mintime).dt.strftime(
-            "%Y/%m/%d"
-        )
-
-        sbs_data["time"] = (
-            pd.to_datetime(sbs_data.mintime)
-            .dt.strftime("%H:%M:%S.%f")
-            .str.slice(0, -3, 1)
-        )
-
-        sbs_data["date_2"] = sbs_data["date"]
-        sbs_data["time_2"] = sbs_data["time"]
-
-        alt = [
-            value
-            for value in ["altitude", "alt"]
-            if value in list(sbs_data.columns)
-        ]
-        sbs_data["alt"] = sbs_data[alt]  # *3.28084
-
-        sbs_data["alt"] = sbs_data.alt.round().astype("Int64")
-
-        vel = [
-            value
-            for value in ["vel", "velocity", "speed"]
-            if value in list(sbs_data.columns)
-        ]
-        sbs_data["velocity"] = sbs_data[vel]  # *1.94384
-
-        lat = [
-            value
-            for value in ["latitude", "lat"]
-            if value in list(sbs_data.columns)
-        ]
-
-        lon = [
-            value
-            for value in ["longitude", "lon"]
-            if value in list(sbs_data.columns)
-        ]
-
-        vert = [
-            value
-            for value in ["vertrate", "vertical_rate"]
-            if value in list(sbs_data.columns)
-        ]
-
-        sbs_data["squawk"] = np.nan
-        sbs_data.loc[sbs_data["msg_type"] == 3, "alert"] = "0"
-        sbs_data.loc[sbs_data["msg_type"] == 3, "emergency"] = "0"
-        sbs_data.loc[sbs_data["msg_type"] == 3, "spi"] = "0"
-        sbs_data.loc[sbs_data["msg_type"] == 3, "surface"] = "0"
-
-        cols = [
-            "msg",
-            "msg_type",
-            "msg_type2",
-            "icao24_dec",
-            "icao24",
-            "icao24_2",
-            "date",
-            "time",
-            "date_2",
-            "time_2",
-            "callsign",
-            "alt",
-            "velocity",
-            "heading",
-            lat[0],
-            lon[0],
-            vert[0],
-            "squawk",
-            "alert",
-            "emergency",
-            "spi",
-            "surface",
-        ]
-
-        sbs_data = sbs_data[cols]
-        sbs_data.sort_values(by=["time", "icao24"], inplace=True)
-
-        return sbs_data
