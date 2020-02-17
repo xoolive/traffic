@@ -1,11 +1,13 @@
+from typing import Callable, Dict, Iterable, Type, TypeVar
+
 import numpy as np
 import pandas as pd
-from typing import (Callable, Dict,)
-
 from pyModeS import adsb
 from pyModeS.decoder.bds.bds08 import callsign
 
 from ...core.mixins import DataFrameMixin
+
+T = TypeVar("T", bound="RawData")
 
 
 def encode_time_dump1090(times: pd.Series) -> pd.Series:
@@ -22,10 +24,16 @@ encode_time: Dict[str, Callable[[pd.Series], pd.Series]] = {
 
 
 class RawData(DataFrameMixin):
+    def __add__(self: T, other: T) -> T:
+        return self.__class__.from_list([self, other])
+
+    @classmethod
+    def from_list(cls: Type[T], elts: Iterable[T]) -> T:
+        res = cls(pd.concat(list(x.data for x in elts), sort=False))
+        return res.sort_values("mintime")
 
     @staticmethod
-    def position_extraction(os_pos, lat_ref=None,
-                            lon_ref=None) -> pd.DataFrame:
+    def position_extraction(os_pos, lat_ref=None, lon_ref=None) -> pd.DataFrame:
         if os_pos.empty:
             return os_pos
 
@@ -40,7 +48,7 @@ class RawData(DataFrameMixin):
         os_pos["icao24"] = os_pos["rawmsg"].str[2:8]
         os_pos.sort_values(by=["icao24", "mintime"], inplace=True)
         os_pos["inv"] = np.nan
-        os_pos["inv_time"] = np.datetime64('NaT')
+        os_pos["inv_time"] = np.datetime64("NaT")
 
         # Loop on the last 10 messages to find a message of the other parity.
         for j in range(10, 0, -1):
@@ -49,8 +57,10 @@ class RawData(DataFrameMixin):
             os_pos["inv"] = np.where(
                 (os_pos.shift(j)["icao24"] == os_pos["icao24"])
                 & (os_pos["oe_flag"].shift(j) != os_pos["oe_flag"])
-                & (os_pos["mintime"].shift(j) >
-                   os_pos["mintime"] - pd.Timedelta(seconds=10)),
+                & (
+                    os_pos["mintime"].shift(j)
+                    > os_pos["mintime"] - pd.Timedelta(seconds=10)
+                ),
                 os_pos.shift(j)["rawmsg"],
                 os_pos.inv,
             )
@@ -59,13 +69,15 @@ class RawData(DataFrameMixin):
             os_pos["inv_time"] = np.where(
                 (os_pos.shift(j)["icao24"] == os_pos["icao24"])
                 & (os_pos["oe_flag"].shift(j) != os_pos["oe_flag"])
-                & (os_pos["mintime"].shift(j) >
-                   os_pos["mintime"] - pd.Timedelta(seconds=10)),
+                & (
+                    os_pos["mintime"].shift(j)
+                    > os_pos["mintime"] - pd.Timedelta(seconds=10)
+                ),
                 os_pos.shift(j)["mintime"],
                 os_pos.inv_time,
             )
 
-        os_pos.inv_time = os_pos.inv_time.dt.tz_localize('UTC')
+        os_pos.inv_time = os_pos.inv_time.dt.tz_localize("UTC")
 
         # apply adsb.position. TODO : calc with matrix. Ask Junzi.
         pos_tmp = os_pos.loc[~os_pos["inv"].isnull(), :].apply(
@@ -106,26 +118,26 @@ class RawData(DataFrameMixin):
         os_ide["callsign"] = os_ide["rawmsg"].apply(callsign)
         return os_ide
 
-    def feature_extraction(self, lat_ref=None, lon_ref=None) -> pd.DataFrame:
-        if 'msg_type' not in self.data.columns:
+    def feature_extraction(self, lat_ref=None, lon_ref=None) -> "RawData":
+        if "msg_type" not in self.data.columns:
             self.get_type()
 
         ide = RawData.identification_extraction(
             self.data.loc[self.data["msg_type"] == 1]
         )
-        vel = RawData.velocity_extraction(self.data.loc[
-            self.data["msg_type"] == 4])
+        vel = RawData.velocity_extraction(
+            self.data.loc[self.data["msg_type"] == 4]
+        )
         pos = RawData.position_extraction(
             self.data.loc[self.data["msg_type"] == 3], lat_ref, lon_ref
         )
         result = pd.concat(
             [ide, vel, pos], axis=0, sort=False, ignore_index=True
         )
-        result.sort_values(by=["mintime", "icao24"], inplace=True)
+        result = result.sort_values(by=["mintime", "icao24"])
         return RawData(result)
 
     def get_type(self, inplace=False):
-
         def get_typecode(msg):
             tc = adsb.typecode(msg)
             if 9 <= tc <= 18:
@@ -146,7 +158,7 @@ class RawData(DataFrameMixin):
     def to_beast(self, time_fmt: str = "dump1090") -> pd.Series:
         df_beast = self.data[["mintime", "rawmsg"]].copy()
         if isinstance(df_beast.mintime.iloc[0], pd.datetime):
-            df_beast.mintime = df_beast.mintime.astype(np.int64) / 10**9
+            df_beast.mintime = df_beast.mintime.astype(np.int64) / 10 ** 9
         encoder = encode_time.get(time_fmt, encode_time_dump1090)
         df_beast["time"] = encoder(df_beast.mintime)
         df_beast["message"] = "@" + df_beast.time + df_beast.rawmsg
