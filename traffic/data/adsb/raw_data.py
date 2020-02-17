@@ -17,16 +17,23 @@ class RawData(DataFrameMixin):
         pass
 
     @staticmethod
-    def position_extraction(os_pos, lat_ref=None, lon_ref=None) -> pd.DataFrame:
+    def position_extraction(os_pos, lat_ref=None,
+                            lon_ref=None) -> pd.DataFrame:
+        if os_pos.empty:
+            return os_pos
 
         # pandas option to get rid of SettingWithCopyWarning
         pd.options.mode.chained_assignment = None
 
+        if os_pos["mintime"].dtypes == np.float64:
+            os_pos["mintime"] = pd.to_datetime(os_pos["mintime"], unit="s")
+
         os_pos["oe_flag"] = os_pos["rawmsg"].apply(adsb.oe_flag)
         os_pos["altitude"] = os_pos["rawmsg"].apply(adsb.altitude)
+        os_pos["icao24"] = os_pos["rawmsg"].str[2:8]
         os_pos.sort_values(by=["icao24", "mintime"], inplace=True)
         os_pos["inv"] = np.nan
-        os_pos["inv_time"] = np.nan
+        os_pos["inv_time"] = np.datetime64('NaT')
 
         # Loop on the last 10 messages to find a message of the other parity.
         for j in range(10, 0, -1):
@@ -35,7 +42,8 @@ class RawData(DataFrameMixin):
             os_pos["inv"] = np.where(
                 (os_pos.shift(j)["icao24"] == os_pos["icao24"])
                 & (os_pos["oe_flag"].shift(j) != os_pos["oe_flag"])
-                & (os_pos["mintime"].shift(j) > os_pos["mintime"] - 10),
+                & (os_pos["mintime"].shift(j) >
+                   os_pos["mintime"] - pd.Timedelta(seconds=10)),
                 os_pos.shift(j)["rawmsg"],
                 os_pos.inv,
             )
@@ -44,16 +52,13 @@ class RawData(DataFrameMixin):
             os_pos["inv_time"] = np.where(
                 (os_pos.shift(j)["icao24"] == os_pos["icao24"])
                 & (os_pos["oe_flag"].shift(j) != os_pos["oe_flag"])
-                & (os_pos["mintime"].shift(j) > os_pos["mintime"] - 10),
+                & (os_pos["mintime"].shift(j) >
+                   os_pos["mintime"] - pd.Timedelta(seconds=10)),
                 os_pos.shift(j)["mintime"],
                 os_pos.inv_time,
             )
 
-        if os_pos["mintime"].dtypes == np.float64:
-            os_pos["mintime"] = pd.to_datetime(os_pos["mintime"], unit="s")
-
-        if os_pos["inv_time"].dtypes == np.float64:
-            os_pos["inv_time"] = pd.to_datetime(os_pos["inv_time"], unit="s")
+        os_pos.inv_time = os_pos.inv_time.dt.tz_localize('UTC')
 
         # apply adsb.position. TODO : calc with matrix. Ask Junzi.
         pos_tmp = os_pos.loc[~os_pos["inv"].isnull(), :].apply(
@@ -62,7 +67,6 @@ class RawData(DataFrameMixin):
             ),
             axis=1,
         )
-
         pos = pd.DataFrame(
             pos_tmp.tolist(),
             columns=["latitude", "longitude"],
@@ -74,6 +78,8 @@ class RawData(DataFrameMixin):
 
     @staticmethod
     def velocity_extraction(os_vel) -> pd.DataFrame:
+        if os_vel.empty:
+            return os_vel
         if os_vel["mintime"].dtypes == np.float64:
             os_vel["mintime"] = pd.to_datetime(os_vel["mintime"], unit="s")
         os_vel["speed_temp"] = os_vel["rawmsg"].apply(adsb.velocity)
@@ -85,19 +91,25 @@ class RawData(DataFrameMixin):
 
     @staticmethod
     def identification_extraction(os_ide) -> pd.DataFrame:
+        if os_ide.empty:
+            return os_ide
+
         if os_ide["mintime"].dtypes == np.float64:
             os_ide["mintime"] = pd.to_datetime(os_ide["mintime"], unit="s")
         os_ide["callsign"] = os_ide["rawmsg"].apply(callsign)
         return os_ide
 
-    @staticmethod
-    def feature_extraction(os_data, lat_ref=None, lon_ref=None) -> pd.DataFrame:
+    def feature_extraction(self, lat_ref=None, lon_ref=None) -> pd.DataFrame:
+        if 'msg_type' not in self.data.columns:
+            self.get_type()
+
         ide = RawData.identification_extraction(
-            os_data.loc[os_data["msg_type"] == 1]
+            self.data.loc[self.data["msg_type"] == 1]
         )
-        vel = RawData.velocity_extraction(os_data.loc[os_data["msg_type"] == 4])
+        vel = RawData.velocity_extraction(self.data.loc[
+            self.data["msg_type"] == 4])
         pos = RawData.position_extraction(
-            os_data.loc[os_data["msg_type"] == 3], lat_ref, lon_ref
+            self.data.loc[self.data["msg_type"] == 3], lat_ref, lon_ref
         )
         result = pd.concat(
             [ide, vel, pos], axis=0, sort=False, ignore_index=True
