@@ -22,6 +22,7 @@ from matplotlib.axes._subplots import Axes
 from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
+
 from tqdm.autonotebook import tqdm
 
 from ..algorithms.douglas_peucker import douglas_peucker
@@ -1685,7 +1686,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
                 return failure()
             df = df_.data
         else:
-            df = data.query("icao24 == @self.icao24").sort_values("mintime")
+            df = data if isinstance(data, pd.DataFrame) else data.data
+            df = df.query("icao24 == @self.icao24").sort_values("mintime")
 
         if df is None:
             return failure()
