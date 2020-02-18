@@ -110,11 +110,15 @@ class RawData(DataFrameMixin):
         else:
             return self.data.rawmsg.apply(get_typecode)
 
-    def to_beast(self, time_fmt: str = "dump1090") -> "RawData":
+    def assign_beast(self, time_fmt: str = "dump1090") -> "RawData":
 
         # Only one time encoder implemented for now
         encoder = encode_time.get(time_fmt, encode_time_dump1090)
 
         return self.assign(encoded_time=lambda df: encoder(df.mintime)).assign(
-            message=lambda df: "@" + df.encoded_time + df.rawmsg
+            beast=lambda df: "@" + df.encoded_time + df.rawmsg
         )
+
+    def to_beast(self, time_fmt: str = "dump1090") -> pd.Series:
+
+        return self.assign_beast(time_fmt).data["beast"]
