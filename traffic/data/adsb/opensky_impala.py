@@ -422,7 +422,6 @@ class Impala(object):
 
         if isinstance(icao24, str):
             other_params += "and icao24='{}' ".format(icao24.lower())
-            print(icao24.lower())
 
         elif isinstance(icao24, Iterable):
             icao24 = ",".join("'{}'".format(c.lower()) for c in icao24)
