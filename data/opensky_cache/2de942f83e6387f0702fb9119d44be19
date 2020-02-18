@@ -1,0 +1,3 @@
+mintime	maxtime	rawmsg	msgcount	icao24	hour
+select mintime, maxtime, rawmsg, msgcount, icao24, hour from aacas_data4  where hour>=1527692400.0 and hour<1527696000.0 and acas_data4.mintimee>=1527693698 and acas_data4.mintime<1527694298 and acas_data4.icao24='484506' annd rawmsg is not null ;
+[hadoop-1:21000] > 

@@ -821,7 +821,7 @@ class Impala(object):
         start: timelike,
         stop: Optional[timelike] = None,
         *args,  # more reasonable to be explicit about arguments
-        table_name: str = "position_data4",
+        table_name: Union[None, str, List[str]] = None,
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         icao24: Union[None, str, Iterable[str]] = None,
         serials: Union[None, int, Iterable[int]] = None,
@@ -903,6 +903,33 @@ class Impala(object):
               LIMIT keyword in SQL.
 
         """
+
+        if table_name is None:
+            table_name = self._raw_tables
+
+        if not isinstance(table_name, str):  # better than Iterable but not str
+            return RawData.from_list(
+                self.rawdata(
+                    start,
+                    stop,
+                    table_name=table,
+                    date_delta=date_delta,
+                    icao24=icao24,
+                    serials=serials,
+                    bounds=bounds,
+                    callsign=callsign,
+                    departure_airport=departure_airport,
+                    arrival_airport=arrival_airport,
+                    airport=airport,
+                    cached=cached,
+                    limit=limit,
+                    other_tables=other_tables,
+                    other_columns=other_columns,
+                    other_params=other_params,
+                    progressbar=progressbar,
+                )
+                for table in table_name
+            )
 
         _request = (
             "select {columns} from {table_name} {other_tables} "
