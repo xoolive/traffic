@@ -3,6 +3,7 @@ from functools import lru_cache, partial
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Type, TypeVar, Union
 
+import altair as alt
 import pandas as pd
 import pyproj
 from cartopy import crs
@@ -10,8 +11,6 @@ from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 from shapely.geometry import Point, base, mapping
 from shapely.ops import transform
-
-import altair as alt
 
 T = TypeVar("T", bound="DataFrameMixin")
 
@@ -163,12 +162,12 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.sort_values(by, **kwargs))
 
-    def query(self: T, query_str: str) -> Optional[T]:
+    def query(self: T, query_str: str, *args, **kwargs) -> Optional[T]:
         """
         Applies the Pandas ``query()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
-        df = self.data.query(query_str)
+        df = self.data.query(query_str, *args, **kwargs)
         if df.shape[0] == 0:
             return None
         return self.__class__(df)

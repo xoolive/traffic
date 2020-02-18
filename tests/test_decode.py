@@ -23,7 +23,9 @@ def test_decode():
     switzerland: Traffic = get_sample(collections, "switzerland")
 
     tap_switzerland = (
-        switzerland.query('callsign.str.startswith("TAP127")')  # type: ignore
+        switzerland.query(  # type: ignore
+            'callsign.str.startswith("TAP127")', engine="python"
+        )
         .filter_if(long_enough)
         .query_opensky()
         .resample("1s")
