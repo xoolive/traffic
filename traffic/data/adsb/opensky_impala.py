@@ -421,10 +421,11 @@ class Impala(object):
         other_params = ""
 
         if isinstance(icao24, str):
-            other_params += "and icao24='{}' ".format(icao24)
+            other_params += "and icao24='{}' ".format(icao24.lower())
+            print(icao24.lower())
 
         elif isinstance(icao24, Iterable):
-            icao24 = ",".join("'{}'".format(c) for c in icao24)
+            icao24 = ",".join("'{}'".format(c.lower()) for c in icao24)
             other_params += "and icao24 in ({}) ".format(icao24)
 
         if isinstance(callsign, str):
@@ -631,11 +632,11 @@ class Impala(object):
 
         if isinstance(icao24, str):
             other_params += "and {}icao24='{}' ".format(
-                "sv." if count_airports_params > 0 else "", icao24
+                "sv." if count_airports_params > 0 else "", icao24.lower()
             )
 
         elif isinstance(icao24, Iterable):
-            icao24 = ",".join("'{}'".format(c) for c in icao24)
+            icao24 = ",".join("'{}'".format(c.lower()) for c in icao24)
             other_params += "and {}icao24 in ({}) ".format(
                 "sv." if count_airports_params > 0 else "", icao24
             )
@@ -964,9 +965,9 @@ class Impala(object):
             stop = start + timedelta(days=1)
 
         if isinstance(icao24, str):
-            other_params += f"and {table_name}.icao24='{icao24}' "
+            other_params += f"and {table_name}.icao24='{icao24.lower()}' "
         elif isinstance(icao24, Iterable):
-            icao24 = ",".join("'{}'".format(c) for c in icao24)
+            icao24 = ",".join("'{}'".format(c.lower()) for c in icao24)
             other_params += f"and {table_name}.icao24 in ({icao24}) "
 
         if isinstance(serials, Iterable):
