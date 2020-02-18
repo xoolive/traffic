@@ -1,0 +1,3 @@
+mintime	maxtime	rawmsg	msgcount	icao24	hour
+select mintime, maxtime, rawmsg, msgcount, icao24, hour from rrollcall_replies_data4  where hour>=1527692400.0 and hour<1527696000.0 and rollcaall_replies_data4.mintime>=1527693698 and rollcall_replies_data4.mintime<15276942298 and rollcall_replies_data4.icao24='484506' and rawmsg is not null ;
+[hadoop-1:21000] > 

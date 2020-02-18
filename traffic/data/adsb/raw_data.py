@@ -1,16 +1,27 @@
-from typing import Callable, Dict, Iterable, Type, TypeVar
+# fmt: off
+
+from typing import (
+    Callable, Dict, Iterable, Optional, Tuple, Type, TypeVar, Union, cast
+)
 
 import numpy as np
 import pandas as pd
 from pyModeS import adsb
-from pyModeS.decoder.bds.bds08 import callsign
+from tqdm.autonotebook import tqdm
 
+from ...core import Traffic
 from ...core.mixins import DataFrameMixin
+from ...core.structure import Airport
+from ...data import ModeS_Decoder
+
+# fmt: on
 
 T = TypeVar("T", bound="RawData")
 
 
 def encode_time_dump1090(times: pd.Series) -> pd.Series:
+    if isinstance(times.iloc[0], pd.datetime):
+        times = times.astype(np.int64) * 1e-9
     ref_time = times.iloc[0]
     rel_times = times - ref_time
     rel_times = rel_times * 12e6
@@ -28,9 +39,58 @@ class RawData(DataFrameMixin):
         return self.__class__.from_list([self, other])
 
     @classmethod
-    def from_list(cls: Type[T], elts: Iterable[T]) -> T:
-        res = cls(pd.concat(list(x.data for x in elts), sort=False))
+    def from_list(cls: Type[T], elts: Iterable[Optional[T]]) -> T:
+        res = cls(
+            pd.concat(list(x.data for x in elts if x is not None), sort=False)
+        )
         return res.sort_values("mintime")
+
+    def decode(
+        self: T,
+        reference: Union[None, str, Airport, Tuple[float, float]] = None,
+        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
+        redefine_mag: int = 10,
+    ) -> Optional[Traffic]:
+
+        decoder = ModeS_Decoder(reference)
+        redefine_freq = 2 ** redefine_mag - 1
+
+        if progressbar is True:
+            progressbar = lambda x: tqdm(  # noqa: E731
+                x, total=self.data.shape[0], leave=False
+            )
+        elif progressbar is False:
+            progressbar = lambda x: x  # noqa: E731
+
+        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
+
+        data = self.data.rename(  # fill with other common renaming rules
+            columns={
+                "mintime": "timestamp",
+                "time": "timestamp",
+                "groundspeed": "spd",
+                "speed": "spd",
+                "altitude": "alt",
+                "track": "trk",
+            }
+        )
+
+        use_extra = all(x in data.columns for x in ["alt", "spd", "trk"])
+
+        for i, (_, line) in progressbar(enumerate(data.iterrows())):
+
+            extra = (
+                dict(spd=line.spd, trk=line.trk, alt=line.alt)
+                if use_extra
+                else dict()
+            )
+
+            decoder.process(line.timestamp, line.rawmsg, **extra)
+
+            if i & redefine_freq == redefine_freq:
+                decoder.redefine_reference(line.timestamp)
+
+        return decoder.traffic
 
     def get_type(self, inplace=False):
         def get_typecode(msg):
@@ -50,11 +110,11 @@ class RawData(DataFrameMixin):
         else:
             return self.data.rawmsg.apply(get_typecode)
 
-    def to_beast(self, time_fmt: str = "dump1090") -> pd.Series:
-        df_beast = self.data[["mintime", "rawmsg"]].copy()
-        if isinstance(df_beast.mintime.iloc[0], pd.datetime):
-            df_beast.mintime = df_beast.mintime.astype(np.int64) / 10 ** 9
+    def to_beast(self, time_fmt: str = "dump1090") -> "RawData":
+
+        # Only one time encoder implemented for now
         encoder = encode_time.get(time_fmt, encode_time_dump1090)
-        df_beast["time"] = encoder(df_beast.mintime)
-        df_beast["message"] = "@" + df_beast.time + df_beast.rawmsg
-        return df_beast["message"]
+
+        return self.assign(encoded_time=lambda df: encoder(df.mintime)).assign(
+            message=lambda df: "@" + df.encoded_time + df.rawmsg
+        )

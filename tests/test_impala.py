@@ -1,9 +1,10 @@
+from datetime import timedelta
 from pathlib import Path
 from typing import Optional, cast
 
 from traffic.core import Traffic
 from traffic.data import opensky
-from traffic.data.samples import lfbo_tma
+from traffic.data.samples import belevingsvlucht, lfbo_tma
 
 opensky.cache_dir = Path(__file__).parent.parent / "data" / "opensky_cache"
 
@@ -59,3 +60,23 @@ def test_history():
 
     t_decoded = t_tma.filter().query_ehs(df).eval(desc="", max_workers=4)
     assert len(t_decoded) == len(t_tma)
+
+
+def test_rawdata():
+
+    r = opensky.rawdata(
+        belevingsvlucht.start,
+        belevingsvlucht.start + timedelta(minutes=10),
+        icao24=belevingsvlucht.icao24,
+    )
+
+    assert r is not None
+
+    t = r.decode("EHAM")
+    assert t is not None
+
+    f = t["484506"]
+    assert f is not None
+
+    assert len(f) == 2748
+    assert f.max("altitude") == 11050
