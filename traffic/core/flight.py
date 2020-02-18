@@ -23,8 +23,6 @@ from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
-from tqdm.autonotebook import tqdm
-
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..drawing.markers import aircraft as aircraft_marker
 from ..drawing.markers import rotate_marker
@@ -37,6 +35,7 @@ from .time import time_or_delta, timelike, to_datetime
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
     from .traffic import Traffic  # noqa: F401
+    from ..data.adsb.raw_data import RawData  # noqa: F401
 
 # fmt: on
 
@@ -1634,7 +1633,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
 
     def query_ehs(
         self,
-        data: Optional[pd.DataFrame] = None,
+        data: Union[None, pd.DataFrame, "RawData"] = None,
         failure_mode: str = "warning",
         progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
     ) -> "Flight":
@@ -1657,7 +1656,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
             Read more about access to the OpenSky Network database `here
             <opensky_impala.html>`_
         """
-        from ..data import opensky, ModeS_Decoder
+
+        from ..data import opensky
+        from ..data.adsb.raw_data import RawData  # noqa: F811
 
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")
@@ -1680,16 +1681,13 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
         failure = failure_dict[failure_mode]
 
         if data is None:
-            # TODO
-            df_ = opensky.extended(self.start, self.stop, icao24=self.icao24)
-            if df_ is None:
-                return failure()
-            df = df_.data
+            ext = opensky.extended(self.start, self.stop, icao24=self.icao24)
+            df = ext.data if ext is not None else None
         else:
             df = data if isinstance(data, pd.DataFrame) else data.data
-            df = df.query("icao24 == @self.icao24").sort_values("mintime")
+            df = df.query("icao24 == @self.icao24")
 
-        if df is None:
+        if df is None or df.shape[0] == 0:
             return failure()
 
         timestamped_df = df.sort_values("mintime").assign(
@@ -1719,45 +1717,14 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
         identifier = (
             self.flight_id if self.flight_id is not None else self.callsign
         )
-        # who cares about default lat0, lon0 with EHS
-        decoder = ModeS_Decoder((0, 0))
 
-        if progressbar is True:
-            progressbar = lambda x: tqdm(  # noqa: E731
-                x,
-                total=referenced_df.shape[0],
-                desc=f"{identifier}:",
-                leave=False,
-            )
-        elif progressbar is False:
-            progressbar = lambda x: x  # noqa: E731
+        t = RawData(referenced_df).decode(
+            reference=self.origin if isinstance(self.origin, str) else None,
+            progressbar=progressbar,
+            progressbar_kw=dict(leave=False, desc=f"{identifier}:"),
+        )
 
-        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
-
-        if isinstance(self.origin, str):
-            from ..data import airports
-
-            airport = airports[self.origin]
-            if airport is not None:
-                decoder.acs.set_latlon(*airport.latlon)
-
-        for _, line in progressbar(referenced_df.iterrows()):
-
-            if line.alt < 5000 and line.latitude is not None:
-                decoder.acs.set_latlon(line.latitude, line.longitude)
-
-            decoder.process(
-                line.timestamp,
-                line.rawmsg,
-                spd=line.spd,
-                trk=line.trk,
-                alt=line.alt,
-            )
-
-        if decoder.traffic is None:
-            return failure()
-
-        extended = decoder.traffic[self.icao24]
+        extended = t[self.icao24] if t is not None else None
         if extended is None:
             return failure()
 

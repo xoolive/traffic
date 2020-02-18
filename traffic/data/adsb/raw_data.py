@@ -1,7 +1,7 @@
 # fmt: off
 
 from typing import (
-    Callable, Dict, Iterable, Optional, Tuple, Type, TypeVar, Union, cast
+    Any, Callable, Dict, Iterable, Optional, Tuple, Type, TypeVar, Union, cast
 )
 
 import numpy as np
@@ -49,6 +49,7 @@ class RawData(DataFrameMixin):
         self: T,
         reference: Union[None, str, Airport, Tuple[float, float]] = None,
         progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
+        progressbar_kw: Optional[Dict[str, Any]] = None,
         redefine_mag: int = 10,
     ) -> Optional[Traffic]:
 
@@ -56,8 +57,10 @@ class RawData(DataFrameMixin):
         redefine_freq = 2 ** redefine_mag - 1
 
         if progressbar is True:
+            if progressbar_kw is None:
+                progressbar_kw = dict()
             progressbar = lambda x: tqdm(  # noqa: E731
-                x, total=self.data.shape[0], leave=False
+                x, total=self.data.shape[0], **progressbar_kw
             )
         elif progressbar is False:
             progressbar = lambda x: x  # noqa: E731
@@ -92,8 +95,8 @@ class RawData(DataFrameMixin):
 
         return decoder.traffic
 
-    def get_type(self, inplace=False):
-        def get_typecode(msg):
+    def assign_type(self) -> "RawData":
+        def get_typecode(msg: Union[bytes, str]) -> Optional[int]:
             tc = adsb.typecode(msg)
             if 9 <= tc <= 18:
                 return 3
@@ -102,13 +105,9 @@ class RawData(DataFrameMixin):
             elif 1 <= tc <= 4:
                 return 1
             else:
-                return np.nan
+                return None
 
-        if inplace:
-            self.data["msg_type"] = self.data.rawmsg.apply(get_typecode)
-            self.data.dropna(subset=["msg_type"], inplace=True)
-        else:
-            return self.data.rawmsg.apply(get_typecode)
+        return self.assign(msg_type=lambda df: df.rawmsg.apply(get_typecode))
 
     def assign_beast(self, time_fmt: str = "dump1090") -> "RawData":
 
