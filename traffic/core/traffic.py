@@ -658,7 +658,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         Example usage:
 
         >>> from traffic.drawing import EuroPP
-        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=EuroPP())
+        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=EuroPP()))
         >>> t.plot(ax, alpha=.5)
 
         """
