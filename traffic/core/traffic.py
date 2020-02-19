@@ -658,7 +658,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         Example usage:
 
         >>> from traffic.drawing import EuroPP
-        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=EuroPP()))
+        >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=EuroPP())
         >>> t.plot(ax, alpha=.5)
 
         """
@@ -916,7 +916,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         >>> t_dbscan = traffic.clustering(
         ...     nb_samples=15,
         ...     projection=EuroPP(),
-        ...     method=DBSCAN(eps=1.5, min_samples=10),
+        ...     clustering=DBSCAN(eps=1.5, min_samples=10),
         ...     transform=StandardScaler(),
         ... ).fit_predict()
         >>> t_dbscan.groupby(["cluster"]).agg({"flight_id": "nunique"})
