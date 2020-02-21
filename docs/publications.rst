@@ -23,6 +23,10 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | S. Proud.
+  | **Go-Around Detection Using Crowd-Sourced ADS-B Position Data**. *Aerospace*, 2020, 7(2), 16
+  | https://doi.org/10.3390/aerospace7020016
+
 - | M. Schultz, X. Olive, J. Rosenow, H. Fricke, S. Alam.
   | **Analysis of airport ground operations based on ADS-B data**. *Proceedings of the 1st conference on Artificial Intelligence and Data Analytics in Air Transportation* (AIDA-AT), 2020
 
