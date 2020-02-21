@@ -24,7 +24,8 @@ The following list contains publications from research using the traffic
 library:
 
 - | S. Proud.
-  | **Go-Around Detection Using Crowd-Sourced ADS-B Position Data**. *Aerospace*, 2020, 7(2), 16
+  | **Go-Around Detection Using Crowd-Sourced ADS-B Position Data**.
+  | *Aerospace*, 2020, 7(2), 16
   | https://doi.org/10.3390/aerospace7020016
 
 - | M. Schultz, X. Olive, J. Rosenow, H. Fricke, S. Alam.

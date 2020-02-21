@@ -136,6 +136,11 @@ class Aircraft(object):
         self.lat0: float = lat0
         self.lon0: float = lon0
 
+        self.version: Optional[int] = None
+        self.nic_a: Optional[int] = None
+        self.nic_bc: Optional[int] = None
+        self.nic_s: Optional[int] = None
+
         self.lock = threading.Lock()
 
     @property
@@ -146,6 +151,12 @@ class Aircraft(object):
 
         if self._flight is not None:
             df = pd.concat([self._flight.data, df], sort=False)
+            if self.version is not None:
+                # remove columns added by nuc_p, nuc_r
+                if "HPL" in df.columns:
+                    df = df.drop(columns=["HPL", "RCu", "RCv"])
+                if "HVE" in df.columns:
+                    df = df.drop(columns=["HVE", "VVE"])
 
         if len(df) == 0:
             return None
@@ -547,6 +558,224 @@ class Aircraft(object):
                     )
                 )
 
+    @property
+    def nuc_p(self):
+        pass
+
+    @nuc_p.setter
+    def nuc_p(self, args):
+        t, msg = args
+        with self.lock:
+            hpl, rcu, rcv = pms.adsb.nuc_p(msg)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
+                    # Horizontal Protection Limit
+                    HPL=hpl,
+                    # 95% Containment Radius on horizontal position error
+                    RCu=rcu,
+                    # 95% Containment Radius on vertical position error
+                    RCv=rcv,
+                )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        # Horizontal Protection Limit
+                        HPL=hpl,
+                        # 95% Containment Radius on horizontal position error
+                        RCu=rcu,
+                        # 95% Containment Radius on vertical position error
+                        RCv=rcv,
+                    )
+                )
+
+    @property
+    def nic_v1(self):
+        pass
+
+    @nic_v1.setter
+    def nic_v1(self, args):
+        t, msg = args
+        if self.nic_s is None:
+            return
+        with self.lock:
+            hcr, vpl = pms.adsb.nic_v1(msg, self.nic_s)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
+                    # Horizontal Containment Radius
+                    HCR=hcr,
+                    # Vertical Protection Limit
+                    VPL=vpl,
+                )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        # Horizontal Containment Radius
+                        HCR=hcr,
+                        # Vertical Protection Limit
+                        VPL=vpl,
+                    )
+                )
+
+    @property
+    def nic_v2(self):
+        pass
+
+    @nic_v2.setter
+    def nic_v2(self, args):
+        t, msg = args
+        if self.nic_a is None or self.nic_bc is None:
+            return
+        with self.lock:
+            hcr = pms.adsb.nic_v2(msg, self.nic_a, self.nic_bc)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
+                    # Horizontal Containment Radius
+                    HCR=hcr,
+                )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        # Horizontal Containment Radius
+                        HCR=hcr,
+                    )
+                )
+
+    @property
+    def nuc_r(self):
+        pass
+
+    @nuc_r.setter
+    def nuc_r(self, args):
+        t, msg = args
+        with self.lock:
+            hve, vve = pms.adsb.nuc_v(msg)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
+                    # Horizontal Velocity Error
+                    HVE=hve,
+                    # Vertical Velocity Error
+                    VVE=vve,
+                )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        # Horizontal Velocity Error
+                        HVE=hve,
+                        # Vertical Velocity Error
+                        VVE=vve,
+                    )
+                )
+
+    @property
+    def nac_v(self):
+        pass
+
+    @nac_v.setter
+    def nac_v(self, args):
+        t, msg = args
+        with self.lock:
+            hfm, vfm = pms.adsb.nac_v(msg)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
+                    # Horizontal Figure of Merit for rate (GNSS)
+                    HFM=hfm,
+                    # Vertical Figure of Merit for rate (GNSS)
+                    VFM=vfm,
+                )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        # Horizontal Figure of Merit for rate (GNSS)
+                        HFM=hfm,
+                        # Vertical Figure of Merit for rate (GNSS)
+                        VFM=vfm,
+                    )
+                )
+
+    @property
+    def nac_p(self):
+        pass
+
+    @nac_p.setter
+    def nac_p(self, args):
+        t, msg = args
+        with self.lock:
+            epu, vepu = pms.adsb.nac_p(msg)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
+                    # Estimated Position Uncertainty
+                    EPU=epu,
+                    # Vertical Estimated Position Uncertainty
+                    VEPU=vepu,
+                )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        # Estimated Position Uncertainty
+                        EPU=epu,
+                        # Vertical Estimated Position Uncertainty
+                        VEPU=vepu,
+                    )
+                )
+
+    @property
+    def sil(self):
+        pass
+
+    @sil.setter
+    def sil(self, args):
+        t, msg = args
+        with self.lock:
+            phcr, pvpl, base = pms.adsb.sil(msg, self.version)
+            last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            if last_entry is not None and last_entry["timestamp"] == t:
+                self.cumul[-1] = dict(
+                    **last_entry,
+                    version=self.version,
+                    # Probability exceeding Horizontal Containment Radius
+                    pHCR=phcr,
+                    # Probability exceeding Vertical Protection Limit
+                    pVPL=pvpl,
+                    sil_base=base,
+                )
+            else:
+                self.cumul.append(
+                    dict(
+                        timestamp=t,
+                        icao24=self.icao24,
+                        version=self.version,
+                        # Probability exceeding Horizontal Containment Radius
+                        pHCR=phcr,
+                        # Probability exceeding Vertical Protection Limit
+                        pVPL=pvpl,
+                        sil_base=base,
+                    )
+                )
+
 
 class AircraftDict(UserDict):
 
@@ -803,6 +1032,8 @@ class Decoder:
         alt: Optional[float] = None,
     ) -> None:
 
+        ac: Aircraft
+
         if len(msg) != 28:
             return
 
@@ -853,43 +1084,34 @@ class Decoder:
                 # Only GNSS altitude
                 pass
 
-            # if 9 <= tc <= 18:
-            #     ac["nic_bc"] = pms.adsb.nic_b(msg)
+            if 9 <= tc <= 18:
+                ac.nic_bc = pms.adsb.nic_b(msg)
 
-            # if (5 <= tc <= 8) or (9 <= tc <= 18) or (20 <= tc <= 22):
-            #     ac["HPL"], ac["RCu"], ac["RCv"] = pms.adsb.nuc_p(msg)
+            if (5 <= tc <= 8) or (9 <= tc <= 18) or (20 <= tc <= 22):
+                ac.nuc_p = time, msg
+                if ac.version == 1:
+                    ac.nic_v1 = time, msg
+                elif ac.version == 2:
+                    ac.nic_v2 = time, msg
 
-            #     if (ac["ver"] == 1) and ("nic_s" in ac.keys()):
-            #         ac["Rc"], ac["VPL"] = pms.adsb.nic_v1(msg, ac["nic_s"])
-            #     elif (
-            #         (ac["ver"] == 2)
-            #         and ("nic_a" in ac.keys())
-            #         and ("nic_bc" in ac.keys())
-            #     ):
-            #         ac["Rc"] = pms.adsb.nic_v2(msg, ac["nic_a"], ac["nic_bc"])
+            if tc == 19:
+                ac.nuc_r = time, msg
+                if ac.version in [1, 2]:
+                    ac.nac_v = time, msg
 
-            # if tc == 19:
-            #     ac["HVE"], ac["VVE"] = pms.adsb.nuc_v(msg)
-            #     if ac["ver"] in [1, 2]:
-            #         ac["EPU"], ac["VEPU"] = pms.adsb.nac_v(msg)
+            if tc == 29:
+                ac.sil = time, msg
+                ac.nac_p = time, msg
 
-            # if tc == 29:
-            #     ac["PE_RCu"], ac["PE_VPL"], ac["base"] = pms.adsb.sil(
-            #         msg, ac["ver"]
-            #     )
-            #     ac["HFOMr"], ac["VFOMr"] = pms.adsb.nac_p(msg)
+            if tc == 31:
+                ac.version = pms.adsb.version(msg)
+                ac.sil = time, msg
+                ac.nac_p = time, msg
 
-            # if tc == 31:
-            #     ac["ver"] = pms.adsb.version(msg)
-            #     ac["HFOMr"], ac["VFOMr"] = pms.adsb.nac_p(msg)
-            #     ac["PE_RCu"], ac["PE_VPL"], ac["sil_base"] = pms.adsb.sil(
-            #         msg, ac["ver"]
-            #     )
-
-            #     if ac["ver"] == 1:
-            #         ac["nic_s"] = pms.adsb.nic_s(msg)
-            #     elif ac["ver"] == 2:
-            #         ac["nic_a"], ac["nic_bc"] = pms.adsb.nic_a_c(msg)
+                if ac.version == 1:
+                    ac.nic_s = pms.adsb.nic_s(msg)
+                elif ac.version == 2:
+                    ac.nic_a, ac.nic_bc = pms.adsb.nic_a_c(msg)
 
         elif df == 20 or df == 21:
 
