@@ -231,3 +231,13 @@ Flight list by airport
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. automethod:: traffic.data.adsb.opensky_impala.Impala.flightlist
+
+Requests for raw data
+~~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: traffic.data.adsb.opensky_impala.Impala.rawdata
+
+Custom requests
+~~~~~~~~~~~~~~~
+
+.. automethod:: traffic.data.adsb.opensky_impala.Impala.request

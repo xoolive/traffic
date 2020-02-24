@@ -329,6 +329,80 @@ class Impala(object):
 
         return df
 
+    def request(
+        self,
+        request_pattern: str,
+        start: timelike,
+        stop: timelike,
+        *args,  # more reasonable to be explicit about arguments
+        columns: List[str],
+        date_delta: timedelta = timedelta(hours=1),  # noqa: B008
+        cached: bool = True,
+        progressbar: Callable[[Iterable], Iterable] = iter,
+    ) -> pd.DataFrame:
+        """Splits and sends a custom request.
+
+        Args:
+            - **request_pattern**: a string containing the basic request you
+              wish to make on Impala shell. Use {before_hour} and {after_hour}
+              place holders to write your hour constraints: they will be
+              automatically replaced by appropriate values.
+            - **start**: a string (default to UTC), epoch or datetime (native
+              Python or pandas)
+            - **stop** (optional): a string (default to UTC), epoch or datetime
+              (native Python or pandas), *by default, one day after start*
+            - **columns**: the list of expected columns in the result. This
+              helps naming the columns in the resulting dataframe.
+
+        **Useful options**
+
+            - **date_delta** (optional): a timedelta representing how to split
+              the requests, *by default: per hour*
+            - **cached** (boolean, default: True): switch to False to force a
+              new request to the database regardless of the cached files;
+              delete previous cache files;
+
+        """
+
+        start = to_datetime(start)
+        if stop is not None:
+            stop = to_datetime(stop)
+        else:
+            stop = start + timedelta(days=1)
+
+        if progressbar == iter and stop - start > date_delta:
+            progressbar = tqdm
+
+        cumul: List[pd.DataFrame] = []
+        sequence = list(split_times(start, stop, date_delta))
+
+        for bt, at, bh, ah in progressbar(sequence):
+            logging.info(
+                f"Sending request between time {bt} and {at} "
+                f"and hour {bh} and {ah}"
+            )
+
+            request = request_pattern.format(
+                before_time=bt.timestamp(),
+                after_time=at.timestamp(),
+                before_hour=bh.timestamp(),
+                after_hour=ah.timestamp(),
+            )
+
+            df = self._impala(
+                request, columns="\t".join(columns), cached=cached
+            )
+
+            if df is None:
+                continue
+
+            cumul.append(df)
+
+        if len(cumul) == 0:
+            return None
+
+        return pd.concat(cumul, sort=True)
+
     def flightlist(
         self,
         start: timelike,
@@ -616,7 +690,7 @@ class Impala(object):
         # default obvious parameter
         where_clause = "where"
 
-        if progressbar == iter and stop - start > timedelta(hours=1):
+        if progressbar == iter and stop - start > date_delta:
             progressbar = tqdm
 
         airports_params = [airport, departure_airport, arrival_airport]
@@ -839,7 +913,7 @@ class Impala(object):
         other_params: str = "",
         progressbar: Callable[[Iterable], Iterable] = iter,
     ) -> Optional[RawData]:
-        """Get EHS message from the OpenSky Impala shell.
+        """Get raw message from the OpenSky Impala shell.
 
         You may pass requests based on time ranges, callsigns, aircraft, areas,
         serial numbers for receivers, or airports of departure or arrival.
