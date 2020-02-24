@@ -1007,7 +1007,7 @@ class Impala(object):
                 if callsign.find("%") > 0 or callsign.find("_") > 0:
                     callsigns = "and callsign ilike '{}' ".format(callsign)
                 else:
-                    callsigns += "and callsign='{:<8s}' ".format(callsign)
+                    callsigns = "and callsign='{:<8s}' ".format(callsign)
 
             elif isinstance(callsign, Iterable):
                 callsign = ",".join("'{:<8s}'".format(c) for c in callsign)
