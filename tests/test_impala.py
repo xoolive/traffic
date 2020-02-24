@@ -72,7 +72,7 @@ def test_rawdata():
 
     assert r is not None
 
-    t = r.decode("EHAM")
+    t = r.decode("EHAM", uncertainty=True)
     assert t is not None
 
     f = t["484506"]

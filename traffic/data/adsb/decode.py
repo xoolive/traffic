@@ -824,6 +824,7 @@ class Decoder:
         cls,
         filename: Union[str, Path],
         reference: Union[str, Airport, Tuple[float, float]],
+        uncertainty: bool = False,
     ) -> "Decoder":
 
         if isinstance(filename, str):
@@ -841,7 +842,8 @@ class Decoder:
                         line.strip().split(",")[1][18:].encode(),
                     )
                     for line in all_lines
-                )
+                ),
+                uncertainty=uncertainty,
             )
             return decoder
 
@@ -851,6 +853,7 @@ class Decoder:
         filename: Union[str, Path],
         reference: Union[str, Airport, Tuple[float, float]],
         *,
+        uncertainty: bool = False,
         time_fmt: str = "dump1090",
         time_0: Optional[datetime] = None,
         redefine_mag: int = 10,
@@ -884,7 +887,7 @@ class Decoder:
             if i & redefine_freq == redefine_freq:
                 decoder.redefine_reference(now)
 
-            decoder.process(now, msg[18:].encode())
+            decoder.process(now, msg[18:].encode(), uncertainty=uncertainty)
 
         return decoder
 
@@ -893,6 +896,7 @@ class Decoder:
         cls,
         reference: Union[str, Airport, Tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
+        uncertainty: bool = False,
     ) -> "Decoder":  # coverage: ignore
 
         from .rtlsdr import MyRtlReader
@@ -905,7 +909,7 @@ class Decoder:
         today = os.path.expanduser(filename)
         fh = open(today, "a", 1)
 
-        rtlsdr = MyRtlReader(decoder, fh)
+        rtlsdr = MyRtlReader(decoder, fh, uncertainty=uncertainty)
         decoder.thread = StoppableThread(target=rtlsdr.run)
         signal.signal(signal.SIGINT, rtlsdr.stop)
         decoder.thread.start()
@@ -917,6 +921,7 @@ class Decoder:
         socket: socket.socket,
         reference: Union[str, Airport, Tuple[float, float]],
         *,
+        uncertainty: bool,
         time_fmt: str = "default",
         time_0: Optional[datetime] = None,
         redefine_mag: int = 7,
@@ -954,7 +959,7 @@ class Decoder:
                 ):
                     decoder.redefine_reference(now)
 
-                decoder.process(now, msg[18:].encode())
+                decoder.process(now, msg[18:].encode(), uncertainty=uncertainty)
 
         decoder.thread = StoppableThread(target=decode)
         decoder.thread.start()
@@ -973,6 +978,7 @@ class Decoder:
         cls,
         reference: Union[str, Airport, Tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
+        uncertainty: bool = False,
     ) -> "Decoder":  # coverage: ignore
         now = datetime.now(timezone.utc)
         filename = now.strftime(file_pattern)
@@ -981,7 +987,12 @@ class Decoder:
         s.connect(("localhost", 30005))
         fh = open(today, "a", 1)
         return cls.from_socket(
-            s, reference, time_fmt="dump1090", time_0=now, fh=fh
+            s,
+            reference,
+            uncertainty=uncertainty,
+            time_fmt="dump1090",
+            time_0=now,
+            fh=fh,
         )
 
     @classmethod
@@ -991,6 +1002,7 @@ class Decoder:
         port: int,
         reference: Union[str, Airport, Tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_tcp.csv",
+        uncertainty: bool = False,
     ) -> "Decoder":  # coverage: ignore
         now = datetime.now(timezone.utc)
         filename = now.strftime(file_pattern)
@@ -998,7 +1010,9 @@ class Decoder:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((host, port))
         fh = open(today, "a", 1)
-        return cls.from_socket(s, reference, time_fmt="radarcape", fh=fh)
+        return cls.from_socket(
+            s, reference, uncertainty=uncertainty, time_fmt="radarcape", fh=fh
+        )
 
     def redefine_reference(self, time: datetime) -> None:
         pos = list(
@@ -1015,18 +1029,21 @@ class Decoder:
                 sum(a[0] for a in pos) / n, sum(a[1] for a in pos) / n
             )
 
-    def process_msgs(self, msgs: Iterable[Tuple[datetime, bytes]]) -> None:
+    def process_msgs(
+        self, msgs: Iterable[Tuple[datetime, bytes]], uncertainty: bool = False
+    ) -> None:
 
         for i, (time, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
             if i & 127 == 127:
                 self.redefine_reference(time)
-            self.process(time, msg)
+            self.process(time, msg, uncertainty=uncertainty)
 
     def process(
         self,
         time: datetime,
         msg: bytes,
         *args,
+        uncertainty: bool = False,
         spd: Optional[float] = None,
         trk: Optional[float] = None,
         alt: Optional[float] = None,
@@ -1083,6 +1100,9 @@ class Decoder:
             if 20 <= tc <= 22:
                 # Only GNSS altitude
                 pass
+
+            if not uncertainty:
+                return
 
             if 9 <= tc <= 18:
                 ac.nic_bc = pms.adsb.nic_b(msg)

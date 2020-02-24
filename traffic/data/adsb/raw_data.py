@@ -6,6 +6,7 @@ from typing import (
 
 import numpy as np
 import pandas as pd
+
 from pyModeS import adsb
 from tqdm.autonotebook import tqdm
 
@@ -48,6 +49,8 @@ class RawData(DataFrameMixin):
     def decode(
         self: T,
         reference: Union[None, str, Airport, Tuple[float, float]] = None,
+        *,
+        uncertainty: bool = False,
         progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
         progressbar_kw: Optional[Dict[str, Any]] = None,
         redefine_mag: int = 10,
@@ -83,9 +86,14 @@ class RawData(DataFrameMixin):
         for i, (_, line) in progressbar(enumerate(data.iterrows())):
 
             extra = (
-                dict(spd=line.spd, trk=line.trk, alt=line.alt)
+                dict(
+                    spd=line.spd,
+                    trk=line.trk,
+                    alt=line.alt,
+                    uncertainty=uncertainty,
+                )
                 if use_extra
-                else dict()
+                else dict(uncertainty=uncertainty)
             )
 
             decoder.process(line.timestamp, line.rawmsg, **extra)

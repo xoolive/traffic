@@ -9,12 +9,17 @@ if TYPE_CHECKING:
 
 class MyRtlReader(RtlReader):
     def __init__(
-        self, decoder: "Decoder", fh: Optional[TextIO] = None, **kwargs,
+        self,
+        decoder: "Decoder",
+        fh: Optional[TextIO] = None,
+        uncertainty: bool = False,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.count = 0
         self.fh = fh
         self.decoder = decoder
+        self.uncertainty = uncertainty
 
     def encode_message(
         self, msg: str, time: float
@@ -52,5 +57,7 @@ class MyRtlReader(RtlReader):
                 self.decoder.redefine_reference(t)
 
             self.decoder.process(
-                datetime.fromtimestamp(t, timezone.utc), msg.encode()
+                datetime.fromtimestamp(t, timezone.utc),
+                msg.encode(),
+                uncertainty=self.uncertainty,
             )
