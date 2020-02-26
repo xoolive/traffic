@@ -15,7 +15,6 @@ from typing import (
 )
 
 import pandas as pd
-
 import pyModeS as pms
 from tqdm.autonotebook import tqdm
 
@@ -567,29 +566,20 @@ class Aircraft(object):
         t, msg = args
         with self.lock:
             hpl, rcu, rcv = pms.adsb.nuc_p(msg)
+            current = dict(
+                # Horizontal Protection Limit
+                HPL=hpl,
+                # 95% Containment Radius on horizontal position error
+                RCu=rcu,
+                # 95% Containment Radius on vertical position error
+                RCv=rcv,
+            )
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
-                    **last_entry,
-                    # Horizontal Protection Limit
-                    HPL=hpl,
-                    # 95% Containment Radius on horizontal position error
-                    RCu=rcu,
-                    # 95% Containment Radius on vertical position error
-                    RCv=rcv,
-                )
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(
-                        timestamp=t,
-                        icao24=self.icao24,
-                        # Horizontal Protection Limit
-                        HPL=hpl,
-                        # 95% Containment Radius on horizontal position error
-                        RCu=rcu,
-                        # 95% Containment Radius on vertical position error
-                        RCv=rcv,
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -604,24 +594,17 @@ class Aircraft(object):
         with self.lock:
             hcr, vpl = pms.adsb.nic_v1(msg, self.nic_s)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            current = dict(
+                # Horizontal Containment Radius
+                HCR=hcr,
+                # Vertical Protection Limit
+                VPL=vpl,
+            )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
-                    **last_entry,
-                    # Horizontal Containment Radius
-                    HCR=hcr,
-                    # Vertical Protection Limit
-                    VPL=vpl,
-                )
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(
-                        timestamp=t,
-                        icao24=self.icao24,
-                        # Horizontal Containment Radius
-                        HCR=hcr,
-                        # Vertical Protection Limit
-                        VPL=vpl,
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -636,20 +619,16 @@ class Aircraft(object):
         with self.lock:
             hcr = pms.adsb.nic_v2(msg, self.nic_a, self.nic_bc)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            current = dict(
+                # Horizontal Containment Radius
+                HCR=hcr
+            )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
-                    **last_entry,
-                    # Horizontal Containment Radius
-                    HCR=hcr,
-                )
+                self.cumul[-1] = {**last_entry, **current}
+
             else:
                 self.cumul.append(
-                    dict(
-                        timestamp=t,
-                        icao24=self.icao24,
-                        # Horizontal Containment Radius
-                        HCR=hcr,
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -662,24 +641,17 @@ class Aircraft(object):
         with self.lock:
             hve, vve = pms.adsb.nuc_v(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            current = dict(
+                # Horizontal Velocity Error
+                HVE=hve,
+                # Vertical Velocity Error
+                VVE=vve,
+            )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
-                    **last_entry,
-                    # Horizontal Velocity Error
-                    HVE=hve,
-                    # Vertical Velocity Error
-                    VVE=vve,
-                )
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(
-                        timestamp=t,
-                        icao24=self.icao24,
-                        # Horizontal Velocity Error
-                        HVE=hve,
-                        # Vertical Velocity Error
-                        VVE=vve,
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -692,24 +664,17 @@ class Aircraft(object):
         with self.lock:
             hfm, vfm = pms.adsb.nac_v(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            current = dict(
+                # Horizontal Figure of Merit for rate (GNSS)
+                HFM=hfm,
+                # Vertical Figure of Merit for rate (GNSS)
+                VFM=vfm,
+            )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
-                    **last_entry,
-                    # Horizontal Figure of Merit for rate (GNSS)
-                    HFM=hfm,
-                    # Vertical Figure of Merit for rate (GNSS)
-                    VFM=vfm,
-                )
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(
-                        timestamp=t,
-                        icao24=self.icao24,
-                        # Horizontal Figure of Merit for rate (GNSS)
-                        HFM=hfm,
-                        # Vertical Figure of Merit for rate (GNSS)
-                        VFM=vfm,
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -722,24 +687,17 @@ class Aircraft(object):
         with self.lock:
             epu, vepu = pms.adsb.nac_p(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            current = dict(
+                # Estimated Position Uncertainty
+                EPU=epu,
+                # Vertical Estimated Position Uncertainty
+                VEPU=vepu,
+            )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
-                    **last_entry,
-                    # Estimated Position Uncertainty
-                    EPU=epu,
-                    # Vertical Estimated Position Uncertainty
-                    VEPU=vepu,
-                )
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(
-                        timestamp=t,
-                        icao24=self.icao24,
-                        # Estimated Position Uncertainty
-                        EPU=epu,
-                        # Vertical Estimated Position Uncertainty
-                        VEPU=vepu,
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -752,28 +710,19 @@ class Aircraft(object):
         with self.lock:
             phcr, pvpl, base = pms.adsb.sil(msg, self.version)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
+            current = dict(
+                version=self.version,
+                # Probability exceeding Horizontal Containment Radius
+                pHCR=phcr,
+                # Probability exceeding Vertical Protection Limit
+                pVPL=pvpl,
+                sil_base=base,
+            )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
-                    **last_entry,
-                    version=self.version,
-                    # Probability exceeding Horizontal Containment Radius
-                    pHCR=phcr,
-                    # Probability exceeding Vertical Protection Limit
-                    pVPL=pvpl,
-                    sil_base=base,
-                )
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(
-                        timestamp=t,
-                        icao24=self.icao24,
-                        version=self.version,
-                        # Probability exceeding Horizontal Containment Radius
-                        pHCR=phcr,
-                        # Probability exceeding Vertical Protection Limit
-                        pVPL=pvpl,
-                        sil_base=base,
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
 

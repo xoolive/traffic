@@ -9,7 +9,7 @@ from datetime import timedelta
 from io import StringIO
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import pandas as pd
 import paramiko
@@ -338,7 +338,7 @@ class Impala(object):
         columns: List[str],
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         cached: bool = True,
-        progressbar: Callable[[Iterable], Iterable] = iter,
+        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
     ) -> pd.DataFrame:
         """Splits and sends a custom request.
 
@@ -370,8 +370,16 @@ class Impala(object):
         else:
             stop = start + timedelta(days=1)
 
-        if progressbar == iter and stop - start > date_delta:
-            progressbar = tqdm
+        if progressbar is True:
+            if stop - start > date_delta:
+                progressbar = tqdm
+            else:
+                progressbar = iter
+
+        if progressbar is False:
+            progressbar = iter
+
+        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
 
         cumul: List[pd.DataFrame] = []
         sequence = list(split_times(start, stop, date_delta))
@@ -415,7 +423,7 @@ class Impala(object):
         icao24: Union[None, str, Iterable[str]] = None,
         cached: bool = True,
         limit: Optional[int] = None,
-        progressbar: Callable[[Iterable], Iterable] = iter,
+        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
     ) -> pd.DataFrame:
         """Lists flights departing or arriving at a given airport.
 
@@ -489,8 +497,16 @@ class Impala(object):
         else:
             stop = start + timedelta(days=1)
 
-        if progressbar == iter and stop - start > timedelta(days=1):
-            progressbar = tqdm
+        if progressbar is True:
+            if stop - start > timedelta(days=1):
+                progressbar = tqdm
+            else:
+                progressbar = iter
+
+        if progressbar is False:
+            progressbar = iter
+
+        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
 
         other_params = ""
 
@@ -608,7 +624,7 @@ class Impala(object):
         limit: Optional[int] = None,
         other_tables: str = "",
         other_params: str = "",
-        progressbar: Callable[[Iterable], Iterable] = iter,
+        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
     ) -> Optional[Union[Traffic, Flight]]:
 
         """Get Traffic from the OpenSky Impala shell.
@@ -690,8 +706,16 @@ class Impala(object):
         # default obvious parameter
         where_clause = "where"
 
-        if progressbar == iter and stop - start > date_delta:
-            progressbar = tqdm
+        if progressbar is True:
+            if stop - start > date_delta:
+                progressbar = tqdm
+            else:
+                progressbar = iter
+
+        if progressbar is False:
+            progressbar = iter
+
+        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
 
         airports_params = [airport, departure_airport, arrival_airport]
         count_airports_params = sum(x is not None for x in airports_params)
@@ -911,7 +935,7 @@ class Impala(object):
         other_tables: str = "",
         other_columns: Union[None, str, List[str]] = None,
         other_params: str = "",
-        progressbar: Callable[[Iterable], Iterable] = iter,
+        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
     ) -> Optional[RawData]:
         """Get raw message from the OpenSky Impala shell.
 
@@ -1036,6 +1060,17 @@ class Impala(object):
             stop = to_datetime(stop)
         else:
             stop = start + timedelta(days=1)
+
+        if progressbar is True:
+            if stop - start > date_delta:
+                progressbar = tqdm
+            else:
+                progressbar = iter
+
+        if progressbar is False:
+            progressbar = iter
+
+        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
 
         if isinstance(icao24, str):
             other_params += f"and {table_name}.icao24='{icao24.lower()}' "
