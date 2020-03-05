@@ -41,7 +41,7 @@ install:
   - python -m pip install -e .
 
 script:
-  - python -m pytest --cov --cov-report term-missing
+  - travis_wait 30 python -m pytest --cov --cov-report term-missing
 
 after_success:
   - codecov
