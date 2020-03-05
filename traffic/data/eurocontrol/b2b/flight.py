@@ -9,7 +9,7 @@ from xml.etree import ElementTree
 import pandas as pd
 
 from ....core import Flight, FlightPlan
-from ....core.mixins import DataFrameMixin
+from ....core.mixins import DataFrameMixin, _HBox
 from ....core.time import timelike, to_datetime
 from .reply import B2BReply
 from .xml import REQUESTS
@@ -297,30 +297,34 @@ class FlightInfo(B2BReply):
             title += f"callsign: {self.aircraftId}<br/>"
         title += f" from {airports[self.aerodromeOfDeparture]}<br/>"
         title += f" to {airports[self.aerodromeOfDestination]}<br/><br/>"
-        if hasattr(self, "aircraftAddress"):
-            title += aircraft[self.aircraftAddress.lower()]._repr_html_()
 
-        info = pd.DataFrame.from_dict(
-            [
-                {
-                    "EOBT": self.estimatedOffBlockTime
-                    if hasattr(self, "estimatedOffBlockTime")
-                    else None,
-                    "ETOT": self.estimatedTakeOffTime
-                    if hasattr(self, "estimatedTakeOffTime")
-                    else None,
-                    "ATOT": self.actualTakeOffTime
-                    if hasattr(self, "actualTakeOffTime")
-                    else None,
-                    "ETOA": self.estimatedTimeOfArrival
-                    if hasattr(self, "estimatedTimeOfArrival")
-                    else None,
-                    "ATOA": self.actualTimeOfArrival
-                    if hasattr(self, "actualTimeOfArrival")
-                    else None,
-                }
-            ]
-        ).T.rename(columns={0: self.flight_id})
+        cumul = list()
+        if hasattr(self, "aircraftAddress"):
+            cumul.append(aircraft[self.aircraftAddress.lower()].T)
+
+        cumul.append(
+            pd.DataFrame.from_dict(
+                [
+                    {
+                        "EOBT": self.estimatedOffBlockTime
+                        if hasattr(self, "estimatedOffBlockTime")
+                        else None,
+                        "ETOT": self.estimatedTakeOffTime
+                        if hasattr(self, "estimatedTakeOffTime")
+                        else None,
+                        "ATOT": self.actualTakeOffTime
+                        if hasattr(self, "actualTakeOffTime")
+                        else None,
+                        "ETOA": self.estimatedTimeOfArrival
+                        if hasattr(self, "estimatedTimeOfArrival")
+                        else None,
+                        "ATOA": self.actualTimeOfArrival
+                        if hasattr(self, "actualTimeOfArrival")
+                        else None,
+                    }
+                ]
+            ).T.rename(columns={0: self.flight_id})
+        )
 
         no_wrap_div = '<div style="float: left; margin: 10px">{}</div>'
         fp = self.flight_plan
@@ -330,7 +334,7 @@ class FlightInfo(B2BReply):
             + "<br/>".join(textwrap.wrap(re.sub(r"\s+", " ", fp.repr).strip()))
             + "</code><br/>"
             + no_wrap_div.format(fp._repr_svg_())
-            + info._repr_html_()
+            + _HBox(*cumul)._repr_html_()
         )
 
     def __getattr__(self, name) -> str:
@@ -475,11 +479,7 @@ class FlightList(DataFrameMixin, B2BReply):
                     }
                 )
 
-        for feat in [
-            "currentlyUsedTaxiTime",
-            "taxiTime",
-            "delay",
-        ]:
+        for feat in ["currentlyUsedTaxiTime", "taxiTime", "delay"]:
             if feat in self.data.columns:
                 self.data = self.data.assign(
                     **{
@@ -623,7 +623,7 @@ class FlightManagement:
         return FlightPlanList.fromET(rep.reply.find("data"))
 
     def flight_get(
-        self, eobt: timelike, callsign: str, origin: str, destination: str,
+        self, eobt: timelike, callsign: str, origin: str, destination: str
     ) -> FlightInfo:
         """Returns full information about a given flight.
 
