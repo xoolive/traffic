@@ -4,9 +4,8 @@ import warnings
 from functools import lru_cache
 from pathlib import Path
 
-from requests import Session
-
 from cartotools import session as carto_session
+from requests import Session
 
 from .. import cache_dir, config, config_file
 from .adsb.decode import Decoder as ModeS_Decoder  # noqa: F401
@@ -20,6 +19,7 @@ from .basic.navaid import Navaids
 from .basic.runways import Runways
 from .eurocontrol.b2b import NMB2B
 from .eurocontrol.ddr.airspaces import NMAirspaceParser
+from .eurocontrol.ddr.allft import AllFt  # noqa: F401
 from .eurocontrol.ddr.navpoints import NMNavaids
 from .eurocontrol.ddr.routes import NMRoutes
 from .eurocontrol.ddr.so6 import SO6  # noqa: F401

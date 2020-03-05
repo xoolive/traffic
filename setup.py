@@ -47,6 +47,7 @@ setup(
             file.relative_to(xml_dir).as_posix()
             for file in xml_dir.glob("**/*.xml")
         ),
+        "traffic.data.eurocontrol.ddr": ["allft_fields.txt"],
         "traffic": [
             os.path.join("..", "icons", f)
             for f in os.listdir(os.path.join("icons"))
