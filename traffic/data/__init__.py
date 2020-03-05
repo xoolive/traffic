@@ -19,7 +19,7 @@ from .basic.navaid import Navaids
 from .basic.runways import Runways
 from .eurocontrol.b2b import NMB2B
 from .eurocontrol.ddr.airspaces import NMAirspaceParser
-from .eurocontrol.ddr.allft import AllFt  # noqa: F401
+from .eurocontrol.ddr.allft import AllFT  # noqa: F401
 from .eurocontrol.ddr.navpoints import NMNavaids
 from .eurocontrol.ddr.routes import NMRoutes
 from .eurocontrol.ddr.so6 import SO6  # noqa: F401

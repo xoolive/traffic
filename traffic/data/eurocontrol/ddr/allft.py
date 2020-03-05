@@ -11,7 +11,7 @@ from ....core import Flight
 from ....core.mixins import DataFrameMixin, _HBox
 from .so6 import _prepare_libarchive
 
-AllFtTypeVar = TypeVar("AllFtTypeVar", bound="AllFt")
+AllFTTypeVar = TypeVar("AllFTTypeVar", bound="AllFT")
 
 
 allft_fields = list(
@@ -147,13 +147,13 @@ class FlightInfo(DataFrameMixin):
         )
 
 
-class AllFt(DataFrameMixin):
+class AllFT(DataFrameMixin):
     __slots__ = ("data",)
 
     @classmethod
     def from_allft(
-        cls: Type[AllFtTypeVar], filename: Union[str, Path, BytesIO]
-    ) -> AllFtTypeVar:
+        cls: Type[AllFTTypeVar], filename: Union[str, Path, BytesIO]
+    ) -> AllFTTypeVar:
         allft = (
             pd.read_csv(
                 filename,
@@ -194,8 +194,8 @@ class AllFt(DataFrameMixin):
 
     @classmethod
     def from_allft_7z(
-        cls: Type[AllFtTypeVar], filename: Union[str, Path]
-    ) -> AllFtTypeVar:
+        cls: Type[AllFTTypeVar], filename: Union[str, Path]
+    ) -> AllFTTypeVar:
         from libarchive.public import memory_reader
 
         _prepare_libarchive()
@@ -260,8 +260,8 @@ class AllFt(DataFrameMixin):
 
     @classmethod
     def from_file(
-        cls: Type[AllFtTypeVar], filename: Union[Path, str], **kwargs
-    ) -> Optional[AllFtTypeVar]:  # coverage: ignore
+        cls: Type[AllFTTypeVar], filename: Union[Path, str], **kwargs
+    ) -> Optional[AllFTTypeVar]:  # coverage: ignore
         """
         In addition to `usual formats
         <export.html#traffic.core.mixins.DataFrameMixin>`_, you can parse so6
@@ -315,8 +315,8 @@ class AllFt(DataFrameMixin):
 
     def __getitem__(
         self, item: Union[str, Iterable[str]]
-    ) -> Union[None, "AllFt", FlightInfo]:
-        res: Optional["AllFt"] = self
+    ) -> Union[None, "AllFT", FlightInfo]:
+        res: Optional["AllFT"] = self
         if isinstance(item, str):
             if item in self.data.ifpsId.values:
                 res = self.query(f'ifpsId == "{item}"')
