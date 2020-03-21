@@ -13,7 +13,7 @@ The underlying data is currently updated daily.
     <div id="covid19_airports"></div>
 
     <script type="text/javascript">
-      var spec = "covid19_airports.json";
+      var spec = "../_static/covid19_airports.json";
       vegaEmbed('#covid19_airports', spec)
       .then(result => console.log(result))
       .catch(console.warn);
