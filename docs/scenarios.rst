@@ -8,3 +8,4 @@ Scenarios and use cases
     scenarios/windfield
     scenarios/calibration
     scenarios/geomagnetic_declination
+    scenarios/covid19
