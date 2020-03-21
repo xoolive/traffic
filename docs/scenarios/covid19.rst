@@ -3,7 +3,7 @@ Impact of COVID-19 on worldwide aviation
 
 .. warning::
 
-    The link to an enriched version of the dataset will be published on a public server after few glitches are fixed.
+    The link to an enriched version of the dataset will be published on a public server after few glitches are fixed. Many thanks to Martin and Jannis from The OpenSky Network.
 
 The pandemic of coronavirus is having a serious impact on aviation around the world. The slowdown appears on data, with some regional peculiarities. The following plot displays the current trend in number of departing aircraft from airports in various areas around the world (covered by The OpenSky Network).
 The underlying data is currently updated daily.
@@ -22,8 +22,8 @@ The underlying data is currently updated daily.
 Currently, the trend shows:
 
 - a slow decrease from February in Asian airports (an early one in Hong-Kong);
-- a late abrupt decrease in early day of March in Europe;
-- not much change in American airports.
+- European airports plummetting since early day of March;
+- America ploughing on at their usual pace.
 
 Data collection and preparation
 ===============================
