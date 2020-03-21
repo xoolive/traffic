@@ -1,5 +1,5 @@
 Impact of COVID-19 on worldwide aviation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------
 
 .. warning::
 
@@ -19,9 +19,14 @@ The underlying data is currently updated daily.
       .catch(console.warn);
     </script>
 
-Currently, the trend shows a slow decrease from February in Asian airports (an early one in Hong-Kong), a fast one in early day of March in Europe and not much change in American airports.
+Currently, the trend shows:
 
-**Data collection and preparation**
+- a slow decrease from February in Asian airports (an early one in Hong-Kong);
+- a late abrupt decrease in early day of March in Europe;
+- not much change in American airports.
+
+Data collection and preparation
+===============================
 
 On the `Impala shell <../opensky_impala.html>`_, a particular table shows flight lists with associated origin and destination airport.
 
