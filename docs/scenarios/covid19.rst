@@ -23,7 +23,8 @@ Currently, the trend shows:
 
 - a slow decrease from February in Asian airports (an early one in Hong-Kong);
 - European airports plummetting since early day of March;
-- America ploughing on at their usual pace.
+- America started dropping later;
+- no more flights out of India (VABB).
 
 Data collection and preparation
 ===============================
@@ -51,7 +52,7 @@ We will select a few subset of airports for visualisation and build a specific t
         # Europe
         ["LFPG", "EGLL", "EHAM", "EDDF", "LEMD", "LIRF", "LSZH"],
         # Asia/Pacific
-        ["VHHH", "WSSS", "RJBB", "RKSI", "YSSY", "OMDB"],
+        ["VHHH", "WSSS", "RJBB", "RKSI", "YSSY", "OMDB", "VABB"],
         # Americas
         ["CYYZ", "KSFO", "KLAX", "KATL", "KJFK", "SBGR"],
     ]
