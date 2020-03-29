@@ -7,8 +7,8 @@
 
     <script src="../_static/calibration.geojson"></script>
 
-Calibration flights
--------------------
+Calibration flights for VOR and ILS systems
+-------------------------------------------
 
 *What is this plane doing?*
 

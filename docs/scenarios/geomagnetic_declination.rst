@@ -1,5 +1,5 @@
-Cross-wind landing and geomagnetic declination
-----------------------------------------------
+Geomagnetic declination in Mode S data
+--------------------------------------
 
 .. warning::
 
