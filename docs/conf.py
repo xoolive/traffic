@@ -100,6 +100,9 @@ html_theme = "sphinx_rtd_theme"
 # documentation.
 #
 # html_theme_options = {}
+html_theme_options = {
+    "style_external_links": True,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -197,12 +200,7 @@ def setup(app):
     app.add_javascript("https://cdn.jsdelivr.net/npm/vega-lite@4")
     app.add_javascript("https://cdn.jsdelivr.net/npm/vega-embed@6")
 
-    # <!-- Import Leaflet -->
-    app.add_stylesheet("https://unpkg.com/leaflet/dist/leaflet.css")
-    app.add_javascript("https://unpkg.com/leaflet/dist/leaflet.js")
-
-    # <!-- Import Kepler -->
-    app.add_javascript("https://unpkg.com/kepler.gl/umd/keplergl.min.js")
+    # <!-- Necessary to include jupyter widgets -->
     app.add_javascript(
         "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
     )

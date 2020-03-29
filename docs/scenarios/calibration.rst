@@ -1,4 +1,9 @@
 .. raw:: html
+    :file: ../embed_widgets/leaflet.html
+
+.. raw:: html
+
+    <!-- The inclusion above triggers the inclusion of leaflet without conflicting other pages. -->
 
     <script src="../_static/calibration.geojson"></script>
 
@@ -50,6 +55,7 @@ those before an attempt of explanation.
 
     <script>
         var mymap;
+        var mymap_ready = false;
 
         function city_select() {
             var inp = document.getElementById('city_selector');
@@ -65,8 +71,10 @@ those before an attempt of explanation.
             )
         };
 
-        /* delay the creation of the map after the whole page has been loaded */
-        document.addEventListener("DOMContentLoaded", function(event) {
+        setInterval(function() {
+
+        if ((typeof (L) !== "undefined") & ~mymap_ready) {
+
         mymap = L.map( 'mymap', {
             center: [43.59601301626894, 1.4321018748075245],
             scrollWheelZoom: false,
@@ -98,7 +106,9 @@ those before an attempt of explanation.
               + layer.feature.properties.callsign;
         }).addTo(mymap);
 
-      })
+        mymap_ready = true
+
+      }}, 1000)
     </script>
 
 You may click on trajectories for more information.
@@ -319,6 +329,7 @@ calibration trajectories from the sample dataset. [3]_
     <script>
 
         var vormap;
+        var vormap_ready = false;
         var ajo, bub, fun, mga, pea, rab;
 
         function vor_select() {
@@ -329,7 +340,9 @@ calibration trajectories from the sample dataset. [3]_
         };
 
         /* delay the creation of the map after the whole page has been loaded */
-        document.addEventListener("DOMContentLoaded", function(event) {
+        setInterval(function() {
+
+        if ((typeof (L) !== "undefined") & ~vormap_ready) {
         vormap = L.map( 'vormap', {
             center: [41.770528, 8.774667],
             scrollWheelZoom: false,
@@ -393,9 +406,10 @@ calibration trajectories from the sample dataset. [3]_
         rab.addTo(vormap);
         rab.bindPopup('<b>Rabinal VOR-DME</b>')
 
-        ajo.openPopup()
+        ajo.openPopup();
+        vormap_ready = true;
 
-      })
+      }})
 
     </script>
 

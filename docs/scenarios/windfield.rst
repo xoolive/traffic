@@ -21,6 +21,21 @@ The following method is a very basic approach to compute wind.
 Please note I am not a meteorology specialist, so feel free to improve this page
 where it should.
 
+.. raw:: html
+
+   <script type="application/vnd.jupyter.widget-view+json">
+   {
+       "version_major": 2,
+       "version_minor": 0,
+       "model_id": "c2a6efbadb4442dcbe468a3407ee237b"
+   }
+   </script>
+
+   <br/>
+
+
+The example above is wind averaged between 25°W and 55°E and between 32°N and
+65°N, from FL200 and above on February 23th 2019, between 14:00 and 16:30 UTC.
 
 .. code:: python
 
@@ -126,21 +141,6 @@ The following is a basic rendering delegated to ipyleaflet library.
 
     map_
 
-.. raw:: html
-
-   <script type="application/vnd.jupyter.widget-view+json">
-   {
-       "version_major": 2,
-       "version_minor": 0,
-       "model_id": "c2a6efbadb4442dcbe468a3407ee237b"
-   }
-   </script>
-
-   <br/>
-
-
-The example above is wind averaged between 25°W and 55°E and between 32°N and
-65°N, from FL200 and above on February 23th 2019, between 14:00 and 16:30 UTC.
 
 .. [1] | Hurter, C., R. Alligier, D. Gianazza, S. Puechmorel, G. Andrienko, and N. Andrienko.
        | « Wind Parameters Extraction from Aircraft Trajectories ». Computers, Environment and Urban Systems 47 (2014): 28‑43.
