@@ -158,9 +158,11 @@ class LazyTraffic:
 
         if max_workers < 2 or FaultCatcher.flag is True:
             iterator = self.wrapped_t.iterate(**self.iterate_kw)
+            # not the same iterator to not exhaust it
+            total = sum(1 for _ in self.wrapped_t.iterate(**self.iterate_kw))
             if desc is not None or len(self.tqdm_kw) > 0:
                 tqdm_kw = {
-                    **dict(desc=desc, leave=False, total=len(self.wrapped_t)),
+                    **dict(desc=desc, leave=False, total=total),
                     **self.tqdm_kw,
                 }
                 iterator = tqdm(iterator, **tqdm_kw)
