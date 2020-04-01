@@ -5,9 +5,13 @@ Impact of COVID-19 on worldwide aviation
 
     The link to an enriched version of the dataset will be published on a public server after few glitches are fixed. Many thanks to Martin and Jannis from The OpenSky Network.
 
-The pandemic of coronavirus is having a serious impact on aviation around the world. The slowdown appears on data, with some regional peculiarities. The following plot displays the current trend in number of departing aircraft from airports in various areas around the world (covered by The OpenSky Network).
+The pandemic of coronavirus is having a serious impact on aviation around the world. The slowdown appears on data, with some regional peculiarities. 
 The underlying data is currently updated daily.
 
+Flight evolution per airport
+============================
+
+The following plot displays the current trend in number of departing aircraft from airports in various areas around the world (covered by The OpenSky Network).
 .. raw:: html
 
     <div id="covid19_airports"></div>
@@ -25,6 +29,26 @@ Currently, the trend shows:
 - European airports plummetting since early day of March;
 - America started dropping later;
 - India almost stopped all traffic (VABB, VIDP).
+
+Flight evolution per airline
+============================
+
+.. raw:: html
+
+    <div id="covid19_airlines"></div>
+
+    <script type="text/javascript">
+      var spec = "../_static/covid19_airlines.json";
+      vegaEmbed('#covid19_airlines', spec)
+      .then(result => console.log(result))
+      .catch(console.warn);
+    </script>
+
+Currently, the trend shows:
+
+- decreasing patterns for regular airlines depending on the geography;
+- more low-cost airlines stopping their activity;
+- cargo airlines carrying on (see activities by `@simon_sat <https://twitter.com/simon_sat/status/1244643841447247872>`_ on Twitter)
 
 Data collection and preparation
 ===============================
@@ -89,7 +113,7 @@ We will select a few subset of airports for visualisation and build a specific t
     )
 
 
-    def full_chart(source, subset):
+    def full_chart(source, subset, subset_name):
 
         # We have many airports, only pick a subset
         chart = source.transform_filter(
@@ -106,8 +130,8 @@ We will select a few subset of airports for visualisation and build a specific t
             chart.mark_point()
             .encode(
                 x="day",
-                y="count",
-                color="airport",
+                y=alt.Y("count", title="# of departing flights"),
+                color=alt.Color("airport", legend=alt.Legend(title=subset_name)),
                 # add some legend next to  point
                 tooltip=["day", "airport", "city", "count"],
                 # not too noisy please
@@ -135,8 +159,16 @@ We will select a few subset of airports for visualisation and build a specific t
     # Concatenate several plots
     result = alt.vconcat(
         *[
-            full_chart(chart, airport_).properties(width=600, height=150)
-            for airport_ in airports_subset
+            full_chart(chart, airport_, subset_name).properties(width=600, height=150)
+            for subset_name, airport_ in zip(
+                [
+                    "European airports",
+                    "East-Asian airports",
+                    "Asian/Australian airports",
+                    "American airports",
+                ],
+                airports_subset,
+            )
         ]
     ).resolve_scale(color="independent")
 
