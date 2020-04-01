@@ -12,6 +12,7 @@ Flight evolution per airport
 ============================
 
 The following plot displays the current trend in number of departing aircraft from airports in various areas around the world (covered by The OpenSky Network).
+
 .. raw:: html
 
     <div id="covid19_airports"></div>
