@@ -1,9 +1,10 @@
 Impact of COVID-19 on worldwide aviation
 ----------------------------------------
 
-.. warning::
+.. admonition:: Information
 
-    The link to an enriched version of the dataset will be published on a public server after few glitches are fixed. Many thanks to Martin and Jannis from The OpenSky Network.
+    The dataset constructed for the analysis on this page is now `available online <https://opensky-network.org/datasets/covid-19/>`_, with a proper introduction on the `OpenSky Network blog <https://opensky-network.org/community/blog/item/6-opensky-covid-19-flight-dataset>`_.
+    Many thanks to the whole team.
 
 The pandemic of coronavirus is having a serious impact on aviation around the world. The slowdown appears on data, with some regional peculiarities. 
 The underlying data is currently updated daily.
@@ -54,19 +55,18 @@ Currently, the trend shows:
 Data collection and preparation
 ===============================
 
-On the `Impala shell <../opensky_impala.html>`_, a particular table shows flight lists with associated origin and destination airport.
+On the `Impala shell <../opensky_impala.html>`_, a particular table contains flight lists with associated origin and destination airport. The data has been downloaded using the `opensky.flightlist <https://traffic-viz.github.io/opensky_impala.html#traffic.data.adsb.opensky_impala.Impala.flightlist>`_ method, curated, then aggregated with aircraft and flight number information before being published `here <https://opensky-network.org/datasets/covid-19/>`_. Download the data and run the following:
 
 .. code:: python
 
-    flightlist = (
-        opensky
-        # the request, adjust dates
-        .flightlist("2020-01-01", "2020-04-01")
-        # some basic sanity checking
-        .query("callsign == callsign and firstseen == firstseen")
+    import pandas as pd
+
+    flightlist = pd.concat(
+        pd.read_csv(file, parse_dates=["firstseen", "lastseen", "day"])
+        for file in Path("path/to/folder").glob("flightlist_*.csv.gz")
     )
 
-We will select a few subset of airports for visualisation and build a specific table limited to these airports: the idea is to plot the number of departing aircraft per day for each of the following airports.
+We will select a few subset of airports for visualisation and build a specific table limited to these airports: the idea is to plot the number of departing aircraft per day for each of the following airports. The plot for airlines goes along the same idea.
 
 .. code:: python
 
