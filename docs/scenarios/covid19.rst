@@ -1,13 +1,13 @@
 Impact of COVID-19 on worldwide aviation
 ----------------------------------------
 
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3737102.svg
+    :target: https://doi.org/10.5281/zenodo.3737102
+
 .. admonition:: Information
 
     The dataset constructed for the analysis on this page is now `available online <https://opensky-network.org/datasets/covid-19/>`_, with a proper introduction on the `OpenSky Network blog <https://opensky-network.org/community/blog/item/6-opensky-covid-19-flight-dataset>`_.
     Many thanks to the whole team.
-
-    .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3737102.svg
-        :target: https://doi.org/10.5281/zenodo.3737102
 
 The pandemic of coronavirus is having a serious impact on aviation around the world. The slowdown appears on data, with some regional peculiarities. 
 The underlying data is currently updated daily.
