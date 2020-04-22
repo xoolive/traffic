@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import numpy as np
@@ -7,7 +8,7 @@ from . import geodesy as geo
 from .mixins import PointMixin
 
 if TYPE_CHECKING:
-    from ..data.basic.airports import Airport  # noqa: F401
+    from ..data.basic.airports import Airport, Airports  # noqa: F401
 
 
 class DistanceAirport(NamedTuple):
@@ -50,8 +51,14 @@ def guess_airport(
     *args,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
+    dataset: Optional["Airports"] = None,
+    warning_distance: Optional[float] = None,
 ) -> DistanceAirport:
-    from ..data import airports
+
+    if dataset is None:
+        from ..data import airports
+
+        dataset = airports
 
     # TODO define a protocol instead of PointMixin
     if point is not None:
@@ -61,9 +68,14 @@ def guess_airport(
         raise RuntimeError("latitude or longitude are None")
 
     distance, _, airport = closest_point(
-        airports.data, latitude=latitude, longitude=longitude
+        dataset.data, latitude=latitude, longitude=longitude
     )
 
-    airport_handle = airports[airport.icao]
+    airport_handle = dataset[airport.icao]
     assert airport_handle is not None
+    if warning_distance is not None and distance > warning_distance:
+        logging.warning(
+            f"Closest airport is more than {warning_distance*1e-3}km away "
+            f" (distance={distance})"
+        )
     return DistanceAirport(distance, airport_handle)

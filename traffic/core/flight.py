@@ -218,6 +218,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
             title += f"<li><b>to:</b> {self.destination} ({self.stop})</li>"
         else:
             title += f"<li><b>to:</b> {self.stop}</li>"
+        if self.diverted is not None:
+            title += f"<li><b>diverted to: {self.diverted}</b></li>"
         title += "</ul>"
         return title
 
@@ -557,6 +559,21 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
 
         """
         return self._get_unique("destination")
+
+    @property
+    def diverted(self) -> Union[str, Set[str], None]:
+        """Returns the unique diverted value(s),
+        None if not available in the DataFrame.
+
+        The diverted airport is usually represented as a ICAO or a IATA code.
+
+        The ICAO code of an airport is represented by 4 letters (e.g. EHAM for
+        Amsterdam Schiphol International Airport) and the IATA code is
+        represented by 3 letters and more familiar to the public (e.g. AMS for
+        Amsterdam)
+
+        """
+        return self._get_unique("diverted")
 
     @property
     def squawk(self) -> Set[str]:
@@ -1289,15 +1306,15 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
             points = [points]
         return min(closest_point(self.data, point) for point in points)
 
-    def guess_takeoff_airport(self) -> DistanceAirport:
+    def guess_takeoff_airport(self, **kwargs) -> DistanceAirport:
         # TODO refactor/rethink return type and documentation
         data = self.data.sort_values("timestamp")
-        return guess_airport(data.iloc[0])
+        return guess_airport(data.iloc[0], **kwargs)
 
-    def guess_landing_airport(self) -> DistanceAirport:
+    def guess_landing_airport(self, **kwargs) -> DistanceAirport:
         # TODO refactor/rethink return type and documentation
         data = self.data.sort_values("timestamp")
-        return guess_airport(data.iloc[-1])
+        return guess_airport(data.iloc[-1], **kwargs)
 
     # -- Distances --
 
