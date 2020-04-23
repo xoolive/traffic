@@ -221,20 +221,44 @@ def test_clip_point() -> None:
     assert flight.clip(eurofirs["LFBB"]) is None
 
 
+def test_closest_point() -> None:
+    from traffic.data import navaids, airports
+
+    item = belevingsvlucht.between(
+        "2018-05-30 16:00", "2018-05-30 17:00"
+    ).closest_point(  # type: ignore
+        [
+            airports["EHLE"],  # type: ignore
+            airports["EHAM"],  # type: ignore
+            navaids["NARAK"],  # type: ignore
+        ]
+    )
+    res = f"{item.timestamp:%H:%M:%S}, {item.point}, {item.distance:.2f}m"
+    assert res == "16:53:46, Lelystad Airport, 49.11m"
+
+
 def test_landing_airport() -> None:
-    # TODO refactor/rethink the returned type
-    flight: Flight = get_sample(featured, "belevingsvlucht")
-    assert flight.guess_landing_airport().airport.icao == "EHAM"
-
-    airbus_tree: Flight = get_sample(featured, "airbus_tree")
-    assert airbus_tree.guess_landing_airport().airport.icao == "EDHI"
+    assert belevingsvlucht.guess_landing_airport().icao == "EHAM"
+    assert airbus_tree.guess_landing_airport().icao == "EDHI"
 
 
-# TODO consider again when decent implementation is done
-# @pytest.mark.skipif(skip_runways, reason="no runways")
-# def test_landing_runway() -> None:
-#     assert belevingsvlucht.guess_landing_runway().name == "06"
-#     assert airbus_tree.guess_landing_runway().name == "23"
+def test_landing_runway() -> None:
+    segment = belevingsvlucht.last(minutes=30).on_runway("EHAM")  # type: ignore
+    assert segment is not None
+    assert segment.mean("altitude") < 0
+
+
+def test_aligned_runway() -> None:
+    assert sum(1 for _ in belevingsvlucht.aligned_on_runway("EHAM")) == 2
+
+
+@pytest.mark.skipif(skip_runways, reason="no runways")
+def test_landing_ils() -> None:
+    aligned: Flight = next(belevingsvlucht.aligned_on_ils("EHAM"))
+    assert aligned.max("ILS") == "06"
+
+    aligned = next(airbus_tree.aligned_on_ils("EDHI"))
+    assert aligned.max("ILS") == "23"
 
 
 def test_douglas_peucker() -> None:

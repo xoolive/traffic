@@ -24,10 +24,10 @@ from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
 from ..algorithms.douglas_peucker import douglas_peucker
+from ..algorithms.navigation import NavigationFeatures
 from ..drawing.markers import aircraft as aircraft_marker
 from ..drawing.markers import rotate_marker
 from . import geodesy as geo
-from .distance import DistanceAirport, closest_point, guess_airport
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .structure import Airport  # noqa: F401
 from .time import time_or_delta, timelike, to_datetime
@@ -92,7 +92,7 @@ class Position(PointMixin, pd.core.series.Series):
         return super().plot(ax, text_kw, shift, **{**visualdict, **kwargs})
 
 
-class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
+class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
     """Flight is the most basic class associated to a trajectory.
     Flights are the building block of all processing methods, built on top of
     pandas DataFrame. The minimum set of required features are:
@@ -143,6 +143,15 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
           `project_shape() <#traffic.core.Flight.project_shape>`_,
           `simplify() <#traffic.core.Flight.simplify>`_,
           `unwrap() <#traffic.core.Flight.unwrap>`_
+        - navigation related method:
+          `closest_point() <#traffic.core.Flight.closest_point>`_,
+          `guess_takeoff_airport()
+           <#traffic.core.Flight.guess_takeoff_airport>`_,
+          `guess_landing_airport()
+           <#traffic.core.Flight.guess_landing_airport>`_,
+          `on_runway() <#traffic.core.Flight.on_runway>`_,
+          `aligned_on_runway() <#traffic.core.Flight.aligned_on_runway>`_,
+          `aligned_on_ils() <#traffic.core.Flight.aligned_on_ils>`_
         - filtering and resampling methods:
           `comet() <#traffic.core.Flight.comet>`_,
           `filter() <#traffic.core.Flight.filter>`_,
@@ -1299,22 +1308,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin):
             data.wind_v.values,
             **kwargs,
         )
-
-    def closest_point(self, points: Union[List[PointMixin], PointMixin]):
-        # TODO refactor/rethink return type and documentation
-        if not isinstance(points, list):
-            points = [points]
-        return min(closest_point(self.data, point) for point in points)
-
-    def guess_takeoff_airport(self, **kwargs) -> DistanceAirport:
-        # TODO refactor/rethink return type and documentation
-        data = self.data.sort_values("timestamp")
-        return guess_airport(data.iloc[0], **kwargs)
-
-    def guess_landing_airport(self, **kwargs) -> DistanceAirport:
-        # TODO refactor/rethink return type and documentation
-        data = self.data.sort_values("timestamp")
-        return guess_airport(data.iloc[-1], **kwargs)
 
     # -- Distances --
 

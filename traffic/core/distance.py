@@ -5,30 +5,20 @@ import numpy as np
 import pandas as pd
 
 from . import geodesy as geo
-from .mixins import PointMixin
 
 if TYPE_CHECKING:
-    from ..data.basic.airports import Airport, Airports  # noqa: F401
-
-
-class DistanceAirport(NamedTuple):
-    distance: float
-    airport: "Airport"
-
-
-class DistancePointTrajectory(NamedTuple):
-    distance: float
-    name: str
-    point: pd.Series
+    from ..data.basic.airports import Airports  # noqa: F401
+    from .mixins import PointMixin  # noqa: F401
+    from .structure import Airport
 
 
 def closest_point(
     data: pd.DataFrame,
-    point: Optional[PointMixin] = None,
+    point: Optional["PointMixin"] = None,
     *args,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
-) -> DistancePointTrajectory:
+) -> pd.Series:
 
     if point is not None:
         latitude = point.latitude
@@ -43,7 +33,11 @@ def closest_point(
         longitude * np.ones(len(data.longitude)),
     )
     argmin = dist_vect.argmin()
-    return DistancePointTrajectory(dist_vect[argmin], name, data.iloc[argmin])
+    elt = data.iloc[argmin]
+    return pd.Series(
+        {**dict(elt), **{"distance": dist_vect[argmin], "point": name}},
+        name=elt.name,
+    )
 
 
 def guess_airport(
@@ -53,7 +47,7 @@ def guess_airport(
     longitude: Optional[float] = None,
     dataset: Optional["Airports"] = None,
     warning_distance: Optional[float] = None,
-) -> DistanceAirport:
+) -> "Airport":
 
     if dataset is None:
         from ..data import airports
@@ -67,15 +61,17 @@ def guess_airport(
     if any((longitude is None, latitude is None)):
         raise RuntimeError("latitude or longitude are None")
 
-    distance, _, airport = closest_point(
+    airport_data = closest_point(
         dataset.data, latitude=latitude, longitude=longitude
     )
 
-    airport_handle = dataset[airport.icao]
-    assert airport_handle is not None
-    if warning_distance is not None and distance > warning_distance:
+    airport = dataset[airport_data.icao]
+    assert airport is not None
+    airport.distance = airport_data.distance  # type: ignore
+
+    if warning_distance is not None and airport.distance > warning_distance:
         logging.warning(
             f"Closest airport is more than {warning_distance*1e-3}km away "
-            f" (distance={distance})"
+            f" (distance={airport.distance})"
         )
-    return DistanceAirport(distance, airport_handle)
+    return airport

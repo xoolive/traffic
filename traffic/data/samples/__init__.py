@@ -65,11 +65,11 @@ def __getattr__(name: str) -> Union[Flight, Traffic]:
     return get_flight(name, filelist[0].parent)
 
 
-airbus_tree = cast(Flight, __getattr__("airbus_tree"))
-belevingsvlucht = cast(Flight, __getattr__("belevingsvlucht"))
-texas_longhorn = cast(Flight, __getattr__("texas_longhorn"))
-quickstart = cast(Traffic, __getattr__("quickstart"))
-switzerland = cast(Traffic, __getattr__("switzerland"))
+airbus_tree: Flight = cast(Flight, __getattr__("airbus_tree"))
+belevingsvlucht: Flight = cast(Flight, __getattr__("belevingsvlucht"))
+texas_longhorn: Flight = cast(Flight, __getattr__("texas_longhorn"))
+quickstart: Traffic = cast(Traffic, __getattr__("quickstart"))
+switzerland: Traffic = cast(Traffic, __getattr__("switzerland"))
 
 lfbo_tma = Airspace.from_file(
     Path(__file__).parent / "airspaces" / "LFBOTMA.json"
