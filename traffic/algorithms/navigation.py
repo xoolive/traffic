@@ -197,7 +197,7 @@ class NavigationFeatures:
         self, airport: Union[str, "Airport"]
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
-        given airport. The runway number is appended as a new `ILS` column.
+        given airport. The runway number is appended as a new ``ILS`` column.
 
         Example usage:
 
@@ -208,8 +208,8 @@ class NavigationFeatures:
             'ILS 06 until 20:17'
 
         Be aware that all segments are not necessarily yielded in order.
-        Consider using `max(..., key=attrgetter('start'))` if you want the
-        last landing attempt, or `sorted(..., key=attrgetter('start'))` for
+        Consider using ``max(..., key=attrgetter('start'))`` if you want the
+        last landing attempt, or ``sorted(..., key=attrgetter('start'))`` for
         an ordered list
 
         .. code:: python

@@ -145,10 +145,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
           `unwrap() <#traffic.core.Flight.unwrap>`_
         - navigation related method:
           `closest_point() <#traffic.core.Flight.closest_point>`_,
-          `guess_takeoff_airport()
-           <#traffic.core.Flight.guess_takeoff_airport>`_,
-          `guess_landing_airport()
-           <#traffic.core.Flight.guess_landing_airport>`_,
+          `guess_takeoff_airport() <#traffic.core.Flight.guess_takeoff_airport>`_,
+          `guess_landing_airport() <#traffic.core.Flight.guess_landing_airport>`_,
           `on_runway() <#traffic.core.Flight.on_runway>`_,
           `aligned_on_runway() <#traffic.core.Flight.aligned_on_runway>`_,
           `aligned_on_ils() <#traffic.core.Flight.aligned_on_ils>`_
