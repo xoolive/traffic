@@ -10,3 +10,4 @@ Scenarios and use cases
     scenarios/geomagnetic_declination
     scenarios/sun_elevation
     scenarios/covid19
+    scenarios/heatmaps

@@ -685,7 +685,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         The resolution of the grid is passed as a dictionary parameter.
         By default, the grid is made by rounding latitudes and longitudes to
-        the nearest integer values. ``resolution=dict(latitude=2, longitude=4)``
+        the nearest integer values. ``dict(latitude=2, longitude=4)``
         will take 2 values per integer latitude intervals (43, 43.5, 44, ...)
         and 4 values per integer longitude intervals (1, 1.25, 1.5, 1.75, ...).
 
@@ -697,16 +697,17 @@ class Traffic(HBoxMixin, GeographyMixin):
           int the given cell.
 
         The returned pandas DataFrame is indexed over latitude and longitude
-        values. It is conveniently chainable with the `.to_xarray()` method
+        values. It is conveniently chainable with the ``.to_xarray()`` method
         in order to plot density heatmaps.
 
         Example usage:
 
-        ..code:: python
+        .. code:: python
 
             switzerland.agg_latlon(
                 resolution=dict(latitude=10, longitude=10),
-                vertical_rate="mean"
+                vertical_rate="mean",
+                timestamp="count"
             )
 
         See how to make `flight density heatmaps </scenarios/heatmap.html>`_
