@@ -38,7 +38,7 @@ def test_properties() -> None:
     assert flight.callsign == "TRA051"
     assert flight.title == "TRA051"
     flight2 = flight.assign(number="FAKE", flight_id="belevingsvlucht")
-    assert flight2.title == "TRA051 / FAKE (belevingsvlucht)"
+    assert flight2.title == "TRA051 – FAKE (belevingsvlucht)"
     assert flight.icao24 == "484506"
     assert flight.registration == "PH-HZO"
     assert flight.typecode == "B738"

@@ -15,7 +15,7 @@ def test_properties() -> None:
 
     handle = switzerland["DLH02A"]
     assert handle is not None
-    assert handle.aircraft == "3c6645 / D-AIRE (A321)"
+    assert handle.aircraft == "3c6645 · 🇩🇪 D-AIRE (A321)"
 
     handle = switzerland["4baa61"]
     assert handle is not None
