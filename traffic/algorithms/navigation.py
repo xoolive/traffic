@@ -58,12 +58,12 @@ class NavigationFeatures:
             key=attrgetter("distance"),
         )
 
-    def guess_takeoff_airport(self, **kwargs) -> "Airport":
+    def takeoff_airport(self, **kwargs) -> "Airport":
         """Returns the most probable takeoff airport.
 
         .. code:: python
 
-            >>> belevingsvlucht.guess_takeoff_airport()
+            >>> belevingsvlucht.takeoff_airport()
             EHAM/AMS: Amsterdam  Schiphol
 
         When data is missing near the ground, it may be relevant
@@ -72,11 +72,11 @@ class NavigationFeatures:
         .. code:: python
 
             >>> missing_data = belevingsvlucht.after("2018-05-30 15:30")
-            >>> missing_data.guess_takeoff_airport()
+            >>> missing_data.takeoff_airport()
             NL-0015/nan: Universitair Medisch Centrum Utrecht Heliport
 
             >>> large_airports = airports.query("type == 'large_airport'")
-            >>> missing_data.guess_takeoff_airport(dataset=large_airports)
+            >>> missing_data.takeoff_airport(dataset=large_airports)
             EHAM/AMS: Amsterdam  Schiphol
         """
 
@@ -88,12 +88,12 @@ class NavigationFeatures:
         data = self.data.sort_values("timestamp")
         return guess_airport(data.iloc[0], **kwargs)
 
-    def guess_landing_airport(self, **kwargs) -> "Airport":
+    def landing_airport(self, **kwargs) -> "Airport":
         """Returns the most probable landing airport.
 
         .. code:: python
 
-            >>> belevingsvlucht.guess_landing_airport()
+            >>> belevingsvlucht.landing_airport()
             EHAM/AMS: Amsterdam  Schiphol
 
         When data is missing near the ground, it may be relevant
@@ -102,11 +102,11 @@ class NavigationFeatures:
         .. code:: python
 
             >>> missing_data = belevingsvlucht.before("2018-05-30 20:00")
-            >>> missing_data.guess_landing_airport()
+            >>> missing_data.landing_airport()
             NL-0024/nan: Middenmeer Aerodrome
 
             >>> large_airports = airports.query("type == 'large_airport'")
-            >>> missing_data.guess_landing_airport(dataset=large_airports)
+            >>> missing_data.landing_airport(dataset=large_airports)
             EHAM/AMS: Amsterdam  Schiphol
         """
 

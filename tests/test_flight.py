@@ -238,8 +238,8 @@ def test_closest_point() -> None:
 
 
 def test_landing_airport() -> None:
-    assert belevingsvlucht.guess_landing_airport().icao == "EHAM"
-    assert airbus_tree.guess_landing_airport().icao == "EDHI"
+    assert belevingsvlucht.landing_airport().icao == "EHAM"
+    assert airbus_tree.landing_airport().icao == "EDHI"
 
 
 def test_landing_runway() -> None:

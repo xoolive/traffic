@@ -678,6 +678,65 @@ class Traffic(HBoxMixin, GeographyMixin):
             if nb_flights is None or i < nb_flights:
                 flight.plot(ax, **kwargs)
 
+    def agg_latlon(
+        self, resolution: Union[Dict[str, float], None] = None, **kwargs
+    ) -> pd.DataFrame:
+        """Aggregates values of a traffic over a grid of lat/lon.
+
+        The resolution of the grid is passed as a dictionary parameter.
+        By default, the grid is made by rounding latitudes and longitudes to
+        the nearest integer values. ``resolution=dict(latitude=2, longitude=4)``
+        will take 2 values per integer latitude intervals (43, 43.5, 44, ...)
+        and 4 values per integer longitude intervals (1, 1.25, 1.5, 1.75, ...).
+
+        The kwargs specifies how to aggregate values:
+
+        - ``altitude="mean"`` would average all values in the given cell;
+        - ``timestamp="count"`` would return the number of samples per cell;
+        - ``icao24="nunique"`` would return the number of different aircraft
+          int the given cell.
+
+        The returned pandas DataFrame is indexed over latitude and longitude
+        values. It is conveniently chainable with the `.to_xarray()` method
+        in order to plot density heatmaps.
+
+        Example usage:
+
+        ..code:: python
+
+            switzerland.agg_latlon(
+                resolution=dict(latitude=10, longitude=10),
+                vertical_rate="mean"
+            )
+
+        See how to make `flight density heatmaps </scenarios/heatmap.html>`_
+        """
+
+        if resolution is None:
+            resolution = dict(latitude=1, longitude=1)
+
+        if len(kwargs) is None:
+            raise ValueError(
+                "Specify parameters to aggregate, "
+                "e.g. altitude='mean' or icao24='nunique'"
+            )
+
+        r_lat = resolution.get("latitude", None)
+        r_lon = resolution.get("longitude", None)
+
+        if r_lat is None or r_lon is None:
+            raise ValueError("Specify a resolution for latitude and longitude")
+
+        data = (
+            self.assign(
+                latitude=lambda x: ((r_lat * x.latitude).round() / r_lat),
+                longitude=lambda x: ((r_lon * x.longitude).round() / r_lon),
+            )
+            .groupby(["latitude", "longitude"])
+            .agg(kwargs)
+        )
+        return data
+
     def windfield(
         self, resolution: Union[Dict[str, float], None] = None
     ) -> pd.DataFrame:
@@ -687,24 +746,12 @@ class Traffic(HBoxMixin, GeographyMixin):
                 "No wind data in trajectory. Consider Traffic.compute_wind()"
             )
 
-        if resolution is None:
-            resolution = dict(latitude=1, longitude=1)
-
-        r_lat = resolution.get("latitude", None)
-        r_lon = resolution.get("longitude", None)
-
-        if r_lat is not None and r_lon is not None:
-            data = (
-                self.assign(
-                    latitude=lambda x: ((r_lat * x.latitude).round() / r_lat),
-                    longitude=lambda x: ((r_lon * x.longitude).round() / r_lon),
-                )
-                .groupby(["latitude", "longitude"])
-                .agg(dict(wind_u="mean", wind_v="mean", timestamp="count"))
-            )
-            return data
-
-        return data[["latitude", "longitude", "wind_u", "wind_v", "timestamp"]]
+        return self.agg_latlon(
+            resolution=resolution,
+            wind_u="mean",
+            wind_v="mean",
+            timestamp="count",
+        )
 
     def plot_wind(
         self,
