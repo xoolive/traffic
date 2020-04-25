@@ -1,13 +1,76 @@
 import io
+import json
 import logging
+import re
 import zipfile
 from functools import reduce
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import pandas as pd
 
 from tqdm.autonotebook import tqdm
+
+json_path = Path(__file__).parent / "patterns.json"
+
+registration_patterns = list(
+    dict(
+        (k, int(v[2:], 16) if k in ["start", "end"] else v)
+        for (k, v) in elt.items()
+    )
+    for elt in json.loads(json_path.read_text())["registers"]
+)
+
+
+def country(reg: Dict[str, str]) -> Dict[str, str]:
+
+    # First, search the country based on the registered address intervals
+    icao24 = int(reg["icao24"], 16)
+    candidate = next(
+        (
+            elt
+            for elt in registration_patterns
+            if "start" in elt.keys() and elt["start"] <= icao24 <= elt["end"]
+        ),
+        None,
+    )
+
+    # If not found or suspicious (Unassigned), look at the tail number pattern
+    if (
+        candidate is None or candidate["country"].startswith("Unassigned")
+    ) and "registration" in reg.keys():
+        candidate = next(
+            (
+                elt
+                for elt in registration_patterns
+                if "pattern" in elt
+                and re.match(elt["pattern"], reg["registration"])
+            ),
+            None,
+        )
+
+    # Still nothing? Give up...
+    if candidate is None:
+        return {"country": "Unknown", "flag": "🏳", "tooltip": "Unknown"}
+
+    # It could be possible to be more specific with categories
+    # Also some tail numbers are attributed to different countries within
+    #   the same ICAO address range
+
+    if "registration" in reg.keys() and "categories" in candidate.keys():
+        precise = next(
+            (
+                elt
+                for elt in candidate["categories"]
+                if "pattern" in elt
+                and re.match(elt["pattern"], reg["registration"])
+            ),
+            None,
+        )
+        if precise is not None:
+            candidate = {**candidate, **precise}
+
+    return candidate
 
 
 class Aircraft(object):
@@ -170,6 +233,14 @@ class Aircraft(object):
         else:
             df = self.data.query("icao24 in @name or registration in @name")
         return self._fmt(df)
+
+    def get_unique(self, name: str) -> Optional[Dict[str, str]]:
+        df = self[name]
+
+        if df.shape[0] == 0:
+            return None
+
+        return {**dict(df.iloc[0]), **country(dict(df.iloc[0]))}
 
     def _fmt(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.sort_values("icao24")

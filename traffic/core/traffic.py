@@ -710,7 +710,7 @@ class Traffic(HBoxMixin, GeographyMixin):
                 timestamp="count"
             )
 
-        See how to make `flight density heatmaps </scenarios/heatmap.html>`_
+        See how to make `flight density heatmaps </scenarios/heatmaps.html>`_
         """
 
         if resolution is None:

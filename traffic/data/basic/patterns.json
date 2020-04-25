@@ -1,0 +1,2392 @@
+{
+  "registers": [
+    {
+      "pattern": "^AP-",
+      "start": "0x760000",
+      "end": "0x767fff",
+      "country": "Pakistan",
+      "flag": "\ud83c\uddf5\ud83c\uddf0"
+    },
+    {
+      "pattern": "^A3-",
+      "start": "0xc8d000",
+      "end": "0xc8d3ff",
+      "country": "Tonga",
+      "flag": "\ud83c\uddf9\ud83c\uddf4"
+    },
+    {
+      "pattern": "^A4O-",
+      "start": "0x70c000",
+      "end": "0x70c3ff",
+      "country": "Oman",
+      "flag": "\ud83c\uddf4\ud83c\uddf2"
+    },
+    {
+      "pattern": "^A2-",
+      "start": "0x30000",
+      "end": "0x303ff",
+      "country": "Botswana",
+      "flag": "\ud83c\udde7\ud83c\uddfc"
+    },
+    {
+      "pattern": "^A5-",
+      "start": "0x680000",
+      "end": "0x6803ff",
+      "country": "Bhutan",
+      "flag": "\ud83c\udde7\ud83c\uddf9"
+    },
+    {
+      "pattern": "^A6-",
+      "start": "0x896000",
+      "end": "0x896fff",
+      "country": "United Arab Emirates",
+      "flag": "\ud83c\udde6\ud83c\uddea"
+    },
+    {
+      "pattern": "^A7-",
+      "start": "0x6a000",
+      "end": "0x6a3ff",
+      "country": "Qatar",
+      "flag": "\ud83c\uddf6\ud83c\udde6",
+      "categories": [
+        {
+          "pattern": "^A7-A",
+          "category": "Airbus"
+        },
+        {
+          "pattern": "^A7-B",
+          "category": "Boeing"
+        },
+        {
+          "pattern": "^A7-G",
+          "category": "Gulf Helicopters"
+        },
+        {
+          "pattern": "^A7-[HM]",
+          "category": "State owned"
+        }
+      ]
+    },
+    {
+      "pattern": "^A8-",
+      "start": "0x50000",
+      "end": "0x50fff",
+      "country": "Liberia",
+      "flag": "\ud83c\uddf1\ud83c\uddf7"
+    },
+    {
+      "pattern": "^A9C-",
+      "start": "0x894000",
+      "end": "0x894fff",
+      "country": "Bahrain",
+      "flag": "\ud83c\udde7\ud83c\udded"
+    },
+    {
+      "pattern": "^B-\\d{5}",
+      "start": "0x899000",
+      "end": "0x8993ff",
+      "country": "Taiwan",
+      "flag": "\ud83c\uddf9\ud83c\uddfc",
+      "comment": "ICAO (special use)"
+    },
+    {
+      "pattern": "^B-",
+      "start": "0x780000",
+      "end": "0x7bffff",
+      "country": "China",
+      "flag": "\ud83c\udde8\ud83c\uddf3",
+      "categories": [
+        {
+          "pattern": "^B-M",
+          "country": "Macau",
+          "flag": "\ud83c\uddf2\ud83c\uddf4"
+        },
+        {
+          "pattern": "^B-(H|K|L)",
+          "country": "Hong Kong",
+          "flag": "\ud83c\udded\ud83c\uddf0"
+        },
+        {
+          "pattern": "^B-2.+[A-Z]",
+          "category": "Boeing"
+        },
+        {
+          "pattern": "^B-3.+[A-Z]",
+          "category": "Airbus"
+        }
+      ]
+    },
+    {
+      "pattern": "^CF?-",
+      "start": "0xc00000",
+      "end": "0xc3ffff",
+      "country": "Canada",
+      "flag": "\ud83c\udde8\ud83c\udde6",
+      "categories": [
+        {
+          "pattern": "^C-I",
+          "category": "Ultralights",
+          "flag": "\ud83c\udde8\ud83c\udde6"
+        }
+      ]
+    },
+    {
+      "pattern": "^CC-",
+      "start": "0xe80000",
+      "end": "0xe80fff",
+      "country": "Chile",
+      "flag": "\ud83c\udde8\ud83c\uddf1",
+      "categories": [
+        {
+          "pattern": "^FACH-",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^CN-",
+      "start": "0x20000",
+      "end": "0x27fff",
+      "country": "Morocco",
+      "flag": "\ud83c\uddf2\ud83c\udde6"
+    },
+    {
+      "pattern": "^CP-",
+      "start": "0xe94000",
+      "end": "0xe94fff",
+      "country": "Bolivia",
+      "flag": "\ud83c\udde7\ud83c\uddf4",
+      "categories": [
+        {
+          "pattern": "^FAB-",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^C(R|S)-",
+      "start": "0x490000",
+      "end": "0x497fff",
+      "country": "Portugal",
+      "flag": "\ud83c\uddf5\ud83c\uddf9",
+      "categories": [
+        {
+          "pattern": "^CR-",
+          "category": "Overseas"
+        },
+        {
+          "pattern": "^CS-B",
+          "category": "Ballons"
+        },
+        {
+          "pattern": "^CS-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^CS-P",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^CS-T",
+          "category": "Airliners"
+        },
+        {
+          "pattern": "^CS-U",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^CS-X",
+          "category": "Experimental"
+        }
+      ]
+    },
+    {
+      "pattern": "^CU-",
+      "start": "0xb0000",
+      "end": "0xb0fff",
+      "country": "Cuba",
+      "flag": "\ud83c\udde8\ud83c\uddfa",
+      "categories": [
+        {
+          "pattern": "^CU-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^CU-U",
+          "category": "Ultralights"
+        }
+      ]
+    },
+    {
+      "pattern": "^CX-",
+      "start": "0xe90000",
+      "end": "0xe90fff",
+      "country": "Uruguay",
+      "flag": "\ud83c\uddfa\ud83c\uddfe"
+    },
+    {
+      "pattern": "^C3-",
+      "country": "Andorra",
+      "flag": "\ud83c\udde6\ud83c\udde9",
+      "comment": "Andorran helicopters seem registered in France or Spain"
+    },
+    {
+      "pattern": "^C5-",
+      "start": "0x9a000",
+      "end": "0x9afff",
+      "country": "Gambia",
+      "flag": "\ud83c\uddec\ud83c\uddf2"
+    },
+    {
+      "pattern": "^C2-",
+      "start": "0xc8a000",
+      "end": "0xc8a3ff",
+      "country": "Nauru",
+      "flag": "\ud83c\uddf3\ud83c\uddf7"
+    },
+    {
+      "pattern": "^C6-",
+      "start": "0xa8000",
+      "end": "0xa8fff",
+      "country": "Bahamas",
+      "flag": "\ud83c\udde7\ud83c\uddf8"
+    },
+    {
+      "pattern": "^C9-",
+      "start": "0x6000",
+      "end": "0x6fff",
+      "country": "Mozambique",
+      "flag": "\ud83c\uddf2\ud83c\uddff"
+    },
+    {
+      "pattern": "^D-",
+      "start": "0x3c0000",
+      "end": "0x3fffff",
+      "country": "Germany",
+      "flag": "\ud83c\udde9\ud83c\uddea",
+      "categories": [
+        {
+          "pattern": "^D-AU",
+          "category": "Finkenwerder Airbus Test"
+        },
+        {
+          "pattern": "^D-A",
+          "category": ">20t"
+        },
+        {
+          "pattern": "^D-B",
+          "category": "14\u201320t"
+        },
+        {
+          "pattern": "^D-C",
+          "category": "5.7\u201314t"
+        },
+        {
+          "pattern": "^D-E",
+          "category": "single engine, <2t"
+        },
+        {
+          "pattern": "^D-F",
+          "category": "single engine, 2\u20135.7t"
+        },
+        {
+          "pattern": "^D-G",
+          "category": "multi engine, <2t"
+        },
+        {
+          "pattern": "^D-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^D-I",
+          "category": "multi engine, 2\u20135.7t"
+        },
+        {
+          "pattern": "^D-K",
+          "category": "Powered Gliders"
+        },
+        {
+          "pattern": "^D-M",
+          "category": "Powered Ultralights"
+        },
+        {
+          "pattern": "^D-N",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^D-O",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^D-\\d{4}",
+          "category": "Gliders"
+        }
+      ]
+    },
+    {
+      "pattern": "^DQ-",
+      "start": "0xc88000",
+      "end": "0xc88fff",
+      "country": "Fiji",
+      "flag": "\ud83c\uddeb\ud83c\uddef"
+    },
+    {
+      "pattern": "^D2-",
+      "start": "0x90000",
+      "end": "0x90fff",
+      "country": "Angola",
+      "flag": "\ud83c\udde6\ud83c\uddf4"
+    },
+    {
+      "pattern": "^D4-",
+      "start": "0x96000",
+      "end": "0x963ff",
+      "country": "Cape Verde",
+      "flag": "\ud83c\udde8\ud83c\uddfb"
+    },
+    {
+      "pattern": "^D6-",
+      "start": "0x35000",
+      "end": "0x353ff",
+      "country": "Comoros",
+      "flag": "\ud83c\uddf0\ud83c\uddf2"
+    },
+    {
+      "pattern": "^EC-",
+      "start": "0x340000",
+      "end": "0x37ffff",
+      "country": "Spain",
+      "flag": "\ud83c\uddea\ud83c\uddf8",
+      "categories": [
+        {
+          "pattern": "^EC-[YZ][A-Z]{2}",
+          "category": "Home built"
+        },
+        {
+          "pattern": "^EC-AA\\d",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^EC-\\d{3}",
+          "category": "Test and Delivery"
+        }
+      ]
+    },
+    {
+      "pattern": "^EK-",
+      "start": "0x600000",
+      "end": "0x6003ff",
+      "country": "Armenia",
+      "flag": "\ud83c\udde6\ud83c\uddf2"
+    },
+    {
+      "pattern": "^E(I|J)-",
+      "start": "0x4ca000",
+      "end": "0x4cafff",
+      "country": "Ireland",
+      "flag": "\ud83c\uddee\ud83c\uddea",
+      "categories": [
+        {
+          "pattern": "^EJ-",
+          "country": "Business and VIP"
+        }
+      ]
+    },
+    {
+      "pattern": "^EP-",
+      "start": "0x730000",
+      "end": "0x737fff",
+      "country": "Iran",
+      "flag": "\ud83c\uddee\ud83c\uddf7"
+    },
+    {
+      "pattern": "^ER-",
+      "start": "0x504c00",
+      "end": "0x504fff",
+      "country": "Moldova",
+      "flag": "\ud83c\uddf2\ud83c\udde9"
+    },
+    {
+      "pattern": "^ES-",
+      "start": "0x511000",
+      "end": "0x5113ff",
+      "country": "Estonia",
+      "flag": "\ud83c\uddea\ud83c\uddea"
+    },
+    {
+      "pattern": "^ET-",
+      "start": "0x40000",
+      "end": "0x40fff",
+      "country": "Ethiopia",
+      "flag": "\ud83c\uddea\ud83c\uddf9"
+    },
+    {
+      "pattern": "^EW-",
+      "start": "0x510000",
+      "end": "0x5103ff",
+      "country": "Belarus",
+      "flag": "\ud83c\udde7\ud83c\uddfe"
+    },
+    {
+      "pattern": "^EX-",
+      "start": "0x601000",
+      "end": "0x6013ff",
+      "country": "Kyrgyzstan",
+      "flag": "\ud83c\uddf0\ud83c\uddec"
+    },
+    {
+      "pattern": "^EY-",
+      "start": "0x515000",
+      "end": "0x5153ff",
+      "country": "Tajikistan",
+      "flag": "\ud83c\uddf9\ud83c\uddef"
+    },
+    {
+      "pattern": "^EZ-",
+      "start": "0x601800",
+      "end": "0x601bff",
+      "country": "Turkmenistan",
+      "flag": "\ud83c\uddf9\ud83c\uddf2"
+    },
+    {
+      "pattern": "^E3-",
+      "start": "0x202000",
+      "end": "0x2023ff",
+      "country": "Eritrea",
+      "flag": "\ud83c\uddea\ud83c\uddf7"
+    },
+    {
+      "pattern": "^E4-",
+      "country": "Palestine",
+      "flag": "\ud83c\uddf5\ud83c\uddf8",
+      "comment": "Temporary assignment to SU-Y (Egypt)"
+    },
+    {
+      "pattern": "^E5-",
+      "start": "0x901000",
+      "end": "0x9013ff",
+      "country": "Cook Islands",
+      "flag": "\ud83c\udde8\ud83c\uddf0"
+    },
+    {
+      "pattern": "^(E7|T9)-",
+      "start": "0x513000",
+      "end": "0x5133ff",
+      "country": "Bosnia and Herzegovina",
+      "flag": "\ud83c\udde7\ud83c\udde6"
+    },
+    {
+      "pattern": "^F-",
+      "start": "0x380000",
+      "end": "0x3bffff",
+      "country": "France",
+      "flag": "\ud83c\uddeb\ud83c\uddf7",
+      "categories": [
+        {
+          "pattern": "^F-A",
+          "category": "Historic aircraft"
+        },
+        {
+          "pattern": "^F-C",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^F-J",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^F-O",
+          "category": "Overseas Territories"
+        },
+        {
+          "pattern": "^F-P",
+          "category": "Home built"
+        },
+        {
+          "pattern": "^F-W",
+          "category": "Test and Delivery"
+        },
+        {
+          "pattern": "^F-Z",
+          "category": "State owned"
+        }
+      ]
+    },
+    {
+      "pattern": "^G-",
+      "start": "0x400000",
+      "end": "0x43ffff",
+      "country": "United Kingdom",
+      "flag": "\ud83c\uddec\ud83c\udde7",
+      "categories": [
+        {
+          "pattern": "^G-\\d+-\\d+",
+          "category": "Test and Delivery"
+        },
+        {
+          "pattern": "^Z[HZ]\\d{3}",
+          "category": "Royal Air Force"
+        },
+        {
+          "pattern": "^ZJ-[A-Z]{3}",
+          "country": "Jersey",
+          "flag": "\ud83c\uddef\ud83c\uddea"
+        },
+        {
+          "pattern": "^2-",
+          "country": "Guernsey",
+          "flag": "\ud83c\uddec\ud83c\uddec"
+        },
+        {
+          "pattern": "^M-",
+          "country": "Isle of Man",
+          "flag": "\ud83c\uddee\ud83c\uddf2"
+        },
+        {
+          "pattern": "^V(P|Q)-B",
+          "country": "Bermuda",
+          "flag": "\ud83c\udde7\ud83c\uddf2"
+        },
+        {
+          "pattern": "^VP-A",
+          "country": "Anguilla",
+          "flag": "\ud83c\udde6\ud83c\uddee"
+        },
+        {
+          "pattern": "^VP-C",
+          "country": "Cayman Islands",
+          "flag": "\ud83c\uddf0\ud83c\uddfe"
+        },
+        {
+          "pattern": "^VP-F",
+          "country": "Falkland Islands",
+          "flag": "\ud83c\uddeb\ud83c\uddf0"
+        },
+        {
+          "pattern": "^VP-G",
+          "country": "Gibraltar",
+          "flag": "\ud83c\uddec\ud83c\uddee"
+        },
+        {
+          "pattern": "^VP-L",
+          "country": "Virgin Islands",
+          "flag": "\ud83c\uddfb\ud83c\uddec"
+        },
+        {
+          "pattern": "^VP-M",
+          "country": "Montserrat",
+          "flag": "\ud83c\uddf2\ud83c\uddf8"
+        },
+        {
+          "pattern": "^VQ-H",
+          "country": "Saint Helena, Ascension and Tristan da Cunha",
+          "flag": "\ud83c\uddf8\ud83c\udded"
+        },
+        {
+          "pattern": "^VQ-T",
+          "country": "Turks and Caicos Islands",
+          "flag": "\ud83c\uddf9\ud83c\udde8"
+        }
+      ]
+    },
+    {
+      "pattern": "^HA-",
+      "start": "0x470000",
+      "end": "0x477fff",
+      "country": "Hungary",
+      "flag": "\ud83c\udded\ud83c\uddfa",
+      "categories": [
+        {
+          "pattern": "^HA-\\d{4}",
+          "category": "Gliders"
+        }
+      ]
+    },
+    {
+      "pattern": "^HB-",
+      "start": "0x4b0000",
+      "end": "0x4b7fff",
+      "country": "Switzerland",
+      "flag": "\ud83c\udde8\ud83c\udded",
+      "categories": [
+        {
+          "pattern": "^HB-A",
+          "category": "multi engine, 5.7\u201315t"
+        },
+        {
+          "pattern": "^HB-B",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^HB-C",
+          "category": "single engine Cessna, <5.7t"
+        },
+        {
+          "pattern": "^HB-D",
+          "category": "single engine, <5.7t"
+        },
+        {
+          "pattern": "^HB-F",
+          "category": "Swiss-produced"
+        },
+        {
+          "pattern": "^HB-[IJ]",
+          "category": ">15t"
+        },
+        {
+          "pattern": "^HB-[XZ]",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^HB-Y",
+          "category": "Experimental"
+        },
+        {
+          "pattern": "^HB-\\d{3}",
+          "category": "Gliders"
+        }
+      ]
+    },
+    {
+      "pattern": "^HC-",
+      "start": "0xe84000",
+      "end": "0xe84fff",
+      "country": "Ecuador",
+      "flag": "\ud83c\uddea\ud83c\udde8"
+    },
+    {
+      "pattern": "^HH",
+      "start": "0xb8000",
+      "end": "0xb8fff",
+      "country": "Haiti",
+      "flag": "\ud83c\udded\ud83c\uddf9"
+    },
+    {
+      "pattern": "^HI",
+      "start": "0xc4000",
+      "end": "0xc4fff",
+      "country": "Dominican Republic",
+      "flag": "\ud83c\udde9\ud83c\uddf4"
+    },
+    {
+      "pattern": "^(H(J|K))-",
+      "start": "0xac000",
+      "end": "0xacfff",
+      "country": "Colombia",
+      "flag": "\ud83c\udde8\ud83c\uddf4",
+      "categories": [
+        {
+          "pattern": "^HJ-",
+          "country": "Microlights"
+        },
+        {
+          "pattern": "^FAC\\d{4}",
+          "category": "Air Force"
+        },
+        {
+          "pattern": "^PNC-",
+          "country": "Police"
+        }
+      ]
+    },
+    {
+      "pattern": "^HL",
+      "start": "0x718000",
+      "end": "0x71ffff",
+      "country": "Republic of Korea",
+      "alt_name": "South Korea",
+      "flag": "\ud83c\uddf0\ud83c\uddf7",
+      "categories": [
+        {
+          "pattern": "^HLC",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^HL(9[1-6]|61)",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^HL0[0-5]",
+          "category": "Gliders"
+        }
+      ]
+    },
+    {
+      "pattern": "^HP-",
+      "start": "0xc2000",
+      "end": "0xc2fff",
+      "country": "Panama",
+      "flag": "\ud83c\uddf5\ud83c\udde6"
+    },
+    {
+      "pattern": "^HR-",
+      "start": "0xba000",
+      "end": "0xbafff",
+      "country": "Honduras",
+      "flag": "\ud83c\udded\ud83c\uddf3",
+      "categories": [
+        {
+          "pattern": "^FAH-",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^HS-",
+      "start": "0x880000",
+      "end": "0x887fff",
+      "country": "Thailand",
+      "flag": "\ud83c\uddf9\ud83c\udded"
+    },
+    {
+      "pattern": "^HV-",
+      "country": "Vatican City",
+      "flag": "\ud83c\uddfb\ud83c\udde6"
+    },
+    {
+      "pattern": "^HZ-",
+      "start": "0x710000",
+      "end": "0x717fff",
+      "country": "Saudi Arabia",
+      "flag": "\ud83c\uddf8\ud83c\udde6"
+    },
+    {
+      "pattern": "^H4-",
+      "start": "0x897000",
+      "end": "0x8973ff",
+      "country": "Solomon Islands",
+      "flag": "\ud83c\uddf8\ud83c\udde7"
+    },
+    {
+      "pattern": "^I-",
+      "start": "0x300000",
+      "end": "0x33ffff",
+      "country": "Italy",
+      "flag": "\ud83c\uddee\ud83c\uddf9",
+      "categories": [
+        {
+          "pattern": "^VF-",
+          "category": "Fire Brigade"
+        },
+        {
+          "pattern": "^MM\\d{5}",
+          "category": "State owned"
+        },
+        {
+          "pattern": "^I[0-9Z]\\d{3}",
+          "category": "Italy (Ultralights)"
+        }
+      ]
+    },
+    {
+      "pattern": "^JA",
+      "start": "0x840000",
+      "end": "0x87ffff",
+      "country": "Japan",
+      "flag": "\ud83c\uddef\ud83c\uddf5",
+      "categories": [
+        {
+          "pattern": "^JAA\\d{3}",
+          "category": "Balloons"
+        }
+      ]
+    },
+    {
+      "pattern": "^JU-",
+      "start": "0x682000",
+      "end": "0x6823ff",
+      "country": "Mongolia",
+      "flag": "\ud83c\uddf2\ud83c\uddf3"
+    },
+    {
+      "pattern": "^JY-",
+      "start": "0x740000",
+      "end": "0x747fff",
+      "country": "Jordan",
+      "flag": "\ud83c\uddef\ud83c\uddf4",
+      "categories": [
+        {
+          "pattern": "^RJAF\\d{3}",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^J2-",
+      "start": "0x98000",
+      "end": "0x983ff",
+      "country": "Djibouti",
+      "flag": "\ud83c\udde9\ud83c\uddef"
+    },
+    {
+      "pattern": "^J3-",
+      "start": "0xcc000",
+      "end": "0xcc3ff",
+      "country": "Grenada",
+      "flag": "\ud83c\uddec\ud83c\udde9"
+    },
+    {
+      "pattern": "^J5-",
+      "start": "0x48000",
+      "end": "0x483ff",
+      "country": "Guinea Bissau",
+      "flag": "\ud83c\uddec\ud83c\uddfc"
+    },
+    {
+      "pattern": "^J6-",
+      "start": "0xc8c000",
+      "end": "0xc8c3ff",
+      "country": "Saint Lucia",
+      "flag": "\ud83c\uddf1\ud83c\udde8"
+    },
+    {
+      "pattern": "^J7-",
+      "country": "Dominica",
+      "flag": "\ud83c\udde9\ud83c\uddf2"
+    },
+    {
+      "pattern": "^J8-",
+      "start": "0xbc000",
+      "end": "0xbc3ff",
+      "country": "Saint Vincent and the Grenadines",
+      "flag": "\ud83c\uddfb\ud83c\udde8"
+    },
+    {
+      "pattern": "^LN-",
+      "start": "0x478000",
+      "end": "0x47ffff",
+      "country": "Norway",
+      "flag": "\ud83c\uddf3\ud83c\uddf4",
+      "categories": [
+        {
+          "pattern": "^LN-C",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^LN-G",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^LN-O",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^LN-Y",
+          "category": "Sports aircraft"
+        }
+      ]
+    },
+    {
+      "pattern": "^L(V|Q)-",
+      "start": "0xe00000",
+      "end": "0xe3ffff",
+      "country": "Argentina",
+      "flag": "\ud83c\udde6\ud83c\uddf7",
+      "categories": [
+        {
+          "pattern": "^LQ-",
+          "category": "State owned"
+        },
+        {
+          "pattern": "^(AE|E|PG)-",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^LX-",
+      "start": "0x4d0000",
+      "end": "0x4d03ff",
+      "country": "Luxembourg",
+      "flag": "\ud83c\uddf1\ud83c\uddfa",
+      "categories": [
+        {
+          "pattern": "^LX-B",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^LX-C",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^LX-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^LX-X",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^LX-N904",
+          "category": "NATO (AWACS)"
+        }
+      ]
+    },
+    {
+      "pattern": "^LY-",
+      "start": "0x503c00",
+      "end": "0x503fff",
+      "country": "Lithuania",
+      "flag": "\ud83c\uddf1\ud83c\uddf9"
+    },
+    {
+      "pattern": "^LZ-",
+      "start": "0x450000",
+      "end": "0x457fff",
+      "country": "Bulgaria",
+      "flag": "\ud83c\udde7\ud83c\uddec"
+    },
+    {
+      "pattern": "^N",
+      "start": "0xa00000",
+      "end": "0xafffff",
+      "country": "United States",
+      "flag": "\ud83c\uddfa\ud83c\uddf8"
+    },
+    {
+      "pattern": "^OB-",
+      "start": "0xe8c000",
+      "end": "0xe8cfff",
+      "country": "Peru",
+      "flag": "\ud83c\uddf5\ud83c\uddea",
+      "categories": [
+        {
+          "pattern": "^FAP-",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^OD-",
+      "start": "0x748000",
+      "end": "0x74ffff",
+      "country": "Lebanon",
+      "flag": "\ud83c\uddf1\ud83c\udde7"
+    },
+    {
+      "pattern": "^OE-",
+      "start": "0x440000",
+      "end": "0x447fff",
+      "country": "Austria",
+      "flag": "\ud83c\udde6\ud83c\uddf9",
+      "categories": [
+        {
+          "pattern": "^OE-B",
+          "category": "State owned"
+        },
+        {
+          "pattern": "^OE-X",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^OE-\\d{4}",
+          "category": "Gliders"
+        }
+      ]
+    },
+    {
+      "pattern": "^OH-",
+      "start": "0x460000",
+      "end": "0x467fff",
+      "country": "Finland",
+      "flag": "\ud83c\uddeb\ud83c\uddee",
+      "categories": [
+        {
+          "pattern": "^OH-\\d{3}",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^OH-G\\d{3}",
+          "category": "Autogyros"
+        },
+        {
+          "pattern": "^OH-U\\d{3}",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^PI-",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^OK-",
+      "start": "0x498000",
+      "end": "0x49ffff",
+      "country": "Czech Republic",
+      "flag": "\ud83c\udde8\ud83c\uddff",
+      "categories": [
+        {
+          "pattern": "^OK-[A-Z]{3}\\d{2}",
+          "category": "Microlights"
+        },
+        {
+          "pattern": "^OK-[0-9A]\\d{3}",
+          "country": "Gliders and Balloons"
+        }
+      ]
+    },
+    {
+      "pattern": "^OM-",
+      "start": "0x505c00",
+      "end": "0x505fff",
+      "country": "Slovakia",
+      "flag": "\ud83c\uddf8\ud83c\uddf0",
+      "categories": [
+        {
+          "pattern": "^OM-\\d{4}",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^OM-[A-Z]{4}",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^OM-M\\d{3}",
+          "category": "Microlights"
+        }
+      ]
+    },
+    {
+      "pattern": "^OO-",
+      "start": "0x448000",
+      "end": "0x44ffff",
+      "country": "Belgium",
+      "flag": "\ud83c\udde7\ud83c\uddea",
+      "categories": [
+        {
+          "pattern": "^OO-B",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^OO-Y",
+          "category": "Gliders"
+        }
+      ]
+    },
+    {
+      "pattern": "^OY-",
+      "start": "0x458000",
+      "end": "0x45ffff",
+      "country": "Denmark",
+      "flag": "\ud83c\udde9\ud83c\uddf0",
+      "categories": [
+        {
+          "pattern": "^OY-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^OY-.*X",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^OY-([89]|10)",
+          "category": "Ultralights"
+        }
+      ]
+    },
+    {
+      "pattern": "^P-",
+      "start": "0x720000",
+      "end": "0x727fff",
+      "country": "Democratic People's Republic of Korea",
+      "alt_name": "North Korea",
+      "flag": "\ud83c\uddf0\ud83c\uddf5"
+    },
+    {
+      "pattern": "^PH-",
+      "start": "0x480000",
+      "end": "0x487fff",
+      "country": "The Netherlands",
+      "flag": "\ud83c\uddf3\ud83c\uddf1",
+      "categories": [
+        {
+          "pattern": "^PH-AO",
+          "category": "KLM A332"
+        },
+        {
+          "pattern": "^PH-BF",
+          "category": "KLM B744"
+        },
+        {
+          "pattern": "^PH-B[CGX]",
+          "category": "KLM B737 series"
+        },
+        {
+          "pattern": "^PH-BH",
+          "category": "KLM B789"
+        },
+        {
+          "pattern": "^PH-BK",
+          "category": "KLM B78X"
+        },
+        {
+          "pattern": "^PH-BQ",
+          "category": "KLM B772"
+        },
+        {
+          "pattern": "^PH-BV",
+          "category": "KLM B77W"
+        },
+        {
+          "pattern": "^PH-C",
+          "category": "KLM Cargo"
+        },
+        {
+          "pattern": "^PH-E",
+          "category": "KLM Cityhopper"
+        },
+        {
+          "pattern": "^PH-\\d{3}",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^PH-\\d[A-Z]\\d",
+          "category": "Microlights"
+        },
+        {
+          "pattern": "^PH-\\d[A-Z]{2}",
+          "category": "Drones"
+        },
+        {
+          "pattern": "^PJ-",
+          "country": "Caribbean Netherlands",
+          "flag": "\ud83c\udde7\ud83c\uddf6"
+        },
+        {
+          "pattern": "^P4-",
+          "country": "Aruba",
+          "flag": "\ud83c\udde6\ud83c\uddfc"
+        }
+      ]
+    },
+    {
+      "pattern": "^PK-",
+      "start": "0x8a0000",
+      "end": "0x8a7fff",
+      "country": "Indonesia",
+      "flag": "\ud83c\uddee\ud83c\udde9"
+    },
+    {
+      "pattern": "^P(P|R|S|T|U)-",
+      "start": "0xe40000",
+      "end": "0xe7ffff",
+      "country": "Brazil",
+      "flag": "\ud83c\udde7\ud83c\uddf7",
+      "categories": [
+        {
+          "pattern": "^FAB\\d{4}",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^PZ-",
+      "start": "0xc8000",
+      "end": "0xc8fff",
+      "country": "Suriname",
+      "flag": "\ud83c\uddf8\ud83c\uddf7",
+      "categories": [
+        {
+          "pattern": "^PZ-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^PZ-T",
+          "category": "Commercial"
+        },
+        {
+          "pattern": "^PZ-U",
+          "category": "Agriculture"
+        }
+      ]
+    },
+    {
+      "pattern": "^P2-",
+      "start": "0x898000",
+      "end": "0x898fff",
+      "country": "Papua New Guinea",
+      "flag": "\ud83c\uddf5\ud83c\uddec"
+    },
+    {
+      "pattern": "^R(A|F)-",
+      "start": "0x100000",
+      "end": "0x1fffff",
+      "country": "Russia",
+      "flag": "\ud83c\uddf7\ud83c\uddfa",
+      "comments": "First two digits indicate owner",
+      "categories": [
+        {
+          "pattern": "^RA-\\d{4}[AK]",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^RA-\\d{4}G",
+          "category": "Private"
+        },
+        {
+          "pattern": "^RF-\\d{5}",
+          "category": "State owned"
+        }
+      ]
+    },
+    {
+      "pattern": "^RDPL-",
+      "start": "0x708000",
+      "end": "0x708fff",
+      "country": "Laos",
+      "flag": "\ud83c\uddf1\ud83c\udde6"
+    },
+    {
+      "pattern": "^RP-",
+      "start": "0x758000",
+      "end": "0x75ffff",
+      "country": "Philippines",
+      "flag": "\ud83c\uddf5\ud83c\udded",
+      "categories": [
+        {
+          "pattern": "^RP-\\d{4}",
+          "category": "State owned"
+        },
+        {
+          "pattern": "^RP-G",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^RP-U",
+          "category": "Drones"
+        },
+        {
+          "pattern": "^RP-X",
+          "category": "Experimental"
+        }
+      ]
+    },
+    {
+      "pattern": "^SE-",
+      "start": "0x4a8000",
+      "end": "0x4affff",
+      "country": "Sweden",
+      "flag": "\ud83c\uddf8\ud83c\uddea",
+      "categories": [
+        {
+          "pattern": "^SE-[A-CE-GIK-M]",
+          "category": "General"
+        },
+        {
+          "pattern": "^SE-[DR]",
+          "category": "Jets"
+        },
+        {
+          "pattern": "^SE-[HJ]",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^SE-[S-U]",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^SE-[VY]",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^SE-X",
+          "category": "Home builts"
+        },
+        {
+          "pattern": "^SE-Z",
+          "category": "Lighter than air"
+        },
+        {
+          "pattern": "^SE-A\\d{2}",
+          "category": "Test and Delivery"
+        }
+      ]
+    },
+    {
+      "pattern": "^S(N|P)-",
+      "start": "0x488000",
+      "end": "0x48ffff",
+      "country": "Poland",
+      "flag": "\ud83c\uddf5\ud83c\uddf1",
+      "categories": [
+        {
+          "pattern": "^SP-0",
+          "category": "Powered Gliders"
+        },
+        {
+          "pattern": "^SP-[1-38]",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^SP-B",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^SP-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^SP-L",
+          "category": "LOT Polish Airlines"
+        },
+        {
+          "pattern": "^SP-S",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^SP-X",
+          "category": "Autogyros"
+        },
+        {
+          "pattern": "^SP-Y",
+          "category": "Experimental"
+        },
+        {
+          "pattern": "^SN-.*[VX]P",
+          "category": "Police"
+        },
+        {
+          "pattern": "^SN-.*(YG|VS)",
+          "category": "Border Guard"
+        }
+      ]
+    },
+    {
+      "pattern": "^ST-",
+      "start": "0x7c000",
+      "end": "0x7cfff",
+      "country": "Sudan",
+      "flag": "\ud83c\uddf8\ud83c\udde9"
+    },
+    {
+      "pattern": "^SU-",
+      "start": "0x10000",
+      "end": "0x17fff",
+      "country": "Egypt",
+      "flag": "\ud83c\uddea\ud83c\uddec",
+      "categories": [
+        {
+          "pattern": "^SU-Y",
+          "country": "Palestine",
+          "flag": "\ud83c\uddf5\ud83c\uddf8",
+          "comment": "Temporary assignment"
+        }
+      ]
+    },
+    {
+      "pattern": "^SX-",
+      "start": "0x468000",
+      "end": "0x46ffff",
+      "country": "Greece",
+      "flag": "\ud83c\uddec\ud83c\uddf7",
+      "categories": [
+        {
+          "pattern": "^SX-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^SX-U",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^SX-\\d{3}",
+          "category": "Gliders"
+        }
+      ]
+    },
+    {
+      "pattern": "^S(2|3)-",
+      "start": "0x702000",
+      "end": "0x702fff",
+      "country": "Bangladesh",
+      "flag": "\ud83c\udde7\ud83c\udde9",
+      "categories": [
+        {
+          "pattern": "^S3-",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^S5-",
+      "start": "0x506c00",
+      "end": "0x506fff",
+      "country": "Slovenia",
+      "flag": "\ud83c\uddf8\ud83c\uddee",
+      "categories": [
+        {
+          "pattern": "^S5-1\\d{3}",
+          "category": "Gliders (oldtimer)"
+        },
+        {
+          "pattern": "^S5-3\\d{3}",
+          "category": "Gliders (single-seater)"
+        },
+        {
+          "pattern": "^S5-7\\d{3}",
+          "category": "Gliders (two-seater)"
+        },
+        {
+          "pattern": "^S5-D",
+          "category": "General"
+        },
+        {
+          "pattern": "^S5-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^S5-J",
+          "category": "Gyrocopters"
+        },
+        {
+          "pattern": "^S5-K",
+          "category": "Powered Gliders"
+        },
+        {
+          "pattern": "^S5-M",
+          "category": "Amateur built"
+        },
+        {
+          "pattern": "^S5-O",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^S5-P",
+          "category": "Ultralights"
+        }
+      ]
+    },
+    {
+      "pattern": "^S7-",
+      "start": "0x74000",
+      "end": "0x743ff",
+      "country": "Seychelles",
+      "flag": "\ud83c\uddf8\ud83c\udde8"
+    },
+    {
+      "pattern": "^S9-",
+      "start": "0x9e000",
+      "end": "0x9e3ff",
+      "country": "S\u00e3o Tom\u00e9 and Pr\u00edncipe",
+      "flag": "\ud83c\uddf8\ud83c\uddf9"
+    },
+    {
+      "pattern": "^TC-",
+      "start": "0x4b8000",
+      "end": "0x4bffff",
+      "country": "Turkey",
+      "flag": "\ud83c\uddf9\ud83c\uddf7",
+      "categories": [
+        {
+          "pattern": "^TC-B",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^TC-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^TC-P",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^TC-U",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^TC-Z",
+          "category": "Agriculture"
+        }
+      ]
+    },
+    {
+      "pattern": "^TF-",
+      "start": "0x4cc000",
+      "end": "0x4ccfff",
+      "country": "Iceland",
+      "flag": "\ud83c\uddee\ud83c\uddf8",
+      "categories": [
+        {
+          "pattern": "^TF-\\d{3}",
+          "category": "Microlights"
+        }
+      ]
+    },
+    {
+      "pattern": "^TG-",
+      "start": "0xb4000",
+      "end": "0xb4fff",
+      "country": "Guatemala",
+      "flag": "\ud83c\uddec\ud83c\uddf9"
+    },
+    {
+      "pattern": "^TI-",
+      "start": "0xae000",
+      "end": "0xaefff",
+      "country": "Costa Rica",
+      "flag": "\ud83c\udde8\ud83c\uddf7"
+    },
+    {
+      "pattern": "^TJ-",
+      "start": "0x34000",
+      "end": "0x34fff",
+      "country": "Cameroon",
+      "flag": "\ud83c\udde8\ud83c\uddf2"
+    },
+    {
+      "pattern": "^TL-",
+      "start": "0x6c000",
+      "end": "0x6cfff",
+      "country": "Central African Republic",
+      "flag": "\ud83c\udde8\ud83c\uddeb"
+    },
+    {
+      "pattern": "^TN-",
+      "start": "0x36000",
+      "end": "0x36fff",
+      "country": "Republic of the Congo",
+      "flag": "\ud83c\udde8\ud83c\uddec"
+    },
+    {
+      "pattern": "^TR-",
+      "start": "0x3e000",
+      "end": "0x3efff",
+      "country": "Gabon",
+      "flag": "\ud83c\uddec\ud83c\udde6"
+    },
+    {
+      "pattern": "^TS-",
+      "start": "0x28000",
+      "end": "0x2ffff",
+      "country": "Tunisia",
+      "flag": "\ud83c\uddf9\ud83c\uddf3"
+    },
+    {
+      "pattern": "^TT-",
+      "start": "0x84000",
+      "end": "0x84fff",
+      "country": "Chad",
+      "flag": "\ud83c\uddf9\ud83c\udde9"
+    },
+    {
+      "pattern": "^TU-",
+      "start": "0x38000",
+      "end": "0x38fff",
+      "country": "Ivory Coast",
+      "flag": "\ud83c\udde8\ud83c\uddee"
+    },
+    {
+      "pattern": "^TY-",
+      "start": "0x94000",
+      "end": "0x943ff",
+      "country": "Benin",
+      "flag": "\ud83c\udde7\ud83c\uddef"
+    },
+    {
+      "pattern": "^TZ-",
+      "start": "0x5c000",
+      "end": "0x5cfff",
+      "country": "Mali",
+      "flag": "\ud83c\uddf2\ud83c\uddf1"
+    },
+    {
+      "pattern": "^T2-",
+      "country": "Tuvalu",
+      "flag": "\ud83c\uddf9\ud83c\uddfb"
+    },
+    {
+      "pattern": "^T3-",
+      "start": "0xc8e000",
+      "end": "0xc8e3ff",
+      "country": "Kiribati",
+      "flag": "\ud83c\uddf0\ud83c\uddee"
+    },
+    {
+      "pattern": "^T7-",
+      "start": "0x500000",
+      "end": "0x5003ff",
+      "country": "San Marino",
+      "flag": "\ud83c\uddf8\ud83c\uddf2",
+      "categories": [
+        {
+          "pattern": "^T7-\\d{3}",
+          "category": "Microlights"
+        }
+      ]
+    },
+    {
+      "pattern": "^T8-",
+      "start": "0x684000",
+      "end": "0x6843ff",
+      "country": "Palau",
+      "flag": "\ud83c\uddf5\ud83c\uddfc"
+    },
+    {
+      "pattern": "^VH-",
+      "start": "0x7c0000",
+      "end": "0x7fffff",
+      "country": "Australia",
+      "flag": "\ud83c\udde6\ud83c\uddfa",
+      "categories": [
+        {
+          "pattern": "^A40",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^VN-",
+      "start": "0x888000",
+      "end": "0x88ffff",
+      "country": "Vietnam",
+      "flag": "\ud83c\uddfb\ud83c\uddf3"
+    },
+    {
+      "pattern": "^V2-",
+      "start": "0xca000",
+      "end": "0xca3ff",
+      "country": "Antigua and Barbuda",
+      "flag": "\ud83c\udde6\ud83c\uddec"
+    },
+    {
+      "pattern": "^V3-",
+      "start": "0xab000",
+      "end": "0xab3ff",
+      "country": "Belize",
+      "flag": "\ud83c\udde7\ud83c\uddff"
+    },
+    {
+      "pattern": "^V4-",
+      "country": "Saint Kitts and Nevis",
+      "flag": "\ud83c\uddf0\ud83c\uddf3"
+    },
+    {
+      "pattern": "^V5-",
+      "start": "0x201000",
+      "end": "0x2013ff",
+      "country": "Namibia",
+      "flag": "\ud83c\uddf3\ud83c\udde6"
+    },
+    {
+      "pattern": "^V6-",
+      "start": "0x681000",
+      "end": "0x6813ff",
+      "country": "Federated States of Micronesia",
+      "flag": "\ud83c\uddeb\ud83c\uddf2"
+    },
+    {
+      "pattern": "^V7-",
+      "start": "0x900000",
+      "end": "0x9003ff",
+      "country": "Marshall Islands",
+      "flag": "\ud83c\uddf2\ud83c\udded"
+    },
+    {
+      "pattern": "^V8-",
+      "start": "0x895000",
+      "end": "0x8953ff",
+      "country": "Brunei",
+      "flag": "\ud83c\udde7\ud83c\uddf3"
+    },
+    {
+      "pattern": "^UK",
+      "start": "0x507c00",
+      "end": "0x507fff",
+      "country": "Uzbekistan",
+      "flag": "\ud83c\uddfa\ud83c\uddff"
+    },
+    {
+      "pattern": "^UP-",
+      "start": "0x683000",
+      "end": "0x6833ff",
+      "country": "Kazakhstan",
+      "flag": "\ud83c\uddf0\ud83c\uddff"
+    },
+    {
+      "pattern": "^UR-",
+      "start": "0x508000",
+      "end": "0x50ffff",
+      "country": "Ukraine",
+      "flag": "\ud83c\uddfa\ud83c\udde6"
+    },
+    {
+      "pattern": "^VT-",
+      "start": "0x800000",
+      "end": "0x83ffff",
+      "country": "India",
+      "flag": "\ud83c\uddee\ud83c\uddf3"
+    },
+    {
+      "pattern": "^X(A|B|C)-",
+      "start": "0xd0000",
+      "end": "0xd7fff",
+      "country": "Mexico",
+      "flag": "\ud83c\uddf2\ud83c\uddfd",
+      "categories": [
+        {
+          "pattern": "^XA-",
+          "category": "Commercial"
+        },
+        {
+          "pattern": "^XB-",
+          "category": "Private"
+        },
+        {
+          "pattern": "^XC-",
+          "category": "State owned"
+        },
+        {
+          "pattern": "^FAM-",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^XT-",
+      "start": "0x9c000",
+      "end": "0x9cfff",
+      "country": "Burkina Faso",
+      "flag": "\ud83c\udde7\ud83c\uddeb"
+    },
+    {
+      "pattern": "^XU-",
+      "start": "0x70e000",
+      "end": "0x70efff",
+      "country": "Cambodia",
+      "flag": "\ud83c\uddf0\ud83c\udded"
+    },
+    {
+      "pattern": "^X(Y|Z)-",
+      "start": "0x704000",
+      "end": "0x704fff",
+      "country": "Myanmar",
+      "flag": "\ud83c\uddf2\ud83c\uddf2"
+    },
+    {
+      "pattern": "^YA-",
+      "start": "0x700000",
+      "end": "0x700fff",
+      "country": "Afghanistan",
+      "flag": "\ud83c\udde6\ud83c\uddeb"
+    },
+    {
+      "pattern": "^YI-",
+      "start": "0x728000",
+      "end": "0x72ffff",
+      "country": "Iraq",
+      "flag": "\ud83c\uddee\ud83c\uddf6"
+    },
+    {
+      "pattern": "^YJ-",
+      "start": "0xc90000",
+      "end": "0xc903ff",
+      "country": "Vanuatu",
+      "flag": "\ud83c\uddfb\ud83c\uddfa"
+    },
+    {
+      "pattern": "^YK-",
+      "start": "0x778000",
+      "end": "0x77ffff",
+      "country": "Syria",
+      "flag": "\ud83c\uddf8\ud83c\uddfe"
+    },
+    {
+      "pattern": "^YL-",
+      "start": "0x502c00",
+      "end": "0x502fff",
+      "country": "Latvia",
+      "flag": "\ud83c\uddf1\ud83c\uddfb"
+    },
+    {
+      "pattern": "^YN-",
+      "start": "0xc0000",
+      "end": "0xc0fff",
+      "country": "Nicaragua",
+      "flag": "\ud83c\uddf3\ud83c\uddee"
+    },
+    {
+      "pattern": "^YR-",
+      "start": "0x4a0000",
+      "end": "0x4a7fff",
+      "country": "Romania",
+      "flag": "\ud83c\uddf7\ud83c\uddf4",
+      "categories": [
+        {
+          "pattern": "^YR-\\d{4}",
+          "category": "Gliders and Ultralights"
+        },
+        {
+          "pattern": "^YR-D",
+          "category": "Drones"
+        }
+      ]
+    },
+    {
+      "pattern": "^YS-",
+      "start": "0xb2000",
+      "end": "0xb2fff",
+      "country": "El Salvador",
+      "flag": "\ud83c\uddf8\ud83c\uddfb"
+    },
+    {
+      "pattern": "^YU-",
+      "start": "0x4c0000",
+      "end": "0x4c7fff",
+      "country": "Serbia",
+      "flag": "\ud83c\uddf7\ud83c\uddf8",
+      "categories": [
+        {
+          "pattern": "^YU-\\d{4}",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^YU-[A-Z]\\d{3}",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^YU-D\\d{4}",
+          "category": "Drones"
+        }
+      ]
+    },
+    {
+      "pattern": "^YV",
+      "country": "Venezuela",
+      "start": "0xd8000",
+      "end": "0xdffff",
+      "flag": "\ud83c\uddfb\ud83c\uddea",
+      "categories": [
+        {
+          "pattern": "^YVO",
+          "category": "State owned"
+        }
+      ]
+    },
+    {
+      "pattern": "^Z-",
+      "start": "0x4000",
+      "end": "0x43ff",
+      "country": "Zimbabwe",
+      "flag": "\ud83c\uddff\ud83c\uddfc"
+    },
+    {
+      "pattern": "^ZA-",
+      "start": "0x501000",
+      "end": "0x5013ff",
+      "country": "Albania",
+      "flag": "\ud83c\udde6\ud83c\uddf1"
+    },
+    {
+      "pattern": "^Z(K|L|M)",
+      "start": "0xc80000",
+      "end": "0xc87fff",
+      "country": "New Zealand",
+      "flag": "\ud83c\uddf3\ud83c\uddff",
+      "categories": [
+        {
+          "pattern": "^ZK-F[A-B]",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^ZK-G",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^ZK-[HI]",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^ZK-R[A-D]",
+          "category": "Gyrocopters"
+        }
+      ]
+    },
+    {
+      "pattern": "^ZP-",
+      "start": "0xe88000",
+      "end": "0xe88fff",
+      "country": "Paraguay",
+      "flag": "\ud83c\uddf5\ud83c\uddfe"
+    },
+    {
+      "pattern": "^Z(S|T|U)",
+      "start": "0x8000",
+      "end": "0xffff",
+      "country": "South Africa",
+      "flag": "\ud83c\uddff\ud83c\udde6"
+    },
+    {
+      "pattern": "^Z3-",
+      "start": "0x512000",
+      "end": "0x5123ff",
+      "country": "North Macedonia",
+      "alt_name": "Macedonia",
+      "flag": "\ud83c\uddf2\ud83c\uddf0",
+      "categories": [
+        {
+          "pattern": "^Z3-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^Z3-UA-",
+          "category": "Ultralights"
+        },
+        {
+          "pattern": "^Z3-O",
+          "category": "Balloons"
+        }
+      ]
+    },
+    {
+      "pattern": "^Z6",
+      "country": "Kosovo",
+      "flag": "\ud83c\uddfd\ud83c\uddf0"
+    },
+    {
+      "pattern": "^3A-",
+      "start": "0x4d4000",
+      "end": "0x4d43ff",
+      "country": "Monaco",
+      "flag": "\ud83c\uddf2\ud83c\udde8"
+    },
+    {
+      "pattern": "^3B-",
+      "start": "0x60000",
+      "end": "0x603ff",
+      "country": "Mauritius",
+      "flag": "\ud83c\uddf2\ud83c\uddfa"
+    },
+    {
+      "pattern": "^3C-",
+      "start": "0x42000",
+      "end": "0x42fff",
+      "country": "Equatorial Guinea",
+      "flag": "\ud83c\uddec\ud83c\uddf6"
+    },
+    {
+      "pattern": "^3DC-",
+      "start": "0x7a000",
+      "end": "0x7a3ff",
+      "country": "Eswatini",
+      "alt_name": "Swaziland",
+      "flag": "\ud83c\uddf8\ud83c\uddff"
+    },
+    {
+      "pattern": "^3X-",
+      "start": "0x46000",
+      "end": "0x46fff",
+      "country": "Guinea",
+      "flag": "\ud83c\uddec\ud83c\uddf3"
+    },
+    {
+      "pattern": "^4K-",
+      "start": "0x600800",
+      "end": "0x600bff",
+      "country": "Azerbaijan",
+      "flag": "\ud83c\udde6\ud83c\uddff"
+    },
+    {
+      "pattern": "^4L-",
+      "start": "0x514000",
+      "end": "0x5143ff",
+      "country": "Georgia",
+      "flag": "\ud83c\uddec\ud83c\uddea"
+    },
+    {
+      "pattern": "^4O-",
+      "start": "0x516000",
+      "end": "0x5163ff",
+      "country": "Montenegro",
+      "flag": "\ud83c\uddf2\ud83c\uddea"
+    },
+    {
+      "pattern": "^4R-",
+      "start": "0x770000",
+      "end": "0x777fff",
+      "country": "Sri Lanka",
+      "flag": "\ud83c\uddf1\ud83c\uddf0"
+    },
+    {
+      "pattern": "^4U-",
+      "country": "United Nations",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "pattern": "^4W-",
+      "country": "Timor-Leste",
+      "alt_name": "East Timor",
+      "flag": "\ud83c\uddf9\ud83c\uddf1"
+    },
+    {
+      "pattern": "^4X-",
+      "start": "0x738000",
+      "end": "0x73ffff",
+      "country": "Israel",
+      "flag": "\ud83c\uddee\ud83c\uddf1"
+    },
+    {
+      "pattern": "^5A-",
+      "start": "0x18000",
+      "end": "0x1ffff",
+      "country": "Libya",
+      "flag": "\ud83c\uddf1\ud83c\uddfe"
+    },
+    {
+      "pattern": "^5B-",
+      "start": "0x4c8000",
+      "end": "0x4c83ff",
+      "country": "Cyprus",
+      "flag": "\ud83c\udde8\ud83c\uddfe"
+    },
+    {
+      "pattern": "^5H-",
+      "start": "0x80000",
+      "end": "0x80fff",
+      "country": "Tanzania",
+      "flag": "\ud83c\uddf9\ud83c\uddff"
+    },
+    {
+      "pattern": "^5N-",
+      "start": "0x64000",
+      "end": "0x64fff",
+      "country": "Nigeria",
+      "flag": "\ud83c\uddf3\ud83c\uddec"
+    },
+    {
+      "pattern": "^5R-",
+      "start": "0x54000",
+      "end": "0x54fff",
+      "country": "Madagascar",
+      "flag": "\ud83c\uddf2\ud83c\uddec"
+    },
+    {
+      "pattern": "^5T-",
+      "start": "0x5e000",
+      "end": "0x5e3ff",
+      "country": "Mauritania",
+      "flag": "\ud83c\uddf2\ud83c\uddf7"
+    },
+    {
+      "pattern": "^5U-",
+      "start": "0x62000",
+      "end": "0x62fff",
+      "country": "Niger",
+      "flag": "\ud83c\uddf3\ud83c\uddea"
+    },
+    {
+      "pattern": "^5V-",
+      "start": "0x88000",
+      "end": "0x88fff",
+      "country": "Togo",
+      "flag": "\ud83c\uddf9\ud83c\uddec"
+    },
+    {
+      "pattern": "^5W-",
+      "start": "0x902000",
+      "end": "0x9023ff",
+      "country": "Samoa",
+      "flag": "\ud83c\uddfc\ud83c\uddf8"
+    },
+    {
+      "pattern": "^5X-",
+      "start": "0x68000",
+      "end": "0x68fff",
+      "country": "Uganda",
+      "flag": "\ud83c\uddfa\ud83c\uddec"
+    },
+    {
+      "pattern": "^5Y-",
+      "start": "0x4c000",
+      "end": "0x4cfff",
+      "country": "Kenya",
+      "flag": "\ud83c\uddf0\ud83c\uddea"
+    },
+    {
+      "pattern": "^6O-",
+      "start": "0x78000",
+      "end": "0x78fff",
+      "country": "Somalia",
+      "flag": "\ud83c\uddf8\ud83c\uddf4"
+    },
+    {
+      "pattern": "^6(V|W)-",
+      "start": "0x70000",
+      "end": "0x70fff",
+      "country": "Senegal",
+      "flag": "\ud83c\uddf8\ud83c\uddf3"
+    },
+    {
+      "pattern": "^6Y-",
+      "start": "0xbe000",
+      "end": "0xbefff",
+      "country": "Jamaica",
+      "flag": "\ud83c\uddef\ud83c\uddf2",
+      "categories": [
+        {
+          "pattern": "^JDF",
+          "category": "Air Force"
+        }
+      ]
+    },
+    {
+      "pattern": "^7O-",
+      "start": "0x890000",
+      "end": "0x890fff",
+      "country": "Yemen",
+      "flag": "\ud83c\uddfe\ud83c\uddea"
+    },
+    {
+      "pattern": "^7P-",
+      "start": "0x4a000",
+      "end": "0x4a3ff",
+      "country": "Lesotho",
+      "flag": "\ud83c\uddf1\ud83c\uddf8"
+    },
+    {
+      "pattern": "^7Q-",
+      "start": "0x58000",
+      "end": "0x58fff",
+      "country": "Malawi",
+      "flag": "\ud83c\uddf2\ud83c\uddfc"
+    },
+    {
+      "pattern": "^7T-",
+      "start": "0xa0000",
+      "end": "0xa7fff",
+      "country": "Algeria",
+      "flag": "\ud83c\udde9\ud83c\uddff",
+      "categories": [
+        {
+          "pattern": "^7T-W",
+          "category": "State owned"
+        }
+      ]
+    },
+    {
+      "pattern": "^8P-",
+      "start": "0xaa000",
+      "end": "0xaa3ff",
+      "country": "Barbados",
+      "flag": "\ud83c\udde7\ud83c\udde7"
+    },
+    {
+      "pattern": "^8Q-",
+      "start": "0x5a000",
+      "end": "0x5a3ff",
+      "country": "Maldives",
+      "flag": "\ud83c\uddf2\ud83c\uddfb"
+    },
+    {
+      "pattern": "^8R-",
+      "start": "0xb6000",
+      "end": "0xb6fff",
+      "country": "Guyana",
+      "flag": "\ud83c\uddec\ud83c\uddfe"
+    },
+    {
+      "pattern": "^9A-",
+      "start": "0x501c00",
+      "end": "0x501fff",
+      "country": "Croatia",
+      "flag": "\ud83c\udded\ud83c\uddf7",
+      "categories": [
+        {
+          "pattern": "^9A-G",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^9A-H",
+          "category": "Helicopters"
+        },
+        {
+          "pattern": "^9A-O",
+          "category": "Balloons"
+        },
+        {
+          "pattern": "^9A-U",
+          "category": "Ultralights"
+        }
+      ]
+    },
+    {
+      "pattern": "^9G-",
+      "start": "0x44000",
+      "end": "0x44fff",
+      "country": "Ghana",
+      "flag": "\ud83c\uddec\ud83c\udded"
+    },
+    {
+      "pattern": "^9H-",
+      "start": "0x4d2000",
+      "end": "0x4d23ff",
+      "country": "Malta",
+      "flag": "\ud83c\uddf2\ud83c\uddf9"
+    },
+    {
+      "pattern": "^9J-",
+      "start": "0x8a000",
+      "end": "0x8afff",
+      "country": "Zambia",
+      "flag": "\ud83c\uddff\ud83c\uddf2"
+    },
+    {
+      "pattern": "^9K-",
+      "start": "0x706000",
+      "end": "0x706fff",
+      "country": "Kuwait",
+      "flag": "\ud83c\uddf0\ud83c\uddfc"
+    },
+    {
+      "pattern": "^9L-",
+      "start": "0x76000",
+      "end": "0x763ff",
+      "country": "Sierra Leone",
+      "flag": "\ud83c\uddf8\ud83c\uddf1"
+    },
+    {
+      "pattern": "^9M-",
+      "start": "0x750000",
+      "end": "0x757fff",
+      "country": "Malaysia",
+      "flag": "\ud83c\uddf2\ud83c\uddfe",
+      "categories": [
+        {
+          "pattern": "^M\\d{2}\\d?-\\d{2}",
+          "category": "Air Force"
+        },
+        {
+          "pattern": "^9M-U",
+          "category": "Microlights"
+        }
+      ]
+    },
+    {
+      "pattern": "^9N-",
+      "start": "0x70a000",
+      "end": "0x70afff",
+      "country": "Nepal",
+      "flag": "\ud83c\uddf3\ud83c\uddf5",
+      "categories": [
+        {
+          "pattern": "^9N-R",
+          "category": "State owned"
+        }
+      ]
+    },
+    {
+      "pattern": "^9(O|Q|S)-",
+      "start": "0x8c000",
+      "end": "0x8cfff",
+      "country": "Democratic Republic of the Congo",
+      "flag": "\ud83c\udde8\ud83c\udde9"
+    },
+    {
+      "pattern": "^9U-",
+      "start": "0x32000",
+      "end": "0x32fff",
+      "country": "Burundi",
+      "flag": "\ud83c\udde7\ud83c\uddee"
+    },
+    {
+      "pattern": "^9V-",
+      "start": "0x768000",
+      "end": "0x76ffff",
+      "country": "Singapore",
+      "flag": "\ud83c\uddf8\ud83c\uddec"
+    },
+    {
+      "pattern": "^9XR-",
+      "start": "0x6e000",
+      "end": "0x6efff",
+      "country": "Rwanda",
+      "flag": "\ud83c\uddf7\ud83c\uddfc"
+    },
+    {
+      "pattern": "^9Y-",
+      "start": "0xc6000",
+      "end": "0xc6fff",
+      "country": "Trinidad and Tobago",
+      "flag": "\ud83c\uddf9\ud83c\uddf9"
+    },
+    {
+      "start": "0xf00000",
+      "end": "0xf07fff",
+      "country": "ICAO (temporary)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0x899000",
+      "end": "0x8993ff",
+      "country": "ICAO (special use)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0xf09000",
+      "end": "0xf093ff",
+      "country": "ICAO (special use)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0x200000",
+      "end": "0x27ffff",
+      "country": "Unassigned (AFI region)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0x280000",
+      "end": "0x28ffff",
+      "country": "Unassigned (SAM region)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0x500000",
+      "end": "0x5fffff",
+      "country": "Unassigned (EUR / NAT regions)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0x600000",
+      "end": "0x67ffff",
+      "country": "Unassigned (MID region)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0x680000",
+      "end": "0x6fffff",
+      "country": "Unassigned (ASIA region)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0x900000",
+      "end": "0x9fffff",
+      "country": "Unassigned (NAM / PAC regions)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0xb00000",
+      "end": "0xbfffff",
+      "country": "Unassigned (reserved for future use)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0xec0000",
+      "end": "0xefffff",
+      "country": "Unassigned (CAR region)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0xd00000",
+      "end": "0xdfffff",
+      "country": "Unassigned (reserved for future use)",
+      "flag": "\ud83c\udff3"
+    },
+    {
+      "start": "0xf00000",
+      "end": "0xffffff",
+      "country": "Unassigned (reserved for future use)",
+      "flag": "\ud83c\udff3"
+    }
+  ],
+  "properties": "Assignment table from Appendix to Chapter 9 of Annex 10 Vol III, Second Edition, July 2007 (with amendments through 88-A, 14/11/2013), see also https://github.com/wiedehopf/tar1090/blob/master/html/flags.js Registration patterns and refinements from the Wikipedia page, see https://en.wikipedia.org/wiki/List_of_aircraft_registration_prefixes Official document: Aircraft Nationality Marks, National Emblems and Common Marks (ICAO); Emoji input from https://flagpedia.net/emoji"
+}

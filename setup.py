@@ -39,6 +39,7 @@ setup(
     packages=find_packages(),
     package_data={
         "traffic.data.airspaces": ["eurofirs.json"],
+        "traffic.data.basic": ["patterns.json"],
         "traffic.data.samples": list(
             file.relative_to(sample_dir).as_posix()
             for file in sample_dir.glob("**/*.json*")  # .json and .json.gz

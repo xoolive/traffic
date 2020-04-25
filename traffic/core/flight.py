@@ -530,7 +530,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         flight_id = self.flight_id
 
         if number is not None:
-            title += f" / {number}"
+            title += f" – {number}"
 
         if flight_id is not None:
             title += f" ({flight_id})"
@@ -633,15 +633,25 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
     @property
     def aircraft(self) -> Optional[str]:
+        from ..data import aircraft
+
         if not isinstance(self.icao24, str):
             return None
 
         res = str(self.icao24)
-        registration = self.registration
-        typecode = self.typecode
+        ac = aircraft.get_unique(res)
+
+        if ac is None:
+            return res
+
+        registration = ac["registration"]
+        typecode = ac["typecode"]
+        flag = ac["flag"]
 
         if registration is not None:
-            res += f" / {registration}"
+            res += f" · {flag} {registration}"
+        else:
+            res = f"{flag} {res}"
 
         if typecode is not None:
             res += f" ({typecode})"
