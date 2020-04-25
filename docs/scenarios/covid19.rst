@@ -17,7 +17,11 @@ Similar initiatives to analyse the impact of COVID-19 on aviation are available 
 - Eurocontrol PRU analysis on their `website <https://ansperformance.eu/covid/>`_, with downloadable data
 - beautiful maps by the `Washington Post <https://www.washingtonpost.com/graphics/2020/business/coronavirus-airline-industry-collapse/>`_
 - FlightRadar24 view on their `blog <https://www.flightradar24.com/blog/tracking-marchs-historic-drop-in-air-traffic/>`_
+
+With the same dataset, we found:
+
 - a focus on American airports by `@ethanklapper <https://twitter.com/ethanklapper/status/1246167346693144578>`_ on Twitter
+- an excellent Observable notebook by `@lounjukk <https://observablehq.com/@lounjukk/flights-during-covid-19-pandemic>`_ replaying all the traffic on a world map
 
 This list may not be exhaustive. You may `open an issue <https://github.com/xoolive/traffic/issues/new>`_ on the github of the library in order to reference more websites.
 
