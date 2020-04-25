@@ -198,16 +198,16 @@ class Traffic(HBoxMixin, GeographyMixin):
     def __getitem__(self, index: int) -> Optional[Flight]:
         ...
 
-    @overload  # noqa: F811
-    def __getitem__(self, index: str) -> Optional[Flight]:
+    @overload
+    def __getitem__(self, index: str) -> Optional[Flight]:  # noqa: F811
         ...
 
-    @overload  # noqa: F811
-    def __getitem__(self, index: slice) -> Optional["Traffic"]:
+    @overload
+    def __getitem__(self, index: slice) -> Optional["Traffic"]:  # noqa: F811
         ...
 
-    @overload  # noqa: F811
-    def __getitem__(self, index: IterStr) -> Optional["Traffic"]:
+    @overload
+    def __getitem__(self, index: IterStr) -> Optional["Traffic"]:  # noqa: F811
         ...
 
     def __getitem__(  # noqa: F811
