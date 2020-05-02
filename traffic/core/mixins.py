@@ -1,5 +1,5 @@
 import warnings
-from functools import lru_cache, partial
+from functools import lru_cache
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Type, TypeVar, Union
 
@@ -345,12 +345,11 @@ class ShapelyMixin(object):
                 lat_0=(bounds[1] + bounds[3]) / 2,
                 lon_0=(bounds[0] + bounds[2]) / 2,
             )
-        projected_shape = transform(
-            partial(
-                pyproj.transform, pyproj.Proj(init="EPSG:4326"), projection
-            ),
-            self.shape,
+
+        transformer = pyproj.Transformer.from_proj(
+            pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
+        projected_shape = transform(transformer.transform, self.shape,)
 
         if not projected_shape.is_valid:
             warnings.warn("The chosen projection is invalid for current shape")
@@ -389,11 +388,11 @@ class GeographyMixin(DataFrameMixin):
                 lon_0=self.data.longitude.mean(),
             )
 
-        x, y = pyproj.transform(
-            pyproj.Proj(init="EPSG:4326"),
-            projection,
-            self.data.longitude.values,
-            self.data.latitude.values,
+        transformer = pyproj.Transformer.from_proj(
+            pyproj.Proj("epsg:4326"), projection, always_xy=True
+        )
+        x, y = transformer.transform(
+            self.data.longitude.values, self.data.latitude.values,
         )
 
         return self.__class__(self.data.assign(x=x, y=y))

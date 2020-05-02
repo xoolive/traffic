@@ -117,9 +117,10 @@ def douglas_peucker(
             lon_0=lon.mean(),
         )
 
-        x, y = pyproj.transform(
-            pyproj.Proj(init="EPSG:4326"), projection, lon.values, lat.values
+        transformer = pyproj.Transformer.from_proj(
+            pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
+        x, y = transformer.transform(lon.values, lat.values,)
     else:
         if df is not None:
             x, y = df[x].values, df[y].values
