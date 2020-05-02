@@ -4,6 +4,8 @@ import os
 import warnings
 from pathlib import Path
 
+# importing ipyleaflet here avoids annoying warnings
+import ipyleaflet  # noqa: F401
 import pandas as pd
 import pkg_resources
 from appdirs import user_cache_dir, user_config_dir

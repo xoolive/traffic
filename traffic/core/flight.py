@@ -3,7 +3,6 @@
 import logging
 import warnings
 from datetime import datetime, timedelta, timezone
-from functools import partial
 from operator import attrgetter
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
@@ -1412,12 +1411,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
                 lon_0=(bounds[0] + bounds[2]) / 2,
             )
 
-            projected_shape = transform(
-                partial(
-                    pyproj.transform, pyproj.Proj(init="EPSG:4326"), projection
-                ),
-                other,
+            transformer = pyproj.Transformer.from_proj(
+                pyproj.Proj("epsg:4326"), projection, always_xy=True
             )
+            projected_shape = transform(transformer.transform, other,)
+
             self_xy = self.compute_xy(projection)
 
             return self.assign(

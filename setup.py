@@ -62,7 +62,7 @@ setup(
         "scipy",
         "matplotlib",
         "pandas>=1.0.0",
-        "pyproj",  # required to build cartopy from source (better be explicit)
+        "pyproj>=2.0",
         "Cartopy",
         "Shapely",
         "requests",
