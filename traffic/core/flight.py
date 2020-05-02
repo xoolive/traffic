@@ -239,21 +239,13 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         if self.shape is None:
             return None
 
-        coords_only = self.query("latitude == latitude")
-        if coords_only is None:
-            return None
-
-        shape = coords_only.shape
-        if shape is None:
-            return None
-
-        if len(shape.coords) < 1000:
+        if len(self.shape.coords) < 1000:
             return super()._repr_svg_()
 
         return super(
             Flight,
             # cast should be useless but return type of simplify() is Union
-            cast(Flight, coords_only.simplify(25)),
+            cast(Flight, self.simplify(25)),
         )._repr_svg_()
 
     def __repr__(self) -> str:
@@ -1414,7 +1406,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             transformer = pyproj.Transformer.from_proj(
                 pyproj.Proj("epsg:4326"), projection, always_xy=True
             )
-            projected_shape = transform(transformer.transform, other,)
+            projected_shape = transform(transformer.transform, other)
 
             self_xy = self.compute_xy(projection)
 
