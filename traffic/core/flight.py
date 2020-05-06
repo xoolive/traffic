@@ -1000,10 +1000,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             "TAS": 23,
             "Mach": 23,
             "groundspeed": 5,
-            "longitude": 15,  # maybe EKF is a better idea... TODO
-            "latitude": 15,
             "compute_gs": (17, 53),
             "onground": 3,
+            "latitude": 1,  # the method doesn't apply well to positions
+            "longitude": 1,
             **kwargs,
         }
 
@@ -1077,6 +1077,16 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             data = data.assign(onground=data.onground.astype(bool))
 
         return self.__class__(data)
+
+    def filter_position(self, cascades: int = 2) -> Optional["Flight"]:
+        flight: Optional["Flight"] = self
+        for _ in range(cascades):
+            if flight is None:
+                return None
+            flight = flight.cumulative_distance().query(
+                "compute_gs < compute_gs.mean() + 3 * compute_gs.std()"
+            )
+        return flight
 
     def comet(self, **kwargs) -> "Flight":
         """Computes a comet for a trajectory.

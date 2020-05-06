@@ -346,6 +346,9 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @property_cache
     def length(self):
+        ids_ = self.flight_ids
+        if ids_ is not None:
+            return len(ids_)
         return sum(1 for _ in self)
 
     def __len__(self):
@@ -403,6 +406,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         ] = lambda x: x.bfill().ffill(),
         **kwargs,
     ):
+        ...
+
+    @lazy_evaluation()
+    def filter_position(self, cascades: int = 2):
         ...
 
     @lazy_evaluation()
