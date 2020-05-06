@@ -2,7 +2,6 @@
 
 import json
 from collections import defaultdict
-from functools import partial
 from pathlib import Path
 from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple,
                     TypeVar, Union)
@@ -111,12 +110,10 @@ class Airspace(ShapelyMixin):
         )
 
         for polygon in self:
-            projected_shape = transform(
-                partial(
-                    pyproj.transform, pyproj.Proj(init="EPSG:4326"), projection
-                ),
-                polygon.polygon,
+            transformer = pyproj.Transformer.from_proj(
+                pyproj.Proj("epsg:4326"), projection, always_xy=True
             )
+            projected_shape = transform(transformer.transform, polygon.polygon)
             title += f"<li>{polygon.lower}, {polygon.upper}</li>"
             shapes += projected_shape.simplify(1e3)._repr_svg_()
         title += "</ul>"
