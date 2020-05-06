@@ -93,14 +93,17 @@ def test_chaining() -> None:
         .airborne()
         .eval(max_workers=4)
     )
-    flight_id: str = sw_filtered.flight_ids.pop()
-    handle = sw_filtered[flight_id]
-    assert handle is not None
-    assert handle.callsign == flight_id.split("_")[0]
+
     assert len(sw_filtered) == 784
     assert sw_filtered.data.shape[0] > 80000
     assert min(len(f) for f in sw_filtered) == 60
     assert sw_filtered.data.altitude.max() == 47000.0
+
+    # not smart to pop this out
+    flight_id: str = sw_filtered.flight_ids.pop()
+    handle = sw_filtered[flight_id]
+    assert handle is not None
+    assert handle.callsign == flight_id.split("_")[0]
 
 
 def test_none():
