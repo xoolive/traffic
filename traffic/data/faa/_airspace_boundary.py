@@ -1,3 +1,4 @@
+import logging
 from typing import Dict
 
 from shapely.geometry import shape
@@ -36,6 +37,10 @@ class Airspace_Boundary(ADDS_FAA_OpenData):
                 designator=feat["properties"]["IDENT"],
                 properties=feat["properties"],
             )
+
+            if not airspace.shape.is_valid:
+                logging.warning(f"Invalid shape part {name}, skipping...")
+                continue
 
             if name in airspaces:
                 airspaces[name] += airspace
