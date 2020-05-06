@@ -58,6 +58,6 @@ class MyRtlReader(RtlReader):
 
             self.decoder.process(
                 datetime.fromtimestamp(t, timezone.utc),
-                msg.encode(),
+                msg,
                 uncertainty=self.uncertainty,
             )

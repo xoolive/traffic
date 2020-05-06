@@ -16,6 +16,7 @@ from typing import (
 
 import pandas as pd
 import pyModeS as pms
+
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
@@ -788,7 +789,7 @@ class Decoder:
                         datetime.fromtimestamp(
                             float(line.strip().split(",")[0]), timezone.utc
                         ),
-                        line.strip().split(",")[1][18:].encode(),
+                        line.strip().split(",")[1][18:],
                     )
                     for line in all_lines
                 ),
@@ -836,7 +837,7 @@ class Decoder:
             if i & redefine_freq == redefine_freq:
                 decoder.redefine_reference(now)
 
-            decoder.process(now, msg[18:].encode(), uncertainty=uncertainty)
+            decoder.process(now, msg[18:], uncertainty=uncertainty)
 
         return decoder
 
@@ -908,7 +909,7 @@ class Decoder:
                 ):
                     decoder.redefine_reference(now)
 
-                decoder.process(now, msg[18:].encode(), uncertainty=uncertainty)
+                decoder.process(now, msg[18:], uncertainty=uncertainty)
 
         decoder.thread = StoppableThread(target=decode)
         decoder.thread.start()
@@ -979,7 +980,7 @@ class Decoder:
             )
 
     def process_msgs(
-        self, msgs: Iterable[Tuple[datetime, bytes]], uncertainty: bool = False
+        self, msgs: Iterable[Tuple[datetime, str]], uncertainty: bool = False
     ) -> None:
 
         for i, (time, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
@@ -990,7 +991,7 @@ class Decoder:
     def process(
         self,
         time: datetime,
-        msg: bytes,
+        msg: str,
         *args,
         uncertainty: bool = False,
         spd: Optional[float] = None,

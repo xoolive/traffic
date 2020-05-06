@@ -77,7 +77,7 @@ setup(
         # "keplergl",  # Kepler.gl for notebooks
         "tqdm>=4.28",  # progressbars
         "cartotools>=1.2.1",
-        "pyModeS>=2.5",
+        "pyModeS>=2.8",
     ],
     classifiers=[
         # How mature is this project? Common values are
