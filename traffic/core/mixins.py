@@ -27,6 +27,9 @@ class DataFrameMixin(object):
     def __init__(self, data: pd.DataFrame, *args, **kwargs) -> None:
         self.data: pd.DataFrame = data
 
+    def __sizeof__(self) -> int:
+        return int(self.data.memory_usage().sum())
+
     @classmethod
     def from_file(
         cls: Type[T], filename: Union[Path, str], **kwargs
