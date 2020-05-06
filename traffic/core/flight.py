@@ -669,7 +669,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             return None
         return self.__class__(df)
 
-    def last(self, **kwargs) -> Optional["Flight"]:
+    # TODO value must be timedelta_like
+    def last(self, value: Optional[str] = None, **kwargs) -> Optional["Flight"]:
         """Returns the last n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -679,7 +680,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
         >>> flight.last(minutes=10)
         """
-        delta = timedelta(**kwargs)
+        if value is not None:
+            delta = pd.Timedelta(value)
+        else:
+            delta = timedelta(**kwargs)
         bound = self.stop - delta  # noqa: F841 => used in the query
         # full call is necessary to keep @bound as a local variable
         df = self.data.query("timestamp > @bound")
@@ -1624,6 +1628,26 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         return clipped_flight
 
     # -- OpenSky specific methods --
+
+    def query_opensky_sensors(self, where_condition: str = "") -> pd.DataFrame:
+        from ..data import opensky
+
+        return (
+            opensky.request(
+                "select s.ITEM, count(*) from state_vectors_data4, "
+                "state_vectors_data4.serials s "
+                f"where icao24='{self.icao24}' and "
+                f"{where_condition} "
+                "{before_time}<=time and time < {after_time} and "
+                "{before_hour}<=hour and hour < {after_hour} "
+                "group by s.ITEM;",
+                self.start,
+                self.stop,
+                columns=["serial", "count"],
+            )
+            .groupby("serial")
+            .sum()
+        )
 
     def query_opensky(self) -> Optional["Flight"]:
         """Returns data from the same Flight as stored in OpenSky database.

@@ -2,7 +2,7 @@
 
 from operator import attrgetter
 from typing import (
-    TYPE_CHECKING, Iterable, Iterator, List, Optional, Union, cast
+    TYPE_CHECKING, Callable, Iterable, Iterator, List, Optional, Union, cast
 )
 
 import numpy as np
@@ -18,6 +18,11 @@ if TYPE_CHECKING:
 
 
 class NavigationFeatures:
+
+    # white lies
+    shape: Optional[LineString]
+    query: Callable[["NavigationFeatures", str], Optional["Flight"]]
+
     def closest_point(
         self, points: Union[List["PointMixin"], "PointMixin"]
     ) -> pd.Series:
@@ -194,7 +199,9 @@ class NavigationFeatures:
         )
 
     def aligned_on_ils(
-        self, airport: Union[str, "Airport"]
+        # TODO None may not be a so good idea
+        self,
+        airport: Union[None, str, "Airport"],
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
@@ -235,6 +242,9 @@ class NavigationFeatures:
         # The following cast secures the typing
         self = cast("Flight", self)
 
+        if airport is None:
+            airport = self.landing_airport()
+
         _airport = airports[airport] if isinstance(airport, str) else airport
         if _airport is None or _airport.runways.shape.is_empty:
             return None
@@ -243,8 +253,8 @@ class NavigationFeatures:
 
         for threshold in _airport.runways.list:
             tentative = (
-                self.bearing(threshold,)
-                .distance(threshold,)
+                self.bearing(threshold)
+                .distance(threshold)
                 .assign(
                     b_diff=lambda df: df.distance
                     * (np.radians(df.bearing - threshold.bearing).abs())
@@ -287,3 +297,59 @@ class NavigationFeatures:
                         and chunk.min("distance") < min_distance
                     ):
                         yield chunk.assign(navaid=navpoint.name)
+
+    def self_intersections(self) -> int:
+        # documentation TODO
+        simplified: "Flight" = self.simplify(25)  # type: ignore
+        if simplified.shape is None:
+            return -1
+        return len(simplified.shape.buffer(1e-3).interiors)
+
+    def holding_pattern(
+        self,
+        min_altitude=7000,
+        turning_threshold=.5,
+        low_limit=pd.Timedelta("30 seconds"),
+        high_limit=pd.Timedelta("10 minutes"),
+        turning_limit = pd.Timedelta("5 minutes"),
+    ) -> Iterator["Flight"]:
+        # documentation TODO
+        # thresholds (set arguments? TODO)
+
+        # avoid parts that are really way too low
+        alt_above = self.query(f"altitude > {min_altitude}")
+        if alt_above is None:
+            return
+
+        straight_line = (
+            alt_above.assign(
+                turning_rate=lambda x: x.track_unwrapped.diff()
+                / x.timestamp.diff().dt.total_seconds()
+            )
+            .filter(turning_rate=17)
+            .query(f"turning_rate.abs() < {turning_threshold}")
+        )
+        if straight_line is None:
+            return
+
+        chunk_candidates = list(
+            (chunk.start, chunk.duration, chunk.mean("track_unwrapped"), chunk)
+            for chunk in straight_line.split("10s")
+            if low_limit <= chunk.duration < high_limit
+        )
+
+        next_ = None
+        for (
+            (start1, duration1, track1, chunk1),
+            (start2, _, track2, chunk2),
+        ) in zip(chunk_candidates, chunk_candidates[1:]):
+            if (
+                start2 - start1 - duration1 < turning_limit
+                and abs(abs(track1 - track2) - 180) < 15
+            ):
+                yield chunk1
+                next_ = chunk2
+            else:
+                if next_ is not None:
+                    yield next_
+                next_ = None
