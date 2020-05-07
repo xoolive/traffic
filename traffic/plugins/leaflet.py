@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from ipyleaflet import Map, Marker, Polygon, Polyline
 from ipywidgets import HTML
@@ -6,6 +6,30 @@ from shapely.geometry import LineString
 
 from ..core import Airspace, Flight, FlightPlan
 from ..core.mixins import PointMixin
+
+
+def flight_map_leaflet(
+    flight: "Flight",
+    zoom: int = 7,
+    highlight: Optional[Dict[str, Callable[[Flight], Optional[Flight]]]] = None,
+    **kwargs,
+) -> Optional[Map]:
+
+    last_position = flight.query("latitude == latitude").at()  # type: ignore
+    if last_position is None:
+        return None
+    m = Map(center=last_position.latlon, zoom=zoom)
+    m.add_layer(flight)
+
+    if highlight is None:
+        highlight = dict()
+
+    for color, method in highlight.items():
+        f = method(flight)
+        if f is not None:
+            m.add_layer(f, color=color)
+
+    return m
 
 
 def flight_leaflet(flight: "Flight", **kwargs) -> Optional[Polyline]:
@@ -128,6 +152,7 @@ def map_add_layer(_map, elt, **kwargs):
 
 def _onload():
     setattr(Flight, "leaflet", flight_leaflet)
+    setattr(Flight, "map_leaflet", flight_map_leaflet)
     setattr(FlightPlan, "leaflet", flightplan_leaflet)
     setattr(Airspace, "leaflet", airspace_leaflet)
     setattr(PointMixin, "leaflet", point_leaflet)
