@@ -17,6 +17,8 @@ Similar initiatives to analyse the impact of COVID-19 on aviation are available 
 - Eurocontrol PRU analysis on their `website <https://ansperformance.eu/covid/>`_, with downloadable data
 - beautiful maps by the `Washington Post <https://www.washingtonpost.com/graphics/2020/business/coronavirus-airline-industry-collapse/>`_
 - FlightRadar24 view on their `blog <https://www.flightradar24.com/blog/tracking-marchs-historic-drop-in-air-traffic/>`_
+- the quarterly `Monetary Policy Report <https://www.bankofengland.co.uk/report/2020/monetary-policy-report-financial-stability-report-may-2020>`_ by the Bank of England uses OpenSky data as well, but the one obtained through the `live API </opensky_rest.html>`_
+- experiment of data visualisations by `Craig Taylor <https://twitter.com/CraigTaylorViz/status/1258083226549194753>`_
 
 With the same dataset, we found:
 
@@ -41,12 +43,14 @@ The following plot displays the current trend in number of departing aircraft fr
       .catch(console.warn);
     </script>
 
-Currently, the trend shows:
+In earlier days, the trend showed:
 
 - a slow decrease from February in Asian airports (an early one in Hong-Kong);
 - European airports plummetting since early day of March;
 - America started dropping later;
 - India almost stopped all traffic (VABB, VIDP).
+
+In the past few days, some airports and airlines seem to have experienced a slight increase of activity.
 
 Flight evolution per airline
 ============================
