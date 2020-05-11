@@ -86,6 +86,13 @@ def test_time_methods() -> None:
     assert f"{first10.stop}" == "2018-05-30 15:31:37+00:00"
     assert f"{last10.start}" == "2018-05-30 20:12:57+00:00"
 
+    first10 = flight.first("10T")
+    last10 = flight.last("10 minutes")
+    assert first10 is not None
+    assert last10 is not None
+    assert f"{first10.stop}" == "2018-05-30 15:31:37+00:00"
+    assert f"{last10.start}" == "2018-05-30 20:12:57+00:00"
+
     # between is a combination of before and after
     before_after = flight.before("2018-05-30 19:00")
     assert before_after is not None

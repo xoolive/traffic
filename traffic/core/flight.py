@@ -29,7 +29,7 @@ from ..drawing.markers import rotate_marker
 from . import geodesy as geo
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .structure import Airport  # noqa: F401
-from .time import time_or_delta, timelike, to_datetime
+from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 
 if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
@@ -651,7 +651,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
     # -- Time handling, splitting, interpolation and resampling --
 
-    def first(self, **kwargs) -> Optional["Flight"]:
+    def first(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
         """Returns the first n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -660,8 +660,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         Example usage:
 
         >>> flight.first(minutes=10)
+        >>> flight.first("1H")
+        >>> flight.first(10)  # seconds by default
         """
-        delta = timedelta(**kwargs)
+        delta = to_timedelta(value, **kwargs)
         bound = self.start + delta  # noqa: F841 => used in the query
         # full call is necessary to keep @bound as a local variable
         df = self.data.query("timestamp < @bound")
@@ -669,8 +671,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             return None
         return self.__class__(df)
 
-    # TODO value must be timedelta_like
-    def last(self, value: Optional[str] = None, **kwargs) -> Optional["Flight"]:
+    def last(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
         """Returns the last n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -679,11 +680,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         Example usage:
 
         >>> flight.last(minutes=10)
+        >>> flight.last("1H")
+        >>> flight.last(10)  # seconds by default
         """
-        if value is not None:
-            delta = pd.Timedelta(value)
-        else:
-            delta = timedelta(**kwargs)
+        delta = to_timedelta(value, **kwargs)
         bound = self.stop - delta  # noqa: F841 => used in the query
         # full call is necessary to keep @bound as a local variable
         df = self.data.query("timestamp > @bound")

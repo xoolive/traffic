@@ -2,7 +2,7 @@
 
 from operator import attrgetter
 from typing import (
-    TYPE_CHECKING, Callable, Iterable, Iterator, List, Optional, Union, cast
+    TYPE_CHECKING, Iterable, Iterator, List, Optional, Union, cast
 )
 
 import numpy as np
@@ -19,9 +19,8 @@ if TYPE_CHECKING:
 
 class NavigationFeatures:
 
-    # white lies
-    shape: Optional[LineString]
-    query: Callable[["NavigationFeatures", str], Optional["Flight"]]
+    # shape: Optional[LineString]
+    # query: Callable[["NavigationFeatures", str], Optional["Flight"]]
 
     def closest_point(
         self, points: Union[List["PointMixin"], "PointMixin"]
@@ -308,16 +307,16 @@ class NavigationFeatures:
     def holding_pattern(
         self,
         min_altitude=7000,
-        turning_threshold=.5,
+        turning_threshold=0.5,
         low_limit=pd.Timedelta("30 seconds"),
         high_limit=pd.Timedelta("10 minutes"),
-        turning_limit = pd.Timedelta("5 minutes"),
+        turning_limit=pd.Timedelta("5 minutes"),
     ) -> Iterator["Flight"]:
         # documentation TODO
         # thresholds (set arguments? TODO)
 
         # avoid parts that are really way too low
-        alt_above = self.query(f"altitude > {min_altitude}")
+        alt_above = self.query(f"altitude > {min_altitude}")  # type: ignore
         if alt_above is None:
             return
 

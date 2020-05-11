@@ -1,14 +1,26 @@
 import warnings
 from datetime import datetime, timedelta, timezone
-from numbers import Number
+from numbers import Real
 from typing import Iterator, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
-timelike = Union[str, Number, datetime, pd.Timestamp]
+timelike = Union[str, Real, datetime, pd.Timestamp]
+deltalike = Union[None, str, Real, timedelta, pd.Timedelta]
+
 time_or_delta = Union[timelike, timedelta]
 timetuple = Tuple[datetime, datetime, datetime, datetime]
+
+
+def to_timedelta(delta: deltalike, **kwargs) -> Union[timedelta, pd.Timedelta]:
+    if isinstance(delta, Real):
+        delta = timedelta(seconds=float(delta))
+    if isinstance(delta, str):
+        delta = pd.Timedelta(delta)
+    if delta is None:
+        delta = timedelta(**kwargs)
+    return delta
 
 
 def to_datetime(time: timelike) -> datetime:
@@ -16,8 +28,8 @@ def to_datetime(time: timelike) -> datetime:
         time = pd.Timestamp(time, tz="utc")
     if isinstance(time, pd.Timestamp):
         time = time.to_pydatetime()
-    if isinstance(time, Number):
-        time = datetime.fromtimestamp(time, timezone.utc)  # type: ignore
+    if isinstance(time, Real):
+        time = datetime.fromtimestamp(float(time), timezone.utc)
     if time.tzinfo is None:  # coverage: ignore
         warnings.warn(
             "This timestamp is tz-naive. Things may not work as expected. "

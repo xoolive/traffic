@@ -3,7 +3,6 @@
 import hashlib
 import logging
 import re
-import shutil
 import time
 from datetime import timedelta
 from io import StringIO
@@ -147,7 +146,7 @@ class Impala(object):
                             content = fh.readlines()[line_nb - 1]
 
                     new_path = Path(gettempdir()) / cachename.name
-                    shutil.move(cachename, new_path)
+                    cachename.rename(new_path)
                     raise ImpalaError(
                         Impala._parseErrorMsg.format(path=new_path)
                         + (error + "\n" + content)
