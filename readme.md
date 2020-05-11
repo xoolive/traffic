@@ -133,7 +133,7 @@ Any input, feedback, bug report or contribution is welcome.
 Should you encounter any issue, you may want to file it in the [issue](https://github.com/xoolive/traffic/issues/new) section of this repository. Please first activate the `DEBUG` messages recorded using Python logging mechanism with the following snippet:
 
 ```python
-from traffic.core.logging import loglevel
+from traffic.core import loglevel
 loglevel('DEBUG')
 ```
 
