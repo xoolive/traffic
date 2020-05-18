@@ -5,6 +5,7 @@ from typing import List
 
 import altair as alt
 import pandas as pd
+
 from traffic.data import airports
 
 alt.renderers.set_embed_options(actions=False)
@@ -103,9 +104,9 @@ def airline_chart(
 chart = alt.Chart(source)
 result = alt.vconcat(
     *[
-        airline_chart(
-            chart, airline_, name, "FDX" not in airline_
-        ).properties(width=550, height=150)
+        airline_chart(chart, airline_, name, "FDX" not in airline_).properties(
+            width=550, height=150
+        )
         for name, airline_ in zip(
             [
                 "European airlines",
@@ -214,3 +215,6 @@ result = alt.vconcat(
 
 result.save("covid19_airports.json")
 result
+
+
+# %%
