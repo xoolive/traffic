@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from ..core import Flight  # noqa: 401
     from ..core.mixins import PointMixin  # noqa: 401
     from ..core.structure import Airport, Navaid  # noqa: 401
+    from ..data.basic.airports import Airports  # noqa: 401
 
 # fmt: on
 
@@ -198,9 +199,7 @@ class NavigationFeatures:
         )
 
     def aligned_on_ils(
-        # TODO None may not be a so good idea
-        self,
-        airport: Union[None, str, "Airport"],
+        self, airport: Union[None, str, "Airport"],
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
@@ -275,6 +274,13 @@ class NavigationFeatures:
         min_time: str = "30s",
         min_distance: int = 80,
     ) -> Iterator["Flight"]:
+        """Iterates on segments of trajectories aligned with one of the given
+        navigational beacons passed in parameter.
+
+        The name of the navigational beacon is assigned in a new column
+        `navaid`.
+
+        """
 
         # The following cast secures the typing
         self = cast("Flight", self)
@@ -297,8 +303,79 @@ class NavigationFeatures:
                     ):
                         yield chunk.assign(navaid=navpoint.name)
 
-    def self_intersections(self) -> int:
-        # documentation TODO
+    def emergency(self) -> Iterator["Flight"]:
+        """Iterates on emergency segments of trajectory.
+
+        An emergency is defined with a 7700 squawk code.
+        """
+        sq7700 = self.query("squawk == '7700'")  # type: ignore
+        if sq7700 is None:
+            return
+        yield from sq7700.split()
+
+    def landing_attempts(
+        self, dataset: Optional["Airports"] = None
+    ) -> Iterator["Flight"]:
+        """Iterates on all landing attempts for current flight.
+
+        First, candidates airports are identified in the neighbourhood
+        of the segments of trajectory below 10,000 ft. By default, the
+        full airport database is considered but it is possible to restrict
+        it and pass a smaller database with the dataset parameter.
+
+        If no runway information is available for the given airport, no
+        trajectory segment will be provided.
+
+        .. warning::
+
+            This API is not stable yet. The interface may change in a near
+            future.
+
+        """
+        candidate = self.query("altitude < 10000")  # type: ignore
+        if candidate is not None:
+            for chunk in candidate.split("10T"):
+                point = chunk.query("altitude == altitude.min()")
+                if dataset is None:
+                    cd = point.landing_airport()
+                else:
+                    cd = point.landing_airport(dataset=dataset)
+                if cd.runways is not None:
+                    yield from chunk.aligned_on_ils(cd)
+
+    def diversion(self) -> Optional["Flight"]:
+        """Returns the segment of trajectory after a possible decision
+        of diversion.
+
+        The method relies on the `destination` parameter to identify the
+        intended destination.
+
+        """
+        from ..data import airports
+
+        f_above = self.query("altitude > 15000")  # type: ignore
+        if (
+            self.destination != self.destination  # type: ignore
+            or airports[self.destination] is None  # type: ignore
+            or f_above is None
+        ):
+            return None
+
+        return (
+            f_above.distance(airports[self.destination])  # type: ignore
+            .diff("distance")
+            .agg_time("10T", distance_diff="mean")
+            .query("distance_diff > 0")
+        )
+
+    def diversion_ts(self) -> pd.Timestamp:
+        diversion = self.diversion()
+        if diversion is None:
+            return pd.Timestamp("NaT")
+        return diversion.start
+
+    def holes(self) -> int:
+        """Returns the number of 'holes' in a trajectory."""
         simplified: "Flight" = self.simplify(25)  # type: ignore
         if simplified.shape is None:
             return -1
@@ -312,9 +389,15 @@ class NavigationFeatures:
         high_limit=pd.Timedelta("10 minutes"),
         turning_limit=pd.Timedelta("5 minutes"),
     ) -> Iterator["Flight"]:
-        # documentation TODO
-        # thresholds (set arguments? TODO)
+        """Iterates on parallel segments candidates for identifying
+        a holding pattern.
 
+        .. warning::
+
+            This API is not stable yet. The interface may change in a near
+            future.
+
+        """
         # avoid parts that are really way too low
         alt_above = self.query(f"altitude > {min_altitude}")  # type: ignore
         if alt_above is None:
