@@ -26,6 +26,7 @@ With the same dataset, we found:
 - an excellent Observable notebook by `@lounjukk <https://observablehq.com/@lounjukk/flights-during-covid-19-pandemic>`_ replaying all the traffic on a world map
 - `Baptiste Coulmont <http://coulmont.com/blog/2020/05/04/dataconfinement1/>`_ analyses the impact of the lockdown in France based on various sources of open data, including this dataset (in French)
 - French newspaper `Liberation <https://www.liberation.fr/apps/2020/05/bilan-confinement/>`_ did a similar job few days later, with more data visualisations 
+- `How COVID-19 has rocked US domestic flights <https://evandenmark.github.io/ForSpaciousSkies/>`_ by `@EvDenmark <https://twitter.com/EvDenmark/status/1260922351732101120>`
 
 This list may not be exhaustive. You may `open an issue <https://github.com/xoolive/traffic/issues/new>`_ on the github of the library in order to reference more websites.
 
