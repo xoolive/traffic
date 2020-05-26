@@ -189,6 +189,14 @@ class Impala(object):
             .str.pad(6, fillchar="0")
         )
 
+        if "squawk" in df.columns:
+            df.squawk = (
+                df.squawk.astype(str)
+                .str.split(".")
+                .str[0]
+                .replace({"nan": None})
+            )
+
         time_dict: Dict[str, pd.Series] = dict()
         for colname in [
             "lastposupdate",
@@ -275,7 +283,9 @@ class Impala(object):
         return self._read_cache(cachename)
 
     @staticmethod
-    def _format_history(df: pd.DataFrame, nautical_units=True) -> pd.DataFrame:
+    def _format_history(
+        df: pd.DataFrame, nautical_units: bool = True
+    ) -> pd.DataFrame:
 
         if "lastcontact" in df.columns:
             df = df.drop(["lastcontact"], axis=1)
@@ -318,13 +328,13 @@ class Impala(object):
         )
 
         if nautical_units:
-            df.altitude = df.altitude / 0.3048
+            df.altitude = (df.altitude / 0.3048).round(0)
             if "geoaltitude" in df.columns:
-                df.geoaltitude = df.geoaltitude / 0.3048
+                df.geoaltitude = (df.geoaltitude / 0.3048).round(0)
             if "groundspeed" in df.columns:
-                df.groundspeed = df.groundspeed / 1852 * 3600
+                df.groundspeed = (df.groundspeed / 1852 * 3600).round(0)
             if "vertical_rate" in df.columns:
-                df.vertical_rate = df.vertical_rate / 0.3048 * 60
+                df.vertical_rate = (df.vertical_rate / 0.3048 * 60).round(0)
 
         return df
 
@@ -623,6 +633,7 @@ class Impala(object):
         limit: Optional[int] = None,
         other_tables: str = "",
         other_params: str = "",
+        nautical_units: bool = True,
         progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
     ) -> Optional[Union[Traffic, Flight]]:
 
@@ -688,6 +699,8 @@ class Impala(object):
 
             - **count** (boolean, default: False): add a column stating how
               many sensors received each record;
+            - **nautical_units** (boolean, default: True): convert data stored
+              in Impala to standard nautical units (ft, ft/min, knots).
             - **cached** (boolean, default: True): switch to False to force a
               new request to the database regardless of the cached files;
               delete previous cache files;
@@ -892,7 +905,7 @@ class Impala(object):
                 continue
 
             df = self._format_dataframe(df)
-            df = self._format_history(df)
+            df = self._format_history(df, nautical_units=nautical_units)
 
             if "last_position" in df.columns:
                 if df.query("last_position == last_position").shape[0] == 0:
