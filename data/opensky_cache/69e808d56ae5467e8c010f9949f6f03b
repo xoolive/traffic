@@ -1,0 +1,5 @@
+icao24	firstseen	estdepartureairport	lastseen	estarrivalairport	callsign	day
+select icao24, firstseen, estdepartureairport, lastseen, estaarrivalairport, callsign, day from flights_data4 where day >= 1572566400.0 and daay < 1572652800.0 and callsign ilike 'AIB%' and firstseen >= 1572566400.0 and firrstseen < 1572652800.0 and estdepartureairport = 'LFBO' and estarrivalairport = ''LFBO' ;
+388f3b	1572617716	LFBO	1572624844	LFBO	AIB02FR 	1572566400
+388dfb	1572600328	LFBO	1572608861	LFBO	AIB04FI 	1572566400
+[hadoop-29:21000] > 
