@@ -16,7 +16,6 @@ from typing import (
 
 import pandas as pd
 import pyModeS as pms
-
 from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
@@ -348,15 +347,18 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
+                self.cumul[-1] = {
                     **last_entry,
-                    # FMS selected altitude (ft)
-                    selected_fms=pms.commb.selalt40fms(msg),
-                    # MCP/FCU selected altitude (ft)
-                    selected_mcp=pms.commb.selalt40mcp(msg),
-                    # Barometric pressure (mb)
-                    barometric_setting=pms.commb.p40baro(msg),
-                )
+                    **dict(
+                        # FMS selected altitude (ft)
+                        selected_fms=pms.commb.selalt40fms(msg),
+                        # MCP/FCU selected altitude (ft)
+                        selected_mcp=pms.commb.selalt40mcp(msg),
+                        # Barometric pressure (mb)
+                        barometric_setting=pms.commb.p40baro(msg),
+                    ),
+                }
+
             else:
                 self.cumul.append(
                     dict(
@@ -385,19 +387,22 @@ class Aircraft(object):
             # or squawk from idcode (DF 5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
+                self.cumul[-1] = {
                     **last_entry,
-                    # Humidity (%)
-                    humidity=pms.commb.hum44(msg),
-                    # Average static pressure (hPa)
-                    pressure=pms.commb.p44(msg),
-                    # Static air temperature (C)
-                    temperature=pms.commb.temp44(msg),
-                    turbulence=pms.commb.turb44(msg),
-                    # Wind speed (kt) and direction (true) (deg)
-                    windspeed=wind[0],
-                    winddirection=wind[1],
-                )
+                    **dict(
+                        # Humidity (%)
+                        humidity=pms.commb.hum44(msg),
+                        # Average static pressure (hPa)
+                        pressure=pms.commb.p44(msg),
+                        # Static air temperature (C)
+                        temperature=pms.commb.temp44(msg),
+                        turbulence=pms.commb.turb44(msg),
+                        # Wind speed (kt) and direction (true) (deg)
+                        windspeed=wind[0],
+                        winddirection=wind[1],
+                    ),
+                }
+
             else:
                 self.cumul.append(
                     dict(
@@ -428,25 +433,28 @@ class Aircraft(object):
             # or squawk from idcode (DF 5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
+                self.cumul[-1] = {
                     **last_entry,
-                    # Turbulence level (0-3)
-                    turbulence=pms.commb.turb45(msg),
-                    # Wind shear level (0-3)
-                    wind_shear=pms.commb.ws45(msg),
-                    # Microburst level (0-3)
-                    microburst=pms.commb.mb45(msg),
-                    # Icing level (0-3)
-                    icing=pms.commb.ic45(msg),
-                    # Wake vortex level (0-3)
-                    wake_vortex=pms.commb.wv45(msg),
-                    # Static air temperature (C)
-                    temperature=pms.commb.temp45(msg),
-                    # Average static pressure (hPa)
-                    pressure=pms.commb.p45(msg),
-                    # Radio height (ft)
-                    radio_height=pms.commb.rh45(msg),
-                )
+                    **dict(
+                        # Turbulence level (0-3)
+                        turbulence=pms.commb.turb45(msg),
+                        # Wind shear level (0-3)
+                        wind_shear=pms.commb.ws45(msg),
+                        # Microburst level (0-3)
+                        microburst=pms.commb.mb45(msg),
+                        # Icing level (0-3)
+                        icing=pms.commb.ic45(msg),
+                        # Wake vortex level (0-3)
+                        wake_vortex=pms.commb.wv45(msg),
+                        # Static air temperature (C)
+                        temperature=pms.commb.temp45(msg),
+                        # Average static pressure (hPa)
+                        pressure=pms.commb.p45(msg),
+                        # Radio height (ft)
+                        radio_height=pms.commb.rh45(msg),
+                    ),
+                }
+
             else:
                 self.cumul.append(
                     dict(
@@ -483,19 +491,22 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
+                self.cumul[-1] = {
                     **last_entry,
-                    # Ground speed (kt)
-                    groundspeed=pms.commb.gs50(msg),
-                    # Roll angle (deg)
-                    roll=pms.commb.roll50(msg),
-                    # True airspeed (kt)
-                    TAS=pms.commb.tas50(msg),
-                    # True track angle (deg)
-                    track=pms.commb.trk50(msg),
-                    # Track angle rate (deg/sec)
-                    track_rate=pms.commb.rtrk50(msg),
-                )
+                    **dict(
+                        # Ground speed (kt)
+                        groundspeed=pms.commb.gs50(msg),
+                        # Roll angle (deg)
+                        roll=pms.commb.roll50(msg),
+                        # True airspeed (kt)
+                        TAS=pms.commb.tas50(msg),
+                        # True track angle (deg)
+                        track=pms.commb.trk50(msg),
+                        # Track angle rate (deg/sec)
+                        track_rate=pms.commb.rtrk50(msg),
+                    ),
+                }
+
             else:
 
                 self.cumul.append(
@@ -527,19 +538,22 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(
+                self.cumul[-1] = {
                     **last_entry,
-                    # Indicated airspeed (kt)
-                    IAS=pms.commb.ias60(msg),
-                    # Magnetic heading (deg)
-                    heading=pms.commb.hdg60(msg),
-                    # Mach number (-)
-                    Mach=pms.commb.mach60(msg),
-                    # Barometric altitude rate (ft/min)
-                    vertical_rate_barometric=pms.commb.vr60baro(msg),
-                    # Inertial vertical speed (ft/min)
-                    vertical_rate_inertial=pms.commb.vr60ins(msg),
-                )
+                    **dict(
+                        # Indicated airspeed (kt)
+                        IAS=pms.commb.ias60(msg),
+                        # Magnetic heading (deg)
+                        heading=pms.commb.hdg60(msg),
+                        # Mach number (-)
+                        Mach=pms.commb.mach60(msg),
+                        # Barometric altitude rate (ft/min)
+                        vertical_rate_barometric=pms.commb.vr60baro(msg),
+                        # Inertial vertical speed (ft/min)
+                        vertical_rate_inertial=pms.commb.vr60ins(msg),
+                    ),
+                }
+
             else:
                 self.cumul.append(
                     dict(

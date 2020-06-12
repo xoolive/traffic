@@ -485,7 +485,7 @@ class Impala(object):
 
         query_str = (
             "select {columns} from flights_data4 "
-            "where day >= {before_day} and day <= {after_day} "
+            "where day >= {before_day} and day < {after_day} "
             "{other_params}"
         )
         columns = ", ".join(
@@ -539,12 +539,12 @@ class Impala(object):
         if departure_airport is not None:
             other_params += (
                 f"and firstseen >= {start.timestamp()} and "
-                f"firstseen <= {stop.timestamp()} "
+                f"firstseen < {stop.timestamp()} "
             )
         else:
             other_params += (
                 f"and lastseen >= {start.timestamp()} and "
-                f"lastseen <= {stop.timestamp()} "
+                f"lastseen < {stop.timestamp()} "
             )
 
         if airport:

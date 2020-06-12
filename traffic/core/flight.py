@@ -1729,7 +1729,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             df = ext.data if ext is not None else None
         else:
             df = data if isinstance(data, pd.DataFrame) else data.data
-            df = df.query("icao24 == @self.icao24")
+            df = df.query(
+                "icao24 == @self.icao24 and "
+                "@self.start < mintime < @self.stop"
+            )
 
         if df is None or df.shape[0] == 0:
             return failure()
