@@ -13,7 +13,7 @@ alt.renderers.set_embed_options(actions=False)
 # %%
 
 dataset_path = "/data/data/own_dataset/covid19/"
-dates = ["20200101", "20200201", "20200301", "20200401", "20200501"]
+dates = ["20200101", "20200201", "20200301", "20200401", "20200501", "20200601"]
 flightlist = pd.concat(
     pd.read_csv(
         max(Path(dataset_path).glob(f"flightlist_{date}_*.csv.gz")),
@@ -121,7 +121,7 @@ result = alt.vconcat(
 ).resolve_scale(color="independent")
 
 result.save("covid19_airlines.json", indent=2)
-result
+# result
 
 # %%
 
@@ -214,7 +214,7 @@ result = alt.vconcat(
 ).resolve_scale(color="independent")
 
 result.save("covid19_airports.json")
-result
+# result
 
 
 # %%
