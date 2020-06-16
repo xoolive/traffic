@@ -4,8 +4,9 @@ from cartopy.crs import TransverseMercator
 from traffic.data import eurofirs
 from traffic.drawing import countries, lakes, ocean, rivers
 
-fig = plt.figure(figsize=(15, 10))
-ax = fig.add_subplot(111, projection=TransverseMercator(10, 45))
+fig, ax = plt.subplots(
+    figsize=(15, 10), subplot_kw=dict(projection=TransverseMercator(10, 45))
+)
 
 ax.set_extent((-20, 45, 30, 70))
 
