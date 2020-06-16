@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import re
+import string
 import time
 from datetime import timedelta
 from io import StringIO
@@ -751,7 +752,16 @@ class Impala(object):
             )
 
         if isinstance(callsign, str):
-            if callsign.find("%") > 0 or callsign.find("_") > 0:
+            if (
+                set(callsign)
+                - set(string.ascii_letters)
+                - set(string.digits)
+                - set("%_")
+            ):  # if regex like characters
+                other_params += "and RTRIM({}callsign) REGEXP('{}') ".format(
+                    "sv." if count_airports_params > 0 else "", callsign
+                )
+            elif callsign.find("%") > 0 or callsign.find("_") > 0:
                 other_params += "and {}callsign ilike '{}' ".format(
                     "sv." if count_airports_params > 0 else "", callsign
                 )
