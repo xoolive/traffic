@@ -1,5 +1,6 @@
 # %%
 
+import sys
 from pathlib import Path
 from typing import List
 
@@ -12,10 +13,11 @@ alt.renderers.set_embed_options(actions=False)
 
 # %%
 
-dataset_path = "/data/data/own_dataset/covid19/"
+dataset_path = sys.argv[1]
 dates = ["20200101", "20200201", "20200301", "20200401", "20200501", "20200601"]
 flightlist = pd.concat(
     pd.read_csv(
+        # only take the latest version of the file
         max(Path(dataset_path).glob(f"flightlist_{date}_*.csv.gz")),
         parse_dates=["firstseen", "lastseen", "day"],
     )
@@ -43,7 +45,6 @@ data = pd.concat(
         .groupby("day")
         .agg(dict(callsign="count"))
         .rename(columns=dict(callsign=airline))
-        # .assign(**{airline: lambda df: df[airline] / df[airline][:30].mean()})
         for airline in sum(airlines_subset, [])
     ),
     axis=1,
@@ -59,7 +60,6 @@ source = (
             rate=lambda df: df["count"] / df.max_,
         )
     )[["day", "airline", "count", "rate"]]
-    # .rename(columns=dict(municipality="city"))
 )
 
 
@@ -121,7 +121,6 @@ result = alt.vconcat(
 ).resolve_scale(color="independent")
 
 result.save("covid19_airlines.json", indent=2)
-# result
 
 # %%
 
@@ -214,7 +213,6 @@ result = alt.vconcat(
 ).resolve_scale(color="independent")
 
 result.save("covid19_airports.json")
-# result
 
 
 # %%
