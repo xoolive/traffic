@@ -825,6 +825,21 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         unit: Optional[str] = None,
         key: Callable[[Optional["Flight"]], Any] = attrgetter_duration,
     ) -> Optional["Flight"]:
+        """Returns the biggest (by default, longest) part of trajectory.
+
+        Example usage:
+
+        >>> from traffic.data.samples import elal747
+        >>> elal747.query("altitude < 15000").max_split()
+        Flight ELY1747
+        aircraft: 738043 · 🇮🇱 4X-ELC (B744)
+        origin: LIRF (2019-11-03 12:14:40+00:00)
+        destination: LLBG (2019-11-03 14:13:00+00:00)
+
+        In this example, the fancy part of the trajectory occurs below
+        15,000 ft. The command extracts the plane pattern.
+
+        """
         return max(
             self.split(value, unit),  # type: ignore
             key=key,
