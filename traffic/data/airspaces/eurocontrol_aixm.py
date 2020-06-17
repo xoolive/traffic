@@ -8,16 +8,19 @@ import warnings
 import zipfile
 from functools import lru_cache
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterator, List, NamedTuple, Optional,
-                    Tuple, Union)
+from typing import (
+    Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Tuple, Union
+)
 from xml.etree import ElementTree
 
 from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
 
 from ...core.airspace import components  # to be moved here TODO
-from ...core.airspace import (Airspace, AirspaceInfo, AirspaceList,
-                              ExtrudedPolygon, cascaded_union_with_alt)
+from ...core.airspace import (
+    Airspace, AirspaceInfo, AirspaceList,
+    ExtrudedPolygon, cascaded_union_with_alt
+)
 from ...data.basic.airports import Airport
 
 # fmt: on
@@ -244,12 +247,12 @@ class AIXMAirspaceParser(object):
 
             upper = (  # noqa: W605
                 float(upper.text)
-                if upper is not None and re.match("\d{3}", upper.text)
+                if upper is not None and re.match(r"\d{3}", upper.text)
                 else float("inf")
             )
             lower = (  # noqa: W605
                 float(lower.text)
-                if lower is not None and re.match("\d{3}", lower.text)
+                if lower is not None and re.match(r"\d{3}", lower.text)
                 else float("-inf")
             )
 
