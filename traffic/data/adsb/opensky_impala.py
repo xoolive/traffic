@@ -121,12 +121,12 @@ class Impala(object):
                     s.write(re.sub(" *\t *", ",", line))  # noqa: W605
                     s.write("\n")
                 # -- pretty-print style cache
-                if re.match("\|.*\|", line):  # noqa: W605
+                if re.match(r"\|.*\|", line):  # noqa: W605
                     count += 1
                     if "," in line:  # this may happen on 'describe table'
                         return_df = False
                         break
-                    s.write(re.sub(" *\| *", ",", line)[1:-2])  # noqa: W605
+                    s.write(re.sub(r" *\| *", ",", line)[1:-2])  # noqa: W605
                     s.write("\n")
             else:
                 return_df = True
