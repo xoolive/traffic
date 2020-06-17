@@ -69,7 +69,7 @@ class Designated_Points(ADDS_FAA_OpenData):
                     "longitude",
                     "magnetic_variation",
                     "description",
-                    # "global_id",
+                    "global_id",
                 ]
             ]
         )

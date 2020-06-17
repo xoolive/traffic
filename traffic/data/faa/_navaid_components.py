@@ -72,7 +72,7 @@ class Navaid_Components(ADDS_FAA_OpenData):
                     "frequency",
                     "magnetic_variation",
                     "description",
-                    # "global_id",
+                    "global_id",
                     # "navsys_id",
                 ]
             ]
