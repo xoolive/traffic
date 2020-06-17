@@ -5,8 +5,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from traffic.core import Airspace
-from traffic.data import nm_airspaces
-from traffic.data.so6 import SO6
+from traffic.data import SO6, nm_airspaces
 
 
 def clip(so6: SO6, airspace: Airspace) -> SO6:

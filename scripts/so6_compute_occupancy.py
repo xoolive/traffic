@@ -8,8 +8,8 @@ import pandas as pd
 from shapely.ops import cascaded_union
 from tqdm import tqdm
 
-from traffic.data import nm_airspaces
-from traffic.data.so6 import SO6, to_datetime
+from traffic.core.time import to_datetime
+from traffic.data import SO6, nm_airspaces
 
 
 def occupancy(data, configuration):
