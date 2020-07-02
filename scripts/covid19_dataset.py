@@ -143,7 +143,7 @@ def main(
         df_full = df_merged.merge(flightdb, how="left")
         df = pd.concat(
             [
-                df_full.query("firstseen < valid").drop(  # TODO add offset
+                df_full.query("firstseen < valid or valid != valid").drop(
                     columns=["Route", "valid", "number"]
                 ),
                 df_full.query("firstseen >= valid").drop(

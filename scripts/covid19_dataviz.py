@@ -82,7 +82,7 @@ def airline_chart(
             y=alt.Y("rate", title="# of flights (normalized)"),
             color=alt.Color("airline", legend=alt.Legend(title=name)),
             tooltip=["day", "airline", "count"],
-            opacity=alt.value(0.5),
+            opacity=alt.value(0.3),
         )
         .add_selection(highlight)
     )
@@ -177,7 +177,7 @@ def airport_chart(source: alt.Chart, subset: List[str], name: str) -> alt.Chart:
             y=alt.Y("count", title="# of departing flights"),
             color=alt.Color("airport", legend=alt.Legend(title=name)),
             tooltip=["day", "airport", "city", "count"],
-            opacity=alt.value(0.5),
+            opacity=alt.value(0.3),
         )
         .add_selection(highlight)
     )
