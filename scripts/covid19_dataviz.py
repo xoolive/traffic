@@ -14,7 +14,15 @@ alt.renderers.set_embed_options(actions=False)
 # %%
 
 dataset_path = sys.argv[1]
-dates = ["20200101", "20200201", "20200301", "20200401", "20200501", "20200601"]
+dates = [
+    "20200101",
+    "20200201",
+    "20200301",
+    "20200401",
+    "20200501",
+    "20200601",
+    "20200701",
+]
 flightlist = pd.concat(
     pd.read_csv(
         # only take the latest version of the file
