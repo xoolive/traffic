@@ -34,7 +34,7 @@ Maybe you have already a working conda environment that you would like to use. I
 
 .. code:: dockerfile
 
-    jupyter/minimal-notebook
+    FROM jupyter/minimal-notebook
 
     # copy miniconda files to image
     COPY traffic_env.yml traffic_env.yml
