@@ -8,7 +8,7 @@ Basic Docker container
 ----------------------
 In the simplest case when you just want to run the traffic library in a Docker container, you can install the library and its dependencies directly into the base environment of the container. In that case, the ``Dockerfile`` could looks something like this:
 
-.. code:: docker
+.. code:: dockerfile
 
     FROM jupyter/minimal-notebook
 
@@ -32,15 +32,14 @@ Docker container using a conda environment
 ------------------------------------------
 Maybe you have already a working conda environment that you would like to use. In this case, you can install your existing environment into the Docker container. The ``Dockerfile`` could looks like this:
 
-.. code:: docker
+.. code:: dockerfile
 
     jupyter/minimal-notebook
 
     # copy miniconda files to image
     COPY traffic_env.yml traffic_env.yml
 
-    # install nb_conda into the base python to allow the user to choose the
-	# environment in the jupyter notebook and install environment
+    # install nb_conda into the base python to allow the user to choose the environment in the jupyter notebook and install environment
     USER jovyan
     RUN conda install -y nb_conda
     RUN conda env create -f traffic_env.yml
