@@ -23,6 +23,11 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | X. Olive, A. Tanner, M. Strohmeier, M. Schäfer, M. Feridun, A. Tart, I. Martinovic and V. Lenders.
+  | **OpenSky Report 2020: Analysing in-flight emergencies using big data**.
+  | *Proceedings of the 39th Digital Avionics Systems Conference* (DASC), 2020
+  | `(notebook) <paper/squawk7700.html>`__
+
 - | S. Proud.
   | **Go-Around Detection Using Crowd-Sourced ADS-B Position Data**.
   | *Aerospace*, 2020, 7(2), 16
@@ -71,3 +76,4 @@ library:
    paper/sectflow
    paper/atc_detect
    paper/runway_excursion
+   paper/squawk7700

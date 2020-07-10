@@ -18,7 +18,7 @@ def flight_map_leaflet(
     last_position = flight.query("latitude == latitude").at()  # type: ignore
     if last_position is None:
         return None
-    m = Map(center=last_position.latlon, zoom=zoom)
+    m = Map(center=last_position.latlon, zoom=zoom, **kwargs)
     m.add_layer(flight)
 
     if highlight is None:

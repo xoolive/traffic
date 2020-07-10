@@ -18,6 +18,7 @@ tbody td, tr, th {
     white-space: normal;
     max-width: none;
     border: none;
+    font-size: 95%;
 }
 .dataframe tbody tr:nth-child(2n) {
     background: #f5f5f5;

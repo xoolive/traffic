@@ -2,10 +2,32 @@ import io
 from hashlib import md5
 from typing import Any, Dict
 
+import pandas as pd
 from tqdm.autonotebook import tqdm
 
 from ... import cache_dir
 from ...core import Traffic
+
+_squawk7700_url = "https://zenodo.org/record/3937483/"
+
+
+def _squawk7700_reader(filename):
+    metadata = get_dataset(
+        dict(
+            url=f"{_squawk7700_url}/files/squawk7700_metadata.csv",
+            md5sum="4d33ff84a05742136f3733692bf944e6",
+            filename="squawk7700_metadata.csv",
+            reader=pd.read_csv,
+        )
+    )
+    squawk7700 = Traffic.from_file(filename)
+    assert squawk7700 is not None
+    squawk7700 = squawk7700.merge(
+        metadata.drop(columns=["callsign", "icao24"]), on="flight_id"
+    )
+    squawk7700.metadata = metadata  # type: ignore
+    return squawk7700
+
 
 datasets = dict(
     paris_toulouse_2017=dict(
@@ -25,6 +47,12 @@ datasets = dict(
         md5sum="c5577f450424fa74ca673ed8a168c67f",
         filename="landing_dataset.parquet",
         reader=Traffic.from_file,
+    ),
+    squawk7700=dict(
+        url=f"{_squawk7700_url}/files/squawk7700_trajectories.parquet.gz",
+        md5sum="8ed5375d92bd7b7b94ea03c0533d959e",
+        filename="squawk7700_trajectories.parquet.gz",
+        reader=_squawk7700_reader,
     ),
 )
 

@@ -332,7 +332,7 @@ class NavigationFeatures:
             future.
 
         """
-        candidate = self.query("altitude < 10000")  # type: ignore
+        candidate = self.query("altitude < 8000")  # type: ignore
         if candidate is not None:
             for chunk in candidate.split("10T"):
                 point = chunk.query("altitude == altitude.min()")
@@ -341,7 +341,7 @@ class NavigationFeatures:
                 else:
                     cd = point.landing_airport(dataset=dataset)
                 if cd.runways is not None:
-                    yield from chunk.aligned_on_ils(cd)
+                    yield from chunk.assign(airport=cd.icao).aligned_on_ils(cd)
 
     def diversion(self) -> Optional["Flight"]:
         """Returns the segment of trajectory after a possible decision
