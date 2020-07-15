@@ -29,10 +29,12 @@ library:
   | `(notebook) <paper/squawk7700.html>`__
 
 - | X. Olive and J. Sun
-  | ** Detecting and Measuring Turbulence from Mode S Surveillance Downlink Data**. *Proceedings of the 9th International Conference on Research in Air Transportation*, 2020
+  | **Detecting and Measuring Turbulence from Mode S Surveillance Downlink Data**.
+  | *Proceedings of the 9th International Conference on Research in Air Transportation*, 2020
 
 - | X. Olive, L. Basora, B. Viry and R. Alligier
-  | **Deep Trajectory Clustering with Autoencoders**. *Proceedings of the 9th International Conference on Research in Air Transportation*, 2020
+  | **Deep Trajectory Clustering with Autoencoders**.
+  | *Proceedings of the 9th International Conference on Research in Air Transportation*, 2020
 
 - | S. Proud.
   | **Go-Around Detection Using Crowd-Sourced ADS-B Position Data**.
@@ -44,7 +46,8 @@ library:
   | `(paper) <https://ieeexplore.ieee.org/document/9049212>`__
 
 - | M. Schultz, J. Rosenow and X. Olive.
-  | **A-CDM Lite: situation awareness and decision making for small airports based on ADS-B data**. *Proceedings of the 9th SESAR Innovation Days*, 2019.
+  | **A-CDM Lite: situation awareness and decision making for small airports based on ADS-B data**.
+  | *Proceedings of the 9th SESAR Innovation Days*, 2019.
   | `(paper) <https://www.sesarju.eu/sites/default/files/documents/sid/2019/papers/SIDs_2019_paper_76.pdf>`__
 
 - | X. Olive and L. Basora.
