@@ -272,14 +272,23 @@ class Impala(object):
             # avoid messing lines in the cache file
             time.sleep(0.1)
             total = ""
+            logging.info("Will be writing into {}".format(cachename))
             while len(total) == 0 or total[-10:] != ":21000] > ":
                 b = self.stdout.channel.recv(256)
                 total += b.decode()
+            # There is no direct streaming into the cache file.
+            # The reason for that is the connection may stall, your computer
+            # may crash or the programme may exit abruptly in spite of your
+            # (and my) best efforts to handle exceptions.
+            # If data is streamed directly into the cache file, it is hard to
+            # detect that it is corrupted and should be removed/overwritten.
+            logging.info("Opening {}".format(cachename))
             with cachename.open("w") as fh:
                 if columns is not None:
                     fh.write(re.sub(", ", "\t", columns))
                     fh.write("\n")
                 fh.write(total)
+            logging.info("Closing {}".format(cachename))
 
         return self._read_cache(cachename)
 
