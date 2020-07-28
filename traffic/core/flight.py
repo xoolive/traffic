@@ -1475,7 +1475,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         )
 
     def cumulative_distance(
-        self, compute_gs: bool = True, *, reverse: bool = False, **kwargs
+        self, compute_gs: bool = True, compute_track: bool = True, *, reverse: bool = False, **kwargs
     ) -> "Flight":
 
         """ Enrich the structure with new ``cumdist`` column computed from
@@ -1514,6 +1514,15 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         if compute_gs:
             gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
             res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "constant")))
+
+        if compute_track:
+            track = geo.bearing(
+                delta_1.latitude.values,
+                delta_1.longitude.values,
+                (delta_1.latitude + delta_1.latitude_1).values,
+                (delta_1.longitude + delta_1.longitude_1).values,
+            )
+            res = res.assign(compute_track=np.abs(np.pad(track, (1, 0), "constant")))
 
         return res.sort_values("timestamp", ascending=True)
 
