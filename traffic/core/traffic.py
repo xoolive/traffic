@@ -744,41 +744,6 @@ class Traffic(HBoxMixin, GeographyMixin):
             .agg(kwargs)
         )
         return data
-    
-    def agg_xy(
-        self,
-        resolution: Union[Dict[str, float], None],
-        projection: Union[pyproj.Proj, crs.Projection, None] = None,
-        **kwargs
-    ) -> pd.DataFrame:
-        """ TODO
-        """
-        if resolution is None:
-            resolution = dict(x=1, y=1)
-
-        if len(kwargs) is None:
-            raise ValueError(
-                "Specify parameters to aggregate, "
-                "e.g. altitude='mean' or icao24='nunique'"
-            )
-
-        r_x = resolution.get("x", None)
-        r_y = resolution.get("y", None)
-
-        if r_x is None or r_y is None:
-            raise ValueError("Specify a resolution for x and y")
-
-        data = (
-            self.compute_xy(projection)
-            .assign(
-                x=lambda elt: ((r_x * elt.x).round() / r_x),
-                y=lambda elt: ((r_y * elt.y).round() / r_y)
-            )
-            .groupby(["x", "y"])
-            .agg(kwargs)
-        )
-
-        return data
 
     def windfield(
         self, resolution: Union[Dict[str, float], None] = None
