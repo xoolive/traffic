@@ -1523,6 +1523,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
                 (delta_1.latitude + delta_1.latitude_1).values,
                 (delta_1.longitude + delta_1.longitude_1).values,
             )
+            track = np.where(track > 0, track, 360 + track)
             res = res.assign(compute_track=np.abs(np.pad(track, (1, 0), "constant")))
 
         return res.sort_values("timestamp", ascending=True)
