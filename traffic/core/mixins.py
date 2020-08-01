@@ -399,18 +399,18 @@ class GeographyMixin(DataFrameMixin):
         )
 
         return self.__class__(self.data.assign(x=x, y=y))
-    
+
     def agg_xy(
         self,
         resolution: Union[Dict[str, float], None],
         projection: Union[pyproj.Proj, crs.Projection, None] = None,
-        **kwargs
+        **kwargs,
     ) -> pd.DataFrame:
         """ Aggregates values of a traffic over a grid of x/y, with x and y
         computed by `traffic.core.GeographyMixin.compute_xy()`.
 
         The resolution of the grid is passed as a dictionary parameter.
-        By default, the grid is made by rounding x and y to the nearest
+        By default, the grid is made by rounding x and y to the lower ten
         kilometer values. ``dict(x=5000, y=3000)`` will take 1 value per 5000
         meters for x (10000, 15000, 20000, ...) and 1 value per 3000 meters for
         y (9000, 12000, 15000, 18000, 20000, ...).
@@ -422,7 +422,7 @@ class GeographyMixin(DataFrameMixin):
         - ``icao24="nunique"`` would return the number of different aircraft
           int the given cell.
 
-        The returned pandas DataFrame is indexed over x and y values. It is 
+        The returned pandas DataFrame is indexed over x and y values. It is
         conveniently chainable with the ``.to_xarray()`` method in order to
         plot density heatmaps.
 
@@ -437,7 +437,7 @@ class GeographyMixin(DataFrameMixin):
             )
         """
         if resolution is None:
-            resolution = dict(x=1000.0, y=1000.0)
+            resolution = dict(x=1e4, y=1e4)
 
         if len(kwargs) is None:
             raise ValueError(
@@ -454,8 +454,8 @@ class GeographyMixin(DataFrameMixin):
         data = (
             self.compute_xy(projection)
             .assign(
-                x=lambda elt: (elt.x//r_x)*r_x,
-                y=lambda elt: (elt.y//r_y)*r_y
+                x=lambda elt: (elt.x // r_x) * r_x,
+                y=lambda elt: (elt.y // r_y) * r_y,
             )
             .groupby(["x", "y"])
             .agg(kwargs)
