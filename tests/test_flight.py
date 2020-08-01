@@ -324,25 +324,29 @@ def test_cumulative_distance() -> None:
     f1 = (
         belevingsvlucht.before("2018-05-30 20:17:58")  # type: ignore
         .last(minutes=15)
-        .cumulative_distance()
+        .cumulative_distance(compute_track=True)
         .last(minutes=10)
         .filter(compute_gs=17)
         .filter(compute_gs=53)
+        .filter(compute_track=17)
     )
 
     f2 = (
         belevingsvlucht.before("2018-05-30 20:17:58")  # type: ignore
         .last(minutes=15)
-        .cumulative_distance(reverse=True)
+        .cumulative_distance(compute_track=True, reverse=True)
         .last(minutes=10)
         .filter(compute_gs=17)
         .filter(compute_gs=53)
+        .filter(compute_track=17)
     )
 
     assert f1.diff(["cumdist"]).mean("cumdist_diff") > 0
     assert f2.diff(["cumdist"]).mean("cumdist_diff") < 0
     assert f1.diff(["compute_gs"]).mean("compute_gs_diff") < 0
     assert f2.diff(["compute_gs"]).mean("compute_gs_diff") < 0
+    assert f1.diff(["compute_track"]).mean("compute_track_diff") < 0
+    assert f2.diff(["compute_track"]).mean("compute_track_diff") < 0
 
 
 def test_agg_time_colnames() -> None:
