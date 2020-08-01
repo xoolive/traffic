@@ -1020,6 +1020,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             "Mach": 23,
             "groundspeed": 5,
             "compute_gs": (17, 53),
+            "compute_track": 17,
             "onground": 3,
             "latitude": 1,  # the method doesn't apply well to positions
             "longitude": 1,
