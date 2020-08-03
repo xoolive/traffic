@@ -5,13 +5,11 @@ import zipfile
 
 import pandas as pd
 import pytest
-
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
-from traffic.data.samples import (
-    airbus_tree, belevingsvlucht, calibration, featured, get_sample
-)
+from traffic.data.samples import (airbus_tree, belevingsvlucht, calibration,
+                                  featured, get_sample)
 
 # fmt: on
 
@@ -324,25 +322,35 @@ def test_cumulative_distance() -> None:
     f1 = (
         belevingsvlucht.before("2018-05-30 20:17:58")  # type: ignore
         .last(minutes=15)
-        .cumulative_distance()
+        .cumulative_distance(compute_track=True)
         .last(minutes=10)
         .filter(compute_gs=17)
         .filter(compute_gs=53)
+        .filter(compute_track=17)
     )
 
     f2 = (
         belevingsvlucht.before("2018-05-30 20:17:58")  # type: ignore
         .last(minutes=15)
-        .cumulative_distance(reverse=True)
+        .cumulative_distance(compute_track=True, reverse=True)
         .last(minutes=10)
         .filter(compute_gs=17)
         .filter(compute_gs=53)
+        .filter(compute_track=17)
     )
 
     assert f1.diff(["cumdist"]).mean("cumdist_diff") > 0
     assert f2.diff(["cumdist"]).mean("cumdist_diff") < 0
-    assert f1.diff(["compute_gs"]).mean("compute_gs_diff") < 0
-    assert f2.diff(["compute_gs"]).mean("compute_gs_diff") < 0
+
+    assert abs(f1.diff(["compute_gs"]).mean("compute_gs_diff")) < 1
+    assert abs(f2.diff(["compute_gs"]).mean("compute_gs_diff")) < 1
+
+    assert abs(f1.diff(["compute_track"]).mean("compute_track_diff")) < 1
+    assert abs(f2.diff(["compute_track"]).mean("compute_track_diff")) < 1
+
+    # check that first value is non-zero
+    assert f1.data.iloc[0].compute_track > 1
+    assert f1.data.iloc[0].compute_gs > 1
 
 
 def test_agg_time_colnames() -> None:
