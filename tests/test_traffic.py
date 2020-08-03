@@ -110,3 +110,22 @@ def test_none():
     assert switzerland.query("altitude > 60000") is None
     assert switzerland.after("2018-08-01").before("2018-08-01") is None
     assert switzerland.iterate_lazy().query("altitude > 60000").eval() is None
+
+
+def test_aggregate():
+    s_0 = switzerland[0]
+    assert s_0 is not None
+    s_0 = s_0.compute_xy()
+    x_max = s_0.data.x.max()
+    x_min = s_0.data.x.min()
+    y_max = s_0.data.y.max()
+    y_min = s_0.data.y.min()
+    resolution = {"x": 2e2, "y": 5e3}
+    expected_shape = (
+        int(abs(x_max // resolution["x"]) + abs(x_min // resolution["x"]) + 1),
+        int(abs(y_max // resolution["y"]) + abs(y_min // resolution["y"]) + 1),
+    )
+    output_shape = (
+        s_0.agg_xy(resolution, icao24="nunique").to_xarray().icao24.values.shape
+    )
+    assert output_shape == expected_shape

@@ -1,7 +1,7 @@
 import warnings
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import altair as alt
 import pandas as pd
@@ -399,6 +399,69 @@ class GeographyMixin(DataFrameMixin):
         )
 
         return self.__class__(self.data.assign(x=x, y=y))
+
+    def agg_xy(
+        self,
+        resolution: Union[Dict[str, float], None],
+        projection: Union[pyproj.Proj, crs.Projection, None] = None,
+        **kwargs,
+    ) -> pd.DataFrame:
+        """ Aggregates values of a traffic over a grid of x/y, with x and y
+        computed by `traffic.core.GeographyMixin.compute_xy()`.
+
+        The resolution of the grid is passed as a dictionary parameter.
+        By default, the grid is made by rounding x and y to the lower ten
+        kilometer values. ``dict(x=5000, y=3000)`` will take 1 value per 5000
+        meters for x (10000, 15000, 20000, ...) and 1 value per 3000 meters for
+        y (9000, 12000, 15000, 18000, 20000, ...).
+
+        The kwargs specifies how to aggregate values:
+
+        - ``altitude="mean"`` would average all values in the given cell;
+        - ``timestamp="count"`` would return the number of samples per cell;
+        - ``icao24="nunique"`` would return the number of different aircraft
+          int the given cell.
+
+        The returned pandas DataFrame is indexed over x and y values. It is
+        conveniently chainable with the ``.to_xarray()`` method in order to
+        plot density heatmaps.
+
+        Example usage:
+
+        .. code:: python
+
+            belevingsvlucht.agg_xy(
+                resolution=dict(x=3e3, y=3e3),
+                vertical_rate="mean",
+                timestamp="count"
+            )
+        """
+        if resolution is None:
+            resolution = dict(x=1e4, y=1e4)
+
+        if len(kwargs) is None:
+            raise ValueError(
+                "Specify parameters to aggregate, "
+                "e.g. altitude='mean' or icao24='nunique'"
+            )
+
+        r_x = resolution.get("x", None)
+        r_y = resolution.get("y", None)
+
+        if r_x is None or r_y is None:
+            raise ValueError("Specify a resolution for x and y")
+
+        data = (
+            self.compute_xy(projection)
+            .assign(
+                x=lambda elt: (elt.x // r_x) * r_x,
+                y=lambda elt: (elt.y // r_y) * r_y,
+            )
+            .groupby(["x", "y"])
+            .agg(kwargs)
+        )
+
+        return data
 
     def geoencode(self) -> alt.Chart:  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the

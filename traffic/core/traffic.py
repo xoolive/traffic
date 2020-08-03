@@ -4,10 +4,8 @@ import logging
 import warnings
 from datetime import timedelta
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-    List, Optional, Set, Type, TypeVar, Union, overload
-)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+                    List, Optional, Set, Type, TypeVar, Union, overload)
 
 import pandas as pd
 import pyproj
@@ -719,6 +717,11 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         See how to make `flight density heatmaps </scenarios/heatmaps.html>`_
         """
+        warnings.warn(
+            "agg_latlon will disappear in future versions. "
+            "Use agg_xy instead",
+            DeprecationWarning,
+        )
 
         if resolution is None:
             resolution = dict(latitude=1, longitude=1)
