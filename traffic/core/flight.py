@@ -4,29 +4,28 @@ import logging
 import warnings
 from datetime import datetime, timedelta, timezone
 from operator import attrgetter
-from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-    List, Optional, Set, Tuple, Union, cast, overload
-)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+                    List, Optional, Set, Tuple, Union, cast, overload)
 
-import altair as alt
 import numpy as np
-import pandas as pd
-import pyproj
 import scipy.signal
-from cartopy.crs import PlateCarree
-from cartopy.mpl.geoaxes import GeoAxesSubplot
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
+
+import altair as alt
+import pandas as pd
+import pyproj
+from cartopy.crs import PlateCarree
+from cartopy.mpl.geoaxes import GeoAxesSubplot
 from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
+from . import geodesy as geo
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..drawing.markers import aircraft as aircraft_marker
 from ..drawing.markers import rotate_marker
-from . import geodesy as geo
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .structure import Airport  # noqa: F401
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
@@ -1476,7 +1475,12 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         )
 
     def cumulative_distance(
-        self, compute_gs: bool = True, compute_track: bool = True, *, reverse: bool = False, **kwargs
+        self,
+        compute_gs: bool = True,
+        compute_track: bool = True,
+        *,
+        reverse: bool = False,
+        **kwargs,
     ) -> "Flight":
 
         """ Enrich the structure with new ``cumdist`` column computed from
@@ -1489,6 +1493,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         When the ``compute_gs`` flag is set to True (default), an additional
         ``compute_gs`` is also added. This value can be compared with the
         decoded ``groundspeed`` value in ADSB messages.
+
+        When the ``compute_track`` flag is set to True (default), an additional
+        ``compute_track`` is also added. This value can be compared with the
+        decoded ``track`` value in ADSB messages.
 
         """
 
@@ -1514,7 +1522,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
         if compute_gs:
             gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
-            res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "constant")))
+            res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "edge")))
 
         if compute_track:
             track = geo.bearing(
@@ -1524,7 +1532,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
                 (delta_1.longitude + delta_1.longitude_1).values,
             )
             track = np.where(track > 0, track, 360 + track)
-            res = res.assign(compute_track=np.abs(np.pad(track, (1, 0), "constant")))
+            res = res.assign(
+                compute_track=np.abs(np.pad(track, (1, 0), "edge"))
+            )
 
         return res.sort_values("timestamp", ascending=True)
 

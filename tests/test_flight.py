@@ -5,13 +5,11 @@ import zipfile
 
 import pandas as pd
 import pytest
-
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
-from traffic.data.samples import (
-    airbus_tree, belevingsvlucht, calibration, featured, get_sample
-)
+from traffic.data.samples import (airbus_tree, belevingsvlucht, calibration,
+                                  featured, get_sample)
 
 # fmt: on
 
@@ -347,6 +345,10 @@ def test_cumulative_distance() -> None:
     assert f2.diff(["compute_gs"]).mean("compute_gs_diff") < 0
     assert f1.diff(["compute_track"]).mean("compute_track_diff") < 0
     assert f2.diff(["compute_track"]).mean("compute_track_diff") < 0
+
+    # check that first value is non-zero
+    assert f1.data.iloc[0].compute_track > 1
+    assert f1.data.iloc[0].compute_gs > 1
 
 
 def test_agg_time_colnames() -> None:
