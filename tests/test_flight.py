@@ -341,10 +341,12 @@ def test_cumulative_distance() -> None:
 
     assert f1.diff(["cumdist"]).mean("cumdist_diff") > 0
     assert f2.diff(["cumdist"]).mean("cumdist_diff") < 0
-    assert f1.diff(["compute_gs"]).mean("compute_gs_diff") < 0
-    assert f2.diff(["compute_gs"]).mean("compute_gs_diff") < 0
-    assert f1.diff(["compute_track"]).mean("compute_track_diff") < 0
-    assert f2.diff(["compute_track"]).mean("compute_track_diff") < 0
+
+    assert abs(f1.diff(["compute_gs"]).mean("compute_gs_diff")) < 1
+    assert abs(f2.diff(["compute_gs"]).mean("compute_gs_diff")) < 1
+
+    assert abs(f1.diff(["compute_track"]).mean("compute_track_diff")) < 1
+    assert abs(f2.diff(["compute_track"]).mean("compute_track_diff")) < 1
 
     # check that first value is non-zero
     assert f1.data.iloc[0].compute_track > 1
