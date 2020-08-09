@@ -121,7 +121,7 @@ Examples of requests
 Extended Mode-S (EHS)
 ~~~~~~~~~~~~~~~~~~~~~
 
-EHS messages are not automatically decoded for your on the OpenSky
+EHS messages are not automatically decoded for you in the OpenSky
 Database but you may access them and decode them from your computer.
 
 .. warning::
