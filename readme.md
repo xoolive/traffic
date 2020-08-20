@@ -158,19 +158,27 @@ way they are.
 
 - I want to know more about Eurocontrol NM files
 
-We download those files from Eurocontrol [Network Manager DDR2 repository
-service](https://www.eurocontrol.int/articles/ddr2-web-portal) under Dataset
-Files > Airspace Environment Datasets. You may not be entitled access to those
-data.
+We download these files from Eurocontrol [Network Manager Demand Data
+Repository (DDR)](https://www.eurocontrol.int/ddr) under Dataset Files >
+Airspace Environment Datasets. [Access
+conditions](https://www.eurocontrol.int/ddr#access-conditions) are managed by
+EUROCONTROL.
 
 Should you have no such access, basic FIRs are provided in `eurofirs` from
 `traffic.data`.
 
 - I want to know more about Eurocontrol AIXM files
 
-When you import `aixm_airspaces` from `traffic.data`, you need to set a path to
-a directory containing AIRAC files. These are XML files following the
+When you import `aixm_airspaces` from `traffic.data`, you need to set a path
+to a directory containing AIRAC files. These are XML files following the
 [AIXM](http://aixm.aero/) standard and produced by Eurocontrol. We download
-those files from  Eurocontrol [Network Manager B2B web
-service](https://eurocontrol.int/service/network-manager-business-business-b2b-web-services).
-You may not be entitled access to those data.
+these files from Eurocontrol [Network Manager B2B web
+services](https://eurocontrol.int/service/network-manager-business-business-b2b-web-services).
+You have to own a B2B certificate granted by EUROCONTROL to get access to
+this data.
+
+- What does AIRAC mean?
+
+Aeronautical Information Publications are updated every 28 days according to
+fixed calendar. This cycle is known as AIRAC (Aeronautical Information
+Regulation And Control) cycle.

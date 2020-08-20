@@ -11,6 +11,11 @@ We provide a basic API for some NM web services. They have been implemented
 on a per need basis: not everything is provided, but functionalities may be
 added in the future.
 
+.. warning::
+
+    You have to own a B2B certificate granted by EUROCONTROL to get access to
+    this data.
+
 .. autoclass:: traffic.data.eurocontrol.b2b.NMB2B()
     :members:
     :no-inherited-members:
