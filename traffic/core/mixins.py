@@ -310,12 +310,14 @@ class ShapelyMixin(object):
         """
         return mapping(self.shape)
 
-    def geoencode(self, linewidth=1) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
+        Specific plot features, such as line widths, can be passed via **kwargs.
+        See `documentation <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
         return alt.Chart(alt.Data(values=self.geojson())).mark_geoshape(
-            stroke="#aaaaaa", strokeWidth=linewidth
+            stroke="#aaaaaa", **kwargs
         )
 
     def project_shape(
@@ -463,9 +465,11 @@ class GeographyMixin(DataFrameMixin):
 
         return data
 
-    def geoencode(self, linewidth=1) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
+        Specific plot features, such as line widths, can be passed via **kwargs.
+        See `documentation <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
         return (
             alt.Chart(
@@ -474,7 +478,7 @@ class GeographyMixin(DataFrameMixin):
                 )[["latitude", "longitude"]]
             )
             .encode(latitude="latitude", longitude="longitude")
-            .mark_line(strokeWidth=linewidth)
+            .mark_line(**kwargs)
         )
 
 
@@ -527,13 +531,13 @@ class GeoDBMixin(DataFrameMixin):
         )
         return output
 
-    def geoencode(self) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         """
         return (
             alt.Chart(self.data)
-            .mark_circle()
+            .mark_circle(**kwargs)
             .encode(
                 longitude="longitude:Q",
                 latitude="latitude:Q",
