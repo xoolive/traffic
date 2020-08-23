@@ -190,6 +190,9 @@ class Impala(object):
             .str.pad(6, fillchar="0")
         )
 
+        if "rawmsg" in df.columns and df.rawmsg.dtype != str:
+	        df.rawmsg = df.rawmsg.astype(str).str.strip()
+
         if "squawk" in df.columns:
             df.squawk = (
                 df.squawk.astype(str)
