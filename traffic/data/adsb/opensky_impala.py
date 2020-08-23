@@ -191,7 +191,7 @@ class Impala(object):
         )
 
         if "rawmsg" in df.columns and df.rawmsg.dtype != str:
-            df.rawmsg = str(df.rawmsg).strip()
+	        df.rawmsg = df.rawmsg.astype(str).str.strip()
 
         if "squawk" in df.columns:
             df.squawk = (
