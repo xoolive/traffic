@@ -63,14 +63,18 @@ def download_data(dataset: Dict[str, str]) -> io.BytesIO:
     from .. import session
 
     f = session.get(dataset["url"], stream=True)
-    total = int(f.headers["Content-Length"])
     buffer = io.BytesIO()
-    for chunk in tqdm(
-        f.iter_content(1024),
-        total=total // 1024 + 1 if total % 1024 > 0 else 0,
-        desc="download",
-    ):
-        buffer.write(chunk)
+
+    if "Content-Length" in f.headers:
+        total = int(f.headers["Content-Length"])
+        for chunk in tqdm(
+            f.iter_content(1024),
+            total=total // 1024 + 1 if total % 1024 > 0 else 0,
+            desc="download",
+        ):
+            buffer.write(chunk)
+    else:
+        buffer.write(f.content)
 
     buffer.seek(0)
 
