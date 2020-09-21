@@ -28,6 +28,11 @@ library:
   | *Proceedings of the 39th Digital Avionics Systems Conference* (DASC), 2020
   | `(notebook) <paper/squawk7700.html>`__
 
+- | A. Pellegrini, P. Di Sanzo, B. Bevilacqua, G. Duca, D. Pascarella, R. Palumbo, J. J. Ramos, M. À. Piera and G. Gigante.
+  | **Simulation-Based Evolutionary Optimization of Air Traffic Management**.
+  | *IEEE Access*, vol. 8, pp. 161551-161570, 2020
+  | https://doi.org/10.1109/access.2020.3021192
+
 - | X. Olive and J. Sun
   | **Detecting and Measuring Turbulence from Mode S Surveillance Downlink Data**.
   | *Proceedings of the 9th International Conference on Research in Air Transportation*, 2020
