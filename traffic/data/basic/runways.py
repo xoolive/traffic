@@ -115,16 +115,14 @@ class RunwayAirport(HBoxMixin, ShapelyMixin):
                     lon, lat, thr.name, rotation=360 - thr.bearing, **text_kw
                 )
 
-    def geoencode(
-        self, mode: str = "geometry"
-    ) -> Optional[alt.Chart]:  # coverage: ignore
+    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
 
-        if mode == "geometry":
+        if kwargs.get("mode", None) == "geometry":
             return (
                 super().geoencode().mark_geoshape(strokeWidth=2, stroke="black")
             )
 
-        elif mode == "labels":
+        else:  # if mode == "labels":
             rwy_labels = alt.Chart(self.data).encode(
                 longitude="longitude:Q", latitude="latitude:Q", text="name:N"
             )
@@ -136,9 +134,6 @@ class RunwayAirport(HBoxMixin, ShapelyMixin):
             ]
 
             return alt.layer(*rwy_layers)
-
-        else:
-            return None
 
 
 class Runways(object):

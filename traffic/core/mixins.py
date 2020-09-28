@@ -3,12 +3,13 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
+
 import altair as alt
 import pandas as pd
 import pyproj
 from cartopy import crs
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
 from shapely.geometry import Point, base, mapping
 from shapely.ops import transform
 
@@ -314,7 +315,8 @@ class ShapelyMixin(object):
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         Specific plot features, such as line widths, can be passed via **kwargs.
-        See `documentation <https://altair-viz.github.io/user_guide/marks.html>`_.
+        See `documentation
+        <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
         return alt.Chart(alt.Data(values=self.geojson())).mark_geoshape(
             stroke="#aaaaaa", **kwargs
@@ -469,7 +471,8 @@ class GeographyMixin(DataFrameMixin):
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         Specific plot features, such as line widths, can be passed via **kwargs.
-        See `documentation <https://altair-viz.github.io/user_guide/marks.html>`_.
+        See `documentation
+        <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
         return (
             alt.Chart(

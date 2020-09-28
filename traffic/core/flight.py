@@ -1685,13 +1685,16 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             .sum()
         )
 
-    def query_opensky(self) -> Optional["Flight"]:
+    def query_opensky(self, **kwargs) -> Optional["Flight"]:
         """Returns data from the same Flight as stored in OpenSky database.
 
         This may be useful if you write your own parser for data from a
         different channel. The method will use the ``callsign`` and ``icao24``
         attributes to build a request for current Flight in the OpenSky Network
         database.
+
+        The kwargs argument helps overriding arguments from the query, namely
+        start, stop, callsign and icao24.
 
         Returns None if no data is found.
 
@@ -1708,6 +1711,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             "callsign": self.callsign,
             "icao24": self.icao24,
             "return_flight": True,
+            **kwargs,
         }
         return opensky.history(**query_params)  # type: ignore
 
