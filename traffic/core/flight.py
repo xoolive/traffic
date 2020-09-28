@@ -1360,6 +1360,12 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
     @overload
     def distance(
+        self, other: None = None, column_name: str = "distance"
+    ) -> float:
+        ...
+
+    @overload
+    def distance(  # noqa: F811
         self,
         other: Union["Airspace", Polygon, PointMixin],
         column_name: str = "distance",
@@ -1374,14 +1380,18 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
     def distance(  # noqa: F811
         self,
-        other: Union["Flight", "Airspace", Polygon, PointMixin],
+        other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
         column_name: str = "distance",
-    ) -> Union[None, "Flight", pd.DataFrame]:
+    ) -> Union[None, float, "Flight", pd.DataFrame]:
 
         """Computes the distance from a Flight to another entity.
 
         The behaviour is different according to the type of the second
         element:
+
+        - if the other element is None (i.e. flight.distance()), the method
+          returns a distance in nautical miles between the first and last
+          recorded positions in the DataFrame.
 
         - if the other element is a Flight, the method returns a pandas
           DataFrame with corresponding data from both flights, aligned
@@ -1401,6 +1411,21 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
               before calling the method.
 
         """
+
+        if other is None:
+            first = self.at_ratio(0)
+            last = self.at_ratio(1)
+            if first is None or last is None:
+                return 0
+            return (
+                geo.distance(
+                    first.latitude,
+                    first.longitude,
+                    last.latitude,
+                    last.longitude,
+                )
+                / 1852  # in nautical miles
+            )
 
         if isinstance(other, PointMixin):
             size = len(self)

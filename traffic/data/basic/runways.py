@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from zipfile import ZipFile
 
-import pandas as pd
 import requests
+
+import altair as alt
+import pandas as pd
 from cartopy.crs import PlateCarree
 from shapely.geometry import base, shape
 from shapely.ops import linemerge
-
-import altair as alt
 from tqdm.autonotebook import tqdm
 
 from ... import cache_expiration

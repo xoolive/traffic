@@ -158,6 +158,9 @@ def test_bearing() -> None:
 
 def test_geometry() -> None:
     flight: Flight = get_sample(featured, "belevingsvlucht")
+
+    assert flight.distance() < 5  # returns to origin
+
     xy_length = flight.project_shape().length / 1852  # in nm
     last_pos = flight.cumulative_distance().at()
     assert last_pos is not None
