@@ -1,15 +1,15 @@
 from functools import lru_cache
 from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
-from cartopy.crs import PlateCarree
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
+
+import altair as alt
+from cartopy.crs import PlateCarree
+from cartotools.osm import request, tags
 from shapely.geometry import LineString, mapping
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
-
-import altair as alt
-from cartotools.osm import request, tags
 
 from .. import cache_expiration
 from ..drawing import Nominatim
@@ -116,7 +116,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
             ],
         }
 
-    def geoencode(
+    def geoencode(  # type: ignore
         self,
         footprint: bool = True,
         runways: bool = False,

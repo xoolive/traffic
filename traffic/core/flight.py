@@ -845,13 +845,20 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             default=None,
         )
 
-    def agg_time(self, freq="1T", merge=True, **kwargs) -> "Flight":
+    def agg_time(
+        self,
+        freq: str = "1T",
+        merge: bool = True,
+        apply: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> "Flight":
         """Aggregate features on time windows.
 
         The following is performed:
 
         - a new column `rounded` rounds the timestamp at the given rate;
         - the groupby/agg is operated with parameters passed in kwargs;
+        - the groupby/apply is operated with parameters passed in apply;
         - if merge is True, the new column in merged into the Flight,
           otherwise a pd.DataFrame is returned.
 
@@ -862,6 +869,12 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         returns a Flight with a new column groundspeed_mean with groundspeed
         averaged per intervals of 3 minutes.
 
+        >>> f.agg_time(
+        ...     "10T", apply=dict(straight=lambda df: Flight(df).distance())
+        ... )
+
+        returns a Flight with a new column straight with the great circle
+        distance between points sampled every 10 minutes.
         """
 
         def flatten(
@@ -894,6 +907,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             for key, value in kwargs.items()
         )
         agg_data = flatten(temp_flight.groupby("rounded").agg(kwargs_modified))
+
+        if apply is None:
+            apply = dict()
+
+        for label, fun in apply.items():
+            agg_data = agg_data.merge(
+                temp_flight.groupby("rounded").apply(fun).rename(label),
+                left_index=True,
+                right_index=True,
+            )
+
         if not merge:
             return agg_data
 
@@ -1359,7 +1383,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         )
 
     @overload
-    def distance(
+    def distance(  # type: ignore
         self, other: None = None, column_name: str = "distance"
     ) -> float:
         ...
