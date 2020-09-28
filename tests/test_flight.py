@@ -307,6 +307,16 @@ def test_agg_time() -> None:
     assert agg.max("groundspeed_mean") <= agg.max("groundspeed")
     assert agg.max("altitude_max") <= agg.max("altitude")
 
+    agg = flight.resample("30s").agg_time(
+        freq="30T",
+        track="mean",
+        apply=dict(
+            factor=lambda df: Flight(df).cumulative_distance().max("cumdist")
+            / Flight(df).distance()
+        ),
+    )
+    assert agg.max("factor") > 15
+
 
 def test_comet() -> None:
     flight = belevingsvlucht
