@@ -4,8 +4,10 @@ import logging
 import warnings
 from datetime import timedelta
 from pathlib import Path
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-                    List, Optional, Set, Type, TypeVar, Union, overload)
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+    List, Optional, Set, Type, TypeVar, Union, overload
+)
 
 import pandas as pd
 import pyproj
@@ -500,13 +502,17 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def agg_time(
-        self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
-    ):
+    def apply_time(self, freq="1T", merge=True, **kwargs):
         ...
 
     @lazy_evaluation()
-    def cumulative_distance(self, compute_gs: bool = False, **kwargs):
+    def agg_time(self, freq="1T", merge=True, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def cumulative_distance(
+        self, compute_gs: bool = True, compute_track: bool = True, **kwargs
+    ):
         ...
 
     @lazy_evaluation()

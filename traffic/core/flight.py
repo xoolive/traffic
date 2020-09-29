@@ -4,28 +4,29 @@ import logging
 import warnings
 from datetime import datetime, timedelta, timezone
 from operator import attrgetter
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-                    List, Optional, Set, Tuple, Union, cast, overload)
-
-import numpy as np
-import scipy.signal
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+    List, Optional, Set, Tuple, Union, cast, overload
+)
 
 import altair as alt
+import numpy as np
 import pandas as pd
 import pyproj
+import scipy.signal
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
 from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
-from . import geodesy as geo
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..drawing.markers import aircraft as aircraft_marker
 from ..drawing.markers import rotate_marker
+from . import geodesy as geo
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .structure import Airport  # noqa: F401
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
@@ -845,12 +846,57 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             default=None,
         )
 
+    def apply_time(
+        self, freq: str = "1T", merge: bool = True, **kwargs,
+    ) -> "Flight":
+        """Apply features on time windows.
+
+        The following is performed:
+
+        - a new column `rounded` rounds the timestamp at the given rate;
+        - the groupby/apply is operated with parameters passed in apply;
+        - if merge is True, the new column in merged into the Flight,
+          otherwise a pd.DataFrame is returned.
+
+        For example:
+
+        >>> f.agg_time("10T", straight=lambda df: Flight(df).distance())
+
+        returns a Flight with a new column straight with the great circle
+        distance between points sampled every 10 minutes.
+        """
+
+        if len(kwargs) == 0:
+            raise RuntimeError("No feature provided for aggregation.")
+        temp_flight = self.assign(
+            rounded=lambda df: df.timestamp.dt.round(freq)
+        )
+
+        agg_data = None
+
+        for label, fun in kwargs.items():
+            agg_data = (
+                agg_data.merge(  # type: ignore
+                    temp_flight.groupby("rounded")
+                    .apply(lambda df: fun(self.__class__(df)))
+                    .rename(label),
+                    left_index=True,
+                    right_index=True,
+                )
+                if agg_data is not None
+                else temp_flight.groupby("rounded")
+                .apply(lambda df: fun(self.__class__(df)))
+                .rename(label)
+                .to_frame()
+            )
+
+        if not merge:  # mostly for debugging purposes
+            return agg_data  # type: ignore
+
+        return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
+
     def agg_time(
-        self,
-        freq: str = "1T",
-        merge: bool = True,
-        apply: Optional[Dict[str, Any]] = None,
-        **kwargs,
+        self, freq: str = "1T", merge: bool = True, **kwargs,
     ) -> "Flight":
         """Aggregate features on time windows.
 
@@ -858,7 +904,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
         - a new column `rounded` rounds the timestamp at the given rate;
         - the groupby/agg is operated with parameters passed in kwargs;
-        - the groupby/apply is operated with parameters passed in apply;
         - if merge is True, the new column in merged into the Flight,
           otherwise a pd.DataFrame is returned.
 
@@ -868,13 +913,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
         returns a Flight with a new column groundspeed_mean with groundspeed
         averaged per intervals of 3 minutes.
-
-        >>> f.agg_time(
-        ...     "10T", apply=dict(straight=lambda df: Flight(df).distance())
-        ... )
-
-        returns a Flight with a new column straight with the great circle
-        distance between points sampled every 10 minutes.
         """
 
         def flatten(
@@ -908,17 +946,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         )
         agg_data = flatten(temp_flight.groupby("rounded").agg(kwargs_modified))
 
-        if apply is None:
-            apply = dict()
-
-        for label, fun in apply.items():
-            agg_data = agg_data.merge(
-                temp_flight.groupby("rounded").apply(fun).rename(label),
-                left_index=True,
-                right_index=True,
-            )
-
-        if not merge:
+        if not merge:  # mostly for debugging purposes
             return agg_data
 
         return temp_flight.merge(agg_data, left_on="rounded", right_index=True)

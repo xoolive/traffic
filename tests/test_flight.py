@@ -5,11 +5,13 @@ import zipfile
 
 import pandas as pd
 import pytest
+
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
-from traffic.data.samples import (airbus_tree, belevingsvlucht, calibration,
-                                  featured, get_sample)
+from traffic.data.samples import (
+    airbus_tree, belevingsvlucht, calibration, featured, get_sample
+)
 
 # fmt: on
 
@@ -307,15 +309,11 @@ def test_agg_time() -> None:
     assert agg.max("groundspeed_mean") <= agg.max("groundspeed")
     assert agg.max("altitude_max") <= agg.max("altitude")
 
-    agg = flight.resample("30s").agg_time(
+    app = flight.resample("30s").apply_time(
         freq="30T",
-        track="mean",
-        apply=dict(
-            factor=lambda df: Flight(df).cumulative_distance().max("cumdist")
-            / Flight(df).distance()
-        ),
+        factor=lambda f: f.distance() / f.cumulative_distance().max("cumdist"),
     )
-    assert agg.max("factor") > 15
+    assert app.min("factor") < 1 / 15
 
 
 def test_comet() -> None:
