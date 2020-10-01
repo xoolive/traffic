@@ -148,6 +148,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         return None
 
     # --- Special methods ---
+    # operators + (union), & (intersection), - (difference), ^ (xor)
 
     def __add__(self, other) -> "Traffic":
         # useful for compatibility with sum() function
@@ -157,6 +158,46 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     def __radd__(self, other) -> "Traffic":
         return self + other
+
+    def __and__(self, other: "Traffic") -> Optional["Traffic"]:
+        if not isinstance(other, Traffic):
+            raise RuntimeError(
+                "Operator `&` is only applicable between Traffic structures."
+            )
+        list_id = other.flight_ids
+        if list_id is None or self.flight_ids is None:
+            raise RuntimeError(
+                "No flight_id is provided in the given Traffic structures."
+            )
+        df = self.data.query("flight_id in @list_id")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
+
+    def __sub__(self, other: "Traffic") -> Optional["Traffic"]:
+        # set difference based on flight_id
+        if not isinstance(other, Traffic):
+            raise RuntimeError(
+                "Operator `-` is only applicable between Traffic structures."
+            )
+        list_id = other.flight_ids
+        if list_id is None or self.flight_ids is None:
+            raise RuntimeError(
+                "No flight_id is provided in the given Traffic structures."
+            )
+        df = self.data.query("flight_id not in @list_id")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
+
+    def __xor__(self, other: "Traffic") -> Optional["Traffic"]:
+        left = self - other
+        right = other - self
+        if left is None:
+            return right
+        if right is None:
+            return left
+        return right + left
 
     def _getSeries(self, index: pd.Series) -> Optional[Flight]:
 
@@ -395,6 +436,14 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
+    def has(self, *args, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def next(self, *args, **kwargs):
+        ...
+
+    @lazy_evaluation()
     def resample(self, rule: Union[str, int] = "1s"):
         ...
 
@@ -616,10 +665,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         return set(self.data.icao24)
 
     @property_cache
-    def flight_ids(self) -> Optional[Set[str]]:
+    def flight_ids(self) -> Optional[List[str]]:
         """Return all the different flight_id in the DataFrame"""
         if "flight_id" in self.data.columns:
-            return set(self.data.flight_id)
+            return list(self.data.flight_id.unique())
         return None
 
     # --- Easy work ---

@@ -265,18 +265,51 @@ class Flight(
         return output
 
     def __getattr__(self, name: str):
+        """Helper to facilitate method chaining without lambda.
+
+        TODO improve the documentation
+        flight.altitude_max
+            => flight.max('altitude')
+        flight.vertical_rate_std
+            => flight.std('vertical_rate')
+
+        Flight.feature_gt("altitude_max", 10000)
+            => lambda f: f.max('altitude') > 10000
+        """
+        msg = f"'{self.__class__.__name__}' has no attribute '{name}'"
         if "_" not in name:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' has no attribute '{name}'"
-            )
-        *feature_list, agg = name.split("_")
-        feature = "_".join(feature_list)
+            raise AttributeError(msg)
+        *name_split, agg = name.split("_")
+        feature = "_".join(name_split)
         if feature not in self.data.columns:
-            raise AttributeError(f"{self.title} has no feature '{feature}'")
+            raise AttributeError(msg)
         return getattr(self.data[feature], agg)()
 
     def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:
+        # TODO deprecate if test() and pipe() do a good job?
         return self if test(self) else None
+
+    def has(
+        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+    ) -> bool:
+        return self.next(method) is not None
+
+    def next(
+        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+    ) -> Optional["Flight"]:
+        """
+        TODO create documentation
+
+        - flight.next("go_around")
+        - flight.next("runway_change")
+        - flight.next(lambda f: f.aligned_on_ils("LFBO"))
+        """
+        fun = (
+            getattr(self.__class__, method)
+            if isinstance(method, str)
+            else method
+        )
+        return next(fun(self), None)
 
     # --- Iterators ---
 
