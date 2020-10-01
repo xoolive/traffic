@@ -67,6 +67,7 @@ setup(
         "Shapely",
         "requests",
         "requests_pkcs12",
+        "scikit-fuzzy",
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "typing_extensions",

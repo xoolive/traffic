@@ -93,6 +93,14 @@ class NavigationFeatures:
         data = self.data.sort_values("timestamp")
         return guess_airport(data.iloc[0], **kwargs)
 
+    def landing_at(self, airport: Union[str, "Airport"]) -> bool:
+        from ..data import airports
+        from ..core.structure import Airport
+
+        return self.landing_airport() == (
+            airport if isinstance(airport, Airport) else airports[airport]
+        )
+
     def landing_airport(self, **kwargs) -> "Airport":
         """Returns the most probable landing airport.
 
@@ -249,6 +257,7 @@ class NavigationFeatures:
 
         rad = np.pi / 180
 
+        chunks = list()
         for threshold in _airport.runways.list:
             tentative = (
                 self.bearing(threshold)
@@ -264,7 +273,13 @@ class NavigationFeatures:
             if tentative is not None:
                 for chunk in tentative.split("20s"):
                     if chunk.longer_than("1 minute"):
-                        yield chunk.assign(ILS=threshold.name)
+                        chunks.append(
+                            chunk.assign(
+                                ILS=threshold.name, airport=_airport.icao
+                            )
+                        )
+
+        yield from sorted(chunks, key=attrgetter("start"))
 
     def aligned_on_navpoint(
         self,
@@ -312,6 +327,111 @@ class NavigationFeatures:
         if sq7700 is None:
             return
         yield from sq7700.split()
+
+    def runway_change(
+        self,
+        airport: Union[str, "Airport", None] = None,
+        dataset: Optional["Airports"] = None,
+    ) -> Iterator["Flight"]:
+
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if airport is None:
+            if dataset is None:
+                airport = self.landing_airport()
+            else:
+                airport = self.landing_airport(dataset=dataset)
+
+        if airport is None:
+            return None
+
+        aligned = iter(self.aligned_on_ils(airport))
+        first = next(aligned, None)
+        if first is None:
+            return
+
+        for second in aligned:
+            candidate = self.between(first.start, second.stop)
+            assert candidate is not None
+            candidate = candidate.assign(ILS=None)
+            if candidate.flight_phases().query('label == "CLIMB"') is None:
+                candidate.data.loc[
+                    candidate.data.timestamp <= first.stop, "ILS"
+                ] = first.max("ILS")
+                candidate.data.loc[
+                    candidate.data.timestamp >= second.start, "ILS"
+                ] = second.max("ILS")
+
+                yield candidate.assign(
+                    airport=airport
+                    if isinstance(airport, str)
+                    else airport.icao
+                )
+
+            first = second
+
+    def go_around(
+        self,
+        airport: Union[str, "Airport", None] = None,
+        dataset: Optional["Airports"] = None,
+    ) -> Iterator["Flight"]:
+        """Detects go-arounds.
+
+        The method yields pieces of trajectories with exactly two landing
+        attempts (aligned on one runway) on the same airport separated by
+        exactly one climbing phase.
+        """
+
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if airport is None:
+            if dataset is None:
+                airport = self.landing_airport()
+            else:
+                airport = self.landing_airport(dataset=dataset)
+
+        if airport is None:
+            return None
+
+        first_attempt = next(self.aligned_on_ils(airport), None)
+
+        while first_attempt is not None:
+            after_first_attempt = self.after(first_attempt.start)
+            assert after_first_attempt is not None
+
+            climb = after_first_attempt.flight_phases().query(
+                'label == "CLIMB"'
+            )
+            if climb is None:
+                return
+
+            after_climb = self.after(next(climb.split("10T")).stop)
+            if after_climb is None:
+                return
+
+            next_attempt = next(after_climb.aligned_on_ils(airport), None)
+
+            if next_attempt is not None:
+                goaround = self.between(first_attempt.start, next_attempt.stop)
+                assert goaround is not None
+
+                goaround = goaround.assign(
+                    ILS=None,
+                    airport=airport
+                    if isinstance(airport, str)
+                    else airport.icao,
+                )
+                goaround.data.loc[
+                    goaround.data.timestamp <= first_attempt.stop, "ILS"
+                ] = first_attempt.max("ILS")
+                goaround.data.loc[
+                    goaround.data.timestamp >= next_attempt.start, "ILS"
+                ] = next_attempt.max("ILS")
+                yield goaround
+
+            first_attempt = next_attempt
 
     def landing_attempts(
         self, dataset: Optional["Airports"] = None

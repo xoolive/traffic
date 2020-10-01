@@ -24,6 +24,7 @@ from shapely.ops import transform
 
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
+from ..algorithms.phases import FuzzyLogic
 from ..drawing.markers import aircraft as aircraft_marker
 from ..drawing.markers import rotate_marker
 from . import geodesy as geo
@@ -91,7 +92,9 @@ class Position(PointMixin, pd.core.series.Series):
         return super().plot(ax, text_kw, shift, **{**visualdict, **kwargs})
 
 
-class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
+class Flight(
+    HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures, FuzzyLogic
+):
     """Flight is the most basic class associated to a trajectory.
     Flights are the building block of all processing methods, built on top of
     pandas DataFrame. The minimum set of required features are:

@@ -281,6 +281,27 @@ def test_getattr() -> None:
         belevingsvlucht.altitude_foo
 
 
+@pytest.mark.skipif(skip_runways, reason="no runways")
+def test_goaround() -> None:
+    assert next(belevingsvlucht.go_around(), None) is None
+    assert sum(1 for _ in belevingsvlucht.go_around("EHLE")) == 5
+
+    # from traffic.data.datasets import landing_zurich_2019
+    # assert sum(1 for _ in landing_zurich_2019["EWG7ME_1079"].go_around()) == 2
+
+    # def many_goarounds(f):
+    #     return sum(1 for _ in f.go_around()) > 1
+
+    # gogo = (
+    #     landing_zurich_2019.query("not simple")
+    #     .iterate_lazy()
+    #     .pipe(many_goarounds)
+    #     .eval(desc="", max_workers=8)
+    # )
+
+    # assert gogo.flight_ids == {"SWR287A_10099", "EWG7ME_1079"}
+
+
 def test_douglas_peucker() -> None:
     # https://github.com/xoolive/traffic/pull/5
     x = [0, 100, 200]
