@@ -271,6 +271,16 @@ def test_landing_ils() -> None:
     assert aligned.max("ILS") == "23"
 
 
+def test_getattr() -> None:
+    assert belevingsvlucht.vertical_rate_min < -3000
+    assert 15000 < belevingsvlucht.altitude_max < 20000
+
+    with pytest.raises(AttributeError, match="has no attribute"):
+        belevingsvlucht.foo
+    with pytest.raises(AttributeError, match="has no attribute"):
+        belevingsvlucht.altitude_foo
+
+
 def test_douglas_peucker() -> None:
     # https://github.com/xoolive/traffic/pull/5
     x = [0, 100, 200]

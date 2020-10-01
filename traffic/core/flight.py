@@ -261,6 +261,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             output += f"\ndestination: {self.stop}"
         return output
 
+    def __getattr__(self, name: str):
+        if "_" not in name:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' has no attribute '{name}'"
+            )
+        *feature_list, agg = name.split("_")
+        feature = "_".join(feature_list)
+        if feature not in self.data.columns:
+            raise AttributeError(f"{self.title} has no feature '{feature}'")
+        return getattr(self.data[feature], agg)()
+
     def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:
         return self if test(self) else None
 
