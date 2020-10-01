@@ -67,7 +67,6 @@ setup(
         "Shapely",
         "requests",
         "requests_pkcs12",
-        "scikit-fuzzy",
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "typing_extensions",
@@ -79,6 +78,7 @@ setup(
         "tqdm>=4.28",  # progressbars
         "cartotools>=1.2.1",
         "pyModeS>=2.8",
+        "openap"
     ],
     classifiers=[
         # How mature is this project? Common values are
