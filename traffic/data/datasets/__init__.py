@@ -42,6 +42,12 @@ datasets = dict(
         filename="airspace_dataset.parquet",
         reader=Traffic.from_file,
     ),
+    landing_toulouse_2017=dict(
+        url="https://ndownloader.figshare.com/files/24926849",
+        md5sum="141e6c39211c382e5dd8ec66096b3798",
+        filename="toulouse2017.parquet.gz",
+        reader=Traffic.from_file,
+    ),
     landing_zurich_2019=dict(
         url="https://ndownloader.figshare.com/files/20291079",
         md5sum="c5577f450424fa74ca673ed8a168c67f",
