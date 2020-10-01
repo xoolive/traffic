@@ -527,6 +527,10 @@ class Traffic(HBoxMixin, GeographyMixin):
     ):
         ...
 
+    @lazy_evaluation()
+    def landing_at(self, airport: str) -> bool:
+        ...
+
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
