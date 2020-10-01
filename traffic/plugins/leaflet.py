@@ -25,7 +25,9 @@ def traffic_map_leaflet(
 
     for flight in traffic:
         if flight.query("latitude == latitude"):
-            m.add_layer(flight)
+            elt = m.add_layer(flight)
+            elt.popup = HTML()
+            elt.popup.value = flight._info_html()
 
         if highlight is None:
             highlight = dict()
@@ -49,7 +51,9 @@ def flight_map_leaflet(
     if last_position is None:
         return None
     m = Map(center=last_position.latlon, zoom=zoom, **kwargs)
-    m.add_layer(flight)
+    elt = m.add_layer(flight)
+    elt.popup = HTML()
+    elt.popup.value = flight._info_html()
 
     if highlight is None:
         highlight = dict()
