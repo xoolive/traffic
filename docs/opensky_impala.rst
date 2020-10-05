@@ -39,6 +39,14 @@ Historical traffic data
 Examples of requests
 ~~~~~~~~~~~~~~~~~~~~
 
+First, the `opensky` instance parses your configuration file upon import:
+
+.. code:: python
+
+    from traffic.data import opensky
+
+Then you may send requests:
+
 - based on callsign:
 
     .. code:: python
