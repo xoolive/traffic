@@ -494,6 +494,7 @@ class NavigationFeatures:
             return pd.Timestamp("NaT")
         return diversion.start
 
+    @property
     def holes(self) -> int:
         """Returns the number of 'holes' in a trajectory."""
         simplified: "Flight" = self.simplify(25)  # type: ignore
