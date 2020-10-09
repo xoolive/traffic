@@ -286,23 +286,70 @@ class Flight(
         return getattr(self.data[feature], agg)()
 
     def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:
-        # TODO deprecate if test() and pipe() do a good job?
+        # TODO deprecate if pipe() does a good job?
         return self if test(self) else None
 
     def has(
         self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
     ) -> bool:
+        """Returns True if flight.method() returns a non-empty iterator.
+
+        Example usage:
+
+        >>> flight.has("go_around")
+        >>> flight.has("runway_change")
+        >>> flight.has(lambda f: f.aligned_on_ils("LFBO"))
+        """
         return self.next(method) is not None
+
+    def sum(
+        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+    ) -> int:
+        """Returns the number of segments returns by flight.method().
+
+        Example usage:
+
+        >>> flight.sum("go_around")
+        >>> flight.sum("runway_change")
+        >>> flight.sum(lambda f: f.aligned_on_ils("LFBO"))
+        """
+        fun = (
+            getattr(self.__class__, method)
+            if isinstance(method, str)
+            else method
+        )
+        return sum(1 for _ in fun(self))
+
+    def all(
+        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+    ) -> Optional["Flight"]:
+        """Returns the concatenation of segments returns by flight.method().
+
+        Example usage:
+
+        >>> flight.all("go_around")
+        >>> flight.all("runway_change")
+        >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
+        """
+        fun = (
+            getattr(self.__class__, method)
+            if isinstance(method, str)
+            else method
+        )
+        t = sum(flight for flight in fun(self))
+        if t == 0:
+            return None
+        return Flight(t.data)  # type: ignore
 
     def next(
         self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
     ) -> Optional["Flight"]:
         """
-        TODO create documentation
+        Returns the first segment of trajectory yielded by flight.method()
 
-        - flight.next("go_around")
-        - flight.next("runway_change")
-        - flight.next(lambda f: f.aligned_on_ils("LFBO"))
+        >>> flight.next("go_around")
+        >>> flight.next("runway_change")
+        >>> flight.next(lambda f: f.aligned_on_ils("LFBO"))
         """
         fun = (
             getattr(self.__class__, method)
@@ -1999,7 +2046,10 @@ class Flight(
         return []
 
     def encode(
-        self, y: Union[str, List[str], alt.Y], **kwargs
+        self,
+        y: Union[str, List[str], alt.Y],
+        x: Union[str, alt.X] = "timestamp:T",
+        **kwargs,
     ) -> alt.Chart:  # coverage: ignore
         """Plots the given features according to time.
 
@@ -2038,7 +2088,7 @@ class Flight(
             feature_list.append(y)
             data = self.data[feature_list].query(f"{y} == {y}")
             default_encode = dict(
-                x="timestamp:T",
+                x=x,
                 y=alt_y if alt_y is not None else alt.Y(y, title=y),
                 color=alt.Color(
                     "flight_id"

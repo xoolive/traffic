@@ -89,7 +89,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         Creates a Traffic structure from all flights passed as an
         iterator or iterable.
         """
-        cumul = [f.data for f in flights if f is not None]
+        cumul = [flight.data for flight in flights if flight is not None]
         if len(cumul) == 0:
             return None
         return cls(pd.concat(cumul, sort=False))
@@ -396,20 +396,20 @@ class Traffic(HBoxMixin, GeographyMixin):
         return self.length
 
     def __repr__(self) -> str:
-        stats = self.stats
-        shape = stats.shape[0]
+        basic_stats = self.basic_stats
+        shape = basic_stats.shape[0]
         if shape > 10:
             # stylers are not efficient on big dataframes...
-            stats = stats.head(10)
-        return stats.__repr__()
+            basic_stats = basic_stats.head(10)
+        return basic_stats.__repr__()
 
     def _repr_html_(self) -> str:
-        stats = self.stats
-        shape = stats.shape[0]
+        basic_stats = self.basic_stats
+        shape = basic_stats.shape[0]
         if shape > 10:
             # stylers are not efficient on big dataframes...
-            stats = stats.head(10)
-        styler = stats.style.bar(align="mid", color="#5fba7d")
+            basic_stats = basic_stats.head(10)
+        styler = basic_stats.style.bar(align="mid", color="#5fba7d")
         rep = f"<b>Traffic with {shape} identifiers</b>"
         return rep + styler._repr_html_()
 
@@ -437,6 +437,10 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @lazy_evaluation()
     def has(self, *args, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def all(self, *args, **kwargs):
         ...
 
     @lazy_evaluation()
@@ -668,7 +672,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     def flight_ids(self) -> Optional[List[str]]:
         """Return all the different flight_id in the DataFrame"""
         if "flight_id" in self.data.columns:
-            return list(self.data.flight_id.unique())
+            return list(flight.flight_id for flight in self)  # type: ignore
         return None
 
     # --- Easy work ---
@@ -693,13 +697,25 @@ class Traffic(HBoxMixin, GeographyMixin):
         )
 
     @property_cache
-    def stats(self) -> pd.DataFrame:
+    def basic_stats(self) -> pd.DataFrame:
         key = ["icao24", "callsign"] if self.flight_ids is None else "flight_id"
         return (
             self.data.groupby(key)[["timestamp"]]
             .count()
             .sort_values("timestamp", ascending=False)
             .rename(columns={"timestamp": "count"})
+        )
+
+    def summary(self, attributes: List[str]) -> pd.DataFrame:
+        """Returns a summary of the current Traffic structure containing
+        featured attributes.
+
+        Example usage (TODO)
+
+        """
+        return pd.DataFrame.from_records(
+            dict((key, getattr(flight, key)) for key in attributes)
+            for flight in self
         )
 
     def geoencode(self, *args, **kwargs):
