@@ -1,6 +1,9 @@
 Scenarios and use cases
 =======================
 
+
+- `Thunderbolts and lightning, very very enlightening <https://spatialawareness.io/blog/thunderbolts-and-lightning/>`__
+
 .. toctree::
     :maxdepth: 1
 

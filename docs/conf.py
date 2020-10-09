@@ -50,6 +50,7 @@ autodoc_mock_imports = [
     "cartotools",
     "ipyleaflet",
     "matplotlib",
+    "openap",
     "pandas",
     "pyModeS",
     "pyproj",

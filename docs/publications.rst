@@ -28,6 +28,16 @@ library:
   | *Proceedings of the 39th Digital Avionics Systems Conference* (DASC), 2020
   | `(notebook) <paper/squawk7700.html>`__
 
+- | G. Lui, R. Liem and K. Hon.
+  | **Towards understanding the impact of convective weather on aircraft arrival traffic at the Hong Kong International Airport**
+  | *{IOP} Conference Series: Earth and Environmental Science*, vol. 569, pp. 012067, 2020
+  | https://iopscience.iop.org/article/10.1088/1755-1315/569/1/012067
+
+- | X. Olive and L. Basora
+  | **Detection and identification of significant events in historical aircraft trajectory data**.
+  | *Transportation Research Part C: Emerging Technologies*, vol. 119, pp. 102737, 2020
+  | https://doi.org/10.1016/j.trc.2020.102737
+
 - | A. Pellegrini, P. Di Sanzo, B. Bevilacqua, G. Duca, D. Pascarella, R. Palumbo, J. J. Ramos, M. À. Piera and G. Gigante.
   | **Simulation-Based Evolutionary Optimization of Air Traffic Management**.
   | *IEEE Access*, vol. 8, pp. 161551-161570, 2020
