@@ -30,7 +30,7 @@ library:
 
 - | G. Lui, R. Liem and K. Hon.
   | **Towards understanding the impact of convective weather on aircraft arrival traffic at the Hong Kong International Airport**
-  | *{IOP} Conference Series: Earth and Environmental Science*, vol. 569, pp. 012067, 2020
+  | *IOP Conference Series: Earth and Environmental Science*, vol. 569, pp. 012067, 2020
   | https://iopscience.iop.org/article/10.1088/1755-1315/569/1/012067
 
 - | X. Olive and L. Basora

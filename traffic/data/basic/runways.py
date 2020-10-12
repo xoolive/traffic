@@ -4,10 +4,9 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from zipfile import ZipFile
 
-import requests
-
 import altair as alt
 import pandas as pd
+import requests
 from cartopy.crs import PlateCarree
 from shapely.geometry import base, shape
 from shapely.ops import linemerge
@@ -121,8 +120,7 @@ class RunwayAirport(HBoxMixin, ShapelyMixin):
             return (
                 super().geoencode().mark_geoshape(strokeWidth=2, stroke="black")
             )
-
-        else:  # if mode == "labels":
+        elif kwargs.get("mode", None) == "labels":
             rwy_labels = alt.Chart(self.data).encode(
                 longitude="longitude:Q", latitude="latitude:Q", text="name:N"
             )
@@ -134,6 +132,8 @@ class RunwayAirport(HBoxMixin, ShapelyMixin):
             ]
 
             return alt.layer(*rwy_layers)
+
+        return None
 
 
 class Runways(object):

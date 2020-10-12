@@ -1,12 +1,11 @@
 from functools import lru_cache
 from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
-
 import altair as alt
 from cartopy.crs import PlateCarree
 from cartotools.osm import request, tags
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
 from shapely.geometry import LineString, mapping
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
@@ -118,17 +117,17 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
     def geoencode(  # type: ignore
         self,
-        footprint: bool = True,
-        runways: bool = False,
-        labels: bool = False,
+        footprint: bool = False,
+        runways: bool = True,
+        labels: bool = True,
     ) -> alt.Chart:  # coverage: ignore
         cumul = []
         if footprint:
             cumul.append(super().geoencode())
         if runways:
-            cumul.append(self.runways.geoencode())
+            cumul.append(self.runways.geoencode(mode="geometry"))
         if labels:
-            cumul.append(self.runways.geoencode("labels"))
+            cumul.append(self.runways.geoencode(mode="labels"))
         if len(cumul) == 0:
             raise TypeError(
                 "At least one of footprint, runways and labels must be True"
