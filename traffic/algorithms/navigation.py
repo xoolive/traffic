@@ -525,7 +525,8 @@ class NavigationFeatures:
             return
 
         straight_line = (
-            alt_above.assign(
+            alt_above.unwrap()
+            .assign(
                 turning_rate=lambda x: x.track_unwrapped.diff()
                 / x.timestamp.diff().dt.total_seconds()
             )
