@@ -881,6 +881,23 @@ class Flight(
         assert subset is not None
         return subset.at()
 
+    def sliding_windows(
+        self, duration: deltalike, step: deltalike,
+    ) -> Iterator["Flight"]:
+
+        duration_ = to_timedelta(duration)
+        step_ = to_timedelta(step)
+
+        first = self.first(duration_)
+        if first is None:
+            return
+
+        yield first
+
+        after = self.after(self.start + step_)
+        if after is not None:
+            yield from after.sliding_windows(duration_, step_)
+
     @overload
     def split(self, value: int, unit: str) -> Iterator["Flight"]:
         ...
