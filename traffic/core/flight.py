@@ -33,9 +33,9 @@ from .structure import Airport  # noqa: F401
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 
 if TYPE_CHECKING:
+    from ..data.adsb.raw_data import RawData  # noqa: F401
     from .airspace import Airspace  # noqa: F401
     from .traffic import Traffic  # noqa: F401
-    from ..data.adsb.raw_data import RawData  # noqa: F401
 
 # fmt: on
 
@@ -238,17 +238,21 @@ class Flight(
         return title + no_wrap_div.format(self._repr_svg_())
 
     def _repr_svg_(self):
+        # assign fake altitude helps when no altitude is given
+        # we only need that for the representation
+        flight = self.assign(altitude=0)
+
         # even 25m should be enough to limit the size of resulting notebooks!
-        if self.shape is None:
+        if flight.shape is None:
             return None
 
-        if len(self.shape.coords) < 1000:
-            return super()._repr_svg_()
+        if len(flight.shape.coords) < 1000:
+            return super(Flight, flight)._repr_svg_()
 
         return super(
             Flight,
             # cast should be useless but return type of simplify() is Union
-            cast(Flight, self.simplify(25)),
+            cast(Flight, flight.simplify(25)),
         )._repr_svg_()
 
     def __repr__(self) -> str:
