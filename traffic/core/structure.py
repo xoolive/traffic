@@ -48,7 +48,26 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         return f"{self.icao}/{self.iata}: {short_name}"
 
     def _repr_html_(self) -> str:
-        title = f"<b>{self.name.strip()}</b> ({self.country}) "
+        title = ""
+        if (
+            self.runways is not None
+            and self.runways.shape.is_empty
+            and len(self.osm_runway["features"]) > 0
+        ):
+            title += "<div class='alert alert-warning'><p>"
+            title += "<b>Warning!</b> No runway information available in our "
+            title += "database. Please consider helping the community by "
+            title += "updating the runway information with data provided "
+            title += "by OpenStreetMap.</p>"
+
+            url = f"https://ourairports.com/airports/{self.icao}/runways.html"
+            title += f"<p>Edit link: <a href='{url}'>{url}</a>.<br/>"
+            title += "Check the data in "
+            title += f"<code>airports['{self.icao}'].osm_runway</code>"
+            title += " and edit the webpage accordingly. You may need to "
+            title += " create an account there to be able to edit.</p></div>"
+
+        title += f"<b>{self.name.strip()}</b> ({self.country}) "
         title += f"<code>{self.icao}/{self.iata}</code>"
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
@@ -82,7 +101,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
     @lru_cache()
     def osm_request(self) -> Nominatim:  # coverage: ignore
 
-        if self.runways is not None:
+        if self.runways is not None and not self.runways.shape.is_empty:
             lon1, lat1, lon2, lat2 = self.runways.bounds
             return request(
                 (lon1 - 0.02, lat1 - 0.02, lon2 + 0.02, lat2 + 0.02),
