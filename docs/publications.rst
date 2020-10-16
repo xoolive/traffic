@@ -26,7 +26,7 @@ library:
 - | X. Olive, A. Tanner, M. Strohmeier, M. Schäfer, M. Feridun, A. Tart, I. Martinovic and V. Lenders.
   | **OpenSky Report 2020: Analysing in-flight emergencies using big data**.
   | *Proceedings of the 39th Digital Avionics Systems Conference* (DASC), 2020
-  | `(notebook) <paper/squawk7700.html>`__
+  | `(paper) <http://www.cs.ox.ac.uk/files/12039/OpenSky%20Report%202020.pdf>`__ `(notebook) <paper/squawk7700.html>`__
 
 - | G. Lui, R. Liem and K. Hon.
   | **Towards understanding the impact of convective weather on aircraft arrival traffic at the Hong Kong International Airport**
@@ -50,6 +50,7 @@ library:
 - | X. Olive, L. Basora, B. Viry and R. Alligier
   | **Deep Trajectory Clustering with Autoencoders**.
   | *Proceedings of the 9th International Conference on Research in Air Transportation*, 2020
+  | `(paper) <http://www.icrat.org/ICRAT/seminarContent/2020/papers/ICRAT2020_paper_2.pdf>`__
 
 - | S. Proud.
   | **Go-Around Detection Using Crowd-Sourced ADS-B Position Data**.
