@@ -54,7 +54,7 @@ setup(
             for f in os.listdir(os.path.join("icons"))
             if f.startswith("travel")
         ]
-        + ["traffic.conf"],
+        + ["traffic.conf", "py.typed"],
     },
     python_requires=">=3.6",
     install_requires=[
@@ -78,7 +78,7 @@ setup(
         "tqdm>=4.28",  # progressbars
         "cartotools>=1.2.1",
         "pyModeS>=2.8",
-        "openap"
+        "openap",
     ],
     classifiers=[
         # How mature is this project? Common values are
