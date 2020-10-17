@@ -1,8 +1,13 @@
+# fmt: off
+
 import re
 import textwrap
 import warnings
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, NoReturn, Optional, Set, Type, TypeVar
+from pathlib import Path
+from typing import (
+    Any, Dict, List, NoReturn, Optional, Set, Type, TypeVar, Union
+)
 from xml.dom import minidom
 from xml.etree import ElementTree
 
@@ -13,6 +18,8 @@ from ....core.mixins import DataFrameMixin, _HBox
 from ....core.time import timelike, to_datetime
 from .reply import B2BReply
 from .xml import REQUESTS
+
+# fmt: on
 
 rename_cols = {
     "aircraftId": "callsign",
@@ -245,19 +252,33 @@ class FlightInfo(B2BReply):
         et = ElementTree.parse(filename)
         return cls.fromET(et.getroot())
 
-    def to_xml(self, filename: Optional[str] = None) -> None:
+    def to_xml(self, filename: Union[None, str, Path] = None) -> None:
 
-        if filename is None:
-            filename = "{id_}_{eobt:%Y-%m-%d}_{callsign}_{from_}_{to}.xml"
-            filename = filename.format(
-                id_=self.flight_id,
-                eobt=self.estimatedOffBlockTime,
-                callsign=self.callsign,
-                from_=self.aerodromeOfDeparture,
-                to=self.aerodromeOfDestination,
-            )
+        if isinstance(filename, str):
+            filepath = Path(filename)
 
-        ElementTree.ElementTree(self.reply).write(filename)
+        if isinstance(filename, Path):
+            filepath = filename
+
+        if filename is None or filepath.is_dir():
+            name = "{eobt:%Y-%m-%d}_{id_}_{callsign}_{from_}_{to}.xml"
+        elif isinstance(filename, str):
+            name = filename
+
+        name = name.format(
+            id_=self.flight_id,
+            eobt=self.estimatedOffBlockTime,
+            callsign=self.callsign,
+            from_=self.aerodromeOfDeparture,
+            to=self.aerodromeOfDestination,
+        )
+
+        if filepath.is_dir():
+            filepath = filepath / name
+        else:
+            filepath = Path(name)
+
+        ElementTree.ElementTree(self.reply).write(filepath)
 
     @property
     def flight_id(self) -> str:
@@ -284,7 +305,7 @@ class FlightInfo(B2BReply):
     @property
     def icao24(self) -> Optional[str]:
         if hasattr(self, "aircraftAddress"):
-            return self.aircraftAddress
+            return self.aircraftAddress.lower()
         return None
 
     def _repr_html_(self):
