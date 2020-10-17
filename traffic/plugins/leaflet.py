@@ -4,7 +4,7 @@ from ipyleaflet import Map, Marker, Polygon, Polyline
 from ipywidgets import HTML
 from shapely.geometry import LineString
 
-from ..core import Airspace, Flight, FlightPlan, Traffic
+from ..core import Airspace, Flight, FlightIterator, FlightPlan, Traffic
 from ..core.mixins import PointMixin
 
 
@@ -181,6 +181,10 @@ def map_add_layer(_map, elt, **kwargs):
         layer = elt.leaflet(**kwargs)
         _old_add_layer(_map, layer)
         return layer
+    if isinstance(elt, FlightIterator):
+        for segment in elt:
+            map_add_layer(_map, segment, **kwargs)
+        return
     return _old_add_layer(_map, elt)
 
 
