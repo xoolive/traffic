@@ -360,7 +360,7 @@ class NavigationFeatures:
             candidate = self.between(first.start, second.stop)
             assert candidate is not None
             candidate = candidate.assign(ILS=None)
-            if candidate.flight_phases().query('label == "CLIMB"') is None:
+            if candidate.phases().query('phase == "CLIMB"') is None:
                 candidate.data.loc[
                     candidate.data.timestamp <= first.stop, "ILS"
                 ] = first.max("ILS")
@@ -407,9 +407,7 @@ class NavigationFeatures:
             after_first_attempt = self.after(first_attempt.start)
             assert after_first_attempt is not None
 
-            climb = after_first_attempt.flight_phases().query(
-                'label == "CLIMB"'
-            )
+            climb = after_first_attempt.phases().query('phase == "CLIMB"')
             if climb is None:
                 return
 

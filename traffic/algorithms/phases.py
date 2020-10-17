@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 class FuzzyLogic:
-    def flight_phases(self) -> "Flight":
+    def phases(self) -> "Flight":
         """Assign a flight phase to each timestamp of a flight
         using OpenAP phase detection fuzzy logic method.
         """
@@ -24,8 +24,8 @@ class FuzzyLogic:
             self.data.groundspeed.values,
             self.data.vertical_rate.values,
         )
-        return self.assign(label=fp.phaselabel()).assign(
-            label=lambda df: df.label.str.replace("GND", "GROUND")
+        return self.assign(phase=fp.phaselabel()).assign(
+            phase=lambda df: df.phase.str.replace("GND", "GROUND")
             .str.replace("CL", "CLIMB")
             .str.replace("DE", "DESCENT")
             .str.replace("CR", "CRUISE")
