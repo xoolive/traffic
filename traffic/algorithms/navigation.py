@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, MultiLineString
 
+from ..core.iterator import flight_iterator
+
 if TYPE_CHECKING:
     from ..core import Flight  # noqa: 401
     from ..core.mixins import PointMixin  # noqa: 401
@@ -94,8 +96,8 @@ class NavigationFeatures:
         return guess_airport(data.iloc[0], **kwargs)
 
     def landing_at(self, airport: Union[str, "Airport"]) -> bool:
-        from ..data import airports
         from ..core.structure import Airport
+        from ..data import airports
 
         return self.landing_airport() == (
             airport if isinstance(airport, Airport) else airports[airport]
@@ -131,6 +133,7 @@ class NavigationFeatures:
         data = self.data.sort_values("timestamp")
         return guess_airport(data.iloc[-1], **kwargs)
 
+    @flight_iterator
     def aligned_on_runway(
         self, airport: Union[str, "Airport"]
     ) -> Iterator["Flight"]:
@@ -206,6 +209,7 @@ class NavigationFeatures:
             default=None,
         )
 
+    @flight_iterator
     def aligned_on_ils(
         self, airport: Union[None, str, "Airport"],
     ) -> Iterator["Flight"]:
@@ -264,11 +268,9 @@ class NavigationFeatures:
                 .distance(threshold)
                 .assign(
                     b_diff=lambda df: df.distance
-                    * (np.radians(df.bearing - threshold.bearing).abs())
+                    * np.radians(df.bearing - threshold.bearing).abs()
                 )
-                .query(
-                    f"b_diff.abs() < .1 and cos((bearing - track) * {rad}) > 0"
-                )
+                .query(f"b_diff < .1 and cos((bearing - track) * {rad}) > 0")
             )
             if tentative is not None:
                 for chunk in tentative.split("20s"):
@@ -281,6 +283,7 @@ class NavigationFeatures:
 
         yield from sorted(chunks, key=attrgetter("start"))
 
+    @flight_iterator
     def aligned_on_navpoint(
         self,
         points: Iterable["Navaid"],
@@ -306,9 +309,9 @@ class NavigationFeatures:
                 .assign(
                     b_diff=lambda df: df.distance
                     * (np.radians(df.bearing - df.track).abs()),
-                    delta=lambda df: (df.bearing - df.track),
+                    delta=lambda df: (df.bearing - df.track).abs(),
                 )
-                .query(f"delta.abs() < {angle_precision} and distance < 500")
+                .query(f"delta < {angle_precision} and distance < 500")
             )
             if tentative is not None:
                 for chunk in tentative.split(time_precision):
@@ -318,6 +321,7 @@ class NavigationFeatures:
                     ):
                         yield chunk.assign(navaid=navpoint.name)
 
+    @flight_iterator
     def emergency(self) -> Iterator["Flight"]:
         """Iterates on emergency segments of trajectory.
 
@@ -328,6 +332,7 @@ class NavigationFeatures:
             return
         yield from sq7700.split()
 
+    @flight_iterator
     def runway_change(
         self,
         airport: Union[str, "Airport", None] = None,
@@ -371,6 +376,7 @@ class NavigationFeatures:
 
             first = second
 
+    @flight_iterator
     def go_around(
         self,
         airport: Union[str, "Airport", None] = None,
@@ -433,6 +439,7 @@ class NavigationFeatures:
 
             first_attempt = next_attempt
 
+    @flight_iterator
     def landing_attempts(
         self, dataset: Optional["Airports"] = None
     ) -> Iterator["Flight"]:
@@ -502,13 +509,14 @@ class NavigationFeatures:
             return -1
         return len(simplified.shape.buffer(1e-3).interiors)
 
+    @flight_iterator
     def holding_pattern(
         self,
         min_altitude=7000,
         turning_threshold=0.5,
-        low_limit=pd.Timedelta("30 seconds"),
-        high_limit=pd.Timedelta("10 minutes"),
-        turning_limit=pd.Timedelta("5 minutes"),
+        low_limit=pd.Timedelta("30 seconds"),  # noqa: B008
+        high_limit=pd.Timedelta("10 minutes"),  # noqa: B008
+        turning_limit=pd.Timedelta("5 minutes"),  # noqa: B008
     ) -> Iterator["Flight"]:
         """Iterates on parallel segments candidates for identifying
         a holding pattern.

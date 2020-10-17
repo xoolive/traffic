@@ -28,6 +28,7 @@ from ..algorithms.phases import FuzzyLogic
 from ..drawing.markers import aircraft as aircraft_marker
 from ..drawing.markers import rotate_marker
 from . import geodesy as geo
+from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .structure import Airport  # noqa: F401
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
@@ -85,6 +86,12 @@ class Position(PointMixin, pd.core.series.Series):
         visualdict = dict(s=300)
         if hasattr(self, "track"):
             visualdict["marker"] = rotate_marker(aircraft_marker, self.track)
+
+        if text_kw is None:
+            text_kw = dict()
+        else:
+            # since we may modify it, let's make a copy
+            text_kw = {**text_kw}
 
         if "s" not in text_kw and hasattr(self, "callsign"):
             text_kw["s"] = self.callsign
@@ -238,21 +245,17 @@ class Flight(
         return title + no_wrap_div.format(self._repr_svg_())
 
     def _repr_svg_(self):
-        # assign fake altitude helps when no altitude is given
-        # we only need that for the representation
-        flight = self.assign(altitude=0)
-
         # even 25m should be enough to limit the size of resulting notebooks!
-        if flight.shape is None:
+        if self.shape is None:
             return None
 
-        if len(flight.shape.coords) < 1000:
-            return super(Flight, flight)._repr_svg_()
+        if len(self.shape.coords) < 1000:
+            return super()._repr_svg_()
 
         return super(
             Flight,
             # cast should be useless but return type of simplify() is Union
-            cast(Flight, flight.simplify(25)),
+            cast(Flight, self.resample("1s").simplify(25)),
         )._repr_svg_()
 
     def __repr__(self) -> str:
@@ -304,7 +307,7 @@ class Flight(
         >>> flight.has("runway_change")
         >>> flight.has(lambda f: f.aligned_on_ils("LFBO"))
         """
-        return self.next(method) is not None
+        return self.next(method) is not None  # noqa: B305
 
     def sum(
         self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
@@ -371,6 +374,8 @@ class Flight(
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
         data = self.data.query("longitude == longitude")
+        if "altitude" not in data.columns:
+            data = data.assign(altitude=0)
         yield from zip(data["longitude"], data["latitude"], data["altitude"])
 
     def coords4d(
@@ -885,6 +890,7 @@ class Flight(
         assert subset is not None
         return subset.at()
 
+    @flight_iterator
     def sliding_windows(
         self, duration: deltalike, step: deltalike,
     ) -> Iterator["Flight"]:
@@ -903,15 +909,16 @@ class Flight(
             yield from after.sliding_windows(duration_, step_)
 
     @overload
-    def split(self, value: int, unit: str) -> Iterator["Flight"]:
+    def split(self, value: int, unit: str) -> FlightIterator:
         ...
 
     @overload
     def split(  # noqa: F811
         self, value: str, unit: None = None
-    ) -> Iterator["Flight"]:
+    ) -> FlightIterator:
         ...
 
+    @flight_iterator
     def split(  # noqa: F811
         self, value: Union[int, str] = 10, unit: Optional[str] = None
     ) -> Iterator["Flight"]:
@@ -955,6 +962,8 @@ class Flight(
         15,000 ft. The command extracts the plane pattern.
 
         """
+
+        warnings.warn("Use split().max() instead.", DeprecationWarning)
         return max(
             self.split(value, unit),  # type: ignore
             key=key,
@@ -1345,12 +1354,23 @@ class Flight(
         """
         return self.assign(flight_id=name.format(self=self, idx=idx))
 
+    # TODO change to Iterator
+    def onground(self) -> Optional["Flight"]:
+        if "altitude" not in self.data.columns:
+            return self
+        if "onground" in self.data.columns and self.data.onground.dtype == bool:
+            return self.query("onground or altitude != altitude")
+        else:
+            return self.query("altitude != altitude")
+
     def airborne(self) -> Optional["Flight"]:
         """Returns the airborne part of the Flight.
 
         The airborne part is determined by an ``onground`` flag or null values
         in the altitude column.
         """
+        if "altitude" not in self.data.columns:
+            return None
         if "onground" in self.data.columns and self.data.onground.dtype == bool:
             return self.query("not onground and altitude == altitude")
         else:
@@ -1734,6 +1754,9 @@ class Flight(
 
     @property
     def linestring(self) -> Optional[LineString]:
+        # longitude is implicit I guess
+        if "latitude" not in self.data.columns:
+            return None
         coords = list(self.coords)
         if len(coords) < 2:
             return None

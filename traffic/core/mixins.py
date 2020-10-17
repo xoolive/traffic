@@ -3,13 +3,12 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
-
 import altair as alt
 import pandas as pd
 import pyproj
 from cartopy import crs
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
 from shapely.geometry import Point, base, mapping
 from shapely.ops import transform
 
@@ -571,7 +570,7 @@ class PointMixin(object):
             shift = dict(units="dots", x=15)
 
         if text_kw is None:
-            text_kw = {}
+            text_kw = dict()
         else:
             # since we may modify it, let's make a copy
             text_kw = {**text_kw}

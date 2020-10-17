@@ -2,6 +2,7 @@
 
 import sys
 import zipfile
+from typing import Optional
 
 import pandas as pd
 import pytest
@@ -123,7 +124,7 @@ def test_time_methods() -> None:
 
     low = flight.query("altitude < 100")
     assert low is not None
-    shorter = low.max_split(10)
+    shorter = low.split("10T").max()
     assert shorter is not None
     assert shorter.duration < pd.Timedelta("6 minutes")
 
@@ -232,7 +233,7 @@ def test_clip_point() -> None:
 
 
 def test_closest_point() -> None:
-    from traffic.data import navaids, airports
+    from traffic.data import airports, navaids
 
     item = belevingsvlucht.between(
         "2018-05-30 16:00", "2018-05-30 17:00"
@@ -259,15 +260,19 @@ def test_landing_runway() -> None:
 
 
 def test_aligned_runway() -> None:
-    assert sum(1 for _ in belevingsvlucht.aligned_on_runway("EHAM")) == 2
+    assert belevingsvlucht.aligned_on_runway("EHAM").sum() == 2
 
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_landing_ils() -> None:
-    aligned: Flight = next(belevingsvlucht.aligned_on_ils("EHAM"))
+    aligned: Optional["Flight"] = (
+        belevingsvlucht.aligned_on_ils("EHAM").next()  # noqa: B305
+    )
+    assert aligned is not None
     assert aligned.max("ILS") == "06"
 
-    aligned = next(airbus_tree.aligned_on_ils("EDHI"))
+    aligned = airbus_tree.aligned_on_ils("EDHI").next()  # noqa: B305
+    assert aligned is not None
     assert aligned.max("ILS") == "23"
 
 
@@ -283,8 +288,8 @@ def test_getattr() -> None:
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_goaround() -> None:
-    assert next(belevingsvlucht.go_around(), None) is None
-    assert sum(1 for _ in belevingsvlucht.go_around("EHLE")) == 5
+    assert belevingsvlucht.go_around().next() is None  # noqa: B305
+    assert belevingsvlucht.go_around("EHLE").sum() == 5
 
     # from traffic.data.datasets import landing_zurich_2019
     # assert sum(1 for _ in landing_zurich_2019["EWG7ME_1079"].go_around()) == 2
@@ -352,10 +357,15 @@ def test_comet() -> None:
 
     subset = flight.query("altitude < 300")
     assert subset is not None
-    takeoff = next(subset.split("10T"))
+    takeoff = subset.split("10T").next()  # noqa: B305
+    assert takeoff is not None
     comet = takeoff.comet(minutes=1)
 
-    assert takeoff.point.altitude + 2000 < comet.point.altitude  # type: ignore
+    t_point = takeoff.point
+    c_point = comet.point
+    assert t_point is not None
+    assert c_point is not None
+    assert t_point.altitude + 2000 < c_point.altitude
 
 
 def test_cumulative_distance() -> None:
