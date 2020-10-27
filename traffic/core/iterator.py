@@ -40,8 +40,9 @@ class FlightIterator:
 
     def __getitem__(self, index):
         if isinstance(index, int):
-            for _, elt in enumerate(self):
-                return elt
+            for i, elt in enumerate(self):
+                if i == index:
+                    return elt
         if isinstance(index, slice):
             if index.step is not None and index.step <= 0:
                 raise ValueError("Negative steps are not supported")
