@@ -338,6 +338,14 @@ class NavigationFeatures:
         airport: Union[str, "Airport", None] = None,
         dataset: Optional["Airports"] = None,
     ) -> Iterator["Flight"]:
+        """Detects runway changes.
+
+        The method yields pieces of trajectories with exactly two runway
+        alignments on the same airport not separated by a climbing phase.
+
+        In each piece of yielded trajectory, the `ILS` column contains the
+        name of the runway targetted by the aircraft at each instant.
+        """
 
         # The following cast secures the typing
         self = cast("Flight", self)
