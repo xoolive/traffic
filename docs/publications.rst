@@ -46,6 +46,7 @@ library:
 - | X. Olive and J. Sun
   | **Detecting and Measuring Turbulence from Mode S Surveillance Downlink Data**.
   | *Proceedings of the 9th International Conference on Research in Air Transportation*, 2020
+  | `(paper) <http://www.icrat.org/ICRAT/seminarContent/2020/papers/ICRAT2020_paper_3.pdf>`__
 
 - | X. Olive, L. Basora, B. Viry and R. Alligier
   | **Deep Trajectory Clustering with Autoencoders**.
