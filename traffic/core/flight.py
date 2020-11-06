@@ -754,6 +754,26 @@ class Flight(
 
     # -- Time handling, splitting, interpolation and resampling --
 
+    def skip(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
+        """Removes the first n days, hours, minutes or seconds of the Flight.
+
+        The elements passed as kwargs as passed as is to the datetime.timedelta
+        constructor.
+
+        Example usage:
+
+        >>> flight.skip(minutes=10)
+        >>> flight.skip("1H")
+        >>> flight.skip(10)  # seconds by default
+        """
+        delta = to_timedelta(value, **kwargs)
+        bound = self.start + delta  # noqa: F841 => used in the query
+        # full call is necessary to keep @bound as a local variable
+        df = self.data.query("timestamp >= @bound")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
+
     def first(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
         """Returns the first n days, hours, minutes or seconds of the Flight.
 
@@ -770,6 +790,26 @@ class Flight(
         bound = self.start + delta  # noqa: F841 => used in the query
         # full call is necessary to keep @bound as a local variable
         df = self.data.query("timestamp < @bound")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
+
+    def shorten(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
+        """Removes the last n days, hours, minutes or seconds of the Flight.
+
+        The elements passed as kwargs as passed as is to the datetime.timedelta
+        constructor.
+
+        Example usage:
+
+        >>> flight.shorten(minutes=10)
+        >>> flight.shorten("1H")
+        >>> flight.shorten(10)  # seconds by default
+        """
+        delta = to_timedelta(value, **kwargs)
+        bound = self.stop - delta  # noqa: F841 => used in the query
+        # full call is necessary to keep @bound as a local variable
+        df = self.data.query("timestamp <= @bound")
         if df.shape[0] == 0:
             return None
         return self.__class__(df)
@@ -963,7 +1003,7 @@ class Flight(
 
         """
 
-        warnings.warn("Use split().max() instead.", DeprecationWarning)
+        # warnings.warn("Use split().max() instead.", DeprecationWarning)
         return max(
             self.split(value, unit),  # type: ignore
             key=key,
