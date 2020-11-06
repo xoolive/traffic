@@ -41,11 +41,12 @@ release:
        # then _either_ with pip (stable version)
        pip install traffic
        # _or_ from sources (dev version)
-       python setup.py install
+       pip install .
 
+.. admonition:: Frequently Asked Questions
 
-.. toctree::
-   :maxdepth: 1
+    .. toctree::
+       :maxdepth: 1
 
-   docker
-   troubleshooting
+       troubleshooting
+       docker

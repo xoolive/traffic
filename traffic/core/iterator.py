@@ -7,6 +7,44 @@ if TYPE_CHECKING:
 
 
 class FlightIterator:
+    """
+    A FlightIterator is a specific structure providing helpers after methods
+    applied on a Flight return a sequence of pieces of trajectories.
+
+    Methods returning a FlightIterator include:
+
+    - `Flight.split("10T")` iterates over pieces of trajectories separated by
+      more than 10 minutes without data;
+    - `Flight.goaround("LFBO")` iterates over landing attempts on a given
+      airport;
+    - `Flight.aligned_on_ils("LFBO")` iterates over segments of trajectories
+      aligned with any of the runways at LFBO.
+    - and more.
+
+    Since a FlightIterator is not a Flight, you can:
+
+    - iterator on it with a for loop, or with Python built-ins functions;
+    - index it with bracket notation (using positive integers or slices);
+    - get True if the sequence is non empty with `.has()`;
+    - get the first element in the sequence with `.next()`;
+    - count the element in the sequence with `.sum()`;
+    - concatenate all elements in the sequence with `.all()`;
+    - get the biggest/shortest element with `.max()`/`.min()`. By default,
+      comparison is made on duration.
+
+    .. warning::
+
+        **FlightIterator instances consume themselves out**.
+
+        If you store a FlightIterator in a variable, calling methods twice in a
+        row will yield different results. In Jupyter environments, representing
+        the FlightIterator will consume it too.
+
+        To avoid issues, the best practice is to **not** store any
+        FlightIterator in a variable.
+
+    """
+
     def __init__(self, generator):
         self.generator = generator
 
@@ -66,15 +104,57 @@ class FlightIterator:
         raise TypeError("The index must be an integer or a slice")
 
     def has(self) -> bool:
+        """Returns True if the FlightIterator is not empty.
+
+        Example usage:
+
+        >>> flight.emergency().has()
+        True
+
+        This is equivalent to:
+
+        >>> flight.has("emergency")
+        """
         return self.next() is not None  # noqa: B305
 
     def next(self) -> Optional["Flight"]:
+        """Returns the first/next element in the FlightIterator.
+
+        Example usage:
+
+        >>> first_attempt = flight.runway_change().next()
+
+        This is equivalent to:
+
+        >>> flight.next("runway_change")
+        """
         return next((segment for segment in self), None)
 
     def sum(self) -> int:
+        """Returns the size of the FlightIterator.
+
+        Example usage:
+
+        >>> flight.go_around().sum()
+        1
+
+        This is equivalent to:
+
+        >>> flight.sum("go_around")
+        """
+
         return len(self)
 
     def all(self) -> Optional["Flight"]:
+        """Returns the concatenation of elements in the FlightIterator.
+
+        >>> flight.aligned_on_ils("LFBO").all()
+
+        This is equivalent to:
+
+        >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
+
+        """
         from traffic.core import Flight  # noqa: F811
 
         t = sum(flight for flight in self)
@@ -83,12 +163,37 @@ class FlightIterator:
         return Flight(t.data)  # type: ignore
 
     def max(self, key: str = "duration") -> Optional["Flight"]:
+        """Returns the biggest element in the Iterator.
+
+        By default, comparison is based on duration.
+
+        >>> flight.query("altitude < 5000").split().max()
+
+        but it can be set on start time as well (the last event to start)
+
+        >>> flight.query("altitude < 5000").split().max(key="start")
+        """
+
         return max(self, key=lambda x: getattr(x, key), default=None)
 
     def min(self, key: str = "duration") -> Optional["Flight"]:
+        """Returns the shortest element in the Iterator.
+
+        By default, comparison is based on duration.
+
+        >>> flight.query("altitude < 5000").split().min()
+
+        but it can be set on ending time as well (the first event to stop)
+
+        >>> flight.query("altitude < 5000").split().min(key="stop")
+        """
         return min(self, key=lambda x: getattr(x, key), default=None)
 
     def plot(self, *args, **kwargs) -> None:
+        """Plots all elements in the structure.
+
+        Arguments as passed as is to the `Flight.plot()` method.
+        """
         for segment in self:
             segment.plot(*args, **kwargs)
 

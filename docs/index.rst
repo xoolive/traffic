@@ -31,9 +31,8 @@ easily extendable to other sources of data.
    data
    algorithms
    export
-   cli
-   gui
-   plugins
+   advanced
+   gallery
    scenarios
    publications
 

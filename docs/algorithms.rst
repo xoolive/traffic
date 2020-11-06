@@ -6,4 +6,5 @@ Algorithms
 
     cpa
     clustering
+    navigation
 
