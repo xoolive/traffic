@@ -9,3 +9,4 @@ use cases <scenarios.html>`_ page.
    :maxdepth: 1
 
    gallery/zero_gravity
+   gallery/tour_de_france
