@@ -140,7 +140,9 @@ class Flight(
           `before() <#traffic.core.Flight.before>`_,
           `between() <#traffic.core.Flight.between>`_,
           `first() <#traffic.core.Flight.first>`_,
-          `last() <#traffic.core.Flight.last>`_
+          `last() <#traffic.core.Flight.last>`_,
+          `skip() <#traffic.core.Flight.skip>`_,
+          `shorten() <#traffic.core.Flight.shorten>`_
         - geometry related methods:
           `airborne() <#traffic.core.Flight.airborne>`_,
           `clip() <#traffic.core.Flight.clip>`_,

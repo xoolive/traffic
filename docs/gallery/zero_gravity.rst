@@ -62,13 +62,13 @@ Zero-gravity test flights
     (
         alt.layer(altitude_data, ias_data)
         .resolve_scale(y="independent")
-        .properties(width=600, height=200)
+        .properties(width=500, height=200)
         & data.encode(
             x=alt.X("timestamp", axis=alt.Axis(titleFontSize=16, labelFontSize=14)),
             y=alt.Y("phase", axis=alt.Axis(title="", labelFontSize=14),),
             color=alt.Color("phase", legend=None),
         )
         .mark_point()
-        .properties(width=600, height=75)
+        .properties(width=500, height=75)
     ).configure(font="Ubuntu")
 
