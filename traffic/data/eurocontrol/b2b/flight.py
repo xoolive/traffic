@@ -278,7 +278,7 @@ class FlightInfo(B2BReply):
         else:
             filepath = Path(name)
 
-        ElementTree.ElementTree(self.reply).write(filepath)  # type: ignore
+        ElementTree.ElementTree(self.reply).write(filepath)
 
     @property
     def flight_id(self) -> str:
