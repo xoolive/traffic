@@ -274,7 +274,10 @@ class NavigationFeatures:
             )
             if tentative is not None:
                 for chunk in tentative.split("20s"):
-                    if chunk.longer_than("1 minute"):
+                    if (
+                        chunk.longer_than("1 minute")
+                        and chunk.altitude_min < 5000
+                    ):
                         chunks.append(
                             chunk.assign(
                                 ILS=threshold.name, airport=_airport.icao
