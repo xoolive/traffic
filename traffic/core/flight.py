@@ -99,8 +99,20 @@ class Position(PointMixin, pd.core.series.Series):
         return super().plot(ax, text_kw, shift, **{**visualdict, **kwargs})
 
 
+class MetaFlight(type):
+    def __getattr__(cls, name):
+        if name.startswith("aligned_on_"):
+            return lambda flight: cls.aligned_on_ils(flight, name[11:])
+        raise AttributeError
+
+
 class Flight(
-    HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures, FuzzyLogic
+    HBoxMixin,
+    GeographyMixin,
+    ShapelyMixin,
+    NavigationFeatures,
+    FuzzyLogic,
+    metaclass=MetaFlight,
 ):
     """Flight is the most basic class associated to a trajectory.
     Flights are the building block of all processing methods, built on top of
@@ -345,7 +357,7 @@ class Flight(
             if isinstance(method, str)
             else method
         )
-        t = sum(flight for flight in fun(self))
+        t = sum(flight.assign(index_=i) for i, flight in enumerate(fun(self)))
         if t == 0:
             return None
         return Flight(t.data)  # type: ignore

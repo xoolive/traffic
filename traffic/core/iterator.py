@@ -157,7 +157,7 @@ class FlightIterator:
         """
         from traffic.core import Flight  # noqa: F811
 
-        t = sum(flight for flight in self)
+        t = sum(flight.assign(index_=i) for i, flight in enumerate(self))
         if t == 0:
             return None
         return Flight(t.data)  # type: ignore
