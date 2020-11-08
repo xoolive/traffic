@@ -6,7 +6,7 @@ from cartopy.crs import PlateCarree
 from cartotools.osm import request, tags
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
-from shapely.geometry import LineString, mapping
+from shapely.geometry import LineString, Polygon, mapping, polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import cascaded_union
 
@@ -125,7 +125,11 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
             "type": "FeatureCollection",
             "features": [
                 {
-                    "geometry": mapping(shape),
+                    "geometry": mapping(
+                        polygon.orient(shape, -1)
+                        if type(shape) == Polygon
+                        else shape
+                    ),
                     "properties": info["tags"],
                     "type": "Feature",
                 }
@@ -135,14 +139,11 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         }
 
     def geoencode(  # type: ignore
-        self,
-        footprint: bool = False,
-        runways: bool = True,
-        labels: bool = True,
+        self, footprint: bool = True, runways: bool = True, labels: bool = True,
     ) -> alt.Chart:  # coverage: ignore
         cumul = []
         if footprint:
-            cumul.append(super().geoencode())
+            cumul.append(super().geoencode(fill=""))
         if runways:
             cumul.append(self.runways.geoencode(mode="geometry"))
         if labels:

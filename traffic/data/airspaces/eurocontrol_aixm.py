@@ -13,7 +13,7 @@ from typing import (
 )
 from xml.etree import ElementTree
 
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, polygon
 from shapely.ops import cascaded_union
 
 from ...core.airspace import components  # to be moved here TODO
@@ -227,7 +227,13 @@ class AIXMAirspaceParser(object):
                         (current_point.latitude, current_point.longitude)
                     )
         block_poly.append(
-            (Polygon([(lon, lat) for lat, lon in coords]), None, None)
+            (
+                polygon.orient(
+                    Polygon([(lon, lat) for lat, lon in coords]), -1
+                ),
+                None,
+                None,
+            )
         )
 
     @lru_cache(None)
