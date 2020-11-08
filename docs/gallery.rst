@@ -10,3 +10,5 @@ use cases <scenarios.html>`_ page.
 
    gallery/zero_gravity
    gallery/tour_de_france
+   gallery/landing_sequence
+   gallery/landing_configuration

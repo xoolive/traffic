@@ -4,8 +4,28 @@
 Tour de France 2020
 ===================
 
-During the Tour de France, aircraft are contracted to `relay TV signals <https://arstechnica.com/cars/2019/07/how-helicopters-bring-us-amazing-views-of-the-tour-de-france/>`_ from helicopters filming the riders. See how their trajectories fits the official map.
 
+During the Tour de France, aircraft are contracted to `relay TV signals <https://arstechnica.com/cars/2019/07/how-helicopters-bring-us-amazing-views-of-the-tour-de-france/>`_ from helicopters filming the riders. See how their trajectories fits the official map at the bottom of the page.
+
+.. raw:: html
+
+   <script type="application/vnd.jupyter.widget-view+json">
+   {
+       "version_major": 2,
+       "version_minor": 0,
+       "model_id": "8d4e18a9abcb43288b13f56c7ae51f21"
+   }
+   </script>
+
+.. code:: python
+
+    from ipywidgets import Layout
+
+    preprocessed.map_leaflet(
+        zoom=5, layout=Layout(max_width="600px", height="600px"),
+    )
+
+The code for the data preparation is pasted below:
 
 .. code:: python
 
@@ -199,24 +219,6 @@ During the Tour de France, aircraft are contracted to `relay TV signals <https:/
     </table>
     </div>
 
-.. code:: python
-
-    from ipywidgets import Layout
-
-    preprocessed.map_leaflet(
-        zoom=5, layout=Layout(max_width="600px", height="600px"),
-    )
-
-
-.. raw:: html
-
-   <script type="application/vnd.jupyter.widget-view+json">
-   {
-       "version_major": 2,
-       "version_minor": 0,
-       "model_id": "8d4e18a9abcb43288b13f56c7ae51f21"
-   }
-   </script>
 
 .. image:: ../_static/tour_de_france_2020.jpg
    :scale: 60%

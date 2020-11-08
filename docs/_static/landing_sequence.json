@@ -1,0 +1,227 @@
+{
+    "config": {
+        "view": {
+            "continuousWidth": 400,
+            "continuousHeight": 300
+        },
+        "axis": {
+            "labelFontSize": 14
+        },
+        "header": {
+            "labelFont": "Ubuntu",
+            "labelFontSize": 24,
+            "labelOrient": "right",
+            "labelPadding": -30,
+            "title": null
+        },
+        "legend": {
+            "orient": "top"
+        },
+        "text": {
+            "font": "Ubuntu"
+        }
+    },
+    "data": {
+        "name": "data-94bb7871d67c0cce26ad8b72c316ace3"
+    },
+    "facet": {
+        "row": {
+            "type": "nominal",
+            "field": "ILS"
+        }
+    },
+    "spec": {
+        "layer": [
+            {
+                "mark": {
+                    "type": "rule",
+                    "size": 3
+                },
+                "encoding": {
+                    "color": {
+                        "type": "nominal",
+                        "field": "go around"
+                    },
+                    "x": {
+                        "type": "temporal",
+                        "axis": {
+                            "title": ""
+                        },
+                        "field": "final approach",
+                        "timeUnit": "utchoursminutes"
+                    },
+                    "x2": {
+                        "field": "landing",
+                        "timeUnit": "utchoursminutes"
+                    },
+                    "y": {
+                        "type": "nominal",
+                        "axis": null,
+                        "field": "landing",
+                        "sort": "descending"
+                    }
+                }
+            },
+            {
+                "mark": {
+                    "type": "text",
+                    "align": "left",
+                    "baseline": "middle",
+                    "dx": 12
+                },
+                "encoding": {
+                    "color": {
+                        "type": "nominal",
+                        "field": "go around"
+                    },
+                    "text": {
+                        "type": "nominal",
+                        "field": "callsign"
+                    },
+                    "x": {
+                        "type": "temporal",
+                        "field": "landing",
+                        "timeUnit": "utchoursminutes"
+                    },
+                    "y": {
+                        "type": "nominal",
+                        "field": "landing"
+                    }
+                }
+            },
+            {
+                "mark": {
+                    "type": "text",
+                    "align": "left",
+                    "baseline": "middle",
+                    "dx": -8,
+                    "dy": 1,
+                    "size": 20
+                },
+                "encoding": {
+                    "color": {
+                        "type": "nominal",
+                        "field": "go around"
+                    },
+                    "text": {
+                        "value": "✈"
+                    },
+                    "x": {
+                        "type": "temporal",
+                        "field": "landing",
+                        "timeUnit": "utchoursminutes"
+                    },
+                    "y": {
+                        "type": "nominal",
+                        "field": "landing"
+                    }
+                }
+            }
+        ],
+        "height": 150,
+        "width": 500
+    },
+    "$schema": "https://vega.github.io/schema/vega-lite/v4.8.1.json",
+    "datasets": {
+        "data-94bb7871d67c0cce26ad8b72c316ace3": [
+            {
+                "callsign": "AFL2390",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:11:17+00:00",
+                "landing": "2019-10-15T10:14:07+00:00",
+                "go around": 0
+            },
+            {
+                "callsign": "SWR53E",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:13:10+00:00",
+                "landing": "2019-10-15T10:15:46+00:00",
+                "go around": 0
+            },
+            {
+                "callsign": "SWR287A",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:14:46+00:00",
+                "landing": "2019-10-15T10:17:40+00:00",
+                "go around": 2
+            },
+            {
+                "callsign": "HBVTB",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:21:21+00:00",
+                "landing": "2019-10-15T10:24:01+00:00",
+                "go around": 0
+            },
+            {
+                "callsign": "BAW712T",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:22:51+00:00",
+                "landing": "2019-10-15T10:26:06+00:00",
+                "go around": 0
+            },
+            {
+                "callsign": "SWR135G",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:24:14+00:00",
+                "landing": "2019-10-15T10:27:31+00:00",
+                "go around": 0
+            },
+            {
+                "callsign": "EDW27",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:25:56+00:00",
+                "landing": "2019-10-15T10:29:06+00:00",
+                "go around": 0
+            },
+            {
+                "callsign": "SWR287A",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:28:41+00:00",
+                "landing": "2019-10-15T10:31:23+00:00",
+                "go around": 2
+            },
+            {
+                "callsign": "SWR46J",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:30:06+00:00",
+                "landing": "2019-10-15T10:33:21+00:00",
+                "go around": 1
+            },
+            {
+                "callsign": "NJE715R",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:31:58+00:00",
+                "landing": "2019-10-15T10:35:04+00:00",
+                "go around": 0
+            },
+            {
+                "callsign": "GSW4943",
+                "ILS": "14",
+                "final approach": "2019-10-15T10:34:04+00:00",
+                "landing": "2019-10-15T10:36:47+00:00",
+                "go around": 0
+            },
+            {
+                "callsign": "SWR287A",
+                "ILS": "28",
+                "final approach": "2019-10-15T10:41:58+00:00",
+                "landing": "2019-10-15T10:45:31+00:00",
+                "go around": 2
+            },
+            {
+                "callsign": "SWR46J",
+                "ILS": "28",
+                "final approach": "2019-10-15T10:43:29+00:00",
+                "landing": "2019-10-15T10:48:12+00:00",
+                "go around": 1
+            },
+            {
+                "callsign": "TYW212F",
+                "ILS": "28",
+                "final approach": "2019-10-15T10:47:02+00:00",
+                "landing": "2019-10-15T10:49:59+00:00",
+                "go around": 0
+            }
+        ]
+    }
+}
