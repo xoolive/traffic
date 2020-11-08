@@ -343,7 +343,9 @@ class Traffic(HBoxMixin, GeographyMixin):
                     yield Flight(df)
         else:
             for i, (_, df) in enumerate(
-                self.data.groupby(["icao24", "callsign"])
+                self.data.sort_values("timestamp").groupby(
+                    ["icao24", "callsign"]
+                )
             ):
                 if nb_flights is None or i < nb_flights:
                     yield from Flight(df).split(
@@ -706,16 +708,22 @@ class Traffic(HBoxMixin, GeographyMixin):
             .rename(columns={"timestamp": "count"})
         )
 
-    def summary(self, attributes: List[str]) -> pd.DataFrame:
+    def summary(
+        self,
+        attributes: List[str],
+        iterate_kw: Optional[Dict[str, Any]] = None,
+    ) -> pd.DataFrame:
         """Returns a summary of the current Traffic structure containing
         featured attributes.
 
         Example usage (TODO)
 
         """
+        if iterate_kw is None:
+            iterate_kw = dict()
         return pd.DataFrame.from_records(
             dict((key, getattr(flight, key)) for key in attributes)
-            for flight in self
+            for flight in self.iterate(**iterate_kw)
         )
 
     def geoencode(self, *args, **kwargs):
