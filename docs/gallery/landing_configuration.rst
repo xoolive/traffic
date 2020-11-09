@@ -1,7 +1,7 @@
 Landing configurations
 ======================
 
-A visualisation attempt at showing which landing configurations are the most commonly used at Zurich airport. Can you see the day when summer time CEST changes to CET?
+A visualisation attempt at showing which landing configurations are the most commonly used at Zurich airport. Can you spot the day when summer time CEST changes to CET?
 
 .. raw:: html
 

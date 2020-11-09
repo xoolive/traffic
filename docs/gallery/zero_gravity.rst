@@ -1,5 +1,5 @@
-Zero-gravity test flights
-=========================
+Zero-gravity flights
+====================
 
 
 .. raw:: html
