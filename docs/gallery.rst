@@ -1,5 +1,5 @@
-Gallery
-=======
+Example Gallery
+===============
 
 This page contains only nice visualisations on recreational examples. More
 solid examples with a strong storyline are available in the `Scenarios and

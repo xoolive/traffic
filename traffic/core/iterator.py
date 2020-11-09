@@ -13,11 +13,11 @@ class FlightIterator:
 
     Methods returning a FlightIterator include:
 
-    - `Flight.split("10T")` iterates over pieces of trajectories separated by
+    - ``Flight.split("10T")`` iterates over pieces of trajectories separated by
       more than 10 minutes without data;
-    - `Flight.goaround("LFBO")` iterates over landing attempts on a given
+    - ``Flight.go_around("LFBO")`` iterates over landing attempts on a given
       airport;
-    - `Flight.aligned_on_ils("LFBO")` iterates over segments of trajectories
+    - ``Flight.aligned_on_ils("LFBO")`` iterates over segments of trajectories
       aligned with any of the runways at LFBO.
     - and more.
 
@@ -25,11 +25,11 @@ class FlightIterator:
 
     - iterator on it with a for loop, or with Python built-ins functions;
     - index it with bracket notation (using positive integers or slices);
-    - get True if the sequence is non empty with `.has()`;
-    - get the first element in the sequence with `.next()`;
-    - count the element in the sequence with `.sum()`;
-    - concatenate all elements in the sequence with `.all()`;
-    - get the biggest/shortest element with `.max()`/`.min()`. By default,
+    - get True if the sequence is non empty with ``.has()``;
+    - get the first element in the sequence with ``.next()``;
+    - count the element in the sequence with ``.sum()``;
+    - concatenate all elements in the sequence with ``.all()``;
+    - get the biggest/shortest element with ``.max()``/``.min()``. By default,
       comparison is made on duration.
 
     .. warning::

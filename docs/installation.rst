@@ -43,10 +43,9 @@ release:
        # _or_ from sources (dev version)
        pip install .
 
-.. admonition:: Frequently Asked Questions
+.. toctree::
+   :maxdepth: 1
+   :caption: Frequently Asked Questions
 
-    .. toctree::
-       :maxdepth: 1
-
-       troubleshooting
-       docker
+   troubleshooting
+   docker

@@ -95,10 +95,10 @@ library:
   | *Aerospace Science and Technology* 84, 2019, pp. 776--781.
   | https://doi.org/10.1016/j.ast.2018.11.031
 
-**Links**
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 0
+   :hidden:
 
    paper/sectflow
    paper/atc_detect
