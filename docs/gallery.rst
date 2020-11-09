@@ -9,22 +9,22 @@ use cases <scenarios.html>`_ page.
 
    <span class="gallery">
    
-   <a class="imagegroup" href="zero_gravity.html">
+   <a class="imagegroup" href="gallery/zero_gravity.html">
      <span class="image" alt="Zero gravity flights" style="background-image: url(./_static/zero_gravity-thumb.png);"></span>
      <span class="image-title">Zero gravity flights</span>
    </a>
    
-   <a class="imagegroup" href="tour_de_france.html">
+   <a class="imagegroup" href="gallery/tour_de_france.html">
      <span class="image" alt="Tour de France 2020" style="background-image: url(./_static/tour_de_france-thumb.png);"></span>
      <span class="image-title">Tour de France 2020</span>
    </a>
    
-   <a class="imagegroup" href="landing_sequence.html">
+   <a class="imagegroup" href="gallery/landing_sequence.html">
      <span class="image" alt="Landing sequence" style="background-image: url(./_static/landing_sequence-thumb.png);"></span>
      <span class="image-title">Landing sequence</span>
    </a>
    
-   <a class="imagegroup" href="landing_configuration.html">
+   <a class="imagegroup" href="gallery/landing_configuration.html">
      <span class="image" alt="Landing configuration" style="background-image: url(./_static/landing_configuration-thumb.png);"></span>
      <span class="image-title">Landing configuration</span>
    </a>
