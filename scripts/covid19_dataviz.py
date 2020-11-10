@@ -25,6 +25,7 @@ dates = [
     "20200801",
     "20200901",
     "20201001",
+    "20201101",
 ]
 flightlist = pd.concat(
     pd.read_csv(
