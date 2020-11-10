@@ -557,6 +557,12 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
+    def apply_segments(
+        self, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
+    ):
+        ...
+
+    @lazy_evaluation()
     def apply_time(self, freq="1T", merge=True, **kwargs):
         ...
 

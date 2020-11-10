@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Callable, Iterator, Optional, cast
 
 if TYPE_CHECKING:
     from . import Flight  # noqa: F401
+    from . import Traffic  # noqa: F401
+    from .lazy import LazyTraffic  # noqa: F401
 
 
 class FlightIterator:
@@ -188,6 +190,22 @@ class FlightIterator:
         >>> flight.query("altitude < 5000").split().min(key="stop")
         """
         return min(self, key=lambda x: getattr(x, key), default=None)
+
+    def __call__(
+        self, fun: Callable[..., "LazyTraffic"], *args, **kwargs,
+    ) -> Optional["Flight"]:
+        from traffic.core import Flight, Traffic  # noqa: F811
+
+        in_ = Traffic.from_flights(
+            segment.assign(index_=i) for i, segment in enumerate(self)
+        )
+        if in_ is None:
+            return None
+        out_ = fun(in_, *args, **kwargs).eval()
+        if out_ is None:
+            return None
+
+        return Flight(out_.data)
 
     def plot(self, *args, **kwargs) -> None:
         """Plots all elements in the structure.

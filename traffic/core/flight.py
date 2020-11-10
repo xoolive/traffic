@@ -36,6 +36,7 @@ from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 if TYPE_CHECKING:
     from ..data.adsb.raw_data import RawData  # noqa: F401
     from .airspace import Airspace  # noqa: F401
+    from .lazy import LazyTraffic  # noqa: F401
     from .traffic import Traffic  # noqa: F401
 
 # fmt: on
@@ -1024,6 +1025,11 @@ class Flight(
             default=None,
         )
 
+    def apply_segments(
+        self, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
+    ) -> Optional["Flight"]:
+        return getattr(self, name)(*args, **kwargs)(fun)
+
     def apply_time(
         self, freq: str = "1T", merge: bool = True, **kwargs,
     ) -> "Flight":
@@ -1328,6 +1334,7 @@ class Flight(
         return self.__class__(data)
 
     def filter_position(self, cascades: int = 2) -> Optional["Flight"]:
+        # TODO improve based on agg_time
         flight: Optional["Flight"] = self
         for _ in range(cascades):
             if flight is None:
