@@ -23,6 +23,21 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | X. Olive, J. Sun, A. Lafage and L. Basora
+  | **Detecting Events in Aircraft Trajectories: Rule-based and Data-driven Approaches**
+  | *Proceedings of the 8th OpenSky Symposium*, 2020
+  | `(paper) <>`__ `(video) <https://youtu.be/uwzR6gqmWPE>`__ `(notebook) <https://github.com/xoolive/traffic/blob/master/opensky/opensky_2020.ipynb>`__
+
+- | J. Sun, H. Vû, X. Olive and J. Hoekstra
+  | **Mode S Transponder Comm-B Capabilities in Current Operational Aircraft**
+  | *Proceedings of the 8th OpenSky Symposium*, 2020
+  | `(paper) <>`__ `(video) <https://youtu.be/buB36H9IOio>`__
+
+- | M. Schultz, S. Förster, X. Olive, E. Spinielli and M. Schultz
+  | **Airport Performance Monitoring using ADS-B data**
+  | *Proceedings of the 8th OpenSky Symposium*, 2020
+  | `(paper) <>`__ `(video) <https://youtu.be/Td93cKvAaBQ>`__
+
 - | X. Olive, A. Tanner, M. Strohmeier, M. Schäfer, M. Feridun, A. Tart, I. Martinovic and V. Lenders.
   | **OpenSky Report 2020: Analysing in-flight emergencies using big data**.
   | *Proceedings of the 39th Digital Avionics Systems Conference* (DASC), 2020
