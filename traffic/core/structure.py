@@ -165,7 +165,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
             raise TypeError(
                 "At least one of footprint, runways and labels must be True"
             )
-        return alt.layer(*cumul)
+        return alt.layer(*cumul).configure_view(opacity=0)
 
     @property
     def shape(self):
