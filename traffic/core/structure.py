@@ -1,5 +1,10 @@
+# fmt: off
+
 from functools import lru_cache
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from itertools import chain
+from typing import (
+    Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, Union
+)
 
 import altair as alt
 from cartopy.crs import PlateCarree
@@ -8,12 +13,13 @@ from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
 from shapely.geometry import LineString, Polygon, mapping, polygon
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union
 
 from .. import cache_expiration
 from ..drawing import Nominatim
 from ..drawing.markers import atc_tower
 from .mixins import HBoxMixin, PointMixin, ShapelyMixin
+
+# fmt: on
 
 request.cache_expiration = cache_expiration
 
@@ -78,7 +84,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
                 f"'{self.__class__.__name__}' has no attribute '{name}'"
             )
         else:
-            values = self.osm_request().ways.values()
+            values = self.osm_values()
             return {
                 "type": "FeatureCollection",
                 "features": [
@@ -92,11 +98,18 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
                 ],
             }
 
-    def osm_tags(self) -> Set[str]:
-        return set(
-            elt[0]["tags"]["aeroway"]
-            for elt in self.osm_request().ways.values()
+    def osm_values(self) -> Iterator[Tuple[Dict[str, Any], BaseGeometry]]:
+        return chain(
+            (
+                (dict_, shape_)
+                for dict_, shape_ in self.osm_request().nodes.values()
+                if "tags" in dict_ and "aeroway" in dict_["tags"]
+            ),
+            self.osm_request().ways.values(),
         )
+
+    def osm_tags(self) -> Set[str]:
+        return set(elt[0]["tags"]["aeroway"] for elt in self.osm_values())
 
     @lru_cache()
     def osm_request(self) -> Nominatim:  # coverage: ignore
@@ -157,15 +170,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
     @property
     def shape(self):
         # filter out the contour, helps for useful display
-        # list(self.osm_request()),
         return self.osm_request().shape
-        return cascaded_union(
-            list(
-                shape
-                for dic, shape in self.osm_request().ways.values()
-                if dic["tags"]["aeroway"] != "aerodrome"
-            )
-        )
 
     @property
     def point(self):
