@@ -19,7 +19,7 @@ except FileNotFoundError:
 
 setup(
     name="traffic",
-    version="2.4.1",
+    version="2.5",
     author="Xavier Olive",
     author_email="git@xoolive.org",
     url="https://github.com/xoolive/traffic/",
