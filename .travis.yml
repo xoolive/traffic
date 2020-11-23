@@ -1,4 +1,4 @@
-dist: xenial   # required for Python >= 3.7
+dist: xenial # required for Python >= 3.7
 
 language: python
 
@@ -6,7 +6,7 @@ cache:
   pip: true
   apt: true
   directories:
-  - $HOME/.cache/traffic/
+    - $HOME/.cache/traffic/
 
 python:
   - 3.6
@@ -35,10 +35,11 @@ before_install:
 install:
   # possible bug with pytest 4.6.0
   - python -m pip install --upgrade codecov pytest-cov pytest==4.5
-  - python -m pip install --upgrade numpy pyproj  # dependency for cartopy
-  - python -m pip install --upgrade libarchive  # dependency for so6.7z
+  - python -m pip install --upgrade numpy pyproj # dependency for cartopy
+  - python -m pip install --upgrade libarchive # dependency for so6.7z
   - python -m pip install --upgrade xarray
   - python -m pip install --upgrade sphinx sphinx-rtd-theme
+  - python -m pip install --upgrade cython
   - python -m pip install -e .
 
 script:
