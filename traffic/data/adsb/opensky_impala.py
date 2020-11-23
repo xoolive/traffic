@@ -265,10 +265,12 @@ class Impala(object):
             cachename.unlink()
 
         if not cachename.exists():
+            logging.info("Sending request: {}".format(request))
+
             if not self.connected:
+                logging.info("Connecting the database")
                 self._connect()
 
-            logging.info("Sending request: {}".format(request))
             # bug fix for when we write a request with """ starting with \n
             request = request.replace("\n", " ")
             self.stdin.channel.send(request + ";\n")
