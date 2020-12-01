@@ -26,12 +26,14 @@ library:
 - | X. Olive, J. Sun, A. Lafage and L. Basora
   | **Detecting Events in Aircraft Trajectories: Rule-based and Data-driven Approaches**
   | *Proceedings of the 8th OpenSky Symposium*, 2020
-  | `(paper) </>`__ `(video) <https://youtu.be/uwzR6gqmWPE>`__ `(notebook) <https://github.com/xoolive/traffic/blob/master/opensky/opensky_2020.ipynb>`__
+  | https://doi.org/10.3390/proceedings2020059008
+  | `(paper) <https://www.mdpi.com/2504-3900/59/1/8/pdf>`__ `(video) <https://youtu.be/uwzR6gqmWPE>`__ `(notebook) <https://github.com/xoolive/traffic/blob/master/opensky/opensky_2020.ipynb>`__
 
 - | J. Sun, H. Vû, X. Olive and J. Hoekstra
   | **Mode S Transponder Comm-B Capabilities in Current Operational Aircraft**
   | *Proceedings of the 8th OpenSky Symposium*, 2020
-  | `(paper) </>`__ `(video) <https://youtu.be/buB36H9IOio>`__
+  | https://doi.org/10.3390/proceedings2020059005
+  | `(paper) <https://www.mdpi.com/2504-3900/59/1/5/pdf>`__ `(video) <https://youtu.be/buB36H9IOio>`__
 
 - | X. Olive, A. Tanner, M. Strohmeier, M. Schäfer, M. Feridun, A. Tart, I. Martinovic and V. Lenders.
   | **OpenSky Report 2020: Analysing in-flight emergencies using big data**.
