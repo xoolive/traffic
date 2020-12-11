@@ -151,6 +151,8 @@ def main(
                 ),
             ]
         )
+    else: 
+        df = df_merged.assign(number=None)
 
     df_clean = df.sort_values("firstseen")[
         [
