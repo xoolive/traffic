@@ -34,7 +34,8 @@ release:
 .. warning::
     `cartopy` and `shapely` have strong dependencies to dynamic libraries which
     may not be available on your system by default. If possible, install
-    `Anaconda <https://www.anaconda.com/distribution/#download-section>`_, then:
+    `Anaconda <https://www.anaconda.com/distribution/#download-section>`_, 
+    then create a virtualenv and run the next commands in the prompt/terminal:
 
     .. parsed-literal::
        conda install cartopy shapely
