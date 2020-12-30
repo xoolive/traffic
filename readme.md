@@ -1,13 +1,15 @@
 # A toolbox for processing and analysing air traffic data
 
-[![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.github.io/)
+[![Documentation Status](https://github.com/xoolive/traffic/workflows/docs/badge.svg)](https://traffic-viz.github.io/)
 [![Build Status](https://travis-ci.org/xoolive/traffic.svg?branch=master)](https://travis-ci.org/xoolive/traffic)
-[![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic) 
+[![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic)
 [![Codacy Badge](https://img.shields.io/codacy/grade/eea673ed15304f1b93490726295d6de0)](https://www.codacy.com/manual/xoolive/traffic)
 [![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy.readthedocs.io/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-black.svg)](https://github.com/python/black)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-black.svg)](https://github.com/psf/black)
 ![License](https://img.shields.io/pypi/l/traffic.svg)\
-[![JOSS badge](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518)
+[![JOSS paper](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518)
+[![PyPI downloads](https://img.shields.io/pypi/dm/traffic)](https://pypi.org/project/traffic)
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/xoolive/traffic/blob/master/docs/quickstart.ipynb)
 
 The traffic library helps working with common sources of air traffic data.
 
@@ -27,7 +29,6 @@ environments with [ipyleaflet](http://ipyleaflet.readthedocs.io/) and
 [altair](http://altair-viz.github.io/); or through exports to other formats,
 including CesiumJS or Google Earth.
 
-
 ## Installation
 
 Latest release:
@@ -43,7 +44,7 @@ pip install git+https://github.com/xoolive/traffic
 ```
 
 **Warning:** `cartotools` and `shapely` have strong dependencies to dynamic
-libraries which may not be available on your system by default. 
+libraries which may not be available on your system by default.
 
 Before reporting an issue, please try to use an Anaconda environment. Other
 installations (You may check them in the `.travis.yml` configuration file.)
@@ -87,12 +88,12 @@ Documentation available at [https://traffic-viz.github.io/](https://traffic-viz.
 ## Tests and code quality
 
 [![Build Status](https://travis-ci.org/xoolive/traffic.svg?branch=master)](https://travis-ci.org/xoolive/traffic)
-[![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic) 
+[![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic)
 [![Codacy Badge](https://img.shields.io/codacy/grade/eea673ed15304f1b93490726295d6de0)](https://www.codacy.com/manual/xoolive/traffic)
 [![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy.readthedocs.io/)
 
 Unit and non-regression tests are written in the `tests/` directory. You may run
-`pytest` or `tox` from the root directory. Tests are currently performed with 
+`pytest` or `tox` from the root directory. Tests are currently performed with
 Python 3.6 and 3.7.
 
 Tests are checked on [travis continuous integration](https://travis-ci.org/xoolive/traffic)

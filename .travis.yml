@@ -47,14 +47,13 @@ script:
 
 after_success:
   - codecov
-  - cd docs; make html; cd ..
-
-deploy:
-  provider: pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN
-  repo: traffic-viz/traffic-viz.github.io
-  target_branch: master
-  local_dir: docs/_build/html
-  on:
-    condition: $TRAVIS_PYTHON_VERSION = 3.7
+#  - cd docs; make html; cd ..
+# deploy:
+#   provider: pages
+#   skip_cleanup: true
+#   github_token: $GITHUB_TOKEN
+#   repo: traffic-viz/traffic-viz.github.io
+#   target_branch: master
+#   local_dir: docs/_build/html
+#   on:
+#     condition: $TRAVIS_PYTHON_VERSION = 3.7
