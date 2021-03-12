@@ -220,7 +220,7 @@ class NavigationFeatures:
         """
         
         from shapely.geometry import Polygon
-        
+        import traffic.core.geodesy as geo
         from ..data import airports
 
         # Donne les fonctions possibles sur un flight object
