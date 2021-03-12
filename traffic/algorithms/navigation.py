@@ -210,6 +210,59 @@ class NavigationFeatures:
         )
 
     @flight_iterator
+    def takeoff(
+        self, airport: Union[str, "Airport"]
+    ) -> Iterator["Flight"]:
+        """Iterates on all segments of trajectory matching a zone around a runway of the
+        given airport.
+        Example usage:
+        >>> 
+        """
+        
+        from shapely.geometry import Polygon
+        
+        from ..data import airports
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self)
+        
+        nb_run = len(airports[airport].runways.data)
+        
+        alt = airports[airport].altitude + 2000
+        
+        #Il faut créer les formes autour de chaque runway
+        set0 = geo.destination(list(airports[airport].runways.data.latitude), list(airports[airport].runways.data.longitude), list(airports[airport].runways.data.bearing), [6000 for i in range(nb_run)])
+        set1 = geo.destination(list(airports[airport].runways.data.latitude), list(airports[airport].runways.data.longitude), [x + 90 for x in list(airports[airport].runways.data.bearing)] , [45 for i in range(nb_run)])
+        set2 = geo.destination(list(airports[airport].runways.data.latitude), list(airports[airport].runways.data.longitude), [x - 90 for x in list(airports[airport].runways.data.bearing)], [45 for i in range(nb_run)])
+        set3 = geo.destination(set0[0], set0[1], [x - 90 for x in list(airports[airport].runways.data.bearing)], [5*45 for i in range(nb_run)])
+        set4 = geo.destination(set0[0], set0[1], [x + 90 for x in list(airports[airport].runways.data.bearing)], [5*45 for i in range(nb_run)])
+        
+        runway_polygons = {}
+
+        for i, name in enumerate(airports[ap].runways.data.name):
+            lat = [set1[0][i], set2[0][i], set3[0][i], set4[0][i]]
+            lon = [set1[1][i], set2[1][i], set3[1][i], set4[1][i]]
+
+            poly = Polygon(zip(lon, lat))
+            runway_polygons[name] = poly
+            
+        
+        for segment in self.query('altitude < '+str(alt)).split("2T"):
+            
+            candidates_set = []
+            
+            for _,name in enumerate(runway_polygons):
+                
+                candidate = segment.clip(runway_polygons[name])
+                if candidate is not None and candidate.data.vertical_rate.mean()>0 :
+                    candidates_set.append(candidate)
+                
+            if len(candidates_set)>0 :
+                
+                yield max(candidates_set, key=attrgetter("duration"), default=None)
+
+
+    @flight_iterator
     def aligned_on_ils(
         self, airport: Union[None, str, "Airport"],
     ) -> Iterator["Flight"]:
