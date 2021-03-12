@@ -255,7 +255,7 @@ class NavigationFeatures:
                 
                 candidate = segment.clip(runway_polygons[name])
                 if candidate is not None and candidate.data.vertical_rate.mean()>0 :
-                    candidates_set.append(candidate)
+                    candidates_set.append(candidate.assign(runway = name))
                 
             if len(candidates_set)>0 :
                 
