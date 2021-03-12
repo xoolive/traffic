@@ -239,7 +239,7 @@ class NavigationFeatures:
         
         runway_polygons = {}
 
-        for i, name in enumerate(airports[ap].runways.data.name):
+        for i, name in enumerate(airports[airport].runways.data.name):
             lat = [set1[0][i], set2[0][i], set3[0][i], set4[0][i]]
             lon = [set1[1][i], set2[1][i], set3[1][i], set4[1][i]]
 
