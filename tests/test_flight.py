@@ -265,15 +265,31 @@ def test_aligned_runway() -> None:
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_landing_ils() -> None:
-    aligned: Optional["Flight"] = (
-        belevingsvlucht.aligned_on_ils("EHAM").next()  # noqa: B305
-    )
+    aligned: Optional["Flight"] = belevingsvlucht.aligned_on_ils(
+        "EHAM"
+    ).next()  # noqa: B305
     assert aligned is not None
     assert aligned.max("ILS") == "06"
 
     aligned = airbus_tree.aligned_on_ils("EDHI").next()  # noqa: B305
     assert aligned is not None
     assert aligned.max("ILS") == "23"
+
+
+@pytest.mark.skipif(skip_runways, reason="no runways")
+def test_takeoff_runway() -> None:
+    # There are as many take-off as landing at EHLE
+    assert sum(1 for _ in belevingsvlucht.takeoff("EHLE")) == sum(
+        1 for _ in belevingsvlucht.aligned_on_ils("EHLE")
+    )
+    for aligned in belevingsvlucht.aligned_on_ils("EHLE"):
+        after = belevingsvlucht.after(aligned.start)
+        assert after is not None
+        takeoff = after.takeoff("EHLE").next()
+        # Every landing is followed by a take-off
+        assert takeoff is not None
+        # and they are on the same runway!
+        assert aligned.max("ILS") == takeoff.max("runway")
 
 
 def test_getattr() -> None:
