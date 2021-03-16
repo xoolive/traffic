@@ -695,7 +695,7 @@ choice.
             # Maximum extent for the map
             ax.set_global()
             # Remove border and set transparency for background
-            ax.outline_patch.set_visible(False)
+            ax.spines['geo'].set_visible(False)
             ax.background_patch.set_visible(False)
     
         # Flight.plot returns the result from Matplotlib as is
@@ -1072,7 +1072,7 @@ signals, then plot the results.
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
         ax.background_patch.set_visible(False)
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
     
         # We may add contours from OpenStreetMap
         # (Occitanie is the name of the administrative region)
@@ -1209,7 +1209,7 @@ with an average vertical speed below 1,000 ft/min.
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
         ax.background_patch.set_visible(False)
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
     
         # We may add contours from OpenStreetMap
         # (Occitanie is the name of the administrative region)
