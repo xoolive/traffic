@@ -79,7 +79,7 @@ class Clustering:
         self.features = features
         self.projection = projection
         self.transform = transform
-        self.X = None
+        self.X: Optional[np.ndarray] = None
 
     def fit(self, max_workers: int = 1) -> None:
 

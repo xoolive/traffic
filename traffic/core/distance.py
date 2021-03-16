@@ -26,6 +26,7 @@ def closest_point(
         name = point.name
     else:
         name = "unnamed"
+    assert latitude is not None and longitude is not None
     dist_vect = geo.distance(
         data.latitude.values,
         data.longitude.values,
