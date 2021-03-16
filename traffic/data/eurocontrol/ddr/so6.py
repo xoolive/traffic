@@ -9,8 +9,10 @@ from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from io import StringIO
 from pathlib import Path
-from typing import (Dict, Iterable, Iterator, List, NoReturn, Optional, Set,
-                    Tuple, Type, TypeVar, Union, overload)
+from typing import (
+    Dict, Iterable, Iterator, List, NoReturn, Optional,
+    Set, Tuple, Type, TypeVar, Union, overload
+)
 
 import numpy as np
 import pandas as pd
@@ -280,7 +282,7 @@ class Flight(FlightMixin):
             raise NotImplementedError()
 
         time = to_datetime(time)
-        timearray: np.ndarray[datetime] = np.array([time.timestamp()])
+        timearray = np.array([time.timestamp()])
         res = self.interpolate(timearray)
 
         return Position(
@@ -315,19 +317,17 @@ class Flight(FlightMixin):
         else:
             time1, time2 = time1[:-1], time2[:-1]
 
-        df: pd.DataFrame = (
-            pd.DataFrame.from_records(
-                np.c_[new_data[:-1, :], new_data[1:, :]],
-                columns=["lon1", "lat1", "alt1", "lon2", "lat2", "alt2"],
-            ).assign(
-                time1=time1,
-                time2=time2,
-                origin=self.origin,
-                destination=self.destination,
-                aircraft=self.aircraft,
-                flight_id=self.flight_id,
-                callsign=self.callsign,
-            )
+        df: pd.DataFrame = pd.DataFrame.from_records(
+            np.c_[new_data[:-1, :], new_data[1:, :]],
+            columns=["lon1", "lat1", "alt1", "lon2", "lat2", "alt2"],
+        ).assign(
+            time1=time1,
+            time2=time2,
+            origin=self.origin,
+            destination=self.destination,
+            aircraft=self.aircraft,
+            flight_id=self.flight_id,
+            callsign=self.callsign,
         )
 
         return Flight(df)

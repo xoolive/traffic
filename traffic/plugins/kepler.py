@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Generator
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 import pandas as pd
 from keplergl import KeplerGl
@@ -39,7 +39,7 @@ def airspace_kepler(airspace: "Airspace") -> Dict[str, Any]:
 def traffic_kepler(traffic: "Traffic") -> pd.DataFrame:
     if traffic.flight_ids is None:
         logging.warning("assign_id() has been appended for you")
-        traffic = traffic.assign_id().eval()
+        traffic = cast("Traffic", traffic.assign_id().eval())
     return pd.DataFrame.from_records(
         [
             {
