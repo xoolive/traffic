@@ -281,7 +281,9 @@ class NavigationFeatures:
             poly = Polygon(zip(lon, lat))
             runway_polygons[name] = poly
 
-        low_traj = self.query(f"phase != 'DESCENT' and altitude < {alt}")
+        low_traj = self.query(
+            f"(phase == 'CLIMB' or phase == 'LEVEL') and altitude < {alt}"
+        )
 
         if low_traj is not None:
             for segment in low_traj.split("2T"):
@@ -289,7 +291,10 @@ class NavigationFeatures:
                 for name, polygon in runway_polygons.items():
                     if segment.intersects(polygon):
                         candidate = segment.clip(polygon)
-                        if candidate is not None:
+                        if (
+                            candidate is not None
+                            and candidate.shape is not None
+                        ):
                             candidates_set.append(candidate.assign(runway=name))
 
                 result = max(

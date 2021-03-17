@@ -299,12 +299,23 @@ def test_takeoff_runway() -> None:
 def test_takeoff_goaround() -> None:
     from traffic.data.datasets import landing_zurich_2019  # type: ignore
 
-    for flight in landing_zurich_2019:
+    go_arounds = landing_zurich_2019.has("go_around").eval(
+        desc="go_around", max_workers=8
+    )
+
+    for flight in go_arounds:
         for segment in flight.go_around():
             aligned = segment.aligned_on_ils("LSZH").next()
-            takeoff = segment.takeoff_from_runway("LSZH").next()
-            assert takeoff is not None
-            assert aligned.max("ILS") == takeoff.max("runway")
+            takeoff = (
+                segment.after(aligned.stop)
+                .takeoff_from_runway("LSZH", threshold_alt=5000)
+                .next()
+            )
+            assert (
+                takeoff is None
+                or takeoff.shorter_than("30s")
+                or aligned.max("ILS") == takeoff.max("runway")
+            )
 
 
 def test_getattr() -> None:
