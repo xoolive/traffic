@@ -216,6 +216,8 @@ class NavigationFeatures:
         airport: Union[str, "Airport"],
         threshold_alt: int = 2000,
         zone_length: int = 6000,
+        little_base: int = 100,
+        opening: float = 10,
     ) -> Iterator["Flight"]:
         """Identifies the take-off runway for trajectories.
 
@@ -228,7 +230,7 @@ class NavigationFeatures:
         from ..data import airports
 
         # Donne les fonctions possibles sur un flight object
-        self = cast("Flight", self)
+        self = cast("Flight", self).phases()
 
         _airport = airports[airport] if isinstance(airport, str) else airport
         if _airport is None or _airport.runways.shape.is_empty:
@@ -236,6 +238,7 @@ class NavigationFeatures:
 
         nb_run = len(_airport.runways.data)
         alt = _airport.altitude + threshold_alt
+        base = zone_length * np.tan(opening * np.pi / 180) + little_base
 
         # Il faut créer les formes autour de chaque runway
         list_p0 = destination(
@@ -248,57 +251,52 @@ class NavigationFeatures:
             list(_airport.runways.data.latitude),
             list(_airport.runways.data.longitude),
             [x + 90 for x in list(_airport.runways.data.bearing)],
-            [45 for i in range(nb_run)],
+            [little_base for i in range(nb_run)],
         )
         list_p2 = destination(
             list(_airport.runways.data.latitude),
             list(_airport.runways.data.longitude),
             [x - 90 for x in list(_airport.runways.data.bearing)],
-            [45 for i in range(nb_run)],
+            [little_base for i in range(nb_run)],
         )
         list_p3 = destination(
             list_p0[0],
             list_p0[1],
             [x - 90 for x in list(_airport.runways.data.bearing)],
-            [5 * 45 for i in range(nb_run)],
+            [base for i in range(nb_run)],
         )
-        set4 = destination(
+        list_p4 = destination(
             list_p0[0],
             list_p0[1],
             [x + 90 for x in list(_airport.runways.data.bearing)],
-            [5 * 45 for i in range(nb_run)],
+            [base for i in range(nb_run)],
         )
 
         runway_polygons = {}
 
         for i, name in enumerate(_airport.runways.data.name):
-            lat = [list_p1[0][i], list_p2[0][i], list_p3[0][i], set4[0][i]]
-            lon = [list_p1[1][i], list_p2[1][i], list_p3[1][i], set4[1][i]]
+            lat = [list_p1[0][i], list_p2[0][i], list_p3[0][i], list_p4[0][i]]
+            lon = [list_p1[1][i], list_p2[1][i], list_p3[1][i], list_p4[1][i]]
 
             poly = Polygon(zip(lon, lat))
             runway_polygons[name] = poly
 
-        low_traj = self.query(f"altitude < {alt}")
+        low_traj = self.query(f"phase != 'DESCENT' and altitude < {alt}")
 
         if low_traj is not None:
             for segment in low_traj.split("2T"):
                 candidates_set = []
-                for _, name in enumerate(runway_polygons):
-                    if segment.intersects(runway_polygons[name]):
-                        candidate = segment.clip(runway_polygons[name])
-                        if (
-                            candidate is not None
-                            and candidate.data.vertical_rate.mean() > 0
-                        ):
+                for name, polygon in runway_polygons.items():
+                    if segment.intersects(polygon):
+                        candidate = segment.clip(polygon)
+                        if candidate is not None:
                             candidates_set.append(candidate.assign(runway=name))
 
-                    result = max(
-                        candidates_set,
-                        key=attrgetter("duration"),
-                        default=None,
-                    )
-                    if result is not None:
-                        yield result
+                result = max(
+                    candidates_set, key=attrgetter("duration"), default=None
+                )
+                if result is not None:
+                    yield result
 
     @flight_iterator
     def aligned_on_ils(

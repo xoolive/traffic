@@ -279,17 +279,32 @@ def test_landing_ils() -> None:
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_takeoff_runway() -> None:
     # There are as many take-off as landing at EHLE
-    assert sum(1 for _ in belevingsvlucht.takeoff_from_runway("EHLE")) == sum(
-        1 for _ in belevingsvlucht.aligned_on_ils("EHLE")
+    nb_takeoff = sum(
+        1
+        for _ in belevingsvlucht.takeoff_from_runway("EHLE", threshold_alt=3000)
     )
+    nb_landing = sum(1 for f in belevingsvlucht.aligned_on_ils("EHLE"))
+    assert nb_takeoff == nb_landing
     for aligned in belevingsvlucht.aligned_on_ils("EHLE"):
-        after = belevingsvlucht.after(aligned.start)
+        after = belevingsvlucht.after(aligned.stop)
         assert after is not None
-        takeoff = after.takeoff_from_runway("EHLE").next()
+        takeoff = after.takeoff_from_runway("EHLE", threshold_alt=3000).next()
         # Every landing is followed by a take-off
         assert takeoff is not None
         # and they are on the same runway!
         assert aligned.max("ILS") == takeoff.max("runway")
+
+
+@pytest.mark.skipif(True)  # launch manually
+def test_takeoff_goaround() -> None:
+    from traffic.data.datasets import landing_zurich_2019  # type: ignore
+
+    for flight in landing_zurich_2019:
+        for segment in flight.go_around():
+            aligned = segment.aligned_on_ils("LSZH").next()
+            takeoff = segment.takeoff_from_runway("LSZH").next()
+            assert takeoff is not None
+            assert aligned.max("ILS") == takeoff.max("runway")
 
 
 def test_getattr() -> None:
