@@ -284,15 +284,14 @@ def test_takeoff_runway() -> None:
         for _ in belevingsvlucht.takeoff_from_runway("EHLE", threshold_alt=3000)
     )
     nb_landing = sum(1 for f in belevingsvlucht.aligned_on_ils("EHLE"))
-    assert nb_takeoff == nb_landing
+    # with go-arounds, sometimes it just doesn't fit
+    assert nb_takeoff <= nb_landing
     for aligned in belevingsvlucht.aligned_on_ils("EHLE"):
         after = belevingsvlucht.after(aligned.stop)
         assert after is not None
         takeoff = after.takeoff_from_runway("EHLE", threshold_alt=3000).next()
-        # Every landing is followed by a take-off
-        assert takeoff is not None
-        # and they are on the same runway!
-        assert aligned.max("ILS") == takeoff.max("runway")
+        # If a landing is followed by a take-off, then it's on the same runway
+        assert takeoff is None or aligned.max("ILS") == takeoff.max("runway")
 
 
 @pytest.mark.skipif(True, reason="too long to execute")  # launch manually

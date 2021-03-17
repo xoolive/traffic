@@ -301,7 +301,9 @@ class NavigationFeatures:
                     candidates_set, key=attrgetter("duration"), default=None
                 )
                 if result is not None:
-                    yield result
+                    runway = result.on_runway(_airport)
+                    if runway is not None:
+                        yield result.after(runway.start)
 
     @flight_iterator
     def aligned_on_ils(
