@@ -295,7 +295,7 @@ def test_takeoff_runway() -> None:
         assert aligned.max("ILS") == takeoff.max("runway")
 
 
-@pytest.mark.skipif(True)  # launch manually
+@pytest.mark.skipif(True, reason="too long to execute")  # launch manually
 def test_takeoff_goaround() -> None:
     from traffic.data.datasets import landing_zurich_2019  # type: ignore
 
