@@ -76,10 +76,21 @@ setup(
         # deactivated for now for dependency issues
         # "keplergl",  # Kepler.gl for notebooks
         "tqdm>=4.28",  # progressbars
-        "cartotools>=1.2.2",
+        "cartes",
         "pyModeS>=2.8",
         "openap",
     ],
+    extras_require={
+        "dev": [
+            "xarray",
+            "libarchive",
+            "pytest",
+            "mypy",
+            "black",
+            "pre-commit",
+            "isort",
+        ]
+    },
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha

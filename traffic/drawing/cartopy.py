@@ -1,9 +1,7 @@
+from cartes.crs import *  # noqa: F401 F403
+from cartes.osm import Nominatim
 from cartopy.feature import NaturalEarthFeature
 from cartopy.mpl.geoaxes import GeoAxesSubplot
-
-from cartotools.crs import *  # noqa: F401 F403
-from cartotools.osm import location
-from cartotools.osm.nominatim import Nominatim
 
 from ..core.mixins import PointMixin, ShapelyMixin
 
@@ -71,7 +69,7 @@ GeoAxesSubplot.set_default_extent = _set_default_extent
 
 def _set_extent(self, shape, buffer: float = 0.01):
     if isinstance(shape, str):
-        shape = location(shape)
+        shape = Nominatim.search(shape)
     if isinstance(shape, ShapelyMixin):
         x1, x2, y1, y2 = shape.extent
         extent = (x1 - buffer, x2 + buffer, y1 - buffer, y2 + buffer)

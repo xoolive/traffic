@@ -4,7 +4,7 @@ import warnings
 from functools import lru_cache
 from pathlib import Path
 
-from cartotools import session as carto_session
+from cartes.osm.requests import session as carto_session
 from requests import Session
 
 from .. import cache_dir, config, config_file
