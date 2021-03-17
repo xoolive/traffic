@@ -2,7 +2,7 @@ from typing import Iterable, List, Tuple, TypeVar
 
 from pyproj import Geod
 
-T = TypeVar("T", float, Iterable[float])
+T = TypeVar("T", float, List[float], Iterable[float])
 
 
 def distance(lat1: T, lon1: T, lat2: T, lon2: T, *args, **kwargs) -> T:

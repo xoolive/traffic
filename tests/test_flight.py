@@ -2,7 +2,7 @@
 
 import sys
 import zipfile
-from typing import Optional
+from typing import Optional, cast
 
 import pandas as pd
 import pytest
@@ -170,7 +170,7 @@ def test_geometry() -> None:
     cumdist = last_pos.cumdist
     assert abs(xy_length - cumdist) / xy_length < 1e-3
 
-    simplified = flight.simplify(1e3)
+    simplified = cast(Flight, flight.simplify(1e3))
     assert len(simplified) < len(flight)
     xy_length_s = simplified.project_shape().length / 1852
     assert xy_length_s < xy_length
@@ -235,9 +235,9 @@ def test_clip_point() -> None:
 def test_closest_point() -> None:
     from traffic.data import airports, navaids
 
-    item = belevingsvlucht.between(
-        "2018-05-30 16:00", "2018-05-30 17:00"
-    ).closest_point(  # type: ignore
+    item = cast(
+        Flight, belevingsvlucht.between("2018-05-30 16:00", "2018-05-30 17:00")
+    ).closest_point(
         [
             airports["EHLE"],  # type: ignore
             airports["EHAM"],  # type: ignore
@@ -265,15 +265,57 @@ def test_aligned_runway() -> None:
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_landing_ils() -> None:
-    aligned: Optional["Flight"] = (
-        belevingsvlucht.aligned_on_ils("EHAM").next()  # noqa: B305
-    )
+    aligned: Optional["Flight"] = belevingsvlucht.aligned_on_ils(
+        "EHAM"
+    ).next()  # noqa: B305
     assert aligned is not None
     assert aligned.max("ILS") == "06"
 
     aligned = airbus_tree.aligned_on_ils("EDHI").next()  # noqa: B305
     assert aligned is not None
     assert aligned.max("ILS") == "23"
+
+
+@pytest.mark.skipif(skip_runways, reason="no runways")
+def test_takeoff_runway() -> None:
+    # There are as many take-off as landing at EHLE
+    nb_takeoff = sum(
+        1
+        for _ in belevingsvlucht.takeoff_from_runway("EHLE", threshold_alt=3000)
+    )
+    nb_landing = sum(1 for f in belevingsvlucht.aligned_on_ils("EHLE"))
+    assert nb_takeoff == nb_landing
+    for aligned in belevingsvlucht.aligned_on_ils("EHLE"):
+        after = belevingsvlucht.after(aligned.stop)
+        assert after is not None
+        takeoff = after.takeoff_from_runway("EHLE", threshold_alt=3000).next()
+        # Every landing is followed by a take-off
+        assert takeoff is not None
+        # and they are on the same runway!
+        assert aligned.max("ILS") == takeoff.max("runway")
+
+
+@pytest.mark.skipif(True, reason="too long to execute")  # launch manually
+def test_takeoff_goaround() -> None:
+    from traffic.data.datasets import landing_zurich_2019  # type: ignore
+
+    go_arounds = landing_zurich_2019.has("go_around").eval(
+        desc="go_around", max_workers=8
+    )
+
+    for flight in go_arounds:
+        for segment in flight.go_around():
+            aligned = segment.aligned_on_ils("LSZH").next()
+            takeoff = (
+                segment.after(aligned.stop)
+                .takeoff_from_runway("LSZH", threshold_alt=5000)
+                .next()
+            )
+            assert (
+                takeoff is None
+                or takeoff.shorter_than("30s")
+                or aligned.max("ILS") == takeoff.max("runway")
+            )
 
 
 def test_getattr() -> None:

@@ -7,8 +7,9 @@ from typing import (
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, MultiLineString
+from shapely.geometry import LineString, MultiLineString, Polygon
 
+from ..core.geodesy import destination
 from ..core.iterator import flight_iterator
 
 if TYPE_CHECKING:
@@ -210,8 +211,102 @@ class NavigationFeatures:
         )
 
     @flight_iterator
+    def takeoff_from_runway(
+        self,
+        airport: Union[str, "Airport"],
+        threshold_alt: int = 2000,
+        zone_length: int = 6000,
+        little_base: int = 100,
+        opening: float = 10,
+    ) -> Iterator["Flight"]:
+        """Identifies the take-off runway for trajectories.
+
+        Iterates on all segments of trajectory matching a zone around a runway
+        of the  given airport. The takeoff runway number is appended as a new
+        ``runway`` column.
+
+        """
+
+        from ..data import airports
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self).phases()
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if _airport is None or _airport.runways.shape.is_empty:
+            return None
+
+        nb_run = len(_airport.runways.data)
+        alt = _airport.altitude + threshold_alt
+        base = zone_length * np.tan(opening * np.pi / 180) + little_base
+
+        # Il faut créer les formes autour de chaque runway
+        list_p0 = destination(
+            list(_airport.runways.data.latitude),
+            list(_airport.runways.data.longitude),
+            list(_airport.runways.data.bearing),
+            [zone_length for i in range(nb_run)],
+        )
+        list_p1 = destination(
+            list(_airport.runways.data.latitude),
+            list(_airport.runways.data.longitude),
+            [x + 90 for x in list(_airport.runways.data.bearing)],
+            [little_base for i in range(nb_run)],
+        )
+        list_p2 = destination(
+            list(_airport.runways.data.latitude),
+            list(_airport.runways.data.longitude),
+            [x - 90 for x in list(_airport.runways.data.bearing)],
+            [little_base for i in range(nb_run)],
+        )
+        list_p3 = destination(
+            list_p0[0],
+            list_p0[1],
+            [x - 90 for x in list(_airport.runways.data.bearing)],
+            [base for i in range(nb_run)],
+        )
+        list_p4 = destination(
+            list_p0[0],
+            list_p0[1],
+            [x + 90 for x in list(_airport.runways.data.bearing)],
+            [base for i in range(nb_run)],
+        )
+
+        runway_polygons = {}
+
+        for i, name in enumerate(_airport.runways.data.name):
+            lat = [list_p1[0][i], list_p2[0][i], list_p3[0][i], list_p4[0][i]]
+            lon = [list_p1[1][i], list_p2[1][i], list_p3[1][i], list_p4[1][i]]
+
+            poly = Polygon(zip(lon, lat))
+            runway_polygons[name] = poly
+
+        low_traj = self.query(
+            f"(phase == 'CLIMB' or phase == 'LEVEL') and altitude < {alt}"
+        )
+
+        if low_traj is not None:
+            for segment in low_traj.split("2T"):
+                candidates_set = []
+                for name, polygon in runway_polygons.items():
+                    if segment.intersects(polygon):
+                        candidate = segment.clip(polygon)
+                        if (
+                            candidate is not None
+                            and candidate.shape is not None
+                        ):
+                            candidates_set.append(candidate.assign(runway=name))
+
+                result = max(
+                    candidates_set, key=attrgetter("duration"), default=None
+                )
+                if result is not None:
+                    yield result
+
+    @flight_iterator
     def aligned_on_ils(
-        self, airport: Union[None, str, "Airport"],
+        self,
+        airport: Union[None, str, "Airport"],
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
