@@ -6,13 +6,11 @@ from typing import Optional, cast
 
 import pandas as pd
 import pytest
-
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
-from traffic.data.samples import (
-    airbus_tree, belevingsvlucht, calibration, featured, get_sample
-)
+from traffic.data.samples import (airbus_tree, belevingsvlucht, calibration,
+                                  elal747, featured, get_sample)
 
 # fmt: on
 
@@ -296,7 +294,7 @@ def test_takeoff_runway() -> None:
 
 @pytest.mark.skipif(True, reason="too long to execute")  # launch manually
 def test_takeoff_goaround() -> None:
-    from traffic.data.datasets import landing_zurich_2019  # type: ignore
+    from traffic.data.datasets import landing_zurich_2019
 
     go_arounds = landing_zurich_2019.has("go_around").eval(
         desc="go_around", max_workers=8
@@ -462,3 +460,10 @@ def test_agg_time_colnames() -> None:
 
     cols = belevingsvlucht.agg_time("5T", altitude=shh).data.columns
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="py36")
+def test_parking_position() -> None:
+    pp = elal747.parking_position("LIRF")
+    assert pp is not None
+    assert pp.max("parking_position") == "702"
