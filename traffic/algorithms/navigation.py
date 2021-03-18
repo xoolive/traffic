@@ -671,3 +671,23 @@ class NavigationFeatures:
                 if next_ is not None:
                     yield next_
                 next_ = None
+
+    def parking_position(self, buffer_size=1e-4) -> Optional["Flight"]:
+        g = self.filter().query("altitude > 3000")
+        if g is not None:
+            self = self.before(
+                g.start
+            )  # we remove the part of flight after it went higher than 3000ft
+        if self is None:
+            return None
+
+        return max(
+            (
+                g.assign(parking_position=p.ref)
+                for _, p in parking_positions.data.iterrows()
+                if self.intersects(p.geometry.buffer(buffer_size))
+                and (g := self.clip(p.geometry.buffer(buffer_size))) is not None
+            ),
+            key=attrgetter("duration"),
+            default=None,
+        )
