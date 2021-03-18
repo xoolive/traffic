@@ -1,6 +1,5 @@
 # fmt: off
 
-import sys
 import zipfile
 from typing import Optional, cast
 
@@ -45,7 +44,6 @@ def test_properties() -> None:
     assert flight.flight_id is None
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py36")
 def test_get_traffic() -> None:
     traffic: Traffic = get_sample(featured, "traffic")
     assert "belevingsvlucht" in traffic.flight_ids
@@ -292,7 +290,7 @@ def test_takeoff_runway() -> None:
         assert takeoff is None or aligned.max("ILS") == takeoff.max("runway")
 
 
-@pytest.mark.skipif(True, reason="too long to execute")  # launch manually
+@pytest.mark.skipif(True, reason="only for local debug")
 def test_takeoff_goaround() -> None:
     from traffic.data.datasets import landing_zurich_2019
 
@@ -462,7 +460,6 @@ def test_agg_time_colnames() -> None:
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py36")
 def test_parking_position() -> None:
     pp = elal747.parking_position("LIRF")
     assert pp is not None
