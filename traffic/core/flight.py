@@ -364,7 +364,8 @@ class Flight(
         return Flight(t.data)  # type: ignore
 
     def next(
-        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+        self,
+        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
     ) -> Optional["Flight"]:
         """
         Returns the first segment of trajectory yielded by flight.method()
@@ -947,7 +948,9 @@ class Flight(
 
     @flight_iterator
     def sliding_windows(
-        self, duration: deltalike, step: deltalike,
+        self,
+        duration: deltalike,
+        step: deltalike,
     ) -> Iterator["Flight"]:
 
         duration_ = to_timedelta(duration)
@@ -1031,7 +1034,10 @@ class Flight(
         return getattr(self, name)(*args, **kwargs)(fun)
 
     def apply_time(
-        self, freq: str = "1T", merge: bool = True, **kwargs,
+        self,
+        freq: str = "1T",
+        merge: bool = True,
+        **kwargs,
     ) -> "Flight":
         """Apply features on time windows.
 
@@ -1080,7 +1086,10 @@ class Flight(
         return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
 
     def agg_time(
-        self, freq: str = "1T", merge: bool = True, **kwargs,
+        self,
+        freq: str = "1T",
+        merge: bool = True,
+        **kwargs,
     ) -> "Flight":
         """Aggregate features on time windows.
 
@@ -1756,7 +1765,7 @@ class Flight(
         **kwargs,
     ) -> "Flight":
 
-        """ Enrich the structure with new ``cumdist`` column computed from
+        """Enrich the structure with new ``cumdist`` column computed from
         latitude and longitude columns.
 
         The first ``cumdist`` value is 0, then distances are computed (in

@@ -264,7 +264,7 @@ respect to the above mentioned navigational beacons.
         
         t_32.plot(ax, alpha=.3, zorder=-2)
     
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
         ax.background_patch.set_visible(False)
 
 
@@ -450,7 +450,7 @@ still acceptable for a statistical analysis.
         t_final.plot(ax, alpha=.3,)
         t_final.query('distance < 8 * 1852').plot(ax, color='crimson', alpha=.3,)
         
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
         ax.background_patch.set_visible(False)
 
 
@@ -584,7 +584,7 @@ appears they follow a specific pattern of late runway changes.
             ax, color='crimson', alpha=.3
         )
             
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
         ax.background_patch.set_visible(False)
 
 

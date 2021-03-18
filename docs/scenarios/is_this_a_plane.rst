@@ -2,7 +2,7 @@
 Is this a plane?
 ----------------
 
-.. figure:: images/aircraft.jpg
+.. image:: images/aircraft.jpg
    :alt: View from my seat
    :align: center
 
@@ -20,7 +20,8 @@ First let's get information about the flight I was on.
     flight = opensky.history(
         "2018-11-15 06:00",  # UTC
         "2018-11-15 08:00",
-        callsign='DLH07F' # of course, you need to know the callsign of your flight
+        callsign='DLH07F', # of course, you need to know the callsign of your flight
+        return_flight=True
     )
 
 
@@ -168,7 +169,7 @@ Tunis). Let's plot their lateral distance vs. time.
         fig, ax = plt.subplots(figsize=(10, 7))
 
         flight.distance(around['AFR1084']).plot(
-            ax=ax, x='timestamp', y='d_horz',
+            ax=ax, x='timestamp', y='lateral',
             label="Lateral distance between aircraft (in nm)"
         )
 
@@ -228,7 +229,7 @@ altitude though.
                 ),
             )
 
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
 
 .. image:: images/aircraft_map.png
    :scale: 70%

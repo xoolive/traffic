@@ -2,7 +2,7 @@ from typing import Iterable, List, Tuple, TypeVar
 
 from pyproj import Geod
 
-T = TypeVar("T", float, Iterable[float])
+T = TypeVar("T", float, List[float], Iterable[float])
 
 
 def distance(lat1: T, lon1: T, lat2: T, lon2: T, *args, **kwargs) -> T:
@@ -26,8 +26,8 @@ def destination(
 
 
 def greatcircle(
-    lat1: T, lon1: T, lat2: T, lon2: T, *args, **kwargs
-) -> List[Tuple[T, T]]:
+    lat1: float, lon1: float, lat2: float, lon2: float, *args, **kwargs
+) -> List[Tuple[float, float]]:
     geod = Geod(ellps="WGS84")
     return [
         (lat, lon)
