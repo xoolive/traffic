@@ -2,15 +2,15 @@
 
 from functools import lru_cache
 from itertools import chain
-from typing import (
-    Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, Union
-)
+from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set,
+                    Tuple, Union)
+
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
 
 import altair as alt
 from cartopy.crs import PlateCarree
 from cartotools.osm import request, tags
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
 from shapely.geometry import LineString, Polygon, mapping, polygon
 from shapely.geometry.base import BaseGeometry
 
@@ -132,6 +132,17 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
                 **tags.airport,
             )
 
+    def parking_positions(self):
+        from cartes.osm import Overpass
+
+        airport = Overpass.request(area={"icao": self.icao}, aeroway=True)
+
+        return airport.assign(
+            geometry_type=lambda df: df.geometry.type.apply(str)
+        ).query(
+            'aeroway == "parking_position" and geometry_type== "LineString"'
+        )
+
     @lru_cache()
     def geojson(self):
         return {
@@ -152,7 +163,10 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         }
 
     def geoencode(  # type: ignore
-        self, footprint: bool = True, runways: bool = True, labels: bool = True,
+        self,
+        footprint: bool = True,
+        runways: bool = True,
+        labels: bool = True,
     ) -> alt.Chart:  # coverage: ignore
         cumul = []
         if footprint:

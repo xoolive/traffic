@@ -6,13 +6,11 @@ from typing import Optional, cast
 
 import pandas as pd
 import pytest
-
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
-from traffic.data.samples import (
-    airbus_tree, belevingsvlucht, calibration, featured, get_sample
-)
+from traffic.data.samples import (airbus_tree, belevingsvlucht, calibration,
+                                  elal747, featured, get_sample)
 
 # fmt: on
 
@@ -462,3 +460,9 @@ def test_agg_time_colnames() -> None:
 
     cols = belevingsvlucht.agg_time("5T", altitude=shh).data.columns
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
+
+
+def test_parking_position() -> None:
+    pp = elal747.parking_position("LIRF")
+    assert pp is not None
+    assert pp.max("parking_position") == "702"

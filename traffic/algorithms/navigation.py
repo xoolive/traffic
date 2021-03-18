@@ -1,11 +1,11 @@
 # fmt: off
 
 from operator import attrgetter
-from typing import (
-    TYPE_CHECKING, Iterable, Iterator, List, Optional, Union, cast
-)
+from typing import (TYPE_CHECKING, Iterable, Iterator, List, Optional, Union,
+                    cast)
 
 import numpy as np
+
 import pandas as pd
 from shapely.geometry import LineString, MultiLineString, Polygon
 
@@ -672,22 +672,44 @@ class NavigationFeatures:
                     yield next_
                 next_ = None
 
-    def parking_position(self, buffer_size=1e-4) -> Optional["Flight"]:
-        g = self.filter().query("altitude > 3000")
-        if g is not None:
-            self = self.before(
-                g.start
-            )  # we remove the part of flight after it went higher than 3000ft
+    # -- Airport ground operations specific methods --
+
+    def parking_position(
+        self,
+        airport: Union[str, "Airport"],
+        buffer_size: float = 1e-4,  # degrees
+    ) -> Optional["Flight"]:
+        """
+        Returns the first parking position of the aircraft
+
+        TODO test/adapat for parking position after landing
+
+        """
+        from ..data import airports
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self).phases()
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if _airport is None or _airport.runways.shape.is_empty:
+            return None
+
+        # we remove the part of flight after it went higher than 3000ft
+        airborne_part = self.filter().query("altitude > 3000")
+        if airborne_part is not None:
+            self = self.before(airborne_part.start)  # type: ignore
         if self is None:
             return None
 
+        def intersections(flight: "Flight") -> Iterator["Flight"]:
+            for _, p in _airport.parking_positions().data.iterrows():  # type: ignore
+                if flight.intersects(p.geometry.buffer(buffer_size)):
+                    airborne_part = flight.clip(p.geometry.buffer(buffer_size))
+                    if airborne_part is not None:
+                        yield airborne_part.assign(parking_position=p.ref)
+
         return max(
-            (
-                g.assign(parking_position=p.ref)
-                for _, p in parking_positions.data.iterrows()
-                if self.intersects(p.geometry.buffer(buffer_size))
-                and (g := self.clip(p.geometry.buffer(buffer_size))) is not None
-            ),
+            intersections(self),  # type: ignore
             key=attrgetter("duration"),
             default=None,
         )
