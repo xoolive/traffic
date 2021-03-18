@@ -9,9 +9,9 @@ cache:
     - $HOME/.cache/traffic/
 
 python:
-  - 3.6
   - 3.7
   - 3.8
+  - 3.9
 
 env:
   global:
@@ -40,7 +40,7 @@ install:
   - python -m pip install --upgrade xarray
   - python -m pip install --upgrade sphinx sphinx-rtd-theme
   - python -m pip install --upgrade cython
-  - python -m pip install --upgrade cartes # temporary
+  - python -m pip install --upgrade git+https://github.com/xoolive/cartes # temporary
   - python -m pip install -e .
 
 script:
