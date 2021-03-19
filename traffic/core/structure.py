@@ -2,26 +2,23 @@
 
 from functools import lru_cache
 from itertools import chain
-from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set,
-                    Tuple, Union)
-
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
+from typing import (
+    Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, Union
+)
 
 import altair as alt
+from cartes.osm import Overpass
 from cartopy.crs import PlateCarree
-from cartotools.osm import request, tags
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
 from shapely.geometry import LineString, Polygon, mapping, polygon
 from shapely.geometry.base import BaseGeometry
 
-from .. import cache_expiration
 from ..drawing import Nominatim
 from ..drawing.markers import atc_tower
 from .mixins import HBoxMixin, PointMixin, ShapelyMixin
 
 # fmt: on
-
-request.cache_expiration = cache_expiration
 
 
 class AirportNamedTuple(NamedTuple):
@@ -112,35 +109,16 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         return set(elt[0]["tags"]["aeroway"] for elt in self.osm_values())
 
     @lru_cache()
-    def osm_request(self) -> Nominatim:  # coverage: ignore
-
-        if self.runways is not None and not self.runways.shape.is_empty:
-            lon1, lat1, lon2, lat2 = self.runways.bounds
-            return request(
-                (lon1 - 0.02, lat1 - 0.02, lon2 + 0.02, lat2 + 0.02),
-                **tags.airport,
-            )
-
-        else:
-            return request(
-                (
-                    self.longitude - 0.01,
-                    self.latitude - 0.01,
-                    self.longitude + 0.01,
-                    self.latitude + 0.01,
-                ),
-                **tags.airport,
-            )
+    def osm_request(self) -> Overpass:  # coverage: ignore
+        return Overpass.request(area={"icao": self.icao}, aeroway=True)
 
     def parking_positions(self):
-        from cartes.osm import Overpass
-
-        airport = Overpass.request(area={"icao": self.icao}, aeroway=True)
-
-        return airport.assign(
-            geometry_type=lambda df: df.geometry.type.apply(str)
-        ).query(
-            'aeroway == "parking_position" and geometry_type== "LineString"'
+        return (
+            self.osm_request()
+            .assign(geometry_type=lambda df: df.geometry.type.apply(str))
+            .query(
+                'aeroway == "parking_position" and geometry_type== "LineString"'
+            )
         )
 
     @lru_cache()
