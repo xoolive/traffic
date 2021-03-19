@@ -705,7 +705,8 @@ class NavigationFeatures:
             return None
 
         def intersections(flight: "Flight") -> Iterator["Flight"]:
-            for _, p in _airport.parking_positions().data.iterrows():  # type: ignore
+            parking_positions = _airport.parking_positions()  # type: ignore
+            for _, p in parking_positions.data.iterrows():
                 if flight.intersects(p.geometry.buffer(buffer_size)):
                     airborne_part = flight.clip(p.geometry.buffer(buffer_size))
                     if airborne_part is not None:
