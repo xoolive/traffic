@@ -3,10 +3,11 @@
 [![Documentation Status](https://github.com/xoolive/traffic/workflows/docs/badge.svg)](https://traffic-viz.github.io/)
 [![Build Status](https://travis-ci.org/xoolive/traffic.svg?branch=master)](https://travis-ci.org/xoolive/traffic)
 [![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic)
-[![Codacy Badge](https://img.shields.io/codacy/grade/eea673ed15304f1b93490726295d6de0)](https://www.codacy.com/manual/xoolive/traffic)
+[![Codacy Badge](https://img.shields.io/codacy/grade/eea673ed15304f1b93490726295d6de0)](https://www.codacy.com/manual/xoolive/traffic)\
 [![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy.readthedocs.io/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-black.svg)](https://github.com/psf/black)
-![License](https://img.shields.io/pypi/l/traffic.svg)\
+![License](https://img.shields.io/pypi/l/traffic.svg)
+[![Join the chat at https://gitter.im/xoolive/traffic](https://badges.gitter.im/xoolive/traffic.svg)](https://gitter.im/xoolive/traffic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)\
 [![JOSS paper](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518)
 [![PyPI downloads](https://img.shields.io/pypi/dm/traffic)](https://pypi.org/project/traffic)
 [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/traffic-viz/traffic_static/blob/master/notebooks/quickstart.ipynb)
@@ -81,9 +82,11 @@ Additionally, you may consider adding a star to the repository. This token of ap
 
 ## Documentation
 
-[![Documentation Status](https://readthedocs.org/projects/traffic-viz/badge/?version=latest)](https://traffic-viz.github.io/)
+[![Documentation Status](https://github.com/xoolive/traffic/workflows/docs/badge.svg)](https://traffic-viz.github.io/)
+[![Join the chat at https://gitter.im/xoolive/traffic](https://badges.gitter.im/xoolive/traffic.svg)](https://gitter.im/xoolive/traffic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Documentation available at [https://traffic-viz.github.io/](https://traffic-viz.github.io/)
+Documentation available at [https://traffic-viz.github.io/](https://traffic-viz.github.io/)\
+Join the Gitter chat: https://gitter.im/xoolive/traffic
 
 ## Tests and code quality
 
@@ -156,6 +159,8 @@ easier that way to keep track of corrections and to remember why things are the
 way they are.
 
 ## Frequently asked questions
+
+[![Join the chat at https://gitter.im/xoolive/traffic](https://badges.gitter.im/xoolive/traffic.svg)](https://gitter.im/xoolive/traffic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 - I want to know more about Eurocontrol NM files
 
