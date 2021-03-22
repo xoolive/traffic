@@ -1,20 +1,17 @@
 # fmt: off
 
 from functools import lru_cache
-from itertools import chain
-from typing import (
-    Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, Union
-)
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 import altair as alt
 from cartes.osm import Overpass
 from cartopy.crs import PlateCarree
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
-from shapely.geometry import LineString, Polygon, mapping, polygon
+from shapely.geometry import LineString
 from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
 
-from ..drawing import Nominatim
 from ..drawing.markers import atc_tower
 from .mixins import HBoxMixin, PointMixin, ShapelyMixin
 
@@ -75,94 +72,79 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
-    def __getattr__(self, name) -> Dict[str, Any]:
-        if not name.startswith("osm_"):
+    def __getattr__(self, name: str) -> Overpass:
+        if name not in self._openstreetmap().data.aeroway.unique():
             raise AttributeError(
                 f"'{self.__class__.__name__}' has no attribute '{name}'"
             )
         else:
-            values = self.osm_values()
-            return {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "geometry": mapping(elt[1]),
-                        "properties": elt[0]["tags"],
-                    }
-                    for elt in values
-                    if elt[0]["tags"]["aeroway"] == name[4:]
-                ],
-            }
-
-    def osm_values(self) -> Iterator[Tuple[Dict[str, Any], BaseGeometry]]:
-        return chain(
-            (
-                (dict_, shape_)
-                for dict_, shape_ in self.osm_request().nodes.values()
-                if "tags" in dict_ and "aeroway" in dict_["tags"]
-            ),
-            self.osm_request().ways.values(),
-        )
-
-    def osm_tags(self) -> Set[str]:
-        return set(elt[0]["tags"]["aeroway"] for elt in self.osm_values())
+            return self._openstreetmap().query(f"aeroway == '{name}'")
 
     @lru_cache()
-    def osm_request(self) -> Overpass:  # coverage: ignore
-        return Overpass.request(area={"icao": self.icao}, aeroway=True)
+    def _openstreetmap(self) -> Overpass:  # coverage: ignore
+        return Overpass.request(
+            area={"icao": self.icao, "as_": "airport"},
+            nwr=[dict(area="airport"), dict(aeroway=True, area="airport")],
+        )
 
-    def parking_positions(self):
+    @property
+    def __geo_interface__(self):
         return (
-            self.osm_request()
-            .assign(geometry_type=lambda df: df.geometry.type.apply(str))
-            .query(
-                'aeroway == "parking_position" and geometry_type== "LineString"'
-            )
+            self._openstreetmap().query('type_ != "node"')
+            # TODO I don't understand why it's necessary here...
+            # .assign(geometry=lambda df: df.geometry.apply(reorient))
+            .__geo_interface__
         )
-
-    @lru_cache()
-    def geojson(self):
-        return {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "geometry": mapping(
-                        polygon.orient(shape, -1)
-                        if type(shape) == Polygon
-                        else shape
-                    ),
-                    "properties": info["tags"],
-                    "type": "Feature",
-                }
-                for info, shape in self.osm_request().ways.values()
-                if info["tags"]["aeroway"] != "aerodrome"
-            ],
-        }
 
     def geoencode(  # type: ignore
         self,
-        footprint: bool = True,
-        runways: bool = True,
-        labels: bool = True,
+        footprint: Union[bool, dict] = True,
+        runways: Union[bool, dict] = True,
+        labels: Union[bool, dict] = True,
     ) -> alt.Chart:  # coverage: ignore
+
+        base = alt.Chart(self).mark_geoshape()
         cumul = []
         if footprint:
-            cumul.append(super().geoencode(fill=""))
+            params = dict(
+                aerodrome=dict(color="gainsboro", opacity=0.5),
+                apron=dict(color="darkgray", opacity=0.5),
+                terminal=dict(color="#888888"),
+                hangar=dict(color="#888888"),
+                taxiway=dict(filled=False, color="silver", strokeWidth=1.5),
+            )
+            if isinstance(footprint, dict):
+                footprint = {**params, **footprint}
+            else:
+                footprint = params
+
+            for key, value in footprint.items():
+                cumul.append(
+                    base.transform_filter(
+                        f"datum.aeroway == '{key}'"
+                    ).mark_geoshape(**value)
+                )
         if runways:
-            cumul.append(self.runways.geoencode(mode="geometry"))
+            if isinstance(runways, dict):
+                cumul.append(self.runways.geoencode(mode="geometry", **runways))
+            else:
+                cumul.append(self.runways.geoencode(mode="geometry"))
         if labels:
-            cumul.append(self.runways.geoencode(mode="labels"))
+            if isinstance(labels, dict):
+                cumul.append(self.runways.geoencode(mode="labels", **labels))
+            else:
+                cumul.append(self.runways.geoencode(mode="labels"))
         if len(cumul) == 0:
             raise TypeError(
                 "At least one of footprint, runways and labels must be True"
             )
-        return alt.layer(*cumul).configure_view(opacity=0)
+        return alt.layer(*cumul)
 
     @property
     def shape(self):
-        # filter out the contour, helps for useful display
-        return self.osm_request().shape
+        return unary_union(
+            self._openstreetmap().query('aeroway == "aerodrome"').data.geometry
+        )
 
     @property
     def point(self):
@@ -180,29 +162,35 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
     def plot(  # type: ignore
         self,
         ax,
-        footprint: bool = True,
+        footprint: Union[bool, Optional[Dict]] = True,
         runways: Union[bool, Optional[Dict]] = False,
         labels: Union[bool, Optional[Dict]] = False,
         **kwargs,
     ):  # coverage: ignore
 
-        if footprint:
-            params = {
-                "edgecolor": "silver",
-                "facecolor": "None",
-                "crs": PlateCarree(),
-                **kwargs,
-            }
-            ax.add_geometries(
-                # filter out the contour, helps for useful display
-                # list(self.osm_request()),
-                list(
-                    shape
-                    for dic, shape in self.osm_request().ways.values()
-                    if dic["tags"]["aeroway"] != "aerodrome"
+        if footprint is True:
+            footprint = dict(
+                by="aeroway",
+                aerodrome=dict(color="gainsboro", alpha=0.5),
+                apron=dict(color="darkgray", alpha=0.5),
+                taxiway=dict(color="darkgray"),
+                terminal=dict(color="black"),
+                # MUTE the rest
+                gate=dict(alpha=0),
+                parking_position=dict(alpha=0),
+                holding_position=dict(alpha=0),
+                tower=dict(alpha=0),
+                helipad=dict(alpha=0),
+                jet_bridge=dict(alpha=0),
+                aerobridge=dict(alpha=0),
+                navigationaid=dict(
+                    papi=dict(alpha=0), approach_light=dict(alpha=0)
                 ),
-                **params,
+                windsock=dict(alpha=0),
             )
+
+        if isinstance(footprint, dict):
+            self._openstreetmap().plot(ax, **footprint)
 
         if self.runways is None:
             return
