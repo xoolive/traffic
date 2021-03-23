@@ -52,7 +52,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         if (
             self.runways is not None
             and self.runways.shape.is_empty
-            and len(self.osm_runway["features"]) > 0
+            and self.runway.data.shape[0] > 0
         ):
             title += "<div class='alert alert-warning'><p>"
             title += "<b>Warning!</b> No runway information available in our "
@@ -63,7 +63,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
             url = f"https://ourairports.com/airports/{self.icao}/runways.html"
             title += f"<p>Edit link: <a href='{url}'>{url}</a>.<br/>"
             title += "Check the data in "
-            title += f"<code>airports['{self.icao}'].osm_runway</code>"
+            title += f"<code>airports['{self.icao}'].runway</code>"
             title += " and edit the webpage accordingly. You may need to "
             title += " create an account there to be able to edit.</p></div>"
 
