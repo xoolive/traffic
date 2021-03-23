@@ -1067,7 +1067,7 @@ signals, then plot the results.
 
 .. code:: python
 
-    from traffic.drawing import location
+    from traffic.drawing import Nominatim
     
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
@@ -1076,7 +1076,7 @@ signals, then plot the results.
     
         # We may add contours from OpenStreetMap
         # (Occitanie is the name of the administrative region)
-        location("Occitanie").plot(ax, linestyle="dotted")
+        Nominatim.search("Occitanie").plot(ax, linestyle="dotted")
         ax.set_extent("Occitanie")
     
         # Plot the airport, the TMA
@@ -1204,7 +1204,7 @@ with an average vertical speed below 1,000 ft/min.
 
 .. code:: python
 
-    from traffic.drawing import location
+    from traffic.drawing import Nominatim
     
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
@@ -1213,7 +1213,7 @@ with an average vertical speed below 1,000 ft/min.
     
         # We may add contours from OpenStreetMap
         # (Occitanie is the name of the administrative region)
-        location("Occitanie").plot(ax, linestyle="dotted")
+        Nominatim.search("Occitanie").plot(ax, linestyle="dotted")
         ax.set_extent("Occitanie")
     
         # Plot the airport, the TMA

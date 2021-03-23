@@ -355,7 +355,10 @@ class ShapelyMixin(object):
         transformer = pyproj.Transformer.from_proj(
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
-        projected_shape = transform(transformer.transform, self.shape,)
+        projected_shape = transform(
+            transformer.transform,
+            self.shape,
+        )
 
         if not projected_shape.is_valid:
             warnings.warn("The chosen projection is invalid for current shape")
@@ -398,7 +401,8 @@ class GeographyMixin(DataFrameMixin):
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
         x, y = transformer.transform(
-            self.data.longitude.values, self.data.latitude.values,
+            self.data.longitude.values,
+            self.data.latitude.values,
         )
 
         return self.__class__(self.data.assign(x=x, y=y))
@@ -409,7 +413,7 @@ class GeographyMixin(DataFrameMixin):
         projection: Union[pyproj.Proj, crs.Projection, None] = None,
         **kwargs,
     ) -> pd.DataFrame:
-        """ Aggregates values of a traffic over a grid of x/y, with x and y
+        """Aggregates values of a traffic over a grid of x/y, with x and y
         computed by `traffic.core.GeographyMixin.compute_xy()`.
 
         The resolution of the grid is passed as a dictionary parameter.
@@ -512,12 +516,12 @@ class GeoDBMixin(DataFrameMixin):
         ZUE (VOR): 47.59216667 8.81766667 1730 ZURICH EAST VOR-DME 110.05MHz
 
         """
-        from ..drawing import Nominatim, location
+        from ..drawing import Nominatim
 
         _extent = (0.0, 0.0, 0.0, 0.0)
 
         if isinstance(extent, str):
-            extent = location(extent)
+            _extent = Nominatim.search(extent).extent  # type: ignore
         if isinstance(extent, ShapelyMixin):
             _extent = extent.extent
         if isinstance(extent, Nominatim):

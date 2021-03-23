@@ -9,6 +9,7 @@
 ![License](https://img.shields.io/pypi/l/traffic.svg)
 [![Join the chat at https://gitter.im/xoolive/traffic](https://badges.gitter.im/xoolive/traffic.svg)](https://gitter.im/xoolive/traffic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)\
 [![JOSS paper](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518)
+![PyPI version](https://img.shields.io/pypi/v/traffic)
 [![PyPI downloads](https://img.shields.io/pypi/dm/traffic)](https://pypi.org/project/traffic)
 [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/traffic-viz/traffic_static/blob/master/notebooks/quickstart.ipynb)
 
@@ -44,7 +45,7 @@ Development version:
 pip install git+https://github.com/xoolive/traffic
 ```
 
-**Warning:** `cartotools` and `shapely` have strong dependencies to dynamic
+**Warning:** `cartes` and `shapely` have strong dependencies to dynamic
 libraries which may not be available on your system by default.
 
 Before reporting an issue, please try to use an Anaconda environment. Other

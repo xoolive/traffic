@@ -9,7 +9,7 @@ import pandas as pd
 
 from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
 from ...core.structure import Navaid, NavaidTuple
-from ...drawing import Nominatim, location
+from ...drawing import Nominatim
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"

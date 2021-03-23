@@ -12,7 +12,7 @@ def test_airspace() -> None:
     assert summed.area > eurofirs["EBBU"].area
     assert summed.area > eurofirs["EHAA"].area
     assert summed.above(300).area == eurofirs["EHAA"].area
-    assert summed.below(190).area == summed.area
+    assert (summed.below(190).area - summed.area) / summed.area < 1e-12
 
     json = summed.export_json()
     assert json["name"] == "BRUSSELS, AMSTERDAM"

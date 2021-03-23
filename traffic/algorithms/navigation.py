@@ -1,11 +1,11 @@
 # fmt: off
 
 from operator import attrgetter
-from typing import (TYPE_CHECKING, Iterable, Iterator, List, Optional, Union,
-                    cast)
+from typing import (
+    TYPE_CHECKING, Iterable, Iterator, List, Optional, Union, cast
+)
 
 import numpy as np
-
 import pandas as pd
 from shapely.geometry import LineString, MultiLineString, Polygon
 
@@ -705,7 +705,7 @@ class NavigationFeatures:
             return None
 
         def intersections(flight: "Flight") -> Iterator["Flight"]:
-            parking_positions = _airport.parking_positions()  # type: ignore
+            parking_positions = _airport.parking_position  # type: ignore
             for _, p in parking_positions.data.iterrows():
                 if flight.intersects(p.geometry.buffer(buffer_size)):
                     airborne_part = flight.clip(p.geometry.buffer(buffer_size))

@@ -11,7 +11,7 @@ SSH protocol in Pure Python, giving access to SSH connection independently of
 the operating system.
 
 Static visualisation tools are accessible with Matplotlib through the
-`cartotools <https://github.com/xoolive/cartotools>`_ library, which leverages
+`cartes <https://github.com/xoolive/cartes>`_ library, which leverages
 access to more projections and to data from OpenStreetMap. More dynamic
 visualisations in Jupyter Lab are accessible thanks to the `altair <https://altair-viz.github.io/>`_ and `ipyleaflet
 <http://ipyleaflet.readthedocs.io/>`_ libraries; other exports to various formats

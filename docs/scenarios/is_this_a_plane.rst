@@ -189,7 +189,7 @@ altitude though.
 .. code:: python
 
     
-    from traffic.drawing import Lambert93, countries, rivers, location
+    from traffic.drawing import Lambert93, Nominatim, countries, rivers
     from traffic.drawing.markers import rotate_marker, aircraft
 
     with plt.style.context("traffic"):
@@ -200,13 +200,13 @@ altitude though.
         ax.add_feature(rivers(linewidth=2.5))
         ax.set_extent((3.9, 6, 44.5, 46))
 
-        location("Lyon").point.plot(
+        Nominatim.search("Lyon").point.plot(
             ax, s=50, marker="*", text_kw=dict(s="Lyon")
         )
-        location("Valence, France").point.plot(
+        Nominatim.search("Valence, France").point.plot(
             ax, s=50, marker="*", text_kw=dict(s="Valence")
         )
-        location("Saint-Étienne").point.plot(
+        Nominatim.search("Saint-Étienne").point.plot(
             ax, s=50, marker="*", text_kw=dict(s="Saint-Étienne")
         )
 
