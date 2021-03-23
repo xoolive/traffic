@@ -3,12 +3,13 @@
 from functools import lru_cache
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
+
 import altair as alt
 from cartes.osm import Overpass
 from cartopy.crs import PlateCarree
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
-from shapely.geometry import LineString
+from shapely.geometry import GeometryCollection, LineString
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
@@ -89,12 +90,27 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
     @property
     def __geo_interface__(self):
-        return (
-            self._openstreetmap().query('type_ != "node"')
-            # TODO I don't understand why it's necessary here...
-            # .assign(geometry=lambda df: df.geometry.apply(reorient))
-            .__geo_interface__
-        )
+        return self._openstreetmap().query('type_ != "node"').__geo_interface__
+
+    @property
+    def shape(self) -> BaseGeometry:
+        osm = self._openstreetmap()
+        if "aeroway" not in osm.data.columns:
+            return GeometryCollection()
+        return unary_union(osm.query('aeroway == "aerodrome"').data.geometry)
+
+    @property
+    def point(self):
+        p = AirportPoint()
+        p.latitude, p.longitude = self.latlon
+        p.name = self.icao
+        return p
+
+    @property
+    def runways(self):
+        from ..data import runways
+
+        return runways[self]
 
     def geoencode(  # type: ignore
         self,
@@ -139,25 +155,6 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
                 "At least one of footprint, runways and labels must be True"
             )
         return alt.layer(*cumul)
-
-    @property
-    def shape(self):
-        return unary_union(
-            self._openstreetmap().query('aeroway == "aerodrome"').data.geometry
-        )
-
-    @property
-    def point(self):
-        p = AirportPoint()
-        p.latitude, p.longitude = self.latlon
-        p.name = self.icao
-        return p
-
-    @property
-    def runways(self):
-        from ..data import runways
-
-        return runways[self]
 
     def plot(  # type: ignore
         self,
