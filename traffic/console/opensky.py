@@ -5,8 +5,9 @@ from pathlib import Path
 
 def opensky_data(start, stop, output_file, **kwargs):
 
+    from cartes.osm import Nominatim
+
     from ..data import nm_airspaces, opensky
-    from ..drawing import location
 
     if kwargs["bounds"] is not None:
         bounds = kwargs["bounds"]
@@ -21,7 +22,7 @@ def opensky_data(start, stop, output_file, **kwargs):
                     raise Exception
             except Exception:
                 # ask OpenStreetMap
-                kwargs["bounds"] = location(bounds)
+                kwargs["bounds"] = Nominatim.search(bounds)
 
     if "verbose" in kwargs:
         del kwargs["verbose"]

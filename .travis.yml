@@ -1,4 +1,4 @@
-dist: xenial   # required for Python >= 3.7
+dist: xenial # required for Python >= 3.7
 
 language: python
 
@@ -6,12 +6,12 @@ cache:
   pip: true
   apt: true
   directories:
-  - $HOME/.cache/traffic/
+    - $HOME/.cache/traffic/
 
 python:
-  - 3.6
   - 3.7
   - 3.8
+  - 3.9
 
 env:
   global:
@@ -35,10 +35,12 @@ before_install:
 install:
   # possible bug with pytest 4.6.0
   - python -m pip install --upgrade codecov pytest-cov pytest==4.5
-  - python -m pip install --upgrade numpy pyproj  # dependency for cartopy
-  - python -m pip install --upgrade libarchive  # dependency for so6.7z
+  - python -m pip install --upgrade numpy pyproj # dependency for cartopy
+  - python -m pip install --upgrade libarchive # dependency for so6.7z
   - python -m pip install --upgrade xarray
   - python -m pip install --upgrade sphinx sphinx-rtd-theme
+  - python -m pip install --upgrade cython
+  - python -m pip install --upgrade git+https://github.com/xoolive/cartes # temporary
   - python -m pip install -e .
 
 script:
@@ -46,14 +48,13 @@ script:
 
 after_success:
   - codecov
-  - cd docs; make html; cd ..
-
-deploy:
-  provider: pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN
-  repo: traffic-viz/traffic-viz.github.io
-  target_branch: master
-  local_dir: docs/_build/html
-  on:
-    condition: $TRAVIS_PYTHON_VERSION = 3.7
+#  - cd docs; make html; cd ..
+# deploy:
+#   provider: pages
+#   skip_cleanup: true
+#   github_token: $GITHUB_TOKEN
+#   repo: traffic-viz/traffic-viz.github.io
+#   target_branch: master
+#   local_dir: docs/_build/html
+#   on:
+#     condition: $TRAVIS_PYTHON_VERSION = 3.7

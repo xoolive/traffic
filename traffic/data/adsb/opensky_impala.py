@@ -78,9 +78,10 @@ class Impala(object):
     For more information, find below the error and the buggy line:
     """
 
-    stdin: paramiko.ChannelFile
-    stdout: paramiko.ChannelFile
-    stderr: paramiko.ChannelFile  # actually ChannelStderrFile
+    stdin: paramiko.ChannelFile  # type: ignore
+    stdout: paramiko.ChannelFile  # type: ignore
+    stderr: paramiko.ChannelFile  # type: ignore
+    # actually ChannelStderrFile
 
     def __init__(
         self, username: str, password: str, cache_dir: Path, proxy_command: str
@@ -169,7 +170,9 @@ class Impala(object):
         return None
 
     @staticmethod
-    def _format_dataframe(df: pd.DataFrame,) -> pd.DataFrame:
+    def _format_dataframe(
+        df: pd.DataFrame,
+    ) -> pd.DataFrame:
         """
         This function converts types, strips spaces after callsigns and sorts
         the DataFrame by timestamp.
@@ -189,6 +192,9 @@ class Impala(object):
             .str.slice(2)
             .str.pad(6, fillchar="0")
         )
+
+        if "rawmsg" in df.columns and df.rawmsg.dtype != str:
+            df.rawmsg = df.rawmsg.astype(str).str.strip()
 
         if "squawk" in df.columns:
             df.squawk = (
@@ -240,7 +246,7 @@ class Impala(object):
             look_for_keys=False,
             allow_agent=False,
             compress=True,
-            **extra_args,
+            **extra_args,  # type: ignore
         )
         self.stdin, self.stdout, self.stderr = client.exec_command(
             "-B", bufsize=-1, get_pty=True
@@ -262,10 +268,12 @@ class Impala(object):
             cachename.unlink()
 
         if not cachename.exists():
+            logging.info("Sending request: {}".format(request))
+
             if not self.connected:
+                logging.info("Connecting the database")
                 self._connect()
 
-            logging.info("Sending request: {}".format(request))
             # bug fix for when we write a request with """ starting with \n
             request = request.replace("\n", " ")
             self.stdin.channel.send(request + ";\n")

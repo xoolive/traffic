@@ -16,11 +16,16 @@ relevant efficiently implemented methods for trajectory analysis. Airspaces take
 advantage of `shapely Geometries <https://shapely.readthedocs.io>`_ for
 geometrical analysis.
 
-**Contents**
+`FlightIterator <traffic.core.iterator.html>`_ has been
+introduced to deal with iteration over pieces of trajectories and for many
+`navigational events <navigation.html>`_ (e.g., holding patterns, go-arounds).
+This structure allows for more flexibility and accuracy when trying to identify
+specific events.
 
 .. toctree::
-   :maxdepth: 1
+   :hidden:
 
    traffic.core.flight
    traffic.core.traffic
    traffic.core.airspace
+   traffic.core.iterator

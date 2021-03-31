@@ -131,7 +131,7 @@ the machine learning method).
         )
         
         ax.legend()
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
         ax.background_patch.set_visible(False)
 
 

@@ -11,7 +11,7 @@ SSH protocol in Pure Python, giving access to SSH connection independently of
 the operating system.
 
 Static visualisation tools are accessible with Matplotlib through the
-`cartotools <https://github.com/xoolive/cartotools>`_ library, which leverages
+`cartes <https://github.com/xoolive/cartes>`_ library, which leverages
 access to more projections and to data from OpenStreetMap. More dynamic
 visualisations in Jupyter Lab are accessible thanks to the `altair <https://altair-viz.github.io/>`_ and `ipyleaflet
 <http://ipyleaflet.readthedocs.io/>`_ libraries; other exports to various formats
@@ -34,18 +34,19 @@ release:
 .. warning::
     `cartopy` and `shapely` have strong dependencies to dynamic libraries which
     may not be available on your system by default. If possible, install
-    `Anaconda <https://www.anaconda.com/distribution/#download-section>`_, then:
+    `Anaconda <https://www.anaconda.com/distribution/#download-section>`_, 
+    then create a virtualenv and run the next commands in the prompt/terminal:
 
     .. parsed-literal::
        conda install cartopy shapely
        # then _either_ with pip (stable version)
        pip install traffic
        # _or_ from sources (dev version)
-       python setup.py install
-
+       pip install .
 
 .. toctree::
    :maxdepth: 1
+   :caption: Frequently Asked Questions
 
-   docker
    troubleshooting
+   docker

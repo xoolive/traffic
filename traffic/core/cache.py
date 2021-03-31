@@ -1,6 +1,14 @@
 import json
 from collections import UserDict
+from hashlib import md5
+from inspect import currentframe, signature
 from pathlib import Path
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar
+
+import pandas as pd
+
+if TYPE_CHECKING:
+    from . import Flight, Traffic
 
 
 class property_cache(object):
@@ -55,3 +63,87 @@ class Cache(UserDict):
         filename = self.cachedir / f"{hashcode}.json"
         with filename.open("w") as fh:
             fh.write(json.dumps(data))
+
+
+T = TypeVar("T", pd.DataFrame, "Traffic", "Flight")
+
+
+def cache_results(
+    fun: Optional[Callable[..., T]] = None,
+    cache_directory: Path = Path("."),
+    loader: Callable[[Path], T] = pd.read_pickle,
+    pd_varnames: bool = False,
+):
+    """
+    The point of this method is to be able to cache results of some costly
+    functions on pd.DataFrame, Flight or Traffic structures.
+
+    Decorate your function with the cache_results method and go ahead!
+
+
+    """
+
+    def cached_values(fun: Callable[..., T]) -> Callable[..., T]:
+        def newfun(*args, **kwargs) -> T:
+            global callers_local_vars
+            sig = signature(fun)
+
+            if sig.return_annotation is not pd.DataFrame:
+                raise TypeError(
+                    "The wrapped function must have a return type of "
+                    "pandas DataFrame and be annotated as so."
+                )
+
+            bound_args = sig.bind(*args, **kwargs)
+            all_args = {
+                **dict(
+                    (param.name, param.default)
+                    for param in sig.parameters.values()
+                ),
+                **dict(bound_args.arguments.items()),
+            }
+
+            l_vars = currentframe().f_back.f_locals.items()  # type: ignore
+
+            args_ = list()
+            for value in all_args.values():
+                if isinstance(value, pd.DataFrame) or (
+                    hasattr(value, "data")
+                    and isinstance(value.data, pd.DataFrame)
+                ):
+                    attempt = None
+                    if pd_varnames:
+                        attempt = next(
+                            (
+                                var_name
+                                for var_name, var_val in l_vars
+                                if var_val is value
+                            ),
+                            None,
+                        )
+
+                    if attempt is not None:
+                        args_.append(attempt)
+                    else:
+                        args_.append(md5(value.values.tobytes()).hexdigest())
+                else:
+                    args_.append(f"{value}")
+
+            filepath = cache_directory / (
+                fun.__name__ + "_" + "_".join(args_) + ".pkl"
+            )
+
+            if filepath.exists():
+                print(f"Reading cached data from {filepath}")
+                return loader(filepath)
+
+            res = fun(*args, **kwargs)
+            res.to_pickle(filepath)
+            return res
+
+        return newfun
+
+    if fun is None:
+        return cached_values
+    else:
+        return cached_values(fun)

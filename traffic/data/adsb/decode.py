@@ -289,6 +289,10 @@ class Aircraft(object):
     @altcode.setter
     def altcode(self, args):
         t, msg = args
+        from pyModeS.c_common import hex2bin
+
+        if set(hex2bin(msg)[19:32]) in [{"0"}, {"1"}]:
+            return
         self.alt = pms.common.altcode(msg)
         with self.lock:
             self.cumul.append(
@@ -302,13 +306,14 @@ class Aircraft(object):
     @idcode.setter
     def idcode(self, args):
         t, msg = args
+        from pyModeS.c_common import hex2bin
+
+        if set(hex2bin(msg)[19:32]) in [{"0"}, {"1"}]:
+            return
+        idcode = pms.common.idcode(msg)
         with self.lock:
             self.cumul.append(
-                dict(
-                    timestamp=t,
-                    icao24=self.icao24,
-                    squawk=pms.common.idcode(msg),
-                )
+                dict(timestamp=t, icao24=self.icao24, squawk=idcode,)
             )
 
     @property

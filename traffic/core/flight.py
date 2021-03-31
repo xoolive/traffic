@@ -4,36 +4,40 @@ import logging
 import warnings
 from datetime import datetime, timedelta, timezone
 from operator import attrgetter
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-                    List, Optional, Set, Tuple, Union, cast, overload)
-
-import numpy as np
-import scipy.signal
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+    List, Optional, Set, Tuple, Union, cast, overload
+)
 
 import altair as alt
+import numpy as np
 import pandas as pd
 import pyproj
+import scipy.signal
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+from matplotlib.artist import Artist
+from matplotlib.axes._subplots import Axes
 from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
-from . import geodesy as geo
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
+from ..algorithms.phases import FuzzyLogic
 from ..drawing.markers import aircraft as aircraft_marker
 from ..drawing.markers import rotate_marker
+from . import geodesy as geo
+from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .structure import Airport  # noqa: F401
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 
 if TYPE_CHECKING:
-    from .airspace import Airspace  # noqa: F401
-    from .traffic import Traffic  # noqa: F401
     from ..data.adsb.raw_data import RawData  # noqa: F401
+    from .airspace import Airspace  # noqa: F401
+    from .lazy import LazyTraffic  # noqa: F401
+    from .traffic import Traffic  # noqa: F401
 
 # fmt: on
 
@@ -84,13 +88,33 @@ class Position(PointMixin, pd.core.series.Series):
         if hasattr(self, "track"):
             visualdict["marker"] = rotate_marker(aircraft_marker, self.track)
 
+        if text_kw is None:
+            text_kw = dict()
+        else:
+            # since we may modify it, let's make a copy
+            text_kw = {**text_kw}
+
         if "s" not in text_kw and hasattr(self, "callsign"):
             text_kw["s"] = self.callsign
 
         return super().plot(ax, text_kw, shift, **{**visualdict, **kwargs})
 
 
-class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
+class MetaFlight(type):
+    def __getattr__(cls, name):
+        if name.startswith("aligned_on_"):
+            return lambda flight: cls.aligned_on_ils(flight, name[11:])
+        raise AttributeError
+
+
+class Flight(
+    HBoxMixin,
+    GeographyMixin,
+    ShapelyMixin,
+    NavigationFeatures,
+    FuzzyLogic,
+    metaclass=MetaFlight,
+):
     """Flight is the most basic class associated to a trajectory.
     Flights are the building block of all processing methods, built on top of
     pandas DataFrame. The minimum set of required features are:
@@ -129,7 +153,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
           `before() <#traffic.core.Flight.before>`_,
           `between() <#traffic.core.Flight.between>`_,
           `first() <#traffic.core.Flight.first>`_,
-          `last() <#traffic.core.Flight.last>`_
+          `last() <#traffic.core.Flight.last>`_,
+          `skip() <#traffic.core.Flight.skip>`_,
+          `shorten() <#traffic.core.Flight.shorten>`_
         - geometry related methods:
           `airborne() <#traffic.core.Flight.airborne>`_,
           `clip() <#traffic.core.Flight.clip>`_,
@@ -244,7 +270,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         return super(
             Flight,
             # cast should be useless but return type of simplify() is Union
-            cast(Flight, self.simplify(25)),
+            cast(Flight, self.resample("1s").simplify(25)),
         )._repr_svg_()
 
     def __repr__(self) -> str:
@@ -260,8 +286,100 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             output += f"\ndestination: {self.stop}"
         return output
 
+    def __getattr__(self, name: str):
+        """Helper to facilitate method chaining without lambda.
+
+        TODO improve the documentation
+        flight.altitude_max
+            => flight.max('altitude')
+        flight.vertical_rate_std
+            => flight.std('vertical_rate')
+
+        Flight.feature_gt("altitude_max", 10000)
+            => lambda f: f.max('altitude') > 10000
+        """
+        msg = f"'{self.__class__.__name__}' has no attribute '{name}'"
+        if "_" not in name:
+            raise AttributeError(msg)
+        *name_split, agg = name.split("_")
+        feature = "_".join(name_split)
+        if feature not in self.data.columns:
+            raise AttributeError(msg)
+        return getattr(self.data[feature], agg)()
+
     def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:
+        # TODO deprecate if pipe() does a good job?
         return self if test(self) else None
+
+    def has(
+        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+    ) -> bool:
+        """Returns True if flight.method() returns a non-empty iterator.
+
+        Example usage:
+
+        >>> flight.has("go_around")
+        >>> flight.has("runway_change")
+        >>> flight.has(lambda f: f.aligned_on_ils("LFBO"))
+        """
+        return self.next(method) is not None  # noqa: B305
+
+    def sum(
+        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+    ) -> int:
+        """Returns the number of segments returns by flight.method().
+
+        Example usage:
+
+        >>> flight.sum("go_around")
+        >>> flight.sum("runway_change")
+        >>> flight.sum(lambda f: f.aligned_on_ils("LFBO"))
+        """
+        fun = (
+            getattr(self.__class__, method)
+            if isinstance(method, str)
+            else method
+        )
+        return sum(1 for _ in fun(self))
+
+    def all(
+        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+    ) -> Optional["Flight"]:
+        """Returns the concatenation of segments returns by flight.method().
+
+        Example usage:
+
+        >>> flight.all("go_around")
+        >>> flight.all("runway_change")
+        >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
+        """
+        fun = (
+            getattr(self.__class__, method)
+            if isinstance(method, str)
+            else method
+        )
+        t = sum(flight.assign(index_=i) for i, flight in enumerate(fun(self)))
+        if t == 0:
+            return None
+        return Flight(t.data)  # type: ignore
+
+    def next(
+        self,
+        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+    ) -> Optional["Flight"]:
+        """
+        Returns the first segment of trajectory yielded by flight.method()
+
+        >>> flight.next("go_around")
+        >>> flight.next("runway_change")
+        >>> flight.next(lambda f: f.aligned_on_ils("LFBO"))
+        """
+        fun = (
+            getattr(self.__class__, method)
+            if isinstance(method, str)
+            else method
+        )
+        return next(fun(self), None)
 
     # --- Iterators ---
 
@@ -272,6 +390,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
         data = self.data.query("longitude == longitude")
+        if "altitude" not in data.columns:
+            data = data.assign(altitude=0)
         yield from zip(data["longitude"], data["latitude"], data["altitude"])
 
     def coords4d(
@@ -650,6 +770,26 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
     # -- Time handling, splitting, interpolation and resampling --
 
+    def skip(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
+        """Removes the first n days, hours, minutes or seconds of the Flight.
+
+        The elements passed as kwargs as passed as is to the datetime.timedelta
+        constructor.
+
+        Example usage:
+
+        >>> flight.skip(minutes=10)
+        >>> flight.skip("1H")
+        >>> flight.skip(10)  # seconds by default
+        """
+        delta = to_timedelta(value, **kwargs)
+        bound = self.start + delta  # noqa: F841 => used in the query
+        # full call is necessary to keep @bound as a local variable
+        df = self.data.query("timestamp >= @bound")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
+
     def first(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
         """Returns the first n days, hours, minutes or seconds of the Flight.
 
@@ -666,6 +806,26 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         bound = self.start + delta  # noqa: F841 => used in the query
         # full call is necessary to keep @bound as a local variable
         df = self.data.query("timestamp < @bound")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
+
+    def shorten(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
+        """Removes the last n days, hours, minutes or seconds of the Flight.
+
+        The elements passed as kwargs as passed as is to the datetime.timedelta
+        constructor.
+
+        Example usage:
+
+        >>> flight.shorten(minutes=10)
+        >>> flight.shorten("1H")
+        >>> flight.shorten(10)  # seconds by default
+        """
+        delta = to_timedelta(value, **kwargs)
+        bound = self.stop - delta  # noqa: F841 => used in the query
+        # full call is necessary to keep @bound as a local variable
+        df = self.data.query("timestamp <= @bound")
         if df.shape[0] == 0:
             return None
         return self.__class__(df)
@@ -786,16 +946,37 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         assert subset is not None
         return subset.at()
 
+    @flight_iterator
+    def sliding_windows(
+        self,
+        duration: deltalike,
+        step: deltalike,
+    ) -> Iterator["Flight"]:
+
+        duration_ = to_timedelta(duration)
+        step_ = to_timedelta(step)
+
+        first = self.first(duration_)
+        if first is None:
+            return
+
+        yield first
+
+        after = self.after(self.start + step_)
+        if after is not None:
+            yield from after.sliding_windows(duration_, step_)
+
     @overload
-    def split(self, value: int, unit: str) -> Iterator["Flight"]:
+    def split(self, value: int, unit: str) -> FlightIterator:
         ...
 
     @overload
     def split(  # noqa: F811
         self, value: str, unit: None = None
-    ) -> Iterator["Flight"]:
+    ) -> FlightIterator:
         ...
 
+    @flight_iterator
     def split(  # noqa: F811
         self, value: Union[int, str] = 10, unit: Optional[str] = None
     ) -> Iterator["Flight"]:
@@ -839,13 +1020,77 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         15,000 ft. The command extracts the plane pattern.
 
         """
+
+        # warnings.warn("Use split().max() instead.", DeprecationWarning)
         return max(
             self.split(value, unit),  # type: ignore
             key=key,
             default=None,
         )
 
-    def agg_time(self, freq="1T", merge=True, **kwargs) -> "Flight":
+    def apply_segments(
+        self, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
+    ) -> Optional["Flight"]:
+        return getattr(self, name)(*args, **kwargs)(fun)
+
+    def apply_time(
+        self,
+        freq: str = "1T",
+        merge: bool = True,
+        **kwargs,
+    ) -> "Flight":
+        """Apply features on time windows.
+
+        The following is performed:
+
+        - a new column `rounded` rounds the timestamp at the given rate;
+        - the groupby/apply is operated with parameters passed in apply;
+        - if merge is True, the new column in merged into the Flight,
+          otherwise a pd.DataFrame is returned.
+
+        For example:
+
+        >>> f.agg_time("10T", straight=lambda df: Flight(df).distance())
+
+        returns a Flight with a new column straight with the great circle
+        distance between points sampled every 10 minutes.
+        """
+
+        if len(kwargs) == 0:
+            raise RuntimeError("No feature provided for aggregation.")
+        temp_flight = self.assign(
+            rounded=lambda df: df.timestamp.dt.round(freq)
+        )
+
+        agg_data = None
+
+        for label, fun in kwargs.items():
+            agg_data = (
+                agg_data.merge(  # type: ignore
+                    temp_flight.groupby("rounded")
+                    .apply(lambda df: fun(self.__class__(df)))
+                    .rename(label),
+                    left_index=True,
+                    right_index=True,
+                )
+                if agg_data is not None
+                else temp_flight.groupby("rounded")
+                .apply(lambda df: fun(self.__class__(df)))
+                .rename(label)
+                .to_frame()
+            )
+
+        if not merge:  # mostly for debugging purposes
+            return agg_data  # type: ignore
+
+        return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
+
+    def agg_time(
+        self,
+        freq: str = "1T",
+        merge: bool = True,
+        **kwargs,
+    ) -> "Flight":
         """Aggregate features on time windows.
 
         The following is performed:
@@ -861,7 +1106,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
         returns a Flight with a new column groundspeed_mean with groundspeed
         averaged per intervals of 3 minutes.
-
         """
 
         def flatten(
@@ -894,7 +1138,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             for key, value in kwargs.items()
         )
         agg_data = flatten(temp_flight.groupby("rounded").agg(kwargs_modified))
-        if not merge:
+
+        if not merge:  # mostly for debugging purposes
             return agg_data
 
         return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
@@ -1098,6 +1343,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         return self.__class__(data)
 
     def filter_position(self, cascades: int = 2) -> Optional["Flight"]:
+        # TODO improve based on agg_time
         flight: Optional["Flight"] = self
         for _ in range(cascades):
             if flight is None:
@@ -1178,12 +1424,23 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         """
         return self.assign(flight_id=name.format(self=self, idx=idx))
 
+    # TODO change to Iterator
+    def onground(self) -> Optional["Flight"]:
+        if "altitude" not in self.data.columns:
+            return self
+        if "onground" in self.data.columns and self.data.onground.dtype == bool:
+            return self.query("onground or altitude != altitude")
+        else:
+            return self.query("altitude != altitude")
+
     def airborne(self) -> Optional["Flight"]:
         """Returns the airborne part of the Flight.
 
         The airborne part is determined by an ``onground`` flag or null values
         in the altitude column.
         """
+        if "altitude" not in self.data.columns:
+            return None
         if "onground" in self.data.columns and self.data.onground.dtype == bool:
             return self.query("not onground and altitude == altitude")
         else:
@@ -1359,7 +1616,13 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         )
 
     @overload
-    def distance(
+    def distance(  # type: ignore
+        self, other: None = None, column_name: str = "distance"
+    ) -> float:
+        ...
+
+    @overload
+    def distance(  # noqa: F811
         self,
         other: Union["Airspace", Polygon, PointMixin],
         column_name: str = "distance",
@@ -1374,14 +1637,18 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
     def distance(  # noqa: F811
         self,
-        other: Union["Flight", "Airspace", Polygon, PointMixin],
+        other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
         column_name: str = "distance",
-    ) -> Union[None, "Flight", pd.DataFrame]:
+    ) -> Union[None, float, "Flight", pd.DataFrame]:
 
         """Computes the distance from a Flight to another entity.
 
         The behaviour is different according to the type of the second
         element:
+
+        - if the other element is None (i.e. flight.distance()), the method
+          returns a distance in nautical miles between the first and last
+          recorded positions in the DataFrame.
 
         - if the other element is a Flight, the method returns a pandas
           DataFrame with corresponding data from both flights, aligned
@@ -1401,6 +1668,21 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
               before calling the method.
 
         """
+
+        if other is None:
+            first = self.at_ratio(0)
+            last = self.at_ratio(1)
+            if first is None or last is None:
+                return 0
+            return (
+                geo.distance(
+                    first.latitude,
+                    first.longitude,
+                    last.latitude,
+                    last.longitude,
+                )
+                / 1852  # in nautical miles
+            )
 
         if isinstance(other, PointMixin):
             size = len(self)
@@ -1483,7 +1765,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         **kwargs,
     ) -> "Flight":
 
-        """ Enrich the structure with new ``cumdist`` column computed from
+        """Enrich the structure with new ``cumdist`` column computed from
         latitude and longitude columns.
 
         The first ``cumdist`` value is 0, then distances are computed (in
@@ -1542,6 +1824,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
 
     @property
     def linestring(self) -> Optional[LineString]:
+        # longitude is implicit I guess
+        if "latitude" not in self.data.columns:
+            return None
         coords = list(self.coords)
         if len(coords) < 2:
             return None
@@ -1685,13 +1970,16 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             .sum()
         )
 
-    def query_opensky(self) -> Optional["Flight"]:
+    def query_opensky(self, **kwargs) -> Optional["Flight"]:
         """Returns data from the same Flight as stored in OpenSky database.
 
         This may be useful if you write your own parser for data from a
         different channel. The method will use the ``callsign`` and ``icao24``
         attributes to build a request for current Flight in the OpenSky Network
         database.
+
+        The kwargs argument helps overriding arguments from the query, namely
+        start, stop, callsign and icao24.
 
         Returns None if no data is found.
 
@@ -1708,6 +1996,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             "callsign": self.callsign,
             "icao24": self.icao24,
             "return_flight": True,
+            **kwargs,
         }
         return opensky.history(**query_params)  # type: ignore
 
@@ -1871,7 +2160,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
         return []
 
     def encode(
-        self, y: Union[str, List[str], alt.Y], **kwargs
+        self,
+        y: Union[str, List[str], alt.Y],
+        x: Union[str, alt.X] = "timestamp:T",
+        **kwargs,
     ) -> alt.Chart:  # coverage: ignore
         """Plots the given features according to time.
 
@@ -1910,7 +2202,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, NavigationFeatures):
             feature_list.append(y)
             data = self.data[feature_list].query(f"{y} == {y}")
             default_encode = dict(
-                x="timestamp:T",
+                x=x,
                 y=alt_y if alt_y is not None else alt.Y(y, title=y),
                 color=alt.Color(
                     "flight_id"

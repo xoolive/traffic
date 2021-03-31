@@ -4,8 +4,40 @@ from ipyleaflet import Map, Marker, Polygon, Polyline
 from ipywidgets import HTML
 from shapely.geometry import LineString
 
-from ..core import Airspace, Flight, FlightPlan
+from ..core import Airspace, Flight, FlightIterator, FlightPlan, Traffic
 from ..core.mixins import PointMixin
+
+
+def traffic_map_leaflet(
+    traffic: "Traffic",
+    zoom: int = 7,
+    highlight: Optional[Dict[str, Callable[[Flight], Optional[Flight]]]] = None,
+    **kwargs,
+) -> Optional[Map]:
+
+    if "center" not in kwargs:
+        kwargs["center"] = (
+            traffic.data.latitude.mean(),
+            traffic.data.longitude.mean(),
+        )
+
+    m = Map(zoom=zoom, **kwargs)
+
+    for flight in traffic:
+        if flight.query("latitude == latitude"):
+            elt = m.add_layer(flight)
+            elt.popup = HTML()
+            elt.popup.value = flight._info_html()
+
+        if highlight is None:
+            highlight = dict()
+
+        for color, method in highlight.items():
+            f = method(flight)
+            if f is not None:
+                m.add_layer(f, color=color)
+
+    return m
 
 
 def flight_map_leaflet(
@@ -19,7 +51,9 @@ def flight_map_leaflet(
     if last_position is None:
         return None
     m = Map(center=last_position.latlon, zoom=zoom, **kwargs)
-    m.add_layer(flight)
+    elt = m.add_layer(flight)
+    elt.popup = HTML()
+    elt.popup.value = flight._info_html()
 
     if highlight is None:
         highlight = dict()
@@ -147,12 +181,17 @@ def map_add_layer(_map, elt, **kwargs):
         layer = elt.leaflet(**kwargs)
         _old_add_layer(_map, layer)
         return layer
+    if isinstance(elt, FlightIterator):
+        for segment in elt:
+            map_add_layer(_map, segment, **kwargs)
+        return
     return _old_add_layer(_map, elt)
 
 
 def _onload():
     setattr(Flight, "leaflet", flight_leaflet)
     setattr(Flight, "map_leaflet", flight_map_leaflet)
+    setattr(Traffic, "map_leaflet", traffic_map_leaflet)
     setattr(FlightPlan, "leaflet", flightplan_leaflet)
     setattr(Airspace, "leaflet", airspace_leaflet)
     setattr(PointMixin, "leaflet", point_leaflet)

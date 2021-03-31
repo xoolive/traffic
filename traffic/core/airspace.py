@@ -3,15 +3,16 @@
 import json
 from collections import defaultdict
 from pathlib import Path
-from typing import (Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple,
-                    TypeVar, Union)
+from typing import (
+    Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, TypeVar, Union
+)
 
 import numpy as np
 import pyproj
 from cartopy.crs import PlateCarree
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 from matplotlib.patches import Polygon as MplPolygon
-from shapely.geometry import Polygon, base, mapping, shape
+from shapely.geometry import Polygon, base, mapping, polygon, shape
 from shapely.ops import cascaded_union, transform
 
 from . import Flight, Traffic
@@ -56,7 +57,7 @@ class Airspace(ShapelyMixin):
 
     def flatten(self) -> Polygon:
         """Returns the 2D footprint of the airspace."""
-        return cascaded_union([p.polygon for p in self])
+        return polygon.orient(cascaded_union([p.polygon for p in self]), -1)
 
     @property
     def shape(self):
@@ -109,12 +110,12 @@ class Airspace(ShapelyMixin):
             lon_0=(bounds[0] + bounds[2]) / 2,
         )
 
-        for polygon in self:
+        for polygon_ in self:
             transformer = pyproj.Transformer.from_proj(
                 pyproj.Proj("epsg:4326"), projection, always_xy=True
             )
-            projected_shape = transform(transformer.transform, polygon.polygon)
-            title += f"<li>{polygon.lower}, {polygon.upper}</li>"
+            projected_shape = transform(transformer.transform, polygon_.polygon)
+            title += f"<li>{polygon_.lower}, {polygon_.upper}</li>"
             shapes += projected_shape.simplify(1e3)._repr_svg_()
         title += "</ul>"
         no_wrap_div = '<div style="white-space: nowrap; width: 12%">{}</div>'
@@ -218,7 +219,7 @@ class Airspace(ShapelyMixin):
             type_=json["type"],
             elements=[
                 ExtrudedPolygon(
-                    polygon=shape(layer["polygon"]),
+                    polygon=polygon.orient(shape(layer["polygon"]), -1),
                     upper=layer["upper"],
                     lower=layer["lower"],
                 )

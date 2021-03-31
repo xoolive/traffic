@@ -6,7 +6,6 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 
 from requests import Session
-
 from requests_pkcs12 import Pkcs12Adapter
 from tqdm.autonotebook import tqdm
 
@@ -139,7 +138,7 @@ class NMB2B(FlightManagement, Measures):
 
         # There may be several dataset available.
         # For now, we keep the latest one
-        latest = max(
+        latest = max(  # type: ignore
             res.reply.findall("data/datasetSummaries"),
             key=lambda x: x.find("publicationDate").text,  # type: ignore
             default=None,

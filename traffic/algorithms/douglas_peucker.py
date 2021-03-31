@@ -1,4 +1,6 @@
 # flake8: noqa
+from typing import cast
+
 import numpy as np
 import pandas as pd
 import pyproj
@@ -23,7 +25,7 @@ def _douglas_peucker_rec(
         mask[np.s_[1 : l - 1]] = 0
         return
 
-    arg = np.argmax(d)
+    arg = cast(int, np.argmax(d))
     _douglas_peucker_rec(x[: arg + 2], y[: arg + 2], mask[: arg + 2], tolerance)
     _douglas_peucker_rec(x[arg + 1 :], y[arg + 1 :], mask[arg + 1 :], tolerance)
 
@@ -49,7 +51,7 @@ def _douglas_peucker_rec_3d(
         mask[np.s_[1 : l - 1]] = 0
         return
 
-    arg = np.argmax(d)
+    arg = cast(int, np.argmax(d))
     _douglas_peucker_rec_3d(
         x[: arg + 2], y[: arg + 2], z[: arg + 2], mask[: arg + 2], tolerance
     )
@@ -120,7 +122,10 @@ def douglas_peucker(
         transformer = pyproj.Transformer.from_proj(
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
-        x, y = transformer.transform(lon.values, lat.values,)
+        x, y = transformer.transform(
+            lon.values,
+            lat.values,
+        )
     else:
         if df is not None:
             x, y = df[x].values, df[y].values

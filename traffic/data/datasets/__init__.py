@@ -42,6 +42,12 @@ datasets = dict(
         filename="airspace_dataset.parquet",
         reader=Traffic.from_file,
     ),
+    landing_toulouse_2017=dict(
+        url="https://ndownloader.figshare.com/files/24926849",
+        md5sum="141e6c39211c382e5dd8ec66096b3798",
+        filename="toulouse2017.parquet.gz",
+        reader=Traffic.from_file,
+    ),
     landing_zurich_2019=dict(
         url="https://ndownloader.figshare.com/files/20291079",
         md5sum="c5577f450424fa74ca673ed8a168c67f",
@@ -63,14 +69,18 @@ def download_data(dataset: Dict[str, str]) -> io.BytesIO:
     from .. import session
 
     f = session.get(dataset["url"], stream=True)
-    total = int(f.headers["Content-Length"])
     buffer = io.BytesIO()
-    for chunk in tqdm(
-        f.iter_content(1024),
-        total=total // 1024 + 1 if total % 1024 > 0 else 0,
-        desc="download",
-    ):
-        buffer.write(chunk)
+
+    if "Content-Length" in f.headers:
+        total = int(f.headers["Content-Length"])
+        for chunk in tqdm(
+            f.iter_content(1024),
+            total=total // 1024 + 1 if total % 1024 > 0 else 0,
+            desc="download",
+        ):
+            buffer.write(chunk)
+    else:
+        buffer.write(f.content)
 
     buffer.seek(0)
 

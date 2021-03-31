@@ -4,6 +4,7 @@ Algorithms
 .. toctree::
     :maxdepth: 1
 
-    cpa
     clustering
+    navigation
+    cpa
 

@@ -1,4 +1,6 @@
-from cartotools.crs import CH1903p
+from typing import cast
+
+from cartes.crs import CH1903p  # type: ignore
 
 from traffic.core import Traffic
 from traffic.data.samples import collections, get_sample
@@ -20,10 +22,11 @@ class StupidClustering:
 def test_clustering() -> None:
     switzerland: Traffic = get_sample(collections, "switzerland")
 
-    smaller = (
+    smaller = cast(
+        Traffic,
         switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")
         .assign_id()
-        .eval(max_workers=4)
+        .eval(max_workers=4),
     )
 
     t_clustering = smaller.clustering(

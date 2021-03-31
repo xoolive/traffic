@@ -19,7 +19,7 @@ except FileNotFoundError:
 
 setup(
     name="traffic",
-    version="2.4.1",
+    version="2.5.1",
     author="Xavier Olive",
     author_email="git@xoolive.org",
     url="https://github.com/xoolive/traffic/",
@@ -54,9 +54,9 @@ setup(
             for f in os.listdir(os.path.join("icons"))
             if f.startswith("travel")
         ]
-        + ["traffic.conf"],
+        + ["traffic.conf", "py.typed"],
     },
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=[
         "numpy>=1.18",
         "scipy",
@@ -76,9 +76,21 @@ setup(
         # deactivated for now for dependency issues
         # "keplergl",  # Kepler.gl for notebooks
         "tqdm>=4.28",  # progressbars
-        "cartotools>=1.2.1",
+        "cartes",
         "pyModeS>=2.8",
+        "openap",
     ],
+    extras_require={
+        "dev": [
+            "xarray",
+            "libarchive",
+            "pytest",
+            "mypy",
+            "black",
+            "pre-commit",
+            "isort",
+        ]
+    },
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha
@@ -99,9 +111,9 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Typing :: Typed",
     ],
 )

@@ -4,6 +4,11 @@ Airspaces from Eurocontrol NM
 The first thing to do is to put the path to a directory containing your files
 from the Eurocontrol NM in your configuration file.
 
+.. warning::
+
+    [Access conditions](https://www.eurocontrol.int/ddr#access-conditions) to
+    this data are managed by EUROCONTROL. 
+
 You will need to put the three following files from the same AIRAC cycle in the same directory:
 
 ::

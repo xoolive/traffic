@@ -7,7 +7,10 @@ from typing import (
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, MultiLineString
+from shapely.geometry import LineString, MultiLineString, Polygon
+
+from ..core.geodesy import destination
+from ..core.iterator import flight_iterator
 
 if TYPE_CHECKING:
     from ..core import Flight  # noqa: 401
@@ -93,6 +96,14 @@ class NavigationFeatures:
         data = self.data.sort_values("timestamp")
         return guess_airport(data.iloc[0], **kwargs)
 
+    def landing_at(self, airport: Union[str, "Airport"]) -> bool:
+        from ..core.structure import Airport
+        from ..data import airports
+
+        return self.landing_airport() == (
+            airport if isinstance(airport, Airport) else airports[airport]
+        )
+
     def landing_airport(self, **kwargs) -> "Airport":
         """Returns the most probable landing airport.
 
@@ -123,6 +134,7 @@ class NavigationFeatures:
         data = self.data.sort_values("timestamp")
         return guess_airport(data.iloc[-1], **kwargs)
 
+    @flight_iterator
     def aligned_on_runway(
         self, airport: Union[str, "Airport"]
     ) -> Iterator["Flight"]:
@@ -198,8 +210,105 @@ class NavigationFeatures:
             default=None,
         )
 
+    @flight_iterator
+    def takeoff_from_runway(
+        self,
+        airport: Union[str, "Airport"],
+        threshold_alt: int = 2000,
+        zone_length: int = 6000,
+        little_base: int = 100,
+        opening: float = 10,
+    ) -> Iterator["Flight"]:
+        """Identifies the take-off runway for trajectories.
+
+        Iterates on all segments of trajectory matching a zone around a runway
+        of the  given airport. The takeoff runway number is appended as a new
+        ``runway`` column.
+
+        """
+
+        from ..data import airports
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self).phases()
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if _airport is None or _airport.runways.shape.is_empty:
+            return None
+
+        nb_run = len(_airport.runways.data)
+        alt = _airport.altitude + threshold_alt
+        base = zone_length * np.tan(opening * np.pi / 180) + little_base
+
+        # Il faut créer les formes autour de chaque runway
+        list_p0 = destination(
+            list(_airport.runways.data.latitude),
+            list(_airport.runways.data.longitude),
+            list(_airport.runways.data.bearing),
+            [zone_length for i in range(nb_run)],
+        )
+        list_p1 = destination(
+            list(_airport.runways.data.latitude),
+            list(_airport.runways.data.longitude),
+            [x + 90 for x in list(_airport.runways.data.bearing)],
+            [little_base for i in range(nb_run)],
+        )
+        list_p2 = destination(
+            list(_airport.runways.data.latitude),
+            list(_airport.runways.data.longitude),
+            [x - 90 for x in list(_airport.runways.data.bearing)],
+            [little_base for i in range(nb_run)],
+        )
+        list_p3 = destination(
+            list_p0[0],
+            list_p0[1],
+            [x - 90 for x in list(_airport.runways.data.bearing)],
+            [base for i in range(nb_run)],
+        )
+        list_p4 = destination(
+            list_p0[0],
+            list_p0[1],
+            [x + 90 for x in list(_airport.runways.data.bearing)],
+            [base for i in range(nb_run)],
+        )
+
+        runway_polygons = {}
+
+        for i, name in enumerate(_airport.runways.data.name):
+            lat = [list_p1[0][i], list_p2[0][i], list_p3[0][i], list_p4[0][i]]
+            lon = [list_p1[1][i], list_p2[1][i], list_p3[1][i], list_p4[1][i]]
+
+            poly = Polygon(zip(lon, lat))
+            runway_polygons[name] = poly
+
+        low_traj = self.query(
+            f"(phase == 'CLIMB' or phase == 'LEVEL') and altitude < {alt}"
+        )
+
+        if low_traj is not None:
+            for segment in low_traj.split("2T"):
+                candidates_set = []
+                for name, polygon in runway_polygons.items():
+                    if segment.intersects(polygon):
+                        candidate = segment.clip(polygon)
+                        if (
+                            candidate is not None
+                            and candidate.shape is not None
+                        ):
+                            candidates_set.append(candidate.assign(runway=name))
+
+                result = max(
+                    candidates_set, key=attrgetter("duration"), default=None
+                )
+                if result is not None:
+                    runway = result.on_runway(_airport)
+                    if runway is not None:
+                        yield result.after(runway.start)
+
+    @flight_iterator
     def aligned_on_ils(
-        self, airport: Union[None, str, "Airport"],
+        self,
+        airport: Union[None, str, "Airport"],
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
@@ -249,23 +358,32 @@ class NavigationFeatures:
 
         rad = np.pi / 180
 
+        chunks = list()
         for threshold in _airport.runways.list:
             tentative = (
                 self.bearing(threshold)
                 .distance(threshold)
                 .assign(
                     b_diff=lambda df: df.distance
-                    * (np.radians(df.bearing - threshold.bearing).abs())
+                    * np.radians(df.bearing - threshold.bearing).abs()
                 )
-                .query(
-                    f"b_diff.abs() < .1 and cos((bearing - track) * {rad}) > 0"
-                )
+                .query(f"b_diff < .1 and cos((bearing - track) * {rad}) > 0")
             )
             if tentative is not None:
                 for chunk in tentative.split("20s"):
-                    if chunk.longer_than("1 minute"):
-                        yield chunk.assign(ILS=threshold.name)
+                    if (
+                        chunk.longer_than("1 minute")
+                        and chunk.altitude_min < 5000
+                    ):
+                        chunks.append(
+                            chunk.assign(
+                                ILS=threshold.name, airport=_airport.icao
+                            )
+                        )
 
+        yield from sorted(chunks, key=attrgetter("start"))
+
+    @flight_iterator
     def aligned_on_navpoint(
         self,
         points: Iterable["Navaid"],
@@ -291,9 +409,9 @@ class NavigationFeatures:
                 .assign(
                     b_diff=lambda df: df.distance
                     * (np.radians(df.bearing - df.track).abs()),
-                    delta=lambda df: (df.bearing - df.track),
+                    delta=lambda df: (df.bearing - df.track).abs(),
                 )
-                .query(f"delta.abs() < {angle_precision} and distance < 500")
+                .query(f"delta < {angle_precision} and distance < 500")
             )
             if tentative is not None:
                 for chunk in tentative.split(time_precision):
@@ -303,6 +421,7 @@ class NavigationFeatures:
                     ):
                         yield chunk.assign(navaid=navpoint.name)
 
+    @flight_iterator
     def emergency(self) -> Iterator["Flight"]:
         """Iterates on emergency segments of trajectory.
 
@@ -313,6 +432,120 @@ class NavigationFeatures:
             return
         yield from sq7700.split()
 
+    @flight_iterator
+    def runway_change(
+        self,
+        airport: Union[str, "Airport", None] = None,
+        dataset: Optional["Airports"] = None,
+    ) -> Iterator["Flight"]:
+        """Detects runway changes.
+
+        The method yields pieces of trajectories with exactly two runway
+        alignments on the same airport not separated by a climbing phase.
+
+        In each piece of yielded trajectory, the `ILS` column contains the
+        name of the runway targetted by the aircraft at each instant.
+        """
+
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if airport is None:
+            if dataset is None:
+                airport = self.landing_airport()
+            else:
+                airport = self.landing_airport(dataset=dataset)
+
+        if airport is None:
+            return None
+
+        aligned = iter(self.aligned_on_ils(airport))
+        first = next(aligned, None)
+        if first is None:
+            return
+
+        for second in aligned:
+            candidate = self.between(first.start, second.stop)
+            assert candidate is not None
+            candidate = candidate.assign(ILS=None)
+            if candidate.phases().query('phase == "CLIMB"') is None:
+                candidate.data.loc[
+                    candidate.data.timestamp <= first.stop, "ILS"
+                ] = first.max("ILS")
+                candidate.data.loc[
+                    candidate.data.timestamp >= second.start, "ILS"
+                ] = second.max("ILS")
+
+                yield candidate.assign(
+                    airport=airport
+                    if isinstance(airport, str)
+                    else airport.icao
+                )
+
+            first = second
+
+    @flight_iterator
+    def go_around(
+        self,
+        airport: Union[str, "Airport", None] = None,
+        dataset: Optional["Airports"] = None,
+    ) -> Iterator["Flight"]:
+        """Detects go-arounds.
+
+        The method yields pieces of trajectories with exactly two landing
+        attempts (aligned on one runway) on the same airport separated by
+        exactly one climbing phase.
+        """
+
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if airport is None:
+            if dataset is None:
+                airport = self.landing_airport()
+            else:
+                airport = self.landing_airport(dataset=dataset)
+
+        if airport is None:
+            return None
+
+        first_attempt = next(self.aligned_on_ils(airport), None)
+
+        while first_attempt is not None:
+            after_first_attempt = self.after(first_attempt.start)
+            assert after_first_attempt is not None
+
+            climb = after_first_attempt.phases().query('phase == "CLIMB"')
+            if climb is None:
+                return
+
+            after_climb = self.after(next(climb.split("10T")).stop)
+            if after_climb is None:
+                return
+
+            next_attempt = next(after_climb.aligned_on_ils(airport), None)
+
+            if next_attempt is not None:
+                goaround = self.between(first_attempt.start, next_attempt.stop)
+                assert goaround is not None
+
+                goaround = goaround.assign(
+                    ILS=None,
+                    airport=airport
+                    if isinstance(airport, str)
+                    else airport.icao,
+                )
+                goaround.data.loc[
+                    goaround.data.timestamp <= first_attempt.stop, "ILS"
+                ] = first_attempt.max("ILS")
+                goaround.data.loc[
+                    goaround.data.timestamp >= next_attempt.start, "ILS"
+                ] = next_attempt.max("ILS")
+                yield goaround
+
+            first_attempt = next_attempt
+
+    @flight_iterator
     def landing_attempts(
         self, dataset: Optional["Airports"] = None
     ) -> Iterator["Flight"]:
@@ -374,6 +607,7 @@ class NavigationFeatures:
             return pd.Timestamp("NaT")
         return diversion.start
 
+    @property
     def holes(self) -> int:
         """Returns the number of 'holes' in a trajectory."""
         simplified: "Flight" = self.simplify(25)  # type: ignore
@@ -381,13 +615,14 @@ class NavigationFeatures:
             return -1
         return len(simplified.shape.buffer(1e-3).interiors)
 
+    @flight_iterator
     def holding_pattern(
         self,
         min_altitude=7000,
         turning_threshold=0.5,
-        low_limit=pd.Timedelta("30 seconds"),
-        high_limit=pd.Timedelta("10 minutes"),
-        turning_limit=pd.Timedelta("5 minutes"),
+        low_limit=pd.Timedelta("30 seconds"),  # noqa: B008
+        high_limit=pd.Timedelta("10 minutes"),  # noqa: B008
+        turning_limit=pd.Timedelta("5 minutes"),  # noqa: B008
     ) -> Iterator["Flight"]:
         """Iterates on parallel segments candidates for identifying
         a holding pattern.
@@ -404,7 +639,8 @@ class NavigationFeatures:
             return
 
         straight_line = (
-            alt_above.assign(
+            alt_above.unwrap()
+            .assign(
                 turning_rate=lambda x: x.track_unwrapped.diff()
                 / x.timestamp.diff().dt.total_seconds()
             )
@@ -435,3 +671,49 @@ class NavigationFeatures:
                 if next_ is not None:
                     yield next_
                 next_ = None
+
+    # -- Airport ground operations specific methods --
+
+    def parking_position(
+        self,
+        airport: Union[str, "Airport"],
+        buffer_size: float = 1e-4,  # degrees
+        threshold_alt: int = 3000,
+    ) -> Optional["Flight"]:
+        """
+        Returns the first parking position of the aircraft
+
+        TODO test/adapt for parking position after landing
+
+        """
+        from ..data import airports
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self).phases()
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if _airport is None or _airport.runways.shape.is_empty:
+            return None
+
+        alt = _airport.altitude + threshold_alt
+
+        # we remove the part of flight after it went higher than 3000ft
+        airborne_part = self.filter().query(f"altitude > {alt}")
+        if airborne_part is not None:
+            self = self.before(airborne_part.start)  # type: ignore
+        if self is None:
+            return None
+
+        def intersections(flight: "Flight") -> Iterator["Flight"]:
+            parking_positions = _airport.parking_position  # type: ignore
+            for _, p in parking_positions.data.iterrows():
+                if flight.intersects(p.geometry.buffer(buffer_size)):
+                    airborne_part = flight.clip(p.geometry.buffer(buffer_size))
+                    if airborne_part is not None:
+                        yield airborne_part.assign(parking_position=p.ref)
+
+        return max(
+            intersections(self),  # type: ignore
+            key=attrgetter("duration"),
+            default=None,
+        )

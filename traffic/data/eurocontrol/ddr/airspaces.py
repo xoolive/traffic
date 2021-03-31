@@ -7,10 +7,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional, Set, Tuple
 
-from shapely.geometry import base, shape
+from shapely.geometry import base, polygon, shape
 
-from ....core.airspace import (Airspace, AirspaceInfo, ExtrudedPolygon,
-                               components)
+from ....core.airspace import (
+    Airspace, AirspaceInfo, ExtrudedPolygon, components
+)
 
 # https://www.nm.eurocontrol.int/HELP/Airspaces.html
 
@@ -75,7 +76,9 @@ class NMAirspaceParser(object):
                             "type": "Polygon",
                             "coordinates": [area_coords],
                         }
-                        self.polygons[name] = shape(geometry)
+                        self.polygons[name] = polygon.orient(
+                            shape(geometry), -1
+                        )
 
                     area_coords.clear()
                     nb, *_, name = line.split()
@@ -87,7 +90,7 @@ class NMAirspaceParser(object):
 
             if name is not None:
                 geometry = {"type": "Polygon", "coordinates": [area_coords]}
-                self.polygons[name] = shape(geometry)
+                self.polygons[name] = polygon.orient(shape(geometry), -1)
 
     def read_sls(self, filename: Path) -> None:
         logging.info(f"Reading SLS file {filename}")

@@ -310,12 +310,15 @@ class ShapelyMixin(object):
         """
         return mapping(self.shape)
 
-    def geoencode(self) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
+        Specific plot features, such as line widths, can be passed via **kwargs.
+        See `documentation
+        <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
         return alt.Chart(alt.Data(values=self.geojson())).mark_geoshape(
-            stroke="#aaaaaa", strokeWidth=1
+            stroke="#aaaaaa", **kwargs
         )
 
     def project_shape(
@@ -352,7 +355,10 @@ class ShapelyMixin(object):
         transformer = pyproj.Transformer.from_proj(
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
-        projected_shape = transform(transformer.transform, self.shape,)
+        projected_shape = transform(
+            transformer.transform,
+            self.shape,
+        )
 
         if not projected_shape.is_valid:
             warnings.warn("The chosen projection is invalid for current shape")
@@ -395,7 +401,8 @@ class GeographyMixin(DataFrameMixin):
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
         x, y = transformer.transform(
-            self.data.longitude.values, self.data.latitude.values,
+            self.data.longitude.values,
+            self.data.latitude.values,
         )
 
         return self.__class__(self.data.assign(x=x, y=y))
@@ -406,7 +413,7 @@ class GeographyMixin(DataFrameMixin):
         projection: Union[pyproj.Proj, crs.Projection, None] = None,
         **kwargs,
     ) -> pd.DataFrame:
-        """ Aggregates values of a traffic over a grid of x/y, with x and y
+        """Aggregates values of a traffic over a grid of x/y, with x and y
         computed by `traffic.core.GeographyMixin.compute_xy()`.
 
         The resolution of the grid is passed as a dictionary parameter.
@@ -463,9 +470,12 @@ class GeographyMixin(DataFrameMixin):
 
         return data
 
-    def geoencode(self) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
+        Specific plot features, such as line widths, can be passed via **kwargs.
+        See `documentation
+        <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
         return (
             alt.Chart(
@@ -474,7 +484,7 @@ class GeographyMixin(DataFrameMixin):
                 )[["latitude", "longitude"]]
             )
             .encode(latitude="latitude", longitude="longitude")
-            .mark_line()
+            .mark_line(**kwargs)
         )
 
 
@@ -506,12 +516,12 @@ class GeoDBMixin(DataFrameMixin):
         ZUE (VOR): 47.59216667 8.81766667 1730 ZURICH EAST VOR-DME 110.05MHz
 
         """
-        from ..drawing import Nominatim, location
+        from ..drawing import Nominatim
 
         _extent = (0.0, 0.0, 0.0, 0.0)
 
         if isinstance(extent, str):
-            extent = location(extent)
+            _extent = Nominatim.search(extent).extent  # type: ignore
         if isinstance(extent, ShapelyMixin):
             _extent = extent.extent
         if isinstance(extent, Nominatim):
@@ -527,13 +537,13 @@ class GeoDBMixin(DataFrameMixin):
         )
         return output
 
-    def geoencode(self) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         """
         return (
             alt.Chart(self.data)
-            .mark_circle()
+            .mark_circle(**kwargs)
             .encode(
                 longitude="longitude:Q",
                 latitude="latitude:Q",
@@ -564,7 +574,7 @@ class PointMixin(object):
             shift = dict(units="dots", x=15)
 
         if text_kw is None:
-            text_kw = {}
+            text_kw = dict()
         else:
             # since we may modify it, let's make a copy
             text_kw = {**text_kw}

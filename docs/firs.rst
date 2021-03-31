@@ -23,7 +23,6 @@ FIRs of countries in the Eurocontrol area are available in the library.
 .. code:: python
 
     from traffic.data import eurofirs
-
     from traffic.drawing import TransverseMercator, countries, lakes, ocean, rivers
 
     import matplotlib.pyplot as plt

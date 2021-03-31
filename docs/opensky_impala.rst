@@ -39,6 +39,14 @@ Historical traffic data
 Examples of requests
 ~~~~~~~~~~~~~~~~~~~~
 
+First, the `opensky` instance parses your configuration file upon import:
+
+.. code:: python
+
+    from traffic.data import opensky
+
+Then you may send requests:
+
 - based on callsign:
 
     .. code:: python
@@ -123,6 +131,10 @@ Extended Mode-S (EHS)
 
 EHS messages are not automatically decoded for you in the OpenSky
 Database but you may access them and decode them from your computer.
+
+.. alert::
+
+    **Some examples here may be outdated**. Today, only EHS data **after January 1st 2020** are available!
 
 .. warning::
 

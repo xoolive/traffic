@@ -43,7 +43,7 @@ the data.
         <option value="dreamliner_airfrance">Dreamliner Air France</option>
         <option value="airbus_tree">Airbus Tree</option>
         <option value="fontainebleau">Aerial Survey: Fontainebleau</option>
-        <option value="gascogne">Aerial Survey: Gascogne</option>
+        <option value="gascogne">Aerial Survey: Lot-et-Garonne</option>
         <option value="mercantour">Aerial Survey: Mercantour</option>
     </select>
 
@@ -249,8 +249,8 @@ you can access each flight individually directly from the
 
 .. code:: python
 
-    from traffic.data.samples import aerialsurvey
-    aerialsurvey.traffic
+    from traffic.data.samples import surveys
+    surveys.traffic
 
 
 .. raw:: html

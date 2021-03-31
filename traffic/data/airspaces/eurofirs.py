@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from shapely.geometry import shape
+from shapely.geometry import polygon, shape
 
 from ...core.airspace import Airspace, ExtrudedPolygon
 
@@ -13,7 +13,7 @@ eurofirs = {
         name=elt["properties"]["NAME"][:-4],  # Remove " FIR" at the end
         elements=[
             ExtrudedPolygon(
-                shape(elt["geometry"]),
+                polygon.orient(shape(elt["geometry"]), -1),
                 int(elt["properties"]["LOWERLIMIT"]),
                 int(elt["properties"]["UPPERLIMIT"]),
             )

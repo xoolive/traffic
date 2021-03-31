@@ -6,9 +6,11 @@ import logging
 import traceback
 import types
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union,
-                    overload)
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, overload
+)
 
+import numpy as np
 from tqdm.autonotebook import tqdm
 
 from .flight import Flight
@@ -56,9 +58,9 @@ class LazyLambda:
         if self.idx_name is not None:
             self.kwargs[self.idx_name] = idx
         result = getattr(Flight, self.f_name)(elt, *self.args, **self.kwargs)
-        if result is False:
+        if result is False or result is np.False_:
             return None
-        if result is True:
+        if result is True or result is np.True_:
             return elt
         return result
 

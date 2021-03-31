@@ -23,18 +23,47 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | X. Olive, J. Sun, A. Lafage and L. Basora
+  | **Detecting Events in Aircraft Trajectories: Rule-based and Data-driven Approaches**
+  | *Proceedings of the 8th OpenSky Symposium*, 2020
+  | https://doi.org/10.3390/proceedings2020059008
+  | `(paper) <https://www.mdpi.com/2504-3900/59/1/8/pdf>`__ `(video) <https://youtu.be/uwzR6gqmWPE>`__ `(notebook) <https://github.com/traffic-viz/traffic_static/blob/master/notebooks/opensky_2020.ipynb>`__
+
+- | J. Sun, H. Vû, X. Olive and J. Hoekstra
+  | **Mode S Transponder Comm-B Capabilities in Current Operational Aircraft**
+  | *Proceedings of the 8th OpenSky Symposium*, 2020
+  | https://doi.org/10.3390/proceedings2020059005
+  | `(paper) <https://www.mdpi.com/2504-3900/59/1/5/pdf>`__ `(video) <https://youtu.be/buB36H9IOio>`__
+
 - | X. Olive, A. Tanner, M. Strohmeier, M. Schäfer, M. Feridun, A. Tart, I. Martinovic and V. Lenders.
   | **OpenSky Report 2020: Analysing in-flight emergencies using big data**.
   | *Proceedings of the 39th Digital Avionics Systems Conference* (DASC), 2020
-  | `(notebook) <paper/squawk7700.html>`__
+  | `(paper) <http://www.cs.ox.ac.uk/files/12039/OpenSky%20Report%202020.pdf>`__ `(notebook) <paper/squawk7700.html>`__
+
+- | G. Lui, R. Liem and K. Hon.
+  | **Towards understanding the impact of convective weather on aircraft arrival traffic at the Hong Kong International Airport**
+  | *IOP Conference Series: Earth and Environmental Science*, vol. 569, pp. 012067, 2020
+  | https://iopscience.iop.org/article/10.1088/1755-1315/569/1/012067
+
+- | X. Olive and L. Basora
+  | **Detection and identification of significant events in historical aircraft trajectory data**.
+  | *Transportation Research Part C: Emerging Technologies*, vol. 119, pp. 102737, 2020
+  | https://doi.org/10.1016/j.trc.2020.102737
+
+- | A. Pellegrini, P. Di Sanzo, B. Bevilacqua, G. Duca, D. Pascarella, R. Palumbo, J. J. Ramos, M. À. Piera and G. Gigante.
+  | **Simulation-Based Evolutionary Optimization of Air Traffic Management**.
+  | *IEEE Access*, vol. 8, pp. 161551-161570, 2020
+  | https://doi.org/10.1109/access.2020.3021192
 
 - | X. Olive and J. Sun
   | **Detecting and Measuring Turbulence from Mode S Surveillance Downlink Data**.
   | *Proceedings of the 9th International Conference on Research in Air Transportation*, 2020
+  | `(paper) <http://www.icrat.org/ICRAT/seminarContent/2020/papers/ICRAT2020_paper_3.pdf>`__
 
 - | X. Olive, L. Basora, B. Viry and R. Alligier
   | **Deep Trajectory Clustering with Autoencoders**.
   | *Proceedings of the 9th International Conference on Research in Air Transportation*, 2020
+  | `(paper) <http://www.icrat.org/ICRAT/seminarContent/2020/papers/ICRAT2020_paper_2.pdf>`__
 
 - | S. Proud.
   | **Go-Around Detection Using Crowd-Sourced ADS-B Position Data**.
@@ -53,7 +82,7 @@ library:
 - | X. Olive and L. Basora.
   | **Air Traffic Data Processing using Python: Trajectory Clustering**.
   | *Proceedings of the 7th OpenSky Workshop*, 2019.
-  | `(paper) <https://easychair.org/publications/download/BXjT>`__ `(notebook) <https://tinyurl.com/opensky2019>`__ https://doi.org/10.29007/sf1f
+  | `(paper) <https://easychair.org/publications/download/BXjT>`__ `(notebook) <https://github.com/traffic-viz/traffic_static/blob/master/notebooks/opensky_2019.ipynb>`__ https://doi.org/10.29007/sf1f
 
 - | M. Schäfer, X. Olive, M. Strohmeier, M. Smith, I. Martinovic, V. Lenders.
   | **OpenSky Report 2019: Analysing TCAS in the Real World using Big Data.**
@@ -78,10 +107,10 @@ library:
   | *Aerospace Science and Technology* 84, 2019, pp. 776--781.
   | https://doi.org/10.1016/j.ast.2018.11.031
 
-**Links**
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 0
+   :hidden:
 
    paper/sectflow
    paper/atc_detect

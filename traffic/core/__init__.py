@@ -1,4 +1,9 @@
 # flake8: noqa
+"""
+It is crucial that the imports do not change order,
+hence the following line:
+isort:skip_file 
+"""
 
 import logging
 import sys
@@ -6,6 +11,7 @@ from typing import Any, Dict, Optional
 
 # WARNING!! Don't change order of import in this file
 from .flight import Flight
+from .iterator import FlightIterator
 from .traffic import Traffic
 from .airspace import Airspace
 from .sv import StateVectors

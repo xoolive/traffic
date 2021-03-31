@@ -1,0 +1,35 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install dependencies
+        run: |
+          sudo apt install -y libgeos-dev libproj-dev proj-bin proj-data
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade numpy pyproj  # dependency for cartopy
+          python -m pip install --upgrade sphinx sphinx-rtd-theme
+          python -m pip install -e .
+      - name: Build pages
+        run: |
+          curl https://opensky-network.org/api/sensor/list -o docs/_static/sensors.json
+          cd docs && make html
+      - name: Deploy pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          external_repository: traffic-viz/traffic-viz.github.io
+          publish_branch: master
+          publish_dir: docs/_build/html

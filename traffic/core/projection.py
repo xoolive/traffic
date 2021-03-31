@@ -1,10 +1,10 @@
+import cartes.crs
 import cartopy
-import cartotools.crs
-from cartotools.crs import *  # noqa: F401 F403
+from cartes.crs import *  # noqa: F401 F403
 
 __all__ = [
     p
-    for p in dir(cartotools.crs)
-    if isinstance(getattr(cartotools.crs, p), type)
-    and cartopy.crs.Projection in getattr(cartotools.crs, p).__mro__
+    for p in dir(cartes.crs)
+    if isinstance(getattr(cartes.crs, p), type)
+    and cartopy.crs.Projection in getattr(cartes.crs, p).__mro__
 ]

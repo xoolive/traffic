@@ -1,22 +1,22 @@
-from functools import lru_cache
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+# fmt: off
 
-from cartopy.crs import PlateCarree
+from functools import lru_cache
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
+
 from matplotlib.artist import Artist
 from matplotlib.axes._subplots import Axes
-from shapely.geometry import LineString, mapping
-from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union
 
 import altair as alt
-from cartotools.osm import request, tags
+from cartes.osm import Overpass
+from cartopy.crs import PlateCarree
+from shapely.geometry import GeometryCollection, LineString
+from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
 
-from .. import cache_expiration
-from ..drawing import Nominatim
 from ..drawing.markers import atc_tower
 from .mixins import HBoxMixin, PointMixin, ShapelyMixin
 
-request.cache_expiration = cache_expiration
+# fmt: on
 
 
 class AirportNamedTuple(NamedTuple):
@@ -49,104 +49,55 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         return f"{self.icao}/{self.iata}: {short_name}"
 
     def _repr_html_(self) -> str:
-        title = f"<b>{self.name.strip()}</b> ({self.country}) "
+        title = ""
+        if (
+            self.runways is not None
+            and self.runways.shape.is_empty
+            and self.runway.data.shape[0] > 0
+        ):
+            title += "<div class='alert alert-warning'><p>"
+            title += "<b>Warning!</b> No runway information available in our "
+            title += "database. Please consider helping the community by "
+            title += "updating the runway information with data provided "
+            title += "by OpenStreetMap.</p>"
+
+            url = f"https://ourairports.com/airports/{self.icao}/runways.html"
+            title += f"<p>Edit link: <a href='{url}'>{url}</a>.<br/>"
+            title += "Check the data in "
+            title += f"<code>airports['{self.icao}'].runway</code>"
+            title += " and edit the webpage accordingly. You may need to "
+            title += " create an account there to be able to edit.</p></div>"
+
+        title += f"<b>{self.name.strip()}</b> ({self.country}) "
         title += f"<code>{self.icao}/{self.iata}</code>"
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
-    def __getattr__(self, name) -> Dict[str, Any]:
-        if not name.startswith("osm_"):
+    def __getattr__(self, name: str) -> Overpass:
+        if name not in self._openstreetmap().data.aeroway.unique():
             raise AttributeError(
                 f"'{self.__class__.__name__}' has no attribute '{name}'"
             )
         else:
-            values = self.osm_request().ways.values()
-            return {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "geometry": mapping(elt[1]),
-                        "properties": elt[0]["tags"],
-                    }
-                    for elt in values
-                    if elt[0]["tags"]["aeroway"] == name[4:]
-                ],
-            }
+            return self._openstreetmap().query(f"aeroway == '{name}'")
 
-    def osm_tags(self) -> Set[str]:
-        return set(
-            elt[0]["tags"]["aeroway"]
-            for elt in self.osm_request().ways.values()
+    @lru_cache()
+    def _openstreetmap(self) -> Overpass:  # coverage: ignore
+        return Overpass.request(
+            area={"icao": self.icao, "as_": "airport"},
+            nwr=[dict(area="airport"), dict(aeroway=True, area="airport")],
         )
-
-    @lru_cache()
-    def osm_request(self) -> Nominatim:  # coverage: ignore
-
-        if self.runways is not None:
-            lon1, lat1, lon2, lat2 = self.runways.bounds
-            return request(
-                (lon1 - 0.02, lat1 - 0.02, lon2 + 0.02, lat2 + 0.02),
-                **tags.airport,
-            )
-
-        else:
-            return request(
-                (
-                    self.longitude - 0.01,
-                    self.latitude - 0.01,
-                    self.longitude + 0.01,
-                    self.latitude + 0.01,
-                ),
-                **tags.airport,
-            )
-
-    @lru_cache()
-    def geojson(self):
-        return {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "geometry": mapping(shape),
-                    "properties": info["tags"],
-                    "type": "Feature",
-                }
-                for info, shape in self.osm_request().ways.values()
-                if info["tags"]["aeroway"] != "aerodrome"
-            ],
-        }
-
-    def geoencode(
-        self,
-        footprint: bool = True,
-        runways: bool = False,
-        labels: bool = False,
-    ) -> alt.Chart:  # coverage: ignore
-        cumul = []
-        if footprint:
-            cumul.append(super().geoencode())
-        if runways:
-            cumul.append(self.runways.geoencode())
-        if labels:
-            cumul.append(self.runways.geoencode("labels"))
-        if len(cumul) == 0:
-            raise TypeError(
-                "At least one of footprint, runways and labels must be True"
-            )
-        return alt.layer(*cumul)
 
     @property
-    def shape(self):
-        # filter out the contour, helps for useful display
-        # list(self.osm_request()),
-        return self.osm_request().shape
-        return cascaded_union(
-            list(
-                shape
-                for dic, shape in self.osm_request().ways.values()
-                if dic["tags"]["aeroway"] != "aerodrome"
-            )
-        )
+    def __geo_interface__(self):
+        return self._openstreetmap().query('type_ != "node"').__geo_interface__
+
+    @property
+    def shape(self) -> BaseGeometry:
+        osm = self._openstreetmap()
+        if "aeroway" not in osm.data.columns:
+            return GeometryCollection()
+        return unary_union(osm.query('aeroway == "aerodrome"').data.geometry)
 
     @property
     def point(self):
@@ -161,32 +112,82 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
         return runways[self]
 
+    def geoencode(  # type: ignore
+        self,
+        footprint: Union[bool, dict] = True,
+        runways: Union[bool, dict] = True,
+        labels: Union[bool, dict] = True,
+    ) -> alt.Chart:  # coverage: ignore
+
+        base = alt.Chart(self).mark_geoshape()
+        cumul = []
+        if footprint:
+            params = dict(
+                aerodrome=dict(color="gainsboro", opacity=0.5),
+                apron=dict(color="darkgray", opacity=0.5),
+                terminal=dict(color="#888888"),
+                hangar=dict(color="#888888"),
+                taxiway=dict(filled=False, color="silver", strokeWidth=1.5),
+            )
+            if isinstance(footprint, dict):
+                footprint = {**params, **footprint}
+            else:
+                footprint = params
+
+            for key, value in footprint.items():
+                cumul.append(
+                    base.transform_filter(
+                        f"datum.aeroway == '{key}'"
+                    ).mark_geoshape(**value)
+                )
+        if runways:
+            if isinstance(runways, dict):
+                cumul.append(self.runways.geoencode(mode="geometry", **runways))
+            else:
+                cumul.append(self.runways.geoencode(mode="geometry"))
+        if labels:
+            if isinstance(labels, dict):
+                cumul.append(self.runways.geoencode(mode="labels", **labels))
+            else:
+                cumul.append(self.runways.geoencode(mode="labels"))
+        if len(cumul) == 0:
+            raise TypeError(
+                "At least one of footprint, runways and labels must be True"
+            )
+        return alt.layer(*cumul)
+
     def plot(  # type: ignore
         self,
         ax,
-        footprint: bool = True,
+        footprint: Union[bool, Optional[Dict]] = True,
         runways: Union[bool, Optional[Dict]] = False,
         labels: Union[bool, Optional[Dict]] = False,
         **kwargs,
     ):  # coverage: ignore
 
-        if footprint:
-            params = {
-                "edgecolor": "silver",
-                "facecolor": "None",
-                "crs": PlateCarree(),
-                **kwargs,
-            }
-            ax.add_geometries(
-                # filter out the contour, helps for useful display
-                # list(self.osm_request()),
-                list(
-                    shape
-                    for dic, shape in self.osm_request().ways.values()
-                    if dic["tags"]["aeroway"] != "aerodrome"
+        if footprint is True:
+            footprint = dict(
+                by="aeroway",
+                aerodrome=dict(color="gainsboro", alpha=0.5),
+                apron=dict(color="darkgray", alpha=0.5),
+                taxiway=dict(color="darkgray"),
+                terminal=dict(color="black"),
+                # MUTE the rest
+                gate=dict(alpha=0),
+                parking_position=dict(alpha=0),
+                holding_position=dict(alpha=0),
+                tower=dict(alpha=0),
+                helipad=dict(alpha=0),
+                jet_bridge=dict(alpha=0),
+                aerobridge=dict(alpha=0),
+                navigationaid=dict(
+                    papi=dict(alpha=0), approach_light=dict(alpha=0)
                 ),
-                **params,
+                windsock=dict(alpha=0),
             )
+
+        if isinstance(footprint, dict):
+            self._openstreetmap().plot(ax, **footprint)
 
         if self.runways is None:
             return

@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from typing import List, Optional, Union, cast
 
-import numpy as np
 import pandas as pd
 
 from traffic.core import Traffic
@@ -67,7 +66,7 @@ def to_bluesky(
         )
 
         for column in data.columns:
-            data[column] = data[column].astype(np.str)
+            data[column] = data[column].astype(str)
 
         is_created: List[str] = []
         is_deleted: List[str] = []

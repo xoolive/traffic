@@ -1,7 +1,7 @@
 # fmt: off
 
-import sys
 import zipfile
+from typing import Optional, cast
 
 import pandas as pd
 import pytest
@@ -9,7 +9,7 @@ from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
 from traffic.data.samples import (airbus_tree, belevingsvlucht, calibration,
-                                  featured, get_sample)
+                                  elal747, featured, get_sample)
 
 # fmt: on
 
@@ -44,7 +44,6 @@ def test_properties() -> None:
     assert flight.flight_id is None
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py36")
 def test_get_traffic() -> None:
     traffic: Traffic = get_sample(featured, "traffic")
     assert "belevingsvlucht" in traffic.flight_ids
@@ -121,7 +120,7 @@ def test_time_methods() -> None:
 
     low = flight.query("altitude < 100")
     assert low is not None
-    shorter = low.max_split(10)
+    shorter = low.split("10T").max()
     assert shorter is not None
     assert shorter.duration < pd.Timedelta("6 minutes")
 
@@ -158,13 +157,16 @@ def test_bearing() -> None:
 
 def test_geometry() -> None:
     flight: Flight = get_sample(featured, "belevingsvlucht")
+
+    assert flight.distance() < 5  # returns to origin
+
     xy_length = flight.project_shape().length / 1852  # in nm
     last_pos = flight.cumulative_distance().at()
     assert last_pos is not None
     cumdist = last_pos.cumdist
     assert abs(xy_length - cumdist) / xy_length < 1e-3
 
-    simplified = flight.simplify(1e3)
+    simplified = cast(Flight, flight.simplify(1e3))
     assert len(simplified) < len(flight)
     xy_length_s = simplified.project_shape().length / 1852
     assert xy_length_s < xy_length
@@ -227,11 +229,11 @@ def test_clip_point() -> None:
 
 
 def test_closest_point() -> None:
-    from traffic.data import navaids, airports
+    from traffic.data import airports, navaids
 
-    item = belevingsvlucht.between(
-        "2018-05-30 16:00", "2018-05-30 17:00"
-    ).closest_point(  # type: ignore
+    item = cast(
+        Flight, belevingsvlucht.between("2018-05-30 16:00", "2018-05-30 17:00")
+    ).closest_point(
         [
             airports["EHLE"],  # type: ignore
             airports["EHAM"],  # type: ignore
@@ -254,16 +256,92 @@ def test_landing_runway() -> None:
 
 
 def test_aligned_runway() -> None:
-    assert sum(1 for _ in belevingsvlucht.aligned_on_runway("EHAM")) == 2
+    assert belevingsvlucht.aligned_on_runway("EHAM").sum() == 2
 
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_landing_ils() -> None:
-    aligned: Flight = next(belevingsvlucht.aligned_on_ils("EHAM"))
+    aligned: Optional["Flight"] = belevingsvlucht.aligned_on_ils(
+        "EHAM"
+    ).next()  # noqa: B305
+    assert aligned is not None
     assert aligned.max("ILS") == "06"
 
-    aligned = next(airbus_tree.aligned_on_ils("EDHI"))
+    aligned = airbus_tree.aligned_on_ils("EDHI").next()  # noqa: B305
+    assert aligned is not None
     assert aligned.max("ILS") == "23"
+
+
+@pytest.mark.skipif(skip_runways, reason="no runways")
+def test_takeoff_runway() -> None:
+    # There are as many take-off as landing at EHLE
+    nb_takeoff = sum(
+        1
+        for _ in belevingsvlucht.takeoff_from_runway("EHLE", threshold_alt=3000)
+    )
+    nb_landing = sum(1 for f in belevingsvlucht.aligned_on_ils("EHLE"))
+    # with go-arounds, sometimes it just doesn't fit
+    assert nb_takeoff <= nb_landing
+    for aligned in belevingsvlucht.aligned_on_ils("EHLE"):
+        after = belevingsvlucht.after(aligned.stop)
+        assert after is not None
+        takeoff = after.takeoff_from_runway("EHLE", threshold_alt=3000).next()
+        # If a landing is followed by a take-off, then it's on the same runway
+        assert takeoff is None or aligned.max("ILS") == takeoff.max("runway")
+
+
+@pytest.mark.skipif(True, reason="only for local debug")
+def test_takeoff_goaround() -> None:
+    from traffic.data.datasets import landing_zurich_2019
+
+    go_arounds = landing_zurich_2019.has("go_around").eval(
+        desc="go_around", max_workers=8
+    )
+
+    for flight in go_arounds:
+        for segment in flight.go_around():
+            aligned = segment.aligned_on_ils("LSZH").next()
+            takeoff = (
+                segment.after(aligned.stop)
+                .takeoff_from_runway("LSZH", threshold_alt=5000)
+                .next()
+            )
+            assert (
+                takeoff is None
+                or takeoff.shorter_than("30s")
+                or aligned.max("ILS") == takeoff.max("runway")
+            )
+
+
+def test_getattr() -> None:
+    assert belevingsvlucht.vertical_rate_min < -3000
+    assert 15000 < belevingsvlucht.altitude_max < 20000
+
+    with pytest.raises(AttributeError, match="has no attribute"):
+        belevingsvlucht.foo
+    with pytest.raises(AttributeError, match="has no attribute"):
+        belevingsvlucht.altitude_foo
+
+
+@pytest.mark.skipif(skip_runways, reason="no runways")
+def test_goaround() -> None:
+    assert belevingsvlucht.go_around().next() is None  # noqa: B305
+    assert belevingsvlucht.go_around("EHLE").sum() == 5
+
+    # from traffic.data.datasets import landing_zurich_2019
+    # assert sum(1 for _ in landing_zurich_2019["EWG7ME_1079"].go_around()) == 2
+
+    # def many_goarounds(f):
+    #     return sum(1 for _ in f.go_around()) > 1
+
+    # gogo = (
+    #     landing_zurich_2019.query("not simple")
+    #     .iterate_lazy()
+    #     .pipe(many_goarounds)
+    #     .eval(desc="", max_workers=8)
+    # )
+
+    # assert gogo.flight_ids == {"SWR287A_10099", "EWG7ME_1079"}
 
 
 def test_douglas_peucker() -> None:
@@ -304,16 +382,27 @@ def test_agg_time() -> None:
     assert agg.max("groundspeed_mean") <= agg.max("groundspeed")
     assert agg.max("altitude_max") <= agg.max("altitude")
 
+    app = flight.resample("30s").apply_time(
+        freq="30T",
+        factor=lambda f: f.distance() / f.cumulative_distance().max("cumdist"),
+    )
+    assert app.min("factor") < 1 / 15
+
 
 def test_comet() -> None:
     flight = belevingsvlucht
 
     subset = flight.query("altitude < 300")
     assert subset is not None
-    takeoff = next(subset.split("10T"))
+    takeoff = subset.split("10T").next()  # noqa: B305
+    assert takeoff is not None
     comet = takeoff.comet(minutes=1)
 
-    assert takeoff.point.altitude + 2000 < comet.point.altitude  # type: ignore
+    t_point = takeoff.point
+    c_point = comet.point
+    assert t_point is not None
+    assert c_point is not None
+    assert t_point.altitude + 2000 < c_point.altitude
 
 
 def test_cumulative_distance() -> None:
@@ -369,3 +458,9 @@ def test_agg_time_colnames() -> None:
 
     cols = belevingsvlucht.agg_time("5T", altitude=shh).data.columns
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
+
+
+def test_parking_position() -> None:
+    pp = elal747.parking_position("LIRF")
+    assert pp is not None
+    assert pp.max("parking_position") == "702"

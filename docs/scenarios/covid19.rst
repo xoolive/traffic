@@ -28,6 +28,8 @@ With the same dataset, we found:
 - French newspaper `Liberation <https://www.liberation.fr/apps/2020/05/bilan-confinement/>`_ did a similar job few days later, with more data visualisations 
 - `How COVID-19 has rocked US domestic flights <https://evandenmark.github.io/ForSpaciousSkies/>`_ by `@EvDenmark <https://twitter.com/EvDenmark/status/1260922351732101120>`_
 - `How have SARS-CoV-2's limitations impacted global aviation traffic? <https://sirbenedick.github.io/corona-aviation-impact/>`_ by `@sirbenedick <https://github.com/SirBenedick>`_
+- `Visualization of Air Traffic during Covid-19 Pandemic <https://towardsdatascience.com/visualization-of-air-traffic-during-covid-19-pandemic-c5941b049401>`_ 
+- `What Explains Temporal and Geographic Variation in the Early US Coronavirus Pandemic? <https://www.nber.org/papers/w27965>`_, DOI: `10.3386/w27965 <https://doi.org/10.3386/w27965>`_
 
 This list may not be exhaustive. You may `open an issue <https://github.com/xoolive/traffic/issues/new>`_ on the github of the library in order to reference more websites.
 
@@ -41,7 +43,7 @@ The following plot displays the current trend in number of departing aircraft fr
     <div id="covid19_airports"></div>
 
     <script type="text/javascript">
-      var spec = "../_static/covid19_airports.json";
+      var spec = "https://raw.githubusercontent.com/traffic-viz/traffic_static/master/json/covid19_airports.json";
       vegaEmbed('#covid19_airports', spec)
       .then(result => console.log(result))
       .catch(console.warn);
@@ -64,7 +66,7 @@ Flight evolution per airline
     <div id="covid19_airlines"></div>
 
     <script type="text/javascript">
-      var spec = "../_static/covid19_airlines.json";
+      var spec = "https://raw.githubusercontent.com/traffic-viz/traffic_static/master/json/covid19_airlines.json";
       vegaEmbed('#covid19_airlines', spec)
       .then(result => console.log(result))
       .catch(console.warn);

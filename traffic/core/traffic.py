@@ -4,8 +4,10 @@ import logging
 import warnings
 from datetime import timedelta
 from pathlib import Path
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-                    List, Optional, Set, Type, TypeVar, Union, overload)
+from typing import (
+    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
+    List, Optional, Set, Type, TypeVar, Union, overload
+)
 
 import pandas as pd
 import pyproj
@@ -87,7 +89,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         Creates a Traffic structure from all flights passed as an
         iterator or iterable.
         """
-        cumul = [f.data for f in flights if f is not None]
+        cumul = [flight.data for flight in flights if flight is not None]
         if len(cumul) == 0:
             return None
         return cls(pd.concat(cumul, sort=False))
@@ -146,6 +148,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         return None
 
     # --- Special methods ---
+    # operators + (union), & (intersection), - (difference), ^ (xor)
 
     def __add__(self, other) -> "Traffic":
         # useful for compatibility with sum() function
@@ -155,6 +158,46 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     def __radd__(self, other) -> "Traffic":
         return self + other
+
+    def __and__(self, other: "Traffic") -> Optional["Traffic"]:
+        if not isinstance(other, Traffic):
+            raise RuntimeError(
+                "Operator `&` is only applicable between Traffic structures."
+            )
+        list_id = other.flight_ids
+        if list_id is None or self.flight_ids is None:
+            raise RuntimeError(
+                "No flight_id is provided in the given Traffic structures."
+            )
+        df = self.data.query("flight_id in @list_id")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
+
+    def __sub__(self, other: "Traffic") -> Optional["Traffic"]:
+        # set difference based on flight_id
+        if not isinstance(other, Traffic):
+            raise RuntimeError(
+                "Operator `-` is only applicable between Traffic structures."
+            )
+        list_id = other.flight_ids
+        if list_id is None or self.flight_ids is None:
+            raise RuntimeError(
+                "No flight_id is provided in the given Traffic structures."
+            )
+        df = self.data.query("flight_id not in @list_id")
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
+
+    def __xor__(self, other: "Traffic") -> Optional["Traffic"]:
+        left = self - other
+        right = other - self
+        if left is None:
+            return right
+        if right is None:
+            return left
+        return right + left
 
     def _getSeries(self, index: pd.Series) -> Optional[Flight]:
 
@@ -300,7 +343,9 @@ class Traffic(HBoxMixin, GeographyMixin):
                     yield Flight(df)
         else:
             for i, (_, df) in enumerate(
-                self.data.groupby(["icao24", "callsign"])
+                self.data.sort_values("timestamp").groupby(
+                    ["icao24", "callsign"]
+                )
             ):
                 if nb_flights is None or i < nb_flights:
                     yield from Flight(df).split(
@@ -353,20 +398,20 @@ class Traffic(HBoxMixin, GeographyMixin):
         return self.length
 
     def __repr__(self) -> str:
-        stats = self.stats
-        shape = stats.shape[0]
+        basic_stats = self.basic_stats
+        shape = basic_stats.shape[0]
         if shape > 10:
             # stylers are not efficient on big dataframes...
-            stats = stats.head(10)
-        return stats.__repr__()
+            basic_stats = basic_stats.head(10)
+        return basic_stats.__repr__()
 
     def _repr_html_(self) -> str:
-        stats = self.stats
-        shape = stats.shape[0]
+        basic_stats = self.basic_stats
+        shape = basic_stats.shape[0]
         if shape > 10:
             # stylers are not efficient on big dataframes...
-            stats = stats.head(10)
-        styler = stats.style.bar(align="mid", color="#5fba7d")
+            basic_stats = basic_stats.head(10)
+        styler = basic_stats.style.bar(align="mid", color="#5fba7d")
         rep = f"<b>Traffic with {shape} identifiers</b>"
         return rep + styler._repr_html_()
 
@@ -390,6 +435,18 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @lazy_evaluation()
     def filter_if(self, *args, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def has(self, *args, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def all(self, *args, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def next(self, *args, **kwargs):
         ...
 
     @lazy_evaluation()
@@ -500,13 +557,23 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def agg_time(
-        self, freq="1T", new_name="{feature}_{agg}", merge=True, **kwargs
+    def apply_segments(
+        self, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
     ):
         ...
 
     @lazy_evaluation()
-    def cumulative_distance(self, compute_gs: bool = False, **kwargs):
+    def apply_time(self, freq="1T", merge=True, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def agg_time(self, freq="1T", merge=True, **kwargs):
+        ...
+
+    @lazy_evaluation()
+    def cumulative_distance(
+        self, compute_gs: bool = True, compute_track: bool = True, **kwargs
+    ):
         ...
 
     @lazy_evaluation()
@@ -519,6 +586,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         other: Union["Airspace", Polygon, PointMixin],
         column_name: str = "distance",
     ):
+        ...
+
+    @lazy_evaluation()
+    def landing_at(self, airport: str) -> bool:
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
@@ -606,10 +677,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         return set(self.data.icao24)
 
     @property_cache
-    def flight_ids(self) -> Optional[Set[str]]:
+    def flight_ids(self) -> Optional[List[str]]:
         """Return all the different flight_id in the DataFrame"""
         if "flight_id" in self.data.columns:
-            return set(self.data.flight_id)
+            return list(flight.flight_id for flight in self)  # type: ignore
         return None
 
     # --- Easy work ---
@@ -634,13 +705,31 @@ class Traffic(HBoxMixin, GeographyMixin):
         )
 
     @property_cache
-    def stats(self) -> pd.DataFrame:
+    def basic_stats(self) -> pd.DataFrame:
         key = ["icao24", "callsign"] if self.flight_ids is None else "flight_id"
         return (
             self.data.groupby(key)[["timestamp"]]
             .count()
             .sort_values("timestamp", ascending=False)
             .rename(columns={"timestamp": "count"})
+        )
+
+    def summary(
+        self,
+        attributes: List[str],
+        iterate_kw: Optional[Dict[str, Any]] = None,
+    ) -> pd.DataFrame:
+        """Returns a summary of the current Traffic structure containing
+        featured attributes.
+
+        Example usage (TODO)
+
+        """
+        if iterate_kw is None:
+            iterate_kw = dict()
+        return pd.DataFrame.from_records(
+            dict((key, getattr(flight, key)) for key in attributes)
+            for flight in self.iterate(**iterate_kw)
         )
 
     def geoencode(self, *args, **kwargs):

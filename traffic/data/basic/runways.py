@@ -4,13 +4,12 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from zipfile import ZipFile
 
+import altair as alt
 import pandas as pd
 import requests
 from cartopy.crs import PlateCarree
 from shapely.geometry import base, shape
 from shapely.ops import linemerge
-
-import altair as alt
 from tqdm.autonotebook import tqdm
 
 from ... import cache_expiration
@@ -115,30 +114,31 @@ class RunwayAirport(HBoxMixin, ShapelyMixin):
                     lon, lat, thr.name, rotation=360 - thr.bearing, **text_kw
                 )
 
-    def geoencode(
-        self, mode: str = "geometry"
-    ) -> Optional[alt.Chart]:  # coverage: ignore
+    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
 
-        if mode == "geometry":
-            return (
-                super().geoencode().mark_geoshape(strokeWidth=2, stroke="black")
-            )
-
-        elif mode == "labels":
+        if kwargs.get("mode", None) == "geometry":
+            params = {**{"strokeWidth": 4, "stroke": "black"}, **kwargs}
+            del params["mode"]
+            return super().geoencode().mark_geoshape(**params)
+        elif kwargs.get("mode", None) == "labels":
+            params = {
+                **{"baseline": "middle", "dy": 20, "fontSize": 18},
+                **kwargs,
+            }
+            del params["mode"]
             rwy_labels = alt.Chart(self.data).encode(
                 longitude="longitude:Q", latitude="latitude:Q", text="name:N"
             )
             rwy_layers = [
                 rwy_labels.transform_filter(alt.datum.name == name).mark_text(
-                    angle=bearing, baseline="middle", dy=10
+                    angle=bearing, **params
                 )
                 for (name, bearing) in zip(self.data.name, self.data.bearing)
             ]
 
             return alt.layer(*rwy_layers)
 
-        else:
-            return None
+        return None
 
 
 class Runways(object):
