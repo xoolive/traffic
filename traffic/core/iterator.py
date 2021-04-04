@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class FlightIterator:
     """
     A FlightIterator is a specific structure providing helpers after methods
-    applied on a Flight return a sequence of pieces of trajectories.
+    applied on a Flight that return a sequence of pieces of trajectories.
 
     Methods returning a FlightIterator include:
 
@@ -25,7 +25,7 @@ class FlightIterator:
 
     Since a FlightIterator is not a Flight, you can:
 
-    - iterator on it with a for loop, or with Python built-ins functions;
+    - iterate on it with a for loop, or with Python built-ins functions;
     - index it with bracket notation (using positive integers or slices);
     - get True if the sequence is non empty with ``.has()``;
     - get the first element in the sequence with ``.next()``;
