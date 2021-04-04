@@ -513,7 +513,7 @@ class Flight(
     def longer_than(
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
     ) -> bool:
-        """Returns True if flight duration is shorter than value."""
+        """Returns True if flight duration is longer than value."""
         if isinstance(value, str):
             value = pd.Timedelta(value)
         return self.feature_gt(attrgetter("duration"), value, strict)
