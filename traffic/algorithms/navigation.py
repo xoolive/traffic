@@ -353,7 +353,11 @@ class NavigationFeatures:
             airport = self.landing_airport()
 
         _airport = airports[airport] if isinstance(airport, str) else airport
-        if _airport is None or _airport.runways.shape.is_empty:
+        if (
+            _airport is None
+            or _airport.runways is None
+            or _airport.runways.shape.is_empty
+        ):
             return None
 
         rad = np.pi / 180
