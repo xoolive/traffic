@@ -66,17 +66,14 @@ setup(
         "Cartopy",
         "Shapely",
         "requests",
-        "requests_pkcs12",
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "typing_extensions",
         "altair",  # interactive Vega plots
         "ipywidgets",  # IPython widgets for traffic
         "ipyleaflet",  # Leaflet for notebooks
-        # deactivated for now for dependency issues
-        # "keplergl",  # Kepler.gl for notebooks
         "tqdm>=4.28",  # progressbars
-        "cartes",
+        "cartes>=0.2",
         "pyModeS>=2.8",
         "openap",
     ],
