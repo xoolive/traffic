@@ -1602,7 +1602,7 @@ class Flight(
         self, other: PointMixin, column_name: str = "bearing"
     ) -> "Flight":
         # temporary, should implement full stuff
-        size = len(self)
+        size = self.data.shape[0]
         return self.assign(
             **{
                 column_name: geo.bearing(
@@ -1685,7 +1685,7 @@ class Flight(
             )
 
         if isinstance(other, PointMixin):
-            size = len(self)
+            size = self.data.shape[0]
             return self.assign(
                 **{
                     column_name: geo.distance(
