@@ -66,6 +66,7 @@ setup(
         "Cartopy",
         "Shapely",
         "requests",
+        "pyOpenSSL>=0.14",
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "typing_extensions",
