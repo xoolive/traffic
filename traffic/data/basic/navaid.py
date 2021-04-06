@@ -70,11 +70,18 @@ class Navaids(GeoDBMixin):
         from .. import session
 
         navaids = []
-        c = session.get(f"{base_url}/earth_fix.dat")
 
-        for line in c.iter_lines():
+        cache_file = self.cache_dir / "earth_fix.dat"
+        if cache_file.exists():
+            iter_lines = cache_file.open("rb")
+        else:
+            c = session.get(f"{base_url}/earth_fix.dat")
+            c.raise_for_status()
+            iter_lines = c.iter_lines()  # type: ignore
 
-            line = line.decode(encoding="ascii", errors="ignore").strip()
+        for line_bytes in iter_lines:
+
+            line = line_bytes.decode(encoding="ascii", errors="ignore").strip()
 
             # Skip empty lines or comments
             if len(line) < 3 or line[0] == "#":
@@ -101,11 +108,17 @@ class Navaids(GeoDBMixin):
                 )
             )
 
-        c = session.get(f"{base_url}/earth_nav.dat")
+        cache_file = self.cache_dir / "earth_nav.dat"
+        if cache_file.exists():
+            iter_lines = cache_file.open("rb")
+        else:
+            c = session.get(f"{base_url}/earth_nav.dat")
+            c.raise_for_status()
+            iter_lines = c.iter_lines()  # type: ignore
 
-        for line in c.iter_lines():
+        for line_bytes in iter_lines:
 
-            line = line.decode(encoding="ascii", errors="ignore").strip()
+            line = line_bytes.decode(encoding="ascii", errors="ignore").strip()
 
             # Skip empty lines or comments
             if len(line) == 0 or line[0] == "#":
