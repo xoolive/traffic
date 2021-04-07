@@ -96,13 +96,12 @@ Join the Gitter chat: https://gitter.im/xoolive/traffic
 [![Codacy Badge](https://img.shields.io/codacy/grade/eea673ed15304f1b93490726295d6de0)](https://www.codacy.com/manual/xoolive/traffic)
 [![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy.readthedocs.io/)
 
-Unit and non-regression tests are written in the `tests/` directory. You may run
-`pytest` or `tox` from the root directory. Tests are currently performed with
-Python 3.6 and 3.7.
+Unit and non-regression tests are written in the `tests/` directory. You may
+run `pytest` from the root directory.
 
-Tests are checked on [travis continuous integration](https://travis-ci.org/xoolive/traffic)
-platform upon each commit. Latest status and coverage are displayed with standard
-badges hereabove.
+Tests are checked on [Github Actions](https://github.com/xoolive/traffic/actions/workflows/run-tests.yml)
+platform upon each commit. Latest status and coverage are displayed with
+standard badges hereabove.
 
 In addition, code is checked against static typing with [mypy](https://mypy.readthedocs.io/)
 ([pre-commit](https://pre-commit.com/) hooks are available in the repository) and
@@ -124,13 +123,6 @@ traffic data -p Tokyo
 
 More details in the [documentation](https://traffic-viz.github.io/).
 
-## Graphical user interface
-
-A Qt application is provided for exploring and recording data.  
-More details in the [GUI section of the documentation](https://traffic-viz.github.io/gui.html).
-
-![GUI screenshot](https://raw.githubusercontent.com/xoolive/traffic/master/docs/_static/gui_start.png)
-
 ## Feedback and contribution
 
 Any input, feedback, bug report or contribution is welcome.
@@ -138,8 +130,8 @@ Any input, feedback, bug report or contribution is welcome.
 Should you encounter any issue, you may want to file it in the [issue](https://github.com/xoolive/traffic/issues/new) section of this repository. Please first activate the `DEBUG` messages recorded using Python logging mechanism with the following snippet:
 
 ```python
-from traffic.core import loglevel
-loglevel('DEBUG')
+import logging
+logging.basicConfig(level=logging.DEBUG)
 ```
 
 Bug fixes and improvements in the library are also helpful.
@@ -150,7 +142,7 @@ on your additions. For details on creating a PR see GitHub documentation
 [Creating a pull
 request](https://help.github.com/en/articles/creating-a-pull-request). You can
 add more details about your example in the PR such as motivation for the example
-or why you thought it would be a good addition. You will get feed back in the PR
+or why you thought it would be a good addition. You will get feedback in the PR
 discussion if anything needs to be changed. To make changes continue to push
 commits made in your local example branch to origin and they will be
 automatically shown in the PR.
