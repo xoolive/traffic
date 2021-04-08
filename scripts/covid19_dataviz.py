@@ -27,6 +27,10 @@ dates = [
     "20201001",
     "20201101",
     "20201201",
+    "20210101",
+    "20210201",
+    "20210301",
+    "20210401",
 ]
 flightlist = pd.concat(
     pd.read_csv(
@@ -95,7 +99,7 @@ def airline_chart(
             y=alt.Y("rate", title="# of flights (normalized)"),
             color=alt.Color("airline", legend=alt.Legend(title=name)),
             tooltip=["day", "airline", "count"],
-            opacity=alt.value(0.3),
+            opacity=alt.value(0),
         )
         .add_selection(highlight)
     )
@@ -108,7 +112,7 @@ def airline_chart(
     )
     if loess:
         lines = lines.transform_loess(
-            "day", "rate", groupby=["airline"], bandwidth=0.2
+            "day", "rate", groupby=["airline"], bandwidth=0.05
         )
 
     return lines + points
@@ -117,9 +121,7 @@ def airline_chart(
 chart = alt.Chart(source)
 result = alt.vconcat(
     *[
-        airline_chart(chart, airline_, name, "FDX" not in airline_).properties(
-            width=550, height=150
-        )
+        airline_chart(chart, airline_, name).properties(width=550, height=150)
         for name, airline_ in zip(
             [
                 "European airlines",
@@ -190,7 +192,7 @@ def airport_chart(source: alt.Chart, subset: List[str], name: str) -> alt.Chart:
             y=alt.Y("count", title="# of departing flights"),
             color=alt.Color("airport", legend=alt.Legend(title=name)),
             tooltip=["day", "airport", "city", "count"],
-            opacity=alt.value(0.3),
+            opacity=alt.value(0),
         )
         .add_selection(highlight)
     )
@@ -203,7 +205,7 @@ def airport_chart(source: alt.Chart, subset: List[str], name: str) -> alt.Chart:
             color="airport",
             size=alt.condition(~highlight, alt.value(1), alt.value(3)),
         )
-        .transform_loess("day", "count", groupby=["airport"], bandwidth=0.2)
+        .transform_loess("day", "count", groupby=["airport"], bandwidth=0.05)
     )
 
     return lines + points
