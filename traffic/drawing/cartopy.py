@@ -81,8 +81,8 @@ def _set_extent(self, shape, buffer: float = 0.01):
     self._set_extent(shape)
 
 
-GeoAxesSubplot._set_extent = GeoAxesSubplot.set_extent
-GeoAxesSubplot.set_extent = _set_extent
+# GeoAxesSubplot._set_extent = GeoAxesSubplot.set_extent
+# GeoAxesSubplot.set_extent = _set_extent
 
 
 def _point(self):
