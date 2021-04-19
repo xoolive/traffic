@@ -275,6 +275,19 @@ def test_landing_ils() -> None:
     assert aligned.max("ILS") == "23"
 
 
+def test_compute_navpoints() -> None:
+
+    from traffic.data.samples import switzerland
+
+    df = cast(Flight, switzerland["BAW585E"]).compute_navpoints()
+    assert df is not None
+    assert df.navaid.to_list() == ["RESIA", "LUL", "IXILU"]
+
+    df = cast(Flight, switzerland["EZY24DP"]).compute_navpoints()
+    assert df is not None
+    assert df.navaid.to_list() == ["RESIA", "ZH367", "LUL"]
+
+
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_takeoff_runway() -> None:
     # There are as many take-off as landing at EHLE
