@@ -1,8 +1,9 @@
 # fmt: off
 
+import warnings
 from operator import attrgetter
 from typing import (
-    TYPE_CHECKING, Iterable, Iterator, List, Optional, Union, cast
+    TYPE_CHECKING, Iterable, Iterator, List, Optional, Sequence, Union, cast
 )
 
 import numpy as np
@@ -13,9 +14,10 @@ from ..core.geodesy import destination
 from ..core.iterator import flight_iterator
 
 if TYPE_CHECKING:
-    from ..core import Flight  # noqa: 401
+    from ..core import Flight, FlightPlan  # noqa: 401
     from ..core.mixins import PointMixin  # noqa: 401
     from ..core.structure import Airport, Navaid  # noqa: 401
+    from ..data import Navaids  # noqa: 401
     from ..data.basic.airports import Airports  # noqa: 401
 
 # fmt: on
@@ -65,6 +67,8 @@ class NavigationFeatures:
             (cp(self.data, point) for point in points),
             key=attrgetter("distance"),
         )
+
+    # -- Most basic metadata properties --
 
     def takeoff_airport(self, **kwargs) -> "Airport":
         """Returns the most probable takeoff airport.
@@ -134,6 +138,8 @@ class NavigationFeatures:
         data = self.data.sort_values("timestamp")
         return guess_airport(data.iloc[-1], **kwargs)
 
+    # -- Alignments --
+
     @flight_iterator
     def aligned_on_runway(
         self, airport: Union[str, "Airport"]
@@ -188,6 +194,8 @@ class NavigationFeatures:
                 if segment is not None:
                     yield segment
 
+    # >>>>> This function is to be deprecated
+
     def on_runway(self, airport: Union[str, "Airport"]) -> Optional["Flight"]:
         """Returns the longest segment of trajectory which perfectly matches
         a runway at given airport.
@@ -203,11 +211,250 @@ class NavigationFeatures:
             437.27272727272725
 
         """
+        msg = "Use .aligned_on_runway(airport).max() instead."
+        warnings.warn(msg, DeprecationWarning)
 
         return max(
             self.aligned_on_runway(airport),
             key=attrgetter("duration"),
             default=None,
+        )
+
+    # --- end ---
+
+    @flight_iterator
+    def aligned_on_ils(
+        self,
+        airport: Union[None, str, "Airport"],
+    ) -> Iterator["Flight"]:
+        """Iterates on all segments of trajectory aligned with the ILS of the
+        given airport. The runway number is appended as a new ``ILS`` column.
+
+        Example usage:
+
+        .. code:: python
+
+            >>> aligned = next(belevingsvlucht.aligned_on_ils('EHAM'))
+            >>> f"ILS {aligned.max('ILS')} until {aligned.stop:%H:%M}"
+            'ILS 06 until 20:17'
+
+        Be aware that all segments are not necessarily yielded in order.
+        Consider using ``max(..., key=attrgetter('start'))`` if you want the
+        last landing attempt, or ``sorted(..., key=attrgetter('start'))`` for
+        an ordered list
+
+        .. code:: python
+
+            >>> for aligned in belevingsvlucht.aligned_on_ils('EHLE'):
+            ...     print(aligned.start)
+            2018-05-30 16:50:44+00:00
+            2018-05-30 18:13:02+00:00
+            2018-05-30 16:00:55+00:00
+            2018-05-30 17:21:17+00:00
+            2018-05-30 19:05:22+00:00
+            2018-05-30 19:42:36+00:00
+
+            >>> from operator import attrgetter
+            >>> last_aligned = max(
+            ...     belevingsvlucht.aligned_on_ils("EHLE"),
+            ...     key=attrgetter('start')
+            ... )
+        """
+
+        from ..data import airports
+
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if airport is None:
+            airport = self.landing_airport()
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if (
+            _airport is None
+            or _airport.runways is None
+            or _airport.runways.shape.is_empty
+        ):
+            return None
+
+        rad = np.pi / 180
+
+        chunks = list()
+        for threshold in _airport.runways.list:
+            tentative = (
+                self.bearing(threshold)
+                .distance(threshold)
+                .assign(
+                    b_diff=lambda df: df.distance
+                    * np.radians(df.bearing - threshold.bearing).abs()
+                )
+                .query(f"b_diff < .1 and cos((bearing - track) * {rad}) > 0")
+            )
+            if tentative is not None:
+                for chunk in tentative.split("20s"):
+                    if (
+                        chunk.longer_than("1 minute")
+                        and chunk.altitude_min < 5000
+                    ):
+                        chunks.append(
+                            chunk.assign(
+                                ILS=threshold.name, airport=_airport.icao
+                            )
+                        )
+
+        yield from sorted(chunks, key=attrgetter("start"))
+
+    @flight_iterator
+    def aligned_on_navpoint(
+        self,
+        points: Union["PointMixin", Iterable["PointMixin"], "FlightPlan"],
+        angle_precision: int = 1,
+        time_precision: str = "2T",
+        min_time: str = "30s",
+        min_distance: int = 80,
+    ) -> Iterator["Flight"]:
+        """Iterates on segments of trajectories aligned with one of the given
+        navigational beacons passed in parameter.
+
+        The name of the navigational beacon is assigned in a new column
+        `navaid`.
+
+        """
+
+        from ..core import FlightPlan
+        from ..core.mixins import PointMixin
+
+        points_: Sequence[PointMixin]
+
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if isinstance(points, PointMixin):
+            points_ = [points]
+        elif isinstance(points, FlightPlan):
+            points_ = points.all_points
+        else:
+            points_ = list(points)
+
+        for navpoint in points_:
+            tentative = (
+                self.distance(navpoint)
+                .bearing(navpoint)
+                .assign(
+                    shift=lambda df: df.distance
+                    * (np.radians(df.bearing - df.track).abs()),
+                    delta=lambda df: (df.bearing - df.track).abs(),
+                )
+                .query(f"delta < {angle_precision} and distance < 500")
+            )
+            if tentative is not None:
+                for chunk in tentative.split(time_precision):
+                    if (
+                        chunk.longer_than(min_time)
+                        and chunk.min("distance") < min_distance
+                    ):
+                        yield chunk.assign(navaid=navpoint.name)
+
+    def compute_navpoints(
+        self, navaids: Optional["Navaids"] = None, buffer: float = 0.1
+    ) -> Optional[pd.DataFrame]:
+
+        """This functions recomputes the most probable alignments on
+        navigational points on the trajectory.
+
+        By default, all navaids of the default database are considered,
+        but limited to a buffered bounding box around the trajectory.
+
+        Once computed, the following Altair snippet may be useful to
+        display the trajectory as a succession of segments:
+
+        .. code:: python
+
+            import altair as alt
+
+            df = flight.compute_navpoints()
+
+            segments = (
+                alt.Chart(df.drop(columns="duration")).encode(
+                    alt.X("start", title=None),
+                    alt.X2("stop"),
+                    alt.Y("navaid", sort="x", title=None),
+                    alt.Color("type", title="Navigational point"),
+                    alt.Tooltip(["navaid", "distance", "shift_mean"]),
+                )
+                .mark_bar(size=10)
+                .configure_legend(
+                    orient="bottom",
+                    labelFontSize=14, titleFontSize=14, labelFont="Ubuntu"
+                )
+                .configure_axis(labelFontSize=14, labelFont="Ubuntu")
+            )
+
+        """
+
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if navaids is None:
+            from ..data import navaids as default_navaids
+
+            navaids = default_navaids
+
+        navaids_ = navaids.extent(self, buffer=buffer)
+        if navaids_ is None:
+            return None
+        navaids_ = navaids_.drop_duplicates("name")
+        all_points: List["Navaid"] = list(navaids_)
+
+        def all_aligned_segments(traj: "Flight") -> pd.DataFrame:
+            return pd.DataFrame.from_records(
+                list(
+                    {
+                        "start": segment.start,
+                        "stop": segment.stop,
+                        "duration": segment.duration,
+                        "navaid": segment.max("navaid"),
+                        "distance": segment.min("distance"),
+                        "shift_mean": segment.shift_mean,
+                        "shift_meanp": segment.shift_mean + 0.02,
+                    }
+                    for segment in traj.aligned_on_navpoint(all_points)
+                )
+            ).sort_values("start")
+
+        def groupby_intervals(table: pd.DataFrame) -> Iterator[pd.DataFrame]:
+            if table.shape[0] == 0:
+                return
+            table = table.sort_values("start")
+            # take as much as you can
+            sweeping_line = table.query("stop <= stop.iloc[0]")
+            # try to push the stop line: which intervals overlap the stop line?
+            additional = table.query(
+                "start <= @sweeping_line.stop.max() < stop"
+            )
+
+            while additional.shape[0] > 0:
+                sweeping_line = table.query("stop <= @additional.stop.max()")
+                additional = table.query(
+                    "start <= @sweeping_line.stop.max() < stop"
+                )
+
+            yield sweeping_line
+            yield from groupby_intervals(
+                table.query("start > @sweeping_line.stop.max()")
+            )
+
+        def most_probable_navpoints(traj: "Flight") -> Iterator[pd.DataFrame]:
+            table = all_aligned_segments(traj)
+            for block in groupby_intervals(table):
+                d_max = block.eval("duration.max()")
+                t_threshold = d_max - pd.Timedelta("30s")  # noqa: F841
+                yield block.sort_values("shift_mean").query(
+                    "duration >= @t_threshold"
+                ).head(1)
+
+        return pd.concat(list(most_probable_navpoints(self))).merge(
+            navaids_.data, left_on="navaid", right_on="name"
         )
 
     @flight_iterator
@@ -305,125 +552,7 @@ class NavigationFeatures:
                     if runway is not None:
                         yield result.after(runway.start)
 
-    @flight_iterator
-    def aligned_on_ils(
-        self,
-        airport: Union[None, str, "Airport"],
-    ) -> Iterator["Flight"]:
-        """Iterates on all segments of trajectory aligned with the ILS of the
-        given airport. The runway number is appended as a new ``ILS`` column.
-
-        Example usage:
-
-        .. code:: python
-
-            >>> aligned = next(belevingsvlucht.aligned_on_ils('EHAM'))
-            >>> f"ILS {aligned.max('ILS')} until {aligned.stop:%H:%M}"
-            'ILS 06 until 20:17'
-
-        Be aware that all segments are not necessarily yielded in order.
-        Consider using ``max(..., key=attrgetter('start'))`` if you want the
-        last landing attempt, or ``sorted(..., key=attrgetter('start'))`` for
-        an ordered list
-
-        .. code:: python
-
-            >>> for aligned in belevingsvlucht.aligned_on_ils('EHLE'):
-            ...     print(aligned.start)
-            2018-05-30 16:50:44+00:00
-            2018-05-30 18:13:02+00:00
-            2018-05-30 16:00:55+00:00
-            2018-05-30 17:21:17+00:00
-            2018-05-30 19:05:22+00:00
-            2018-05-30 19:42:36+00:00
-
-            >>> from operator import attrgetter
-            >>> last_aligned = max(
-            ...     belevingsvlucht.aligned_on_ils("EHLE"),
-            ...     key=attrgetter('start')
-            ... )
-        """
-
-        from ..data import airports
-
-        # The following cast secures the typing
-        self = cast("Flight", self)
-
-        if airport is None:
-            airport = self.landing_airport()
-
-        _airport = airports[airport] if isinstance(airport, str) else airport
-        if (
-            _airport is None
-            or _airport.runways is None
-            or _airport.runways.shape.is_empty
-        ):
-            return None
-
-        rad = np.pi / 180
-
-        chunks = list()
-        for threshold in _airport.runways.list:
-            tentative = (
-                self.bearing(threshold)
-                .distance(threshold)
-                .assign(
-                    b_diff=lambda df: df.distance
-                    * np.radians(df.bearing - threshold.bearing).abs()
-                )
-                .query(f"b_diff < .1 and cos((bearing - track) * {rad}) > 0")
-            )
-            if tentative is not None:
-                for chunk in tentative.split("20s"):
-                    if (
-                        chunk.longer_than("1 minute")
-                        and chunk.altitude_min < 5000
-                    ):
-                        chunks.append(
-                            chunk.assign(
-                                ILS=threshold.name, airport=_airport.icao
-                            )
-                        )
-
-        yield from sorted(chunks, key=attrgetter("start"))
-
-    @flight_iterator
-    def aligned_on_navpoint(
-        self,
-        points: Iterable["Navaid"],
-        angle_precision: int = 1,
-        time_precision: str = "2T",
-        min_time: str = "30s",
-        min_distance: int = 80,
-    ) -> Iterator["Flight"]:
-        """Iterates on segments of trajectories aligned with one of the given
-        navigational beacons passed in parameter.
-
-        The name of the navigational beacon is assigned in a new column
-        `navaid`.
-
-        """
-
-        # The following cast secures the typing
-        self = cast("Flight", self)
-        for navpoint in points:
-            tentative = (
-                self.distance(navpoint)
-                .bearing(navpoint)
-                .assign(
-                    b_diff=lambda df: df.distance
-                    * (np.radians(df.bearing - df.track).abs()),
-                    delta=lambda df: (df.bearing - df.track).abs(),
-                )
-                .query(f"delta < {angle_precision} and distance < 500")
-            )
-            if tentative is not None:
-                for chunk in tentative.split(time_precision):
-                    if (
-                        chunk.longer_than(min_time)
-                        and chunk.min("distance") < min_distance
-                    ):
-                        yield chunk.assign(navaid=navpoint.name)
+    # -- Special operations --
 
     @flight_iterator
     def emergency(self) -> Iterator["Flight"]:
@@ -678,7 +807,7 @@ class NavigationFeatures:
 
     # -- Airport ground operations specific methods --
 
-    def parking_position(
+    def on_parking_position(
         self,
         airport: Union[str, "Airport"],
         buffer_size: float = 1e-4,  # degrees
