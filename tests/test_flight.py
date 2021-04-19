@@ -477,6 +477,6 @@ def test_agg_time_colnames() -> None:
 
 
 def test_parking_position() -> None:
-    pp = elal747.parking_position("LIRF")
+    pp = elal747.on_parking_position("LIRF")
     assert pp is not None
     assert pp.max("parking_position") == "702"
