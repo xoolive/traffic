@@ -463,8 +463,8 @@ class NavigationFeatures:
         airport: Union[str, "Airport"],
         threshold_alt: int = 2000,
         zone_length: int = 6000,
-        little_base: int = 100,
-        opening: float = 10,
+        little_base: int = 50,
+        opening: float = 5,
     ) -> Iterator["Flight"]:
         """Identifies the take-off runway for trajectories.
 
@@ -532,25 +532,35 @@ class NavigationFeatures:
             f"(phase == 'CLIMB' or phase == 'LEVEL') and altitude < {alt}"
         )
 
-        if low_traj is not None:
-            for segment in low_traj.split("2T"):
-                candidates_set = []
-                for name, polygon in runway_polygons.items():
-                    if segment.intersects(polygon):
-                        candidate = segment.clip(polygon)
-                        if (
-                            candidate is not None
-                            and candidate.shape is not None
-                        ):
-                            candidates_set.append(candidate.assign(runway=name))
+        if low_traj is None:
+            return
 
-                result = max(
-                    candidates_set, key=attrgetter("duration"), default=None
-                )
-                if result is not None:
-                    runway = result.on_runway(_airport)
-                    if runway is not None:
-                        yield result.after(runway.start)
+        for segment in low_traj.split("2T"):
+            candidates_set = []
+            for name, polygon in runway_polygons.items():
+
+                if segment.intersects(polygon):
+                    candidate = (
+                        segment.cumulative_distance()
+                        .clip_iterate(polygon)
+                        .max(key="compute_gs_max")
+                    )
+                    if candidate is None or candidate.shape is None:
+                        continue
+                    start_runway = candidate.aligned_on_runway("LSZH").max()
+
+                    if start_runway is not None:
+                        candidate = candidate.after(start_runway.start)
+                    if candidate.max("compute_gs") < 140:
+                        continue
+
+                    candidates_set.append(candidate.assign(runway=name))
+
+            result = max(
+                candidates_set, key=attrgetter("duration"), default=None
+            )
+            if result is not None:
+                yield result
 
     # -- Special operations --
 
@@ -807,12 +817,12 @@ class NavigationFeatures:
 
     # -- Airport ground operations specific methods --
 
+    @flight_iterator
     def on_parking_position(
         self,
         airport: Union[str, "Airport"],
         buffer_size: float = 1e-4,  # degrees
-        threshold_alt: int = 3000,
-    ) -> Optional["Flight"]:
+    ) -> Iterator["Flight"]:
         """
         Returns the first parking position of the aircraft
 
@@ -822,31 +832,96 @@ class NavigationFeatures:
         from ..data import airports
 
         # Donne les fonctions possibles sur un flight object
-        self = cast("Flight", self).phases()
+        self = cast("Flight", self)
 
         _airport = airports[airport] if isinstance(airport, str) else airport
         if _airport is None or _airport.runways.shape.is_empty:
             return None
 
-        alt = _airport.altitude + threshold_alt
-
-        # we remove the part of flight after it went higher than 3000ft
-        airborne_part = self.filter().query(f"altitude > {alt}")
-        if airborne_part is not None:
-            self = self.before(airborne_part.start)  # type: ignore
-        if self is None:
+        segment = self.filter().inside_bbox(_airport)
+        if segment is None:
             return None
 
-        def intersections(flight: "Flight") -> Iterator["Flight"]:
-            parking_positions = _airport.parking_position  # type: ignore
-            for _, p in parking_positions.data.iterrows():
-                if flight.intersects(p.geometry.buffer(buffer_size)):
-                    airborne_part = flight.clip(p.geometry.buffer(buffer_size))
-                    if airborne_part is not None:
-                        yield airborne_part.assign(parking_position=p.ref)
+        segment = segment.split().max()
 
-        return max(
-            intersections(self),  # type: ignore
-            key=attrgetter("duration"),
-            default=None,
+        parking_positions = _airport.parking_position
+        for _, p in parking_positions.data.iterrows():
+            if segment.intersects(p.geometry.buffer(buffer_size)):
+                airborne_part = segment.clip(p.geometry.buffer(buffer_size))
+                if airborne_part is not None:
+                    yield airborne_part.assign(parking_position=p.ref)
+
+    def start_moving(
+        self, speed_threshold: float = 5, time_threshold: str = "10s"
+    ) -> Optional["Flight"]:
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self)
+
+        not_moving = (
+            self.cumulative_distance()
+            .filter()
+            .query(f"compute_gs < {speed_threshold}")
         )
+        if not_moving is None:
+            return self
+        shift_start = not_moving.start - self.start
+
+        if not_moving is None or shift_start < pd.Timedelta(time_threshold):
+            return self
+
+        first_not_moving = not_moving.split(time_threshold).next()
+        assert first_not_moving is not None
+        return self.after(first_not_moving.stop)
+
+    def pushback(
+        self,
+        airport: Union[str, "Airport"],
+        buffer_size: float = 1e-4,  # degrees
+        filter_dict=dict(compute_track_unwrapped=21),
+        track_threshold: float = 50,
+    ) -> Optional["Flight"]:
+        """
+        Returns the pushback phase from the first movement (gs>0) of the ac
+        to the start of the following
+        holding position (waiting for the carrier to leave)
+
+        TODO
+
+        """
+
+        from ..data import airports
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self)
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if _airport is None or _airport.runways.shape.is_empty:
+            return None
+
+        within_airport = self.inside_bbox(_airport)
+
+        parking_position = within_airport.on_parking_position(
+            airport, buffer_size=buffer_size
+        ).next()
+        if parking_position is None:
+            return None
+
+        in_movement = within_airport.after(
+            parking_position.start
+        ).start_moving()
+
+        track_reversed = (
+            in_movement.cumulative_distance()
+            .unwrap(["compute_track"])
+            .filter(**filter_dict)
+            .diff("compute_track_unwrapped")
+            .query(
+                f"compute_track_unwrapped_diff > {track_threshold} or "
+                f"compute_track_unwrapped_diff < -{track_threshold}"
+            )
+        )
+        if track_reversed is None:
+            return None
+
+        return in_movement.before(track_reversed.start)

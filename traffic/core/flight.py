@@ -1886,24 +1886,10 @@ class Flight(
         # given here for consistency in types
         ...
 
-    def clip(
+    @flight_iterator
+    def clip_iterate(
         self, shape: Union[ShapelyMixin, base.BaseGeometry]
-    ) -> Optional["Flight"]:
-        """Clips the trajectory to a given shape.
-
-        For a shapely Geometry, the first time of entry and the last time of
-        exit are first computed before returning the part of the trajectory
-        between the two timestamps.
-
-        Most of the time, aircraft do not repeatedly come out and in an
-        airspace, but computation errors may sometimes give this impression.
-        As a consequence, the clipped trajectory may have points outside the
-        shape.
-
-        .. warning::
-            Altitudes are not taken into account.
-
-        """
+    ) -> Iterator["Flight"]:
         list_coords = list(self.xy_time)
         if len(list_coords) < 2:
             return None
@@ -1935,13 +1921,41 @@ class Flight(
                 )
                 yield min(times), max(times)
 
-        times: List[Tuple[datetime, datetime]] = list(_clip_generator())
-        clipped_flight = self.between(
-            min(t for t, _ in times), max(t for _, t in times)
-        )
+        for t1, t2 in _clip_generator():
+            between = self.between(t1, t2)
+            if between is not None:
+                yield between
 
-        if clipped_flight is None:
+    def clip(
+        self, shape: Union[ShapelyMixin, base.BaseGeometry]
+    ) -> Optional["Flight"]:
+        """Clips the trajectory to a given shape.
+
+        For a shapely Geometry, the first time of entry and the last time of
+        exit are first computed before returning the part of the trajectory
+        between the two timestamps.
+
+        Most of the time, aircraft do not repeatedly come out and in an
+        airspace, but computation errors may sometimes give this impression.
+        As a consequence, the clipped trajectory may have points outside the
+        shape.
+
+        .. warning::
+            Altitudes are not taken into account.
+
+        """
+
+        t1 = None
+        for segment in self.clip_iterate(shape):
+            if t1 is None:
+                t1 = segment.start
+            t2 = segment.stop
+
+        if t1 is None:
             return None
+
+        clipped_flight = self.between(t1, t2)
+        assert clipped_flight is not None
 
         if clipped_flight.shape is None:
             return None
