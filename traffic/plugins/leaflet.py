@@ -46,6 +46,7 @@ def flight_map_leaflet(
     highlight: Optional[Dict[str, Callable[[Flight], Optional[Flight]]]] = None,
     **kwargs,
 ) -> Optional[Map]:
+    from traffic.core import Flight
 
     last_position = flight.query("latitude == latitude").at()  # type: ignore
     if last_position is None:
@@ -59,6 +60,10 @@ def flight_map_leaflet(
         highlight = dict()
 
     for color, method in highlight.items():
+        if isinstance(method, str):
+            method = getattr(Flight, method, None)
+            if method is None:
+                continue
         f = method(flight)
         if f is not None:
             m.add_layer(f, color=color)

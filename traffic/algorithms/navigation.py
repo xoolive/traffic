@@ -852,34 +852,43 @@ class NavigationFeatures:
                     yield airborne_part.assign(parking_position=p.ref)
 
     def start_moving(
-        self, speed_threshold: float = 5, time_threshold: str = "10s"
+        self,
+        speed_threshold: float = 2,
+        time_threshold: str = "30s",
+        filter_dict=dict(compute_gs=21),
     ) -> Optional["Flight"]:
 
         # Donne les fonctions possibles sur un flight object
         self = cast("Flight", self)
 
-        not_moving = (
+        moving = (
             self.cumulative_distance()
-            .filter()
-            .query(f"compute_gs < {speed_threshold}")
+            .filter(**filter_dict)
+            .query(f"compute_gs > {speed_threshold}")
         )
-        if not_moving is None:
-            return self
-        shift_start = not_moving.start - self.start
+        if moving is None:
+            return None
 
-        if not_moving is None or shift_start < pd.Timedelta(time_threshold):
-            return self
+        first_segment = next(
+            (
+                segment
+                for segment in moving.split("1T")
+                if segment.longer_than(time_threshold)
+            ),
+            None,
+        )
+        if first_segment is None:
+            return None
 
-        first_not_moving = not_moving.split(time_threshold).next()
-        assert first_not_moving is not None
-        return self.after(first_not_moving.stop)
+        return self.after(first_segment.start)
 
     def pushback(
         self,
         airport: Union[str, "Airport"],
-        buffer_size: float = 1e-4,  # degrees
-        filter_dict=dict(compute_track_unwrapped=21),
-        track_threshold: float = 50,
+        filter_dict=dict(
+            compute_track_unwrapped=21, compute_track=21, compute_gs=21
+        ),
+        track_threshold: float = 90,
     ) -> Optional["Flight"]:
         """
         Returns the pushback phase from the first movement (gs>0) of the ac
@@ -900,28 +909,30 @@ class NavigationFeatures:
             return None
 
         within_airport = self.inside_bbox(_airport)
+        if within_airport is None:
+            return None
 
-        parking_position = within_airport.on_parking_position(
-            airport, buffer_size=buffer_size
-        ).next()
+        parking_position = within_airport.on_parking_position(_airport).next()
         if parking_position is None:
             return None
 
-        in_movement = within_airport.after(
-            parking_position.start
-        ).start_moving()
+        after_parking = within_airport.after(parking_position.start)
+        assert after_parking is not None
 
-        track_reversed = (
-            in_movement.cumulative_distance()
+        in_movement = after_parking.start_moving()
+
+        first_backwards = (
+            # first trim the first few seconds to avoid annoying first spike
+            in_movement.first("5T")
+            .last("4T30s")
+            .cumulative_distance()
             .unwrap(["compute_track"])
             .filter(**filter_dict)
             .diff("compute_track_unwrapped")
-            .query(
-                f"compute_track_unwrapped_diff > {track_threshold} or "
-                f"compute_track_unwrapped_diff < -{track_threshold}"
-            )
+            .query(f"compute_track_unwrapped_diff.abs() > {track_threshold}")
         )
-        if track_reversed is None:
+
+        if first_backwards is None:
             return None
 
-        return in_movement.before(track_reversed.start)
+        return in_movement.before(first_backwards.start)

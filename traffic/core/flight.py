@@ -104,6 +104,12 @@ class MetaFlight(type):
     def __getattr__(cls, name):
         if name.startswith("aligned_on_"):
             return lambda flight: cls.aligned_on_ils(flight, name[11:])
+        if name.startswith("takeoff_from_"):
+            return lambda flight: cls.takeoff_from_runway(flight, name[13:])
+        if name.startswith("on_parking_"):
+            return lambda flight: cls.on_parking_position(flight, name[11:])
+        if name.startswith("pushback_"):
+            return lambda flight: cls.pushback(flight, name[9:])
         raise AttributeError
 
 
