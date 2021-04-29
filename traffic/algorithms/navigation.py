@@ -70,6 +70,14 @@ class NavigationFeatures:
 
     # -- Most basic metadata properties --
 
+    def takeoff_from(self, airport: Union[str, "Airport"]) -> bool:
+        from ..core.structure import Airport
+        from ..data import airports
+
+        return self.takeoff_airport() == (
+            airport if isinstance(airport, Airport) else airports[airport]
+        )
+
     def takeoff_airport(self, **kwargs) -> "Airport":
         """Returns the most probable takeoff airport.
 
@@ -551,6 +559,8 @@ class NavigationFeatures:
 
                     if start_runway is not None:
                         candidate = candidate.after(start_runway.start)
+                        if candidate is None or candidate.shape is None:
+                            continue
                     if candidate.max("compute_gs") < 140:
                         continue
 
@@ -847,9 +857,9 @@ class NavigationFeatures:
         parking_positions = _airport.parking_position
         for _, p in parking_positions.data.iterrows():
             if segment.intersects(p.geometry.buffer(buffer_size)):
-                airborne_part = segment.clip(p.geometry.buffer(buffer_size))
-                if airborne_part is not None:
-                    yield airborne_part.assign(parking_position=p.ref)
+                parking_part = segment.clip(p.geometry.buffer(buffer_size))
+                if parking_part is not None:
+                    yield parking_part.assign(parking_position=p.ref)
 
     def start_moving(
         self,
