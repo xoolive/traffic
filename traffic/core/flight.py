@@ -104,12 +104,16 @@ class MetaFlight(type):
     def __getattr__(cls, name):
         if name.startswith("aligned_on_"):
             return lambda flight: cls.aligned_on_ils(flight, name[11:])
-        if name.startswith("takeoff_from_"):
-            return lambda flight: cls.takeoff_from_runway(flight, name[13:])
+        if name.startswith("takeoff_runway_"):
+            return lambda flight: cls.takeoff_from_runway(flight, name[15:])
         if name.startswith("on_parking_"):
             return lambda flight: cls.on_parking_position(flight, name[11:])
         if name.startswith("pushback_"):
             return lambda flight: cls.pushback(flight, name[9:])
+        if name.startswith("landing_at_"):
+            return lambda flight: cls.landing_at(flight, name[11:])
+        if name.startswith("takeoff_from_"):
+            return lambda flight: cls.takeoff_from(flight, name[13:])
         raise AttributeError
 
 
@@ -1917,7 +1921,10 @@ class Flight(
                 datetime.fromtimestamp(t, timezone.utc)
                 for t in np.stack(intersection.coords)[:, 2]
             )
-            return self.between(min(time_list), max(time_list))
+            between = self.between(min(time_list), max(time_list))
+            if between is not None:
+                yield between
+            return None
 
         def _clip_generator() -> Iterable[Tuple[datetime, datetime]]:
             for segment in intersection:
@@ -1961,9 +1968,8 @@ class Flight(
             return None
 
         clipped_flight = self.between(t1, t2)
-        assert clipped_flight is not None
 
-        if clipped_flight.shape is None:
+        if clipped_flight is None or clipped_flight.shape is None:
             return None
 
         return clipped_flight

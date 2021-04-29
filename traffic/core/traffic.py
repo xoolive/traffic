@@ -26,11 +26,11 @@ from .mixins import GeographyMixin, HBoxMixin, PointMixin
 from .sv import StateVectors
 
 if TYPE_CHECKING:
-    from .airspace import Airspace  # noqa: F401
-    from ..algorithms.cpa import CPA  # noqa: F401
     from ..algorithms.clustering import (  # noqa: F401
         ClusteringProtocol, TransformerProtocol
     )
+    from ..algorithms.cpa import CPA  # noqa: F401
+    from .airspace import Airspace  # noqa: F401
 
 # fmt: on
 
@@ -590,6 +590,10 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @lazy_evaluation()
     def landing_at(self, airport: str) -> bool:
+        ...
+
+    @lazy_evaluation()
+    def takeoff_from(self, airport: str) -> bool:
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
