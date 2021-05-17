@@ -952,3 +952,31 @@ class NavigationFeatures:
             return None
 
         return in_movement.before(first_backwards.start)
+
+    def is_from_IMS(
+        self, airport="LSZH", is_landing=False, freq_threshold=0.05
+    ):
+        """
+        Returns true if trajectory data is mainly coming from IMS measurement (i.e. composed of numerous 90° sharp turns).
+
+        Used and tested on ground data.
+
+        Try with : ENT57BW_4770
+        aircraft: 4891b6 · 🇵🇱 SP-ENX (B738)
+        from: LSZH (2019-11-29 10:11:30+00:00)
+        to: EKCH (2019-11-29 10:25:59+00:00)
+        """
+        self = cast("Flight", self)
+        if self is None:
+            return True
+        if not "compute_track" in self.data.columns:
+            self = self.cumulative_distance(compute_gs=False)
+
+        freq = (
+            self.diff("compute_track")
+            .compute_track_diff.round()
+            .value_counts(normalize=True)
+        )
+        if 90 not in freq.index or -90 not in freq.index:
+            return False
+        return freq[90] > freq_threshold and freq[-90] > freq_threshold
