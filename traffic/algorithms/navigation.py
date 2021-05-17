@@ -8,9 +8,9 @@ from typing import (
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, MultiLineString, Polygon
+from shapely.geometry import LineString, MultiLineString, Polygon, Point
 
-from ..core.geodesy import destination
+from ..core.geodesy import destination, mrr_diagonal
 from ..core.iterator import flight_iterator
 
 if TYPE_CHECKING:
@@ -953,9 +953,7 @@ class NavigationFeatures:
 
         return in_movement.before(first_backwards.start)
 
-    def is_from_IMS(
-        self, airport="LSZH", is_landing=False, freq_threshold=0.05
-    ):
+    def is_from_IMS(self, freq_threshold=0.05):
         """
         Returns true if trajectory data is mainly coming from IMS measurement (i.e. composed of numerous 90° sharp turns).
 
@@ -980,3 +978,69 @@ class NavigationFeatures:
         if 90 not in freq.index or -90 not in freq.index:
             return False
         return freq[90] > freq_threshold and freq[-90] > freq_threshold
+
+    def on_hold(
+        self,
+        min_duration=pd.Timedelta(seconds=60),
+        max_diameter=100,
+    ) -> Iterator["Flight"]:
+        """
+        Iterate through the trajectory on holding segments. They are defined as part of
+        the trajectory where it stayed more than min_duration (in s) within a circle of diameter max_diameter (in m)
+        """
+        self = cast("Flight", self)
+
+        f_ = self.start_moving()
+        if f_ is None:
+            return None
+        f_ = f_.onground()
+        if f_ is None:
+            return None
+        f_ = f_.resample("5s")
+
+        traj_df = (
+            f_.data[["timestamp", "latitude", "longitude"]]
+            .sort_values("timestamp")
+            .set_index("timestamp")
+        )
+
+        segment_geoms = []
+        segment_times = []
+        is_stopped = False
+        previously_stopped = False
+
+        for index, row in traj_df.iterrows():
+            segment_geoms.append(Point(row.longitude, row.latitude))
+            segment_times.append(index)
+
+            if not is_stopped:  # remove points to the specified min_duration
+                while (
+                    len(segment_geoms) > 2
+                    and segment_times[-1] - segment_times[0] >= min_duration
+                ):
+                    segment_geoms.pop(0)
+                    segment_times.pop(0)
+
+            if (
+                len(segment_geoms) > 1
+                and mrr_diagonal(segment_geoms) < max_diameter
+            ):
+                is_stopped = True
+            else:
+                is_stopped = False
+
+            if len(segment_geoms) > 1:
+                segment_end = segment_times[-2]
+                segment_begin = segment_times[0]
+                if not is_stopped and previously_stopped:
+                    if (
+                        segment_end - segment_begin >= min_duration
+                    ):  # detected end of a stop
+                        yield (self.between(segment_begin, segment_end))
+                        segment_geoms = []
+                        segment_times = []
+
+            previously_stopped = is_stopped
+
+        if is_stopped and segment_times[-1] - segment_times[0] >= min_duration:
+            yield (self.between(segment_times[0], segment_times[-1]))
