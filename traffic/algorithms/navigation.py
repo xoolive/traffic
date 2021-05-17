@@ -865,14 +865,17 @@ class NavigationFeatures:
         self,
         speed_threshold: float = 2,
         time_threshold: str = "30s",
-        filter_dict=dict(compute_gs=21),
+        filter_dict=dict(compute_gs=3),
     ) -> Optional["Flight"]:
 
         # Donne les fonctions possibles sur un flight object
         self = cast("Flight", self)
+        resampled = self.resample("5s")
+        if resampled is None or len(resampled) <= 2:
+            return None
 
         moving = (
-            self.cumulative_distance()
+            resampled.cumulative_distance()
             .filter(**filter_dict)
             .query(f"compute_gs > {speed_threshold}")
         )
@@ -930,6 +933,9 @@ class NavigationFeatures:
         assert after_parking is not None
 
         in_movement = after_parking.start_moving()
+
+        if in_movement is None:
+            return None
 
         first_backwards = (
             # first trim the first few seconds to avoid annoying first spike
