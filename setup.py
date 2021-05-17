@@ -77,6 +77,7 @@ setup(
         "cartes>=0.2",
         "pyModeS>=2.8",
         "openap",
+        "pyarrow",
     ],
     extras_require={
         "dev": [
