@@ -189,7 +189,7 @@ class Flight(
           `filter() <#traffic.core.Flight.filter>`_,
           `resample() <#traffic.core.Flight.resample>`_,
         - visualisation with altair:
-          `encode() <#traffic.core.Flight.encode>`_,
+          `chart() <#traffic.core.Flight.chart>`_,
           `geoencode() <#traffic.core.Flight.geoencode>`_
         - visualisation with leaflet: `layer() <#traffic.core.Flight.layer>`_
         - visualisation with Matplotlib:
@@ -2185,76 +2185,87 @@ class Flight(
             return ax.plot(*self.shape.xy, **kwargs)
         return []
 
+    def chart(self, *features) -> alt.Chart:  # coverage: ignore
+        """
+        Initializes an altair Chart based on Flight data.
+
+        The features passed in parameters are dispatched to allow plotting
+        multiple features on the same graph.
+
+        Example usage:
+
+        .. code:: python
+
+            # Most simple usage
+            flight.chart().encode(alt.Y("altitude"))
+
+            # With some configuration
+            flight.chart().encode(
+                alt.X(
+                    "utcyearmonthdatehoursminutes(timestamp)",
+                    axis=alt.Axis(title=None, format="%H:%M"),
+                ),
+                alt.Y("altitude", title="altitude (in ft)"),
+                alt.Color("callsign")
+            )
+
+        For a more complex graph plotting similar physical quantities on the
+        same graph, and other quantities on a different graph, the following
+        snippet may be of use.
+
+            # More advanced with several plots on the same graph
+            base = (
+                flight.chart("altitude", "groundspeed", "IAS")
+                .encode(
+                    alt.X(
+                        "utcyearmonthdatehoursminutesseconds(timestamp)",
+                        axis=alt.Axis(title=None, format="%H:%M"),
+                    )
+                )
+                .properties(height=200)
+            )
+
+            alt.vconcat(
+                base.transform_filter('datum.variable != "altitude"').encode(
+                    alt.Y(
+                        "value:Q",
+                        axis=alt.Axis(title="speed (in kts)"),
+                        scale=alt.Scale(zero=False),
+                    )
+                ),
+                base.transform_filter('datum.variable == "altitude"').encode(
+                    alt.Y("value:Q", title="altitude (in ft)")
+                ),
+            )
+
+        .. note::
+            See also `plot_time() <#traffic.core.Flight.plot_time>`_ for the
+            Matplotlib equivalent.
+
+        """
+        base = alt.Chart(self.data).encode(
+            alt.X(
+                "utcyearmonthdatehoursminutesseconds(timestamp)",
+                title='alt.X("utcyearmonthdatehoursminutesseconds(timestamp)")',
+            ),
+        )
+        if len(features) > 0:
+            base = base.transform_fold(
+                list(features), as_=["variable", "value"]
+            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))
+
+        return base.mark_line()
+
     def encode(
         self,
         y: Union[str, List[str], alt.Y],
         x: Union[str, alt.X] = "timestamp:T",
         **kwargs,
     ) -> alt.Chart:  # coverage: ignore
-        """Plots the given features according to time.
-
-        The method ensures:
-
-        - only non-NaN data are displayed (no gap in the plot);
-        - the timestamp is naively converted to UTC if not localized.
-
-        Example usage:
-
-        .. code:: python
-
-            flight.encode('altitude')
-            # or with several comparable features
-            flight.encode(['groundspeed', 'IAS', 'TAS'])
-
-        .. warning::
-            No twin axes are available in altair/Vega charts.
-
-        .. note::
-            See also `plot_time() <#traffic.core.Flight.plot_time>`_ for the
-            Matplotlib equivalent.
         """
-        feature_list = ["timestamp"]
-        alt_y: Optional[alt.Y] = None
-        if "flight_id" in self.data.columns:
-            feature_list.append("flight_id")
-        if "callsign" in self.data.columns:
-            feature_list.append("callsign")
-        if "icao24" in self.data.columns:
-            feature_list.append("icao24")
-        if isinstance(y, alt.Y):
-            alt_y = y
-            y = y.shorthand
-        if isinstance(y, str):
-            feature_list.append(y)
-            data = self.data[feature_list].query(f"{y} == {y}")
-            default_encode = dict(
-                x=x,
-                y=alt_y if alt_y is not None else alt.Y(y, title=y),
-                color=alt.Color(
-                    "flight_id"
-                    if "flight_id" in data.columns
-                    else (
-                        "callsign" if "callsign" in data.columns else "icao24"
-                    )
-                ),
-            )
-        else:
-            feature_list += y
-            data = (
-                self.data[feature_list]
-                .melt("timestamp", y)
-                .query("value == value")
-            )
-            default_encode = dict(x="timestamp:T", y="value", color="variable")
-
-        return (
-            alt.Chart(data)
-            .mark_line(interpolate="monotone")
-            .encode(**{**default_encode, **kwargs})
-            .transform_timeunit(
-                timestamp="utcyearmonthdatehoursminutesseconds(timestamp)"
-            )
-        )
+        DEPRECATED: Use Flight.chart() method instead.
+        """
+        raise DeprecationWarning("Use Flight.chart() method instead")
 
     def plot_time(
         self,
@@ -2284,7 +2295,7 @@ class Flight(
             )
 
         .. note::
-            See also `encode() <#traffic.core.Flight.encode>`_ for the altair
+            See also `chart() <#traffic.core.Flight.chart>`_ for the altair
             equivalent.
 
         """

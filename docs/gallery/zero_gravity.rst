@@ -21,38 +21,38 @@ Zero-gravity flights
     import altair as alt
 
 
-    data = alt.Chart(
+    base = (
         zero_gravity.phases(45)
         .skip("45T")
         .first("45T")
-        .data[["timestamp", "altitude", "IAS", "phase"]]
+        .chart()
+        .encode(
+            alt.X(
+                "utchoursminutesseconds(timestamp)",
+                axis=alt.Axis(title=None, format="%H:%M"),
+            )
+        )
     )
 
-    altitude_data = data.encode(
-        x=alt.X("timestamp", axis=None),
+    altitude_data = base.encode(
         y=alt.Y(
             "altitude",
             scale=alt.Scale(domain=(15000, 30000)),
             axis=alt.Axis(
                 title="altitude (in ft)",
-                labelFontSize=14,
                 labelColor="#5276A7",
-                titleFontSize=16,
                 titleColor="#5276A7",
             ),
         ),
     ).mark_line(color="#5276A7")
 
-    ias_data = data.encode(
-        x=alt.X("timestamp", axis=None),
+    ias_data = base.encode(
         y=alt.Y(
             "IAS",
             scale=alt.Scale(domain=(100, 350)),
             axis=alt.Axis(
                 title="indicated airspeed (in kts)",
-                labelFontSize=14,
                 labelColor="#F18727",
-                titleFontSize=16,
                 titleColor="#F18727",
             ),
         ),
@@ -60,15 +60,17 @@ Zero-gravity flights
 
 
     (
-        alt.layer(altitude_data, ias_data)
-        .resolve_scale(y="independent")
-        .properties(width=500, height=200)
-        & data.encode(
-            x=alt.X("timestamp", axis=alt.Axis(titleFontSize=16, labelFontSize=14)),
-            y=alt.Y("phase", axis=alt.Axis(title="", labelFontSize=14),),
-            color=alt.Color("phase", legend=None),
+        alt.vconcat(
+            alt.layer(altitude_data, ias_data)
+            .resolve_scale(y="independent")
+            .properties(width=500, height=200),
+            base.encode(
+                y=alt.Y("phase", title=None),
+                color=alt.Color("phase", legend=None),
+            )
+            .mark_point()
+            .properties(width=500, height=75),
         )
-        .mark_point()
-        .properties(width=500, height=75)
-    ).configure(font="Ubuntu")
-
+        .configure(font="Ubuntu")
+        .configure_axis(labelFontSize=14, titleFontSize=16)
+    )

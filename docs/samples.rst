@@ -202,7 +202,7 @@ Socata TBM 900 and shot the following video in 8k. Both trajectories are
     
     alt_chart = []
     for flight in dreamliner_airfrance.between("2017-12-01 14:40", "2017-12-01 15:20"):
-        alt_chart.append(flight.encode("altitude"))
+        alt_chart.append(flight.chart().encode(alt.Y("altitude")))
     
     alt.layer(*alt_chart)
 

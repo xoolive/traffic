@@ -29,9 +29,9 @@ Arctic night.
     
     (
         f.assign(arctic_circle=66.5)
+        .chart("latitude", "arctic_circle") 
         .encode(
-            ["latitude", "arctic_circle"],
-            color=alt.Color("variable", legend=alt.Legend(title="angle"),),
+            alt.Color("variable", legend=alt.Legend(title="angle")),
         )
         .properties(height=180, width=400)
     )
@@ -92,9 +92,9 @@ aircraft.
 
     (
         g.assign(horizon=0, twilight=-6)
+        .chart("sun_altitude", "horizon", "twilight")
         .encode(
-            ["sun_altitude", "horizon", "twilight"],
-            color=alt.Color(
+            alt.Color(
                 "variable",
                 legend=alt.Legend(title="angle"),
                 scale=alt.Scale(
@@ -223,4 +223,3 @@ for daylight, orange for twilight, etc.)
             marker.popup = image
     
             map_.add_layer(marker)
-
