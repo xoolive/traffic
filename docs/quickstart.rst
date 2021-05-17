@@ -931,11 +931,15 @@ take this faulty values out:
 
     import altair as alt
     
-    # Let's define a common y-scale for both flights
-    scale = alt.Scale(domain=(0, 40000))
-    
     visualisations = [
-        (flight.encode(alt.Y("altitude", scale=scale)).properties(height=180, width=360))
+        (
+            flight.chart()
+            .encode(
+                # Let's define a common y-scale for both flights
+                alt.Y("altitude", scale=alt.Scale(domain=(0, 40000))), 
+                alt.Color("callsign")
+            ).properties(height=180, width=360)
+        )
         for flight in [hop87dj, filtered]
     ]
     

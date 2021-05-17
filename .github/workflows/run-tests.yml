@@ -32,6 +32,7 @@ jobs:
           path: |
             ~/.cache/pip/
             ~/.cache/traffic/
+            ~/.cache/cartes/
           key: ${{ runner.os }}-${{ matrix.python-version }}-cache_traffic
       - name: Populate first cache files
         if: steps.cache-folder.outputs.cache-hit != 'true'
