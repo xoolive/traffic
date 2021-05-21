@@ -994,7 +994,7 @@ class NavigationFeatures:
         return freq[90] > freq_threshold and freq[-90] > freq_threshold
 
     @flight_iterator
-    def holding_segments(
+    def onground_holding_segments(
         self,
         min_duration: deltalike = pd.Timedelta(seconds=60),
         max_diameter: float = 100,  # TODO unit in type
