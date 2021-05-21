@@ -1,7 +1,7 @@
 from typing import Iterable, List, Tuple, TypeVar
 
 from pyproj import Geod
-from shapely.geometry import Point, LineString
+from shapely.geometry import LineString, Point, base
 
 T = TypeVar("T", float, List[float], Iterable[float])
 
@@ -36,9 +36,9 @@ def greatcircle(
     ]
 
 
-def mrr_diagonal(geom):
+def mrr_diagonal(geom: base.BaseGeometry) -> float:
     """
-    Calculate the length of the diagonal of the minimum rotated rectangle of the input geometry encoded as [longitude, latitude].
+    Returns the length of the diagonal of the minimum rotated rectangle.
     """
     if len(geom) <= 1:
         return 0
@@ -49,9 +49,9 @@ def mrr_diagonal(geom):
     mrr = LineString(geom).minimum_rotated_rectangle
     if isinstance(mrr, Point):
         return 0
-    try:  # usually mrr is a Polygon
+    try:  # in most cases, mrr is a Polygon
         x, y = mrr.exterior.coords.xy
-    except AttributeError:  # thrown if mrr is a LineString
+    except AttributeError:  # then it should be a LineString
         p0, p1 = mrr.coords[0], mrr.coords[-1]
         return distance(p0[1], p0[0], p1[1], p1[0])
     return distance(y[0], x[0], y[2], x[2])
