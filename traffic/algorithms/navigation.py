@@ -1028,9 +1028,11 @@ class NavigationFeatures:
 
         segment_geoms = []
         segment_times = []
-        is_stopped = False
-        previously_stopped = False
+        is_stopped = False  # current segment being generated is stopped ?
+        previously_stopped = False  # previous segment was a stop ?
 
+        # iterrate over each coordinate to create segments
+        # Each data point is added to a queue (FIFO)
         for index, row in traj_df.iterrows():
             segment_geoms.append(Point(row.longitude, row.latitude))
             segment_times.append(index)
@@ -1044,6 +1046,9 @@ class NavigationFeatures:
                     segment_geoms.pop(0)
                     segment_times.pop(0)
 
+            # Check if current segment (trimmed to have a
+            # duration <= to min_duration threshold)
+            # is longer than the maximum distance threshold
             if (
                 len(segment_geoms) > 1
                 and mrr_diagonal(segment_geoms) < max_diameter
@@ -1052,6 +1057,8 @@ class NavigationFeatures:
             else:
                 is_stopped = False
 
+            # detection of the end of a stop segment and append to
+            # stop segment list
             if len(segment_geoms) > 1:
                 segment_end = segment_times[-2]
                 segment_begin = segment_times[0]
