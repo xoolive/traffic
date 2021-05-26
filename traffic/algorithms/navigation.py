@@ -1028,8 +1028,11 @@ class NavigationFeatures:
 
         segment_geoms = []
         segment_times = []
-        is_stopped = False  # current segment being generated is stopped ?
-        previously_stopped = False  # previous segment was a stop ?
+
+        # Variables to detect changes between a stop
+        # segment and a moving segment
+        is_stopped = False
+        previously_stopped = False
 
         # iterrate over each coordinate to create segments
         # Each data point is added to a queue (FIFO)
