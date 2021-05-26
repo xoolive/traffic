@@ -997,7 +997,7 @@ class NavigationFeatures:
     def onground_holding_segments(
         self,
         min_duration: deltalike = pd.Timedelta(seconds=60),
-        max_diameter: float = 100,  # TODO unit in type
+        max_diameter: float = 150,  # TODO unit in type
     ) -> Iterator["Flight"]:
         """
         Holding segments are part of a trajectory where the aircraft stays more
