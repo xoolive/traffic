@@ -940,7 +940,7 @@ class NavigationFeatures:
         after_parking = within_airport.after(parking_position.start)
         assert after_parking is not None
 
-        in_movement = after_parking.start_moving()
+        in_movement = after_parking.moving()
 
         if in_movement is None:
             return None
@@ -972,11 +972,6 @@ class NavigationFeatures:
         - zig-zag patterns
         - taxiing out of taxiways (TODO)
 
-        TODO
-        Try with : ENT57BW_4770
-        aircraft: 4891b6 · 🇵🇱 SP-ENX (B738)
-        from: LSZH (2019-11-29 10:11:30+00:00)
-        to: EKCH (2019-11-29 10:25:59+00:00)
         """
         self = cast("Flight", self)
 
@@ -994,10 +989,10 @@ class NavigationFeatures:
         return freq[90] > freq_threshold and freq[-90] > freq_threshold
 
     @flight_iterator
-    def onground_holding_segments(
+    def slow_taxi(
         self,
-        min_duration: deltalike = pd.Timedelta(seconds=60),
-        max_diameter: float = 150,  # TODO unit in type
+        min_duration: deltalike = "60s",
+        max_diameter: float = 150,  # in meters
     ) -> Iterator["Flight"]:
         """
         Holding segments are part of a trajectory where the aircraft stays more
@@ -1034,7 +1029,7 @@ class NavigationFeatures:
         is_stopped = False
         previously_stopped = False
 
-        # iterrate over each coordinate to create segments
+        # iterate over each coordinate to create segments
         # Each data point is added to a queue (FIFO)
         for index, row in traj_df.iterrows():
             segment_geoms.append(Point(row.longitude, row.latitude))
@@ -1049,9 +1044,9 @@ class NavigationFeatures:
                     segment_geoms.pop(0)
                     segment_times.pop(0)
 
-            # Check if current segment (trimmed to have a
-            # duration <= to min_duration threshold)
-            # is longer than the maximum distance threshold
+            # Check if current segment, trimmed to have a duration shorthen than
+            # min_duration threshold,  is longer than the maximum distance
+            # threshold
             if (
                 len(segment_geoms) > 1
                 and mrr_diagonal(segment_geoms) < max_diameter
