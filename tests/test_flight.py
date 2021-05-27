@@ -10,7 +10,8 @@ from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
 from traffic.data.samples import (
-    airbus_tree, belevingsvlucht, calibration, elal747, featured, get_sample
+    airbus_tree, belevingsvlucht, calibration,
+    elal747, featured, get_sample, zurich_airport
 )
 
 # fmt: on
@@ -480,3 +481,60 @@ def test_parking_position() -> None:
     pp = elal747.on_parking_position("LIRF").next()
     assert pp is not None
     assert pp.max("parking_position") == "702"
+
+    # Landing aircraft
+    flight = zurich_airport["EDW229"]
+    assert flight is not None
+
+    pp = flight.on_parking_position("LSZH").next()
+    assert pp is not None
+    assert 5 < pp.duration.total_seconds() < 10
+    assert pp.parking_position_max == "A49"
+
+
+def test_from_inertial():
+
+    flight = zurich_airport["ENT57BW"]
+    assert flight is not None
+    assert flight.is_from_inertial()
+
+    flight = zurich_airport["CAI3208"]
+    assert flight is not None
+    assert not flight.is_from_inertial()
+
+
+def test_slow_taxi():
+
+    flight = zurich_airport["SWR137H"]
+    assert flight is not None
+    slow_durations = sum(
+        ((slow_segment.duration,) for slow_segment in flight.slow_taxi()),
+        (),
+    )
+
+    assert len(slow_durations) == 4
+    assert sum(slow_durations, pd.Timedelta(0)) == pd.Timedelta(
+        "0 days 00:06:17"
+    )
+
+    flight = zurich_airport["ACA879"]
+    assert flight is not None
+    assert flight.slow_taxi().next() is None
+
+
+def test_pushback():
+
+    flight = zurich_airport["AEE5ZH"]
+    assert flight is not None
+    parking_position = flight.on_parking_position("LSZH").max()
+    pushback = flight.pushback("LSZH")
+
+    assert parking_position is not None
+    assert pushback is not None
+    assert (
+        parking_position.parking_position_max
+        == pushback.parking_position_max
+        == "A10"
+    )
+    assert pushback.start <= parking_position.stop
+    assert pushback.stop >= parking_position.stop

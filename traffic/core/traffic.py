@@ -649,6 +649,15 @@ class Traffic(HBoxMixin, GeographyMixin):
         else:
             return self.query("altitude == altitude")
 
+    @lazy_evaluation(default=True)
+    def onground(self) -> Optional["Traffic"]:
+        if "altitude" not in self.data.columns:
+            return self
+        if "onground" in self.data.columns and self.data.onground.dtype == bool:
+            return self.query("onground or altitude != altitude")
+        else:
+            return self.query("altitude != altitude")
+
     # --- Properties ---
 
     @property_cache

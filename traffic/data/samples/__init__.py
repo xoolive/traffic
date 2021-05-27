@@ -72,6 +72,7 @@ elal747: Flight = cast(Flight, __getattr__("elal747"))
 texas_longhorn: Flight = cast(Flight, __getattr__("texas_longhorn"))
 quickstart: Traffic = cast(Traffic, __getattr__("quickstart"))
 switzerland: Traffic = cast(Traffic, __getattr__("switzerland"))
+zurich_airport: Traffic = cast(Traffic, __getattr__("zurich_airport"))
 
 lfbo_tma = Airspace.from_file(
     Path(__file__).parent / "airspaces" / "LFBOTMA.json"
