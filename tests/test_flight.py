@@ -488,7 +488,7 @@ def test_parking_position() -> None:
 
     pp = flight.on_parking_position("LSZH").next()
     assert pp is not None
-    assert pp.duration.total_seconds() == 7
+    assert 5 < pp.duration.total_seconds() < 10
     assert pp.parking_position_max == "A49"
 
 
