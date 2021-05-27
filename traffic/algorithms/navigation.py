@@ -8,10 +8,11 @@ from typing import (
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, MultiLineString, Polygon
+from shapely.geometry import LineString, MultiLineString, Point, Polygon
 
-from ..core.geodesy import destination
+from ..core.geodesy import destination, mrr_diagonal
 from ..core.iterator import flight_iterator
+from ..core.time import deltalike, to_timedelta
 
 if TYPE_CHECKING:
     from ..core import Flight, FlightPlan  # noqa: 401
@@ -861,18 +862,28 @@ class NavigationFeatures:
                 if parking_part is not None:
                     yield parking_part.assign(parking_position=p.ref)
 
-    def start_moving(
+    def moving(
         self,
         speed_threshold: float = 2,
         time_threshold: str = "30s",
-        filter_dict=dict(compute_gs=21),
+        filter_dict=dict(compute_gs=3),
+        resample_rule: str = "5s",
     ) -> Optional["Flight"]:
+        """
+        Returns the part of the trajectory after the aircraft starts moving.
 
-        # Donne les fonctions possibles sur un flight object
+        TODO: extend the method to trim the final part of the trajectory after
+        the aircraft stops moving.
+        """
+
         self = cast("Flight", self)
 
+        resampled = self.resample(resample_rule)
+        if resampled is None or len(resampled) <= 2:
+            return None
+
         moving = (
-            self.cumulative_distance()
+            resampled.cumulative_distance()
             .filter(**filter_dict)
             .query(f"compute_gs > {speed_threshold}")
         )
@@ -901,11 +912,11 @@ class NavigationFeatures:
         track_threshold: float = 90,
     ) -> Optional["Flight"]:
         """
-        Returns the pushback phase from the first movement (gs>0) of the ac
-        to the start of the following
-        holding position (waiting for the carrier to leave)
+        Returns the pushback part of the trajectory on ground.
 
-        TODO
+        The method identifies the start of the movement, the parking_position
+        and the moment the aircraft suddenly changes direction the computed
+        track angle.
 
         """
 
@@ -929,9 +940,13 @@ class NavigationFeatures:
         after_parking = within_airport.after(parking_position.start)
         assert after_parking is not None
 
-        in_movement = after_parking.start_moving()
+        in_movement = after_parking.moving()
 
-        first_backwards = (
+        if in_movement is None:
+            return None
+
+        direction_change = (
+            # TODO clarify these durations
             # first trim the first few seconds to avoid annoying first spike
             in_movement.first("5T")
             .last("4T30s")
@@ -942,7 +957,125 @@ class NavigationFeatures:
             .query(f"compute_track_unwrapped_diff.abs() > {track_threshold}")
         )
 
-        if first_backwards is None:
+        if direction_change is None:
             return None
 
-        return in_movement.before(first_backwards.start)
+        return in_movement.before(direction_change.start).assign(
+            parking_position=parking_position.parking_position_max
+        )
+
+    def is_from_inertial(self, freq_threshold=0.05) -> bool:
+        """
+        Returns True if ground trajectory data looks noisy.
+
+        This may include:
+        - zig-zag patterns
+        - taxiing out of taxiways (TODO)
+
+        """
+        self = cast("Flight", self)
+
+        # TODO focus on ground trajectories
+        if "compute_track" not in self.data.columns:
+            self = self.cumulative_distance(compute_gs=False)
+
+        freq = (
+            self.diff("compute_track")
+            .compute_track_diff.round()
+            .value_counts(normalize=True)
+        )
+        if 90 not in freq.index or -90 not in freq.index:
+            return False
+        return freq[90] > freq_threshold and freq[-90] > freq_threshold
+
+    @flight_iterator
+    def slow_taxi(
+        self,
+        min_duration: deltalike = "60s",
+        max_diameter: float = 150,  # in meters
+    ) -> Iterator["Flight"]:
+        """
+        Holding segments are part of a trajectory where the aircraft stays more
+        than min_duration (in s) within a circle of diameter max_diameter (in m)
+
+        """
+        self = cast("Flight", self)
+
+        duration_threshold = to_timedelta(min_duration)
+
+        current_flight = self.moving()
+        if current_flight is None:
+            return None
+
+        current_flight = current_flight.onground()
+        if current_flight is None:
+            return None
+
+        current_flight = current_flight.resample("5s")
+        if current_flight is None:
+            return None
+
+        traj_df = (
+            current_flight.data[["timestamp", "latitude", "longitude"]]
+            .sort_values("timestamp")
+            .set_index("timestamp")
+        )
+
+        segment_geoms = []
+        segment_times = []
+
+        # Variables to detect changes between a stop
+        # segment and a moving segment
+        is_stopped = False
+        previously_stopped = False
+
+        # iterate over each coordinate to create segments
+        # Each data point is added to a queue (FIFO)
+        for index, row in traj_df.iterrows():
+            segment_geoms.append(Point(row.longitude, row.latitude))
+            segment_times.append(index)
+
+            if not is_stopped:  # remove points to the specified min_duration
+                while (
+                    len(segment_geoms) > 2
+                    and segment_times[-1] - segment_times[0]
+                    >= duration_threshold
+                ):
+                    segment_geoms.pop(0)
+                    segment_times.pop(0)
+
+            # Check if current segment, trimmed to have a duration shorthen than
+            # min_duration threshold,  is longer than the maximum distance
+            # threshold
+            if (
+                len(segment_geoms) > 1
+                and mrr_diagonal(segment_geoms) < max_diameter
+            ):
+                is_stopped = True
+            else:
+                is_stopped = False
+
+            # detection of the end of a stop segment and append to
+            # stop segment list
+            if len(segment_geoms) > 1:
+                segment_end = segment_times[-2]
+                segment_begin = segment_times[0]
+                if not is_stopped and previously_stopped:
+                    if (
+                        segment_end - segment_begin >= duration_threshold
+                    ):  # detected end of a stop
+                        candidate = self.between(segment_begin, segment_end)
+                        if candidate is not None:
+                            yield candidate
+                        segment_geoms = []
+                        segment_times = []
+
+            previously_stopped = is_stopped
+
+        if (
+            is_stopped
+            and segment_times[-1] - segment_times[0] >= duration_threshold
+        ):
+            candidate = self.between(segment_times[0], segment_times[-1])
+            if candidate is not None:
+                yield candidate
