@@ -14,35 +14,35 @@ This page organises those methods by scope:
 - `ground events <#ground-events>`__ refer to all what happens when on ground at a given airport.
 
 
-TMA events
-----------
+Basic metadata
+--------------
 
 .. automethod:: traffic.core.Flight.takeoff_airport
 .. automethod:: traffic.core.Flight.takeoff_from
-
 .. automethod:: traffic.core.Flight.landing_airport
 .. automethod:: traffic.core.Flight.landing_at
 
+TMA events
+----------
 
-- ``aligned_on_ils()``
-- ``takeoff_from_runway()``
-
-- ``runway_change()``
-- ``go_around()``
-
+.. automethod:: traffic.core.Flight.takeoff_from_runway
+.. automethod:: traffic.core.Flight.aligned_on_ils
+.. automethod:: traffic.core.Flight.go_around
+.. automethod:: traffic.core.Flight.runway_change
 
 Airborne events
 ---------------
 
-- ``aligned_on_navpoint()``
-- ``compute_navpoints()``
-- ``emergency()``
+.. automethod:: traffic.core.Flight.aligned_on_navpoint
+.. automethod:: traffic.core.Flight.compute_navpoints
+.. automethod:: traffic.core.Flight.emergency
+
 
 Ground events
 -------------
 
-- ``aligned_on_runway()``
-- ``on_parking_position()``
-- ``pushback()``
-- ``slow_taxi()``
-- ``moving()``
+.. automethod:: traffic.core.Flight.aligned_on_runway
+.. automethod:: traffic.core.Flight.on_parking_position
+.. automethod:: traffic.core.Flight.pushback
+.. automethod:: traffic.core.Flight.slow_taxi
+.. automethod:: traffic.core.Flight.moving
