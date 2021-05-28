@@ -78,6 +78,9 @@ setup(
         "pyModeS>=2.8",
         "openap",
         "pyarrow",
+        "beautifulsoup4",
+        "lxml",
+        "metar",
     ],
     extras_require={
         "dev": [
