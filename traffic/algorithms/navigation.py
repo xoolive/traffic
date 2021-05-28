@@ -243,7 +243,7 @@ class NavigationFeatures:
 
         .. code:: python
 
-            >>> aligned = next(belevingsvlucht.aligned_on_ils('EHAM'))
+            >>> aligned = belevingsvlucht.aligned_on_ils('EHAM').next()
             >>> f"ILS {aligned.max('ILS')} until {aligned.stop:%H:%M}"
             'ILS 06 until 20:17'
 
@@ -835,9 +835,17 @@ class NavigationFeatures:
         buffer_size: float = 1e-4,  # degrees
     ) -> Iterator["Flight"]:
         """
-        Returns the first parking position of the aircraft
+        Generates possible parking positions at a given airport.
 
-        TODO test/adapt for parking position after landing
+        Example usage:
+
+        >>> parking = flight.on_parking_position('LSZH').max()
+        # returns the most probable parking position in terms of duration
+
+        .. warning::
+
+            This method has been well tested for aircraft taking off, but should
+            be double checked for landing trajectories.
 
         """
         from ..data import airports
@@ -872,8 +880,12 @@ class NavigationFeatures:
         """
         Returns the part of the trajectory after the aircraft starts moving.
 
-        TODO: extend the method to trim the final part of the trajectory after
-        the aircraft stops moving.
+        .. warning::
+
+            This method has been extensively tested on aircraft taxiing before
+            take-off. It should be adapted/taken with extra care for
+            trajectories after landing.
+
         """
 
         self = cast("Flight", self)
@@ -918,6 +930,12 @@ class NavigationFeatures:
         and the moment the aircraft suddenly changes direction the computed
         track angle.
 
+        .. warning::
+
+            The method has poor performance when trajectory point on ground are
+            lacking. This is often the case for data recorded from locations far
+            from the airport.
+
         """
 
         from ..data import airports
@@ -946,8 +964,7 @@ class NavigationFeatures:
             return None
 
         direction_change = (
-            # TODO clarify these durations
-            # first trim the first few seconds to avoid annoying first spike
+            # trim the first few seconds to avoid annoying first spike
             in_movement.first("5T")
             .last("4T30s")
             .cumulative_distance()
@@ -968,9 +985,11 @@ class NavigationFeatures:
         """
         Returns True if ground trajectory data looks noisy.
 
-        This may include:
-        - zig-zag patterns
-        - taxiing out of taxiways (TODO)
+        .. warning::
+
+            This method is still experimental and tries to catch trajectories
+            based on the inertial system rather than the GPS. It catches zig-zag
+            patterns but fails to get trajectories driving between taxiways.
 
         """
         self = cast("Flight", self)
