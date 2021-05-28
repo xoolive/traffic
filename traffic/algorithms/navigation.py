@@ -72,6 +72,8 @@ class NavigationFeatures:
     # -- Most basic metadata properties --
 
     def takeoff_from(self, airport: Union[str, "Airport"]) -> bool:
+        """Returns True if the flight takes off from the given airport."""
+
         from ..core.structure import Airport
         from ..data import airports
 
@@ -80,7 +82,8 @@ class NavigationFeatures:
         )
 
     def takeoff_airport(self, **kwargs) -> "Airport":
-        """Returns the most probable takeoff airport.
+        """Returns the most probable takeoff airport based on the first location
+        in the trajectory.
 
         .. code:: python
 
@@ -110,6 +113,8 @@ class NavigationFeatures:
         return guess_airport(data.iloc[0], **kwargs)
 
     def landing_at(self, airport: Union[str, "Airport"]) -> bool:
+        """Returns True if the flight takes off from the given airport."""
+
         from ..core.structure import Airport
         from ..data import airports
 
@@ -118,7 +123,8 @@ class NavigationFeatures:
         )
 
     def landing_airport(self, **kwargs) -> "Airport":
-        """Returns the most probable landing airport.
+        """Returns the most probable landing airport based on the last location
+        in the trajectory.
 
         .. code:: python
 

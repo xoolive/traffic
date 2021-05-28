@@ -145,6 +145,11 @@ class Flight(
         for further processing, e.g. ``groundspeed``, ``vertical_rate``,
         ``track``, ``heading``, ``IAS`` (indicated airspeed) or ``squawk``.
 
+    .. note::
+
+        All navigation related methods are described more in depth on a
+        `dedicated page <navigation.html>`_.
+
     **Abridged contents:**
 
         - properties:
@@ -177,13 +182,6 @@ class Flight(
           `project_shape() <#traffic.core.Flight.project_shape>`_,
           `simplify() <#traffic.core.Flight.simplify>`_,
           `unwrap() <#traffic.core.Flight.unwrap>`_
-        - navigation related method:
-          `closest_point() <#traffic.core.Flight.closest_point>`_,
-          `takeoff_airport() <#traffic.core.Flight.takeoff_airport>`_,
-          `landing_airport() <#traffic.core.Flight.landing_airport>`_,
-          `on_runway() <#traffic.core.Flight.on_runway>`_,
-          `aligned_on_runway() <#traffic.core.Flight.aligned_on_runway>`_,
-          `aligned_on_ils() <#traffic.core.Flight.aligned_on_ils>`_
         - filtering and resampling methods:
           `comet() <#traffic.core.Flight.comet>`_,
           `filter() <#traffic.core.Flight.filter>`_,
