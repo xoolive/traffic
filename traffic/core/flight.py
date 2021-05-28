@@ -2213,6 +2213,8 @@ class Flight(
         same graph, and other quantities on a different graph, the following
         snippet may be of use.
 
+        .. code:: python
+
             # More advanced with several plots on the same graph
             base = (
                 flight.chart("altitude", "groundspeed", "IAS")
