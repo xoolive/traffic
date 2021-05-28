@@ -16,10 +16,9 @@ from xml.etree import ElementTree
 from shapely.geometry import Polygon, polygon
 from shapely.ops import cascaded_union
 
-from ...core.airspace import components  # to be moved here TODO
 from ...core.airspace import (
     Airspace, AirspaceInfo, AirspaceList,
-    ExtrudedPolygon, cascaded_union_with_alt
+    ExtrudedPolygon, cascaded_union_with_alt, components
 )
 from ...data.basic.airports import Airport
 

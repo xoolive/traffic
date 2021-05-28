@@ -735,7 +735,12 @@ class Traffic(HBoxMixin, GeographyMixin):
         """Returns a summary of the current Traffic structure containing
         featured attributes.
 
-        Example usage (TODO)
+        Example usage:
+
+        >>> t.summary(['icao24', 'start', 'stop', 'duration'])
+
+        Consider monkey-patching properties to the Flight class if you need more
+        information in your summary DataFrame.
 
         """
         if iterate_kw is None:

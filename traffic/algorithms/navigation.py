@@ -994,7 +994,6 @@ class NavigationFeatures:
         """
         self = cast("Flight", self)
 
-        # TODO focus on ground trajectories
         if "compute_track" not in self.data.columns:
             self = self.cumulative_distance(compute_gs=False)
 

@@ -299,7 +299,8 @@ class Flight(
     def __getattr__(self, name: str):
         """Helper to facilitate method chaining without lambda.
 
-        TODO improve the documentation
+        Example usage:
+
         flight.altitude_max
             => flight.max('altitude')
         flight.vertical_rate_std
@@ -1353,7 +1354,7 @@ class Flight(
         return self.__class__(data)
 
     def filter_position(self, cascades: int = 2) -> Optional["Flight"]:
-        # TODO improve based on agg_time
+        # TODO improve based on agg_time or EKF
         flight: Optional["Flight"] = self
         for _ in range(cascades):
             if flight is None:
@@ -1434,7 +1435,6 @@ class Flight(
         """
         return self.assign(flight_id=name.format(self=self, idx=idx))
 
-    # TODO change to Iterator
     def onground(self) -> Optional["Flight"]:
         if "altitude" not in self.data.columns:
             return self
