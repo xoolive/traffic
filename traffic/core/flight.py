@@ -6,9 +6,9 @@ from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-    List, Optional, Set, Tuple, Union, cast, overload
+    List, Optional, Set, Tuple, Union, cast, overload,TypeVar,Type
 )
-
+from pathlib import Path
 import altair as alt
 import numpy as np
 import pandas as pd
@@ -40,6 +40,8 @@ if TYPE_CHECKING:
     from .traffic import Traffic  # noqa: F401
 
 # fmt: on
+
+T = TypeVar("T", bound="DataFrameMixin")
 
 
 def _tz_interpolate(data, *args, **kwargs):
@@ -364,7 +366,8 @@ class Flight(
         return Flight(t.data)  # type: ignore
 
     def next(
-        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+        self,
+        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
     ) -> Optional["Flight"]:
         """
         Returns the first segment of trajectory yielded by flight.method()
@@ -947,7 +950,9 @@ class Flight(
 
     @flight_iterator
     def sliding_windows(
-        self, duration: deltalike, step: deltalike,
+        self,
+        duration: deltalike,
+        step: deltalike,
     ) -> Iterator["Flight"]:
 
         duration_ = to_timedelta(duration)
@@ -1031,7 +1036,10 @@ class Flight(
         return getattr(self, name)(*args, **kwargs)(fun)
 
     def apply_time(
-        self, freq: str = "1T", merge: bool = True, **kwargs,
+        self,
+        freq: str = "1T",
+        merge: bool = True,
+        **kwargs,
     ) -> "Flight":
         """Apply features on time windows.
 
@@ -1080,7 +1088,10 @@ class Flight(
         return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
 
     def agg_time(
-        self, freq: str = "1T", merge: bool = True, **kwargs,
+        self,
+        freq: str = "1T",
+        merge: bool = True,
+        **kwargs,
     ) -> "Flight":
         """Aggregate features on time windows.
 
@@ -1756,7 +1767,7 @@ class Flight(
         **kwargs,
     ) -> "Flight":
 
-        """ Enrich the structure with new ``cumdist`` column computed from
+        """Enrich the structure with new ``cumdist`` column computed from
         latitude and longitude columns.
 
         The first ``cumdist`` value is 0, then distances are computed (in
@@ -2285,3 +2296,41 @@ class Flight(
                         ).dt.tz_convert("utc")
                     ).plot(ax=ax, x="timestamp", **kw)
                 )
+
+    @classmethod
+    def from_file(
+        cls: Type[T], filename: Union[Path, str], **kwargs
+    ) -> Optional[T]:
+        cols_24 = {
+            "Altitude",
+            "Callsign",
+            "Direction",
+            "Position",
+            "Speed",
+            "Timestamp",
+            "UTC",
+        }  # colunms in flightradar24 .csv
+        tentative = super().from_file(filename, **kwargs)
+        if (tentative is not None) & (set(tentative.data.columns) == cols_24):
+            tentative.data[
+                ["latitude", "longitude"]
+            ] = tentative.data.Position.str.split(pat=",", expand=True)
+            tentative.data[["latitude", "longitude"]] = tentative.data[
+                ["latitude", "longitude"]
+            ].astype(dtype=np.float64)
+            tentative.data["UTC"] = pd.to_datetime(tentative.data["UTC"])
+            rename_columns = {
+                "UTC": "timestamp",
+                "Altitude": "altitude",
+                "Callsign": "callsign",
+                "Speed": "groundspeed",
+                "Direction": "track",
+            }
+            tentative.data.drop(columns=["Timestamp", "Position"], inplace=True)
+            return tentative.rename(columns=rename_columns)
+        elif tentative is not None:
+            return tentative
+
+        path = Path(filename)
+        logging.warning(f"{path.suffixes} extension is not supported")
+        return None
