@@ -27,7 +27,7 @@ library:
   | **Detecting Events in Aircraft Trajectories: Rule-based and Data-driven Approaches**
   | *Proceedings of the 8th OpenSky Symposium*, 2020
   | https://doi.org/10.3390/proceedings2020059008
-  | `(paper) <https://www.mdpi.com/2504-3900/59/1/8/pdf>`__ `(video) <https://youtu.be/uwzR6gqmWPE>`__ `(notebook) <https://github.com/xoolive/traffic/blob/master/opensky/opensky_2020.ipynb>`__
+  | `(paper) <https://www.mdpi.com/2504-3900/59/1/8/pdf>`__ `(video) <https://youtu.be/uwzR6gqmWPE>`__ `(notebook) <https://github.com/traffic-viz/traffic_static/blob/master/notebooks/opensky_2020.ipynb>`__
 
 - | J. Sun, H. Vû, X. Olive and J. Hoekstra
   | **Mode S Transponder Comm-B Capabilities in Current Operational Aircraft**
@@ -82,7 +82,7 @@ library:
 - | X. Olive and L. Basora.
   | **Air Traffic Data Processing using Python: Trajectory Clustering**.
   | *Proceedings of the 7th OpenSky Workshop*, 2019.
-  | `(paper) <https://easychair.org/publications/download/BXjT>`__ `(notebook) <https://tinyurl.com/opensky2019>`__ https://doi.org/10.29007/sf1f
+  | `(paper) <https://easychair.org/publications/download/BXjT>`__ `(notebook) <https://github.com/traffic-viz/traffic_static/blob/master/notebooks/opensky_2019.ipynb>`__ https://doi.org/10.29007/sf1f
 
 - | M. Schäfer, X. Olive, M. Strohmeier, M. Smith, I. Martinovic, V. Lenders.
   | **OpenSky Report 2019: Analysing TCAS in the Real World using Big Data.**

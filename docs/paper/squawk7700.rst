@@ -941,10 +941,11 @@ These flights are usually characterised by a rapid descent to around
 .. code:: python
 
     (
-        pressure["RPA4599_20190719"].encode("altitude")
+        pressure["RPA4599_20190719"].chart().encode(alt.Y("altitude"))
         + next(pressure["RPA4599_20190719"].emergency())
         .assign_id("emergency")
-        .encode("altitude")
+        .chart()
+        .encode(alt.Y("altitude"))
     )
 
 .. raw:: html

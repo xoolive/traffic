@@ -26,11 +26,11 @@ from .mixins import GeographyMixin, HBoxMixin, PointMixin
 from .sv import StateVectors
 
 if TYPE_CHECKING:
-    from .airspace import Airspace  # noqa: F401
-    from ..algorithms.cpa import CPA  # noqa: F401
     from ..algorithms.clustering import (  # noqa: F401
         ClusteringProtocol, TransformerProtocol
     )
+    from ..algorithms.cpa import CPA  # noqa: F401
+    from .airspace import Airspace  # noqa: F401
 
 # fmt: on
 
@@ -592,6 +592,10 @@ class Traffic(HBoxMixin, GeographyMixin):
     def landing_at(self, airport: str) -> bool:
         ...
 
+    @lazy_evaluation()
+    def takeoff_from(self, airport: str) -> bool:
+        ...
+
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
@@ -644,6 +648,15 @@ class Traffic(HBoxMixin, GeographyMixin):
             return self.query("not onground and altitude == altitude")
         else:
             return self.query("altitude == altitude")
+
+    @lazy_evaluation(default=True)
+    def onground(self) -> Optional["Traffic"]:
+        if "altitude" not in self.data.columns:
+            return self
+        if "onground" in self.data.columns and self.data.onground.dtype == bool:
+            return self.query("onground or altitude != altitude")
+        else:
+            return self.query("altitude != altitude")
 
     # --- Properties ---
 
@@ -722,7 +735,12 @@ class Traffic(HBoxMixin, GeographyMixin):
         """Returns a summary of the current Traffic structure containing
         featured attributes.
 
-        Example usage (TODO)
+        Example usage:
+
+        >>> t.summary(['icao24', 'start', 'stop', 'duration'])
+
+        Consider monkey-patching properties to the Flight class if you need more
+        information in your summary DataFrame.
 
         """
         if iterate_kw is None:

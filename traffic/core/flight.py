@@ -106,6 +106,16 @@ class MetaFlight(type):
     def __getattr__(cls, name):
         if name.startswith("aligned_on_"):
             return lambda flight: cls.aligned_on_ils(flight, name[11:])
+        if name.startswith("takeoff_runway_"):
+            return lambda flight: cls.takeoff_from_runway(flight, name[15:])
+        if name.startswith("on_parking_"):
+            return lambda flight: cls.on_parking_position(flight, name[11:])
+        if name.startswith("pushback_"):
+            return lambda flight: cls.pushback(flight, name[9:])
+        if name.startswith("landing_at_"):
+            return lambda flight: cls.landing_at(flight, name[11:])
+        if name.startswith("takeoff_from_"):
+            return lambda flight: cls.takeoff_from(flight, name[13:])
         raise AttributeError
 
 
@@ -136,6 +146,11 @@ class Flight(
         a pair of (``icao24``, ``callsign``). More features may also be provided
         for further processing, e.g. ``groundspeed``, ``vertical_rate``,
         ``track``, ``heading``, ``IAS`` (indicated airspeed) or ``squawk``.
+
+    .. note::
+
+        All navigation related methods are described more in depth on a
+        `dedicated page <navigation.html>`_.
 
     **Abridged contents:**
 
@@ -169,19 +184,12 @@ class Flight(
           `project_shape() <#traffic.core.Flight.project_shape>`_,
           `simplify() <#traffic.core.Flight.simplify>`_,
           `unwrap() <#traffic.core.Flight.unwrap>`_
-        - navigation related method:
-          `closest_point() <#traffic.core.Flight.closest_point>`_,
-          `takeoff_airport() <#traffic.core.Flight.takeoff_airport>`_,
-          `landing_airport() <#traffic.core.Flight.landing_airport>`_,
-          `on_runway() <#traffic.core.Flight.on_runway>`_,
-          `aligned_on_runway() <#traffic.core.Flight.aligned_on_runway>`_,
-          `aligned_on_ils() <#traffic.core.Flight.aligned_on_ils>`_
         - filtering and resampling methods:
           `comet() <#traffic.core.Flight.comet>`_,
           `filter() <#traffic.core.Flight.filter>`_,
           `resample() <#traffic.core.Flight.resample>`_,
         - visualisation with altair:
-          `encode() <#traffic.core.Flight.encode>`_,
+          `chart() <#traffic.core.Flight.chart>`_,
           `geoencode() <#traffic.core.Flight.geoencode>`_
         - visualisation with leaflet: `layer() <#traffic.core.Flight.layer>`_
         - visualisation with Matplotlib:
@@ -291,7 +299,8 @@ class Flight(
     def __getattr__(self, name: str):
         """Helper to facilitate method chaining without lambda.
 
-        TODO improve the documentation
+        Example usage:
+
         flight.altitude_max
             => flight.max('altitude')
         flight.vertical_rate_std
@@ -515,7 +524,7 @@ class Flight(
     def longer_than(
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
     ) -> bool:
-        """Returns True if flight duration is shorter than value."""
+        """Returns True if flight duration is longer than value."""
         if isinstance(value, str):
             value = pd.Timedelta(value)
         return self.feature_gt(attrgetter("duration"), value, strict)
@@ -1345,7 +1354,7 @@ class Flight(
         return self.__class__(data)
 
     def filter_position(self, cascades: int = 2) -> Optional["Flight"]:
-        # TODO improve based on agg_time
+        # TODO improve based on agg_time or EKF
         flight: Optional["Flight"] = self
         for _ in range(cascades):
             if flight is None:
@@ -1426,7 +1435,6 @@ class Flight(
         """
         return self.assign(flight_id=name.format(self=self, idx=idx))
 
-    # TODO change to Iterator
     def onground(self) -> Optional["Flight"]:
         if "altitude" not in self.data.columns:
             return self
@@ -1604,7 +1612,7 @@ class Flight(
         self, other: PointMixin, column_name: str = "bearing"
     ) -> "Flight":
         # temporary, should implement full stuff
-        size = len(self)
+        size = self.data.shape[0]
         return self.assign(
             **{
                 column_name: geo.bearing(
@@ -1687,7 +1695,7 @@ class Flight(
             )
 
         if isinstance(other, PointMixin):
-            size = len(self)
+            size = self.data.shape[0]
             return self.assign(
                 **{
                     column_name: geo.distance(
@@ -1888,24 +1896,10 @@ class Flight(
         # given here for consistency in types
         ...
 
-    def clip(
+    @flight_iterator
+    def clip_iterate(
         self, shape: Union[ShapelyMixin, base.BaseGeometry]
-    ) -> Optional["Flight"]:
-        """Clips the trajectory to a given shape.
-
-        For a shapely Geometry, the first time of entry and the last time of
-        exit are first computed before returning the part of the trajectory
-        between the two timestamps.
-
-        Most of the time, aircraft do not repeatedly come out and in an
-        airspace, but computation errors may sometimes give this impression.
-        As a consequence, the clipped trajectory may have points outside the
-        shape.
-
-        .. warning::
-            Altitudes are not taken into account.
-
-        """
+    ) -> Iterator["Flight"]:
         list_coords = list(self.xy_time)
         if len(list_coords) < 2:
             return None
@@ -1927,7 +1921,10 @@ class Flight(
                 datetime.fromtimestamp(t, timezone.utc)
                 for t in np.stack(intersection.coords)[:, 2]
             )
-            return self.between(min(time_list), max(time_list))
+            between = self.between(min(time_list), max(time_list))
+            if between is not None:
+                yield between
+            return None
 
         def _clip_generator() -> Iterable[Tuple[datetime, datetime]]:
             for segment in intersection:
@@ -1937,15 +1934,42 @@ class Flight(
                 )
                 yield min(times), max(times)
 
-        times: List[Tuple[datetime, datetime]] = list(_clip_generator())
-        clipped_flight = self.between(
-            min(t for t, _ in times), max(t for _, t in times)
-        )
+        for t1, t2 in _clip_generator():
+            between = self.between(t1, t2)
+            if between is not None:
+                yield between
 
-        if clipped_flight is None:
+    def clip(
+        self, shape: Union[ShapelyMixin, base.BaseGeometry]
+    ) -> Optional["Flight"]:
+        """Clips the trajectory to a given shape.
+
+        For a shapely Geometry, the first time of entry and the last time of
+        exit are first computed before returning the part of the trajectory
+        between the two timestamps.
+
+        Most of the time, aircraft do not repeatedly come out and in an
+        airspace, but computation errors may sometimes give this impression.
+        As a consequence, the clipped trajectory may have points outside the
+        shape.
+
+        .. warning::
+            Altitudes are not taken into account.
+
+        """
+
+        t1 = None
+        for segment in self.clip_iterate(shape):
+            if t1 is None:
+                t1 = segment.start
+            t2 = segment.stop
+
+        if t1 is None:
             return None
 
-        if clipped_flight.shape is None:
+        clipped_flight = self.between(t1, t2)
+
+        if clipped_flight is None or clipped_flight.shape is None:
             return None
 
         return clipped_flight
@@ -2161,76 +2185,89 @@ class Flight(
             return ax.plot(*self.shape.xy, **kwargs)
         return []
 
+    def chart(self, *features) -> alt.Chart:  # coverage: ignore
+        """
+        Initializes an altair Chart based on Flight data.
+
+        The features passed in parameters are dispatched to allow plotting
+        multiple features on the same graph.
+
+        Example usage:
+
+        .. code:: python
+
+            # Most simple usage
+            flight.chart().encode(alt.Y("altitude"))
+
+            # With some configuration
+            flight.chart().encode(
+                alt.X(
+                    "utcyearmonthdatehoursminutes(timestamp)",
+                    axis=alt.Axis(title=None, format="%H:%M"),
+                ),
+                alt.Y("altitude", title="altitude (in ft)"),
+                alt.Color("callsign")
+            )
+
+        For a more complex graph plotting similar physical quantities on the
+        same graph, and other quantities on a different graph, the following
+        snippet may be of use.
+
+        .. code:: python
+
+            # More advanced with several plots on the same graph
+            base = (
+                flight.chart("altitude", "groundspeed", "IAS")
+                .encode(
+                    alt.X(
+                        "utcyearmonthdatehoursminutesseconds(timestamp)",
+                        axis=alt.Axis(title=None, format="%H:%M"),
+                    )
+                )
+                .properties(height=200)
+            )
+
+            alt.vconcat(
+                base.transform_filter('datum.variable != "altitude"').encode(
+                    alt.Y(
+                        "value:Q",
+                        axis=alt.Axis(title="speed (in kts)"),
+                        scale=alt.Scale(zero=False),
+                    )
+                ),
+                base.transform_filter('datum.variable == "altitude"').encode(
+                    alt.Y("value:Q", title="altitude (in ft)")
+                ),
+            )
+
+        .. note::
+            See also `plot_time() <#traffic.core.Flight.plot_time>`_ for the
+            Matplotlib equivalent.
+
+        """
+        base = alt.Chart(self.data).encode(
+            alt.X(
+                "utcyearmonthdatehoursminutesseconds(timestamp)",
+                title='alt.X("utcyearmonthdatehoursminutesseconds(timestamp)")',
+            ),
+        )
+        if len(features) > 0:
+            base = base.transform_fold(
+                list(features), as_=["variable", "value"]
+            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))
+
+        return base.mark_line()
+
     def encode(
         self,
         y: Union[str, List[str], alt.Y],
         x: Union[str, alt.X] = "timestamp:T",
         **kwargs,
     ) -> alt.Chart:  # coverage: ignore
-        """Plots the given features according to time.
-
-        The method ensures:
-
-        - only non-NaN data are displayed (no gap in the plot);
-        - the timestamp is naively converted to UTC if not localized.
-
-        Example usage:
-
-        .. code:: python
-
-            flight.encode('altitude')
-            # or with several comparable features
-            flight.encode(['groundspeed', 'IAS', 'TAS'])
-
-        .. warning::
-            No twin axes are available in altair/Vega charts.
-
-        .. note::
-            See also `plot_time() <#traffic.core.Flight.plot_time>`_ for the
-            Matplotlib equivalent.
         """
-        feature_list = ["timestamp"]
-        alt_y: Optional[alt.Y] = None
-        if "flight_id" in self.data.columns:
-            feature_list.append("flight_id")
-        if "callsign" in self.data.columns:
-            feature_list.append("callsign")
-        if "icao24" in self.data.columns:
-            feature_list.append("icao24")
-        if isinstance(y, alt.Y):
-            alt_y = y
-            y = y.shorthand
-        if isinstance(y, str):
-            feature_list.append(y)
-            data = self.data[feature_list].query(f"{y} == {y}")
-            default_encode = dict(
-                x=x,
-                y=alt_y if alt_y is not None else alt.Y(y, title=y),
-                color=alt.Color(
-                    "flight_id"
-                    if "flight_id" in data.columns
-                    else (
-                        "callsign" if "callsign" in data.columns else "icao24"
-                    )
-                ),
-            )
-        else:
-            feature_list += y
-            data = (
-                self.data[feature_list]
-                .melt("timestamp", y)
-                .query("value == value")
-            )
-            default_encode = dict(x="timestamp:T", y="value", color="variable")
-
-        return (
-            alt.Chart(data)
-            .mark_line(interpolate="monotone")
-            .encode(**{**default_encode, **kwargs})
-            .transform_timeunit(
-                timestamp="utcyearmonthdatehoursminutesseconds(timestamp)"
-            )
-        )
+        DEPRECATED: Use Flight.chart() method instead.
+        """
+        raise DeprecationWarning("Use Flight.chart() method instead")
 
     def plot_time(
         self,
@@ -2260,7 +2297,7 @@ class Flight(
             )
 
         .. note::
-            See also `encode() <#traffic.core.Flight.encode>`_ for the altair
+            See also `chart() <#traffic.core.Flight.chart>`_ for the altair
             equivalent.
 
         """

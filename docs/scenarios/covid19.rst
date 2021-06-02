@@ -43,7 +43,7 @@ The following plot displays the current trend in number of departing aircraft fr
     <div id="covid19_airports"></div>
 
     <script type="text/javascript">
-      var spec = "../_static/covid19_airports.json";
+      var spec = "https://raw.githubusercontent.com/traffic-viz/traffic_static/master/json/covid19_airports.json";
       vegaEmbed('#covid19_airports', spec)
       .then(result => console.log(result))
       .catch(console.warn);
@@ -66,7 +66,7 @@ Flight evolution per airline
     <div id="covid19_airlines"></div>
 
     <script type="text/javascript">
-      var spec = "../_static/covid19_airlines.json";
+      var spec = "https://raw.githubusercontent.com/traffic-viz/traffic_static/master/json/covid19_airlines.json";
       vegaEmbed('#covid19_airlines', spec)
       .then(result => console.log(result))
       .catch(console.warn);

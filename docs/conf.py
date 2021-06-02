@@ -47,7 +47,7 @@ autodoc_mock_imports = [
     "altair",
     "cartopy",
     "cartopy.crs",
-    "cartotools",
+    "cartes",
     "ipyleaflet",
     "matplotlib",
     "openap",

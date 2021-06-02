@@ -40,7 +40,7 @@ the configuration file, in the ``[projections]`` section:
     extra = Lambert93; Amersfoort; GaussKruger
 
 .. note::
-    Available projections are default cartopy projections, completed by additional common European projections in the cartotools `dependency module <https://github.com/xoolive/cartotools/tree/master/cartotools/crs>`_ (here `Lambert 93 <https://fr.wikipedia.org/wiki/Projection_conique_conforme_de_Lambert#Lambert_93>`_ is the official projection in France, `Amersfoort <https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten>`_ in the Netherlands and `Gauss-Krüger <https://de.wikipedia.org/wiki/Gau%C3%9F-Kr%C3%BCger-Koordinatensystem>`_ in Germany)
+    Available projections are default cartopy projections, completed by additional common European projections in the cartes `dependency module <https://github.com/xoolive/cartes/tree/master/cartes/crs>`_ (here `Lambert 93 <https://fr.wikipedia.org/wiki/Projection_conique_conforme_de_Lambert#Lambert_93>`_ is the official projection in France, `Amersfoort <https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten>`_ in the Netherlands and `Gauss-Krüger <https://de.wikipedia.org/wiki/Gau%C3%9F-Kr%C3%BCger-Koordinatensystem>`_ in Germany)
 
 .. tip::
     You can implement more projections as `plugins <plugins.html>`_.

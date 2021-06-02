@@ -78,9 +78,10 @@ class Impala(object):
     For more information, find below the error and the buggy line:
     """
 
-    stdin: paramiko.ChannelFile
-    stdout: paramiko.ChannelFile
-    stderr: paramiko.ChannelFile  # actually ChannelStderrFile
+    stdin: paramiko.ChannelFile  # type: ignore
+    stdout: paramiko.ChannelFile  # type: ignore
+    stderr: paramiko.ChannelFile  # type: ignore
+    # actually ChannelStderrFile
 
     def __init__(
         self, username: str, password: str, cache_dir: Path, proxy_command: str
@@ -169,7 +170,9 @@ class Impala(object):
         return None
 
     @staticmethod
-    def _format_dataframe(df: pd.DataFrame,) -> pd.DataFrame:
+    def _format_dataframe(
+        df: pd.DataFrame,
+    ) -> pd.DataFrame:
         """
         This function converts types, strips spaces after callsigns and sorts
         the DataFrame by timestamp.
@@ -243,7 +246,7 @@ class Impala(object):
             look_for_keys=False,
             allow_agent=False,
             compress=True,
-            **extra_args,
+            **extra_args,  # type: ignore
         )
         self.stdin, self.stdout, self.stderr = client.exec_command(
             "-B", bufsize=-1, get_pty=True

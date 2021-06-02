@@ -56,7 +56,7 @@ setup(
         ]
         + ["traffic.conf", "py.typed"],
     },
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=[
         "numpy>=1.18",
         "scipy",
@@ -66,20 +66,33 @@ setup(
         "Cartopy",
         "Shapely",
         "requests",
-        "requests_pkcs12",
+        "pyOpenSSL>=0.14",
         "appdirs",  # proper configuration directories
         "paramiko",  # ssh connections
         "typing_extensions",
         "altair",  # interactive Vega plots
         "ipywidgets",  # IPython widgets for traffic
         "ipyleaflet",  # Leaflet for notebooks
-        # deactivated for now for dependency issues
-        # "keplergl",  # Kepler.gl for notebooks
         "tqdm>=4.28",  # progressbars
-        "cartotools>=1.2.2",
+        "cartes>=0.2",
         "pyModeS>=2.8",
         "openap",
+        "pyarrow",
+        "beautifulsoup4",
+        "lxml",
+        "metar",
     ],
+    extras_require={
+        "dev": [
+            "xarray",
+            "libarchive",
+            "pytest",
+            "mypy",
+            "black",
+            "pre-commit",
+            "isort",
+        ]
+    },
     classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha
@@ -100,9 +113,9 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Typing :: Typed",
     ],
 )

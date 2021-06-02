@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question
+    url: https://gitter.im/xoolive/traffic
+    about: Please ask questions such as "How do I do X?" or "Why does this not work?" on the dedicated Gitter channel.
+  - name: Discussion
+    url: https://github.com/xoolive/traffic/discussions/
+    about: If you want to discuss a topic or ask a question that is not a good fit for Gitter, please open a new discussion here on GitHub.

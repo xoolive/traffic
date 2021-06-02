@@ -132,6 +132,10 @@ Extended Mode-S (EHS)
 EHS messages are not automatically decoded for you in the OpenSky
 Database but you may access them and decode them from your computer.
 
+.. alert::
+
+    **Some examples here may be outdated**. Today, only EHS data **after January 1st 2020** are available!
+
 .. warning::
 
     ``Flight.query_ehs()`` messages also takes a dataframe argument to avoid

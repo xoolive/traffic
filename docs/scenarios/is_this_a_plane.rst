@@ -2,7 +2,7 @@
 Is this a plane?
 ----------------
 
-.. figure:: images/aircraft.jpg
+.. image:: images/aircraft.jpg
    :alt: View from my seat
    :align: center
 
@@ -20,7 +20,8 @@ First let's get information about the flight I was on.
     flight = opensky.history(
         "2018-11-15 06:00",  # UTC
         "2018-11-15 08:00",
-        callsign='DLH07F' # of course, you need to know the callsign of your flight
+        callsign='DLH07F', # of course, you need to know the callsign of your flight
+        return_flight=True
     )
 
 
@@ -168,7 +169,7 @@ Tunis). Let's plot their lateral distance vs. time.
         fig, ax = plt.subplots(figsize=(10, 7))
 
         flight.distance(around['AFR1084']).plot(
-            ax=ax, x='timestamp', y='d_horz',
+            ax=ax, x='timestamp', y='lateral',
             label="Lateral distance between aircraft (in nm)"
         )
 
@@ -188,7 +189,7 @@ altitude though.
 .. code:: python
 
     
-    from traffic.drawing import Lambert93, countries, rivers, location
+    from traffic.drawing import Lambert93, Nominatim, countries, rivers
     from traffic.drawing.markers import rotate_marker, aircraft
 
     with plt.style.context("traffic"):
@@ -199,13 +200,13 @@ altitude though.
         ax.add_feature(rivers(linewidth=2.5))
         ax.set_extent((3.9, 6, 44.5, 46))
 
-        location("Lyon").point.plot(
+        Nominatim.search("Lyon").point.plot(
             ax, s=50, marker="*", text_kw=dict(s="Lyon")
         )
-        location("Valence, France").point.plot(
+        Nominatim.search("Valence, France").point.plot(
             ax, s=50, marker="*", text_kw=dict(s="Valence")
         )
-        location("Saint-Étienne").point.plot(
+        Nominatim.search("Saint-Étienne").point.plot(
             ax, s=50, marker="*", text_kw=dict(s="Saint-Étienne")
         )
 
@@ -228,7 +229,7 @@ altitude though.
                 ),
             )
 
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
 
 .. image:: images/aircraft_map.png
    :scale: 70%

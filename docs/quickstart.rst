@@ -695,7 +695,7 @@ choice.
             # Maximum extent for the map
             ax.set_global()
             # Remove border and set transparency for background
-            ax.outline_patch.set_visible(False)
+            ax.spines['geo'].set_visible(False)
             ax.background_patch.set_visible(False)
     
         # Flight.plot returns the result from Matplotlib as is
@@ -931,11 +931,15 @@ take this faulty values out:
 
     import altair as alt
     
-    # Let's define a common y-scale for both flights
-    scale = alt.Scale(domain=(0, 40000))
-    
     visualisations = [
-        (flight.encode(alt.Y("altitude", scale=scale)).properties(height=180, width=360))
+        (
+            flight.chart()
+            .encode(
+                # Let's define a common y-scale for both flights
+                alt.Y("altitude", scale=alt.Scale(domain=(0, 40000))), 
+                alt.Color("callsign")
+            ).properties(height=180, width=360)
+        )
         for flight in [hop87dj, filtered]
     ]
     
@@ -1067,16 +1071,16 @@ signals, then plot the results.
 
 .. code:: python
 
-    from traffic.drawing import location
+    from traffic.drawing import Nominatim
     
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
         ax.background_patch.set_visible(False)
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
     
         # We may add contours from OpenStreetMap
         # (Occitanie is the name of the administrative region)
-        location("Occitanie").plot(ax, linestyle="dotted")
+        Nominatim.search("Occitanie").plot(ax, linestyle="dotted")
         ax.set_extent("Occitanie")
     
         # Plot the airport, the TMA
@@ -1204,16 +1208,16 @@ with an average vertical speed below 1,000 ft/min.
 
 .. code:: python
 
-    from traffic.drawing import location
+    from traffic.drawing import Nominatim
     
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
         ax.background_patch.set_visible(False)
-        ax.outline_patch.set_visible(False)
+        ax.spines['geo'].set_visible(False)
     
         # We may add contours from OpenStreetMap
         # (Occitanie is the name of the administrative region)
-        location("Occitanie").plot(ax, linestyle="dotted")
+        Nominatim.search("Occitanie").plot(ax, linestyle="dotted")
         ax.set_extent("Occitanie")
     
         # Plot the airport, the TMA

@@ -1,8 +1,7 @@
 # fmt: off
 
-import sys
 import zipfile
-from typing import Optional
+from typing import Optional, cast
 
 import pandas as pd
 import pytest
@@ -11,7 +10,8 @@ from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
 from traffic.data.samples import (
-    airbus_tree, belevingsvlucht, calibration, featured, get_sample
+    airbus_tree, belevingsvlucht, calibration,
+    elal747, featured, get_sample, zurich_airport
 )
 
 # fmt: on
@@ -47,7 +47,7 @@ def test_properties() -> None:
     assert flight.flight_id is None
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="py36")
+@pytest.mark.skipif(True, reason="TODO this is wrong...")
 def test_get_traffic() -> None:
     traffic: Traffic = get_sample(featured, "traffic")
     assert "belevingsvlucht" in traffic.flight_ids
@@ -170,7 +170,7 @@ def test_geometry() -> None:
     cumdist = last_pos.cumdist
     assert abs(xy_length - cumdist) / xy_length < 1e-3
 
-    simplified = flight.simplify(1e3)
+    simplified = cast(Flight, flight.simplify(1e3))
     assert len(simplified) < len(flight)
     xy_length_s = simplified.project_shape().length / 1852
     assert xy_length_s < xy_length
@@ -235,9 +235,9 @@ def test_clip_point() -> None:
 def test_closest_point() -> None:
     from traffic.data import airports, navaids
 
-    item = belevingsvlucht.between(
-        "2018-05-30 16:00", "2018-05-30 17:00"
-    ).closest_point(  # type: ignore
+    item = cast(
+        Flight, belevingsvlucht.between("2018-05-30 16:00", "2018-05-30 17:00")
+    ).closest_point(
         [
             airports["EHLE"],  # type: ignore
             airports["EHAM"],  # type: ignore
@@ -265,15 +265,69 @@ def test_aligned_runway() -> None:
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_landing_ils() -> None:
-    aligned: Optional["Flight"] = (
-        belevingsvlucht.aligned_on_ils("EHAM").next()  # noqa: B305
-    )
+    aligned: Optional["Flight"] = belevingsvlucht.aligned_on_ils(
+        "EHAM"
+    ).next()  # noqa: B305
     assert aligned is not None
     assert aligned.max("ILS") == "06"
 
     aligned = airbus_tree.aligned_on_ils("EDHI").next()  # noqa: B305
     assert aligned is not None
     assert aligned.max("ILS") == "23"
+
+
+def test_compute_navpoints() -> None:
+
+    from traffic.data.samples import switzerland
+
+    df = cast(Flight, switzerland["BAW585E"]).compute_navpoints()
+    assert df is not None
+    assert df.navaid.to_list() == ["RESIA", "LUL", "IXILU"]
+
+    df = cast(Flight, switzerland["EZY24DP"]).compute_navpoints()
+    assert df is not None
+    assert df.navaid.to_list() == ["RESIA", "ZH367", "LUL"]
+
+
+@pytest.mark.skipif(skip_runways, reason="no runways")
+def test_takeoff_runway() -> None:
+    # There are as many take-off as landing at EHLE
+    nb_takeoff = sum(
+        1
+        for _ in belevingsvlucht.takeoff_from_runway("EHLE", threshold_alt=3000)
+    )
+    nb_landing = sum(1 for f in belevingsvlucht.aligned_on_ils("EHLE"))
+    # with go-arounds, sometimes it just doesn't fit
+    assert nb_takeoff <= nb_landing
+    for aligned in belevingsvlucht.aligned_on_ils("EHLE"):
+        after = belevingsvlucht.after(aligned.stop)
+        assert after is not None
+        takeoff = after.takeoff_from_runway("EHLE", threshold_alt=3000).next()
+        # If a landing is followed by a take-off, then it's on the same runway
+        assert takeoff is None or aligned.max("ILS") == takeoff.max("runway")
+
+
+@pytest.mark.skipif(True, reason="only for local debug")
+def test_takeoff_goaround() -> None:
+    from traffic.data.datasets import landing_zurich_2019
+
+    go_arounds = landing_zurich_2019.has("go_around").eval(
+        desc="go_around", max_workers=8
+    )
+
+    for flight in go_arounds:
+        for segment in flight.go_around():
+            aligned = segment.aligned_on_ils("LSZH").next()
+            takeoff = (
+                segment.after(aligned.stop)
+                .takeoff_from_runway("LSZH", threshold_alt=5000)
+                .next()
+            )
+            assert (
+                takeoff is None
+                or takeoff.shorter_than("30s")
+                or aligned.max("ILS") == takeoff.max("runway")
+            )
 
 
 def test_getattr() -> None:
@@ -421,3 +475,66 @@ def test_agg_time_colnames() -> None:
 
     cols = belevingsvlucht.agg_time("5T", altitude=shh).data.columns
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
+
+
+def test_parking_position() -> None:
+    pp = elal747.on_parking_position("LIRF").next()
+    assert pp is not None
+    assert pp.max("parking_position") == "702"
+
+    # Landing aircraft
+    flight = zurich_airport["EDW229"]
+    assert flight is not None
+
+    pp = flight.on_parking_position("LSZH").next()
+    assert pp is not None
+    assert 5 < pp.duration.total_seconds() < 10
+    assert pp.parking_position_max == "A49"
+
+
+def test_from_inertial():
+
+    flight = zurich_airport["ENT57BW"]
+    assert flight is not None
+    assert flight.is_from_inertial()
+
+    flight = zurich_airport["CAI3208"]
+    assert flight is not None
+    assert not flight.is_from_inertial()
+
+
+def test_slow_taxi():
+
+    flight = zurich_airport["SWR137H"]
+    assert flight is not None
+    slow_durations = sum(
+        ((slow_segment.duration,) for slow_segment in flight.slow_taxi()),
+        (),
+    )
+
+    assert len(slow_durations) == 4
+    assert sum(slow_durations, pd.Timedelta(0)) == pd.Timedelta(
+        "0 days 00:06:17"
+    )
+
+    flight = zurich_airport["ACA879"]
+    assert flight is not None
+    assert flight.slow_taxi().next() is None
+
+
+def test_pushback():
+
+    flight = zurich_airport["AEE5ZH"]
+    assert flight is not None
+    parking_position = flight.on_parking_position("LSZH").max()
+    pushback = flight.pushback("LSZH")
+
+    assert parking_position is not None
+    assert pushback is not None
+    assert (
+        parking_position.parking_position_max
+        == pushback.parking_position_max
+        == "A10"
+    )
+    assert pushback.start <= parking_position.stop
+    assert pushback.stop >= parking_position.stop

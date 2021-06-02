@@ -297,7 +297,7 @@ We have all we need to enhance the interesting parts of the trajectory now:
                segment.plot(ax, color="forestgreen")
 
        ax.set_extent((7.6, 9.9, 41.3, 43.3))
-       ax.outline_patch.set_visible(False)
+       ax.spines['geo'].set_visible(False)
        ax.background_patch.set_visible(False)
 
 .. image:: images/ajaccio_map.png

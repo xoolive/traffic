@@ -1,20 +1,24 @@
 # fmt: off
 
+import warnings
 from operator import attrgetter
 from typing import (
-    TYPE_CHECKING, Iterable, Iterator, List, Optional, Union, cast
+    TYPE_CHECKING, Iterable, Iterator, List, Optional, Sequence, Union, cast
 )
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, MultiLineString
+from shapely.geometry import LineString, MultiLineString, Point, Polygon
 
+from ..core.geodesy import destination, mrr_diagonal
 from ..core.iterator import flight_iterator
+from ..core.time import deltalike, to_timedelta
 
 if TYPE_CHECKING:
-    from ..core import Flight  # noqa: 401
+    from ..core import Flight, FlightPlan  # noqa: 401
     from ..core.mixins import PointMixin  # noqa: 401
     from ..core.structure import Airport, Navaid  # noqa: 401
+    from ..data import Navaids  # noqa: 401
     from ..data.basic.airports import Airports  # noqa: 401
 
 # fmt: on
@@ -65,8 +69,21 @@ class NavigationFeatures:
             key=attrgetter("distance"),
         )
 
+    # -- Most basic metadata properties --
+
+    def takeoff_from(self, airport: Union[str, "Airport"]) -> bool:
+        """Returns True if the flight takes off from the given airport."""
+
+        from ..core.structure import Airport
+        from ..data import airports
+
+        return self.takeoff_airport() == (
+            airport if isinstance(airport, Airport) else airports[airport]
+        )
+
     def takeoff_airport(self, **kwargs) -> "Airport":
-        """Returns the most probable takeoff airport.
+        """Returns the most probable takeoff airport based on the first location
+        in the trajectory.
 
         .. code:: python
 
@@ -96,6 +113,8 @@ class NavigationFeatures:
         return guess_airport(data.iloc[0], **kwargs)
 
     def landing_at(self, airport: Union[str, "Airport"]) -> bool:
+        """Returns True if the flight takes off from the given airport."""
+
         from ..core.structure import Airport
         from ..data import airports
 
@@ -104,7 +123,8 @@ class NavigationFeatures:
         )
 
     def landing_airport(self, **kwargs) -> "Airport":
-        """Returns the most probable landing airport.
+        """Returns the most probable landing airport based on the last location
+        in the trajectory.
 
         .. code:: python
 
@@ -132,6 +152,8 @@ class NavigationFeatures:
 
         data = self.data.sort_values("timestamp")
         return guess_airport(data.iloc[-1], **kwargs)
+
+    # -- Alignments --
 
     @flight_iterator
     def aligned_on_runway(
@@ -187,6 +209,8 @@ class NavigationFeatures:
                 if segment is not None:
                     yield segment
 
+    # >>>>> This function is to be deprecated
+
     def on_runway(self, airport: Union[str, "Airport"]) -> Optional["Flight"]:
         """Returns the longest segment of trajectory which perfectly matches
         a runway at given airport.
@@ -202,6 +226,8 @@ class NavigationFeatures:
             437.27272727272725
 
         """
+        msg = "Use .aligned_on_runway(airport).max() instead."
+        warnings.warn(msg, DeprecationWarning)
 
         return max(
             self.aligned_on_runway(airport),
@@ -209,9 +235,12 @@ class NavigationFeatures:
             default=None,
         )
 
+    # --- end ---
+
     @flight_iterator
     def aligned_on_ils(
-        self, airport: Union[None, str, "Airport"],
+        self,
+        airport: Union[None, str, "Airport"],
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
@@ -220,7 +249,7 @@ class NavigationFeatures:
 
         .. code:: python
 
-            >>> aligned = next(belevingsvlucht.aligned_on_ils('EHAM'))
+            >>> aligned = belevingsvlucht.aligned_on_ils('EHAM').next()
             >>> f"ILS {aligned.max('ILS')} until {aligned.stop:%H:%M}"
             'ILS 06 until 20:17'
 
@@ -256,7 +285,11 @@ class NavigationFeatures:
             airport = self.landing_airport()
 
         _airport = airports[airport] if isinstance(airport, str) else airport
-        if _airport is None or _airport.runways.shape.is_empty:
+        if (
+            _airport is None
+            or _airport.runways is None
+            or _airport.runways.shape.is_empty
+        ):
             return None
 
         rad = np.pi / 180
@@ -289,7 +322,7 @@ class NavigationFeatures:
     @flight_iterator
     def aligned_on_navpoint(
         self,
-        points: Iterable["Navaid"],
+        points: Union["PointMixin", Iterable["PointMixin"], "FlightPlan"],
         angle_precision: int = 1,
         time_precision: str = "2T",
         min_time: str = "30s",
@@ -303,14 +336,27 @@ class NavigationFeatures:
 
         """
 
+        from ..core import FlightPlan
+        from ..core.mixins import PointMixin
+
+        points_: Sequence[PointMixin]
+
         # The following cast secures the typing
         self = cast("Flight", self)
-        for navpoint in points:
+
+        if isinstance(points, PointMixin):
+            points_ = [points]
+        elif isinstance(points, FlightPlan):
+            points_ = points.all_points
+        else:
+            points_ = list(points)
+
+        for navpoint in points_:
             tentative = (
                 self.distance(navpoint)
                 .bearing(navpoint)
                 .assign(
-                    b_diff=lambda df: df.distance
+                    shift=lambda df: df.distance
                     * (np.radians(df.bearing - df.track).abs()),
                     delta=lambda df: (df.bearing - df.track).abs(),
                 )
@@ -323,6 +369,217 @@ class NavigationFeatures:
                         and chunk.min("distance") < min_distance
                     ):
                         yield chunk.assign(navaid=navpoint.name)
+
+    def compute_navpoints(
+        self, navaids: Optional["Navaids"] = None, buffer: float = 0.1
+    ) -> Optional[pd.DataFrame]:
+
+        """This functions recomputes the most probable alignments on
+        navigational points on the trajectory.
+
+        By default, all navaids of the default database are considered,
+        but limited to a buffered bounding box around the trajectory.
+
+        Once computed, the following Altair snippet may be useful to
+        display the trajectory as a succession of segments:
+
+        .. code:: python
+
+            import altair as alt
+
+            df = flight.compute_navpoints()
+
+            segments = (
+                alt.Chart(df.drop(columns="duration")).encode(
+                    alt.X("start", title=None),
+                    alt.X2("stop"),
+                    alt.Y("navaid", sort="x", title=None),
+                    alt.Color("type", title="Navigational point"),
+                    alt.Tooltip(["navaid", "distance", "shift_mean"]),
+                )
+                .mark_bar(size=10)
+                .configure_legend(
+                    orient="bottom",
+                    labelFontSize=14, titleFontSize=14, labelFont="Ubuntu"
+                )
+                .configure_axis(labelFontSize=14, labelFont="Ubuntu")
+            )
+
+        """
+
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if navaids is None:
+            from ..data import navaids as default_navaids
+
+            navaids = default_navaids
+
+        navaids_ = navaids.extent(self, buffer=buffer)
+        if navaids_ is None:
+            return None
+        navaids_ = navaids_.drop_duplicates("name")
+        all_points: List["Navaid"] = list(navaids_)
+
+        def all_aligned_segments(traj: "Flight") -> pd.DataFrame:
+            return pd.DataFrame.from_records(
+                list(
+                    {
+                        "start": segment.start,
+                        "stop": segment.stop,
+                        "duration": segment.duration,
+                        "navaid": segment.max("navaid"),
+                        "distance": segment.min("distance"),
+                        "shift_mean": segment.shift_mean,
+                        "shift_meanp": segment.shift_mean + 0.02,
+                    }
+                    for segment in traj.aligned_on_navpoint(all_points)
+                )
+            ).sort_values("start")
+
+        def groupby_intervals(table: pd.DataFrame) -> Iterator[pd.DataFrame]:
+            if table.shape[0] == 0:
+                return
+            table = table.sort_values("start")
+            # take as much as you can
+            sweeping_line = table.query("stop <= stop.iloc[0]")
+            # try to push the stop line: which intervals overlap the stop line?
+            additional = table.query(
+                "start <= @sweeping_line.stop.max() < stop"
+            )
+
+            while additional.shape[0] > 0:
+                sweeping_line = table.query("stop <= @additional.stop.max()")
+                additional = table.query(
+                    "start <= @sweeping_line.stop.max() < stop"
+                )
+
+            yield sweeping_line
+            yield from groupby_intervals(
+                table.query("start > @sweeping_line.stop.max()")
+            )
+
+        def most_probable_navpoints(traj: "Flight") -> Iterator[pd.DataFrame]:
+            table = all_aligned_segments(traj)
+            for block in groupby_intervals(table):
+                d_max = block.eval("duration.max()")
+                t_threshold = d_max - pd.Timedelta("30s")  # noqa: F841
+                yield block.sort_values("shift_mean").query(
+                    "duration >= @t_threshold"
+                ).head(1)
+
+        return pd.concat(list(most_probable_navpoints(self))).merge(
+            navaids_.data, left_on="navaid", right_on="name"
+        )
+
+    @flight_iterator
+    def takeoff_from_runway(
+        self,
+        airport: Union[str, "Airport"],
+        threshold_alt: int = 2000,
+        zone_length: int = 6000,
+        little_base: int = 50,
+        opening: float = 5,
+    ) -> Iterator["Flight"]:
+        """Identifies the take-off runway for trajectories.
+
+        Iterates on all segments of trajectory matching a zone around a runway
+        of the  given airport. The takeoff runway number is appended as a new
+        ``runway`` column.
+
+        """
+
+        from ..data import airports
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self).phases()
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if _airport is None or _airport.runways.shape.is_empty:
+            return None
+
+        nb_run = len(_airport.runways.data)
+        alt = _airport.altitude + threshold_alt
+        base = zone_length * np.tan(opening * np.pi / 180) + little_base
+
+        # Il faut créer les formes autour de chaque runway
+        list_p0 = destination(
+            list(_airport.runways.data.latitude),
+            list(_airport.runways.data.longitude),
+            list(_airport.runways.data.bearing),
+            [zone_length for i in range(nb_run)],
+        )
+        list_p1 = destination(
+            list(_airport.runways.data.latitude),
+            list(_airport.runways.data.longitude),
+            [x + 90 for x in list(_airport.runways.data.bearing)],
+            [little_base for i in range(nb_run)],
+        )
+        list_p2 = destination(
+            list(_airport.runways.data.latitude),
+            list(_airport.runways.data.longitude),
+            [x - 90 for x in list(_airport.runways.data.bearing)],
+            [little_base for i in range(nb_run)],
+        )
+        list_p3 = destination(
+            list_p0[0],
+            list_p0[1],
+            [x - 90 for x in list(_airport.runways.data.bearing)],
+            [base for i in range(nb_run)],
+        )
+        list_p4 = destination(
+            list_p0[0],
+            list_p0[1],
+            [x + 90 for x in list(_airport.runways.data.bearing)],
+            [base for i in range(nb_run)],
+        )
+
+        runway_polygons = {}
+
+        for i, name in enumerate(_airport.runways.data.name):
+            lat = [list_p1[0][i], list_p2[0][i], list_p3[0][i], list_p4[0][i]]
+            lon = [list_p1[1][i], list_p2[1][i], list_p3[1][i], list_p4[1][i]]
+
+            poly = Polygon(zip(lon, lat))
+            runway_polygons[name] = poly
+
+        low_traj = self.query(
+            f"(phase == 'CLIMB' or phase == 'LEVEL') and altitude < {alt}"
+        )
+
+        if low_traj is None:
+            return
+
+        for segment in low_traj.split("2T"):
+            candidates_set = []
+            for name, polygon in runway_polygons.items():
+
+                if segment.intersects(polygon):
+                    candidate = (
+                        segment.cumulative_distance()
+                        .clip_iterate(polygon)
+                        .max(key="compute_gs_max")
+                    )
+                    if candidate is None or candidate.shape is None:
+                        continue
+                    start_runway = candidate.aligned_on_runway("LSZH").max()
+
+                    if start_runway is not None:
+                        candidate = candidate.after(start_runway.start)
+                        if candidate is None or candidate.shape is None:
+                            continue
+                    if candidate.max("compute_gs") < 140:
+                        continue
+
+                    candidates_set.append(candidate.assign(runway=name))
+
+            result = max(
+                candidates_set, key=attrgetter("duration"), default=None
+            )
+            if result is not None:
+                yield result
+
+    # -- Special operations --
 
     @flight_iterator
     def emergency(self) -> Iterator["Flight"]:
@@ -574,3 +831,275 @@ class NavigationFeatures:
                 if next_ is not None:
                     yield next_
                 next_ = None
+
+    # -- Airport ground operations specific methods --
+
+    @flight_iterator
+    def on_parking_position(
+        self,
+        airport: Union[str, "Airport"],
+        buffer_size: float = 1e-4,  # degrees
+    ) -> Iterator["Flight"]:
+        """
+        Generates possible parking positions at a given airport.
+
+        Example usage:
+
+        >>> parking = flight.on_parking_position('LSZH').max()
+        # returns the most probable parking position in terms of duration
+
+        .. warning::
+
+            This method has been well tested for aircraft taking off, but should
+            be double checked for landing trajectories.
+
+        """
+        from ..data import airports
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self)
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if _airport is None or _airport.runways.shape.is_empty:
+            return None
+
+        segment = self.filter().inside_bbox(_airport)
+        if segment is None:
+            return None
+
+        segment = segment.split().max()
+
+        parking_positions = _airport.parking_position
+        for _, p in parking_positions.data.iterrows():
+            if segment.intersects(p.geometry.buffer(buffer_size)):
+                parking_part = segment.clip(p.geometry.buffer(buffer_size))
+                if parking_part is not None:
+                    yield parking_part.assign(parking_position=p.ref)
+
+    def moving(
+        self,
+        speed_threshold: float = 2,
+        time_threshold: str = "30s",
+        filter_dict=dict(compute_gs=3),
+        resample_rule: str = "5s",
+    ) -> Optional["Flight"]:
+        """
+        Returns the part of the trajectory after the aircraft starts moving.
+
+        .. warning::
+
+            This method has been extensively tested on aircraft taxiing before
+            take-off. It should be adapted/taken with extra care for
+            trajectories after landing.
+
+        """
+
+        self = cast("Flight", self)
+
+        resampled = self.resample(resample_rule)
+        if resampled is None or len(resampled) <= 2:
+            return None
+
+        moving = (
+            resampled.cumulative_distance()
+            .filter(**filter_dict)
+            .query(f"compute_gs > {speed_threshold}")
+        )
+        if moving is None:
+            return None
+
+        first_segment = next(
+            (
+                segment
+                for segment in moving.split("1T")
+                if segment.longer_than(time_threshold)
+            ),
+            None,
+        )
+        if first_segment is None:
+            return None
+
+        return self.after(first_segment.start)
+
+    def pushback(
+        self,
+        airport: Union[str, "Airport"],
+        filter_dict=dict(
+            compute_track_unwrapped=21, compute_track=21, compute_gs=21
+        ),
+        track_threshold: float = 90,
+    ) -> Optional["Flight"]:
+        """
+        Returns the pushback part of the trajectory on ground.
+
+        The method identifies the start of the movement, the parking_position
+        and the moment the aircraft suddenly changes direction the computed
+        track angle.
+
+        .. warning::
+
+            The method has poor performance when trajectory point on ground are
+            lacking. This is often the case for data recorded from locations far
+            from the airport.
+
+        """
+
+        from ..data import airports
+
+        # Donne les fonctions possibles sur un flight object
+        self = cast("Flight", self)
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if _airport is None or _airport.runways.shape.is_empty:
+            return None
+
+        within_airport = self.inside_bbox(_airport)
+        if within_airport is None:
+            return None
+
+        parking_position = within_airport.on_parking_position(_airport).next()
+        if parking_position is None:
+            return None
+
+        after_parking = within_airport.after(parking_position.start)
+        assert after_parking is not None
+
+        in_movement = after_parking.moving()
+
+        if in_movement is None:
+            return None
+
+        direction_change = (
+            # trim the first few seconds to avoid annoying first spike
+            in_movement.first("5T")
+            .last("4T30s")
+            .cumulative_distance()
+            .unwrap(["compute_track"])
+            .filter(**filter_dict)
+            .diff("compute_track_unwrapped")
+            .query(f"compute_track_unwrapped_diff.abs() > {track_threshold}")
+        )
+
+        if direction_change is None:
+            return None
+
+        return in_movement.before(direction_change.start).assign(
+            parking_position=parking_position.parking_position_max
+        )
+
+    def is_from_inertial(self, freq_threshold=0.05) -> bool:
+        """
+        Returns True if ground trajectory data looks noisy.
+
+        .. warning::
+
+            This method is still experimental and tries to catch trajectories
+            based on the inertial system rather than the GPS. It catches zig-zag
+            patterns but fails to get trajectories driving between taxiways.
+
+        """
+        self = cast("Flight", self)
+
+        if "compute_track" not in self.data.columns:
+            self = self.cumulative_distance(compute_gs=False)
+
+        freq = (
+            self.diff("compute_track")
+            .compute_track_diff.round()
+            .value_counts(normalize=True)
+        )
+        if 90 not in freq.index or -90 not in freq.index:
+            return False
+        return freq[90] > freq_threshold and freq[-90] > freq_threshold
+
+    @flight_iterator
+    def slow_taxi(
+        self,
+        min_duration: deltalike = "60s",
+        max_diameter: float = 150,  # in meters
+    ) -> Iterator["Flight"]:
+        """
+        Holding segments are part of a trajectory where the aircraft stays more
+        than min_duration (in s) within a circle of diameter max_diameter (in m)
+
+        """
+        self = cast("Flight", self)
+
+        duration_threshold = to_timedelta(min_duration)
+
+        current_flight = self.moving()
+        if current_flight is None:
+            return None
+
+        current_flight = current_flight.onground()
+        if current_flight is None:
+            return None
+
+        current_flight = current_flight.resample("5s")
+        if current_flight is None:
+            return None
+
+        traj_df = (
+            current_flight.data[["timestamp", "latitude", "longitude"]]
+            .sort_values("timestamp")
+            .set_index("timestamp")
+        )
+
+        segment_geoms = []
+        segment_times = []
+
+        # Variables to detect changes between a stop
+        # segment and a moving segment
+        is_stopped = False
+        previously_stopped = False
+
+        # iterate over each coordinate to create segments
+        # Each data point is added to a queue (FIFO)
+        for index, row in traj_df.iterrows():
+            segment_geoms.append(Point(row.longitude, row.latitude))
+            segment_times.append(index)
+
+            if not is_stopped:  # remove points to the specified min_duration
+                while (
+                    len(segment_geoms) > 2
+                    and segment_times[-1] - segment_times[0]
+                    >= duration_threshold
+                ):
+                    segment_geoms.pop(0)
+                    segment_times.pop(0)
+
+            # Check if current segment, trimmed to have a duration shorthen than
+            # min_duration threshold,  is longer than the maximum distance
+            # threshold
+            if (
+                len(segment_geoms) > 1
+                and mrr_diagonal(segment_geoms) < max_diameter
+            ):
+                is_stopped = True
+            else:
+                is_stopped = False
+
+            # detection of the end of a stop segment and append to
+            # stop segment list
+            if len(segment_geoms) > 1:
+                segment_end = segment_times[-2]
+                segment_begin = segment_times[0]
+                if not is_stopped and previously_stopped:
+                    if (
+                        segment_end - segment_begin >= duration_threshold
+                    ):  # detected end of a stop
+                        candidate = self.between(segment_begin, segment_end)
+                        if candidate is not None:
+                            yield candidate
+                        segment_geoms = []
+                        segment_times = []
+
+            previously_stopped = is_stopped
+
+        if (
+            is_stopped
+            and segment_times[-1] - segment_times[0] >= duration_threshold
+        ):
+            candidate = self.between(segment_times[0], segment_times[-1])
+            if candidate is not None:
+                yield candidate

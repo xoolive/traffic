@@ -6,12 +6,11 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 
 from requests import Session
-
-from requests_pkcs12 import Pkcs12Adapter
 from tqdm.autonotebook import tqdm
 
 from .flight import FlightManagement
 from .flow import Measures
+from .pkcs12 import Pkcs12Adapter
 from .reply import B2BReply
 from .xml import REQUESTS
 
@@ -75,7 +74,7 @@ class NMB2B(FlightManagement, Measures):
         self.session.mount(
             mode["base_url"],
             Pkcs12Adapter(
-                pkcs12_filename=pkcs12_filename, pkcs12_password=pkcs12_password
+                filename=Path(pkcs12_filename), password=pkcs12_password
             ),
         )
 
@@ -139,7 +138,7 @@ class NMB2B(FlightManagement, Measures):
 
         # There may be several dataset available.
         # For now, we keep the latest one
-        latest = max(
+        latest = max(  # type: ignore
             res.reply.findall("data/datasetSummaries"),
             key=lambda x: x.find("publicationDate").text,  # type: ignore
             default=None,

@@ -5,15 +5,17 @@ import warnings
 from pathlib import Path
 
 # importing ipyleaflet here avoids annoying warnings
+import importlib_metadata
 import ipyleaflet  # noqa: F401
 import pandas as pd
 import pkg_resources
 from appdirs import user_cache_dir, user_config_dir
-
 from tqdm import TqdmExperimentalWarning
 
 # Silence this warning about autonotebook mode for tqdm
 warnings.simplefilter("ignore", TqdmExperimentalWarning)
+
+__version__ = importlib_metadata.version("traffic")
 
 # -- Configuration management --
 

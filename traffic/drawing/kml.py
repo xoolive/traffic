@@ -3,12 +3,11 @@ from contextlib import contextmanager
 from typing import Optional
 
 import numpy as np
-
 from fastkml import LineStyle, PolyStyle, kml
 from fastkml.geometry import Geometry
 from shapely.geometry import LineString
 
-from ..core import Flight, Airspace
+from ..core import Airspace, Flight
 
 _colormap = {
     "blue": "#1928f0",
@@ -64,7 +63,7 @@ def _flight_export_kml(
     flight: Flight,
     styleUrl: Optional[kml.StyleUrl] = None,
     color: Optional[str] = None,
-    alpha: float = .5,
+    alpha: float = 0.5,
     **kwargs,
 ) -> kml.Placemark:
     if color is not None:
@@ -80,7 +79,7 @@ def _flight_export_kml(
     placemark = kml.Placemark(**params)
     placemark.visibility = 1
     # Convert to meters
-    coords = np.stack(flight.coords)
+    coords = np.stack(flight.coords)  # type: ignore
     coords[:, 2] *= 0.3048
     placemark.geometry = Geometry(
         geometry=LineString(coords),
@@ -94,7 +93,7 @@ def _airspace_export_kml(
     sector: Airspace,
     styleUrl: Optional[kml.StyleUrl] = None,
     color: Optional[str] = None,
-    alpha: float = .5,
+    alpha: float = 0.5,
 ) -> kml.Placemark:
     if color is not None:
         # the style will be set only if the kml.export context is open
