@@ -192,7 +192,7 @@ class Flight(
         - visualisation with altair:
           `chart() <#traffic.core.Flight.chart>`_,
           `geoencode() <#traffic.core.Flight.geoencode>`_
-        - visualisation with leaflet: `layer() <#traffic.core.Flight.layer>`_
+        - visualisation with leaflet: `map_leaflet() <leaflet.html>`_
         - visualisation with Matplotlib:
           `plot() <#traffic.core.Flight.plot>`_,
           `plot_time() <#traffic.core.Flight.plot_time>`_
