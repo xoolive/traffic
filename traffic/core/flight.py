@@ -4,9 +4,10 @@ import logging
 import warnings
 from datetime import datetime, timedelta, timezone
 from operator import attrgetter
+from pathlib import Path
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-    List, Optional, Set, Tuple, Union, cast, overload
+    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator, List,
+    Optional, Set, Tuple, Type, TypeVar, Union, cast, overload
 )
 
 import altair as alt
@@ -40,6 +41,8 @@ if TYPE_CHECKING:
     from .traffic import Traffic  # noqa: F401
 
 # fmt: on
+
+T = TypeVar("T", bound="Flight")
 
 
 def _tz_interpolate(data, *args, **kwargs):
@@ -2331,3 +2334,65 @@ class Flight(
                         ).dt.tz_convert("utc")
                     ).plot(ax=ax, x="timestamp", **kw)
                 )
+
+    @classmethod
+    def from_file(
+        cls: Type[T], filename: Union[Path, str], **kwargs
+    ) -> Optional[T]:
+
+        """Read data from various formats.
+
+        This class method dispatches the loading of data in various format to
+        the proper ``pandas.read_*`` method based on the extension of the
+        filename.
+
+        - .pkl and .pkl.gz dispatch to ``pandas.read_pickle``;
+        - .parquet and .parquet.gz dispatch to ``pandas.read_parquet``;
+        - .json and .json.gz dispatch to ``pandas.read_json``;
+        - .csv and .csv.gz dispatch to ``pandas.read_csv``;
+        - .h5 dispatch to ``pandas.read_hdf``.
+
+        Other extensions return ``None``.
+        Specific arguments may be passed to the underlying ``pandas.read_*``
+        method with the kwargs argument.
+
+        Example usage:
+
+        >>> t = Flight.from_file("example_flight.csv")
+        """
+
+        tentative = super().from_file(filename, **kwargs)
+        if tentative is None:
+            return None
+
+        # Special treatment for flights to download from flightradar24
+        cols_fr24 = {
+            "Altitude",
+            "Callsign",
+            "Direction",
+            "Position",
+            "Speed",
+            "Timestamp",
+            "UTC",
+        }
+        if set(tentative.data.columns) != cols_fr24:
+            return tentative
+
+        latlon = tentative.data.Position.str.split(pat=",", expand=True)
+        return (
+            tentative.assign(
+                latitude=latlon[0].astype(float),
+                longitude=latlon[1].astype(float),
+                timestamp=lambda df: pd.to_datetime(df.UTC),
+            )
+            .rename(
+                columns={
+                    "UTC": "timestamp",
+                    "Altitude": "altitude",
+                    "Callsign": "callsign",
+                    "Speed": "groundspeed",
+                    "Direction": "track",
+                }
+            )
+            .drop(columns=["Timestamp", "Position"])
+        )
