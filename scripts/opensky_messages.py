@@ -16,7 +16,8 @@ df = df.assign(timestamp=lambda df: pd.to_datetime(df.timestamp, unit="ms"))
 chart = alt.Chart(df).encode(
     x=alt.X("timestamp", title=None),
     y=alt.Y(
-        "daily", axis=alt.Axis(format="~s", title="Number of daily messages"),
+        "daily",
+        axis=alt.Axis(format="~s", title=None),
     ),
 )
 
@@ -38,18 +39,23 @@ annotation = (
         )
     )
     .encode(x="timestamp", y="daily", text="text")
-    .mark_text(align="right", baseline="middle", fontSize=14, fontWeight="bold")
+    .mark_text(
+        align="right",
+        baseline="middle",
+        fontSize=16,
+        fontWeight="bold",
+    )
 )
 
 view = (
     (
-        chart.mark_line(opacity=0.0,)
-        + annotation
+        chart.mark_line(opacity=0.0)
         + chart.transform_loess("timestamp", "daily", bandwidth=0.02).mark_line(
-            color="#d35400"
+            color="#4e79a7"
         )
+        + annotation
     )
-    .configure(font="Ubuntu",)
+    .configure(font="Ubuntu")
     .properties(
         width=500,
         height=300,
@@ -63,7 +69,7 @@ view = (
         titleFont="Ubuntu",
     )
 )
-
+view.save("opensky_stats.svg")
 view
 
 # %%

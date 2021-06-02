@@ -92,19 +92,23 @@ def main(
         .drop(columns=["hour"])
         .rename(
             columns=dict(
-                estarrivalairport="destination", estdepartureairport="origin",
+                estarrivalairport="destination",
+                estdepartureairport="origin",
             )
         )
         .assign(
             firstseen=lambda df: pd.to_datetime(
-                df.firstseen, unit="s",
+                df.firstseen,
+                unit="s",
             ).dt.tz_localize("utc"),
             lastseen=lambda df: pd.to_datetime(
-                df.lastseen, unit="s",
+                df.lastseen,
+                unit="s",
             ).dt.tz_localize("utc"),
-            day=lambda df: pd.to_datetime(df.day, unit="s",).dt.tz_localize(
-                "utc"
-            ),
+            day=lambda df: pd.to_datetime(
+                df.day,
+                unit="s",
+            ).dt.tz_localize("utc"),
         )
     )
     df_merged = df.merge(aircraft.opensky_db, how="left")[
@@ -151,7 +155,7 @@ def main(
                 ),
             ]
         )
-    else: 
+    else:
         df = df_merged.assign(number=None)
 
     df_clean = df.sort_values("firstseen")[
