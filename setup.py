@@ -75,7 +75,7 @@ setup(
         "ipyleaflet",  # Leaflet for notebooks
         "tqdm>=4.28",  # progressbars
         "cartes>=0.2",
-        "pyModeS>=2.8",
+        "pyModeS>=2.9",
         "openap",
         "pyarrow",
         "beautifulsoup4",

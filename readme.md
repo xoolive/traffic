@@ -33,28 +33,32 @@ including CesiumJS or Google Earth.
 
 ## Installation
 
+Most recommended option, in a fresh conda environment:
+
+```sh
+conda create -n traffic -c conda-forge python=3.9 traffic
+```
+
 Latest release:
 
 ```sh
+# in an existing conda environment
+conda install -c conda-forge traffic
+# with pip
 pip install --upgrade traffic
 ```
 
 Development version:
 
 ```sh
-pip install git+https://github.com/xoolive/traffic
+git clone https://github.com/xoolive/traffic
+cd traffic
+pip install .
 ```
 
-**Warning:** `cartes` and `shapely` have strong dependencies to dynamic
-libraries which may not be available on your system by default.
+**Warning:**
 
-Before reporting an issue, please try to use an Anaconda environment. Other
-installations (You may check them in the `.travis.yml` configuration file.)
-should work but the Anaconda way proved to work smoothly.
-
-```sh
-conda install cartopy shapely
-```
+Before reporting an issue, use the most recommended option in a fresh conda environment.
 
 For troubleshootings, refer to the appropriate
 [documentation section](https://traffic-viz.github.io/installation.html#troubleshooting).

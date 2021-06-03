@@ -17,32 +17,23 @@ visualisations in Jupyter Lab are accessible thanks to the `altair <https://alta
 <http://ipyleaflet.readthedocs.io/>`_ libraries; other exports to various formats
 (including CesiumJS or Google Earth) are also available.
 
-We recommend cloning the latest version from the repository before installing
-it.
+We recommend creating a fresh conda environment for a first installation:
+
+.. parsed-literal::
+    conda create -n traffic -c conda-forge python=3.9 traffic
+    conda activate traffic
+
+You may as well install traffic in an existing environment:
+
+.. parsed-literal::
+    conda install -c conda-forge traffic
+
+For the most recent development version:
 
 .. parsed-literal::
     git clone https://github.com/xoolive/traffic
     cd traffic/
     pip install .
-
-If you are not comfortable with that option, you can always install the latest
-release:
-
-.. parsed-literal::
-    pip install traffic
-
-.. warning::
-    `cartopy` and `shapely` have strong dependencies to dynamic libraries which
-    may not be available on your system by default. If possible, install
-    `Anaconda <https://www.anaconda.com/distribution/#download-section>`_, 
-    then create a virtualenv and run the next commands in the prompt/terminal:
-
-    .. parsed-literal::
-       conda install cartopy shapely
-       # then _either_ with pip (stable version)
-       pip install traffic
-       # _or_ from sources (dev version)
-       pip install .
 
 .. toctree::
    :maxdepth: 1
