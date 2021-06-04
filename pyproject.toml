@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 80
-target_version = ['py36', 'py37', 'py38']
+target_version = ['py37', 'py38', 'py39']
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -18,5 +18,3 @@ exclude = '''
 line_length = 80
 multi_line_output = 5
 balanced_wrapping = true
-# known_pandas=numpy,pandas,shapely,altair,pyproj
-# sections=FUTURE,STDLIB,PANDAS,THIRDPARTY,FIRSTPARTY,LOCALFOLDER
