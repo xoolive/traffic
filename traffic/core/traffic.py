@@ -557,6 +557,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
+    def diff(self, features: Union[str, List[str]], **kwargs):
+        ...
+
+    @lazy_evaluation()
     def apply_segments(
         self, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
     ):
@@ -578,6 +582,14 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @lazy_evaluation()
     def compute_wind(self):
+        ...
+
+    @lazy_evaluation()
+    def bearing(
+        self,
+        other: Union[PointMixin],
+        column_name: str = "bearing",
+    ):
         ...
 
     @lazy_evaluation()
