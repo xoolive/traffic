@@ -6,6 +6,7 @@ import logging
 import traceback
 import types
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
 from typing import (
     TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, overload
 )
@@ -18,6 +19,7 @@ from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
     from typing_extensions import Literal
+
     from .traffic import Traffic  # noqa: F401
 
 # fmt: on
@@ -119,7 +121,10 @@ class LazyTraffic:
         )
 
     def eval(
-        self, max_workers: int = 1, desc: Optional[str] = None
+        self,
+        max_workers: int = 1,
+        desc: Optional[str] = None,
+        cache_file: Union[str, Path, None] = None,
     ) -> Optional["Traffic"]:
         """
 
@@ -133,6 +138,10 @@ class LazyTraffic:
 
         desc: str, default: None
             If not None, a tqdm progressbar is displayed with this parameter.
+
+        cache_file: str, Path, default: None
+            If not None, store the results in cache_file and load the results
+            from the file if it exists.
 
         Example usage:
             The following call
@@ -157,6 +166,9 @@ class LazyTraffic:
         Check the documentation for more options.
 
         """
+
+        if cache_file is not None and Path(cache_file).exists():
+            return self.wrapped_t.__class__.from_file(cache_file)
 
         if max_workers < 2 or FaultCatcher.flag is True:
             iterator = self.wrapped_t.iterate(**self.iterate_kw)
@@ -207,9 +219,14 @@ class LazyTraffic:
                     cumul.append(future.result())
 
         # return Traffic.from_flights
-        return self.wrapped_t.__class__.from_flights(
+        result = self.wrapped_t.__class__.from_flights(
             [flight for flight in cumul if flight is not None]
         )
+
+        if cache_file is not None and result is not None:
+            result.to_pickle(cache_file)
+
+        return result
 
     def __getattr__(self, name):
         if hasattr(self.wrapped_t, name):
@@ -360,9 +377,9 @@ for name, handle in inspect.getmembers(
     if name.startswith("_") or "self" not in annots or "return" not in annots:
         continue
 
-    if (
+    if (  # includes .query()
         annots["return"] == annots["self"]
-        or annots["return"] == Optional[annots["self"]]  # includes .query()
+        or annots["return"] == Optional[annots["self"]]  # noqa: F821
     ):
 
         def make_lambda(name: str) -> Callable[..., LazyTraffic]:
