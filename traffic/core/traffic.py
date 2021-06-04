@@ -18,6 +18,7 @@ from typing import (
     overload,
 )
 
+import altair as alt
 import pandas as pd
 import pyproj
 from shapely.geometry import Polygon, base
@@ -761,12 +762,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         """Returns a summary of the current Traffic structure containing
         featured attributes.
 
-        Example usage:
-
-        >>> t.summary(['icao24', 'start', 'stop', 'duration'])
-
-        Consider monkey-patching properties to the Flight class if you need more
-        information in your summary DataFrame.
+        Example usage (TODO)
 
         """
         if iterate_kw is None:
@@ -782,6 +778,57 @@ class Traffic(HBoxMixin, GeographyMixin):
             This method is not implemented.
         """
         raise NotImplementedError
+
+    def geoencode_groundtraffic(
+        self,
+        airport: str,
+        dt_sec: int = 5,
+    ):
+        def timestamp(t):
+            return pd.to_datetime(t).timestamp() * 1000
+
+        from ..data import airports
+
+        # The following cast secures the typing
+        _airport = airports[airport] if isinstance(airport, str) else airport
+        if _airport is None or _airport.runways.shape.is_empty:
+            return None
+
+        source = (
+            self.iterate_lazy()
+            .inside_bbox(_airport)
+            .onground()
+            .resample(f"{dt_sec}s")
+            .eval()
+            .data[["timestamp", "latitude", "longitude", "flight_id"]]
+        )
+
+        slider = alt.binding_range(
+            step=1000 * dt_sec,  # 1sec
+            min=timestamp(min(source["timestamp"])),
+            max=timestamp(max(source["timestamp"])),
+        )
+
+        select_date = alt.selection_single(
+            fields=["timestamp"],
+            bind=slider,
+            init={"timestamp": timestamp(min(source["timestamp"]))},
+            name="slider",
+        )
+
+        return _airport.geoencode() + alt.Chart(source).mark_circle(
+            size=30
+        ).encode(
+            latitude="latitude",
+            longitude="longitude",
+            color=alt.Color("flight_id"),
+        ).add_selection(
+            select_date
+        ).transform_filter(
+            "(minutes(datum.timestamp) == minutes(slider.timestamp[0])) && "
+            "(seconds(datum.timestamp) == seconds(slider.timestamp[0])) && "
+            "(hours(datum.timestamp) == hours(slider.timestamp[0]))"
+        )
 
     def plot(
         self, ax: "GeoAxesSubplot", nb_flights: Optional[int] = None, **kwargs
