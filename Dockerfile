@@ -9,5 +9,4 @@
 FROM jupyter/minimal-notebook
 
 USER jovyan
-RUN conda install cartopy shapely pip
-RUN pip install keplergl traffic
+RUN conda install -c conda-forge traffic

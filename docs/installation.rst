@@ -17,23 +17,68 @@ visualisations in Jupyter Lab are accessible thanks to the `altair <https://alta
 <http://ipyleaflet.readthedocs.io/>`_ libraries; other exports to various formats
 (including CesiumJS or Google Earth) are also available.
 
+Latest release
+--------------
+
 We recommend creating a fresh conda environment for a first installation:
 
 .. parsed-literal::
+
+    # Recommended options if not set up yet
+    conda config --set channel_priority strict
+    conda config --add channels conda-forge
+
+    # Installation
     conda create -n traffic -c conda-forge python=3.9 traffic
     conda activate traffic
 
-You may as well install traffic in an existing environment:
+Adjust the Python version (>=3.7) and append packages you may need for future works (e.g. ``bpython``, ``jupyterlab``, etc.)
+
+Then activate the environment each time you need to use the ``traffic`` library:
 
 .. parsed-literal::
-    conda install -c conda-forge traffic
 
-For the most recent development version:
+    conda activate traffic
+
+.. warning::
+
+    Please only report installation issues in fresh conda environments.
+
+.. hint::
+
+    Consider using `mamba <https://github.com/mamba-org/mamba>`_ for a faster Conda experience.
+
+Updating traffic
+----------------
 
 .. parsed-literal::
+
+    # -n option is followed by the name of the environment
+    conda update -n traffic -c conda-forge traffic
+
+
+Development version
+-------------------
+
+You may also install or update ``traffic`` in an existing environment with pip:
+
+.. parsed-literal::
+
+    pip install --upgrade traffic
+
+For the most recent development version, clone the Github repository:
+
+.. parsed-literal::
+
     git clone https://github.com/xoolive/traffic
     cd traffic/
     pip install .
+
+If you intend to file a pull request, please activate ``pre-commit`` hooks:
+
+.. parsed-literal::
+
+    pre-commit install
 
 .. toctree::
    :maxdepth: 1

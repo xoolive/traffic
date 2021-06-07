@@ -11,6 +11,8 @@
 [![JOSS paper](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518)
 ![PyPI version](https://img.shields.io/pypi/v/traffic)
 [![PyPI downloads](https://img.shields.io/pypi/dm/traffic)](https://pypi.org/project/traffic)
+![Conda version](https://img.shields.io/conda/vn/conda-forge/traffic)
+[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/traffic.svg)](https://anaconda.org/conda-forge/traffic)
 [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/traffic-viz/traffic_static/blob/master/notebooks/quickstart.ipynb)
 
 The traffic library helps working with common sources of air traffic data.
@@ -33,32 +35,62 @@ including CesiumJS or Google Earth.
 
 ## Installation
 
-Most recommended option, in a fresh conda environment:
+### Latest release
+
+You may install `traffic` in a fresh conda environment:
 
 ```sh
+# Recommended options if not set up yet
+conda config --set channel_priority strict
+conda config --add channels conda-forge
+
+# Installation
 conda create -n traffic -c conda-forge python=3.9 traffic
 ```
 
-Latest release:
+Adjust the Python version (>=3.7) and append packages you may need for future works (e.g. `bpython`, `jupyterlab`, etc.)
+
+Then activate the environment each time you need to use the `traffic` library:
 
 ```sh
-# in an existing conda environment
-conda install -c conda-forge traffic
-# with pip
-pip install --upgrade traffic
-```
-
-Development version:
-
-```sh
-git clone https://github.com/xoolive/traffic
-cd traffic
-pip install .
+conda activate traffic
 ```
 
 **Warning:**
 
-Before reporting an issue, use the most recommended option in a fresh conda environment.
+Please only report installation issues in fresh conda environments.
+
+### Updating traffic
+
+```sh
+# -n option is followed by the name of the environment
+conda update -n traffic -c conda-forge traffic
+```
+
+
+### Development version
+
+You may also install or update `traffic` in an existing environment with pip:
+
+```sh
+pip install --upgrade traffic
+```
+
+For the most recent development version, clone the Github repository:
+
+```sh
+git clone https://github.com/xoolive/traffic
+cd traffic
+pip install .[dev]
+```
+
+If you intend to file a pull request, please activate `pre-commit` hooks:
+
+```sh
+pre-commit install
+```
+
+
 
 For troubleshootings, refer to the appropriate
 [documentation section](https://traffic-viz.github.io/installation.html#troubleshooting).

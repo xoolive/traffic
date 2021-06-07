@@ -19,7 +19,7 @@ except FileNotFoundError:
 
 setup(
     name="traffic",
-    version="2.6.1",
+    version="2.6.2",
     author="Xavier Olive",
     author_email="git@xoolive.org",
     url="https://github.com/xoolive/traffic/",
@@ -91,6 +91,7 @@ setup(
             "black",
             "pre-commit",
             "isort",
+            "sphinx_rtd_theme",
         ]
     },
     classifiers=[
