@@ -14,8 +14,7 @@ In the simplest case when you just want to run the traffic library in a Docker c
     FROM jupyter/minimal-notebook
 
     USER jovyan
-    RUN conda install cartopy shapely pip
-    RUN pip install keplergl traffic
+    RUN conda install -c conda-forge traffic
 
 To run this Docker, you first have to generate an image with ``docker build``:
 
@@ -56,10 +55,4 @@ Note that the environment file ``traffic_env.yml`` has to be in the same directo
       - defaults
     dependencies:
       - python
-      - cartopy
-      - shapely
-      - pip
-      - nb_conda
-      - pip:
-        - keplergl
-        - traffic
+      - traffic
