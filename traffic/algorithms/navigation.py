@@ -908,6 +908,7 @@ class NavigationFeatures:
         if moving is None:
             return None
 
+        segment = None
         first_segment = None
         for segment in moving.split("1T"):
             if segment.longer_than(time_threshold) and first_segment is None:
