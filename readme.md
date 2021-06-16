@@ -60,6 +60,10 @@ conda activate traffic
 
 Please only report installation issues in fresh conda environments.
 
+#### How to use Traffic with Conda
+
+Simply download miniconda, install `anaconda-navigator` using the command `conda install anaconda-navigator` in a conda promt. Then open the anaconda navigator and select `traffic` on the `Applications on` list. After that install VSCode or any other IDE and launch it.
+
 ### Updating traffic
 
 ```sh
