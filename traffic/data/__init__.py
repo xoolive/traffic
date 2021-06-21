@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Any, Dict
 
 from .. import cache_dir, config, config_file
 
@@ -51,31 +52,47 @@ if nmb2b_mode not in ["OPS", "PREOPS"]:
 nmb2b_version = config.get("nmb2b", "version", fallback="23.0.0")
 
 
+_cached_imports: Dict[str, Any] = dict()
+
+
 def __getattr__(name: str):
+
+    res: Any
+    if name in _cached_imports.keys():
+        return _cached_imports[name]
+
     """This only works for Python >= 3.7, see PEP 562."""
     if name == "aircraft":
         from .basic.aircraft import Aircraft
 
         Aircraft.cache_dir = cache_dir
-        return Aircraft()
+        res = Aircraft()
+        _cached_imports[name] = res
+        return res
 
     if name == "airports_fr24":
         from .basic.airports import Airports
 
         Airports.cache_dir = cache_dir
-        return Airports(src="fr24")
+        res = Airports(src="fr24")
+        _cached_imports[name] = res
+        return res
 
     if name == "airports":
         from .basic.airports import Airports
 
         Airports.cache_dir = cache_dir
-        return Airports()
+        res = Airports()
+        _cached_imports[name] = res
+        return res
 
     if name == "airways":
         from .basic.airways import Airways
 
         Airways.cache_dir = cache_dir
-        return Airways()
+        res = Airways()
+        _cached_imports[name] = res
+        return res
 
     if name == "carto_session":
         from cartes.osm.requests import session as carto_session
@@ -84,7 +101,9 @@ def __getattr__(name: str):
             carto_session.proxies.update(proxy_values)
             carto_session.trust_env = False
 
-        return carto_session
+        res = carto_session
+        _cached_imports[name] = res
+        return res
 
     if name == "eurofirs":
         from .airspaces.eurofirs import eurofirs
@@ -95,7 +114,9 @@ def __getattr__(name: str):
         from .basic.navaid import Navaids
 
         Navaids.cache_dir = cache_dir
-        return Navaids()
+        res = Navaids()
+        _cached_imports[name] = res
+        return res
 
     if name == "aixm_airspaces":  # coverage: ignore
         from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
@@ -105,26 +126,34 @@ def __getattr__(name: str):
         if aixm_path_str != "":  # coverage: ignore
             AIXMAirspaceParser.aixm_path = Path(aixm_path_str)
 
-        return AIXMAirspaceParser(config_file)
+        res = AIXMAirspaceParser(config_file)
+        _cached_imports[name] = res
+        return res
 
     if name == "nm_airspaces":  # coverage: ignore
         from .eurocontrol.ddr.airspaces import NMAirspaceParser
 
         if nm_path_str != "":  # coverage: ignore
             NMAirspaceParser.nm_path = Path(nm_path_str)
-        return NMAirspaceParser(config_file)
+        res = NMAirspaceParser(config_file)
+        _cached_imports[name] = res
+        return res
 
     if name == "nm_navaids":  # coverage: ignore
         from .eurocontrol.ddr.navpoints import NMNavaids
 
-        return NMNavaids.from_file(nm_path_str)
+        res = NMNavaids.from_file(nm_path_str)
+        _cached_imports[name] = res
+        return res
 
     if name == "nm_airways":
         from .eurocontrol.ddr.routes import NMRoutes
 
         if nm_path_str != "":  # coverage: ignore
             NMRoutes.nm_path = Path(nm_path_str)
-        return NMRoutes()
+        res = NMRoutes()
+        _cached_imports[name] = res
+        return res
 
     if name == "opensky":
         from . import session
@@ -137,13 +166,17 @@ def __getattr__(name: str):
             session,
             paramiko_proxy,
         )
-        return opensky
+        res = opensky
+        _cached_imports[name] = res
+        return res
 
     if name == "runways":
         from .basic.runways import Runways
 
         Runways.cache_dir = cache_dir
-        return Runways()
+        res = Runways()
+        _cached_imports[name] = res
+        return res
 
     if name == "session":
         from requests import Session
@@ -152,7 +185,9 @@ def __getattr__(name: str):
         if len(proxy_values) > 0:
             session.proxies.update(proxy_values)
             session.trust_env = False
-        return session
+        res = session
+        _cached_imports[name] = res
+        return res
 
     if name == "nm_b2b":
         from .eurocontrol.b2b import NMB2B
@@ -166,7 +201,9 @@ def __getattr__(name: str):
                 pkcs12_filename,
                 pkcs12_password,
             )
-            return nm_b2b
+            res = nm_b2b
+            _cached_imports[name] = res
+            return res
 
     if name == "AllFT":
         from .eurocontrol.ddr.allft import AllFT
