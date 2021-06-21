@@ -17,8 +17,6 @@ from typing import (
 import numpy as np
 import pandas as pd
 import pyproj
-from cartopy.crs import PlateCarree
-from scipy.interpolate import interp1d
 from shapely.geometry import LineString, base
 
 from ....core import Airspace
@@ -249,7 +247,12 @@ class Flight(FlightMixin):
         """Identity method, available for consistency"""
         return self
 
-    def interpolate(self, times, proj=PlateCarree()) -> np.ndarray:
+    def interpolate(self, times, proj=None) -> np.ndarray:
+        from cartopy.crs import PlateCarree
+        from scipy.interpolate import interp1d
+
+        if proj is None:
+            proj = PlateCarree()
         if proj not in self.interpolator:
             self.interpolator[proj] = interp1d(
                 np.stack(

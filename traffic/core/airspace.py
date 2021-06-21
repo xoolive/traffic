@@ -4,20 +4,22 @@ import json
 from collections import defaultdict
 from pathlib import Path
 from typing import (
-    Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, TypeVar, Union
+    TYPE_CHECKING, Any, Dict, Iterator, List,
+    NamedTuple, Optional, Set, Tuple, TypeVar, Union
 )
 
 import numpy as np
 import pyproj
-from cartopy.crs import PlateCarree
-from cartopy.mpl.geoaxes import GeoAxesSubplot
-from matplotlib.patches import Polygon as MplPolygon
 from shapely.geometry import Polygon, base, mapping, polygon, shape
 from shapely.ops import cascaded_union, transform
 
 from . import Flight, Traffic
 from .lazy import lazy_evaluation
 from .mixins import GeographyMixin, PointMixin, ShapelyMixin  # noqa: F401
+
+if TYPE_CHECKING:
+    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from matplotlib.patches import Polygon as MplPolygon
 
 # fmt: on
 
@@ -128,15 +130,17 @@ class Airspace(ShapelyMixin):
         return f"""Airspace {self.name} with {len(self.elements)} parts"""
 
     def annotate(
-        self, ax: GeoAxesSubplot, **kwargs
+        self, ax: "GeoAxesSubplot", **kwargs
     ) -> None:  # coverage: ignore
+        from cartopy.crs import PlateCarree
+
         if "projection" in ax.__dict__:
             kwargs["transform"] = PlateCarree()
         if "s" not in kwargs:
             kwargs["s"] = self.name
         ax.text(*np.array(self.centroid), **kwargs)
 
-    def plot(self, ax: GeoAxesSubplot, **kwargs) -> None:  # coverage: ignore
+    def plot(self, ax: "GeoAxesSubplot", **kwargs) -> None:  # coverage: ignore
         flat = self.flatten()
         if isinstance(flat, base.BaseMultipartGeometry):
             for poly in flat:
@@ -151,6 +155,8 @@ class Airspace(ShapelyMixin):
             kwargs["edgecolor"] = ax._get_lines.get_next_color()
 
         if "projection" in ax.__dict__:
+            from cartopy.crs import PlateCarree
+
             ax.add_geometries([flat], crs=PlateCarree(), **kwargs)
         else:
             ax.add_patch(MplPolygon(list(flat.exterior.coords), **kwargs))

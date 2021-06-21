@@ -1,12 +1,11 @@
-from cartes.crs import *  # noqa: F401 F403
-from cartes.osm import Nominatim
-from cartopy.feature import NaturalEarthFeature
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 
 from ..core.mixins import PointMixin, ShapelyMixin
 
 
 def countries(**kwargs):
+    from cartopy.feature import NaturalEarthFeature
+
     params = {
         "category": "cultural",
         "name": "admin_0_countries",
@@ -20,6 +19,8 @@ def countries(**kwargs):
 
 
 def rivers(**kwargs):
+    from cartopy.feature import NaturalEarthFeature
+
     params = {
         "category": "physical",
         "name": "rivers_lake_centerlines",
@@ -33,6 +34,8 @@ def rivers(**kwargs):
 
 
 def lakes(**kwargs):
+    from cartopy.feature import NaturalEarthFeature
+
     params = {
         "category": "physical",
         "name": "lakes",
@@ -46,6 +49,8 @@ def lakes(**kwargs):
 
 
 def ocean(**kwargs):
+    from cartopy.feature import NaturalEarthFeature
+
     params = {
         "category": "physical",
         "name": "ocean",
@@ -68,6 +73,8 @@ GeoAxesSubplot.set_default_extent = _set_default_extent
 
 
 def _set_extent(self, shape, buffer: float = 0.01):
+    from cartes.osm import Nominatim
+
     if isinstance(shape, str):
         shape = Nominatim.search(shape)
     if isinstance(shape, ShapelyMixin):
@@ -91,4 +98,15 @@ def _point(self):
     return point
 
 
-setattr(Nominatim, "point", property(_point))
+# TODO
+# setattr(Nominatim, "point", property(_point))
+
+
+def __getattr__(name: str):
+
+    import cartopy.crs
+
+    if not name.startswith("_") and name in dir(cartopy.crs):
+        return getattr(cartopy.crs, name)
+
+    raise AttributeError(f"module {__name__} has no attribute {name}")

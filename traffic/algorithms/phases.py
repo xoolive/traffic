@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
-from openap.phase import FlightPhase
 
 if TYPE_CHECKING:
     from ..core import Flight  # noqa: F401
@@ -12,6 +11,8 @@ class FuzzyLogic:
         """Assign a flight phase to each timestamp of a flight
         using OpenAP phase detection fuzzy logic method.
         """
+
+        from openap.phase import FlightPhase
 
         # The following cast secures the typing
         self = cast("Flight", self)

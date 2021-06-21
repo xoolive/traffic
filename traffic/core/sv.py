@@ -1,12 +1,13 @@
-from typing import Iterator, Set
+from typing import TYPE_CHECKING, Iterator, Set
 
 import pandas as pd
-from cartopy.crs import PlateCarree
-from cartopy.mpl.geoaxes import GeoAxesSubplot
-from matplotlib.artist import Artist
 
 from .flight import Position
 from .mixins import GeographyMixin
+
+if TYPE_CHECKING:
+    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from matplotlib.artist import Artist
 
 
 class StateVectors(GeographyMixin):
@@ -35,9 +36,11 @@ class StateVectors(GeographyMixin):
             yield Position(p)
 
     def plot(
-        self, ax: GeoAxesSubplot, s: int = 10, **kwargs
-    ) -> Artist:  # coverage: ignore
+        self, ax: "GeoAxesSubplot", s: int = 10, **kwargs
+    ) -> "Artist":  # coverage: ignore
         """Plotting function. All arguments are passed to ax.scatter"""
+        from cartopy.crs import PlateCarree
+
         return ax.scatter(
             self.data.longitude,
             self.data.latitude,

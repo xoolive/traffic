@@ -313,7 +313,11 @@ class Aircraft(object):
         idcode = pms.common.idcode(msg)
         with self.lock:
             self.cumul.append(
-                dict(timestamp=t, icao24=self.icao24, squawk=idcode,)
+                dict(
+                    timestamp=t,
+                    icao24=self.icao24,
+                    squawk=idcode,
+                )
             )
 
     @property
@@ -782,7 +786,7 @@ class Decoder:
         elif isinstance(reference, Airport):
             lat0, lon0 = reference.latlon
         else:
-            lat0, lon0 = reference
+            lat0, lon0 = reference  # type: ignore
 
         self.acs: AircraftDict = AircraftDict()
         self.acs.set_latlon(lat0, lon0)

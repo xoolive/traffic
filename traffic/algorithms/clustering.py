@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, List, Optional, Union
 import numpy as np
 import pandas as pd
 import pyproj
-from cartopy import crs
-from scipy.spatial.distance import pdist, squareform
 from typing_extensions import Protocol
 
 if TYPE_CHECKING:
+    from cartopy import crs
+
     from ..core import Flight, Traffic  # noqa: F401
 
 
@@ -31,7 +31,7 @@ def prepare_features(
     traffic: "Traffic",
     nb_samples: Optional[int],
     features: List[str],
-    projection: Union[None, crs.Projection, pyproj.Proj] = None,
+    projection: Union[None, "crs.Projection", pyproj.Proj] = None,
     max_workers: int = 1,
 ) -> np.ndarray:
     if "last_position" in traffic.data.columns:
@@ -69,7 +69,7 @@ class Clustering:
         nb_samples: Optional[int],
         features: List[str],
         *args,
-        projection: Union[None, crs.Projection, pyproj.Proj] = None,
+        projection: Union[None, "crs.Projection", pyproj.Proj] = None,
         transform: Optional[TransformerProtocol] = None,
     ) -> None:
 
@@ -164,7 +164,7 @@ def centroid(
     traffic: "Traffic",
     nb_samples: Optional[int],
     features: List[str],
-    projection: Union[None, crs.Projection, pyproj.Proj] = None,
+    projection: Union[None, "crs.Projection", pyproj.Proj] = None,
     transform: Optional[TransformerProtocol] = None,
     max_workers: int = 1,
     *args,
@@ -178,6 +178,8 @@ def centroid(
         Remember the time and space complexity of this method is **quadratic**.
 
     """
+
+    from scipy.spatial.distance import pdist, squareform
 
     X = prepare_features(traffic, nb_samples, features, projection, max_workers)
     ids = list(f.flight_id for f in traffic)
