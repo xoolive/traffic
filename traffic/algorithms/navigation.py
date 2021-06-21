@@ -1102,11 +1102,3 @@ class NavigationFeatures:
             candidate = self.between(segment_times[0], segment_times[-1])
             if candidate is not None:
                 yield candidate
-
-    def slow_taxi_duration(
-        self, min_duration: deltalike = "60s", max_diameter: float = 150
-    ):
-        d = pd.Timedelta(seconds=0)
-        for stop in self.slow_taxi(min_duration, max_diameter):
-            d = d + stop.duration
-        return d
