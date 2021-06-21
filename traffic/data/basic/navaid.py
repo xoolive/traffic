@@ -3,13 +3,12 @@
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterator, NamedTuple, Optional, Tuple, Union
+from typing import Dict, Iterator, Optional
 
 import pandas as pd
 
-from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
+from ...core.mixins import GeoDBMixin
 from ...core.structure import Navaid, NavaidTuple
-from ...drawing import Nominatim
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"
@@ -77,7 +76,7 @@ class Navaids(GeoDBMixin):
         else:
             c = session.get(f"{base_url}/earth_fix.dat")
             c.raise_for_status()
-            iter_lines = c.iter_lines()  # type: ignore
+            iter_lines = c.iter_lines()
 
         for line_bytes in iter_lines:
 
@@ -114,7 +113,7 @@ class Navaids(GeoDBMixin):
         else:
             c = session.get(f"{base_url}/earth_nav.dat")
             c.raise_for_status()
-            iter_lines = c.iter_lines()  # type: ignore
+            iter_lines = c.iter_lines()
 
         for line_bytes in iter_lines:
 

@@ -11,9 +11,6 @@ from typing import (
 
 import pandas as pd
 import pyproj
-from cartopy import crs
-from cartopy.mpl.geoaxes import GeoAxesSubplot
-from matplotlib.artist import Artist
 from shapely.geometry import Polygon, base
 
 from ..algorithms.clustering import Clustering, centroid
@@ -26,6 +23,10 @@ from .mixins import GeographyMixin, HBoxMixin, PointMixin
 from .sv import StateVectors
 
 if TYPE_CHECKING:
+    from cartopy import crs
+    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from matplotlib.artist import Artist
+
     from ..algorithms.clustering import (  # noqa: F401
         ClusteringProtocol, TransformerProtocol
     )
@@ -770,7 +771,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         raise NotImplementedError
 
     def plot(
-        self, ax: GeoAxesSubplot, nb_flights: Optional[int] = None, **kwargs
+        self, ax: "GeoAxesSubplot", nb_flights: Optional[int] = None, **kwargs
     ) -> None:  # coverage: ignore
         """Plots each trajectory on a Matplotlib axis.
 
@@ -885,12 +886,12 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     def plot_wind(
         self,
-        ax: GeoAxesSubplot,
+        ax: "GeoAxesSubplot",
         resolution: Union[Dict[str, float], None] = None,
         threshold: int = 10,
         filtered: bool = False,
         **kwargs,
-    ) -> List[Artist]:  # coverage: ignore
+    ) -> List["Artist"]:  # coverage: ignore
         """Plots the wind field seen by the aircraft on a Matplotlib axis.
 
         The Flight supports Cartopy axis as well with automatic projection. If
@@ -919,6 +920,8 @@ class Traffic(HBoxMixin, GeographyMixin):
         ... )
 
         """
+
+        from cartopy import crs
 
         if "projection" in ax.__dict__ and "transform" not in kwargs:
             kwargs["transform"] = crs.PlateCarree()
@@ -997,7 +1000,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         self,
         lateral_separation: float,
         vertical_separation: float,
-        projection: Union[pyproj.Proj, crs.Projection, None] = None,
+        projection: Union[pyproj.Proj, "crs.Projection", None] = None,
         round_t: str = "d",
         max_workers: int = 4,
     ) -> Optional["CPA"]:
@@ -1056,7 +1059,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         nb_samples: Optional[int],
         features: Optional[List[str]] = None,
         *args,
-        projection: Union[None, crs.Projection, pyproj.Proj] = None,
+        projection: Union[None, "crs.Projection", pyproj.Proj] = None,
         transform: Optional["TransformerProtocol"] = None,
         max_workers: int = 1,
         return_traffic: bool = True,
@@ -1125,7 +1128,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         self,
         nb_samples: Optional[int],
         features: Optional[List[str]] = None,
-        projection: Union[None, crs.Projection, pyproj.Proj] = None,
+        projection: Union[None, "crs.Projection", pyproj.Proj] = None,
         transformer: Optional["TransformerProtocol"] = None,
         max_workers: int = 1,
         *args,

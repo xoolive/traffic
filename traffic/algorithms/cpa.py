@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING, Iterator, Optional, Set, Tuple, Union
 
 import pandas as pd
 import pyproj
-from cartopy import crs
 from tqdm.autonotebook import tqdm
 
 from ..core import Flight
 from ..core.mixins import DataFrameMixin
 
 if TYPE_CHECKING:
+    from cartopy import crs
+
     from ..core import Traffic
 
 
@@ -118,7 +119,7 @@ def closest_point_of_approach(
     traffic: "Traffic",
     lateral_separation: float,
     vertical_separation: float,
-    projection: Union[pyproj.Proj, crs.Projection, None] = None,
+    projection: Union[pyproj.Proj, "crs.Projection", None] = None,
     round_t: str = "d",
     max_workers: int = 4,
 ) -> Optional[CPA]:
@@ -146,6 +147,8 @@ def closest_point_of_approach(
     processors.
 
     """
+
+    from cartopy import crs
 
     if projection is None:
         logging.warn("Defaulting to projection EuroPP()")

@@ -1,28 +1,7 @@
 import logging
-import sys
-import warnings
-from functools import lru_cache
 from pathlib import Path
 
-from cartes.osm.requests import session as carto_session
-from requests import Session
-
 from .. import cache_dir, config, config_file
-from .adsb.decode import Decoder as ModeS_Decoder  # noqa: F401
-from .adsb.opensky import OpenSky
-from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
-from .airspaces.eurofirs import eurofirs
-from .basic.aircraft import Aircraft
-from .basic.airports import Airports
-from .basic.airways import Airways
-from .basic.navaid import Navaids
-from .basic.runways import Runways
-from .eurocontrol.b2b import NMB2B
-from .eurocontrol.ddr.airspaces import NMAirspaceParser
-from .eurocontrol.ddr.allft import AllFT  # noqa: F401
-from .eurocontrol.ddr.navpoints import NMNavaids
-from .eurocontrol.ddr.routes import NMRoutes
-from .eurocontrol.ddr.so6 import SO6  # noqa: F401
 
 # Parse configuration and input specific parameters in below classes
 
@@ -30,6 +9,7 @@ __all__ = [
     "aircraft",
     "airports",
     "airways",
+    "carto_session",
     "navaids",
     "aixm_airspaces",
     "nm_airspaces",
@@ -37,53 +17,17 @@ __all__ = [
     "nm_navaids",
     "eurofirs",
     "opensky",
+    "AllFT",
+    "ModeS_Decoder",
+    "SO6",
 ]
 
-Aircraft.cache_dir = cache_dir
-Airports.cache_dir = cache_dir
-Airways.cache_dir = cache_dir
-Navaids.cache_dir = cache_dir
-Runways.cache_dir = cache_dir
-AIXMAirspaceParser.cache_dir = cache_dir
 
 aixm_path_str = config.get("global", "aixm_path", fallback="")
-if aixm_path_str != "":  # coverage: ignore
-    AIXMAirspaceParser.aixm_path = Path(aixm_path_str)
-
 nm_path_str = config.get("global", "nm_path", fallback="")
-if nm_path_str != "":  # coverage: ignore
-    NMAirspaceParser.nm_path = Path(nm_path_str)
-    NMRoutes.nm_path = Path(nm_path_str)
 
-# -- Part to be deprecated --
-# vvvvvvvvvvvvvvvvvvvvvvvvvvv
-
-opensky_username = config.get("global", "opensky_username", fallback="")
-opensky_password = config.get("global", "opensky_password", fallback="")
-
-if opensky_password != "" and opensky_username != "":  # coverage: ignore
-    warnings.warn(
-        """Please edit your configuration file:
-
-        # Old style, will soon no longer be supported
-        [global]
-        opensky_username =
-        opensky_password =
-
-        # New style
-
-        [opensky]
-        username =
-        password =
-
-        """,
-        DeprecationWarning,
-    )
-
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-opensky_username = config.get("opensky", "username", fallback=opensky_username)
-opensky_password = config.get("opensky", "password", fallback=opensky_password)
+opensky_username = config.get("opensky", "username", fallback="")
+opensky_password = config.get("opensky", "password", fallback="")
 
 # We keep "" for forcing to no proxy
 
@@ -97,13 +41,6 @@ proxy_values = dict(
     if value != "<>"
 )
 
-session = Session()
-if len(proxy_values) > 0:
-    session.proxies.update(proxy_values)
-    session.trust_env = False
-
-    carto_session.proxies.update(proxy_values)
-    carto_session.trust_env = False
 
 pkcs12_filename = config.get("nmb2b", "pkcs12_filename", fallback="")
 pkcs12_password = config.get("nmb2b", "pkcs12_password", fallback="")
@@ -113,59 +50,85 @@ if nmb2b_mode not in ["OPS", "PREOPS"]:
 nmb2b_version = config.get("nmb2b", "version", fallback="23.0.0")
 
 
-if sys.version_info < (3, 7, 0):
-    aircraft = Aircraft()
-    airports = Airports()
-    airways = Airways()
-    navaids = Navaids()
-    runways = Runways()
-
-    aixm_airspaces = AIXMAirspaceParser(config_file)
-    nm_airspaces = NMAirspaceParser(config_file)
-    nm_navaids = NMNavaids.from_file(nm_path_str)
-    nm_airways = NMRoutes()
-
-    opensky = OpenSky(
-        opensky_username,
-        opensky_password,
-        cache_dir / "opensky",
-        session,
-        paramiko_proxy,
-    )
-
-    if pkcs12_filename != "" and pkcs12_password != "":
-        logging.debug(f"pcks12_filename: {pkcs12_filename}")
-        nm_b2b = NMB2B(
-            getattr(NMB2B, nmb2b_mode),
-            nmb2b_version,
-            session,
-            pkcs12_filename,
-            pkcs12_password,
-        )
-
-
-@lru_cache()
 def __getattr__(name: str):
     """This only works for Python >= 3.7, see PEP 562."""
     if name == "aircraft":
+        from .basic.aircraft import Aircraft
+
+        Aircraft.cache_dir = cache_dir
         return Aircraft()
+
     if name == "airports_fr24":
+        from .basic.airports import Airports
+
+        Airports.cache_dir = cache_dir
         return Airports(src="fr24")
+
     if name == "airports":
+        from .basic.airports import Airports
+
+        Airports.cache_dir = cache_dir
         return Airports()
+
     if name == "airways":
+        from .basic.airways import Airways
+
+        Airways.cache_dir = cache_dir
         return Airways()
+
+    if name == "carto_session":
+        from cartes.osm.requests import session as carto_session
+
+        if len(proxy_values) > 0:
+            carto_session.proxies.update(proxy_values)
+            carto_session.trust_env = False
+
+        return carto_session
+
+    if name == "eurofirs":
+        from .airspaces.eurofirs import eurofirs
+
+        return eurofirs
+
     if name == "navaids":
+        from .basic.navaid import Navaids
+
+        Navaids.cache_dir = cache_dir
         return Navaids()
+
     if name == "aixm_airspaces":  # coverage: ignore
+        from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
+
+        AIXMAirspaceParser.cache_dir = cache_dir
+
+        if aixm_path_str != "":  # coverage: ignore
+            AIXMAirspaceParser.aixm_path = Path(aixm_path_str)
+
         return AIXMAirspaceParser(config_file)
+
     if name == "nm_airspaces":  # coverage: ignore
+        from .eurocontrol.ddr.airspaces import NMAirspaceParser
+
+        if nm_path_str != "":  # coverage: ignore
+            NMAirspaceParser.nm_path = Path(nm_path_str)
         return NMAirspaceParser(config_file)
+
     if name == "nm_navaids":  # coverage: ignore
+        from .eurocontrol.ddr.navpoints import NMNavaids
+
         return NMNavaids.from_file(nm_path_str)
+
     if name == "nm_airways":
+        from .eurocontrol.ddr.routes import NMRoutes
+
+        if nm_path_str != "":  # coverage: ignore
+            NMRoutes.nm_path = Path(nm_path_str)
         return NMRoutes()
+
     if name == "opensky":
+        from . import session
+        from .adsb.opensky import OpenSky
+
         opensky = OpenSky(
             opensky_username,
             opensky_password,
@@ -174,9 +137,24 @@ def __getattr__(name: str):
             paramiko_proxy,
         )
         return opensky
+
     if name == "runways":
+        from .basic.runways import Runways
+
+        Runways.cache_dir = cache_dir
         return Runways()
+
+    if name == "session":
+        from requests import Session
+
+        session = Session()
+        if len(proxy_values) > 0:
+            session.proxies.update(proxy_values)
+            session.trust_env = False
+
     if name == "nm_b2b":
+        from .eurocontrol.b2b import NMB2B
+
         if pkcs12_filename != "" and pkcs12_password != "":
             logging.debug(f"pcks12_filename: {pkcs12_filename}")
             nm_b2b = NMB2B(
@@ -187,5 +165,20 @@ def __getattr__(name: str):
                 pkcs12_password,
             )
             return nm_b2b
+
+    if name == "AllFT":
+        from .eurocontrol.ddr.allft import AllFT
+
+        return AllFT
+
+    if name == "ModeS_Decoder":
+        from .adsb.decode import Decoder as ModeS_Decoder
+
+        return ModeS_Decoder
+
+    if name == "SO6":
+        from .eurocontrol.ddr.so6 import SO6
+
+        return SO6
 
     raise AttributeError(f"module {__name__} has no attribute {name}")

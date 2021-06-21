@@ -2,17 +2,17 @@ import re
 import textwrap
 import warnings
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
-from cartopy.crs import PlateCarree
-from cartopy.mpl.geoaxes import GeoAxesSubplot
-from matplotlib.artist import Artist
 from shapely.geometry import LineString
 from shapely.ops import linemerge
 
-from ..drawing import markers
 from .mixins import PointMixin, ShapelyMixin
 from .structure import Airport, Navaid, Route
+
+if TYPE_CHECKING:
+    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from matplotlib.artist import Artist
 
 
 class _Point(PointMixin):
@@ -405,7 +405,12 @@ class FlightPlan(ShapelyMixin):
                     # this one may return None
                     # (probably no, but mypy is whining)
                     n = navaids.extent(
-                        (lon1 - buf, lon2 + buf, lat1 - buf, lat2 + buf,)
+                        (
+                            lon1 - buf,
+                            lon2 + buf,
+                            lat1 - buf,
+                            lat2 + buf,
+                        )
                     )
                 else:
                     n = None
@@ -448,7 +453,12 @@ class FlightPlan(ShapelyMixin):
                     # this one may return None
                     # (probably no, but mypy is whining)
                     n = navaids.extent(
-                        (lon1 - buf, lon2 + buf, lat1 - buf, lat2 + buf,)
+                        (
+                            lon1 - buf,
+                            lon2 + buf,
+                            lat1 - buf,
+                            lat2 + buf,
+                        )
                     )
                 else:
                     n = None
@@ -498,13 +508,13 @@ class FlightPlan(ShapelyMixin):
     # -- Visualisation --
     def plot(
         self,
-        ax: GeoAxesSubplot,
+        ax: "GeoAxesSubplot",
         airports: bool = True,
         airports_kw: Optional[Dict[str, Any]] = None,
         labels: Union[None, bool, str] = None,
         labels_kw: Optional[Dict[str, Any]] = None,
         **kwargs,
-    ) -> List[Artist]:  # coverage: ignore
+    ) -> List["Artist"]:  # coverage: ignore
         """Plots the trajectory on a Matplotlib axis.
 
         FlightPlans support Cartopy axis as well with automatic projection. If
@@ -525,6 +535,10 @@ class FlightPlan(ShapelyMixin):
             altair equivalent.
 
         """
+
+        from cartopy.crs import PlateCarree
+
+        from ..drawing import markers
 
         cumul = []
         if "projection" in ax.__dict__ and "transform" not in kwargs:

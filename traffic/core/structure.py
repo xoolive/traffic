@@ -1,20 +1,19 @@
 # fmt: off
 
 from functools import lru_cache
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
-
-import altair as alt
-from cartes.osm import Overpass
-from cartopy.crs import PlateCarree
 from shapely.geometry import GeometryCollection, LineString
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from ..drawing.markers import atc_tower
 from .mixins import HBoxMixin, PointMixin, ShapelyMixin
+
+if TYPE_CHECKING:
+    import altair as alt
+    from cartes.osm import Overpass
+    from matplotlib.artist import Artist
+    from matplotlib.axes._subplots import Axes
 
 # fmt: on
 
@@ -32,8 +31,10 @@ class AirportNamedTuple(NamedTuple):
 
 class AirportPoint(PointMixin):
     def plot(
-        self, ax: Axes, text_kw=None, shift=None, **kwargs
-    ) -> List[Artist]:  # coverage: ignore
+        self, ax: "Axes", text_kw=None, shift=None, **kwargs
+    ) -> List["Artist"]:  # coverage: ignore
+        from ..drawing.markers import atc_tower
+
         return super().plot(
             ax, text_kw, shift, **{**{"marker": atc_tower, "s": 400}, **kwargs}
         )
@@ -73,7 +74,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
-    def __getattr__(self, name: str) -> Overpass:
+    def __getattr__(self, name: str) -> "Overpass":
         if name not in self._openstreetmap().data.aeroway.unique():
             raise AttributeError(
                 f"'{self.__class__.__name__}' has no attribute '{name}'"
@@ -82,7 +83,9 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
             return self._openstreetmap().query(f"aeroway == '{name}'")
 
     @lru_cache()
-    def _openstreetmap(self) -> Overpass:  # coverage: ignore
+    def _openstreetmap(self) -> "Overpass":  # coverage: ignore
+        from cartes.osm import Overpass
+
         return Overpass.request(
             area={"icao": self.icao, "as_": "airport"},
             nwr=[dict(area="airport"), dict(aeroway=True, area="airport")],
@@ -117,7 +120,9 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         footprint: Union[bool, dict] = True,
         runways: Union[bool, dict] = True,
         labels: Union[bool, dict] = True,
-    ) -> alt.Chart:  # coverage: ignore
+    ) -> "alt.Chart":  # coverage: ignore
+
+        import altair as alt
 
         base = alt.Chart(self).mark_geoshape()
         cumul = []
@@ -286,6 +291,8 @@ class Route(HBoxMixin, ShapelyMixin):
         if "linestyle" not in kwargs and "ls" not in kwargs:
             kwargs["linestyle"] = "dashed"
         if "projection" in ax.__dict__:
+            from cartopy.crs import PlateCarree
+
             kwargs["transform"] = PlateCarree()
 
         ax.plot(*self.shape.xy, **kwargs)

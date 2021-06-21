@@ -1,16 +1,25 @@
+# fmt: off
+
 import warnings
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+)
 
-import altair as alt
 import pandas as pd
 import pyproj
-from cartopy import crs
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
 from shapely.geometry import Point, base, mapping
 from shapely.ops import transform
+
+if TYPE_CHECKING:
+    import altair as alt
+    from cartopy import crs
+    from matplotlib.artist import Artist
+    from matplotlib.axes._subplots import Axes
+
+# fmt: on
+
 
 T = TypeVar("T", bound="DataFrameMixin")
 
@@ -310,19 +319,21 @@ class ShapelyMixin(object):
         """
         return mapping(self.shape)
 
-    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         Specific plot features, such as line widths, can be passed via **kwargs.
         See `documentation
         <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
+        import altair as alt
+
         return alt.Chart(alt.Data(values=self.geojson())).mark_geoshape(
             stroke="#aaaaaa", **kwargs
         )
 
     def project_shape(
-        self, projection: Union[pyproj.Proj, crs.Projection, None] = None
+        self, projection: Union[pyproj.Proj, "crs.Projection", None] = None
     ) -> base.BaseGeometry:
         """Returns a projected representation of the shape.
 
@@ -335,6 +346,8 @@ class ShapelyMixin(object):
         - as ``cartopy.crs.Projection`` objects.
 
         """
+
+        from cartopy import crs
 
         if self.shape is None:
             return None
@@ -369,7 +382,7 @@ class GeographyMixin(DataFrameMixin):
     """Adds Euclidean coordinates to a latitude/longitude DataFrame."""
 
     def compute_xy(
-        self: T, projection: Union[pyproj.Proj, crs.Projection, None] = None
+        self: T, projection: Union[pyproj.Proj, "crs.Projection", None] = None
     ) -> T:
         """Enrich the structure with new x and y columns computed through a
         projection of the latitude and longitude columns.
@@ -383,6 +396,7 @@ class GeographyMixin(DataFrameMixin):
         - as ``pyproj.Proj`` objects;
         - as ``cartopy.crs.Projection`` objects.
         """
+        from cartopy import crs
 
         if isinstance(projection, crs.Projection):
             projection = pyproj.Proj(projection.proj4_init)
@@ -410,7 +424,7 @@ class GeographyMixin(DataFrameMixin):
     def agg_xy(
         self,
         resolution: Union[Dict[str, float], None],
-        projection: Union[pyproj.Proj, crs.Projection, None] = None,
+        projection: Union[pyproj.Proj, "crs.Projection", None] = None,
         **kwargs,
     ) -> pd.DataFrame:
         """Aggregates values of a traffic over a grid of x/y, with x and y
@@ -470,13 +484,15 @@ class GeographyMixin(DataFrameMixin):
 
         return data
 
-    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         Specific plot features, such as line widths, can be passed via **kwargs.
         See `documentation
         <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
+        import altair as alt
+
         return (
             alt.Chart(
                 self.data.query(
@@ -516,7 +532,7 @@ class GeoDBMixin(DataFrameMixin):
         ZUE (VOR): 47.59216667 8.81766667 1730 ZURICH EAST VOR-DME 110.05MHz
 
         """
-        from ..drawing import Nominatim
+        from cartes.osm import Nominatim
 
         _extent = (0.0, 0.0, 0.0, 0.0)
 
@@ -537,10 +553,12 @@ class GeoDBMixin(DataFrameMixin):
         )
         return output
 
-    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         """
+        import altair as alt
+
         return (
             alt.Chart(self.data)
             .mark_circle(**kwargs)
@@ -566,8 +584,8 @@ class PointMixin(object):
         return (self.latitude, self.longitude)
 
     def plot(
-        self, ax: Axes, text_kw=None, shift=None, **kwargs
-    ) -> List[Artist]:  # coverage: ignore
+        self, ax: "Axes", text_kw=None, shift=None, **kwargs
+    ) -> List["Artist"]:  # coverage: ignore
 
         if shift is None:
             # flake B006
@@ -596,7 +614,7 @@ class PointMixin(object):
             if hasattr(self, "name"):
                 text_kw["s"] = getattr(self, "name")  # noqa: B009
 
-        cumul: List[Artist] = []
+        cumul: List["Artist"] = []
         cumul.append(ax.scatter(self.longitude, self.latitude, **kwargs))
 
         west, east, south, north = ax.get_extent(PlateCarree())

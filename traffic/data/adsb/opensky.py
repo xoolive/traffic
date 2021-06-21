@@ -211,7 +211,9 @@ class OpenSky(Impala):
 
         return StateVectors(r, self)
 
-    def api_tracks(self, icao24: str, time: Optional[timelike] = None) -> Flight:
+    def api_tracks(
+        self, icao24: str, time: Optional[timelike] = None
+    ) -> Flight:
         """Returns a Flight corresponding to a given aircraft.
 
         Official documentation
@@ -247,7 +249,8 @@ class OpenSky(Impala):
         """
         time = int(to_datetime(time).timestamp()) if time is not None else 0
         c = self.session.get(
-            f"https://opensky-network.org/api/tracks/?icao24={icao24}&time={time}"
+            f"https://opensky-network.org/api/tracks/"
+            f"?icao24={icao24}&time={time}"
         )
         c.raise_for_status()
         json = c.json()
@@ -279,7 +282,7 @@ class OpenSky(Impala):
         c.raise_for_status()
         json = c.json()
 
-        return tuple(airports[a] for a in json["route"])  # type: ignore
+        return tuple(airports[a] for a in json["route"])
 
     def api_aircraft(
         self,

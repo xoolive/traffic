@@ -10,15 +10,9 @@ from typing import (
     Optional, Set, Tuple, Type, TypeVar, Union, cast, overload
 )
 
-import altair as alt
 import numpy as np
 import pandas as pd
 import pyproj
-import scipy.signal
-from cartopy.crs import PlateCarree
-from cartopy.mpl.geoaxes import GeoAxesSubplot
-from matplotlib.artist import Artist
-from matplotlib.axes._subplots import Axes
 from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
@@ -26,8 +20,6 @@ from shapely.ops import transform
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.phases import FuzzyLogic
-from ..drawing.markers import aircraft as aircraft_marker
-from ..drawing.markers import rotate_marker
 from . import geodesy as geo
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
@@ -35,6 +27,11 @@ from .structure import Airport  # noqa: F401
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 
 if TYPE_CHECKING:
+    import altair as alt  # noqa: F401
+    from cartopy.mpl.geoaxes import GeoAxesSubplot  # noqa: F401
+    from matplotlib.artist import Artist  # noqa: F401
+    from matplotlib.axes._subplots import Axes  # noqa: F401
+
     from ..data.adsb.raw_data import RawData  # noqa: F401
     from .airspace import Airspace  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
@@ -84,8 +81,11 @@ default_angle_features = ["track", "heading"]
 
 class Position(PointMixin, pd.core.series.Series):
     def plot(
-        self, ax: Axes, text_kw=None, shift=None, **kwargs
-    ) -> List[Artist]:  # coverage: ignore
+        self, ax: "Axes", text_kw=None, shift=None, **kwargs
+    ) -> List["Artist"]:  # coverage: ignore
+
+        from ..drawing.markers import aircraft as aircraft_marker
+        from ..drawing.markers import rotate_marker
 
         visualdict = dict(s=300)
         if hasattr(self, "track"):
@@ -1267,6 +1267,8 @@ class Flight(
 
         """
 
+        import scipy.signal
+
         ks_dict: Dict[str, Union[int, Iterable[int]]] = {
             "altitude": (17, 53),
             "selected_mcp": (17, 53),
@@ -1515,11 +1517,11 @@ class Flight(
 
     def plot_wind(
         self,
-        ax: GeoAxesSubplot,
+        ax: "GeoAxesSubplot",
         resolution: Union[int, str, Dict[str, float], None] = "5T",
         filtered: bool = False,
         **kwargs,
-    ) -> List[Artist]:  # coverage: ignore
+    ) -> List["Artist"]:  # coverage: ignore
         """Plots the wind field seen by the aircraft on a Matplotlib axis.
 
         The Flight supports Cartopy axis as well with automatic projection. If
@@ -1552,6 +1554,8 @@ class Flight(
             )
 
         """
+
+        from cartopy.crs import PlateCarree
 
         if "projection" in ax.__dict__ and "transform" not in kwargs:
             kwargs["transform"] = PlateCarree()
@@ -2025,7 +2029,7 @@ class Flight(
             "return_flight": True,
             **kwargs,
         }
-        return opensky.history(**query_params)  # type: ignore
+        return opensky.history(**query_params)
 
     def query_ehs(
         self,
@@ -2157,8 +2161,8 @@ class Flight(
     # -- Visualisation --
 
     def plot(
-        self, ax: GeoAxesSubplot, **kwargs
-    ) -> List[Artist]:  # coverage: ignore
+        self, ax: "GeoAxesSubplot", **kwargs
+    ) -> List["Artist"]:  # coverage: ignore
         """Plots the trajectory on a Matplotlib axis.
 
         The Flight supports Cartopy axis as well with automatic projection. If
@@ -2180,13 +2184,15 @@ class Flight(
 
         """
 
+        from cartopy.crs import PlateCarree
+
         if "projection" in ax.__dict__ and "transform" not in kwargs:
             kwargs["transform"] = PlateCarree()
         if self.shape is not None:
             return ax.plot(*self.shape.xy, **kwargs)
         return []
 
-    def chart(self, *features) -> alt.Chart:  # coverage: ignore
+    def chart(self, *features) -> "alt.Chart":  # coverage: ignore
         """
         Initializes an altair Chart based on Flight data.
 
@@ -2246,6 +2252,8 @@ class Flight(
             Matplotlib equivalent.
 
         """
+        import altair as alt
+
         base = alt.Chart(self.data).encode(
             alt.X(
                 "utcyearmonthdatehoursminutesseconds(timestamp)",
@@ -2259,12 +2267,7 @@ class Flight(
 
         return base.mark_line()
 
-    def encode(
-        self,
-        y: Union[str, List[str], alt.Y],
-        x: Union[str, alt.X] = "timestamp:T",
-        **kwargs,
-    ) -> alt.Chart:  # coverage: ignore
+    def encode(self, **kwargs):  # coverage: ignore
         """
         DEPRECATED: Use Flight.chart() method instead.
         """
@@ -2272,7 +2275,7 @@ class Flight(
 
     def plot_time(
         self,
-        ax: Axes,
+        ax: "Axes",
         y: Union[str, List[str]],
         secondary_y: Union[None, str, List[str]] = None,
         **kwargs,
