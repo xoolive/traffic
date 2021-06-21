@@ -17,6 +17,7 @@ __all__ = [
     "nm_navaids",
     "eurofirs",
     "opensky",
+    "session",
     "AllFT",
     "ModeS_Decoder",
     "SO6",
@@ -151,6 +152,7 @@ def __getattr__(name: str):
         if len(proxy_values) > 0:
             session.proxies.update(proxy_values)
             session.trust_env = False
+        return session
 
     if name == "nm_b2b":
         from .eurocontrol.b2b import NMB2B
