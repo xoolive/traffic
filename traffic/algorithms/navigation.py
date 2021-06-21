@@ -908,18 +908,17 @@ class NavigationFeatures:
         if moving is None:
             return None
 
-        first_segment = next(
-            (
-                segment
-                for segment in moving.split("1T")
-                if segment.longer_than(time_threshold)
-            ),
-            None,
-        )
-        if first_segment is None:
+        segment = None
+        first_segment = None
+        for segment in moving.split("1T"):
+            if segment.longer_than(time_threshold) and first_segment is None:
+                first_segment = segment
+        last_segment = segment
+
+        if first_segment is None or last_segment is None:
             return None
 
-        return self.after(first_segment.start)
+        return self.between(first_segment.start, last_segment.stop)
 
     def pushback(
         self,
