@@ -7,9 +7,9 @@ from functools import reduce
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-import pandas as pd
-
 from tqdm.autonotebook import tqdm
+
+import pandas as pd
 
 json_path = Path(__file__).parent / "patterns.json"
 

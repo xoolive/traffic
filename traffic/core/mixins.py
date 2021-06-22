@@ -1,10 +1,16 @@
-# fmt: off
-
 import warnings
 from functools import lru_cache
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
 )
 
 import pandas as pd
@@ -17,8 +23,6 @@ if TYPE_CHECKING:
     from cartopy import crs
     from matplotlib.artist import Artist
     from matplotlib.axes._subplots import Axes
-
-# fmt: on
 
 
 T = TypeVar("T", bound="DataFrameMixin")

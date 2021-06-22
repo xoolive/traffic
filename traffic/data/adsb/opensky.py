@@ -1,13 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Set, Tuple, Union
+
+from requests import Session
 
 import pandas as pd
-from cartopy.crs import PlateCarree
-from cartopy.mpl.geoaxes import GeoAxesSubplot
-from matplotlib.artist import Artist
-from matplotlib.patches import Polygon as MplPolygon
-from requests import Session
 from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
@@ -17,6 +14,10 @@ from ...core.mixins import PointMixin, ShapelyMixin
 from ...core.time import round_time, timelike, to_datetime
 from ..basic.airports import Airport
 from .opensky_impala import Impala
+
+if TYPE_CHECKING:
+    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from matplotlib.artist import Artist
 
 
 class Coverage(object):
@@ -31,9 +32,11 @@ class Coverage(object):
         ).sort_values("altitude")
 
     def plot(
-        self, ax: GeoAxesSubplot, cmap: str = "inferno", s: int = 5, **kwargs
-    ) -> Artist:
+        self, ax: "GeoAxesSubplot", cmap: str = "inferno", s: int = 5, **kwargs
+    ) -> "Artist":
         """Plotting function. All arguments are passed to ax.scatter"""
+        from cartopy.crs import PlateCarree
+
         return ax.scatter(
             self.df.longitude,
             self.df.latitude,
@@ -74,8 +77,10 @@ class SensorRange(ShapelyMixin):
             ]
             self.point.name = value[0]["serial"]
 
-    def plot(self, ax: GeoAxesSubplot, **kwargs) -> Artist:
+    def plot(self, ax: "GeoAxesSubplot", **kwargs) -> "Artist":
         """Plotting function. All arguments are passed to the geometry"""
+        from cartopy.crs import PlateCarree
+        from matplotlib.patches import Polygon as MplPolygon
 
         if "facecolor" not in kwargs:
             kwargs["facecolor"] = "None"

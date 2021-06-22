@@ -1,5 +1,3 @@
-# fmt: off
-
 import hashlib
 import logging
 import re
@@ -11,17 +9,16 @@ from pathlib import Path
 from tempfile import gettempdir
 from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
 
-import pandas as pd
 import paramiko
+from tqdm.autonotebook import tqdm
+
+import pandas as pd
 from pandas.errors import ParserError
 from shapely.geometry.base import BaseGeometry
-from tqdm.autonotebook import tqdm
 
 from ...core import Flight, Traffic
 from ...core.time import round_time, split_times, timelike, to_datetime
 from .raw_data import RawData
-
-# fmt: on
 
 
 class ImpalaError(Exception):

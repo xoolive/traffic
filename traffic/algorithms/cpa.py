@@ -2,9 +2,10 @@ import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Iterator, Optional, Set, Tuple, Union
 
+from tqdm.autonotebook import tqdm
+
 import pandas as pd
 import pyproj
-from tqdm.autonotebook import tqdm
 
 from ..core import Flight
 from ..core.mixins import DataFrameMixin

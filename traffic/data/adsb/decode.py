@@ -1,5 +1,3 @@
-# fmt: off
-
 import logging
 import os
 import signal
@@ -10,18 +8,25 @@ from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 from pathlib import Path
 from typing import (
-    Any, Callable, Dict, Iterable, Iterator,
-    List, Optional, TextIO, Tuple, Union
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    TextIO,
+    Tuple,
+    Union,
 )
 
-import pandas as pd
 import pyModeS as pms
 from tqdm.autonotebook import tqdm
 
+import pandas as pd
+
 from ...core import Flight, Traffic
 from ...data.basic.airports import Airport
-
-# fmt: on
 
 
 def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
@@ -289,7 +294,7 @@ class Aircraft(object):
     @altcode.setter
     def altcode(self, args):
         t, msg = args
-        from pyModeS.c_common import hex2bin
+        from pyModeS import hex2bin
 
         if set(hex2bin(msg)[19:32]) in [{"0"}, {"1"}]:
             return
@@ -306,7 +311,7 @@ class Aircraft(object):
     @idcode.setter
     def idcode(self, args):
         t, msg = args
-        from pyModeS.c_common import hex2bin
+        from pyModeS import hex2bin
 
         if set(hex2bin(msg)[19:32]) in [{"0"}, {"1"}]:
             return

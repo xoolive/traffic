@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Optional, Union, cast
 
 import pandas as pd
-
 from traffic.core import Traffic
 from traffic.core.aero import vtas2cas
 from traffic.core.time import timelike

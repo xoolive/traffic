@@ -2,8 +2,9 @@ import io
 from hashlib import md5
 from typing import Any, Dict
 
-import pandas as pd
 from tqdm.autonotebook import tqdm
+
+import pandas as pd
 
 from ... import cache_dir
 from ...core import Traffic

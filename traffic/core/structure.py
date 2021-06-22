@@ -1,5 +1,3 @@
-# fmt: off
-
 from functools import lru_cache
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
@@ -14,8 +12,6 @@ if TYPE_CHECKING:
     from cartes.osm import Overpass
     from matplotlib.artist import Artist
     from matplotlib.axes._subplots import Axes
-
-# fmt: on
 
 
 class AirportNamedTuple(NamedTuple):

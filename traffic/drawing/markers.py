@@ -1,5 +1,6 @@
-import numpy as np
 from matplotlib.path import Path
+
+import numpy as np
 
 
 def rotate_marker(path: Path, degrees: float) -> Path:

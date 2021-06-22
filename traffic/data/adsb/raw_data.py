@@ -1,21 +1,26 @@
-# fmt: off
-
 from typing import (
-    Any, Callable, Dict, Iterable, Optional, Tuple, Type, TypeVar, Union, cast
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
 )
-
-import numpy as np
-import pandas as pd
 
 from pyModeS import adsb
 from tqdm.autonotebook import tqdm
+
+import numpy as np
+import pandas as pd
 
 from ...core import Traffic
 from ...core.mixins import DataFrameMixin
 from ...core.structure import Airport
 from ...data import ModeS_Decoder
-
-# fmt: on
 
 T = TypeVar("T", bound="RawData")
 

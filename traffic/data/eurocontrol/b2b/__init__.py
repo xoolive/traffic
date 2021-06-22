@@ -138,7 +138,7 @@ class NMB2B(FlightManagement, Measures):
 
         # There may be several dataset available.
         # For now, we keep the latest one
-        latest = max(  # type: ignore
+        latest = max(
             res.reply.findall("data/datasetSummaries"),
             key=lambda x: x.find("publicationDate").text,  # type: ignore
             default=None,

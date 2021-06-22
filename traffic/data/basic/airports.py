@@ -1,19 +1,16 @@
 # flake8: noqa
 
 import io
-import time
-from functools import lru_cache
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import Optional
 
-import pandas as pd
 import requests
-
-import altair as alt
 from tqdm.autonotebook import tqdm
 
+import pandas as pd
+
 from ... import cache_expiration
-from ...core.mixins import GeoDBMixin, PointMixin, ShapelyMixin
+from ...core.mixins import GeoDBMixin
 from ...core.structure import Airport
 
 
@@ -87,7 +84,9 @@ class Airports(GeoDBMixin):
         buffer.seek(0)
         df = pd.read_csv(buffer)
 
-        f = session.get("https://ourairports.com/data/countries.csv",)
+        f = session.get(
+            "https://ourairports.com/data/countries.csv",
+        )
         buffer = io.BytesIO(f.content)
         buffer.seek(0)
         countries = pd.read_csv(buffer)

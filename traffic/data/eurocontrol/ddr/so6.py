@@ -1,4 +1,3 @@
-# fmt: off
 import json
 import logging
 import os
@@ -10,8 +9,18 @@ from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 from typing import (
-    Dict, Iterable, Iterator, List, NoReturn, Optional,
-    Set, Tuple, Type, TypeVar, Union, overload
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    NoReturn,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
 )
 
 import numpy as np
@@ -24,8 +33,6 @@ from ....core import Flight as FlightMixin
 from ....core.flight import Position
 from ....core.mixins import DataFrameMixin
 from ....core.time import time_or_delta, timelike, to_datetime
-
-# fmt: on
 
 
 def _prepare_libarchive():  # coverage: ignore
