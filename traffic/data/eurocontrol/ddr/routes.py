@@ -1,5 +1,3 @@
-# fmt: off
-
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, Set
@@ -7,8 +5,6 @@ from typing import Optional, Set
 import pandas as pd
 
 from ...basic.airways import Airways
-
-# fmt: on
 
 
 class NMRoutes(Airways):
@@ -26,7 +22,7 @@ class NMRoutes(Airways):
     @property
     def data(self):
         if self._data is None:
-            msg = f"Edit config file with NM directory"
+            msg = "Edit config file with NM directory"
 
             if self.nm_path is None:
                 raise RuntimeError(msg)
