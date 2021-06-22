@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING, List, Optional, Union
 
+from typing_extensions import Protocol
+
 import numpy as np
 import pandas as pd
 import pyproj
-from typing_extensions import Protocol
 
 if TYPE_CHECKING:
     from cartopy import crs

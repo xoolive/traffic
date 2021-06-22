@@ -4,8 +4,9 @@ import logging
 from pathlib import Path
 from typing import Any, Dict
 
-import pandas as pd
 import requests
+
+import pandas as pd
 
 from ... import cache_expiration
 from .. import cache_dir

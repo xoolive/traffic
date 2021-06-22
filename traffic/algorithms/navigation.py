@@ -1,9 +1,14 @@
-# fmt: off
-
 import warnings
 from operator import attrgetter
 from typing import (
-    TYPE_CHECKING, Iterable, Iterator, List, Optional, Sequence, Union, cast
+    TYPE_CHECKING,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
 )
 
 import numpy as np
@@ -20,8 +25,6 @@ if TYPE_CHECKING:
     from ..core.structure import Airport, Navaid  # noqa: 401
     from ..data import Navaids  # noqa: 401
     from ..data.basic.airports import Airports  # noqa: 401
-
-# fmt: on
 
 
 class NavigationFeatures:

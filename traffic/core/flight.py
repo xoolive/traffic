@@ -1,13 +1,24 @@
-# fmt: off
-
 import logging
 import warnings
 from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator, List,
-    Optional, Set, Tuple, Type, TypeVar, Union, cast, overload
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
 )
 
 import numpy as np
@@ -23,7 +34,6 @@ from ..algorithms.phases import FuzzyLogic
 from . import geodesy as geo
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
-from .structure import Airport  # noqa: F401
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 
 if TYPE_CHECKING:
@@ -37,7 +47,6 @@ if TYPE_CHECKING:
     from .lazy import LazyTraffic  # noqa: F401
     from .traffic import Traffic  # noqa: F401
 
-# fmt: on
 
 T = TypeVar("T", bound="Flight")
 

@@ -2,8 +2,9 @@ import logging
 from collections.abc import Generator
 from typing import Any, Dict, cast
 
-import pandas as pd
 from keplergl import KeplerGl
+
+import pandas as pd
 from shapely.geometry import mapping
 from shapely.wkt import dumps
 

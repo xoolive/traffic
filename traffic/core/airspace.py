@@ -1,11 +1,18 @@
-# fmt: off
-
 import json
 from collections import defaultdict
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING, Any, Dict, Iterator, List,
-    NamedTuple, Optional, Set, Tuple, TypeVar, Union
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
 )
 
 import numpy as np
@@ -20,8 +27,6 @@ from .mixins import GeographyMixin, PointMixin, ShapelyMixin  # noqa: F401
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.patches import Polygon as MplPolygon
-
-# fmt: on
 
 
 class ExtrudedPolygon(NamedTuple):

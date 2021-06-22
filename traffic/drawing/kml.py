@@ -2,9 +2,10 @@ from collections import UserDict
 from contextlib import contextmanager
 from typing import Optional
 
-import numpy as np
 from fastkml import LineStyle, PolyStyle, kml
 from fastkml.geometry import Geometry
+
+import numpy as np
 from shapely.geometry import LineString
 
 from ..core import Airspace, Flight

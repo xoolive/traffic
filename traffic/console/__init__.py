@@ -19,7 +19,7 @@ def dispatch_open(filename: Path):
 
 
 def import_submodules(package, recursive=True):
-    """ Import all submodules of a module, recursively, including subpackages
+    """Import all submodules of a module, recursively, including subpackages
 
     :param package: package (name or actual module)
     :type package: str | module

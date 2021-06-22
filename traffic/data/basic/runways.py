@@ -5,12 +5,13 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from zipfile import ZipFile
 
 import altair as alt
-import pandas as pd
 import requests
 from cartopy.crs import PlateCarree
+from tqdm.autonotebook import tqdm
+
+import pandas as pd
 from shapely.geometry import base, shape
 from shapely.ops import linemerge
-from tqdm.autonotebook import tqdm
 
 from ... import cache_expiration
 from ...core.geodesy import bearing, destination

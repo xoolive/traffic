@@ -192,7 +192,10 @@ class FlightIterator:
         return min(self, key=lambda x: getattr(x, key), default=None)
 
     def __call__(
-        self, fun: Callable[..., "LazyTraffic"], *args, **kwargs,
+        self,
+        fun: Callable[..., "LazyTraffic"],
+        *args,
+        **kwargs,
     ) -> Optional["Flight"]:
         from traffic.core import Flight, Traffic  # noqa: F811
 

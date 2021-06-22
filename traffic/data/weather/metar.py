@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import Optional, Union
 
 import bs4
-import pandas as pd
 import requests
 from metar import Metar
+
+import pandas as pd
 
 from ...core.structure import Airport
 from ...core.time import timelike, to_datetime

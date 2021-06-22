@@ -22,18 +22,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1.1.6
+        with:
+          version: 1.1.6
+          virtualenvs-in-project: true
+
       - name: Display Python version
-        run: python -c "import sys; print(sys.version)"
+        run: poetry run python -c "import sys; print(sys.version)"
 
       - name: Cache folder
         uses: actions/cache@v2
         id: cache-folder
         with:
           path: |
-            ~/.cache/pip/
             ~/.cache/traffic/
             ~/.cache/cartes/
           key: ${{ runner.os }}-${{ matrix.python-version }}-cache_traffic
+
       - name: Populate first cache files
         if: steps.cache-folder.outputs.cache-hit != 'true'
         run: |
@@ -43,16 +49,23 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt install -y libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade numpy cython pyproj  # dependency for cartopy
-          python -m pip install --upgrade pytest codecov pytest-cov
-          python -m pip install -e .[dev]
+          poetry install -E all
+
+      - name: Style checking
+        run: |
+          poetry run flake8 traffic
+          poetry run isort --check-only traffic
+          poetry run black --check traffic
+
+      - name: Type checking
+        run: |
+          poetry run mypy traffic
 
       - name: Run tests
         env:
           TRAFFIC_NOPLUGIN: ""
         run: |
-          python -m pytest --cov --cov-report term-missing
+          poetry run pytest --cov --cov-report term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1

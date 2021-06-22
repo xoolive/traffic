@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Union, cast
 
 import pandas as pd
-
 from traffic.core import Airspace
 
 from ...core import Flight, Traffic

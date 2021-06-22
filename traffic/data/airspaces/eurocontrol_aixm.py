@@ -1,5 +1,3 @@
-# fmt: off
-
 import logging
 import operator
 import pickle
@@ -9,7 +7,15 @@ import zipfile
 from functools import lru_cache
 from pathlib import Path
 from typing import (
-    Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Tuple, Union
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Union,
 )
 from xml.etree import ElementTree
 
@@ -17,12 +23,14 @@ from shapely.geometry import Polygon, polygon
 from shapely.ops import cascaded_union
 
 from ...core.airspace import (
-    Airspace, AirspaceInfo, AirspaceList,
-    ExtrudedPolygon, cascaded_union_with_alt, components
+    Airspace,
+    AirspaceInfo,
+    AirspaceList,
+    ExtrudedPolygon,
+    cascaded_union_with_alt,
+    components,
 )
 from ...data.basic.airports import Airport
-
-# fmt: on
 
 
 class Point(NamedTuple):

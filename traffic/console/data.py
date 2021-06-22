@@ -64,7 +64,7 @@ def main(args):
     elif args.verbose >= 2:
         logger.setLevel(logging.DEBUG)
 
-    from ..data import airports, aircraft, navaids
+    from ..data import aircraft, airports, navaids
 
     if args.aircraft:
         for arg in args.args:

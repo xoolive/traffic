@@ -1,12 +1,18 @@
-# fmt: off
-
 import re
 import textwrap
 import warnings
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import (
-    Any, Dict, List, NoReturn, Optional, Set, Type, TypeVar, Union
+    Any,
+    Dict,
+    List,
+    NoReturn,
+    Optional,
+    Set,
+    Type,
+    TypeVar,
+    Union,
 )
 from xml.dom import minidom
 from xml.etree import ElementTree
@@ -18,8 +24,6 @@ from ....core.mixins import DataFrameMixin, _HBox
 from ....core.time import timelike, to_datetime
 from .reply import B2BReply
 from .xml import REQUESTS
-
-# fmt: on
 
 rename_cols = {
     "aircraftId": "callsign",

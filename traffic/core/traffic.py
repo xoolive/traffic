@@ -1,12 +1,21 @@
-# fmt: off
-
 import logging
 import warnings
 from datetime import timedelta
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, Iterable, Iterator,
-    List, Optional, Set, Type, TypeVar, Union, overload
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+    overload,
 )
 
 import pandas as pd
@@ -28,12 +37,12 @@ if TYPE_CHECKING:
     from matplotlib.artist import Artist
 
     from ..algorithms.clustering import (  # noqa: F401
-        ClusteringProtocol, TransformerProtocol
+        ClusteringProtocol,
+        TransformerProtocol,
     )
     from ..algorithms.cpa import CPA  # noqa: F401
     from .airspace import Airspace  # noqa: F401
 
-# fmt: on
 
 # https://github.com/python/mypy/issues/2511
 TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")

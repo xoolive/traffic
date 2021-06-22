@@ -4,8 +4,9 @@ from operator import itemgetter
 from pathlib import Path
 from typing import Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union
 
-import pandas as pd
 from tqdm.autonotebook import tqdm
+
+import pandas as pd
 
 from ....core import Flight
 from ....core.mixins import DataFrameMixin, _HBox

@@ -1,18 +1,20 @@
-# fmt: off
-
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from ipyleaflet import GeoData, Map, Marker, MarkerCluster, Polygon, Polyline
 from ipywidgets import HTML
+
 from shapely.geometry import LineString
 
 from ..core import (
-    Airspace, Flight, FlightIterator, FlightPlan, StateVectors, Traffic
+    Airspace,
+    Flight,
+    FlightIterator,
+    FlightPlan,
+    StateVectors,
+    Traffic,
 )
 from ..core.mixins import PointMixin
 from ..core.structure import Airport
-
-# fmt: on
 
 
 def traffic_map_leaflet(

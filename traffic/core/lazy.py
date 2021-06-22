@@ -1,5 +1,3 @@
-# fmt: off
-
 import functools
 import inspect
 import logging
@@ -8,11 +6,19 @@ import types
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, overload
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+    overload,
 )
 
-import numpy as np
 from tqdm.autonotebook import tqdm
+
+import numpy as np
 
 from .flight import Flight
 from .mixins import GeographyMixin
@@ -21,8 +27,6 @@ if TYPE_CHECKING:
     from typing_extensions import Literal
 
     from .traffic import Traffic  # noqa: F401
-
-# fmt: on
 
 
 class FaultCatcher:
