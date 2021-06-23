@@ -11,17 +11,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.x"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel
+          python-version: "3.9"
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1.1.6
+        with:
+          version: 1.1.6
+          virtualenvs-in-project: true
+
+      - name: Display Python version
+        run: poetry run python -c "import sys; print(sys.version)"
+
       - name: Build packages
-        run: |
-          python setup.py sdist bdist_wheel
+        run: poetry build
+
       - name: Publish a Python distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

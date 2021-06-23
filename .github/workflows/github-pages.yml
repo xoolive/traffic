@@ -11,21 +11,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.8"
+          python-version: "3.9"
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1.1.6
+        with:
+          version: 1.1.6
+          virtualenvs-in-project: true
+
+      - name: Display Python version
+        run: poetry run python -c "import sys; print(sys.version)"
+
       - name: Install dependencies
         run: |
-          sudo apt install -y libgeos-dev libproj-dev proj-bin proj-data
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade numpy pyproj  # dependency for cartopy
-          python -m pip install --upgrade sphinx sphinx-rtd-theme
-          python -m pip install -e .
+          sudo apt install -y libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
+          poetry install -E all
+
       - name: Build pages
         run: |
           curl https://opensky-network.org/api/sensor/list -o docs/_static/sensors.json
-          cd docs && make html
+          cd docs && poetry run make html
+
       - name: Deploy pages
         uses: peaceiris/actions-gh-pages@v3
         with:
