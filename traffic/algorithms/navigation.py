@@ -13,9 +13,11 @@ from typing import (
 
 import numpy as np
 import pandas as pd
+from pyproj.exceptions import CRSError
 from shapely.geometry import LineString, MultiLineString, Point, Polygon
 
-from ..core.geodesy import destination, mrr_diagonal
+from ..algorithms.douglas_peucker import douglas_peucker
+from ..core.geodesy import destination, distance, mrr_diagonal
 from ..core.iterator import flight_iterator
 from ..core.time import deltalike, to_timedelta
 
@@ -1105,3 +1107,135 @@ class NavigationFeatures:
             candidate = self.between(segment_times[0], segment_times[-1])
             if candidate is not None:
                 yield candidate
+
+    def ground_movement_type(self, airport):
+        self = cast("Flight", self)
+        if self.destination == airport and self.origin == airport:
+            return "BOTH"
+        if self.origin == airport:
+            return "DEP"
+        if self.destination == airport:
+            return "ARR"
+        else:
+            return None
+
+    def assign_twy(self, airport, long_twy_df=None):
+        """
+        For each datapoint of a ground trajectory,
+        assigns in a new column 'twy' the
+        name of the long taxiway the point situated on.
+
+        @param long_twy_df: is a dataframe containing shapely
+                            geometry column with corresponding twy encoded
+        """
+
+        def get_long_twy(airport):
+            """
+            Returns selection of twys that are referenced by a unique letter,
+            hence they are considered as 'long' or 'main' taxiways
+            """
+            from ..data import airports
+
+            apt = airports[airport]
+            if apt is None:
+                return None
+            assert apt is not None
+            apt_twy = apt.taxiway
+            assert apt_twy is not None
+            apt_long_twy = apt_twy.query("ref==ref & ref.str.len()==1")
+            assert apt_long_twy is not None
+            df = apt_long_twy._data
+            assert df is not None
+            return (
+                df.groupby("ref")
+                .agg({"geometry": list})["geometry"]
+                .apply(MultiLineString)
+                .to_frame()
+            )
+
+        self = cast("Flight", self)
+        if self is None:
+            return self
+        if not (self.origin == airport or self.destination == airport):
+            print(
+                f"{self.flight_id} has a weird origin ({self.origin}) "
+                + "or destination ({self.destination})"
+            )
+            return self
+
+        if long_twy_df is None:
+            long_twy_df = get_long_twy(airport)
+        f_ground = self.onground()
+        if f_ground is None:
+            return self
+        f_ground = f_ground.moving()
+        if f_ground is None:
+            return self
+        pb = self.pushback("LSZH")
+
+        mvt_type = self.ground_movement_type(airport)
+        if mvt_type == "BOTH":
+            print(self.flight_id, " is both")
+            # raise NotImplementedError  # TODO
+            return self
+        elif mvt_type == "DEP":
+            if pb is not None:
+                f_ground = f_ground.after(pb.stop)
+            if f_ground is None:
+                return self
+            if self.aligned_on_runway("LSZH").has():
+                aligned_f = self.aligned_on_runway("LSZH").max()
+                assert aligned_f is not None
+                f_ground = f_ground.before(aligned_f.start)
+            else:
+                return self
+        elif mvt_type == "ARR":
+            pp = self.on_parking_position(airport).next()
+            if pp is not None:
+                f_ground = f_ground.before(pp.start)
+            if f_ground is None:
+                return self
+            if self.aligned_on_runway("LSZH").has():
+                aligned_f = self.aligned_on_runway("LSZH").max()
+                assert aligned_f is not None
+                f_ground = f_ground.after(aligned_f.stop)
+            else:
+                return self
+
+        if f_ground is None:
+            return self
+
+        try:
+            mask = douglas_peucker(
+                df=f_ground.data, tolerance=15, lat="latitude", lon="longitude"
+            )
+        except CRSError:
+            return self
+
+        simplified_df = f_ground.data.loc[mask]
+        df = self.data
+
+        for i in range(1, len(simplified_df)):
+            t1 = simplified_df.iloc[i - 1].timestamp
+            t2 = simplified_df.iloc[i].timestamp
+            p1 = Point(
+                simplified_df.iloc[i - 1].longitude,
+                simplified_df.iloc[i - 1].latitude,
+            )
+            p2 = Point(
+                simplified_df.iloc[i].longitude, simplified_df.iloc[i].latitude
+            )
+
+            def extremities_dist(twy):
+                p1_proj = twy.interpolate(twy.project(p1))
+                p2_proj = twy.interpolate(twy.project(p2))
+                d1 = distance(p1_proj.y, p1_proj.x, p1.y, p1.x)
+                d2 = distance(p2_proj.y, p2_proj.x, p2.y, p2.x)
+                return d1 + d2
+
+            temp_ = long_twy_df.assign(dist=np.vectorize(extremities_dist))
+            nearest_twy = temp_["dist"].idxmin()
+            self.data.loc[
+                (t1 < df.timestamp) & (df.timestamp <= t2), "twy"
+            ] = nearest_twy
+        return self
