@@ -1,3 +1,4 @@
+import logging
 import warnings
 from operator import attrgetter
 from typing import (
@@ -1157,7 +1158,7 @@ class NavigationFeatures:
         if self is None:
             return self
         if not (self.origin == airport or self.destination == airport):
-            print(
+            logging.debug(
                 f"{self.flight_id} has a weird origin ({self.origin}) "
                 + "or destination ({self.destination})"
             )
@@ -1175,7 +1176,10 @@ class NavigationFeatures:
 
         mvt_type = self.ground_movement_type(airport)
         if mvt_type == "BOTH":
-            print(self.flight_id, " is both")
+            logging.debug(
+                self.flight_id,
+                " takes off from and lands to the same airport",
+            )
             # raise NotImplementedError  # TODO
             return self
         elif mvt_type == "DEP":
