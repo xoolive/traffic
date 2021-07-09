@@ -52,7 +52,7 @@ T = TypeVar("T", bound="Flight")
 
 
 def _tz_interpolate(data, *args, **kwargs):
-    return data.astype(int).interpolate(*args, **kwargs).astype(data.dtype)
+    return data.view(int).interpolate(*args, **kwargs).astype(data.dtype)
 
 
 DatetimeTZBlock.interpolate = _tz_interpolate
