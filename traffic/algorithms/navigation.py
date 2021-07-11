@@ -116,7 +116,7 @@ class NavigationFeatures:
         return guess_airport(data.iloc[0], **kwargs)
 
     def landing_at(self, airport: Union[str, "Airport"]) -> bool:
-        """Returns True if the flight takes off from the given airport."""
+        """Returns True if the flight lands at the given airport."""
 
         from ..core.structure import Airport
         from ..data import airports
