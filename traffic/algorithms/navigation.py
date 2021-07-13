@@ -1,4 +1,3 @@
-import logging
 import warnings
 from operator import attrgetter
 from typing import (
@@ -14,10 +13,8 @@ from typing import (
 
 import numpy as np
 import pandas as pd
-from pyproj.exceptions import CRSError
 from shapely.geometry import LineString, MultiLineString, Point, Polygon
 
-from ..algorithms.douglas_peucker import douglas_peucker
 from ..core.geodesy import destination, distance, mrr_diagonal
 from ..core.iterator import flight_iterator
 from ..core.time import deltalike, to_timedelta
@@ -28,6 +25,7 @@ if TYPE_CHECKING:
     from ..core.structure import Airport, Navaid  # noqa: 401
     from ..data import Navaids  # noqa: 401
     from ..data.basic.airports import Airports  # noqa: 401
+    from cartes.osm import Overpass  # noqa: 401
 
 
 class NavigationFeatures:
@@ -1109,126 +1107,73 @@ class NavigationFeatures:
             if candidate is not None:
                 yield candidate
 
-    def ground_movement_type(self, airport):
-        self = cast("Flight", self)
-        if self.destination == airport and self.origin == airport:
-            return "BOTH"
-        if self.origin == airport:
-            return "DEP"
-        if self.destination == airport:
-            return "ARR"
-        else:
-            return None
+    @flight_iterator
+    def ground_trajectory(
+        self, airport: Union[str, "Airport"]
+    ) -> Iterator["Flight"]:
+        """Returns the ground part of the trajectory limited to the apron
+        of the airport passed in parameter.
 
-    def assign_twy(self, airport, long_twy_df=None):
-        """
-        For each datapoint of a ground trajectory,
-        assigns in a new column 'twy' the
-        name of the long taxiway the point situated on.
-
-        @param long_twy_df: is a dataframe containing shapely
-                            geometry column with corresponding twy encoded
+        The same trajectory could use the apron several times, hence the safest
+        option to return a FlightIterator.
         """
 
-        def get_long_twy(airport):
-            """
-            Returns selection of twys that are referenced by a unique letter,
-            hence they are considered as 'long' or 'main' taxiways
-            """
-            from ..data import airports
-
-            apt = airports[airport]
-            if apt is None:
-                return None
-            assert apt is not None
-            apt_twy = apt.taxiway
-            assert apt_twy is not None
-            apt_long_twy = apt_twy.query("ref==ref & ref.str.len()==1")
-            assert apt_long_twy is not None
-            df = apt_long_twy._data
-            assert df is not None
-            return (
-                df.groupby("ref")
-                .agg({"geometry": list})["geometry"]
-                .apply(MultiLineString)
-                .to_frame()
-            )
+        from traffic.data import airports
 
         self = cast("Flight", self)
-        if self is None:
-            return self
-        if not (self.origin == airport or self.destination == airport):
-            logging.debug(
-                f"{self.flight_id} has a weird origin ({self.origin}) "
-                + "or destination ({self.destination})"
+        airport_ = airports[airport] if isinstance(airport, str) else airport
+        clip_ = self.clip(airport_)
+        if clip_ is not None:
+            yield from clip_.split("10T")
+
+    @flight_iterator
+    def match_taxiway(
+        self,
+        airport_or_taxiways: Union[str, pd.DataFrame, "Airport", "Overpass"],
+        *,
+        tolerance: float = 15,
+    ) -> Iterator["Flight"]:
+        """
+        Iterates on segments of trajectory matching a single runway label.
+        """
+
+        from ..core.structure import Airport
+        from ..data import airports
+
+        self = cast("Flight", self)
+        if isinstance(airport_or_taxiways, str):
+            airport_or_taxiways = airports[airport_or_taxiways]
+
+        taxiways_ = (
+            airport_or_taxiways.taxiway
+            if isinstance(airport_or_taxiways, Airport)
+            else airport_or_taxiways
+        )
+
+        taxiways = (  # one entry per runway label
+            (
+                taxiways_
+                if isinstance(taxiways_, pd.DataFrame)
+                else taxiways_.data
             )
-            return self
+            .groupby("ref")
+            .agg({"geometry": list})["geometry"]
+            .apply(MultiLineString)
+            .to_frame()
+        )
 
-        if long_twy_df is None:
-            long_twy_df = get_long_twy(airport)
-        f_ground = self.onground()
-        if f_ground is None:
-            return self
-        f_ground = f_ground.moving()
-        if f_ground is None:
-            return self
-        pb = self.pushback("LSZH")
+        simplified_df = cast(
+            pd.DataFrame, self.simplify(tolerance=tolerance).data
+        )
+        if simplified_df.shape[0] < 2:
+            return
 
-        mvt_type = self.ground_movement_type(airport)
-        if mvt_type == "BOTH":
-            logging.debug(
-                self.flight_id,
-                " takes off from and lands to the same airport",
-            )
-            # raise NotImplementedError  # TODO
-            return self
-        elif mvt_type == "DEP":
-            if pb is not None:
-                f_ground = f_ground.after(pb.stop)
-            if f_ground is None:
-                return self
-            if self.aligned_on_runway("LSZH").has():
-                aligned_f = self.aligned_on_runway("LSZH").max()
-                assert aligned_f is not None
-                f_ground = f_ground.before(aligned_f.start)
-            else:
-                return self
-        elif mvt_type == "ARR":
-            pp = self.on_parking_position(airport).next()
-            if pp is not None:
-                f_ground = f_ground.before(pp.start)
-            if f_ground is None:
-                return self
-            if self.aligned_on_runway("LSZH").has():
-                aligned_f = self.aligned_on_runway("LSZH").max()
-                assert aligned_f is not None
-                f_ground = f_ground.after(aligned_f.stop)
-            else:
-                return self
+        previous_candidate = None
+        first = simplified_df.iloc[0]
+        for _, second in simplified_df.iloc[1:].iterrows():
 
-        if f_ground is None:
-            return self
-
-        try:
-            mask = douglas_peucker(
-                df=f_ground.data, tolerance=15, lat="latitude", lon="longitude"
-            )
-        except CRSError:
-            return self
-
-        simplified_df = f_ground.data.loc[mask]
-        df = self.data
-
-        for i in range(1, len(simplified_df)):
-            t1 = simplified_df.iloc[i - 1].timestamp
-            t2 = simplified_df.iloc[i].timestamp
-            p1 = Point(
-                simplified_df.iloc[i - 1].longitude,
-                simplified_df.iloc[i - 1].latitude,
-            )
-            p2 = Point(
-                simplified_df.iloc[i].longitude, simplified_df.iloc[i].latitude
-            )
+            p1 = Point(first.longitude, first.latitude)
+            p2 = Point(second.longitude, second.latitude)
 
             def extremities_dist(twy):
                 p1_proj = twy.interpolate(twy.project(p1))
@@ -1237,9 +1182,31 @@ class NavigationFeatures:
                 d2 = distance(p2_proj.y, p2_proj.x, p2.y, p2.x)
                 return d1 + d2
 
-            temp_ = long_twy_df.assign(dist=np.vectorize(extremities_dist))
-            nearest_twy = temp_["dist"].idxmin()
-            self.data.loc[
-                (t1 < df.timestamp) & (df.timestamp <= t2), "twy"
-            ] = nearest_twy
-        return self
+            temp_ = taxiways.assign(dist=np.vectorize(extremities_dist))
+            start, stop, ref, dist = (
+                first.timestamp,
+                second.timestamp,
+                temp_.dist.idxmin(),
+                temp_.dist.min(),
+            )
+            if dist < tolerance:
+                candidate = self.assign(taxiway=ref).between(start, stop)
+                if previous_candidate is None:
+                    previous_candidate = candidate
+
+                else:
+                    prev_ref = previous_candidate.taxiway_max
+                    delta = start - previous_candidate.stop
+                    if prev_ref == ref and delta < pd.Timedelta("1T"):
+                        previous_candidate = self.assign(taxiway=ref).between(
+                            previous_candidate.start, stop
+                        )
+
+                    else:
+                        yield previous_candidate
+                        previous_candidate = candidate
+
+            first = second
+
+        if previous_candidate is not None:
+            yield previous_candidate
