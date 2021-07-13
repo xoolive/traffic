@@ -3,15 +3,20 @@
 import zipfile
 from typing import Optional, cast
 
-import pandas as pd
 import pytest
 
+import pandas as pd
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import eurofirs, navaids, runways
 from traffic.data.samples import (
-    airbus_tree, belevingsvlucht, calibration,
-    elal747, featured, get_sample, zurich_airport
+    airbus_tree,
+    belevingsvlucht,
+    calibration,
+    elal747,
+    featured,
+    get_sample,
+    zurich_airport,
 )
 
 # fmt: on
@@ -237,13 +242,7 @@ def test_closest_point() -> None:
 
     item = cast(
         Flight, belevingsvlucht.between("2018-05-30 16:00", "2018-05-30 17:00")
-    ).closest_point(
-        [
-            airports["EHLE"],  # type: ignore
-            airports["EHAM"],  # type: ignore
-            navaids["NARAK"],  # type: ignore
-        ]
-    )
+    ).closest_point([airports["EHLE"], airports["EHAM"], navaids["NARAK"]])
     res = f"{item.timestamp:%H:%M:%S}, {item.point}, {item.distance:.2f}m"
     assert res == "16:53:46, Lelystad Airport, 49.11m"
 

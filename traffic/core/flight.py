@@ -51,11 +51,20 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound="Flight")
 
 
-def _tz_interpolate(data, *args, **kwargs):
-    return data.astype(int).interpolate(*args, **kwargs).astype(data.dtype)
+if pd.__version__ < "1.3":
 
+    def _tz_interpolate(data, *args, **kwargs):
+        return data.astype(int).interpolate(*args, **kwargs).astype(data.dtype)
 
-DatetimeTZBlock.interpolate = _tz_interpolate
+    DatetimeTZBlock.interpolate = _tz_interpolate
+
+else:
+
+    def _tz_interpolate(data, *args, **kwargs):
+        interpolated, *_ = data.astype(int).interpolate(*args, **kwargs)
+        return interpolated.astype(data.dtype)
+
+    DatetimeTZBlock.interpolate = _tz_interpolate
 
 
 def _split(
