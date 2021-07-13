@@ -20,12 +20,13 @@ from ..core.iterator import flight_iterator
 from ..core.time import deltalike, to_timedelta
 
 if TYPE_CHECKING:
+    from cartes.osm import Overpass  # noqa: 401
+
     from ..core import Flight, FlightPlan  # noqa: 401
     from ..core.mixins import PointMixin  # noqa: 401
     from ..core.structure import Airport, Navaid  # noqa: 401
     from ..data import Navaids  # noqa: 401
     from ..data.basic.airports import Airports  # noqa: 401
-    from cartes.osm import Overpass  # noqa: 401
 
 
 class NavigationFeatures:
@@ -1127,7 +1128,7 @@ class NavigationFeatures:
             yield from clip_.split("10T")
 
     @flight_iterator
-    def match_taxiway(
+    def on_taxiway(
         self,
         airport_or_taxiways: Union[str, pd.DataFrame, "Airport", "Overpass"],
         *,
