@@ -54,7 +54,7 @@ pyproj = "^3.1.0"
 Cartopy = "^0.19.0"
 Shapely = "^1.7.1"
 requests = "^2.25.1"
-pyOpenSSL = "^20.0.1"
+pyOpenSSL = "^20.0"
 appdirs = "^1.4.4"
 paramiko = "^2.7.2"
 typing-extensions = "^3.10.0"
@@ -65,7 +65,7 @@ tqdm = "^4.61.1"
 cartes = "^0.3"
 pyModeS = "^2.9"
 openap = "^1.1"
-pyarrow = "^4.0.1"
+pyarrow = "^4.0"
 beautifulsoup4 = "^4.9.3"
 lxml = "^4.6.3"
 metar = "^1.8.0"
@@ -140,3 +140,7 @@ warn_unused_ignores = true
 module = "traffic.core.*"
 # warn_unreachable = true
 # disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report term-missing"
+testpaths = ["tests"]
