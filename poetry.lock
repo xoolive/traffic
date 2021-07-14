@@ -1282,15 +1282,19 @@ tests = ["pytest (>=3.2.1,!=3.3.0)", "hypothesis (>=3.27.0)"]
 
 [[package]]
 name = "pyopenssl"
-version = "0.14"
+version = "20.0.1"
 description = "Python wrapper module around the OpenSSL library"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
 
 [package.dependencies]
-cryptography = ">=0.2.1"
+cryptography = ">=3.2"
 six = ">=1.5.2"
+
+[package.extras]
+docs = ["sphinx", "sphinx-rtd-theme"]
+test = ["flaky", "pretend", "pytest (>=3.0.1)"]
 
 [[package]]
 name = "pyparsing"
@@ -1909,7 +1913,7 @@ dev = ["pre-commit", "isort", "black", "flake8", "mypy"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1,<3.10"
-content-hash = "cb64578fd9eb45e21f1467c677e795a8587cc587a3494ea7f3a23bb104512487"
+content-hash = "3530c6040c55b8ba2ab4221e567f8af57a7014e01a685f41237730122d82b135"
 
 [metadata.files]
 alabaster = [
@@ -2771,7 +2775,8 @@ pynacl = [
     {file = "PyNaCl-1.4.0.tar.gz", hash = "sha256:54e9a2c849c742006516ad56a88f5c74bf2ce92c9f67435187c3c5953b346505"},
 ]
 pyopenssl = [
-    {file = "pyOpenSSL-0.14.tar.gz", hash = "sha256:a99db8e59c120138ad8a72eecedcc24b4510d2eed3ce48213b7e32f22cc4ee6e"},
+    {file = "pyOpenSSL-20.0.1-py2.py3-none-any.whl", hash = "sha256:818ae18e06922c066f777a33f1fca45786d85edfe71cd043de6379337a7f274b"},
+    {file = "pyOpenSSL-20.0.1.tar.gz", hash = "sha256:4c231c759543ba02560fcd2480c48dcec4dae34c9da7d3747c508227e0624b51"},
 ]
 pyparsing = [
     {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
