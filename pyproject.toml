@@ -2,7 +2,7 @@
 name = "traffic"
 homepage = "https://github.com/xoolive/traffic/"
 documentation = "https://traffic-viz.github.io/"
-version = "2.6.3"
+version = "2.6.4"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"

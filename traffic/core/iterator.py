@@ -132,6 +132,22 @@ class FlightIterator:
         """
         return next((segment for segment in self), None)
 
+    def final(self) -> Optional["Flight"]:
+        """Returns the final (last) element in the FlightIterator.
+
+        Example usage:
+
+        >>> first_attempt = flight.runway_change().final()
+
+        This is equivalent to:
+
+        >>> flight.final("runway_change")
+        """
+        segment = None
+        for segment in self:
+            continue
+        return segment
+
     def sum(self) -> int:
         """Returns the size of the FlightIterator.
 

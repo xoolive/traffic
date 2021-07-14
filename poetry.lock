@@ -1916,7 +1916,7 @@ dev = ["pre-commit", "isort", "black", "flake8", "mypy"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1,<3.10"
-content-hash = "1e5a7235baa1a885b32ed7e26b47a95b486d314096824a34ff8eb7da5ad15b72"
+content-hash = "57283083bb27360cfd1459eed836ff3e7d4c73e0d331ee68028e41c88f9c0c69"
 
 [metadata.files]
 alabaster = [

@@ -270,6 +270,10 @@ def test_landing_ils() -> None:
     assert aligned is not None
     assert aligned.max("ILS") == "06"
 
+    aligned = belevingsvlucht.final("aligned_on_EHLE")
+    assert aligned is not None
+    assert aligned.ILS_max == "23"
+
     aligned = airbus_tree.aligned_on_ils("EDHI").next()  # noqa: B305
     assert aligned is not None
     assert aligned.max("ILS") == "23"

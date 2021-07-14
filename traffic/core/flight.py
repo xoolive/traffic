@@ -411,6 +411,27 @@ class Flight(
         )
         return next(fun(self), None)
 
+    def final(
+        self,
+        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+    ) -> Optional["Flight"]:
+        """
+        Returns the first segment of trajectory yielded by flight.method()
+
+        >>> flight.final("go_around")
+        >>> flight.final("runway_change")
+        >>> flight.final(lambda f: f.aligned_on_ils("LFBO"))
+        """
+        fun = (
+            getattr(self.__class__, method)
+            if isinstance(method, str)
+            else method
+        )
+        segment = None
+        for segment in fun(self):
+            continue
+        return segment
+
     # --- Iterators ---
 
     @property
