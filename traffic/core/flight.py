@@ -61,7 +61,7 @@ if pd.__version__ < "1.3":
 else:
 
     def _tz_interpolate(data, *args, **kwargs):
-        interpolated, *_ = data.astype(int).interpolate(*args, **kwargs)
+        interpolated, *_ = data.astype("int64").interpolate(*args, **kwargs)
         return interpolated.astype(data.dtype)
 
     DatetimeTZBlock.interpolate = _tz_interpolate
