@@ -50,8 +50,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound="Flight")
 
-
-if pd.__version__ < "1.3":
+if str(pd.__version__) < "1.3":
 
     def _tz_interpolate(data, *args, **kwargs):
         return data.astype(int).interpolate(*args, **kwargs).astype(data.dtype)
@@ -59,10 +58,14 @@ if pd.__version__ < "1.3":
     DatetimeTZBlock.interpolate = _tz_interpolate
 
 else:
+    # - with version 1.3.0, interpolate returns a list
+    # - Windows require "int64" as "int" may be interpreted as "int32" and raise
+    #   an error (was not raised before 1.3.0)
 
     def _tz_interpolate(data, *args, **kwargs):
-        interpolated, *_ = data.astype("int64").interpolate(*args, **kwargs)
-        return interpolated.astype(data.dtype)
+        coerced = data.coerce_to_target_dtype("int64")
+        interpolated, *_ = coerced.interpolate(*args, **kwargs)
+        return interpolated
 
     DatetimeTZBlock.interpolate = _tz_interpolate
 
