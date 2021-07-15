@@ -55,6 +55,7 @@ class DataFrameMixin(object):
 
         - .pkl and .pkl.gz dispatch to ``pandas.read_pickle``;
         - .parquet and .parquet.gz dispatch to ``pandas.read_parquet``;
+        - .feather and .feather.gz dispatch to ``pandas.read_feather``;
         - .json and .json.gz dispatch to ``pandas.read_json``;
         - .csv and .csv.gz dispatch to ``pandas.read_csv``;
         - .h5 dispatch to ``pandas.read_hdf``.
@@ -72,6 +73,8 @@ class DataFrameMixin(object):
             return cls(pd.read_pickle(path, **kwargs))
         if path.suffixes in [[".parquet"], [".parquet", ".gz"]]:
             return cls(pd.read_parquet(path, **kwargs))
+        if path.suffixes in [[".feather"], [".feather", ".gz"]]:
+            return cls(pd.read_feather(path, **kwargs))
         if path.suffixes in [[".json"], [".json", ".gz"]]:
             return cls(pd.read_json(path, **kwargs))
         if path.suffixes in [[".csv"], [".csv", ".gz"]]:
@@ -157,6 +160,19 @@ class DataFrameMixin(object):
         <./export.html>`_ section
         """
         self.data.to_parquet(filename, *args, **kwargs)
+
+    def to_feather(
+        self, filename: Union[str, Path], *args, **kwargs
+    ) -> None:  # coverage: ignore
+        """Exports to feather format.
+
+        Options can be passed to ``pandas.to_feather``
+        as args and kwargs arguments.
+
+        Read more about export formats in the `Exporting and Storing data
+        <./export.html>`_ section
+        """
+        self.data.to_feather(filename, *args, **kwargs)
 
     def to_excel(
         self, filename: Union[str, Path], *args, **kwargs

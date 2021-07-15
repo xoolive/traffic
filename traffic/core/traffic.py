@@ -460,6 +460,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
+    def final(self, *args, **kwargs):
+        ...
+
+    @lazy_evaluation()
     def resample(self, rule: Union[str, int] = "1s"):
         ...
 
