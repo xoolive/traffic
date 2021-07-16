@@ -419,7 +419,8 @@ class Flight(
         method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
     ) -> Optional["Flight"]:
         """
-        Returns the first segment of trajectory yielded by flight.method()
+        Returns the final (last) segment of trajectory yielded by
+        flight.method()
 
         >>> flight.final("go_around")
         >>> flight.final("runway_change")
