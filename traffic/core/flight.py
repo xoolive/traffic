@@ -1969,7 +1969,7 @@ class Flight(
                 datetime.fromtimestamp(t, timezone.utc)
                 for t in np.stack(intersection.coords)[:, 2]
             )
-            between = self.between(min(time_list), max(time_list))
+            between = self.between(min(time_list), max(time_list), strict=False)
             if between is not None:
                 yield between
             return None
@@ -1983,7 +1983,7 @@ class Flight(
                 yield min(times), max(times)
 
         for t1, t2 in _clip_generator():
-            between = self.between(t1, t2)
+            between = self.between(t1, t2, strict=False)
             if between is not None:
                 yield between
 
@@ -2015,7 +2015,7 @@ class Flight(
         if t1 is None:
             return None
 
-        clipped_flight = self.between(t1, t2)
+        clipped_flight = self.between(t1, t2, strict=False)
 
         if clipped_flight is None or clipped_flight.shape is None:
             return None
