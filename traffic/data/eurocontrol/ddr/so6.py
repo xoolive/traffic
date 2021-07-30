@@ -342,7 +342,9 @@ class Flight(FlightMixin):
 
         return Flight(df)
 
-    def clip(self, shape: base.BaseGeometry) -> Optional["Flight"]:
+    def clip(
+        self, shape: base.BaseGeometry, strict: bool = True
+    ) -> Optional["Flight"]:
         linestring = LineString(list(self.xy_time))
         intersection = linestring.intersection(shape)
         begin: Optional[datetime] = None
@@ -365,7 +367,7 @@ class Flight(FlightMixin):
                 if begin is None:
                     begin = begin_
 
-        return self.between(begin, end)
+        return self.between(begin, end, strict=strict)
 
     def clip_altitude(self, min_: int, max_: int) -> Iterator["Flight"]:
         """
