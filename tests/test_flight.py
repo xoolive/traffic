@@ -541,3 +541,43 @@ def test_pushback():
     )
     assert pushback.start <= parking_position.stop
     assert pushback.stop >= parking_position.stop
+
+
+def test_on_taxiway():
+    flight = zurich_airport["ACA879"]
+    assert flight is not None
+    assert len(flight.on_taxiway("LSZH")) == 3
+
+    last_stop = pd.Timestamp(0, tz="utc")
+    twy_names = ["C", "E", "E2"]
+    for i, twy_seg in enumerate(flight.on_taxiway("LSZH")):
+        assert twy_seg.start >= last_stop
+        last_stop = twy_seg.stop
+        assert twy_seg.taxiway_max == twy_names[i]
+
+    flight = zurich_airport["SWISS"]
+    assert flight is not None
+    assert flight.on_taxiway("LSZH").next() is None
+
+    # another airport
+    last_stop = pd.Timestamp(0, tz="utc")
+    twy_names = ["V", "Z", "M", "R", "B", "BB"]
+    flight = elal747
+    assert flight is not None
+    for i, twy_seg in enumerate(flight.on_taxiway("LIRF")):
+        assert twy_seg.start >= last_stop
+        last_stop = twy_seg.stop
+        assert twy_seg.taxiway_max == twy_names[i]
+
+    # Landing
+    last_stop = pd.Timestamp(0, tz="utc")
+    twy_names = ["K", "M1", "D6"]
+    for i, twy_seg in enumerate(flight.on_taxiway("LLBG")):
+        assert twy_seg.start >= last_stop
+        last_stop = twy_seg.stop
+        assert twy_seg.taxiway_max == twy_names[i]
+
+    # Flight that leaves and come back to the airport
+    flight = zurich_airport["SWR5220_6069"]
+    assert flight is not None
+    assert len(flight.on_taxiway("LSZH")) == 8

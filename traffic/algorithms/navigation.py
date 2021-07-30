@@ -1133,6 +1133,7 @@ class NavigationFeatures:
         airport_or_taxiways: Union[str, pd.DataFrame, "Airport", "Overpass"],
         *,
         tolerance: float = 15,
+        max_dist: float = 85,
     ) -> Iterator["Flight"]:
         """
         Iterates on segments of trajectory matching a single runway label.
@@ -1190,7 +1191,7 @@ class NavigationFeatures:
                 temp_.dist.idxmin(),
                 temp_.dist.min(),
             )
-            if dist < tolerance:
+            if dist < max_dist:
                 candidate = self.assign(taxiway=ref).between(start, stop)
                 if previous_candidate is None:
                     previous_candidate = candidate
