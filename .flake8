@@ -10,4 +10,5 @@ ignore =
     # W503 line break before binary operator
     # C901 too complex
     # B010 setattr are often just necessary
-    W503, C901, B010
+    # B305 `.next()` is not a thing on Python 3
+    W503, C901, B010, B305

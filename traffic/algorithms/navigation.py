@@ -885,7 +885,7 @@ class NavigationFeatures:
         self,
         speed_threshold: float = 2,
         time_threshold: str = "30s",
-        filter_dict=dict(compute_gs=3),
+        filter_dict=dict(compute_gs=3),  # noqa: B006
         resample_rule: str = "5s",
     ) -> Optional["Flight"]:
         """
@@ -928,7 +928,7 @@ class NavigationFeatures:
     def pushback(
         self,
         airport: Union[str, "Airport"],
-        filter_dict=dict(
+        filter_dict=dict(  # noqa: B006
             compute_track_unwrapped=21, compute_track=21, compute_gs=21
         ),
         track_threshold: float = 90,
@@ -1123,9 +1123,27 @@ class NavigationFeatures:
 
         self = cast("Flight", self)
         airport_ = airports[airport] if isinstance(airport, str) else airport
-        clip_ = self.clip(airport_)
-        if clip_ is not None:
-            yield from clip_.split("10T")
+
+        has_onground = "onground" in self.data.columns
+        criterion = "altitude < 5000"
+        if has_onground:
+            criterion += " or onground"
+
+        low_altitude = self.query(criterion)
+        if low_altitude is None:
+            return
+        for low_segment in low_altitude.split("10T"):
+            for airport_segment in low_segment.clip_iterate(
+                airport_.shape.buffer(5e-3)
+            ):
+                if has_onground:
+                    onground = airport_segment.query("onground")
+                else:
+                    onground = airport_segment.query(
+                        "altitude < 500 or altitude != altitude"
+                    )
+                if onground is not None:
+                    yield onground
 
     @flight_iterator
     def on_taxiway(

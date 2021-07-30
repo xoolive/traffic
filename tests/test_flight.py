@@ -8,7 +8,7 @@ import pytest
 import pandas as pd
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
-from traffic.data import eurofirs, navaids, runways
+from traffic.data import airports, eurofirs, navaids, runways
 from traffic.data.samples import (
     airbus_tree,
     belevingsvlucht,
@@ -201,6 +201,16 @@ def test_geometry() -> None:
     clip_mm = airbus_tree.clip(eurofirs["EDMM"])
     assert clip_mm is not None
     assert clip_mm.duration < flight.duration
+
+
+def test_clip_iterate() -> None:
+    flight_iterate = belevingsvlucht.clip_iterate(
+        airports["EHAM"].shape.buffer(2e-3), strict=False
+    )
+    takeoff = next(flight_iterate)
+    assert takeoff.stop == pd.Timestamp("2018-05-30 15:21:57+00:00")
+    landing = next(flight_iterate)
+    assert landing.start == pd.Timestamp("2018-05-30 20:17:55+00:00")
 
 
 def test_clip_point() -> None:
@@ -578,6 +588,27 @@ def test_on_taxiway():
         assert twy_seg.taxiway_max == twy_names[i]
 
     # Flight that leaves and come back to the airport
-    flight = zurich_airport["SWR5220_6069"]
+    flight = zurich_airport["SWR5220"]
     assert flight is not None
     assert len(flight.on_taxiway("LSZH")) == 8
+
+
+def test_ground_trajectory() -> None:
+    flight_iterate = belevingsvlucht.ground_trajectory("EHAM")
+    takeoff = next(flight_iterate)
+    assert takeoff.stop == pd.Timestamp("2018-05-30 15:21:44+00:00")
+    landing = next(flight_iterate)
+    assert landing.start == pd.Timestamp("2018-05-30 20:17:50+00:00")
+    assert next(flight_iterate, None) is None
+
+    assert belevingsvlucht.ground_trajectory("EHLE").sum() == 0
+
+    flight = zurich_airport["SWR5220"]
+    assert flight is not None
+
+    flight_iterate = flight.ground_trajectory("LSZH")
+    takeoff = next(flight_iterate)
+    assert takeoff.stop == pd.Timestamp("2019-11-05 13:05:21+00:00")
+    landing = next(flight_iterate)
+    assert landing.start == pd.Timestamp("2019-11-05 16:36:52+00:00")
+    assert next(flight_iterate, None) is None
