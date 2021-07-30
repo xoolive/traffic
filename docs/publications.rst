@@ -23,6 +23,15 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | A. Filippone and B. Parkes
+  | **Evaluation of commuter airplane emissions: A European case study**
+  | *Transportation Research Part D: Transport and Environment*, vol. 98, pp. 102979, 2021
+  | https://doi.org/10.1016/j.trd.2021.102979
+
+- | S. Corrado, T. Puranik et al.
+  | **Deep Autoencoder for Anomaly Detection in Terminal Airspace Operations**
+  | *Proceedings of the AIAA aviation forum, 2021
+
 - | X. Olive, J. Sun, A. Lafage and L. Basora
   | **Detecting Events in Aircraft Trajectories: Rule-based and Data-driven Approaches**
   | *Proceedings of the 8th OpenSky Symposium*, 2020
