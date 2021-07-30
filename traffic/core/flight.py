@@ -1946,7 +1946,7 @@ class Flight(
 
     @flight_iterator
     def clip_iterate(
-        self, shape: Union[ShapelyMixin, base.BaseGeometry]
+        self, shape: Union[ShapelyMixin, base.BaseGeometry], strict: bool = True
     ) -> Iterator["Flight"]:
         list_coords = list(self.xy_time)
         if len(list_coords) < 2:
@@ -1969,7 +1969,9 @@ class Flight(
                 datetime.fromtimestamp(t, timezone.utc)
                 for t in np.stack(intersection.coords)[:, 2]
             )
-            between = self.between(min(time_list), max(time_list))
+            between = self.between(
+                min(time_list), max(time_list), strict=strict
+            )
             if between is not None:
                 yield between
             return None
@@ -1983,12 +1985,12 @@ class Flight(
                 yield min(times), max(times)
 
         for t1, t2 in _clip_generator():
-            between = self.between(t1, t2)
+            between = self.between(t1, t2, strict=strict)
             if between is not None:
                 yield between
 
     def clip(
-        self, shape: Union[ShapelyMixin, base.BaseGeometry]
+        self, shape: Union[ShapelyMixin, base.BaseGeometry], strict: bool = True
     ) -> Optional["Flight"]:
         """Clips the trajectory to a given shape.
 
@@ -2007,7 +2009,7 @@ class Flight(
         """
 
         t1 = None
-        for segment in self.clip_iterate(shape):
+        for segment in self.clip_iterate(shape, strict=strict):
             if t1 is None:
                 t1 = segment.start
             t2 = segment.stop
@@ -2015,7 +2017,7 @@ class Flight(
         if t1 is None:
             return None
 
-        clipped_flight = self.between(t1, t2)
+        clipped_flight = self.between(t1, t2, strict=strict)
 
         if clipped_flight is None or clipped_flight.shape is None:
             return None
