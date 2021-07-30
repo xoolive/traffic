@@ -15,11 +15,13 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, MultiLineString, Point, Polygon
 
-from ..core.geodesy import destination, mrr_diagonal
+from ..core.geodesy import destination, distance, mrr_diagonal
 from ..core.iterator import flight_iterator
 from ..core.time import deltalike, to_timedelta
 
 if TYPE_CHECKING:
+    from cartes.osm import Overpass  # noqa: 401
+
     from ..core import Flight, FlightPlan  # noqa: 401
     from ..core.mixins import PointMixin  # noqa: 401
     from ..core.structure import Airport, Navaid  # noqa: 401
@@ -883,7 +885,7 @@ class NavigationFeatures:
         self,
         speed_threshold: float = 2,
         time_threshold: str = "30s",
-        filter_dict=dict(compute_gs=3),
+        filter_dict=dict(compute_gs=3),  # noqa: B006
         resample_rule: str = "5s",
     ) -> Optional["Flight"]:
         """
@@ -926,7 +928,7 @@ class NavigationFeatures:
     def pushback(
         self,
         airport: Union[str, "Airport"],
-        filter_dict=dict(
+        filter_dict=dict(  # noqa: B006
             compute_track_unwrapped=21, compute_track=21, compute_gs=21
         ),
         track_threshold: float = 90,
@@ -1105,3 +1107,126 @@ class NavigationFeatures:
             candidate = self.between(segment_times[0], segment_times[-1])
             if candidate is not None:
                 yield candidate
+
+    @flight_iterator
+    def ground_trajectory(
+        self, airport: Union[str, "Airport"]
+    ) -> Iterator["Flight"]:
+        """Returns the ground part of the trajectory limited to the apron
+        of the airport passed in parameter.
+
+        The same trajectory could use the apron several times, hence the safest
+        option to return a FlightIterator.
+        """
+
+        from traffic.data import airports
+
+        self = cast("Flight", self)
+        airport_ = airports[airport] if isinstance(airport, str) else airport
+
+        has_onground = "onground" in self.data.columns
+        criterion = "altitude < 5000"
+        if has_onground:
+            criterion += " or onground"
+
+        low_altitude = self.query(criterion)
+        if low_altitude is None:
+            return
+        for low_segment in low_altitude.split("10T"):
+            for airport_segment in low_segment.clip_iterate(
+                airport_.shape.buffer(5e-3)
+            ):
+                if has_onground:
+                    onground = airport_segment.query("onground")
+                else:
+                    onground = airport_segment.query(
+                        "altitude < 500 or altitude != altitude"
+                    )
+                if onground is not None:
+                    yield onground
+
+    @flight_iterator
+    def on_taxiway(
+        self,
+        airport_or_taxiways: Union[str, pd.DataFrame, "Airport", "Overpass"],
+        *,
+        tolerance: float = 15,
+        max_dist: float = 85,
+    ) -> Iterator["Flight"]:
+        """
+        Iterates on segments of trajectory matching a single runway label.
+        """
+
+        from ..core.structure import Airport
+        from ..data import airports
+
+        self = cast("Flight", self)
+        if isinstance(airport_or_taxiways, str):
+            airport_or_taxiways = airports[airport_or_taxiways]
+
+        taxiways_ = (
+            airport_or_taxiways.taxiway
+            if isinstance(airport_or_taxiways, Airport)
+            else airport_or_taxiways
+        )
+
+        taxiways = (  # one entry per runway label
+            (
+                taxiways_
+                if isinstance(taxiways_, pd.DataFrame)
+                else taxiways_.data
+            )
+            .groupby("ref")
+            .agg({"geometry": list})["geometry"]
+            .apply(MultiLineString)
+            .to_frame()
+        )
+
+        simplified_df = cast(
+            pd.DataFrame, self.simplify(tolerance=tolerance).data
+        )
+        if simplified_df.shape[0] < 2:
+            return
+
+        previous_candidate = None
+        first = simplified_df.iloc[0]
+        for _, second in simplified_df.iloc[1:].iterrows():
+
+            p1 = Point(first.longitude, first.latitude)
+            p2 = Point(second.longitude, second.latitude)
+
+            def extremities_dist(twy):
+                p1_proj = twy.interpolate(twy.project(p1))
+                p2_proj = twy.interpolate(twy.project(p2))
+                d1 = distance(p1_proj.y, p1_proj.x, p1.y, p1.x)
+                d2 = distance(p2_proj.y, p2_proj.x, p2.y, p2.x)
+                return d1 + d2
+
+            temp_ = taxiways.assign(dist=np.vectorize(extremities_dist))
+            start, stop, ref, dist = (
+                first.timestamp,
+                second.timestamp,
+                temp_.dist.idxmin(),
+                temp_.dist.min(),
+            )
+            if dist < max_dist:
+                candidate = self.assign(taxiway=ref).between(start, stop)
+                if previous_candidate is None:
+                    previous_candidate = candidate
+
+                else:
+                    prev_ref = previous_candidate.taxiway_max
+                    delta = start - previous_candidate.stop
+                    if prev_ref == ref and delta < pd.Timedelta("1T"):
+                        previous_candidate = self.assign(taxiway=ref).between(
+                            previous_candidate.start, stop
+                        )
+
+                    else:
+                        yield previous_candidate
+                        previous_candidate = candidate
+
+            first = second
+
+        if previous_candidate is not None:
+            yield previous_candidate

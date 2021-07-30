@@ -432,7 +432,7 @@ class Flight(
             else method
         )
         segment = None
-        for segment in fun(self):
+        for segment in fun(self):  # noqa: B007
             continue
         return segment
 
@@ -1984,8 +1984,22 @@ class Flight(
                 )
                 yield min(times), max(times)
 
+        # it is actually not so simple because of self intersecting trajectories
+        prev_t1, prev_t2 = None, None
+
         for t1, t2 in _clip_generator():
-            between = self.between(t1, t2, strict=strict)
+            if prev_t2 is not None and t1 > prev_t2:
+                between = self.between(prev_t1, prev_t2, strict=strict)
+                if between is not None:
+                    yield between
+                prev_t1, prev_t2 = t1, t2
+            elif prev_t2 is None:
+                prev_t1, prev_t2 = t1, t2
+            else:
+                prev_t1, prev_t2 = min(prev_t1, t1), max(prev_t2, t2)
+
+        if prev_t2 is not None:
+            between = self.between(prev_t1, prev_t2, strict=strict)
             if between is not None:
                 yield between
 
