@@ -622,6 +622,10 @@ class Traffic(HBoxMixin, GeographyMixin):
     def takeoff_from(self, airport: str) -> bool:
         ...
 
+    @lazy_evaluation()
+    def phases(self, twindow: int = 60):
+        ...
+
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
