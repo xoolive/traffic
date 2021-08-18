@@ -23,14 +23,29 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | S. Corrado, T. Puranik, O. J. Pinon-Fischer and D. Mavris
+  | **A clustering-based quantitative analysis of the interdependent relationship between spatial and energy anomalies in ADS-B trajectory data**
+  | *Transportation Research Part C: Emerging Technologies*, vol. 131, pp. 103331, 2021
+
 - | A. Filippone and B. Parkes
   | **Evaluation of commuter airplane emissions: A European case study**
   | *Transportation Research Part D: Transport and Environment*, vol. 98, pp. 102979, 2021
   | https://doi.org/10.1016/j.trd.2021.102979
 
-- | S. Corrado, T. Puranik et al.
-  | **Deep Autoencoder for Anomaly Detection in Terminal Airspace Operations**
-  | *Proceedings of the AIAA aviation forum, 2021
+- | A. Filippone, B. Parkes, N. Bojdo and T. Kelly
+  | **Prediction of aircraft engine emissions using ADS-B flight data**
+  | *The Aeronautical Journal*, vol. 125, issue 1288, pp. 988--1012, 2021
+  | https://doi.org/10.1017/aer.2021.2
+
+- | S. Corrado, T. Puranik, O. J. Pinon-Fischer, D. Mavris, R. Rose, J. Williams and R. Heidary
+  | **Deep Autoencoder for Anomaly Detection in Terminal Airspace Operations**
+  | *Proceedings of the AIAA aviation forum*, 2021
+  | https://doi.org/10.2514/6.2021-2405
+
+- | J. Sun
+  | **The 1090 Megahertz Riddle: A Guide to Decoding Mode S and ADS-B Signals**
+  | ISBN: 978-94-6366-402-8, 2021
+  | https://doi.org/10.34641/mg.11 
 
 - | X. Olive, J. Sun, A. Lafage and L. Basora
   | **Detecting Events in Aircraft Trajectories: Rule-based and Data-driven Approaches**
