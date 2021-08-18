@@ -33,11 +33,11 @@ authentication.
 
 .. code:: python
 
-    %matplotlib inline
     import matplotlib.pyplot as plt
 
+    from cartes.crs import EuroPP
     from traffic.data import opensky
-    from traffic.drawing import EuroPP, countries
+    from traffic.drawing import countries
 
     sv = opensky.api_states()
 

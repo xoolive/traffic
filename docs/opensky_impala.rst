@@ -96,7 +96,8 @@ Then you may send requests:
 
     .. code:: python
 
-        from traffic.drawing import EuroPP, PlateCarree, countries, rivers
+        from cartopy.crs import EuroPP
+        from traffic.drawing import countries, rivers
 
         flight = opensky.history(
             "2018-06-11 15:00",

@@ -1071,7 +1071,7 @@ signals, then plot the results.
 
 .. code:: python
 
-    from traffic.drawing import Nominatim
+    from cartes.osm import Nominatim
     
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
@@ -1208,7 +1208,7 @@ with an average vertical speed below 1,000 ft/min.
 
 .. code:: python
 
-    from traffic.drawing import Nominatim
+    from cartes.osm import Nominatim
     
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))

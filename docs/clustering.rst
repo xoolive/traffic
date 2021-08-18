@@ -28,7 +28,7 @@ The full dataset of trajectories can be displayed on a basic Switzerland map.
 
     import matplotlib.pyplot as plt
 
-    from traffic.core.projection import CH1903
+    from cartes.crs import CH1903
     from traffic.drawing import countries
     
     with plt.style.context("traffic"):
@@ -66,7 +66,7 @@ called on new data.
 
     from sklearn.cluster import DBSCAN
     from sklearn.preprocessing import StandardScaler
-    from traffic.core.projection import CH1903
+    from cartes.crs import CH1903
     
     t_dbscan = t_unwrapped.clustering(
         nb_samples=15,
@@ -187,8 +187,9 @@ with the same parameters as the clustering.
     
     from random import sample
     
+    from cartes.crs import CH1903
     from traffic.data import airports, airways, navaids
-    from traffic.drawing import CH1903, countries, lakes
+    from traffic.drawing import countries, lakes
     from traffic.drawing.markers import rotate_marker, atc_tower, aircraft
     
     with plt.style.context("traffic"):

@@ -65,11 +65,10 @@ the machine learning method).
 
 .. code:: python
 
-    %matplotlib inline
     import matplotlib.pyplot as plt
     
     from traffic.data import airports, navaids, nm_airspaces
-    from traffic.drawing import EuroPP, PlateCarree
+    from cartes.crs import EuroPP, PlateCarree
     
     with plt.style.context("traffic"):
     

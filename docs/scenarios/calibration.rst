@@ -254,12 +254,11 @@ We have all we need to enhance the interesting parts of the trajectory now:
 
 .. code:: python
 
-   %matplotlib inline
-
    import matplotlib.pyplot as plt
    import pandas as pd
 
-   from traffic.drawing import Lambert93, countries
+   from cartes.crs import Lambert93
+   from traffic.drawing import countries
    from traffic.data import airports
 
    point_params = dict(zorder=5, text_kw=dict(fontname="Ubuntu", fontsize=15))

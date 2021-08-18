@@ -93,7 +93,8 @@ The `.agg_latlon() </traffic.core.traffic.html#traffic.core.Traffic.agg_latlon>`
     from matplotlib.offsetbox import AnchoredText
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
     
-    from traffic.drawing import countries, ocean, EuroPP, PlateCarree
+    from cartopy.crs import EuroPP, PlateCarree
+    from traffic.drawing import countries, ocean
     
     
     with plt.style.context("traffic"):

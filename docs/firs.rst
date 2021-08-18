@@ -22,8 +22,9 @@ FIRs of countries in the Eurocontrol area are available in the library.
 
 .. code:: python
 
+    from cartopy.crs import TransverseMercator
     from traffic.data import eurofirs
-    from traffic.drawing import TransverseMercator, countries, lakes, ocean, rivers
+    from traffic.drawing import countries, lakes, ocean, rivers
 
     import matplotlib.pyplot as plt
 
@@ -64,8 +65,9 @@ On the following map, Air Route Traffic Control Centers (ARTCC) are displayed to
 
 .. code:: python
 
+    from cartes.crs import AlbersUSA
     from traffic.data import faa
-    from traffic.drawing import AlbersUSA, countries, lakes, ocean, rivers
+    from traffic.drawing import countries, lakes, ocean, rivers
 
     import matplotlib.pyplot as plt
 

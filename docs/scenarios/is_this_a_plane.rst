@@ -189,7 +189,9 @@ altitude though.
 .. code:: python
 
     
-    from traffic.drawing import Lambert93, Nominatim, countries, rivers
+    from cartes.crs import Lambert93
+    from cartes.osm import Nominatim
+    from traffic.drawing import countries, rivers
     from traffic.drawing.markers import rotate_marker, aircraft
 
     with plt.style.context("traffic"):

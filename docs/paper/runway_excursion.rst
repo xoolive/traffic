@@ -251,7 +251,7 @@ respect to the above mentioned navigational beacons.
 
 .. code:: python
 
-    from traffic.drawing import EuroPP
+    from cartopy.crs import EuroPP
     from traffic.data import airports
     
     with plt.style.context('traffic'):
@@ -433,10 +433,10 @@ still acceptable for a statistical analysis.
 
 .. code:: python
 
-    %matplotlib inline
     import matplotlib.pyplot as plt
     
-    from traffic.drawing import EuroPP, rivers
+    from cartopy.crs import EuroPP
+    from traffic.drawing import rivers
     from traffic.data import airports
     
     with plt.style.context('traffic'):
@@ -568,8 +568,9 @@ appears they follow a specific pattern of late runway changes.
 
 .. code:: python
 
-    from traffic.drawing import EuroPP, rivers
+    from cartopy.crs import EuroPP
     from traffic.data import airports
+    from traffic.drawing import rivers
     
     with plt.style.context('traffic'):
         fig, ax = plt.subplots(
