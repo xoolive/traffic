@@ -26,6 +26,7 @@ library:
 - | S. Corrado, T. Puranik, O. J. Pinon-Fischer and D. Mavris
   | **A clustering-based quantitative analysis of the interdependent relationship between spatial and energy anomalies in ADS-B trajectory data**
   | *Transportation Research Part C: Emerging Technologies*, vol. 131, pp. 103331, 2021
+  | https://doi.org/10.1016/j.trc.2021.103331
 
 - | A. Filippone and B. Parkes
   | **Evaluation of commuter airplane emissions: A European case study**
