@@ -864,7 +864,7 @@ class Impala(object):
                 day_max=day_max.timestamp(),
             )
 
-        cumul = []
+        cumul: List[pd.DataFrame] = []
         sequence = list(split_times(start, stop, date_delta))
         columns = ", ".join(f"sv.{field}" for field in self._impala_columns)
         parse_columns = ", ".join(self._impala_columns)
@@ -912,8 +912,7 @@ class Impala(object):
                 other_params=other_params,
                 where_clause=where_clause,
             )
-            logging.info(f"Sending Impala request: {request}")
-            return request
+
             df = self._impala(request, columns=parse_columns, cached=cached)
 
             if df is None:
