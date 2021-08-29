@@ -759,7 +759,7 @@ class Impala(object):
 
         elif isinstance(icao24, Iterable):
             icao24 = ",".join("'{}'".format(c.lower()) for c in icao24)
-            other_params += "and sv.icao24 in ({}) ".format(icao24.lower())
+            other_params += "and sv.icao24 in ({}) ".format(icao24)
 
         if isinstance(callsign, str):
             if (
@@ -825,6 +825,10 @@ class Impala(object):
             )
 
         elif arrival_airport is not None:
+            if airport is not None:
+                raise RuntimeError(
+                    "airport may not be set if " "arrival_airport is set"
+                )
             other_tables += (
                 "join (select icao24 as e_icao24, firstseen, "
                 "estdepartureairport, lastseen, estarrivalairport, "
@@ -838,6 +842,10 @@ class Impala(object):
             )
 
         elif departure_airport is not None:
+            if airport is not None:
+                raise RuntimeError(
+                    "airport may not be set if " "departure_airport is set"
+                )
             other_tables += (
                 "join (select icao24 as e_icao24, firstseen, "
                 "estdepartureairport, lastseen, estarrivalairport, "
@@ -886,7 +894,7 @@ class Impala(object):
             )
 
         if count is True:
-            other_params += "group by " + columns
+            other_params += "group by " + columns + " "
             columns = "count(*) as count, " + columns
             parse_columns = "count, " + parse_columns
             if serials is None:
