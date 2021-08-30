@@ -795,8 +795,8 @@ class Impala(object):
             except AttributeError:
                 west, south, east, north = bounds
 
-            other_params += "and lon>={} and lon<={} ".format(west, east)
-            other_params += "and lat>={} and lat<={} ".format(south, north)
+            other_params += "and sv.lon>={} and sv.lon<={} ".format(west, east)
+            other_params += "and sv.lat>={} and sv.lat<={} ".format(south, north)
 
         day_min = round_time(start, how="before", by=timedelta(days=1))
         day_max = round_time(stop, how="after", by=timedelta(days=1))
