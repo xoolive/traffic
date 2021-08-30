@@ -1,8 +1,6 @@
 from datetime import timedelta
 from typing import Optional, cast
 
-import pytest
-
 from traffic.core import Traffic
 from traffic.data import opensky
 from traffic.data.samples import belevingsvlucht, lfbo_tma
@@ -59,77 +57,6 @@ def test_history():
 
     t_decoded = t_tma.filter().query_ehs(df).eval(desc="", max_workers=4)
     assert len(t_decoded) == len(t_tma)
-
-
-def test_complex_queries():
-    error_msg = "airport may not be set if arrival_airport is set"
-    with pytest.raises(RuntimeError, match=error_msg):
-        _ = opensky.history(
-            start="2021-08-24 00:00",
-            stop="2021-08-24 01:00",
-            airport="ESSA",
-            arrival_airport="EGLL",
-            limit=3,
-        )
-
-    t2 = opensky.history(
-        start="2021-08-24 00:00",
-        stop="2021-08-24 01:00",
-        airport="ESSA",
-        limit=3,
-    )
-    assert t2 is not None
-
-    t3 = opensky.history(
-        start="2021-08-24 00:00",
-        stop="2021-08-24 01:00",
-        arrival_airport="ESSA",
-        limit=3,
-    )
-    assert t3 is not None
-
-    t4 = opensky.history(
-        start="2021-08-24 00:00",
-        departure_airport="ESSA",
-        arrival_airport="EGLL",
-        limit=3,
-    )
-    assert t4 is not None
-
-    with pytest.raises(RuntimeError, match=error_msg):
-        _ = opensky.history(
-            start="2021-08-24 00:00",
-            stop="2021-08-24 01:00",
-            airport="ESSA",
-            arrival_airport="EGLL",
-            limit=3,
-        )
-
-    t6 = opensky.history(
-        start="2021-08-24 00:00",
-        stop="2021-08-24 01:00",
-        arrival_airport="ESSA",
-        serials=-1408232560,
-        limit=3,
-    )
-    assert t6 is not None
-
-    t7 = opensky.history(
-        start="2021-08-24 00:00",
-        stop="2021-08-24 01:00",
-        serials=(-1408232560, -1408232534),
-        limit=3,
-    )
-    assert t7 is not None
-
-    t8 = opensky.history(
-        start="2021-08-24 00:00",
-        stop="2021-08-24 01:00",
-        departure_airport="ESSA",
-        serials=(-1408232560, -1408232534),
-        limit=3,
-    )
-    assert t8 is not None
 
 
 def test_rawdata():
