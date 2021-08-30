@@ -18,4 +18,6 @@ def pytest_configure(config):
     username = os.environ.get("OPENSKY_USERNAME", None)
     password = os.environ.get("OPENSKY_PASSWORD", None)
     if username is not None and password is not None:
+        opensky.username = username
+        opensky.password = password
         opensky.auth = (username, password)
