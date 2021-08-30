@@ -301,6 +301,12 @@ class Impala(object):
     def _format_history(
         df: pd.DataFrame, nautical_units: bool = True
     ) -> pd.DataFrame:
+        """
+        This function can be used in tandem with `_format_dataframe()` to
+        convert (historical data specific) column types and optionally convert
+        the units back to nautical miles, feet and feet/min.
+
+        """
 
         if "lastcontact" in df.columns:
             df = df.drop(["lastcontact"], axis=1)
