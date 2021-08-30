@@ -3,6 +3,9 @@ name: tests
 on:
   push:
   pull_request:
+  schedule:
+    - cron: "42 7 * * 0" # Every Sunday morning when I am fast asleep :)
+    # This is useful for keeping the cache fit and ready
   workflow_dispatch:
 
 jobs:
@@ -67,7 +70,7 @@ jobs:
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
         run: |
-          poetry run pytest --cov --cov-report term-missing
+          poetry run pytest --log-level=DEBUG
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
