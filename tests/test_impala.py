@@ -1,12 +1,9 @@
 from datetime import timedelta
-from pathlib import Path
 from typing import Optional, cast
 
 from traffic.core import Traffic
 from traffic.data import opensky
 from traffic.data.samples import belevingsvlucht, lfbo_tma
-
-opensky.cache_dir = Path(__file__).parent.parent / "data" / "opensky_cache"
 
 
 def test_flightlist():

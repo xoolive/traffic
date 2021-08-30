@@ -1,11 +1,11 @@
 import time
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
+import pandas as pd
 from traffic.core import Flight, Traffic
-from traffic.data import ModeS_Decoder, opensky
+from traffic.data import ModeS_Decoder
 from traffic.data.samples import collections, get_sample
 
 
@@ -14,11 +14,6 @@ def long_enough(flight: Flight) -> bool:
 
 
 def test_decode():
-
-    opensky.cache_dir = Path(__file__).parent.parent / "data" / "opensky_cache"
-
-    # with zipfile.ZipFile(opensky.cache_dir / "opensky_cache.zip") as zfile:
-    #     zfile.extractall(path=opensky.cache_dir)
 
     switzerland: Traffic = get_sample(collections, "switzerland")
 
