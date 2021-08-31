@@ -174,7 +174,6 @@ def test_complex_queries():
     tD = opensky.history(
             start="2021-08-24 00:00",
             stop="2021-08-24 01:00",
-            departure_airport="ESSA",
             count=True,
             bounds=[17.8936, 59.6118, 17.9894, 59.6716],
             limit=3,
