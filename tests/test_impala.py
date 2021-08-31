@@ -131,6 +131,55 @@ def test_complex_queries():
     )
     assert t8 is not None
 
+    t9 = opensky.history(
+            start="2021-08-24 00:00",
+            stop="2021-08-24 01:00",
+            bounds=[17.8936, 59.6118, 17.9894, 59.6716],
+            serials=(-1408232560, -1408232534),
+            limit=3,
+        )
+    assert t9 is not None
+
+    tA = opensky.history(
+            start="2021-08-24 00:00",
+            stop="2021-08-24 01:00",
+            departure_airport="ESSA",
+            bounds=[17.8936, 59.6118, 17.9894, 59.6716],
+            serials=(-1408232560, -1408232534),
+            limit=3,
+        )
+    assert tA is not None
+
+    tB = opensky.history(
+            start="2021-08-24 00:00",
+            stop="2021-08-24 01:00",
+            departure_airport="ESSA",
+            count=True,
+            bounds=[17.8936, 59.6118, 17.9894, 59.6716],
+            serials=(-1408232560, -1408232534),
+            limit=3,
+        )
+    assert tB is not None
+
+    tC = opensky.history(
+            start="2021-08-24 00:00",
+            stop="2021-08-24 01:00",
+            departure_airport="ESSA",
+            count=True,
+            bounds=[17.8936, 59.6118, 17.9894, 59.6716],
+            limit=3,
+        )
+    assert tC is not None
+
+    tD = opensky.history(
+            start="2021-08-24 00:00",
+            stop="2021-08-24 01:00",
+            departure_airport="ESSA",
+            count=True,
+            bounds=[17.8936, 59.6118, 17.9894, 59.6716],
+            limit=3,
+        )
+    assert tD is not None
 
 def test_rawdata():
 

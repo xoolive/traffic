@@ -59,9 +59,9 @@ class Impala(object):
     ]
 
     basic_request = (
-        "select {columns} from state_vectors_data4 as sv {other_tables} "
-        "{where_clause} sv.hour>={before_hour} and sv.hour<{after_hour} "
-        "and sv.time>={before_time} and sv.time<{after_time} "
+        "select {columns} from state_vectors_data4 {other_tables} "
+        "{where_clause} hour>={before_hour} and hour<{after_hour} "
+        "and time>={before_time} and time<{after_time} "
         "{other_params}"
     )
 
@@ -753,6 +753,9 @@ class Impala(object):
         airports_params = [airport, departure_airport, arrival_airport]
         count_airports_params = sum(x is not None for x in airports_params)
 
+        if count is True and serials is None:
+            other_tables += ", state_vectors_data4.serials s "
+
         if isinstance(serials, Iterable):
             other_tables += ", state_vectors_data4.serials s "
             other_params += "and s.ITEM in {} ".format(tuple(serials))
@@ -761,11 +764,11 @@ class Impala(object):
             other_params += "and s.ITEM = {} ".format(serials)
 
         if isinstance(icao24, str):
-            other_params += "and sv.icao24='{}' ".format(icao24.lower())
+            other_params += "and icao24='{}' ".format(icao24.lower())
 
         elif isinstance(icao24, Iterable):
             icao24 = ",".join("'{}'".format(c.lower()) for c in icao24)
-            other_params += "and sv.icao24 in ({}) ".format(icao24)
+            other_params += "and icao24 in ({}) ".format(icao24)
 
         if isinstance(callsign, str):
             if (
@@ -774,18 +777,18 @@ class Impala(object):
                 - set(string.digits)
                 - set("%_")
             ):  # if regex like characters
-                other_params += "and RTRIM(sv.callsign) REGEXP('{}') ".format(
+                other_params += "and RTRIM(callsign) REGEXP('{}') ".format(
                     callsign
                 )
 
             elif callsign.find("%") > 0 or callsign.find("_") > 0:
-                other_params += "and sv.callsign ilike '{}' ".format(callsign)
+                other_params += "and callsign ilike '{}' ".format(callsign)
             else:
-                other_params += "and sv.callsign='{:<8s}' ".format(callsign)
+                other_params += "and callsign='{:<8s}' ".format(callsign)
 
         elif isinstance(callsign, Iterable):
             callsign = ",".join("'{:<8s}'".format(c) for c in callsign)
-            other_params += "and sv.callsign in ({}) ".format(callsign)
+            other_params += "and callsign in ({}) ".format(callsign)
 
         if bounds is not None:
             try:
@@ -795,18 +798,18 @@ class Impala(object):
             except AttributeError:
                 west, south, east, north = bounds
 
-            other_params += "and sv.lon>={} and sv.lon<={} ".format(west, east)
-            other_params += "and sv.lat>={} and sv.lat<={} ".format(south, north)
+            other_params += "and lon>={} and lon<={} ".format(west, east)
+            other_params += "and lat>={} and lat<={} ".format(south, north)
 
         day_min = round_time(start, how="before", by=timedelta(days=1))
         day_max = round_time(stop, how="after", by=timedelta(days=1))
 
         if count_airports_params > 0:
             where_clause = (
-                "on sv.icao24 = est.e_icao24 and "
-                "sv.callsign = est.e_callsign and "
-                "est.firstseen <= sv.time and "
-                "sv.time <= est.lastseen "
+                "on icao24 = est.e_icao24 and "
+                "callsign = est.e_callsign and "
+                "est.firstseen <= time and "
+                "time <= est.lastseen "
                 "where"
             )
 
@@ -880,7 +883,7 @@ class Impala(object):
 
         cumul: List[pd.DataFrame] = []
         sequence = list(split_times(start, stop, date_delta))
-        columns = ", ".join(f"sv.{field}" for field in self._impala_columns)
+        columns = ", ".join(f"{field}" for field in self._impala_columns)
         parse_columns = ", ".join(self._impala_columns)
 
         if count_airports_params > 0:
@@ -903,8 +906,6 @@ class Impala(object):
             other_params += "group by " + columns + " "
             columns = "count(*) as count, " + columns
             parse_columns = "count, " + parse_columns
-            if serials is None:
-                other_tables += ", state_vectors_data4.serials s"
 
         if limit is not None:
             other_params += f"limit {limit}"
