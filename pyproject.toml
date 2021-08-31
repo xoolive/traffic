@@ -142,5 +142,5 @@ module = "traffic.core.*"
 # disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
-addopts = "--cov --cov-report term-missing --log-debug=DEBUG"
+addopts = "--cov --cov-report term-missing --log-level=DEBUG"
 testpaths = ["tests"]
