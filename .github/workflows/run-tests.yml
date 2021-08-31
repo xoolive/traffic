@@ -73,7 +73,7 @@ jobs:
           poetry run pytest
 
       - name: Upload coverage to Codecov
+        if: ${{ github.event_name != 'pull_request_target' }}
         uses: codecov/codecov-action@v1
-        if: $ {{ github.event_name != "pull_request_target" }}
         with:
           env_vars: PYTHON
