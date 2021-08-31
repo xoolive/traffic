@@ -301,6 +301,12 @@ class Impala(object):
     def _format_history(
         df: pd.DataFrame, nautical_units: bool = True
     ) -> pd.DataFrame:
+        """
+        This function can be used in tandem with `_format_dataframe()` to
+        convert (historical data specific) column types and optionally convert
+        the units back to nautical miles, feet and feet/min.
+
+        """
 
         if "lastcontact" in df.columns:
             df = df.drop(["lastcontact"], axis=1)
@@ -747,6 +753,9 @@ class Impala(object):
         airports_params = [airport, departure_airport, arrival_airport]
         count_airports_params = sum(x is not None for x in airports_params)
 
+        if count is True and serials is None:
+            other_tables += ", state_vectors_data4.serials s "
+
         if isinstance(serials, Iterable):
             other_tables += ", state_vectors_data4.serials s "
             other_params += "and s.ITEM in {} ".format(tuple(serials))
@@ -755,15 +764,11 @@ class Impala(object):
             other_params += "and s.ITEM = {} ".format(serials)
 
         if isinstance(icao24, str):
-            other_params += "and {}icao24='{}' ".format(
-                "sv." if count_airports_params > 0 else "", icao24.lower()
-            )
+            other_params += "and icao24='{}' ".format(icao24.lower())
 
         elif isinstance(icao24, Iterable):
             icao24 = ",".join("'{}'".format(c.lower()) for c in icao24)
-            other_params += "and {}icao24 in ({}) ".format(
-                "sv." if count_airports_params > 0 else "", icao24
-            )
+            other_params += "and icao24 in ({}) ".format(icao24)
 
         if isinstance(callsign, str):
             if (
@@ -772,23 +777,18 @@ class Impala(object):
                 - set(string.digits)
                 - set("%_")
             ):  # if regex like characters
-                other_params += "and RTRIM({}callsign) REGEXP('{}') ".format(
-                    "sv." if count_airports_params > 0 else "", callsign
+                other_params += "and RTRIM(callsign) REGEXP('{}') ".format(
+                    callsign
                 )
+
             elif callsign.find("%") > 0 or callsign.find("_") > 0:
-                other_params += "and {}callsign ilike '{}' ".format(
-                    "sv." if count_airports_params > 0 else "", callsign
-                )
+                other_params += "and callsign ilike '{}' ".format(callsign)
             else:
-                other_params += "and {}callsign='{:<8s}' ".format(
-                    "sv." if count_airports_params > 0 else "", callsign
-                )
+                other_params += "and callsign='{:<8s}' ".format(callsign)
 
         elif isinstance(callsign, Iterable):
             callsign = ",".join("'{:<8s}'".format(c) for c in callsign)
-            other_params += "and {}callsign in ({}) ".format(
-                "sv." if count_airports_params > 0 else "", callsign
-            )
+            other_params += "and callsign in ({}) ".format(callsign)
 
         if bounds is not None:
             try:
@@ -806,10 +806,10 @@ class Impala(object):
 
         if count_airports_params > 0:
             where_clause = (
-                "on sv.icao24 = est.e_icao24 and "
-                "sv.callsign = est.e_callsign and "
-                "est.firstseen <= sv.time and "
-                "sv.time <= est.lastseen "
+                "on icao24 = est.e_icao24 and "
+                "callsign = est.e_callsign and "
+                "est.firstseen <= time and "
+                "time <= est.lastseen "
                 "where"
             )
 
@@ -820,7 +820,7 @@ class Impala(object):
                     "either arrival_airport or departure_airport is set"
                 )
             other_tables += (
-                "as sv join (select icao24 as e_icao24, firstseen, "
+                "join (select icao24 as e_icao24, firstseen, "
                 "estdepartureairport, lastseen, estarrivalairport, "
                 "callsign as e_callsign, day from flights_data4 "
                 "where estdepartureairport ='{departure_airport}' "
@@ -834,8 +834,12 @@ class Impala(object):
             )
 
         elif arrival_airport is not None:
+            if airport is not None:
+                raise RuntimeError(
+                    "airport may not be set if " "arrival_airport is set"
+                )
             other_tables += (
-                "as sv join (select icao24 as e_icao24, firstseen, "
+                "join (select icao24 as e_icao24, firstseen, "
                 "estdepartureairport, lastseen, estarrivalairport, "
                 "callsign as e_callsign, day from flights_data4 "
                 "where estarrivalairport ='{arrival_airport}' "
@@ -847,8 +851,12 @@ class Impala(object):
             )
 
         elif departure_airport is not None:
+            if airport is not None:
+                raise RuntimeError(
+                    "airport may not be set if " "departure_airport is set"
+                )
             other_tables += (
-                "as sv join (select icao24 as e_icao24, firstseen, "
+                "join (select icao24 as e_icao24, firstseen, "
                 "estdepartureairport, lastseen, estarrivalairport, "
                 "callsign as e_callsign, day from flights_data4 "
                 "where estdepartureairport ='{departure_airport}' "
@@ -861,7 +869,7 @@ class Impala(object):
 
         elif airport is not None:
             other_tables += (
-                "as sv join (select icao24 as e_icao24, firstseen, "
+                "join (select icao24 as e_icao24, firstseen, "
                 "estdepartureairport, lastseen, estarrivalairport, "
                 "callsign as e_callsign, day from flights_data4 "
                 "where (estdepartureairport ='{arrival_or_departure_airport}' "
@@ -873,9 +881,9 @@ class Impala(object):
                 day_max=day_max.timestamp(),
             )
 
-        cumul = []
+        cumul: List[pd.DataFrame] = []
         sequence = list(split_times(start, stop, date_delta))
-        columns = ", ".join(self._impala_columns)
+        columns = ", ".join(f"{field}" for field in self._impala_columns)
         parse_columns = ", ".join(self._impala_columns)
 
         if count_airports_params > 0:
@@ -886,10 +894,8 @@ class Impala(object):
                 "estarrivalairport",
                 "day",
             ]
-            columns = (
-                ", ".join(f"sv.{field}" for field in self._impala_columns)
-                + ", "
-                + ", ".join(f"est.{field}" for field in est_columns)
+            columns = columns + (
+                ", " + ", ".join(f"est.{field}" for field in est_columns)
             )
             parse_columns = ", ".join(
                 self._impala_columns
@@ -897,10 +903,9 @@ class Impala(object):
             )
 
         if count is True:
-            other_params += "group by " + columns
+            other_params += "group by " + columns + " "
             columns = "count(*) as count, " + columns
             parse_columns = "count, " + parse_columns
-            other_tables += ", state_vectors_data4.serials s"
 
         if limit is not None:
             other_params += f"limit {limit}"

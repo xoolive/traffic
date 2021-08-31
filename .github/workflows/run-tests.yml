@@ -70,9 +70,10 @@ jobs:
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
         run: |
-          poetry run pytest --log-level=DEBUG
+          poetry run pytest
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
+        if: $ {{ github.event_name != "pull_request_target" }}
         with:
           env_vars: PYTHON
