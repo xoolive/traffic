@@ -1,15 +1,16 @@
-# fmt: off
 from typing import List, cast
 
 import pandas as pd
-
 from traffic.core.flightplan import (
-    Airway, CoordinatePoint, Direct, FlightPlan,
-    Point, SpeedLevel, _ElementaryBlock
+    Airway,
+    CoordinatePoint,
+    Direct,
+    FlightPlan,
+    Point,
+    SpeedLevel,
+    _ElementaryBlock,
 )
 from traffic.data.basic.airways import Airways
-
-# fmt: on
 
 
 class ExtraData(Airways):

@@ -1,5 +1,4 @@
 import numpy as np
-
 from traffic.core.geodesy import bearing, destination, distance, greatcircle
 
 
