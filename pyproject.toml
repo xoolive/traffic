@@ -35,6 +35,11 @@ include = [
   "allft_fields.txt"
 ]
 
+[project.urls]
+Releases = "https://github.com/xoolive/traffic/releases"
+Gitter = "https://gitter.im/xoolive/traffic"
+Issues = "https://github.com/xoolive/traffic/issues"
+
 [tool.poetry.scripts]
 traffic = 'traffic.console:main'
 
