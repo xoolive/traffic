@@ -39,7 +39,11 @@ release = ""
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.githubpages"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.githubpages",
+    "jupyter_sphinx",
+]
 
 # To avoid installing all dependencies when building doc
 # https://stackoverflow.com/a/15912502/8729698
