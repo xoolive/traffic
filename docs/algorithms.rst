@@ -7,4 +7,5 @@ Algorithms
     clustering
     navigation
     cpa
+    generation
 
