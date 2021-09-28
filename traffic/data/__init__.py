@@ -190,6 +190,7 @@ def __getattr__(name: str):
         return res
 
     if name == "nm_b2b":
+        from . import session
         from .eurocontrol.b2b import NMB2B
 
         if pkcs12_filename != "" and pkcs12_password != "":

@@ -41,6 +41,7 @@ def create_pyopenssl_sslcontext(data: bytes, password: bytes):
     private_key, certificate, additional = pkcs12.load_key_and_certificates(
         data, password
     )
+    assert private_key is not None
     assert certificate is not None
     check_cert_not_after(certificate)
     ssl_context = PyOpenSSLContext(ssl_protocol)
