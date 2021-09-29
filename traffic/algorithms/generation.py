@@ -1,3 +1,5 @@
+import pickle
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 from cartopy import crs
@@ -97,18 +99,8 @@ def compute_latlon_from_trackgs(
         df["track"] = df["track"].values[::-1] - 180
         df["groundspeed"] = df["groundspeed"].values[::-1]
         df["timestamp"] = df["timestamp"].values[::-1]
-    lat = np.array(
-        [
-            [coordinates["latitude"]] + [np.nan] * (n_obs - 1)
-            for _ in range(n_samples)
-        ]
-    ).ravel()
-    lon = np.array(
-        [
-            [coordinates["longitude"]] + [np.nan] * (n_obs - 1)
-            for _ in range(n_samples)
-        ]
-    ).ravel()
+    lat = np.array(([coordinates["latitude"]] + [np.nan] * n_obs) * n_samples)
+    lon = np.array(([coordinates["latitude"]] + [np.nan] * n_obs) * n_samples)
 
     for i in range(len(df)):
         if np.isnan(lat[i]) or np.isnan(lon[i]):
@@ -144,6 +136,8 @@ class Generation:
         "timestamp",
     ]
 
+    _repr_indent = 4
+
     def __init__(
         self,
         generation: GenerationProtocol,
@@ -152,7 +146,7 @@ class Generation:
     ) -> None:
 
         self.generation = generation
-        self.features = set(features)
+        self.features = features
         self.scaler = scaler
 
     def prepare_features(self, t: "Traffic") -> np.ndarray:
@@ -197,10 +191,10 @@ class Generation:
                 timestamp=pd.to_timedelta(df.timedelta, unit="s") + base_ts
             )
         # if relevant, enriches DataFrame with latitude and longitude columns.
-        if not set(["latitude", "longitude"]).issubset(self.features):
+        if not set(["latitude", "longitude"]).issubset(set(self.features)):
             if set(["x", "y"]).issubset(self.features):
                 df = compute_latlon_from_xy(df, projection=projection)
-            if set(["track", "groundspeed"]).issubset(self.features):
+            if set(["track", "groundspeed"]).issubset(set(self.features)):
                 assert (
                     coordinates is not None
                 ), "coordinates attribute shouldn't be None"
@@ -228,8 +222,26 @@ class Generation:
             X = self.scaler.inverse_transform(X)
         return self.build_traffic(X, projection, coordinates, from_start)
 
-    def save(self):
-        ...
+    @classmethod
+    def from_file(self, path: Union[str, Path]) -> "Generation":
+        if isinstance(path, str):
+            path = Path(path)
+
+        with open(path, "rb") as f:
+            return pickle.load(f)
+
+    def save(self, path: Union[str, Path]) -> None:
+        if isinstance(path, str):
+            path = Path(path)
+
+        with open(path, "wb") as f:
+            pickle.dump(self, f)
 
     def __repr__(self) -> str:
-        pass
+        head = "Generation"
+        body = [f"Generative model: {repr(self.generation)}"]
+        body += [f"Features: {self.features}"]
+        if self.scaler is not None:
+            body += [repr(self.scaler)]
+        lines = [head] + [" " * self._repr_indent + line for line in body]
+        return "\n".join(lines)

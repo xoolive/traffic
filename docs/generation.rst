@@ -15,13 +15,20 @@ You can import this class with the following code:
 
     from traffic.algorithms.generation import Generation
 
+.. jupyter-execute::
+    :hide-code:
+
+    import numpy as np
+
+    np.random.seed(42)
 
 Loading models
 --------------
 
-.. code:: python
+.. jupyter-execute::
 
-    g = Generation.from_file("path/to/backup")
+    g = Generation.from_file("_static/saved_model.pkl")
+    print(g)
 
 Training models
 ---------------
@@ -161,9 +168,9 @@ Then we can sample the fitted model to produce new Traffic data.
 
 Do not forget to save the model if you want to use it later.
 
-.. code:: python
+.. jupyter-execute::
 
-    gen_model.save("path/to/backup")
+    g1.save("_static/saved_model.pkl")
 
 Metrics
 -------
