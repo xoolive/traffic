@@ -1192,7 +1192,7 @@ class NavigationFeatures:
         )
 
         # decompose with a function because MyPy is lost
-        def taxi_df(taxiways_: Union[Overpass, pd.DataFrame]) -> pd.DataFrame:
+        def taxi_df(taxiways_: Union["Overpass", pd.DataFrame]) -> pd.DataFrame:
             if isinstance(taxiways_, pd.DataFrame):
                 return taxiways_
             if taxiways_.data is None:
