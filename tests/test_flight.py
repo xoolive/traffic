@@ -204,8 +204,12 @@ def test_geometry() -> None:
 
 
 def test_clip_iterate() -> None:
+    schiphol = airports["EHAM"]
+    assert schiphol is not None
+    schiphol_shape = schiphol.shape
+    assert schiphol_shape is not None
     flight_iterate = belevingsvlucht.clip_iterate(
-        airports["EHAM"].shape.buffer(2e-3), strict=False
+        schiphol_shape.buffer(2e-3), strict=False
     )
     takeoff = next(flight_iterate)
     assert takeoff.stop == pd.Timestamp("2018-05-30 15:21:57+00:00")
@@ -250,9 +254,18 @@ def test_clip_point() -> None:
 def test_closest_point() -> None:
     from traffic.data import airports, navaids
 
+    lelystad = airports["EHLE"]
+    assert lelystad is not None
+
+    schiphol = airports["EHAM"]
+    assert schiphol is not None
+
+    narak = navaids["NARAK"]
+    assert narak is not None
+
     item = cast(
         Flight, belevingsvlucht.between("2018-05-30 16:00", "2018-05-30 17:00")
-    ).closest_point([airports["EHLE"], airports["EHAM"], navaids["NARAK"]])
+    ).closest_point([lelystad, schiphol, narak])
     res = f"{item.timestamp:%H:%M:%S}, {item.point}, {item.distance:.2f}m"
     assert res == "16:53:46, Lelystad Airport, 49.11m"
 

@@ -791,7 +791,7 @@ class Decoder:
         elif isinstance(reference, Airport):
             lat0, lon0 = reference.latlon
         else:
-            lat0, lon0 = reference  # type: ignore
+            lat0, lon0 = reference
 
         self.acs: AircraftDict = AircraftDict()
         self.acs.set_latlon(lat0, lon0)

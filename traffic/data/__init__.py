@@ -1,8 +1,26 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
+
+from requests import Session
 
 from .. import cache_dir, config, config_file
+
+if TYPE_CHECKING:
+    from ..core.airspace import Airspace
+    from .adsb.decode import Decoder as ModeS_Decoder
+    from .adsb.opensky import OpenSky
+    from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
+    from .basic.aircraft import Aircraft
+    from .basic.airports import Airports
+    from .basic.airways import Airways
+    from .basic.navaid import Navaids
+    from .basic.runways import Runways
+    from .eurocontrol.ddr.airspaces import NMAirspaceParser
+    from .eurocontrol.ddr.allft import AllFT
+    from .eurocontrol.ddr.navpoints import NMNavaids
+    from .eurocontrol.ddr.routes import NMRoutes
+    from .eurocontrol.ddr.so6 import SO6
 
 # Parse configuration and input specific parameters in below classes
 
@@ -12,6 +30,7 @@ __all__ = [
     "airways",
     "carto_session",
     "navaids",
+    "runways",
     "aixm_airspaces",
     "nm_airspaces",
     "nm_airways",
@@ -23,6 +42,20 @@ __all__ = [
     "ModeS_Decoder",
     "SO6",
 ]
+
+aircraft: Aircraft
+airports: Airports
+airways: Airways
+carto_session: Session
+navaids: Navaids
+runways: Runways
+aixm_airspaces: AIXMAirspaceParser
+nm_airspaces: NMAirspaceParser
+nm_airways: NMRoutes
+nm_navaids: NMNavaids
+eurofirs: Dict[Any, Airspace]
+opensky: OpenSky
+session: Session
 
 
 aixm_path_str = config.get("global", "aixm_path", fallback="")
@@ -179,7 +212,6 @@ def __getattr__(name: str):
         return res
 
     if name == "session":
-        from requests import Session
 
         session = Session()
         if len(proxy_values) > 0:

@@ -42,6 +42,7 @@ def test_search() -> None:
 def test_runway_list() -> None:
     airport = airports["TLS"]
     assert airport is not None
+    assert airport.runways is not None
     rwy_list = set(t.name for t in airport.runways.list)
     assert rwy_list == {"14L", "14R", "32L", "32R"}
 
@@ -51,6 +52,7 @@ def test_runway_bearing() -> None:
     for apt_name in ["EHAM", "EDDF", "LFPG", "KLAX", "KSFO", "RJTT"]:
         airport = airports[apt_name]
         assert airport is not None
+        assert airport.runways is not None
         for runway in airport.runways.list:
             delta = abs(int(runway.name[:2]) * 10 - runway.bearing)
             if delta > 180:

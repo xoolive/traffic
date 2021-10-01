@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Set, Tuple, Union, cast
 
 from requests import Session
 
@@ -287,7 +287,7 @@ class OpenSky(Impala):
         c.raise_for_status()
         json = c.json()
 
-        return tuple(airports[a] for a in json["route"])
+        return tuple(cast(Airport, airports[a]) for a in json["route"])
 
     def api_aircraft(
         self,

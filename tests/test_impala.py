@@ -77,6 +77,7 @@ def test_complex_queries():
         airport="ESSA",
         limit=3,
     )
+    assert t2 is not None
     assert len(t2.data) == 3
 
     t2_1 = opensky.history(
@@ -84,6 +85,7 @@ def test_complex_queries():
         stop="2021-08-24 09:10",
         airport="ESSA",
     )
+    assert t2_1 is not None
     assert len(t2_1) == 23
 
     t3 = opensky.history(
@@ -91,6 +93,7 @@ def test_complex_queries():
         stop="2021-08-24 09:10",
         arrival_airport="ESSA",
     )
+    assert t3 is not None
     assert len(t3) == 13
 
     t4 = opensky.history(
@@ -99,8 +102,9 @@ def test_complex_queries():
         departure_airport="ESSA",
         arrival_airport="EGLL",
     )
+    assert t4 is not None
     assert len(t4) == 1
-    flight = t4["BAW777C"]
+    flight = cast(Traffic, t4)["BAW777C"]
     assert flight is not None
     assert flight.icao24 == "400936"
 
@@ -119,8 +123,9 @@ def test_complex_queries():
         arrival_airport="ESSA",
         serials=-1408232560,
     )
+    assert t6 is not None
     assert len(t6) == 1
-    flight = t6[0]
+    flight = cast(Traffic, t6)[0]
     assert flight is not None
     assert flight.callsign == "SAS6906"
     assert flight.icao24 == "4ca863"
@@ -130,6 +135,7 @@ def test_complex_queries():
         stop="2021-08-24 00:10",
         serials=(-1408232560, -1408232534),
     )
+    assert t7 is not None
     assert len(t7) == 12
 
     t8 = opensky.history(
@@ -138,8 +144,9 @@ def test_complex_queries():
         departure_airport="ESSA",
         serials=(-1408232560, -1408232534),
     )
+    assert t8 is not None
     assert len(t8) == 1
-    flight = t8[0]
+    flight = cast(Traffic, t8)[0]
     assert flight is not None
     assert flight.callsign == "LOT454"
     assert flight.icao24 == "489789"
@@ -150,8 +157,9 @@ def test_complex_queries():
         bounds=[17.8936, 59.6118, 17.9894, 59.6716],
         serials=(-1408232560, -1408232534),
     )
+    assert t9 is not None
     assert len(t9) == 9
-    flight = t9["SAS1136"]
+    flight = cast(Traffic, t9)["SAS1136"]
     assert flight is not None
     assert flight.icao24 == "51110b"
 
@@ -162,8 +170,9 @@ def test_complex_queries():
         bounds=[17.8936, 59.6118, 17.9894, 59.6716],
         serials=(-1408232560, -1408232534),
     )
+    assert tA is not None
     assert len(tA) == 1
-    flight = tA[0]
+    flight = cast(Traffic, tA)[0]
     assert flight is not None
     assert flight.callsign == "THY5HT"
     assert flight.icao24 == "4bb1c5"
@@ -176,8 +185,9 @@ def test_complex_queries():
         bounds=[17.8936, 59.6118, 17.9894, 59.6716],
         serials=(-1408232560, -1408232534),
     )
+    assert tB is not None
     assert len(tB) == 1
-    flight = tB[0]
+    flight = cast(Traffic, tB)[0]
     assert flight is not None
     assert flight.callsign == "SAS69E"
     assert flight.icao24 == "4ac9e5"
@@ -189,8 +199,9 @@ def test_complex_queries():
         count=True,
         bounds=[17.8936, 59.6118, 17.9894, 59.6716],
     )
+    assert tC is not None
     assert len(tC) == 1
-    flight = tC[0]
+    flight = cast(Traffic, tC)[0]
     assert flight is not None
     assert flight.callsign == "SAS69E"
     assert flight.icao24 == "4ac9e5"
@@ -200,6 +211,7 @@ def test_complex_queries():
         stop="2021-08-24 09:50",
         bounds=[17.8936, 59.6118, 17.9894, 59.6716],
     )
+    assert tD is not None
     assert len(tD) == 9
 
 

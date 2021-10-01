@@ -68,6 +68,7 @@ class Navaids(GeoDBMixin):
 
         from .. import session
 
+        iter_lines: Iterator[bytes]
         navaids = []
 
         cache_file = self.cache_dir / "earth_fix.dat"

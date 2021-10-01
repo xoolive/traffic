@@ -179,7 +179,11 @@ class NavigationFeatures:
         self = cast("Flight", self)
 
         _airport = airports[airport] if isinstance(airport, str) else airport
-        if _airport is None or _airport.runways.shape.is_empty:
+        if (
+            _airport is None
+            or _airport.runways is None
+            or _airport.runways.shape.is_empty
+        ):
             return None
 
         if isinstance(_airport.runways.shape, LineString):
@@ -500,7 +504,11 @@ class NavigationFeatures:
         self = cast("Flight", self).phases()
 
         _airport = airports[airport] if isinstance(airport, str) else airport
-        if _airport is None or _airport.runways.shape.is_empty:
+        if (
+            _airport is None
+            or _airport.runways is None
+            or _airport.runways.shape.is_empty
+        ):
             return None
 
         nb_run = len(_airport.runways.data)
@@ -865,7 +873,11 @@ class NavigationFeatures:
         self = cast("Flight", self)
 
         _airport = airports[airport] if isinstance(airport, str) else airport
-        if _airport is None or _airport.runways.shape.is_empty:
+        if (
+            _airport is None
+            or _airport.runways is None
+            or _airport.runways.shape.is_empty
+        ):
             return None
 
         segment = self.filter().inside_bbox(_airport)
@@ -954,7 +966,11 @@ class NavigationFeatures:
         self = cast("Flight", self)
 
         _airport = airports[airport] if isinstance(airport, str) else airport
-        if _airport is None or _airport.runways.shape.is_empty:
+        if (
+            _airport is None
+            or _airport.runways is None
+            or _airport.runways.shape.is_empty
+        ):
             return None
 
         within_airport = self.inside_bbox(_airport)
@@ -1123,6 +1139,7 @@ class NavigationFeatures:
 
         self = cast("Flight", self)
         airport_ = airports[airport] if isinstance(airport, str) else airport
+        assert airport_ is not None
 
         has_onground = "onground" in self.data.columns
         criterion = "altitude < 5000"
@@ -1132,6 +1149,8 @@ class NavigationFeatures:
         low_altitude = self.query(criterion)
         if low_altitude is None:
             return
+        if airport_.shape is None:
+            raise ValueError("No shape available for the given airport")
         for low_segment in low_altitude.split("10T"):
             for airport_segment in low_segment.clip_iterate(
                 airport_.shape.buffer(5e-3)
@@ -1163,6 +1182,8 @@ class NavigationFeatures:
         self = cast("Flight", self)
         if isinstance(airport_or_taxiways, str):
             airport_or_taxiways = airports[airport_or_taxiways]
+        # This is obvious, but not for MyPy
+        assert not isinstance(airport_or_taxiways, str)
 
         taxiways_ = (
             airport_or_taxiways.taxiway
@@ -1170,12 +1191,16 @@ class NavigationFeatures:
             else airport_or_taxiways
         )
 
+        # decompose with a function because MyPy is lost
+        def taxi_df(taxiways_: Union[Overpass, pd.DataFrame]) -> pd.DataFrame:
+            if isinstance(taxiways_, pd.DataFrame):
+                return taxiways_
+            if taxiways_.data is None:
+                raise ValueError("No taxiway information")
+            return taxiways_.data
+
         taxiways = (  # one entry per runway label
-            (
-                taxiways_
-                if isinstance(taxiways_, pd.DataFrame)
-                else taxiways_.data
-            )
+            taxi_df(taxiways_)
             .groupby("ref")
             .agg({"geometry": list})["geometry"]
             .apply(MultiLineString)

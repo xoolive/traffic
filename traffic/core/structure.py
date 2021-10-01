@@ -5,6 +5,7 @@ from shapely.geometry import GeometryCollection, LineString
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
+from ..data.basic.runways import RunwayAirport
 from .mixins import HBoxMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
@@ -84,7 +85,7 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
         return Overpass.request(
             area={"icao": self.icao, "as_": "airport"},
-            nwr=[dict(area="airport"), dict(aeroway=True, area="airport")],
+            nwr=[dict(aeroway=True, area="airport")],
         )
 
     @property
@@ -96,17 +97,17 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         osm = self._openstreetmap()
         if "aeroway" not in osm.data.columns:
             return GeometryCollection()
-        return unary_union(osm.query('aeroway == "aerodrome"').data.geometry)
+        return unary_union(osm.query('type_ != "node"').data.geometry)
 
     @property
-    def point(self):
+    def point(self) -> AirportPoint:
         p = AirportPoint()
         p.latitude, p.longitude = self.latlon
         p.name = self.icao
         return p
 
     @property
-    def runways(self):
+    def runways(self) -> Optional[RunwayAirport]:
         from ..data import runways
 
         return runways[self]
@@ -141,12 +142,12 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
                         f"datum.aeroway == '{key}'"
                     ).mark_geoshape(**value)
                 )
-        if runways:
+        if runways and self.runways is not None:
             if isinstance(runways, dict):
                 cumul.append(self.runways.geoencode(mode="geometry", **runways))
             else:
                 cumul.append(self.runways.geoencode(mode="geometry"))
-        if labels:
+        if labels and self.runways is not None:
             if isinstance(labels, dict):
                 cumul.append(self.runways.geoencode(mode="labels", **labels))
             else:

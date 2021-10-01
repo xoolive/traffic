@@ -318,6 +318,13 @@ class Flight(
             output += f"\ndestination: {self.stop}"
         return output
 
+    @property
+    def __geo_interface__(self):
+        if self.shape is None:
+            # Returns an empty geometry
+            return {"type": "GeometryCollection", "geometries": []}
+        return self.shape.__geo_interface__
+
     def __getattr__(self, name: str):
         """Helper to facilitate method chaining without lambda.
 
@@ -2088,7 +2095,7 @@ class Flight(
             "return_flight": True,
             **kwargs,
         }
-        return opensky.history(**query_params)
+        return cast(Optional["Flight"], opensky.history(**query_params))
 
     def query_ehs(
         self,
