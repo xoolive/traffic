@@ -43,18 +43,18 @@ __all__ = [
     "SO6",
 ]
 
-aircraft: Aircraft
-airports: Airports
-airways: Airways
+aircraft: "Aircraft"
+airports: "Airports"
+airways: "Airways"
 carto_session: Session
-navaids: Navaids
-runways: Runways
-aixm_airspaces: AIXMAirspaceParser
-nm_airspaces: NMAirspaceParser
-nm_airways: NMRoutes
-nm_navaids: NMNavaids
-eurofirs: Dict[Any, Airspace]
-opensky: OpenSky
+navaids: "Navaids"
+runways: "Runways"
+aixm_airspaces: "AIXMAirspaceParser"
+nm_airspaces: "NMAirspaceParser"
+nm_airways: "NMRoutes"
+nm_navaids: "NMNavaids"
+eurofirs: Dict[Any, "Airspace"]
+opensky: "OpenSky"
 session: Session
 
 
