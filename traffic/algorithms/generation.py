@@ -203,6 +203,13 @@ class Generation:
                     df, n_samples, n_obs, coordinates, from_start=from_start
                 )
 
+        if not set(self._required_traffic_columns).issubset(set(df.columns)):
+            raise UserWarning(
+                "The generated dataframe doesn't contain all required",
+                "columns to instanciate a Traffic object:",
+                f"{set(self._required_traffic_columns) - set(df.columns)}."
+            )
+
         return df
 
     def fit(self, t: "Traffic", **kwargs) -> "Generation":

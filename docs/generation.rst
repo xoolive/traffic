@@ -25,10 +25,15 @@ You can import this class with the following code:
 Loading models
 --------------
 
+It is possible to load a Generation object from a pickle file using the
+from_file() method.
+
 .. jupyter-execute::
 
     g = Generation.from_file("_static/saved_model.pkl")
     print(g)
+
+Then you can either use the model to sample or fit it on another traffic.
 
 Training models
 ---------------
