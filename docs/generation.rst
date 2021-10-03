@@ -22,19 +22,6 @@ You can import this class with the following code:
 
     np.random.seed(42)
 
-Loading models
---------------
-
-It is possible to load a Generation object from a pickle file using the
-from_file() method.
-
-.. jupyter-execute::
-
-    g = Generation.from_file("_static/saved_model.pkl")
-    print(g)
-
-Then you can either use the model to sample or fit it on another traffic.
-
 Training models
 ---------------
 
@@ -74,7 +61,7 @@ from the north.
         .filter_if(coming_from_north)
         .resample(100)
         .unwrap()
-        .eval(max_workers=4)
+        .eval(max_workers=1)
     )
 
     with plt.style.context("traffic"):
@@ -176,6 +163,20 @@ Do not forget to save the model if you want to use it later.
 .. jupyter-execute::
 
     g1.save("_static/saved_model.pkl")
+
+Loading models
+--------------
+
+It is possible to load a Generation object from a pickle file using the
+from_file() method.
+
+.. jupyter-execute::
+
+    g = Generation.from_file("_static/saved_model.pkl")
+    print(g)
+
+Then you can either use the model to sample new trajectories or fit it on
+another traffic.
 
 Metrics
 -------

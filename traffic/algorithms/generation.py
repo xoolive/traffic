@@ -1,13 +1,14 @@
 import pickle
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
-from cartopy import crs
 from typing_extensions import Protocol, TypedDict
 
 import numpy as np
 import pandas as pd
 import pyproj
+from cartopy import crs
 
 from ..core.geodesy import destination
 
@@ -87,20 +88,32 @@ def compute_latlon_from_trackgs(
     n_samples: int,
     n_obs: int,
     coordinates: Coordinates,
-    from_start: bool = True,
+    forward: bool = True,
 ) -> pd.DataFrame:
-    """Computes latitude and longitude coordinates using track angle,
-    groundspeed and timestamp.
+    """Computes iteratively coordinates (latitude/longitude) using previous
+    coordinates, track angle, groundspeed and timedelta.
 
-    TODO: details.
+    The coordinates computation is made using pyproj.Geod.fwd() method.
+
+    Args:
+        data (pandas.DataFrame): The DataFrame containing trajectories.
+        n_samples (int): Number of trajectories in data.
+        n_obs (int): Number of coordinates representing a trajectory.
+        coordinates (Coordinates): Some start coordinates.
+        forward (bool): Whether the coordinates correspond to a start or an
+            end.
     """
     df = data.copy(deep=True)
-    if not from_start:
+    if not forward:
         df["track"] = df["track"].values[::-1] - 180
         df["groundspeed"] = df["groundspeed"].values[::-1]
         df["timestamp"] = df["timestamp"].values[::-1]
-    lat = np.array(([coordinates["latitude"]] + [np.nan] * n_obs) * n_samples)
-    lon = np.array(([coordinates["latitude"]] + [np.nan] * n_obs) * n_samples)
+    lat = np.array(
+        ([coordinates["latitude"]] + [np.nan] * (n_obs - 1)) * n_samples
+    )
+    lon = np.array(
+        ([coordinates["latitude"]] + [np.nan] * (n_obs - 1)) * n_samples
+    )
 
     for i in range(len(df)):
         if np.isnan(lat[i]) or np.isnan(lon[i]):
@@ -119,7 +132,7 @@ def compute_latlon_from_trackgs(
             lat[i] = lat2
             lon[i] = lon2
 
-    if not from_start:
+    if not forward:
         lat, lon = lat[::-1], lon[::-1]
 
     return data.assign(latitude=lat, longitude=lon)
@@ -160,7 +173,7 @@ class Generation:
         X: np.ndarray,
         projection: Union[pyproj.Proj, "crs.Projection", None] = None,
         coordinates: Optional[Coordinates] = None,
-        from_start: bool = True,
+        forward: bool = True,
     ) -> pd.DataFrame:
         """Build Traffic DataFrame from numpy array.
 
@@ -200,14 +213,15 @@ class Generation:
                 ), "coordinates attribute shouldn't be None"
                 # integrate lat/lon in df
                 df = compute_latlon_from_trackgs(
-                    df, n_samples, n_obs, coordinates, from_start=from_start
+                    df, n_samples, n_obs, coordinates, forward=forward
                 )
 
         if not set(self._required_traffic_columns).issubset(set(df.columns)):
-            raise UserWarning(
-                "The generated dataframe doesn't contain all required",
-                "columns to instanciate a Traffic object:",
-                f"{set(self._required_traffic_columns) - set(df.columns)}."
+            warnings.warn(
+                f"The generated dataframe doesn't contain all required \
+                columns to instanciate a Traffic object: \
+                {set(self._required_traffic_columns) - set(df.columns)}.",
+                UserWarning,
             )
 
         return df
@@ -222,12 +236,12 @@ class Generation:
         n_samples: int = 1,
         projection: Union[pyproj.Proj, "crs.Projection", None] = None,
         coordinates: Optional[Coordinates] = None,
-        from_start: bool = True,
+        forward: bool = True,
     ) -> pd.DataFrame:
         X, _ = self.generation.sample(n_samples)
         if self.scaler is not None:
             X = self.scaler.inverse_transform(X)
-        return self.build_traffic(X, projection, coordinates, from_start)
+        return self.build_traffic(X, projection, coordinates, forward)
 
     @classmethod
     def from_file(self, path: Union[str, Path]) -> "Generation":

@@ -1,6 +1,6 @@
 
 Running traffic in a Docker container
-------------------------------------
+-------------------------------------
 
 It is quite simple to run the traffic library in a Docker container. The following two examples show how you can use the traffic library in a docker with `jupyter notebook <https://jupyter-docker-stacks.readthedocs.io/en/latest/>`__. If you are completely unfamiliar with Docker and how to modify a Docker image, you can find a good tutorial in the `official documentation <https://docs.docker.com/get-started/>`__. Of course, you can base your Docker container on a different Dockerfile as the one used in the examples.
 
