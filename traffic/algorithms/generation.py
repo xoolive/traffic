@@ -175,13 +175,8 @@ class Generation:
         coordinates: Optional[Coordinates] = None,
         forward: bool = True,
     ) -> pd.DataFrame:
-        """Build Traffic DataFrame from numpy array.
-
-        Args:
-            X (np.ndarray): [description]
-
-        Returns:
-            pandas.DataFrame: [description]
+        """Build Traffic DataFrame from numpy array according to the list
+        of features ```self.features``.
         """
         n_samples = X.shape[0]
         X = X.reshape(n_samples, -1, len(self.features))
