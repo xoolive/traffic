@@ -15,6 +15,14 @@ You can import this class with the following code:
 
     from traffic.algorithms.generation import Generation
 
+To instanciate such an object you can pass those arguments:
+
+* ``generation``: Any object implementing fit() and sample() methods. It will
+  define the generative model to use.
+* ``features``: The list of the features to represent a trajectory.
+* ``scaler``: A scaler that is optional to make sure each feature weights the
+  same during the fitting part.
+
 .. jupyter-execute::
     :hide-code:
 
@@ -27,10 +35,10 @@ Training models
 
 In the case the generative model within your Generation object is not fitted
 to any Traffic, you can use the fit() method.
-Depending on the generative model used the fit() method can take some time, 
+Depending on the generative model used, its fit() method can take some time, 
 specifically if you use a deep generative model.
 
-We load here a traffic data of landing trajectories at Zurich airport coming
+We load here traffic data of landing trajectories at Zurich airport coming
 from the north.
 
 .. jupyter-execute::
@@ -107,7 +115,7 @@ Mixture with two components.
     from sklearn.preprocessing import MinMaxScaler
 
     g1 = Generation(
-        generation=GaussianMixture(n_components=1),
+        generation=GaussianMixture(n_components=2),
         features=["x", "y", "altitude", "timedelta"],
         scaler=MinMaxScaler(feature_range=(-1, 1))
     ).fit(t)
@@ -167,8 +175,8 @@ Do not forget to save the model if you want to use it later.
 Loading models
 --------------
 
-It is possible to load a Generation object from a pickle file using the
-from_file() method.
+It is possible to load a previously saved Generation object from a pickle file
+using the from_file() method.
 
 .. jupyter-execute::
 
