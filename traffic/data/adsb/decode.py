@@ -276,6 +276,9 @@ class Aircraft(object):
         self.lat, self.lon = pms.adsb.surface_position_with_ref(
             msg, self.lat0, self.lon0
         )
+        speed, track, _, speed_type, *_ = pms.adsb.surface_velocity(msg)
+        if speed_type != "GS":
+            logging.warn(f"Ground airspeed for aircraft {self.icao24}")
         with self.lock:
             self.cumul.append(
                 dict(
@@ -283,6 +286,8 @@ class Aircraft(object):
                     icao24=self.icao24,
                     latitude=self.lat,
                     longitude=self.lon,
+                    groundspeed=speed,
+                    track=track,
                     onground=True,
                 )
             )
