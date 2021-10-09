@@ -22,6 +22,27 @@ registration_patterns = list(
 )
 
 
+def pia_candidate(df: pd.DataFrame) -> pd.DataFrame:
+    """Returns subsets of dataframes which could be part of the PIA program.
+
+    PIA stands for Private ICAO Address.
+    Check https://doi.org/10.2514/1.I010938 for more details
+
+    - registration should be between N41000 (0xA4D691) and N42 (0xA4F946)
+    - callsign should start starts with DCM or FFL
+    - registration number in the CAR is reserved by SBS PROGRAM OFFICE.
+
+    """
+    return (
+        df.assign(_tmp=lambda df: df.icao24.apply(int, base=16))
+        .query(
+            "0xA4D691 <= _tmp < 0xA4F946 and "
+            '(callsign.str.startswith("DCM") or callsign.str.startswith("FFL"))'
+        )
+        .drop(columns=["_tmp"])
+    )
+
+
 def country(reg: Dict[str, str]) -> Dict[str, str]:
 
     # First, search the country based on the registered address intervals
