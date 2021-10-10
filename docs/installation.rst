@@ -73,7 +73,7 @@ For the most recent development version, clone the Github repository:
     git clone https://github.com/xoolive/traffic
     cd traffic/
     pip install .[dev]
-    
+
 If you intend to file a pull request, please activate ``pre-commit`` hooks:
 
 .. parsed-literal::
