@@ -116,7 +116,8 @@ The following is a basic rendering delegated to ipyleaflet library.
 
 .. code:: python
 
-    from ipyleaflet import Map, Velocity, basemaps
+    from ipyleaflet import Map, basemaps
+    from ipyleaflet.velocity import Velocity
 
     # t_extended = Traffic.from_file("wind_backup.pkl")
 
