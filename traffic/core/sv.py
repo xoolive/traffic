@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Iterator, Set
+from typing import TYPE_CHECKING, Any, Iterator, Set
 
 import pandas as pd
 
@@ -20,11 +20,11 @@ class StateVectors(GeographyMixin):
         return {*self.aircraft, *self.callsigns}
 
     @property
-    def aircraft(self):
+    def aircraft(self) -> Set[str]:
         return set(self.data.icao24)
 
     @property
-    def callsigns(self):
+    def callsigns(self) -> Set[str]:
         return set(self.data.callsign)
 
     def __iter__(self) -> Iterator[Position]:
@@ -36,7 +36,7 @@ class StateVectors(GeographyMixin):
             yield Position(p)
 
     def plot(
-        self, ax: "GeoAxesSubplot", s: int = 10, **kwargs
+        self, ax: "GeoAxesSubplot", s: int = 10, **kwargs: Any
     ) -> "Artist":  # coverage: ignore
         """Plotting function. All arguments are passed to ax.scatter"""
         from cartopy.crs import PlateCarree

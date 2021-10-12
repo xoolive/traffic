@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
     NoReturn,
@@ -154,7 +155,7 @@ default_flight_fields: Set[str] = {
 
 
 class ParseFields:
-    def __init__(self):
+    def __init__(self) -> None:
         self.route: Optional[str] = None
 
     def parse(self, elt: ElementTree.Element) -> Dict[str, Any]:
@@ -162,7 +163,9 @@ class ParseFields:
             return {elt.tag: pd.Timestamp(elt.text, tz="UTC")}
         if elt.text is not None:
             return {elt.tag: elt.text}
-        method = getattr(type(self), elt.tag, None)
+        method: Callable[..., Dict[str, Any]] = getattr(
+            type(self), elt.tag, None
+        )
         if method is None:
             self.unknown(elt)
         return method(self, elt)
@@ -252,7 +255,7 @@ class ParseFields:
 
 class FlightInfo(B2BReply):
     @classmethod
-    def from_file(cls, filename: str):
+    def from_file(cls, filename: str) -> "FlightInfo":
         et = ElementTree.parse(filename)
         return cls.fromET(et.getroot())
 
@@ -312,7 +315,7 @@ class FlightInfo(B2BReply):
             return self.aircraftAddress.lower()
         return None
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         from ....data import aircraft, airports
 
         title = f"<h4><b>Flight {self.flight_id}</b> "
@@ -353,16 +356,17 @@ class FlightInfo(B2BReply):
 
         no_wrap_div = '<div style="float: left; margin: 10px">{}</div>'
         fp = self.flight_plan
+        fp_svg = fp._repr_svg_()
         return (
             title
             + "<br/><code>"
             + "<br/>".join(textwrap.wrap(re.sub(r"\s+", " ", fp.repr).strip()))
             + "</code><br/>"
-            + no_wrap_div.format(fp._repr_svg_())
+            + (no_wrap_div.format(fp_svg) if fp_svg is not None else "")
             + _HBox(*cumul)._repr_html_()
         )
 
-    def __getattr__(self, name) -> str:
+    def __getattr__(self, name: str) -> str:
         cls = type(self)
         assert self.reply is not None
         elt = self.reply.find(name)
@@ -370,12 +374,12 @@ class FlightInfo(B2BReply):
             elt = self.reply.find("flightId/keys/" + name)
         if elt is not None and elt.text is not None:
             if "Time" in name or "time" in name:
-                return pd.Timestamp(elt.text, tz="UTC")
+                return repr(pd.Timestamp(elt.text, tz="UTC"))
             return elt.text
         msg = "{.__name__!r} object has no attribute {!r}"
         raise AttributeError(msg.format(cls, name))
 
-    def parsePlan(self, name) -> Optional[Flight]:
+    def parsePlan(self, name: str) -> Optional[Flight]:
         assert self.reply is not None
         msg = "No {} found in requested fields"
         if self.reply.find(name) is None:
@@ -410,7 +414,7 @@ FlightListTypeVar = TypeVar("FlightListTypeVar", bound="FlightList")
 
 
 class FlightList(DataFrameMixin, B2BReply):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         if len(args) == 0 and "data" not in kwargs:
             super().__init__(data=None, **kwargs)
         else:
@@ -432,7 +436,7 @@ class FlightList(DataFrameMixin, B2BReply):
         instance.build_df()
         return instance
 
-    def __getitem__(self, item) -> Optional[FlightInfo]:
+    def __getitem__(self, item: str) -> Optional[FlightInfo]:
         assert self.reply is not None
         for elt in self.reply.findall("data/flights/flight"):
             key = elt.find("flightId/id")
@@ -556,7 +560,7 @@ class FlightPlanList(FlightList):
 
         self.format_data()
 
-    def __getitem__(self, item) -> Optional[FlightInfo]:
+    def __getitem__(self, item: str) -> Optional[FlightInfo]:
         handle = next(
             (df for _, df in self.data.iterrows() if df.flightId == item), None
         )
@@ -578,7 +582,7 @@ class FlightManagement:
         self,
         start: Optional[timelike] = None,
         stop: Optional[timelike] = None,
-        *args,
+        *args: Any,
         callsign: Optional[str] = None,
         origin: Optional[str] = None,
         destination: Optional[str] = None,
@@ -680,7 +684,7 @@ class FlightManagement:
         self,
         start: Optional[timelike] = None,
         stop: Optional[timelike] = None,
-        *args,
+        *args: Any,
         airspace: Optional[str] = None,
         airport: Optional[str] = None,
         origin: Optional[str] = None,

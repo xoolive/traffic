@@ -13,6 +13,8 @@ from ... import cache_expiration
 from ...core.mixins import GeoDBMixin
 from ...core.structure import Airport
 
+__all__ = ["Airport", "Airports"]
+
 
 class Airports(GeoDBMixin):
     """

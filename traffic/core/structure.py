@@ -1,5 +1,14 @@
 from functools import lru_cache
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from shapely.geometry import GeometryCollection, LineString
 from shapely.geometry.base import BaseGeometry
@@ -28,7 +37,11 @@ class AirportNamedTuple(NamedTuple):
 
 class AirportPoint(PointMixin):
     def plot(
-        self, ax: "Axes", text_kw=None, shift=None, **kwargs
+        self,
+        ax: "Axes",
+        text_kw: Optional[Dict[str, Any]] = None,
+        shift: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
         from ..drawing.markers import atc_tower
 
@@ -89,8 +102,11 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         )
 
     @property
-    def __geo_interface__(self):
-        return self._openstreetmap().query('type_ != "node"').__geo_interface__
+    def __geo_interface__(self) -> Optional[Dict[str, Any]]:
+        df = self._openstreetmap().query('type_ != "node"')
+        if df.data.shape[0] == 0:
+            return None
+        return df.__geo_interface__  # type: ignore
 
     @property
     def shape(self) -> BaseGeometry:
@@ -114,9 +130,9 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
     def geoencode(  # type: ignore
         self,
-        footprint: Union[bool, dict] = True,
-        runways: Union[bool, dict] = True,
-        labels: Union[bool, dict] = True,
+        footprint: Union[bool, Dict[str, Any]] = True,
+        runways: Union[bool, Dict[str, Any]] = True,
+        labels: Union[bool, Dict[str, Any]] = True,
     ) -> "alt.Chart":  # coverage: ignore
 
         import altair as alt
@@ -161,9 +177,9 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
     def plot(  # type: ignore
         self,
         ax,
-        footprint: Union[bool, Optional[Dict]] = True,
-        runways: Union[bool, Optional[Dict]] = False,
-        labels: Union[bool, Optional[Dict]] = False,
+        footprint: Union[bool, Optional[Dict[str, Any]]] = True,
+        runways: Union[bool, Optional[Dict[str, Any]]] = False,
+        labels: Union[bool, Optional[Dict[str, Any]]] = False,
         **kwargs,
     ):  # coverage: ignore
 
@@ -214,23 +230,24 @@ class NavaidTuple(NamedTuple):
     magnetic_variation: Optional[float]
     description: Optional[str]
 
-    def __getstate__(self):
+    def __getstate__(self) -> Any:
         return self.__dict__
 
-    def __setstate__(self, d):
+    def __setstate__(self, d: Any) -> Any:
         self.__dict__.update(d)
 
 
 class Navaid(NavaidTuple, PointMixin):
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> float:
         if name == "lat":
             return self.latitude
         if name == "lon":
             return self.longitude
         if name == "alt":
             return self.altitude
+        raise AttributeError()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.type not in {"DME", "NDB", "TACAN", "VOR"}:
             return (
                 f"{self.name} ({self.type}): {self.latitude} {self.longitude}"
@@ -250,7 +267,7 @@ class Route(HBoxMixin, ShapelyMixin):
         self.name = name
         self.navaids = navaids
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.name} ({', '.join(self.navaids)})"
 
     def _info_html(self) -> str:
@@ -278,7 +295,7 @@ class Route(HBoxMixin, ShapelyMixin):
         )
         # fmt: on
 
-    def plot(self, ax, **kwargs):  # coverage: ignore
+    def plot(self, ax: "Axes", **kwargs: Any) -> None:  # coverage: ignore
         if "color" not in kwargs:
             kwargs["color"] = "#aaaaaa"
         if "alpha" not in kwargs:

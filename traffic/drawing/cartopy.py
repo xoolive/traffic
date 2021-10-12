@@ -1,10 +1,17 @@
+from typing import TYPE_CHECKING, Any, Tuple, Union
+
+from cartopy.feature import NaturalEarthFeature
 from cartopy.mpl.geoaxes import GeoAxesSubplot
+
+from shapely.geometry import BaseGeometry
 
 from ..core.mixins import PointMixin, ShapelyMixin
 
+if TYPE_CHECKING:
+    from cartes.osm import Nominatim
 
-def countries(**kwargs):
-    from cartopy.feature import NaturalEarthFeature
+
+def countries(**kwargs: str) -> NaturalEarthFeature:
 
     params = {
         "category": "cultural",
@@ -18,8 +25,7 @@ def countries(**kwargs):
     return NaturalEarthFeature(**params)
 
 
-def rivers(**kwargs):
-    from cartopy.feature import NaturalEarthFeature
+def rivers(**kwargs: str) -> NaturalEarthFeature:
 
     params = {
         "category": "physical",
@@ -33,8 +39,7 @@ def rivers(**kwargs):
     return NaturalEarthFeature(**params)
 
 
-def lakes(**kwargs):
-    from cartopy.feature import NaturalEarthFeature
+def lakes(**kwargs: str) -> NaturalEarthFeature:
 
     params = {
         "category": "physical",
@@ -48,8 +53,7 @@ def lakes(**kwargs):
     return NaturalEarthFeature(**params)
 
 
-def ocean(**kwargs):
-    from cartopy.feature import NaturalEarthFeature
+def ocean(**kwargs: str) -> NaturalEarthFeature:
 
     params = {
         "category": "physical",
@@ -63,7 +67,7 @@ def ocean(**kwargs):
     return NaturalEarthFeature(**params)
 
 
-def _set_default_extent(self):
+def _set_default_extent(self: GeoAxesSubplot) -> None:
     """Helper for a default extent limited to the projection boundaries."""
     west, south, east, north = self.projection.boundary.bounds
     self.set_extent((west, east, south, north), crs=self.projection)
@@ -72,27 +76,38 @@ def _set_default_extent(self):
 GeoAxesSubplot.set_default_extent = _set_default_extent
 
 
-def _set_extent(self, shape, buffer: float = 0.01):
-    from cartes.osm import Nominatim
+def _set_extent(
+    self: GeoAxesSubplot,
+    shape: Union[
+        str, ShapelyMixin, Nominatim, Tuple[float, float, float, float]
+    ],
+    buffer: float = 0.01,
+) -> None:
 
     if isinstance(shape, str):
-        shape = Nominatim.search(shape)
+        shape_ = Nominatim.search(shape)
+        if shape_ is None:
+            raise ValueError(f"'{shape}' not found on Nominatim")
+        shape = shape_
     if isinstance(shape, ShapelyMixin):
         x1, x2, y1, y2 = shape.extent
         extent = (x1 - buffer, x2 + buffer, y1 - buffer, y2 + buffer)
-        return self._set_extent(extent)
+        self._set_extent(extent)
+        return
     if isinstance(shape, Nominatim):
         x1, x2, y1, y2 = shape.extent
         extent = (x1 - buffer, x2 + buffer, y1 - buffer, y2 + buffer)
-        return self._set_extent(extent)
+        self._set_extent(extent)
+        return
     self._set_extent(shape)
+    return
 
 
 # GeoAxesSubplot._set_extent = GeoAxesSubplot.set_extent
 # GeoAxesSubplot.set_extent = _set_extent
 
 
-def _point(self):
+def _point(self: BaseGeometry) -> PointMixin:
     point = PointMixin()
     (point.longitude,), (point.latitude,) = self.shape.centroid.xy
     return point
@@ -102,7 +117,7 @@ def _point(self):
 # setattr(Nominatim, "point", property(_point))
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
 
     import cartopy.crs
 

@@ -1,4 +1,5 @@
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import (
@@ -15,6 +16,11 @@ from typing import (
     Union,
 )
 
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 import numpy as np
 import pyproj
 from shapely.geometry import Polygon, base, mapping, polygon, shape
@@ -28,11 +34,13 @@ if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.patches import Polygon as MplPolygon
 
+    from shapely.geometry.base import BaseGeometry
+
 
 class ExtrudedPolygon(NamedTuple):
     polygon: Polygon
-    lower: float
-    upper: float
+    lower: Optional[float]
+    upper: Optional[float]
 
 
 class AirspaceInfo(NamedTuple):
@@ -67,13 +75,13 @@ class Airspace(ShapelyMixin):
         return polygon.orient(cascaded_union([p.polygon for p in self]), -1)
 
     @property
-    def shape(self):
+    def shape(self) -> "BaseGeometry":
         return self.flatten()
 
-    def __getitem__(self, *args) -> ExtrudedPolygon:
+    def __getitem__(self, *args: int) -> ExtrudedPolygon:
         return self.elements.__getitem__(*args)
 
-    def __add__(self, other: "Airspace") -> "Airspace":
+    def __add__(self, other: Union[Literal[0], "Airspace"]) -> "Airspace":
         if other == 0:
             # useful for compatibility with sum() function
             return self
@@ -97,13 +105,13 @@ class Airspace(ShapelyMixin):
             properties={**self.properties, **other.properties},
         )
 
-    def __radd__(self, other):
+    def __radd__(self, other: Union[Literal[0], "Airspace"]) -> "Airspace":
         return self + other
 
     def __iter__(self) -> Iterator[ExtrudedPolygon]:
         return self.elements.__iter__()
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         title = f"<b>{self.name} [{self.designator}] ({self.type})</b>"
         shapes = ""
         title += "<ul>"
@@ -128,14 +136,14 @@ class Airspace(ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap; width: 12%">{}</div>'
         return title + no_wrap_div.format(shapes)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Airspace {self.name} [{self.designator}] ({self.type})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"""Airspace {self.name} with {len(self.elements)} parts"""
 
     def annotate(
-        self, ax: "GeoAxesSubplot", **kwargs
+        self, ax: "GeoAxesSubplot", **kwargs: Any
     ) -> None:  # coverage: ignore
         from cartopy.crs import PlateCarree
 
@@ -145,7 +153,9 @@ class Airspace(ShapelyMixin):
             kwargs["s"] = self.name
         ax.text(*np.array(self.centroid), **kwargs)
 
-    def plot(self, ax: "GeoAxesSubplot", **kwargs) -> None:  # coverage: ignore
+    def plot(
+        self, ax: "GeoAxesSubplot", **kwargs: Any
+    ) -> None:  # coverage: ignore
         flat = self.flatten()
         if isinstance(flat, base.BaseMultipartGeometry):
             for poly in flat:
@@ -176,9 +186,11 @@ class Airspace(ShapelyMixin):
     def components(self) -> Set[AirspaceInfo]:
         return components[self.name]
 
-    def decompose(self, extr_p):
+    def decompose(self, extr_p: ExtrudedPolygon) -> Iterator[Polygon]:
         c = np.stack(extr_p.polygon.exterior.coords)
         alt = np.zeros(c.shape[0], dtype=float)
+        assert extr_p.upper is not None
+        assert extr_p.lower is not None
 
         alt[:] = min(extr_p.upper, 400) * 30.48
         upper_layer = np.c_[c, alt]
@@ -198,14 +210,22 @@ class Airspace(ShapelyMixin):
     def above(self, level: int) -> "Airspace":
         return Airspace(
             self.name,
-            list(c for c in self.elements if c.upper >= level),
+            list(
+                c
+                for c in self.elements
+                if c.upper is not None and c.upper >= level
+            ),
             type_=self.type,
         )
 
     def below(self, level: int) -> "Airspace":
         return Airspace(
             self.name,
-            list(c for c in self.elements if c.lower <= level),
+            list(
+                c
+                for c in self.elements
+                if c.lower is not None and c.lower <= level
+            ),
             type_=self.type,
         )
 
@@ -224,7 +244,7 @@ class Airspace(ShapelyMixin):
         return export
 
     @classmethod
-    def from_json(cls, json: Dict[str, Any]):
+    def from_json(cls, json: Dict[str, Any]) -> "Airspace":
         return cls(
             name=json["name"],
             type_=json["type"],
@@ -239,14 +259,16 @@ class Airspace(ShapelyMixin):
         )
 
     @classmethod
-    def from_file(cls, filename: Union[Path, str]):
+    def from_file(cls, filename: Union[Path, str]) -> "Airspace":
         path = Path(filename)
         with path.open("r") as fh:
             return cls.from_json(json.load(fh))
 
 
 def cascaded_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
-    altitudes = set(alt for _, *low_up in polyalt for alt in low_up)
+    altitudes = set(
+        alt for _, *low_up in polyalt for alt in low_up if alt is not None
+    )
     slices = sorted(altitudes)
     if len(slices) == 1 and slices[0] is None:
         simple_union = cascaded_union([p for p, *_ in polyalt])
@@ -256,7 +278,10 @@ def cascaded_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
         matched_poly = [
             p
             for (p, low_, up_) in polyalt
-            if low_ <= low <= up_ and low_ <= up <= up_
+            if low_ is not None
+            and up_ is not None
+            and low_ <= low <= up_
+            and low_ <= up <= up_
         ]
         new_poly = ExtrudedPolygon(cascaded_union(matched_poly), low, up)
         if len(results) > 0 and new_poly.polygon.equals(results[-1].polygon):
@@ -327,6 +352,8 @@ def _flight_intersects(
     for layer in shape:
         ix = linestring.intersection(layer.polygon)
         if not ix.is_empty:
+            assert layer.lower is not None
+            assert layer.upper is not None
             if isinstance(ix, base.BaseMultipartGeometry):
                 for part in ix:
                     if any(

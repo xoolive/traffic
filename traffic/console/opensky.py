@@ -1,9 +1,12 @@
 import argparse
 import logging
 from pathlib import Path
+from typing import Any, List
 
 
-def opensky_data(start, stop, output_file, **kwargs):
+def opensky_data(
+    start: str, stop: str, output_file: Path, **kwargs: Any
+) -> None:
 
     from cartes.osm import Nominatim
 
@@ -46,7 +49,7 @@ def opensky_data(start, stop, output_file, **kwargs):
         data.to_excel(output_file.as_posix())
 
 
-def main(args):
+def main(args_list: List[str]) -> None:
 
     parser = argparse.ArgumentParser(
         prog="traffic opensky",
@@ -76,7 +79,7 @@ def main(args):
         help="display logging messages",
     )
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(args_list)
 
     logger = logging.getLogger()
     if args.verbose == 1:

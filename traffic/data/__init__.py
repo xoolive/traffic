@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from .basic.airways import Airways
     from .basic.navaid import Navaids
     from .basic.runways import Runways
+    from .eurocontrol.b2b import NMB2B
     from .eurocontrol.ddr.airspaces import NMAirspaceParser
     from .eurocontrol.ddr.allft import AllFT
     from .eurocontrol.ddr.navpoints import NMNavaids
@@ -40,6 +41,7 @@ __all__ = [
     "session",
     "AllFT",
     "ModeS_Decoder",
+    "Navaids",
     "SO6",
 ]
 
@@ -52,6 +54,7 @@ runways: "Runways"
 aixm_airspaces: "AIXMAirspaceParser"
 nm_airspaces: "NMAirspaceParser"
 nm_airways: "NMRoutes"
+nm_b2b: "NMB2B"
 nm_navaids: "NMNavaids"
 eurofirs: Dict[Any, "Airspace"]
 opensky: "OpenSky"
@@ -88,7 +91,7 @@ nmb2b_version = config.get("nmb2b", "version", fallback="23.0.0")
 _cached_imports: Dict[str, Any] = dict()
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
 
     res: Any
     if name in _cached_imports.keys():

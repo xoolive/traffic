@@ -5,6 +5,7 @@ import signal
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, List, NoReturn
 
 description = """
 Get data from Radarcape or dump1090. Timestamp each message and dump it to a
@@ -14,7 +15,7 @@ output on localhost:30005 and set the reference airport as reference.
 """
 
 
-def main(args):
+def main(args_list: List[str]) -> None:
 
     parser = argparse.ArgumentParser(
         prog="traffic dump", description=description
@@ -38,7 +39,7 @@ def main(args):
         "reference", help="configuration name or IATA/ICAO code for dump1090"
     )
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(args_list)
 
     logger = logging.getLogger()
     if args.verbose == 1:
@@ -65,7 +66,7 @@ def main(args):
             args.reference, filename.with_suffix(".csv").as_posix()
         )
 
-    def signal_handler(sig, frame):
+    def signal_handler(sig: Any, frame: Any) -> NoReturn:
         logging.info("Interruption signal caught")
         t = decoder.traffic
         if t is not None:

@@ -1,7 +1,7 @@
 # fmt: off
 
 import zipfile
-from typing import Optional, cast
+from typing import Any, Optional, cast
 
 import pytest
 
@@ -54,7 +54,7 @@ def test_properties() -> None:
 
 @pytest.mark.skipif(True, reason="TODO this is wrong...")
 def test_get_traffic() -> None:
-    traffic: Traffic = get_sample(featured, "traffic")
+    traffic = cast(Traffic, get_sample(featured, "traffic"))
     assert "belevingsvlucht" in traffic.flight_ids
 
 
@@ -147,7 +147,7 @@ def test_time_methods() -> None:
 
 
 def test_bearing() -> None:
-    ajaccio: Flight = get_sample(calibration, "ajaccio")
+    ajaccio = cast(Flight, get_sample(calibration, "ajaccio"))
     ext_navaids = navaids.extent(ajaccio)
     assert ext_navaids is not None
     vor = ext_navaids["AJO"]
@@ -165,7 +165,7 @@ def test_bearing() -> None:
 
 
 def test_geometry() -> None:
-    flight: Flight = get_sample(featured, "belevingsvlucht")
+    flight = cast(Flight, get_sample(featured, "belevingsvlucht"))
 
     assert flight.distance() < 5  # returns to origin
 
@@ -189,7 +189,7 @@ def test_geometry() -> None:
 
     assert flight.distance(eurofirs["EHAA"]).data.distance.mean() < 0
 
-    airbus_tree: Flight = get_sample(featured, "airbus_tree")
+    airbus_tree = cast(Flight, get_sample(featured, "airbus_tree"))
     clip_dk = airbus_tree.clip(eurofirs["EKDK"])
     assert clip_dk is not None
     assert clip_dk.duration < flight.duration
@@ -276,7 +276,9 @@ def test_landing_airport() -> None:
 
 
 def test_landing_runway() -> None:
-    segment = belevingsvlucht.last(minutes=30).on_runway("EHAM")  # type: ignore
+    last = belevingsvlucht.last(minutes=30)
+    assert last is not None
+    segment = last.aligned_on_runway("EHAM").max()
     assert segment is not None
     assert segment.mean("altitude") < 0
 
@@ -496,8 +498,8 @@ def test_agg_time_colnames() -> None:
     ).data.columns
     assert list(cols)[-3:] == ["altitude", "rounded", "altitude_<lambda>"]
 
-    def shh(x):
-        x.sum()
+    def shh(x: Any) -> Any:
+        return x.sum()
 
     cols = belevingsvlucht.agg_time("5T", altitude=shh).data.columns
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
@@ -518,7 +520,7 @@ def test_parking_position() -> None:
     assert pp.parking_position_max == "A49"
 
 
-def test_from_inertial():
+def test_from_inertial() -> None:
 
     flight = zurich_airport["ENT57BW"]
     assert flight is not None
@@ -529,7 +531,7 @@ def test_from_inertial():
     assert not flight.is_from_inertial()
 
 
-def test_slow_taxi():
+def test_slow_taxi() -> None:
 
     flight = zurich_airport["SWR137H"]
     assert flight is not None
@@ -548,7 +550,7 @@ def test_slow_taxi():
     assert flight.slow_taxi().next() is None
 
 
-def test_pushback():
+def test_pushback() -> None:
 
     flight = zurich_airport["AEE5ZH"]
     assert flight is not None
@@ -566,7 +568,7 @@ def test_pushback():
     assert pushback.stop >= parking_position.stop
 
 
-def test_on_taxiway():
+def test_on_taxiway() -> None:
     flight = zurich_airport["ACA879"]
     assert flight is not None
     assert len(flight.on_taxiway("LSZH")) == 3

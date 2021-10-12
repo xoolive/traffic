@@ -1,11 +1,12 @@
 import argparse
 import logging
 from pathlib import Path
+from typing import List
 
 from ..data.adsb.decode import Decoder
 
 
-def main(args):
+def main(args_list: List[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="traffic decode",
         description="Decode ADS-B and EHS messages from file",
@@ -27,7 +28,7 @@ def main(args):
         help="display logging messages",
     )
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(args_list)
 
     logger = logging.getLogger()
     if args.verbose == 1:

@@ -22,7 +22,7 @@ class _Point(PointMixin):
         self.longitude = lon
         self.name = name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.name} ({self.latitude:.4}, {self.longitude:.4})"
 
 
@@ -30,13 +30,13 @@ class _ElementaryBlock:
 
     pattern: str
 
-    def __init__(self, *args) -> None:
+    def __init__(self, *args: Union[None, str, "_ElementaryBlock"]) -> None:
         self.elt = args
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}{self.elt}"
 
-    def get(self):
+    def get(self) -> "_ElementaryBlock":
         return self
 
     @property
@@ -118,7 +118,7 @@ class SpeedLevel(_ElementaryBlock):
     # A (Altitude in feet)
     # M (Altitude in meter)
 
-    def __init__(self, elt):
+    def __init__(self, elt: str) -> None:
         x = re.match(self.pattern, elt)
         assert x is not None
 
@@ -134,8 +134,11 @@ class SpeedLevel(_ElementaryBlock):
 class Airway(_ElementaryBlock):
     pattern = r"\w{2,7}$"
 
-    def get(self) -> Optional[Route]:
+    def get(self) -> Optional[Route]:  # type: ignore
         from traffic.data import airways
+
+        if not isinstance(self.elt[0], str):
+            return None
 
         return airways.global_get(self.elt[0])
 
@@ -149,8 +152,11 @@ class Airway(_ElementaryBlock):
 class Point(_ElementaryBlock):
     pattern = r"\D{2,5}$"
 
-    def get(self) -> Optional[Navaid]:
+    def get(self) -> Optional[Navaid]:  # type: ignore
         from traffic.data import navaids
+
+        if not isinstance(self.elt[0], str):
+            return None
 
         return navaids.global_get(self.elt[0])
 
@@ -165,8 +171,13 @@ class SID(Airway):
     def valid(cls, elt: str) -> bool:
         return bool(re.match(cls.pattern, elt))
 
-    def get(self, airport: Optional[str] = None) -> Optional[Route]:
+    def get(  # type: ignore
+        self, airport: Optional[str] = None
+    ) -> Optional[Route]:
         from traffic.data import airways, nm_airways
+
+        if not isinstance(self.elt[0], str):
+            return None
 
         if airport is not None:
             return airways.global_get(self.elt[0] + airport)
@@ -189,8 +200,13 @@ class STAR(Airway):
     def valid(cls, elt: str) -> bool:
         return bool(re.match(cls.pattern, elt))
 
-    def get(self, airport: Optional[str] = None) -> Optional[Route]:
+    def get(  # type: ignore
+        self, airport: Optional[str] = None
+    ) -> Optional[Route]:
         from traffic.data import airways, nm_airways
+
+        if not isinstance(self.elt[0], str):
+            return None
 
         if airport is not None:
             return airways.global_get(self.elt[0] + airport)
@@ -217,7 +233,7 @@ class CoordinatePoint(_ElementaryBlock):
     lon: float
     lat: float
 
-    def get(self) -> Navaid:
+    def get(self) -> Navaid:  # type: ignore
         return Navaid(
             cast(str, self.elt),
             "NDB",
@@ -229,7 +245,7 @@ class CoordinatePoint(_ElementaryBlock):
             None,
         )
 
-    def __init__(self, elt):
+    def __init__(self, elt: str) -> None:
         x = re.match(self.pattern, elt)
         assert x is not None
         lat, lat_sign = x.group(1), 1 if x.group(2) == "N" else -1
@@ -245,23 +261,23 @@ class CoordinatePoint(_ElementaryBlock):
         else:
             self.lon = lon_sign * int(lon) / 100
 
-        self.elt = elt
+        self.elt = elt  # type: ignore
 
 
 class SpeedLevelChangePoint(_ElementaryBlock):
 
     pattern = "(.*)/(.*)"
 
-    def get(self) -> Optional[Navaid]:
-        return self.elt[0].get()
+    def get(self) -> Optional[Navaid]:  # type: ignore
+        return self.elt[0].get()  # type: ignore
 
     @property
     def name(self) -> str:
-        return self.elt[0].name
+        return self.elt[0].name  # type: ignore
 
     @property
     def text(self) -> str:
-        return f"{self.elt[0].name} ({self.elt[1].name})"
+        return f"{self.elt[0].name} ({self.elt[1].name})"  # type: ignore
 
 
 class FlightPlan(ShapelyMixin):
@@ -313,7 +329,8 @@ class FlightPlan(ShapelyMixin):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
-    def _repr_svg_(self):
+    @lru_cache()
+    def _repr_svg_(self) -> Optional[str]:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             try:
@@ -336,7 +353,7 @@ class FlightPlan(ShapelyMixin):
         )
         c.raise_for_status()
 
-        return c.json()
+        return c.json()  # type: ignore
 
     def decompose(self) -> List[Optional[_ElementaryBlock]]:
         parsed: List[Optional[_ElementaryBlock]] = []
@@ -513,7 +530,7 @@ class FlightPlan(ShapelyMixin):
         airports_kw: Optional[Dict[str, Any]] = None,
         labels: Union[None, bool, str] = None,
         labels_kw: Optional[Dict[str, Any]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
         """Plots the trajectory on a Matplotlib axis.
 
@@ -574,6 +591,6 @@ class FlightPlan(ShapelyMixin):
 
         if labels:
             for point in self.all_points if labels == "all" else self.points:
-                cumul.append(point.plot(ax, **labels_style))
+                cumul.append(point.plot(ax, **labels_style))  # type: ignore
 
         return cumul

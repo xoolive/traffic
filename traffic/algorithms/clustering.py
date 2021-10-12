@@ -1,8 +1,13 @@
-from typing import TYPE_CHECKING, List, Optional, Union
+import sys
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
-from typing_extensions import Protocol
+if sys.version_info >= (3, 8):
+    from typing import Protocol
+else:
+    from typing_extensions import Protocol
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pyproj
 
@@ -11,20 +16,22 @@ if TYPE_CHECKING:
 
     from ..core import Flight, Traffic  # noqa: F401
 
+Numeric = npt.NDArray[np.float64]
+
 
 class TransformerProtocol(Protocol):
-    def fit_transform(self, X: np.ndarray) -> np.ndarray:
+    def fit_transform(self, X: Numeric) -> Numeric:
         ...
 
-    def transform(self, X: np.ndarray) -> np.ndarray:
+    def transform(self, X: Numeric) -> Numeric:
         ...
 
 
 class ClusteringProtocol(Protocol):
-    def fit(self, X: np.ndarray) -> None:
+    def fit(self, X: Numeric) -> None:
         ...
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X: Numeric) -> Numeric:
         ...
 
 
@@ -34,7 +41,7 @@ def prepare_features(
     features: List[str],
     projection: Union[None, "crs.Projection", pyproj.Proj] = None,
     max_workers: int = 1,
-) -> np.ndarray:
+) -> Numeric:
     if "last_position" in traffic.data.columns:
         traffic = traffic.drop(columns="last_position")
 
@@ -69,7 +76,7 @@ class Clustering:
         clustering: ClusteringProtocol,
         nb_samples: Optional[int],
         features: List[str],
-        *args,
+        *,
         projection: Union[None, "crs.Projection", pyproj.Proj] = None,
         transform: Optional[TransformerProtocol] = None,
     ) -> None:
@@ -80,7 +87,7 @@ class Clustering:
         self.features = features
         self.projection = projection
         self.transform = transform
-        self.X: Optional[np.ndarray] = None
+        self.X: Optional[Numeric] = None
 
     def fit(self, max_workers: int = 1) -> None:
 
@@ -98,7 +105,9 @@ class Clustering:
 
         self.clustering.fit(self.X)
 
-    def predict(self, max_workers: int = 1, return_traffic: bool = True):
+    def predict(
+        self, max_workers: int = 1, return_traffic: bool = True
+    ) -> Union[pd.DataFrame, "Traffic"]:
 
         if self.X is None:
             self.X = prepare_features(
@@ -127,7 +136,7 @@ class Clustering:
 
     def fit_predict(
         self, max_workers: int = 1, return_traffic: bool = True
-    ) -> "Traffic":
+    ) -> Union[pd.DataFrame, "Traffic"]:
 
         if self.X is None:
             self.X = prepare_features(
@@ -143,7 +152,7 @@ class Clustering:
 
         self.clustering.fit(self.X)
 
-        labels: np.ndarray = (
+        labels: Numeric = (
             self.clustering.labels_  # type: ignore
             if hasattr(self.clustering, "labels_")
             else self.clustering.predict(self.X)
@@ -168,8 +177,8 @@ def centroid(
     projection: Union[None, "crs.Projection", pyproj.Proj] = None,
     transform: Optional[TransformerProtocol] = None,
     max_workers: int = 1,
-    *args,
-    **kwargs,
+    *args: Any,
+    **kwargs: Any,
 ) -> "Flight":
     """
     Returns the trajectory in the Traffic that is the closest to all other
@@ -188,6 +197,10 @@ def centroid(
     if transform is not None:
         X = transform.fit_transform(X)
 
-    return traffic[
-        ids[squareform(pdist(X, *args, **kwargs)).mean(axis=1).argmin()]
-    ]
+    index = ids[squareform(pdist(X, *args, **kwargs)).mean(axis=1).argmin()]
+    assert isinstance(index, str)
+
+    flight = traffic[index]
+    assert flight is not None
+
+    return flight

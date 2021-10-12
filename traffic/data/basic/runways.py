@@ -1,7 +1,16 @@
 import pickle
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Union,
+)
 from zipfile import ZipFile
 
 import altair as alt
@@ -17,6 +26,11 @@ from ... import cache_expiration
 from ...core.geodesy import bearing, destination
 from ...core.mixins import HBoxMixin, PointMixin, ShapelyMixin
 
+if TYPE_CHECKING:
+    from cartopy.mpl.geoaxes import GeoAxesSubplot  # noqa: F401
+
+    from ...core.structure import Airport  # noqa: F401
+
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "ProfHoekstra/bluesky/master/data/navdata"
 
@@ -29,7 +43,7 @@ class ThresholdTuple(NamedTuple):
 
 
 class Threshold(ThresholdTuple, PointMixin):
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Runway {self.name}: {self.latlon}"
 
 
@@ -37,7 +51,7 @@ RunwaysType = Dict[str, List[Tuple[Threshold, Threshold]]]
 
 
 class RunwayAirport(HBoxMixin, ShapelyMixin):
-    def __init__(self, runways: List[Tuple[Threshold, Threshold]]):
+    def __init__(self, runways: List[Tuple[Threshold, Threshold]]) -> None:
         self._runways = runways
 
     @property
@@ -71,14 +85,14 @@ class RunwayAirport(HBoxMixin, ShapelyMixin):
 
     def plot(
         self,
-        ax,
-        *,
+        ax: "GeoAxesSubplot",
+        *args: Any,
         runways: bool = True,
         labels: bool = False,
         shift: int = 300,
-        text_kw: Optional[Dict] = None,
-        **kwargs,
-    ):  # coverage: ignore
+        text_kw: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:  # coverage: ignore
 
         if runways is True:
             params = {
@@ -115,7 +129,7 @@ class RunwayAirport(HBoxMixin, ShapelyMixin):
                     lon, lat, thr.name, rotation=360 - thr.bearing, **text_kw
                 )
 
-    def geoencode(self, **kwargs) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs: Any) -> alt.Chart:  # coverage: ignore
 
         if kwargs.get("mode", None) == "geometry":
             params = {**{"strokeWidth": 4, "stroke": "black"}, **kwargs}
@@ -171,14 +185,17 @@ class Runways(object):
             self._runways = pickle.load(fh)
             return self._runways
 
-    def __getitem__(self, airport) -> Optional[RunwayAirport]:
-        if isinstance(airport, str):
-            from .. import airports
+    def __getitem__(
+        self, airport: Union["Airport", str]
+    ) -> Optional[RunwayAirport]:
+        from .. import airports
 
-            airport = airports[airport]
-        if airport is None:
+        airport_: Optional["Airport"] = (
+            airports[airport] if isinstance(airport, str) else airport
+        )
+        if airport_ is None:
             return None
-        elt = self.runways.get(airport.icao, None)
+        elt = self.runways.get(airport_.icao, None)
         if elt is None:
             return None
         return RunwayAirport(elt)

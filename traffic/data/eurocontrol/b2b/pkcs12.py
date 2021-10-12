@@ -17,8 +17,10 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from cryptography.hazmat.primitives.serialization import pkcs12
+from cryptography.x509 import Certificate
 from OpenSSL import crypto
 from requests.adapters import HTTPAdapter
 from urllib3.contrib.pyopenssl import PyOpenSSLContext
@@ -29,7 +31,7 @@ except ImportError:
     from ssl import PROTOCOL_SSLv23 as ssl_protocol
 
 
-def check_cert_not_after(certificate):
+def check_cert_not_after(certificate: Certificate) -> None:
     if certificate.not_valid_after < datetime.utcnow():
         raise ValueError(
             "Client certificate expired: Not After: "
@@ -37,7 +39,9 @@ def check_cert_not_after(certificate):
         )
 
 
-def create_pyopenssl_sslcontext(data: bytes, password: bytes):
+def create_pyopenssl_sslcontext(
+    data: bytes, password: bytes
+) -> PyOpenSSLContext:
     private_key, certificate, additional = pkcs12.load_key_and_certificates(
         data, password
     )
@@ -63,7 +67,7 @@ def create_pyopenssl_sslcontext(data: bytes, password: bytes):
 
 
 class Pkcs12Adapter(HTTPAdapter):
-    def __init__(self, filename: Path, password: str):
+    def __init__(self, filename: Path, password: str) -> None:
         pkcs12_data = filename.read_bytes()
         if isinstance(password, bytes):
             pkcs12_password_bytes = password
@@ -74,12 +78,12 @@ class Pkcs12Adapter(HTTPAdapter):
         )
         super().__init__()
 
-    def init_poolmanager(self, *args, **kwargs):
+    def init_poolmanager(self, *args: Any, **kwargs: Any) -> Any:
         if self.ssl_context:
             kwargs["ssl_context"] = self.ssl_context
-        return super(Pkcs12Adapter, self).init_poolmanager(*args, **kwargs)
+        return super().init_poolmanager(*args, **kwargs)  # type: ignore
 
-    def proxy_manager_for(self, *args, **kwargs):
+    def proxy_manager_for(self, *args: Any, **kwargs: Any) -> Any:
         if self.ssl_context:
             kwargs["ssl_context"] = self.ssl_context
-        return super(Pkcs12Adapter, self).proxy_manager_for(*args, **kwargs)
+        return super().proxy_manager_for(*args, **kwargs)  # type: ignore

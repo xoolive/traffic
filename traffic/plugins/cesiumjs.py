@@ -26,7 +26,7 @@ class _CZML_Params:
 
 
 def format_ts(ts: pd.Timestamp) -> str:
-    return ts.isoformat()[:-6] + "Z"
+    return ts.isoformat()[:-6] + "Z"  # type: ignore
 
 
 def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
@@ -135,6 +135,6 @@ def to_czml(
     logging.info(f"Scenario file {filename} written")
 
 
-def _onload():
+def _onload() -> None:
     setattr(Traffic, "to_czml", to_czml)
     setattr(SO6, "to_czml", to_czml)

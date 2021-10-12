@@ -2,7 +2,18 @@ import re
 from io import BytesIO
 from operator import itemgetter
 from pathlib import Path
-from typing import Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Iterable,
+    Iterator,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from tqdm.autonotebook import tqdm
 
@@ -24,7 +35,7 @@ allft_fields = list(
 )
 
 
-def parse_date(x):
+def parse_date(x: Any) -> pd.Timestamp:
     return pd.to_datetime(x).dt.tz_localize("utc")
 
 
@@ -51,32 +62,32 @@ class FlightInfo(DataFrameMixin):
 
     @property
     def origin(self) -> str:
-        return self.data.origin
+        return cast(str, self.data.origin)
 
     @property
     def destination(self) -> str:
-        return self.data.destination
+        return cast(str, self.data.destination)
 
     @property
     def callsign(self) -> str:
-        return self.data.callsign
+        return cast(str, self.data.callsign)
 
     @property
     def icao24(self) -> Optional[str]:
         if self.data.icao24 == self.data.icao24:
-            return self.data.icao24
+            return cast(str, self.data.icao24)
         else:
             return None
 
     @property
     def ifpsId(self) -> str:
-        return self.data.ifpsId
+        return cast(str, self.data.ifpsId)
 
     @property
     def flight_id(self) -> str:
-        return self.data.ifpsId
+        return cast(str, self.data.ifpsId)
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         from ....data import aircraft, airports
 
         title = f"<h4><b>Flight {self.flight_id}</b> "
@@ -261,7 +272,7 @@ class AllFT(DataFrameMixin):
 
     @classmethod
     def from_file(
-        cls: Type[AllFTTypeVar], filename: Union[Path, str], **kwargs
+        cls: Type[AllFTTypeVar], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[AllFTTypeVar]:  # coverage: ignore
         """
         In addition to `usual formats
@@ -283,8 +294,9 @@ class AllFT(DataFrameMixin):
             return cls.from_allft(filename)
         return super().from_file(filename)
 
-    def _repr_html_(self):
-        return (
+    def _repr_html_(self) -> str:
+        return cast(
+            str,
             self.data[
                 [
                     "origin",
@@ -301,10 +313,10 @@ class AllFT(DataFrameMixin):
                 ]
             ]
             .set_index("ifpsId")
-            ._repr_html_()
+            ._repr_html_(),
         )
 
-    def _ipython_key_completions_(self):
+    def _ipython_key_completions_(self) -> Set[str]:
         return {
             *self.data.ifpsId.values,
             *self.data.callsign.values,
@@ -312,7 +324,7 @@ class AllFT(DataFrameMixin):
         }
 
     def __len__(self) -> int:
-        return self.data.shape[0]
+        return cast(int, self.data.shape[0])
 
     def __getitem__(
         self, item: Union[str, Iterable[str]]

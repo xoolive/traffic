@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 def combinations(
     t: "Traffic", lateral_separation: float, vertical_separation: float
-) -> Iterator[Tuple["Flight", "Flight"]]:
+) -> Iterator[Tuple[Flight, Flight]]:
     for flight in tqdm(t, desc="Combinations", leave=False):
 
         t_ = t.query(f'icao24 != "{flight.icao24}"')
@@ -72,8 +72,6 @@ class CPA(DataFrameMixin):
 
     def __getitem__(self, index: str) -> "CPA":
         df = self.data
-        if not isinstance(index, str) or index in df.columns:
-            return df[index]
 
         rename_cols = {
             "latitude_x": "latitude_y",
@@ -107,9 +105,9 @@ class CPA(DataFrameMixin):
 
         return self.__class__(res)
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         try:
-            return self.data.style.background_gradient(
+            return self.data.style.background_gradient(  # type: ignore
                 subset=["aggregated"], cmap="bwr_r", low=0.9, high=1.0
             )._repr_html_()
         except Exception:
@@ -158,7 +156,7 @@ def closest_point_of_approach(
     if isinstance(projection, crs.Projection):
         projection = pyproj.Proj(projection.proj4_init)
 
-    def yield_pairs(t_chunk: "Traffic"):
+    def yield_pairs(t_chunk: "Traffic") -> Iterator[Tuple[Flight, Flight]]:
         """
         This function yields all pairs of possible candidates for a CPA
         calculation.

@@ -5,11 +5,12 @@ import pkgutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any, Dict
 
 import pkg_resources
 
 
-def dispatch_open(filename: Path):
+def dispatch_open(filename: Path) -> None:
     if sys.platform.startswith("darwin"):
         subprocess.call(("open", filename))
     elif os.name == "nt":  # For Windows
@@ -18,7 +19,7 @@ def dispatch_open(filename: Path):
         subprocess.call(("xdg-open", filename))
 
 
-def import_submodules(package, recursive=True):
+def import_submodules(package: Any, recursive: bool = True) -> Dict[str, Any]:
     """Import all submodules of a module, recursively, including subpackages
 
     :param package: package (name or actual module)
@@ -39,7 +40,7 @@ def import_submodules(package, recursive=True):
     return results
 
 
-def main():
+def main() -> Any:
 
     cmd = import_submodules(__name__, recursive=False)
 
@@ -62,4 +63,4 @@ def main():
     if mod is None:
         return parser.print_help()
 
-    return mod.main(args.args)
+    mod.main(args.args)

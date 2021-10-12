@@ -16,7 +16,8 @@ import pandas as pd
 # Silence this warning about autonotebook mode for tqdm
 warnings.simplefilter("ignore", TqdmExperimentalWarning)
 
-__version__ = importlib_metadata.version("traffic")
+__version__ = importlib_metadata.version("traffic")  # type: ignore
+__all__ = ["config_dir", "config_file", "cache_dir"]
 
 # -- Configuration management --
 

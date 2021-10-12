@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional, TextIO, Tuple
+from typing import TYPE_CHECKING, Any, Iterable, Optional, TextIO, Tuple
 
 from pyModeS.extra.rtlreader import RtlReader
 
@@ -7,14 +7,14 @@ if TYPE_CHECKING:
     from .decode import Decoder
 
 
-class MyRtlReader(RtlReader):
+class MyRtlReader(RtlReader):  # type: ignore
     def __init__(
         self,
         decoder: "Decoder",
         fh: Optional[TextIO] = None,
         uncertainty: bool = False,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.count = 0
         self.fh = fh
@@ -22,8 +22,8 @@ class MyRtlReader(RtlReader):
         self.uncertainty = uncertainty
 
     def encode_message(
-        self, msg: str, time: float
-    ) -> Optional[Tuple[float, str]]:
+        self, msg: str, time: datetime
+    ) -> Optional[Tuple[datetime, str]]:
 
         now = datetime.now(timezone.utc)
         secs_total = (
@@ -42,7 +42,7 @@ class MyRtlReader(RtlReader):
             return time, f"1a31{t:012x}00{msg.lower()}"
         return None
 
-    def handle_messages(self, messages):
+    def handle_messages(self, messages: Iterable[Tuple[str, datetime]]) -> None:
 
         for msg, t in messages:
 
@@ -57,7 +57,7 @@ class MyRtlReader(RtlReader):
                 self.decoder.redefine_reference(t)
 
             self.decoder.process(
-                datetime.fromtimestamp(t, timezone.utc),
+                datetime.fromtimestamp(t.timestamp(), timezone.utc),
                 msg,
                 uncertainty=self.uncertainty,
             )

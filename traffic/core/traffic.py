@@ -1,4 +1,5 @@
 import logging
+import sys
 import warnings
 from datetime import timedelta
 from pathlib import Path
@@ -10,6 +11,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    NoReturn,
     Optional,
     Set,
     Type,
@@ -17,6 +19,11 @@ from typing import (
     Union,
     overload,
 )
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 import pandas as pd
 import pyproj
@@ -106,7 +113,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @classmethod
     def from_file(
-        cls: Type[TrafficTypeVar], filename: Union[Path, str], **kwargs
+        cls: Type[TrafficTypeVar], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[TrafficTypeVar]:
 
         tentative = super().from_file(filename, **kwargs)
@@ -160,13 +167,15 @@ class Traffic(HBoxMixin, GeographyMixin):
     # --- Special methods ---
     # operators + (union), & (intersection), - (difference), ^ (xor)
 
-    def __add__(self, other) -> "Traffic":
+    def __add__(self, other: Union[Literal[0], Flight, "Traffic"]) -> "Traffic":
         # useful for compatibility with sum() function
         if other == 0:
             return self
         return self.__class__(pd.concat([self.data, other.data], sort=False))
 
-    def __radd__(self, other) -> "Traffic":
+    def __radd__(
+        self, other: Union[Literal[0], Flight, "Traffic"]
+    ) -> "Traffic":
         return self + other
 
     def __and__(self, other: "Traffic") -> Optional["Traffic"]:
@@ -262,7 +271,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     def __getitem__(  # noqa: F811
-        self, index
+        self, index: Union[pd.Series, pd.DataFrame, int, slice, IterStr]
     ) -> Union[None, Flight, "Traffic"]:
 
         if isinstance(index, pd.Series):
@@ -308,10 +317,10 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         return None
 
-    def _ipython_key_completions_(self) -> Set[str]:
+    def _ipython_key_completions_(self) -> Optional[List[str]]:
         if self.flight_ids is not None:
-            return self.flight_ids
-        return {*self.aircraft, *self.callsigns}
+            return self.flight_ids  # type: ignore
+        return list({*self.aircraft, *self.callsigns})
 
     def iterate(
         self,
@@ -398,14 +407,14 @@ class Traffic(HBoxMixin, GeographyMixin):
         yield from self.iterate()
 
     @property_cache
-    def length(self):
+    def length(self) -> int:
         ids_ = self.flight_ids
         if ids_ is not None:
             return len(ids_)
         return sum(1 for _ in self)
 
-    def __len__(self):
-        return self.length
+    def __len__(self) -> int:
+        return self.length  # type: ignore
 
     def __repr__(self) -> str:
         basic_stats = self.basic_stats
@@ -413,7 +422,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         if shape > 10:
             # stylers are not efficient on big dataframes...
             basic_stats = basic_stats.head(10)
-        return basic_stats.__repr__()
+        return repr(basic_stats)
 
     def _repr_html_(self) -> str:
         basic_stats = self.basic_stats
@@ -423,7 +432,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             basic_stats = basic_stats.head(10)
         styler = basic_stats.style.bar(align="mid", color="#5fba7d")
         rep = f"<b>Traffic with {shape} identifiers</b>"
-        return rep + styler._repr_html_()
+        return rep + styler._repr_html_()  # type: ignore
 
     def aircraft_data(self) -> "Traffic":
         """
@@ -442,33 +451,35 @@ class Traffic(HBoxMixin, GeographyMixin):
         )
 
     # -- Methods for lazy evaluation, delegated to Flight --
+    # 'type: ignore' annotations are fine here, since everything will be
+    # overriden by the decorator anyway
 
     @lazy_evaluation()
-    def filter_if(self, *args, **kwargs):
+    def filter_if(self, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def has(self, *args, **kwargs):
+    def has(self, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def all(self, *args, **kwargs):
+    def all(self, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def next(self, *args, **kwargs):
+    def next(self, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def final(self, *args, **kwargs):
+    def final(self, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def resample(self, rule: Union[str, int] = "1s"):
+    def resample(self, rule: Union[str, int] = "1s"):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def filter(
+    def filter(  # type: ignore
         self,
         strategy: Callable[
             [pd.DataFrame], pd.DataFrame
@@ -478,15 +489,19 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def filter_position(self, cascades: int = 2):
+    def filter_position(self, cascades: int = 2):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def unwrap(self, features: Union[None, str, List[str]] = None):
+    def unwrap(  # type: ignore
+        self, features: Union[None, str, List[str]] = None
+    ):
         ...
 
     @lazy_evaluation(idx_name="idx")
-    def assign_id(self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0):
+    def assign_id(  # type: ignore
+        self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0
+    ):
         """Assigns a `flight_id` to trajectories present in the structure.
 
         The heuristics with iterate on flights based on ``flight_id`` (if the
@@ -499,7 +514,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def clip(self, shape: Union["Airspace", base.BaseGeometry]):
+    def clip(self, shape: Union["Airspace", base.BaseGeometry]):  # type: ignore
         ...
 
     @lazy_evaluation()
@@ -507,7 +522,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def simplify(
+    def simplify(  # type: ignore
         self,
         tolerance: float,
         altitude: Optional[str] = None,
@@ -516,23 +531,23 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def query_opensky(self):
+    def query_opensky(self):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def query_ehs(self, data, failure_mode, propressbar):
+    def query_ehs(self, data, failure_mode, propressbar):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def first(self, **kwargs):
+    def first(self, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def last(self, **kwargs):
+    def last(self, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def feature_gt(
+    def feature_gt(  # type: ignore
         self,
         feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
@@ -541,7 +556,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def feature_lt(
+    def feature_lt(  # type: ignore
         self,
         feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
@@ -550,19 +565,19 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def shorter_than(
+    def shorter_than(  # type: ignore
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
     ):
         ...
 
     @lazy_evaluation()
-    def longer_than(
+    def longer_than(  # type: ignore
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
     ):
         ...
 
     @lazy_evaluation()
-    def max_split(
+    def max_split(  # type: ignore
         self,
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
@@ -571,35 +586,35 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def diff(self, features: Union[str, List[str]], **kwargs):
+    def diff(self, features: Union[str, List[str]], **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def apply_segments(
+    def apply_segments(  # type: ignore
         self, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
     ):
         ...
 
     @lazy_evaluation()
-    def apply_time(self, freq="1T", merge=True, **kwargs):
+    def apply_time(self, freq="1T", merge=True, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def agg_time(self, freq="1T", merge=True, **kwargs):
+    def agg_time(self, freq="1T", merge=True, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def cumulative_distance(
+    def cumulative_distance(  # type: ignore
         self, compute_gs: bool = True, compute_track: bool = True, **kwargs
     ):
         ...
 
     @lazy_evaluation()
-    def compute_wind(self):
+    def compute_wind(self):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def bearing(
+    def bearing(  # type: ignore
         self,
         other: Union[PointMixin],
         column_name: str = "bearing",
@@ -607,7 +622,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def distance(
+    def distance(  # type: ignore
         self,
         other: Union["Airspace", Polygon, PointMixin],
         column_name: str = "distance",
@@ -623,7 +638,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def phases(self, twindow: int = 60):
+    def phases(self, twindow: int = 60):  # type: ignore
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
@@ -780,7 +795,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             for flight in self.iterate(**iterate_kw)
         )
 
-    def geoencode(self, *args, **kwargs):
+    def geoencode(self, *args: Any, **kwargs: Any) -> NoReturn:
         """
         .. danger::
             This method is not implemented.
@@ -788,7 +803,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         raise NotImplementedError
 
     def plot(
-        self, ax: "GeoAxesSubplot", nb_flights: Optional[int] = None, **kwargs
+        self,
+        ax: "GeoAxesSubplot",
+        nb_flights: Optional[int] = None,
+        **kwargs: Any,
     ) -> None:  # coverage: ignore
         """Plots each trajectory on a Matplotlib axis.
 
@@ -821,7 +839,7 @@ class Traffic(HBoxMixin, GeographyMixin):
                 flight.plot(ax, **kwargs)
 
     def agg_latlon(
-        self, resolution: Union[Dict[str, float], None] = None, **kwargs
+        self, resolution: Union[Dict[str, float], None] = None, **kwargs: Any
     ) -> pd.DataFrame:
         """Aggregates values of a traffic over a grid of lat/lon.
 
@@ -907,7 +925,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         resolution: Union[Dict[str, float], None] = None,
         threshold: int = 10,
         filtered: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
         """Plots the wind field seen by the aircraft on a Matplotlib axis.
 
@@ -966,7 +984,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             .reset_index()
         )
 
-        return ax.barbs(
+        return ax.barbs(  # type: ignore
             windfield.longitude.values,
             windfield.latitude.values,
             windfield.wind_u.values,
@@ -1075,7 +1093,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         clustering: "ClusteringProtocol",
         nb_samples: Optional[int],
         features: Optional[List[str]] = None,
-        *args,
+        *args: Any,
         projection: Union[None, "crs.Projection", pyproj.Proj] = None,
         transform: Optional["TransformerProtocol"] = None,
         max_workers: int = 1,
@@ -1148,8 +1166,8 @@ class Traffic(HBoxMixin, GeographyMixin):
         projection: Union[None, "crs.Projection", pyproj.Proj] = None,
         transformer: Optional["TransformerProtocol"] = None,
         max_workers: int = 1,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> "Flight":
         """
         Returns the trajectory in the Traffic that is the closest to all other

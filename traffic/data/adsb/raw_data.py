@@ -20,9 +20,11 @@ import pandas as pd
 from ...core import Traffic
 from ...core.mixins import DataFrameMixin
 from ...core.structure import Airport
+from ...core.types import ProgressbarType
 from ...data import ModeS_Decoder
 
 T = TypeVar("T", bound="RawData")
+U = Tuple[int, Tuple[Any, Any]]
 
 
 def encode_time_dump1090(times: pd.Series) -> pd.Series:
@@ -56,7 +58,7 @@ class RawData(DataFrameMixin):
         reference: Union[None, str, Airport, Tuple[float, float]] = None,
         *,
         uncertainty: bool = False,
-        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
+        progressbar: Union[bool, ProgressbarType[U]] = True,
         progressbar_kw: Optional[Dict[str, Any]] = None,
         redefine_mag: int = 10,
     ) -> Optional[Traffic]:
@@ -67,13 +69,21 @@ class RawData(DataFrameMixin):
         if progressbar is True:
             if progressbar_kw is None:
                 progressbar_kw = dict()
-            progressbar = lambda x: tqdm(  # noqa: E731
-                x, total=self.data.shape[0], **progressbar_kw
-            )
-        elif progressbar is False:
-            progressbar = lambda x: x  # noqa: E731
 
-        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
+            def custom_tqdm(x: Iterable[U]) -> Iterable[U]:
+                return tqdm(  # type: ignore
+                    x, total=self.data.shape[0], **progressbar_kw
+                )
+
+            progressbar = custom_tqdm
+        elif progressbar is False:
+
+            def identity(x: Iterable[U]) -> Iterable[U]:
+                return x
+
+            progressbar = identity
+
+        progressbar = cast(ProgressbarType[U], progressbar)
 
         data = self.data.rename(  # fill with other common renaming rules
             columns={

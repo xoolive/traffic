@@ -2,6 +2,8 @@ import warnings
 from operator import attrgetter
 from typing import (
     TYPE_CHECKING,
+    Any,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -86,7 +88,7 @@ class NavigationFeatures:
             airport if isinstance(airport, Airport) else airports[airport]
         )
 
-    def takeoff_airport(self, **kwargs) -> "Airport":
+    def takeoff_airport(self, **kwargs: Any) -> "Airport":
         """Returns the most probable takeoff airport based on the first location
         in the trajectory.
 
@@ -127,7 +129,7 @@ class NavigationFeatures:
             airport if isinstance(airport, Airport) else airports[airport]
         )
 
-    def landing_airport(self, **kwargs) -> "Airport":
+    def landing_airport(self, **kwargs: Any) -> "Airport":
         """Returns the most probable landing airport based on the last location
         in the trajectory.
 
@@ -738,10 +740,15 @@ class NavigationFeatures:
             future.
 
         """
-        candidate = self.query("altitude < 8000")  # type: ignore
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        candidate = self.query("altitude < 8000")
         if candidate is not None:
             for chunk in candidate.split("10T"):
                 point = chunk.query("altitude == altitude.min()")
+                if point is None:
+                    return
                 if dataset is None:
                     cd = point.landing_airport()
                 else:
@@ -759,9 +766,12 @@ class NavigationFeatures:
         """
         from ..data import airports
 
-        f_above = self.query("altitude > 15000")  # type: ignore
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        f_above: Optional["Flight"] = self.query("altitude > 15000")
         if (
-            self.destination != self.destination  # type: ignore
+            self.destination != self.destination
             or airports[self.destination] is None  # type: ignore
             or f_above is None
         ):
@@ -783,7 +793,11 @@ class NavigationFeatures:
     @property
     def holes(self) -> int:
         """Returns the number of 'holes' in a trajectory."""
-        simplified: "Flight" = self.simplify(25)  # type: ignore
+
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        simplified = self.simplify(25)
         if simplified.shape is None:
             return -1
         return len(simplified.shape.buffer(1e-3).interiors)
@@ -791,11 +805,11 @@ class NavigationFeatures:
     @flight_iterator
     def holding_pattern(
         self,
-        min_altitude=7000,
-        turning_threshold=0.5,
-        low_limit=pd.Timedelta("30 seconds"),  # noqa: B008
-        high_limit=pd.Timedelta("10 minutes"),  # noqa: B008
-        turning_limit=pd.Timedelta("5 minutes"),  # noqa: B008
+        min_altitude: float = 7000,
+        turning_threshold: float = 0.5,
+        low_limit: pd.Timedelta = pd.Timedelta("30 seconds"),  # noqa: B008
+        high_limit: pd.Timedelta = pd.Timedelta("10 minutes"),  # noqa: B008
+        turning_limit: pd.Timedelta = pd.Timedelta("5 minutes"),  # noqa: B008
     ) -> Iterator["Flight"]:
         """Iterates on parallel segments candidates for identifying
         a holding pattern.
@@ -897,7 +911,7 @@ class NavigationFeatures:
         self,
         speed_threshold: float = 2,
         time_threshold: str = "30s",
-        filter_dict=dict(compute_gs=3),  # noqa: B006
+        filter_dict: Dict[str, int] = dict(compute_gs=3),  # noqa: B006
         resample_rule: str = "5s",
     ) -> Optional["Flight"]:
         """
@@ -919,7 +933,7 @@ class NavigationFeatures:
 
         moving = (
             resampled.cumulative_distance()
-            .filter(**filter_dict)
+            .filter(**filter_dict)  # type: ignore
             .query(f"compute_gs > {speed_threshold}")
         )
         if moving is None:
@@ -940,7 +954,7 @@ class NavigationFeatures:
     def pushback(
         self,
         airport: Union[str, "Airport"],
-        filter_dict=dict(  # noqa: B006
+        filter_dict: Dict[str, int] = dict(
             compute_track_unwrapped=21, compute_track=21, compute_gs=21
         ),
         track_threshold: float = 90,
@@ -984,30 +998,31 @@ class NavigationFeatures:
         after_parking = within_airport.after(parking_position.start)
         assert after_parking is not None
 
-        in_movement = after_parking.moving()
+        in_movement = cast(Optional["Flight"], after_parking.moving())
 
         if in_movement is None:
             return None
 
-        direction_change = (
+        direction_change = cast(
+            Optional["Flight"],
             # trim the first few seconds to avoid annoying first spike
-            in_movement.first("5T")
+            in_movement.first("5T")  # type:ignore
             .last("4T30s")
             .cumulative_distance()
             .unwrap(["compute_track"])
-            .filter(**filter_dict)
+            .filter(**filter_dict)  # type: ignore
             .diff("compute_track_unwrapped")
-            .query(f"compute_track_unwrapped_diff.abs() > {track_threshold}")
+            .query(f"compute_track_unwrapped_diff.abs() > {track_threshold}"),
         )
 
         if direction_change is None:
             return None
 
-        return in_movement.before(direction_change.start).assign(
-            parking_position=parking_position.parking_position_max
-        )
+        return in_movement.before(  # type: ignore
+            direction_change.start
+        ).assign(parking_position=parking_position.parking_position_max)
 
-    def is_from_inertial(self, freq_threshold=0.05) -> bool:
+    def is_from_inertial(self, freq_threshold: float = 0.05) -> bool:
         """
         Returns True if ground trajectory data looks noisy.
 
@@ -1030,7 +1045,9 @@ class NavigationFeatures:
         )
         if 90 not in freq.index or -90 not in freq.index:
             return False
-        return freq[90] > freq_threshold and freq[-90] > freq_threshold
+        return (  # type: ignore
+            freq[90] > freq_threshold and freq[-90] > freq_threshold
+        )
 
     @flight_iterator
     def slow_taxi(
@@ -1220,12 +1237,12 @@ class NavigationFeatures:
             p1 = Point(first.longitude, first.latitude)
             p2 = Point(second.longitude, second.latitude)
 
-            def extremities_dist(twy):
+            def extremities_dist(twy: MultiLineString) -> float:
                 p1_proj = twy.interpolate(twy.project(p1))
                 p2_proj = twy.interpolate(twy.project(p2))
                 d1 = distance(p1_proj.y, p1_proj.x, p1.y, p1.x)
                 d2 = distance(p2_proj.y, p2_proj.x, p2.y, p2.x)
-                return d1 + d2
+                return d1 + d2  # type: ignore
 
             temp_ = taxiways.assign(dist=np.vectorize(extremities_dist))
             start, stop, ref, dist = (

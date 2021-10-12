@@ -1,6 +1,22 @@
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Set, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
+
+if sys.version_info >= (3, 8):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict
 
 from requests import Session
 
@@ -23,7 +39,7 @@ if TYPE_CHECKING:
 class Coverage(object):
     """Plots the output of the coverage json."""
 
-    def __init__(self, json):
+    def __init__(self, json: List[Tuple[float, float, float]]) -> None:
         self.df = pd.DataFrame.from_records(
             [
                 dict(latitude=latitude, longitude=longitude, altitude=altitude)
@@ -32,7 +48,11 @@ class Coverage(object):
         ).sort_values("altitude")
 
     def plot(
-        self, ax: "GeoAxesSubplot", cmap: str = "inferno", s: int = 5, **kwargs
+        self,
+        ax: "GeoAxesSubplot",
+        cmap: str = "inferno",
+        s: int = 5,
+        **kwargs: Any,
     ) -> "Artist":
         """Plotting function. All arguments are passed to ax.scatter"""
         from cartopy.crs import PlateCarree
@@ -55,20 +75,26 @@ class StateVectors(SVMixin):
         super().__init__(data)
         self.opensky = opensky
 
-    def __getitem__(self, identifier: str):
+    def __getitem__(self, identifier: str) -> Flight:
         icao24 = self.data.query(
             "callsign == @identifier or icao24 == @identifier"
         ).icao24.item()
         return self.opensky.api_tracks(icao24)
 
 
+class SensorRangeJSON(TypedDict):
+    serial: str
+    ranges: List[Tuple[float, float, float]]
+    sensorPosition: Tuple[float, float]
+
+
 class SensorRange(ShapelyMixin):
     """Wraps the polygon defining the range of an OpenSky sensor."""
 
-    def __init__(self, json):
+    def __init__(self, json: Dict[Any, List[SensorRangeJSON]]) -> None:
         for _, value in json.items():
             self.shape = Polygon(
-                [(lon, lat) for (deg, lat, lon) in value[0]["ranges"]]
+                [(lon, lat) for (_deg, lat, lon) in value[0]["ranges"]]
             )
             self.point = PointMixin()
 
@@ -77,7 +103,7 @@ class SensorRange(ShapelyMixin):
             ]
             self.point.name = value[0]["serial"]
 
-    def plot(self, ax: "GeoAxesSubplot", **kwargs) -> "Artist":
+    def plot(self, ax: "GeoAxesSubplot", **kwargs: Any) -> "Artist":
         """Plotting function. All arguments are passed to the geometry"""
         from cartopy.crs import PlateCarree
         from matplotlib.patches import Polygon as MplPolygon

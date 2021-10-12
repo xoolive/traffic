@@ -1,10 +1,11 @@
 import argparse
 import logging
+from typing import List
 
 from . import dispatch_open
 
 
-def main(args):
+def main(args_list: List[str]) -> None:
 
     from .. import cache_dir
 
@@ -28,7 +29,7 @@ def main(args):
         help="open the cache directory in your native file browser",
     )
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(args_list)
 
     if args.list:
         print(cache_dir)

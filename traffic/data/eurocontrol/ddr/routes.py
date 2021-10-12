@@ -20,7 +20,7 @@ class NMRoutes(Airways):
         return self.nm_path is not None
 
     @property
-    def data(self):
+    def data(self) -> pd.DataFrame:
         if self._data is None:
             msg = "Edit config file with NM directory"
 

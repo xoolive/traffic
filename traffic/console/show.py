@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
+from typing import List
 
 
-def main(args):
+def main(args_list: List[str]) -> None:
 
     from ..core import Traffic
 
@@ -27,7 +28,7 @@ def main(args):
         help="display specific information about specific flights",
     )
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(args_list)
     t = Traffic.from_file(args.filename)
     assert t is not None
 

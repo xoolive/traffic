@@ -1,7 +1,7 @@
 import warnings
 from datetime import datetime, timedelta, timezone
 from numbers import Real
-from typing import Iterator, Tuple, Union
+from typing import Any, Iterator, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,9 @@ time_or_delta = Union[timelike, timedelta]
 timetuple = Tuple[datetime, datetime, datetime, datetime]
 
 
-def to_timedelta(delta: deltalike, **kwargs) -> Union[timedelta, pd.Timedelta]:
+def to_timedelta(
+    delta: deltalike, **kwargs: Any
+) -> Union[timedelta, pd.Timedelta]:
     if isinstance(delta, Real):
         delta = timedelta(seconds=float(delta))
     if isinstance(delta, str):
@@ -38,7 +40,7 @@ def to_datetime(time: timelike) -> datetime:
             "automatically, look at the tzinfo (resp. tz) argument of the "
             "datetime (resp. pd.Timestamp) constructor."
         )
-    return time
+    return time  # type: ignore
 
 
 def round_time(

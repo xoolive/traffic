@@ -7,7 +7,7 @@ from datetime import timedelta
 from io import StringIO
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
 
 import paramiko
 from tqdm.autonotebook import tqdm
@@ -18,6 +18,7 @@ from shapely.geometry.base import BaseGeometry
 
 from ...core import Flight, Traffic
 from ...core.time import round_time, split_times, timelike, to_datetime
+from ...core.types import ProgressbarType
 from .raw_data import RawData
 
 
@@ -364,11 +365,11 @@ class Impala(object):
         request_pattern: str,
         start: timelike,
         stop: timelike,
-        *args,  # more reasonable to be explicit about arguments
+        *args: Any,  # more reasonable to be explicit about arguments
         columns: List[str],
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         cached: bool = True,
-        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
+        progressbar: Union[bool, ProgressbarType[Any]] = True,
     ) -> pd.DataFrame:
         """Splits and sends a custom request.
 
@@ -409,7 +410,7 @@ class Impala(object):
         if progressbar is False:
             progressbar = iter
 
-        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
+        progressbar = cast(ProgressbarType[Any], progressbar)
 
         cumul: List[pd.DataFrame] = []
         sequence = list(split_times(start, stop, date_delta))
@@ -445,7 +446,7 @@ class Impala(object):
         self,
         start: timelike,
         stop: Optional[timelike] = None,
-        *args,  # more reasonable to be explicit about arguments
+        *args: Any,  # more reasonable to be explicit about arguments
         departure_airport: Union[None, str, Iterable[str]] = None,
         arrival_airport: Union[None, str, Iterable[str]] = None,
         airport: Union[None, str, Iterable[str]] = None,
@@ -453,7 +454,7 @@ class Impala(object):
         icao24: Union[None, str, Iterable[str]] = None,
         cached: bool = True,
         limit: Optional[int] = None,
-        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
+        progressbar: Union[bool, ProgressbarType[Any]] = True,
     ) -> pd.DataFrame:
         """Lists flights departing or arriving at a given airport.
 
@@ -536,7 +537,7 @@ class Impala(object):
         if progressbar is False:
             progressbar = iter
 
-        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
+        progressbar = cast(ProgressbarType[Any], progressbar)
 
         other_params = ""
 
@@ -637,7 +638,7 @@ class Impala(object):
         self,
         start: timelike,
         stop: Optional[timelike] = None,
-        *args,  # more reasonable to be explicit about arguments
+        *args: Any,  # more reasonable to be explicit about arguments
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         return_flight: bool = False,
         callsign: Union[None, str, Iterable[str]] = None,
@@ -655,7 +656,7 @@ class Impala(object):
         other_tables: str = "",
         other_params: str = "",
         nautical_units: bool = True,
-        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
+        progressbar: Union[bool, ProgressbarType[Any]] = True,
     ) -> Optional[Union[Traffic, Flight]]:
 
         """Get Traffic from the OpenSky Impala shell.
@@ -748,7 +749,7 @@ class Impala(object):
         if progressbar is False:
             progressbar = iter
 
-        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
+        progressbar = cast(ProgressbarType[Any], progressbar)
 
         airports_params = [airport, departure_airport, arrival_airport]
         count_airports_params = sum(x is not None for x in airports_params)
@@ -959,7 +960,7 @@ class Impala(object):
         self,
         start: timelike,
         stop: Optional[timelike] = None,
-        *args,  # more reasonable to be explicit about arguments
+        *args: Any,  # more reasonable to be explicit about arguments
         table_name: Union[None, str, List[str]] = None,
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         icao24: Union[None, str, Iterable[str]] = None,
@@ -976,7 +977,7 @@ class Impala(object):
         other_tables: str = "",
         other_columns: Union[None, str, List[str]] = None,
         other_params: str = "",
-        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
+        progressbar: Union[bool, ProgressbarType[Any]] = True,
     ) -> Optional[RawData]:
         """Get raw message from the OpenSky Impala shell.
 
@@ -1111,7 +1112,7 @@ class Impala(object):
         if progressbar is False:
             progressbar = iter
 
-        progressbar = cast(Callable[[Iterable], Iterable], progressbar)
+        progressbar = cast(ProgressbarType[Any], progressbar)
 
         if isinstance(icao24, str):
             other_params += f"and {table_name}.icao24='{icao24.lower()}' "
@@ -1332,7 +1333,7 @@ class Impala(object):
 
         return RawData(pd.concat(cumul).sort_values("mintime"))
 
-    def extended(self, *args, **kwargs) -> Optional[RawData]:
+    def extended(self, *args: Any, **kwargs: Any) -> Optional[RawData]:
         return self.rawdata(
             table_name="rollcall_replies_data4", *args, **kwargs
         )

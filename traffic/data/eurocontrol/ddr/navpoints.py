@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Type, TypeVar, Union
+from typing import Any, Optional, Type, TypeVar, Union
 
 import pandas as pd
 
@@ -33,7 +33,7 @@ class NMNavaids(Navaids):
 
     @classmethod
     def from_file(
-        cls: Type[T], filename: Union[Path, str], **kwargs
+        cls: Type[T], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[T]:
 
         if filename == "":

@@ -1,8 +1,9 @@
 import argparse
 import logging
+from typing import List
 
 
-def main(args):
+def main(args_list: List[str]) -> None:
 
     parser = argparse.ArgumentParser(
         prog="traffic data",
@@ -56,7 +57,7 @@ def main(args):
 
     parser.add_argument("args", nargs=argparse.REMAINDER)
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(args_list)
 
     logger = logging.getLogger()
     if args.verbose == 1:

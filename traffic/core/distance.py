@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def closest_point(
     data: pd.DataFrame,
     point: Optional["PointMixin"] = None,
-    *args,
+    *,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
 ) -> pd.Series:
@@ -43,7 +43,7 @@ def closest_point(
 
 def guess_airport(
     point: Optional[NamedTuple] = None,
-    *args,
+    *,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
     dataset: Optional["Airports"] = None,

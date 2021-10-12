@@ -2,8 +2,8 @@ import logging
 import os
 import signal
 import socket
+import sys
 import threading
-from collections import UserDict
 from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 from pathlib import Path
@@ -18,6 +18,7 @@ from typing import (
     TextIO,
     Tuple,
     Union,
+    cast,
 )
 
 import pyModeS as pms
@@ -27,6 +28,11 @@ import pandas as pd
 
 from ...core import Flight, Traffic
 from ...data.basic.airports import Airport
+
+if sys.version_info >= (3, 8):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict
 
 
 def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
@@ -105,7 +111,7 @@ class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
     regularly for the to_be_stopped() condition."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.daemon = True  # is it redundant?
         self._stop_event = threading.Event()
@@ -117,12 +123,71 @@ class StoppableThread(threading.Thread):
         return self._stop_event.is_set()
 
 
+# total=False means that some keys can be absent
+class Entry(TypedDict, total=False):
+    timestamp: datetime
+    icao24: str
+    callsign: Optional[str]
+    latitude: Optional[float]
+    longitude: Optional[float]
+    altitude: Optional[int]
+    geoaltitude: Optional[int]
+    groundspeed: Optional[int]
+    track: Optional[float]
+    vertical_rate: Optional[int]
+    onground: Optional[bool]
+    squawk: Optional[int]
+    # BDS 4,0
+    selected_fms: Optional[int]
+    selected_mcp: Optional[int]
+    barometric_setting: Optional[int]
+    # BDS 4,4
+    humidity: Optional[int]
+    pressure: Optional[int]
+    temperature: Optional[int]
+    turbulence: Optional[int]
+    windspeed: Optional[int]
+    winddirection: Optional[int]
+    # BDS 4,5
+    wind_shear: Optional[int]
+    microburst: Optional[int]
+    icing: Optional[int]
+    wake_vortex: Optional[int]
+    radio_height: Optional[int]
+    # BDS 5,0
+    roll: Optional[float]
+    TAS: Optional[int]
+    track_rate: Optional[float]
+    # BDS 6,0
+    IAS: Optional[int]
+    heading: Optional[float]
+    Mach: Optional[float]
+    vertical_rate_barometric: Optional[int]
+    vertical_rate_inertial: Optional[int]
+    # Uncertainty
+    HPL: Optional[int]
+    RCu: Optional[int]
+    RCv: Optional[int]
+    HCR: Optional[int]
+    VPL: Optional[int]
+    HVE: Optional[int]
+    VVE: Optional[int]
+    HFM: Optional[int]
+    VFM: Optional[int]
+    EPU: Optional[int]
+    VEPU: Optional[int]
+    version: Optional[int]
+    pHCR: Optional[int]
+    pVPL: Optional[int]
+    sil_base: Optional[int]
+
+
 class Aircraft(object):
     def __init__(self, icao24: str, lat0: float, lon0: float) -> None:
         self.icao24 = icao24
         self._callsign: Optional[str] = None
         self._flight: Optional[Flight] = None
-        self.cumul: List[Dict] = []
+        self.cumul: List[Entry] = []
 
         self.t0: Optional[datetime] = None
         self.t1: Optional[datetime] = None
@@ -133,9 +198,9 @@ class Aircraft(object):
 
         self.lat: Optional[float] = None
         self.lon: Optional[float] = None
-        self.alt: Optional[float] = None
+        self.alt: Optional[int] = None
         self.trk: Optional[float] = None
-        self.spd: Optional[float] = None
+        self.spd: Optional[int] = None
 
         self.lat0: float = lat0
         self.lon0: float = lon0
@@ -176,11 +241,11 @@ class Aircraft(object):
         return self._flight
 
     @property
-    def callsign(self):
+    def callsign(self) -> Optional[str]:
         return self._callsign
 
     @callsign.setter
-    def callsign(self, args):
+    def callsign(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         callsign = pms.adsb.callsign(msg).strip("_")
         if callsign == "":
@@ -192,11 +257,11 @@ class Aircraft(object):
             )
 
     @property
-    def speed(self):
+    def speed(self) -> None:
         pass
 
     @speed.setter
-    def speed(self, args):
+    def speed(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         vdata = pms.adsb.velocity(msg)
         if vdata is None:
@@ -228,11 +293,11 @@ class Aircraft(object):
                 self.cumul[-1]["geoaltitude"] = self.alt + delta
 
     @property
-    def position(self):
+    def position(self) -> None:
         pass
 
     @position.setter
-    def position(self, args):
+    def position(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         oe = pms.adsb.oe_flag(msg)
         setattr(self, "m" + str(oe), msg)
@@ -267,11 +332,11 @@ class Aircraft(object):
                 )
 
     @property
-    def surface(self):
+    def surface(self) -> None:
         pass
 
     @surface.setter
-    def surface(self, args):
+    def surface(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         self.lat, self.lon = pms.adsb.surface_position_with_ref(
             msg, self.lat0, self.lon0
@@ -293,11 +358,11 @@ class Aircraft(object):
             )
 
     @property
-    def altcode(self):
+    def altcode(self) -> None:
         pass
 
     @altcode.setter
-    def altcode(self, args):
+    def altcode(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         from pyModeS import hex2bin
 
@@ -310,11 +375,11 @@ class Aircraft(object):
             )
 
     @property
-    def idcode(self):
+    def idcode(self) -> None:
         pass
 
     @idcode.setter
-    def idcode(self, args):
+    def idcode(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         from pyModeS import hex2bin
 
@@ -331,11 +396,11 @@ class Aircraft(object):
             )
 
     @property
-    def bds20(self):
+    def bds20(self) -> None:
         pass
 
     @bds20.setter
-    def bds20(self, args):
+    def bds20(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         callsign = pms.commb.cs20(msg).strip("_")
         if callsign == "":
@@ -346,7 +411,9 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(**last_entry, callsign=self._callsign)
+                self.cumul[-1] = dict(  # type: ignore
+                    **last_entry, callsign=self._callsign
+                )
             else:
                 self.cumul.append(
                     dict(
@@ -355,18 +422,18 @@ class Aircraft(object):
                 )
 
     @property
-    def bds40(self):
+    def bds40(self) -> None:
         pass
 
     @bds40.setter
-    def bds40(self, args):
+    def bds40(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {
+                self.cumul[-1] = {  # type: ignore
                     **last_entry,
                     **dict(
                         # FMS selected altitude (ft)
@@ -393,11 +460,11 @@ class Aircraft(object):
                 )
 
     @property
-    def bds44(self):
+    def bds44(self) -> None:
         pass
 
     @bds44.setter
-    def bds44(self, args):
+    def bds44(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         wind = pms.commb.wind44(msg)
         wind = wind if wind is not None else (None, None)
@@ -406,7 +473,7 @@ class Aircraft(object):
             # or squawk from idcode (DF 5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {
+                self.cumul[-1] = {  # type: ignore
                     **last_entry,
                     **dict(
                         # Humidity (%)
@@ -441,18 +508,18 @@ class Aircraft(object):
                 )
 
     @property
-    def bds45(self):
+    def bds45(self) -> None:
         pass
 
     @bds45.setter
-    def bds45(self, args):
+    def bds45(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
             # or squawk from idcode (DF 5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {
+                self.cumul[-1] = {  # type: ignore
                     **last_entry,
                     **dict(
                         # Turbulence level (0-3)
@@ -499,18 +566,18 @@ class Aircraft(object):
                 )
 
     @property
-    def bds50(self):
+    def bds50(self) -> None:
         pass
 
     @bds50.setter
-    def bds50(self, args):
+    def bds50(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {
+                self.cumul[-1] = {  # type: ignore
                     **last_entry,
                     **dict(
                         # Ground speed (kt)
@@ -546,18 +613,18 @@ class Aircraft(object):
                 )
 
     @property
-    def bds60(self):
+    def bds60(self) -> None:
         pass
 
     @bds60.setter
-    def bds60(self, args):
+    def bds60(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {
+                self.cumul[-1] = {  # type: ignore
                     **last_entry,
                     **dict(
                         # Indicated airspeed (kt)
@@ -592,11 +659,11 @@ class Aircraft(object):
                 )
 
     @property
-    def nuc_p(self):
+    def nuc_p(self) -> None:
         pass
 
     @nuc_p.setter
-    def nuc_p(self, args):
+    def nuc_p(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             hpl, rcu, rcv = pms.adsb.nuc_p(msg)
@@ -610,18 +677,20 @@ class Aircraft(object):
             )
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}
+                self.cumul[-1] = {**last_entry, **current}  # type: ignore
             else:
                 self.cumul.append(
-                    dict(timestamp=t, icao24=self.icao24, **current)
+                    dict(  # type: ignore
+                        timestamp=t, icao24=self.icao24, **current
+                    )
                 )
 
     @property
-    def nic_v1(self):
+    def nic_v1(self) -> None:
         pass
 
     @nic_v1.setter
-    def nic_v1(self, args):
+    def nic_v1(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         if self.nic_s is None:
             return
@@ -635,18 +704,20 @@ class Aircraft(object):
                 VPL=vpl,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}
+                self.cumul[-1] = {**last_entry, **current}  # type: ignore
             else:
                 self.cumul.append(
-                    dict(timestamp=t, icao24=self.icao24, **current)
+                    dict(  # type: ignore
+                        timestamp=t, icao24=self.icao24, **current
+                    )
                 )
 
     @property
-    def nic_v2(self):
+    def nic_v2(self) -> None:
         pass
 
     @nic_v2.setter
-    def nic_v2(self, args):
+    def nic_v2(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         if self.nic_a is None or self.nic_bc is None:
             return
@@ -658,19 +729,21 @@ class Aircraft(object):
                 HCR=hcr
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}
+                self.cumul[-1] = {**last_entry, **current}  # type: ignore
 
             else:
                 self.cumul.append(
-                    dict(timestamp=t, icao24=self.icao24, **current)
+                    dict(  # type: ignore
+                        timestamp=t, icao24=self.icao24, **current
+                    )
                 )
 
     @property
-    def nuc_r(self):
+    def nuc_r(self) -> None:
         pass
 
     @nuc_r.setter
-    def nuc_r(self, args):
+    def nuc_r(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             hve, vve = pms.adsb.nuc_v(msg)
@@ -682,18 +755,20 @@ class Aircraft(object):
                 VVE=vve,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}
+                self.cumul[-1] = {**last_entry, **current}  # type: ignore
             else:
                 self.cumul.append(
-                    dict(timestamp=t, icao24=self.icao24, **current)
+                    dict(  # type: ignore
+                        timestamp=t, icao24=self.icao24, **current
+                    )
                 )
 
     @property
-    def nac_v(self):
+    def nac_v(self) -> None:
         pass
 
     @nac_v.setter
-    def nac_v(self, args):
+    def nac_v(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             hfm, vfm = pms.adsb.nac_v(msg)
@@ -705,18 +780,20 @@ class Aircraft(object):
                 VFM=vfm,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}
+                self.cumul[-1] = {**last_entry, **current}  # type: ignore
             else:
                 self.cumul.append(
-                    dict(timestamp=t, icao24=self.icao24, **current)
+                    dict(  # type: ignore
+                        timestamp=t, icao24=self.icao24, **current
+                    )
                 )
 
     @property
-    def nac_p(self):
+    def nac_p(self) -> None:
         pass
 
     @nac_p.setter
-    def nac_p(self, args):
+    def nac_p(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             epu, vepu = pms.adsb.nac_p(msg)
@@ -728,18 +805,20 @@ class Aircraft(object):
                 VEPU=vepu,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}
+                self.cumul[-1] = {**last_entry, **current}  # type: ignore
             else:
                 self.cumul.append(
-                    dict(timestamp=t, icao24=self.icao24, **current)
+                    dict(  # type: ignore
+                        timestamp=t, icao24=self.icao24, **current
+                    )
                 )
 
     @property
-    def sil(self):
+    def sil(self) -> None:
         pass
 
     @sil.setter
-    def sil(self, args):
+    def sil(self, args: Tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             phcr, pvpl, base = pms.adsb.sil(msg, self.version)
@@ -753,23 +832,25 @@ class Aircraft(object):
                 sil_base=base,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}
+                self.cumul[-1] = {**last_entry, **current}  # type: ignore
             else:
                 self.cumul.append(
-                    dict(timestamp=t, icao24=self.icao24, **current)
+                    dict(  # type: ignore
+                        timestamp=t, icao24=self.icao24, **current
+                    )
                 )
 
 
-class AircraftDict(UserDict):
+class AircraftDict(Dict[str, Aircraft]):
 
     lat0: float
     lon0: float
 
-    def __missing__(self, key):
+    def __missing__(self, key: str) -> Aircraft:
         self[key] = value = Aircraft(key, self.lat0, self.lon0)
         return value
 
-    def set_latlon(self, lat0, lon0):
+    def set_latlon(self, lat0: float, lon0: float) -> None:
         self.lat0 = lat0
         self.lon0 = lon0
         for ac in self.values():
@@ -841,7 +922,7 @@ class Decoder:
         time_0: Optional[datetime] = None,
         redefine_mag: int = 10,
         fh: Optional[TextIO] = None,
-    ):
+    ) -> "Decoder":
 
         decoder = cls(reference)
         redefine_freq = 2 ** redefine_mag - 1
@@ -922,7 +1003,7 @@ class Decoder:
                     return
                 yield socket.recv(2048)
 
-        def decode():
+        def decode() -> None:
             for i, bin_msg in enumerate(next_msg(next_in_socket())):
 
                 msg = "".join(["{:02x}".format(t) for t in bin_msg])
@@ -948,12 +1029,12 @@ class Decoder:
         decoder.thread.start()
         return decoder
 
-    def stop(self):
+    def stop(self) -> None:
         if self.thread is not None and self.thread.is_alive():
             self.thread.stop()
             self.thread.join()
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.stop()
 
     @classmethod
@@ -1008,9 +1089,9 @@ class Decoder:
         )
         n = len(pos)
         if n > 0:
-            self.acs.set_latlon(
-                sum(a[0] for a in pos) / n, sum(a[1] for a in pos) / n
-            )
+            sum_lat = cast(float, sum(a[0] for a in pos))
+            sum_lon = cast(float, sum(a[1] for a in pos))
+            self.acs.set_latlon(sum_lat / n, sum_lon / n)
 
     def process_msgs(
         self, msgs: Iterable[Tuple[datetime, str]], uncertainty: bool = False
@@ -1025,7 +1106,7 @@ class Decoder:
         self,
         time: datetime,
         msg: str,
-        *args,
+        *args: Any,
         uncertainty: bool = False,
         spd: Optional[float] = None,
         trk: Optional[float] = None,
@@ -1044,14 +1125,14 @@ class Decoder:
             if isinstance(icao, bytes):
                 icao = icao.decode()
             ac = self.acs[icao.lower()]
-            ac.altcode = time, msg
+            ac.altcode = time, msg  # type: ignore
 
         if df == 5 or df == 21:
             icao = pms.icao(msg)
             if isinstance(icao, bytes):
                 icao = icao.decode()
             ac = self.acs[icao.lower()]
-            ac.idcode = time, msg
+            ac.idcode = time, msg  # type: ignore
 
         if df == 17 or df == 18:  # ADS-B
 
@@ -1068,17 +1149,17 @@ class Decoder:
             ac = self.acs[icao.lower()]
 
             if 1 <= tc <= 4:
-                ac.callsign = time, msg
+                ac.callsign = time, msg  # type: ignore
 
             if 5 <= tc <= 8:
-                ac.surface = time, msg
+                ac.surface = time, msg  # type: ignore
 
             if tc == 19:
-                ac.speed = time, msg
+                ac.speed = time, msg  # type: ignore
 
             if 9 <= tc <= 18:
                 # This is barometric altitude
-                ac.position = time, msg
+                ac.position = time, msg  # type: ignore
 
             if 20 <= tc <= 22:
                 # Only GNSS altitude
@@ -1091,25 +1172,25 @@ class Decoder:
                 ac.nic_bc = pms.adsb.nic_b(msg)
 
             if (5 <= tc <= 8) or (9 <= tc <= 18) or (20 <= tc <= 22):
-                ac.nuc_p = time, msg
+                ac.nuc_p = time, msg  # type: ignore
                 if ac.version == 1:
-                    ac.nic_v1 = time, msg
+                    ac.nic_v1 = time, msg  # type: ignore
                 elif ac.version == 2:
-                    ac.nic_v2 = time, msg
+                    ac.nic_v2 = time, msg  # type: ignore
 
             if tc == 19:
-                ac.nuc_r = time, msg
+                ac.nuc_r = time, msg  # type: ignore
                 if ac.version in [1, 2]:
-                    ac.nac_v = time, msg
+                    ac.nac_v = time, msg  # type: ignore
 
             if tc == 29:
-                ac.sil = time, msg
-                ac.nac_p = time, msg
+                ac.sil = time, msg  # type: ignore
+                ac.nac_p = time, msg  # type: ignore
 
             if tc == 31:
                 ac.version = pms.adsb.version(msg)
-                ac.sil = time, msg
-                ac.nac_p = time, msg
+                ac.sil = time, msg  # type: ignore
+                ac.nac_p = time, msg  # type: ignore
 
                 if ac.version == 1:
                     ac.nic_s = pms.adsb.nic_s(msg)
@@ -1125,19 +1206,19 @@ class Decoder:
             ac = self.acs[icao.lower()]
 
             if bds == "BDS20":
-                ac.bds20 = time, msg
+                ac.bds20 = time, msg  # type: ignore
                 return
 
             if bds == "BDS40":
-                ac.bds40 = time, msg
+                ac.bds40 = time, msg  # type: ignore
                 return
 
             if bds == "BDS44":
-                ac.bds44 = time, msg
+                ac.bds44 = time, msg  # type: ignore
                 return
 
             if bds == "BDS45":
-                ac.bds45 = time, msg
+                ac.bds45 = time, msg  # type: ignore
                 return
 
             if bds == "BDS50,BDS60":
@@ -1154,11 +1235,11 @@ class Decoder:
                 # do not return!
 
             if bds == "BDS50":
-                ac.bds50 = time, msg
+                ac.bds50 = time, msg  # type: ignore
                 return
 
             if bds == "BDS60":
-                ac.bds60 = time, msg
+                ac.bds60 = time, msg  # type: ignore
                 return
 
     @property

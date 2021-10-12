@@ -1,9 +1,10 @@
 import json
-from collections import UserDict
+
+# from collections import UserDict
 from hashlib import md5
 from inspect import currentframe, signature
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union
 
 import pandas as pd
 
@@ -21,14 +22,14 @@ class property_cache(object):
 
     """
 
-    def __init__(self, method):
+    def __init__(self, method: Callable[..., Any]) -> None:
         # record the unbound-method and the name
         self.method = method
         self.name = method.__name__
         self.__doc__ = method.__doc__
         self.__annotations__ = method.__annotations__
 
-    def __get__(self, instance, cls):
+    def __get__(self, instance: Any, cls: Any) -> Any:
         # self: <__main__.cache object at 0xb781340c>
         # inst: <__main__.A object at 0xb781348c>
         # cls: <class '__main__.A'>
@@ -43,14 +44,14 @@ class property_cache(object):
         return result
 
 
-class Cache(UserDict):
+class Cache(Dict[str, Any]):
     def __init__(self, cachedir: Path) -> None:
         self.cachedir = cachedir
         if not self.cachedir.exists():
             self.cachedir.mkdir(parents=True)
         super().__init__()
 
-    def __missing__(self, hashcode: str):
+    def __missing__(self, hashcode: str) -> Any:
         filename = self.cachedir / f"{hashcode}.json"
         if filename.exists():
             response = json.loads(filename.read_text())
@@ -58,7 +59,7 @@ class Cache(UserDict):
             super().__setitem__(hashcode, response)
             return response
 
-    def __setitem__(self, hashcode: str, data):
+    def __setitem__(self, hashcode: str, data: Any) -> None:
         super().__setitem__(hashcode, data)
         filename = self.cachedir / f"{hashcode}.json"
         with filename.open("w") as fh:
@@ -73,7 +74,7 @@ def cache_results(
     cache_directory: Path = Path("."),
     loader: Callable[[Path], T] = pd.read_pickle,
     pd_varnames: bool = False,
-):
+) -> Callable[[Callable[..., T]], Union[T, Callable[..., T]]]:
     """
     The point of this method is to be able to cache results of some costly
     functions on pd.DataFrame, Flight or Traffic structures.
@@ -84,7 +85,7 @@ def cache_results(
     """
 
     def cached_values(fun: Callable[..., T]) -> Callable[..., T]:
-        def newfun(*args, **kwargs) -> T:
+        def newfun(*args: Any, **kwargs: Any) -> T:
             global callers_local_vars
             sig = signature(fun)
 

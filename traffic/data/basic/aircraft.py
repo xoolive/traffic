@@ -5,7 +5,7 @@ import re
 import zipfile
 from functools import reduce
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from tqdm.autonotebook import tqdm
 
@@ -124,7 +124,7 @@ class Aircraft(object):
     cache_dir: Path
     basic_columns = ["icao24", "registration", "typecode", "model", "operator"]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._junzis: Optional[pd.DataFrame] = None
         self._opensky: Optional[pd.DataFrame] = None
         self._merged: Optional[pd.DataFrame] = None
@@ -171,7 +171,7 @@ class Aircraft(object):
         assert self._junzis is not None
         return self._junzis.fillna("")
 
-    def download_opensky(self):  # coverage: ignore
+    def download_opensky(self) -> None:  # coverage: ignore
         """Downloads the latest version of the OpenSky aircraft database.
 
         url: https://opensky-network.org/aircraft-database
@@ -403,7 +403,7 @@ class Aircraft(object):
         """
         return self._fmt(self.data.query("registration.str.contains(@name)"))
 
-    def query(self, **kwargs) -> pd.DataFrame:
+    def query(self, **kwargs: Any) -> pd.DataFrame:
         """Combines several requests.
 
         The keyword arguments correspond to the name of other methods.

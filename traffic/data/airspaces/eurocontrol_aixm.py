@@ -53,14 +53,14 @@ class _Airport(NamedTuple):
     city: Optional[str]
     type: Optional[str]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.icao}/{self.iata}    {self.name} ({self.type})"
             f"\n\t{self.latitude} {self.longitude} altitude: {self.altitude}"
         )
 
 
-def _re_match_ignorecase(x, y):
+def _re_match_ignorecase(x: str, y: str) -> Optional[re.Match[str]]:
     return re.match(x, y, re.IGNORECASE)
 
 
@@ -220,7 +220,7 @@ class AIXMAirspaceParser(object):
             point for point in self.all_points.values() if point.name == name
         )
 
-    def append_coords(self, lr, block_poly):
+    def append_coords(self, lr: Any, block_poly: AirspaceList) -> None:
         coords: List[Tuple[float, ...]] = []
         gml, xlink = self.ns["gml"], self.ns["xlink"]
         for point in lr.iter():
@@ -234,7 +234,7 @@ class AIXMAirspaceParser(object):
                         (current_point.latitude, current_point.longitude)
                     )
         block_poly.append(
-            (
+            ExtrudedPolygon(
                 polygon.orient(
                     Polygon([(lon, lat) for lat, lon in coords]), -1
                 ),
@@ -244,28 +244,34 @@ class AIXMAirspaceParser(object):
         )
 
     @lru_cache(None)
-    def make_polygon(self, airspace) -> AirspaceList:
+    def make_polygon(self, airspace: ElementTree.ElementTree) -> AirspaceList:
         polygons: AirspaceList = []
         designator = airspace.find("aixm:designator", self.ns)
+
         if designator is not None:
             name = designator.text
+
         for block in airspace.findall(
             "aixm:geometryComponent/aixm:AirspaceGeometryComponent/"
             "aixm:theAirspaceVolume/aixm:AirspaceVolume",
             self.ns,
         ):
             block_poly: AirspaceList = []
-            upper = block.find("aixm:upperLimit", self.ns)
-            lower = block.find("aixm:lowerLimit", self.ns)
+            upper_elt = block.find("aixm:upperLimit", self.ns)
+            lower_elt = block.find("aixm:lowerLimit", self.ns)
 
             upper = (  # noqa: W605
-                float(upper.text)
-                if upper is not None and re.match(r"\d{3}", upper.text)
+                float(upper_elt.text)
+                if upper_elt is not None
+                and upper_elt.text is not None
+                and re.match(r"\d{3}", upper_elt.text)
                 else float("inf")
             )
             lower = (  # noqa: W605
-                float(lower.text)
-                if lower is not None and re.match(r"\d{3}", lower.text)
+                float(lower_elt.text)
+                if lower_elt is not None
+                and lower_elt.text is not None
+                and re.match(r"\d{3}", lower_elt.text)
                 else float("-inf")
             )
 
@@ -283,7 +289,7 @@ class AIXMAirspaceParser(object):
                     new_d = ats.find("aixm:designator", self.ns)
                     new_t = ats.find("aixm:type", self.ns)
                     if new_d is not None:
-                        if designator is not None:
+                        if designator is not None and name is not None:
                             components[name].add(
                                 AirspaceInfo(
                                     new_d.text,
@@ -328,7 +334,9 @@ class AIXMAirspaceParser(object):
         return next(self.search(name, operator.eq), None)
 
     def search(
-        self, name: str, cmp: Callable = _re_match_ignorecase
+        self,
+        name: str,
+        cmp: Callable[..., Optional[re.Match[str]]] = _re_match_ignorecase,
     ) -> Iterator[Airspace]:
 
         if not self.initialized:
@@ -379,7 +387,9 @@ class AIXMAirspaceParser(object):
                         )
 
     def parse(
-        self, pattern: str, cmp: Callable = _re_match_ignorecase
+        self,
+        pattern: str,
+        cmp: Callable[..., Optional[re.Match[str]]] = _re_match_ignorecase,
     ) -> Iterator[AirspaceInfo]:
 
         if not self.initialized:

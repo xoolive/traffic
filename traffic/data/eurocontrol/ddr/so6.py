@@ -9,6 +9,9 @@ from functools import lru_cache
 from io import StringIO
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -20,10 +23,17 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pyproj
 from shapely.geometry import LineString, base
@@ -34,8 +44,11 @@ from ....core.flight import Position
 from ....core.mixins import DataFrameMixin
 from ....core.time import time_or_delta, timelike, to_datetime
 
+if TYPE_CHECKING:
+    from cartopy.crs import Projection
 
-def _prepare_libarchive():  # coverage: ignore
+
+def _prepare_libarchive() -> None:  # coverage: ignore
     """
     There are some well documented issues in MacOS about libarchive.
     Let's try to do things ourselves...
@@ -71,6 +84,7 @@ def _prepare_libarchive():  # coverage: ignore
     os.environ["LA_LIBRARY_FILEPATH"] = os.path.join(
         library_path, "libarchive.dylib"
     )
+    return
 
 
 # https://github.com/python/mypy/issues/2511
@@ -172,12 +186,19 @@ class Flight(FlightMixin):
 
     def __init__(self, data: pd.DataFrame) -> None:
         super().__init__(data)
-        self.interpolator: Dict = dict()
+        self.interpolator: Dict[
+            "Projection",
+            Callable[[npt.NDArray[np.datetime64]], npt.NDArray[np.float64]],
+        ] = dict()
 
-    def __add__(self, other):
+    def __add__(  # type: ignore
+        self, other: Union[Literal[0], "Flight", "SO6"]
+    ) -> "SO6":
+        # TODO fix mypy error: Return type "SO6" of "__add__" incompatible with
+        # return type "Traffic" in supertype "Flight"
         if other == 0:
             # useful for compatibility with sum() function
-            return self
+            return SO6(self.data)
 
         return SO6(pd.concat([self.data, other.data], sort=False))
 
@@ -191,11 +212,11 @@ class Flight(FlightMixin):
 
     @property
     def aircraft(self) -> str:
-        return self.data.iloc[0].aircraft
+        return cast(str, self.data.iloc[0].aircraft)
 
     @property
     def typecode(self) -> str:
-        return self.data.iloc[0].aircraft
+        return cast(str, self.data.iloc[0].aircraft)
 
     @property
     def start(self) -> pd.Timestamp:
@@ -254,7 +275,11 @@ class Flight(FlightMixin):
         """Identity method, available for consistency"""
         return self
 
-    def interpolate(self, times, proj=None) -> np.ndarray:
+    def interpolate(
+        self,
+        times: npt.NDArray[np.datetime64],
+        proj: Optional["Projection"] = None,
+    ) -> npt.NDArray[np.float64]:
         from cartopy.crs import PlateCarree
         from scipy.interpolate import interp1d
 
@@ -269,7 +294,7 @@ class Flight(FlightMixin):
                     PlateCarree(), *np.stack(list(self.coords)).T
                 ).T,
             )
-        return PlateCarree().transform_points(
+        return PlateCarree().transform_points(  # type: ignore
             proj, *self.interpolator[proj](times)
         )
 
@@ -311,10 +336,10 @@ class Flight(FlightMixin):
         else:
             stop = to_datetime(stop)
 
-        t: np.ndarray = np.stack(list(self.timestamp))
-        index = np.where((start < t) & (t < stop))
+        t: npt.NDArray[np.datetime64] = np.stack(list(self.timestamp))
+        index = np.where((start < t) & (t < stop))  # type: ignore
 
-        new_data: np.ndarray = np.stack(list(self.coords))[index]
+        new_data = np.stack(list(self.coords))[index]
         time1: List[datetime] = [start, *t[index]]
         time2: List[datetime] = [*t[index], stop]
 
@@ -561,10 +586,10 @@ class SO6(DataFrameMixin):
     def __len__(self) -> int:
         return len(self.flight_ids)
 
-    def _ipython_key_completions_(self):
+    def _ipython_key_completions_(self) -> Set[Union[int, str]]:
         return {*self.flight_ids, *self.callsigns}
 
-    def __add__(self, other: Union[Flight, "SO6"]) -> "SO6":
+    def __add__(self, other: Union[Literal[0], Flight, "SO6"]) -> "SO6":
         # useful for compatibility with sum() function
         if other == 0:
             return self
@@ -615,11 +640,11 @@ class SO6(DataFrameMixin):
 
     def __repr__(self) -> str:
         stats = self.stats()
-        return stats.__repr__()
+        return cast(str, stats.__repr__())
 
     def _repr_html_(self) -> str:
         stats = self.stats()
-        return stats._repr_html_()
+        return cast(str, stats._repr_html_())
 
     @classmethod
     def from_so6(
@@ -699,7 +724,7 @@ class SO6(DataFrameMixin):
 
     @classmethod
     def from_file(
-        cls: Type[SO6TypeVar], filename: Union[Path, str], **kwargs
+        cls: Type[SO6TypeVar], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[SO6TypeVar]:  # coverage: ignore
         """
         In addition to `usual formats

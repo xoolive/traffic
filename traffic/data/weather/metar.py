@@ -15,7 +15,7 @@ class METAR:  # coverage: ignore
     def __init__(self, airport: Union[str, Airport]):
         self.airport = airport if isinstance(airport, str) else airport.icao
 
-    def get(self, start: Optional[timelike]):
+    def get(self, start: Optional[timelike]) -> pd.Dataframe:
 
         timestamp = to_datetime(start) if start is not None else datetime.now()
 

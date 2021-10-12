@@ -17,7 +17,7 @@ from ....core.airspace import (
 # https://www.nm.eurocontrol.int/HELP/Airspaces.html
 
 
-def _re_match_ignorecase(x, y):
+def _re_match_ignorecase(x: str, y: str) -> Optional[re.Match[str]]:
     return re.match(x, y, re.IGNORECASE)
 
 
@@ -35,11 +35,11 @@ class NMAirspaceParser(object):
         self.types: Dict[str, str] = dict()
         self.initialized = False
 
-    def update_path(self, path: Path):
+    def update_path(self, path: Path) -> None:
         self.nm_path = path
         self.init_cache()
 
-    def init_cache(self):
+    def init_cache(self) -> None:
         msg = f"Edit file {self.config_file} with NM directory"
 
         if self.nm_path is None:
@@ -163,7 +163,11 @@ class NMAirspaceParser(object):
         return airspace
 
     def parse(
-        self, pattern: str, cmp: Callable = _re_match_ignorecase
+        self,
+        pattern: str,
+        cmp: Callable[
+            [str, str], Optional[re.Match[str]]
+        ] = _re_match_ignorecase,
     ) -> Iterator[AirspaceInfo]:
 
         if not self.initialized:
@@ -183,7 +187,11 @@ class NMAirspaceParser(object):
                 yield AirspaceInfo(key, value)
 
     def search(
-        self, pattern: str, cmp: Callable = _re_match_ignorecase
+        self,
+        pattern: str,
+        cmp: Callable[
+            [str, str], Optional[re.Match[str]]
+        ] = _re_match_ignorecase,
     ) -> Iterator[Airspace]:
 
         if not self.initialized:

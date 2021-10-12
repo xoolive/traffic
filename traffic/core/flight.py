@@ -1,6 +1,8 @@
 import logging
+import sys
 import warnings
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from operator import attrgetter
 from pathlib import Path
 from typing import (
@@ -11,6 +13,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    NoReturn,
     Optional,
     Set,
     Tuple,
@@ -21,7 +24,13 @@ from typing import (
     overload,
 )
 
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pyproj
 from pandas.core.internals import DatetimeTZBlock
@@ -31,6 +40,7 @@ from shapely.ops import transform
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.phases import FuzzyLogic
+from ..core.types import ProgressbarType
 from . import geodesy as geo
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
@@ -52,7 +62,9 @@ T = TypeVar("T", bound="Flight")
 
 if str(pd.__version__) < "1.3":
 
-    def _tz_interpolate(data, *args, **kwargs):
+    def _tz_interpolate(
+        data: DatetimeTZBlock, *args: Any, **kwargs: Any
+    ) -> DatetimeTZBlock:
         return data.astype(int).interpolate(*args, **kwargs).astype(data.dtype)
 
     DatetimeTZBlock.interpolate = _tz_interpolate
@@ -62,7 +74,9 @@ else:
     # - Windows require "int64" as "int" may be interpreted as "int32" and raise
     #   an error (was not raised before 1.3.0)
 
-    def _tz_interpolate(data, *args, **kwargs):
+    def _tz_interpolate(
+        data: DatetimeTZBlock, *args: Any, **kwargs: Any
+    ) -> DatetimeTZBlock:
         coerced = data.coerce_to_target_dtype("int64")
         interpolated, *_ = coerced.interpolate(*args, **kwargs)
         return interpolated
@@ -83,7 +97,7 @@ def _split(
         delta = np.timedelta64(value, unit)
     # There seems to be a change with numpy >= 1.18
     # max() now may return NaN, therefore the following fix
-    max_ = np.nanmax(diff)
+    max_ = np.nanmax(diff)  # type: ignore
     if max_ > delta:
         # np.nanargmax seems bugged with timestamps
         argmax = np.where(diff == max_)[0][0]
@@ -100,9 +114,13 @@ attrgetter_duration = attrgetter("duration")
 default_angle_features = ["track", "heading"]
 
 
-class Position(PointMixin, pd.core.series.Series):
+class Position(PointMixin, pd.core.series.Series):  # type: ignore
     def plot(
-        self, ax: "Axes", text_kw=None, shift=None, **kwargs
+        self,
+        ax: "Axes",
+        text_kw: Optional[Dict[str, Any]] = None,
+        shift: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
 
         from ..drawing.markers import aircraft as aircraft_marker
@@ -125,7 +143,7 @@ class Position(PointMixin, pd.core.series.Series):
 
 
 class MetaFlight(type):
-    def __getattr__(cls, name):
+    def __getattr__(cls, name: str) -> Callable[..., Any]:
         if name.startswith("aligned_on_"):
             return lambda flight: cls.aligned_on_ils(flight, name[11:])
         if name.startswith("takeoff_runway_"):
@@ -228,7 +246,9 @@ class Flight(
 
     # --- Special methods ---
 
-    def __add__(self, other) -> "Traffic":
+    def __add__(
+        self, other: Union[Literal[0], "Flight", "Traffic"]
+    ) -> "Traffic":
         """
         As Traffic is thought as a collection of Flights, the sum of two Flight
         objects returns a Traffic object
@@ -243,7 +263,9 @@ class Flight(
         # This just cannot return None in this case.
         return Traffic.from_flights([self, other])  # type: ignore
 
-    def __radd__(self, other) -> "Traffic":
+    def __radd__(
+        self, other: Union[Literal[0], "Flight", "Traffic"]
+    ) -> "Traffic":
         """
         As Traffic is thought as a collection of Flights, the sum of two Flight
         objects returns a Traffic object
@@ -265,9 +287,10 @@ class Flight(
         """
 
         if "last_position" in self.data.columns:
-            return self.data.drop_duplicates("last_position").shape[0]
+            data = self.data.drop_duplicates("last_position")
+            return data.shape[0]  # type: ignore
         else:
-            return self.data.shape[0]
+            return self.data.shape[0]  # type: ignore
 
     def _info_html(self) -> str:
         title = f"<b>Flight {self.title}</b>"
@@ -291,7 +314,8 @@ class Flight(
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
-    def _repr_svg_(self):
+    @lru_cache()
+    def _repr_svg_(self) -> Optional[str]:
         # even 25m should be enough to limit the size of resulting notebooks!
         if self.shape is None:
             return None
@@ -319,13 +343,13 @@ class Flight(
         return output
 
     @property
-    def __geo_interface__(self):
+    def __geo_interface__(self) -> Dict[str, Any]:
         if self.shape is None:
             # Returns an empty geometry
             return {"type": "GeometryCollection", "geometries": []}
-        return self.shape.__geo_interface__
+        return self.shape.__geo_interface__  # type: ignore
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         """Helper to facilitate method chaining without lambda.
 
         Example usage:
@@ -441,7 +465,7 @@ class Flight(
         segment = None
         for segment in fun(self):  # noqa: B007
             continue
-        return segment
+        return segment  # type: ignore
 
     # --- Iterators ---
 
@@ -484,7 +508,7 @@ class Flight(
 
     # --- Properties (and alike) ---
 
-    def min(self, feature: str):
+    def min(self, feature: str) -> Any:
         """Returns the minimum value of given feature.
 
         >>> flight.min('altitude')  # dummy example
@@ -492,7 +516,7 @@ class Flight(
         """
         return self.data[feature].min()
 
-    def max(self, feature: str):
+    def max(self, feature: str) -> Any:
         """Returns the maximum value of given feature.
 
         >>> flight.max('altitude')  # dummy example
@@ -500,7 +524,7 @@ class Flight(
         """
         return self.data[feature].max()
 
-    def mean(self, feature: str):
+    def mean(self, feature: str) -> Any:
         """Returns the average value of given feature.
 
         >>> flight.mean('vertical_rate')  # dummy example
@@ -533,8 +557,8 @@ class Flight(
             feature = attrgetter(feature)
         attribute = feature(self)
         if strict:
-            return attribute > value
-        return attribute >= value
+            return attribute > value  # type: ignore
+        return attribute >= value  # type: ignore
 
     def feature_lt(
         self,
@@ -561,8 +585,8 @@ class Flight(
             feature = attrgetter(feature)
         attribute = feature(self)
         if strict:
-            return attribute < value
-        return attribute <= value
+            return attribute < value  # type: ignore
+        return attribute <= value  # type: ignore
 
     def shorter_than(
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
@@ -580,7 +604,7 @@ class Flight(
             value = pd.Timedelta(value)
         return self.feature_gt(attrgetter("duration"), value, strict)
 
-    def abs(self, features: Union[str, List[str]], **kwargs) -> "Flight":
+    def abs(self, features: Union[str, List[str]], **kwargs: Any) -> "Flight":
         """Assign absolute versions of features to new columns.
 
         >>> flight.abs("track")
@@ -601,7 +625,7 @@ class Flight(
             assign_dict[value] = self.data[key].abs()
         return self.assign(**assign_dict)
 
-    def diff(self, features: Union[str, List[str]], **kwargs) -> "Flight":
+    def diff(self, features: Union[str, List[str]], **kwargs: Any) -> "Flight":
         """Assign differential versions of features to new columns.
 
         >>> flight.diff("track")
@@ -644,7 +668,7 @@ class Flight(
             return None
         tmp = self.data[field].unique()
         if len(tmp) == 1:
-            return tmp[0]
+            return tmp[0]  # type: ignore
         if warn:
             logging.warning(
                 f"Several {field}s for one flight, consider splitting"
@@ -788,7 +812,7 @@ class Flight(
         res = aircraft[self.icao24]
         res = res.query("registration == registration and registration != ''")
         if res.shape[0] == 1:
-            return res.iloc[0].registration
+            return res.iloc[0].registration  # type: ignore
         return None
 
     @property
@@ -800,7 +824,7 @@ class Flight(
         res = aircraft[self.icao24]
         res = res.query("typecode == typecode and typecode != ''")
         if res.shape[0] == 1:
-            return res.iloc[0].typecode
+            return res.iloc[0].typecode  # type: ignore
         return None
 
     @property
@@ -832,7 +856,9 @@ class Flight(
 
     # -- Time handling, splitting, interpolation and resampling --
 
-    def skip(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
+    def skip(
+        self, value: deltalike = None, **kwargs: Any
+    ) -> Optional["Flight"]:
         """Removes the first n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -852,7 +878,9 @@ class Flight(
             return None
         return self.__class__(df)
 
-    def first(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
+    def first(
+        self, value: deltalike = None, **kwargs: Any
+    ) -> Optional["Flight"]:
         """Returns the first n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -872,7 +900,9 @@ class Flight(
             return None
         return self.__class__(df)
 
-    def shorten(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
+    def shorten(
+        self, value: deltalike = None, **kwargs: Any
+    ) -> Optional["Flight"]:
         """Removes the last n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -892,7 +922,9 @@ class Flight(
             return None
         return self.__class__(df)
 
-    def last(self, value: deltalike = None, **kwargs) -> Optional["Flight"]:
+    def last(
+        self, value: deltalike = None, **kwargs: Any
+    ) -> Optional["Flight"]:
         """Returns the last n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -1091,15 +1123,19 @@ class Flight(
         )
 
     def apply_segments(
-        self, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
+        self,
+        fun: Callable[..., "LazyTraffic"],
+        name: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> Optional["Flight"]:
-        return getattr(self, name)(*args, **kwargs)(fun)
+        return getattr(self, name)(*args, **kwargs)(fun)  # type: ignore
 
     def apply_time(
         self,
         freq: str = "1T",
         merge: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> "Flight":
         """Apply features on time windows.
 
@@ -1151,7 +1187,7 @@ class Flight(
         self,
         freq: str = "1T",
         merge: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> "Flight":
         """Aggregate features on time windows.
 
@@ -1171,7 +1207,7 @@ class Flight(
         """
 
         def flatten(
-            data: pd.DataFrame, how: Callable = "_".join
+            data: pd.DataFrame, how: Callable[..., Any] = "_".join
         ) -> pd.DataFrame:
             data.columns = (
                 [
@@ -1201,8 +1237,10 @@ class Flight(
         )
         agg_data = flatten(temp_flight.groupby("rounded").agg(kwargs_modified))
 
-        if not merge:  # mostly for debugging purposes
-            return agg_data
+        if not merge:
+            # WARN: Return type is inconsistent but this is mostly for
+            # debugging purposes
+            return agg_data  # type: ignore
 
         return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
 
@@ -1284,7 +1322,7 @@ class Flight(
         strategy: Optional[
             Callable[[pd.DataFrame], pd.DataFrame]
         ] = lambda x: x.bfill().ffill(),
-        **kwargs,
+        **kwargs: int,
     ) -> "Flight":
 
         """Filters the trajectory given features with a median filter.
@@ -1337,13 +1375,16 @@ class Flight(
 
         if strategy is None:
 
-            def identity(x):
+            def identity(x: pd.DataFrame) -> pd.DataFrame:
                 return x  # noqa: E704
 
             strategy = identity
 
         def cascaded_filters(
-            df, feature: str, kernel_size: int, filt=scipy.signal.medfilt
+            df: pd.DataFrame,
+            feature: str,
+            kernel_size: int,
+            filt: Callable[[pd.Series, int], Any] = scipy.signal.medfilt,
         ) -> pd.DataFrame:
             """Produces a mask for data to be discarded.
 
@@ -1417,7 +1458,7 @@ class Flight(
             )
         return flight
 
-    def comet(self, **kwargs) -> "Flight":
+    def comet(self, **kwargs: Any) -> "Flight":
         """Computes a comet for a trajectory.
 
         The method uses the last position of a trajectory (method `at()
@@ -1533,7 +1574,9 @@ class Flight(
             series = reset.data[feature]
             idx = ~series.isnull()
             result_dict[f"{feature}_unwrapped"] = pd.Series(
-                np.degrees(np.unwrap(np.radians(series.loc[idx]))),
+                np.degrees(
+                    np.unwrap(np.radians(series.loc[idx]))  # type: ignore
+                ),
                 index=series.loc[idx].index,
             )
 
@@ -1570,7 +1613,7 @@ class Flight(
         ax: "GeoAxesSubplot",
         resolution: Union[int, str, Dict[str, float], None] = "5T",
         filtered: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
         """Plots the wind field seen by the aircraft on a Matplotlib axis.
 
@@ -1653,7 +1696,7 @@ class Flight(
                         .reset_index()
                     )
 
-        return ax.barbs(
+        return ax.barbs(  # type: ignore
             data.longitude.values,
             data.latitude.values,
             data.wind_u.values,
@@ -1827,7 +1870,7 @@ class Flight(
         compute_track: bool = True,
         *,
         reverse: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> "Flight":
 
         """Enrich the structure with new ``cumdist`` column computed from
@@ -1864,12 +1907,16 @@ class Flight(
         )
 
         res = cur_sorted.assign(
-            cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant")
+            cumdist=np.pad(  # type: ignore
+                d.cumsum() / 1852, (1, 0), "constant"
+            )
         )
 
         if compute_gs:
             gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
-            res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "edge")))
+            res = res.assign(
+                compute_gs=np.abs(np.pad(gs, (1, 0), "edge"))  # type: ignore
+            )
 
         if compute_track:
             track = geo.bearing(
@@ -1880,7 +1927,9 @@ class Flight(
             )
             track = np.where(track > 0, track, 360 + track)
             res = res.assign(
-                compute_track=np.abs(np.pad(track, (1, 0), "edge"))
+                compute_track=np.abs(
+                    np.pad(track, (1, 0), "edge")  # type: ignore
+                )
             )
 
         return res.sort_values("timestamp", ascending=True)
@@ -1911,7 +1960,7 @@ class Flight(
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
         return_mask: bool = False,
-    ) -> Union[np.ndarray, "Flight"]:
+    ) -> Union[npt.NDArray[np.float64], "Flight"]:
         """Simplifies a trajectory with Douglas-Peucker algorithm.
 
         The method uses latitude and longitude, projects the trajectory to a
@@ -2067,7 +2116,7 @@ class Flight(
             .sum()
         )
 
-    def query_opensky(self, **kwargs) -> Optional["Flight"]:
+    def query_opensky(self, **kwargs: Any) -> Optional["Flight"]:
         """Returns data from the same Flight as stored in OpenSky database.
 
         This may be useful if you write your own parser for data from a
@@ -2101,7 +2150,7 @@ class Flight(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
         failure_mode: str = "warning",
-        progressbar: Union[bool, Callable[[Iterable], Iterable]] = True,
+        progressbar: Union[bool, ProgressbarType[Any]] = True,
     ) -> "Flight":
         """Extends data with extra columns from EHS messages.
 
@@ -2132,7 +2181,7 @@ class Flight(
         if not isinstance(self.callsign, str):
             raise RuntimeError("Several callsigns for this flight")
 
-        def fail_warning():
+        def fail_warning() -> "Flight":
             """Called when nothing can be added to data."""
             id_ = self.flight_id
             if id_ is None:
@@ -2140,7 +2189,7 @@ class Flight(
             logging.warning(f"No data on Impala for flight {id_}.")
             return self
 
-        def fail_silent():
+        def fail_silent() -> "Flight":
             return self
 
         failure_dict = dict(warning=fail_warning, silent=fail_silent)
@@ -2227,7 +2276,7 @@ class Flight(
     # -- Visualisation --
 
     def plot(
-        self, ax: "GeoAxesSubplot", **kwargs
+        self, ax: "GeoAxesSubplot", **kwargs: Any
     ) -> List["Artist"]:  # coverage: ignore
         """Plots the trajectory on a Matplotlib axis.
 
@@ -2255,10 +2304,10 @@ class Flight(
         if "projection" in ax.__dict__ and "transform" not in kwargs:
             kwargs["transform"] = PlateCarree()
         if self.shape is not None:
-            return ax.plot(*self.shape.xy, **kwargs)
+            return ax.plot(*self.shape.xy, **kwargs)  # type: ignore
         return []
 
-    def chart(self, *features) -> "alt.Chart":  # coverage: ignore
+    def chart(self, *features: str) -> "alt.Chart":  # coverage: ignore
         """
         Initializes an altair Chart based on Flight data.
 
@@ -2333,7 +2382,7 @@ class Flight(
 
         return base.mark_line()
 
-    def encode(self, **kwargs):  # coverage: ignore
+    def encode(self, **kwargs: Any) -> NoReturn:  # coverage: ignore
         """
         DEPRECATED: Use Flight.chart() method instead.
         """
@@ -2344,7 +2393,7 @@ class Flight(
         ax: "Axes",
         y: Union[str, List[str]],
         secondary_y: Union[None, str, List[str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:  # coverage: ignore
         """Plots the given features according to time.
 
@@ -2406,7 +2455,7 @@ class Flight(
 
     @classmethod
     def from_file(
-        cls: Type[T], filename: Union[Path, str], **kwargs
+        cls: Type[T], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[T]:
 
         """Read data from various formats.

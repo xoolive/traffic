@@ -129,7 +129,7 @@ class NMB2B(FlightManagement, Measures):
         self,
         airac_id: Union[str, int],
         output_dir: Union[None, Path, str] = None,
-    ):
+    ) -> None:
         data = REQUESTS["CompleteAIXMDatasetRequest"].format(
             airac_id=airac_id, send_time=datetime.now(timezone.utc)
         )

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional, Set, Type, TypeVar, Union
+from typing import Any, List, Optional, Set, Type, TypeVar, Union
 from xml.etree import ElementTree
 
 import pandas as pd
@@ -68,7 +68,7 @@ class RegulationInfo(B2BReply):
         return elt.text
 
     @property
-    def start(self):
+    def start(self) -> pd.Timestamp:
         assert self.reply is not None
         elt = self.reply.find("applicability/wef")
         assert elt is not None
@@ -76,7 +76,7 @@ class RegulationInfo(B2BReply):
         return pd.Timestamp(elt.text, tz="UTC")
 
     @property
-    def stop(self):
+    def stop(self) -> pd.Timestamp:
         assert self.reply is not None
         elt = self.reply.find("applicability/unt")
         assert elt is not None
@@ -92,7 +92,7 @@ class RegulationInfo(B2BReply):
         return elt.text
 
     @property
-    def location(self):
+    def location(self) -> Optional[str]:
         assert self.reply is not None
         elt = self.reply.find(
             "location/referenceLocation-ReferenceLocationAirspace/id"
@@ -120,7 +120,7 @@ class RegulationInfo(B2BReply):
             int(elt.text) if elt is not None and elt.text is not None else 999
         )
 
-    def __getattr__(self, name) -> str:
+    def __getattr__(self, name: str) -> str:
         cls = type(self)
         assert self.reply is not None
         elt = self.reply.find(name)
@@ -131,14 +131,16 @@ class RegulationInfo(B2BReply):
 
 
 class RegulationList(DataFrameMixin, B2BReply):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         if len(args) == 0 and "data" not in kwargs:
             super().__init__(data=None, **kwargs)
         else:
             super().__init__(*args, **kwargs)
 
     @classmethod
-    def fromB2BReply(cls, r: B2BReply):
+    def fromB2BReply(
+        cls: Type[RegulationListTypeVar], r: B2BReply
+    ) -> RegulationListTypeVar:
         assert r.reply is not None
         return cls.fromET(r.reply)
 
@@ -151,7 +153,7 @@ class RegulationList(DataFrameMixin, B2BReply):
         instance.build_df()
         return instance
 
-    def __getitem__(self, item) -> Optional[RegulationInfo]:
+    def __getitem__(self, item: str) -> Optional[RegulationInfo]:
         assert self.reply is not None
         for elt in self.reply.findall("data/regulations/item"):
             key = elt.find("regulationId")
@@ -261,7 +263,7 @@ class Measures:
         start: timelike,
         stop: Optional[timelike] = None,
         traffic_volumes: Optional[List[str]] = None,
-        regulations: Union[str, List[str]] = None,
+        regulations: Union[None, str, List[str]] = None,
         fields: Optional[List[str]] = None,
     ) -> Optional[RegulationList]:
         """Returns information about a (set of) given regulation(s).

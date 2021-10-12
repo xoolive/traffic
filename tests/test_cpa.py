@@ -1,3 +1,5 @@
+from typing import cast
+
 from cartes.crs import CH1903p  # type: ignore
 
 from traffic.core import Traffic
@@ -5,7 +7,7 @@ from traffic.data.samples import collections, get_sample
 
 
 def test_cpa() -> None:
-    switzerland: Traffic = get_sample(collections, "switzerland")
+    switzerland = cast(Traffic, get_sample(collections, "switzerland"))
 
     smaller = (
         switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")

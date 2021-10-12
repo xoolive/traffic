@@ -70,7 +70,7 @@ jobs:
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
         run: |
-          poetry run pytest
+          poetry run pytest --cov --cov-report term-missing
 
       - name: Upload coverage to Codecov
         if: ${{ github.event_name != 'pull_request_target' }}

@@ -78,12 +78,8 @@ class Airways(GeoDBMixin):
 
     def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
         self._data = data
-
-    def __new__(cls, data: Optional[pd.DataFrame] = None) -> "Airways":
-        instance = super().__new__(cls)
-        if instance.available:
-            Airways.alternatives[cls.name] = instance
-        return instance
+        if self.available:
+            Airways.alternatives[self.name] = self
 
     def download_data(self) -> None:  # coverage: ignore
         from .. import session
@@ -122,7 +118,7 @@ class Airways(GeoDBMixin):
 
         return self._data
 
-    def __getitem__(self, name) -> Optional[Route]:
+    def __getitem__(self, name: str) -> Optional[Route]:
         output = self.data.query("route == @name").sort_values("id")
         if output.shape[0] == 0:
             return None
@@ -131,7 +127,7 @@ class Airways(GeoDBMixin):
         )
         return Route(ls, name, list(output.navaid))
 
-    def global_get(self, name) -> Optional[Route]:
+    def global_get(self, name: str) -> Optional[Route]:
         """Search for a route from all alternative data sources."""
         for _key, value in self.alternatives.items():
             alt = value[name]

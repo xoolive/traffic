@@ -48,14 +48,10 @@ class Navaids(GeoDBMixin):
     alternatives: Dict[str, "Navaids"] = dict()
     name: str = "default"
 
-    def __init__(self, data: Optional[pd.DataFrame] = None):
+    def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
         self._data: Optional[pd.DataFrame] = data
-
-    def __new__(cls, data: Optional[pd.DataFrame] = None) -> "Navaids":
-        instance = super().__new__(cls)
-        if instance.available:
-            Navaids.alternatives[cls.name] = instance
-        return instance
+        if self.available:
+            Navaids.alternatives[self.name] = self
 
     @property
     def available(self) -> bool:
@@ -227,7 +223,7 @@ class Navaids(GeoDBMixin):
             dic["magnetic_variation"] = None
         return Navaid(**dic)
 
-    def global_get(self, name) -> Optional[Navaid]:
+    def global_get(self, name: str) -> Optional[Navaid]:
         """Search for a navaid from all alternative data sources."""
         for _key, value in self.alternatives.items():
             alt = value[name]

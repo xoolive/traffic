@@ -38,7 +38,7 @@ def test_search() -> None:
     )
 
 
-@pytest.mark.skipif(skip_runways, reason="Failed downloading runway data")
+@pytest.mark.skipif(skip_runways, reason="Failed to download runway data")
 def test_runway_list() -> None:
     airport = airports["TLS"]
     assert airport is not None
@@ -47,7 +47,7 @@ def test_runway_list() -> None:
     assert rwy_list == {"14L", "14R", "32L", "32R"}
 
 
-@pytest.mark.skipif(skip_runways, reason="Failed downloading runway data")
+@pytest.mark.skipif(skip_runways, reason="Failed to download runway data")
 def test_runway_bearing() -> None:
     for apt_name in ["EHAM", "EDDF", "LFPG", "KLAX", "KSFO", "RJTT"]:
         airport = airports[apt_name]

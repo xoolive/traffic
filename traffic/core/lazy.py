@@ -13,6 +13,7 @@ from typing import (
     List,
     Optional,
     Union,
+    cast,
     overload,
 )
 
@@ -33,11 +34,13 @@ class FaultCatcher:
     flag: bool = False
     flight: Optional[Flight] = None
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         FaultCatcher.flag = True
         FaultCatcher.flight = None
 
-    def __exit__(self, exc_type, exc_value, tb):
+    def __exit__(
+        self, _exc_type: Any, _exc_value: Any, tb: Optional[types.TracebackType]
+    ) -> None:
         FaultCatcher.flag = False
         traceback.format_tb(tb)
 
@@ -53,7 +56,7 @@ class LazyLambda:
     """
 
     def __init__(
-        self, f_name: str, idx_name: Optional[str], *args, **kwargs
+        self, f_name: str, idx_name: Optional[str], *args: Any, **kwargs: Any
     ) -> None:
         self.f_name = f_name
         self.idx_name = idx_name
@@ -63,12 +66,15 @@ class LazyLambda:
     def __call__(self, idx: int, elt: Optional[Flight]) -> Optional[Flight]:
         if self.idx_name is not None:
             self.kwargs[self.idx_name] = idx
-        result = getattr(Flight, self.f_name)(elt, *self.args, **self.kwargs)
+        result = cast(
+            Union[None, bool, np.bool_, Flight],
+            getattr(Flight, self.f_name)(elt, *self.args, **self.kwargs),
+        )
         if result is False or result is np.False_:
             return None
         if result is True or result is np.True_:
             return elt
-        return result
+        return result  # type: ignore
 
 
 def apply(
@@ -115,7 +121,7 @@ class LazyTraffic:
         )
         self.tqdm_kw: Dict[str, Any] = tqdm_kw if tqdm_kw is not None else {}
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         assert LazyTraffic.__doc__ is not None
         return (
             "class LazyTraffic:\n"
@@ -232,7 +238,7 @@ class LazyTraffic:
 
         return result
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if hasattr(self.wrapped_t, name):
             logging.warning(
                 ".eval() has been automatically appended for you.\n"
@@ -299,14 +305,18 @@ def lazy_evaluation(
 It should be safe to create a proper named function and pass it to filter_if.
         """
 
-        def is_lambda(f) -> bool:
+        def is_lambda(f: Callable[..., Any]) -> bool:
             return isinstance(f, types.LambdaType) and f.__name__ == "<lambda>"
 
         # Check the decorated method is implemented by A
         if not hasattr(Flight, f.__name__):
             raise TypeError(f"Class Flight does not provide {f.__name__}")
 
-        def lazy_λf(lazy: LazyTraffic, *args, **kwargs) -> LazyTraffic:
+        def lazy_λf(
+            lazy: LazyTraffic,
+            *args: Callable[..., Union["Traffic", LazyTraffic]],
+            **kwargs: Callable[..., Union["Traffic", LazyTraffic]],
+        ) -> LazyTraffic:
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             if any(is_lambda(arg) for arg in args):
@@ -339,7 +349,11 @@ It should be safe to create a proper named function and pass it to filter_if.
             return f
 
         # Take the method in Flight and create a LazyCollection
-        def λf(wrapped_t: "Traffic", *args, **kwargs) -> LazyTraffic:
+        def λf(
+            wrapped_t: "Traffic",
+            *args: Callable[..., Union["Traffic", LazyTraffic]],
+            **kwargs: Callable[..., Union["Traffic", LazyTraffic]],
+        ) -> LazyTraffic:
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             if any(is_lambda(arg) for arg in args):
@@ -387,7 +401,11 @@ for name, handle in inspect.getmembers(
     ):
 
         def make_lambda(name: str) -> Callable[..., LazyTraffic]:
-            def lazy_λf(lazy: LazyTraffic, *args, **kwargs):
+            def lazy_λf(
+                lazy: LazyTraffic,
+                *args: Callable[..., Union["Traffic", LazyTraffic]],
+                **kwargs: Callable[..., Union["Traffic", LazyTraffic]],
+            ) -> LazyTraffic:
                 op_idx = LazyLambda(name, None, *args, **kwargs)
                 return LazyTraffic(
                     lazy.wrapped_t,

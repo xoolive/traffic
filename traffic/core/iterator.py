@@ -1,6 +1,6 @@
 import functools
 import operator
-from typing import TYPE_CHECKING, Callable, Iterator, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 
 if TYPE_CHECKING:
     from . import Flight  # noqa: F401
@@ -47,19 +47,19 @@ class FlightIterator:
 
     """
 
-    def __init__(self, generator):
+    def __init__(self, generator: Iterator["Flight"]) -> None:
         self.generator = generator
 
-    def __next__(self):
+    def __next__(self) -> "Flight":
         return next(self.generator)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator["Flight"]:
         yield from self.generator
 
-    def __len__(self):
+    def __len__(self) -> int:
         return sum(1 for _ in self)
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         try:
             concat = functools.reduce(operator.or_, self)._repr_html_()
         except TypeError:  # reduce() of empty sequence with no initial value
@@ -78,7 +78,9 @@ class FlightIterator:
             + concat
         )
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: Union[int, slice]
+    ) -> Union["Flight", "FlightIterator"]:
         if isinstance(index, int):
             for i, elt in enumerate(self):
                 if i == index:
@@ -87,7 +89,8 @@ class FlightIterator:
             if index.step is not None and index.step <= 0:
                 raise ValueError("Negative steps are not supported")
 
-            def gen():
+            def gen() -> Iterator["Flight"]:
+                assert isinstance(index, slice)
                 modulo_start = None
                 for i, elt in enumerate(self):
                     if index.start is not None and i < index.start:
@@ -192,7 +195,9 @@ class FlightIterator:
         >>> flight.query("altitude < 5000").split().max(key="start")
         """
 
-        return max(self, key=lambda x: getattr(x, key), default=None)
+        return max(
+            self, key=lambda x: getattr(x, key), default=None  # type: ignore
+        )
 
     def min(self, key: str = "duration") -> Optional["Flight"]:
         """Returns the shortest element in the Iterator.
@@ -205,13 +210,15 @@ class FlightIterator:
 
         >>> flight.query("altitude < 5000").split().min(key="stop")
         """
-        return min(self, key=lambda x: getattr(x, key), default=None)
+        return min(
+            self, key=lambda x: getattr(x, key), default=None  # type: ignore
+        )
 
     def __call__(
         self,
         fun: Callable[..., "LazyTraffic"],
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> Optional["Flight"]:
         from traffic.core import Flight, Traffic  # noqa: F811
 
@@ -226,7 +233,7 @@ class FlightIterator:
 
         return Flight(out_.data)
 
-    def plot(self, *args, **kwargs) -> None:
+    def plot(self, *args: Any, **kwargs: Any) -> None:
         """Plots all elements in the structure.
 
         Arguments as passed as is to the `Flight.plot()` method.
@@ -247,7 +254,7 @@ def flight_iterator(
         raise TypeError(msg)
 
     @functools.wraps(fun, updated=("__dict__", "__annotations__"))
-    def fun_wrapper(*args, **kwargs) -> FlightIterator:
+    def fun_wrapper(*args: Any, **kwargs: Any) -> FlightIterator:
         return FlightIterator(fun(*args, **kwargs))
 
     fun_wrapper = cast(Callable[..., FlightIterator], fun_wrapper)

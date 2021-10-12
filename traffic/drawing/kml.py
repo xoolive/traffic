@@ -1,6 +1,5 @@
-from collections import UserDict
 from contextlib import contextmanager
-from typing import Optional
+from typing import Any, Dict, Iterator, Optional
 
 from fastkml import LineStyle, PolyStyle, kml
 from fastkml.geometry import Geometry
@@ -23,8 +22,8 @@ _colormap = {
 current_document: Optional[kml.Document] = None
 
 
-class StyleMap(UserDict):
-    def __missing__(self, color: str):
+class StyleMap(Dict[str, kml.StyleUrl]):
+    def __missing__(self, color: str) -> kml.StyleUrl:
         style = kml.Style(id=color)
         if current_document is not None:
             current_document.append_style(style)
@@ -48,7 +47,7 @@ def toStyle(color: str, alpha: float = 0.5) -> kml.StyleUrl:
 
 
 @contextmanager
-def export(filename: str):
+def export(filename: str) -> Iterator[kml.Document]:
     global current_document
     kml_tree = kml.KML()
     current_document = kml.Document()
@@ -65,7 +64,7 @@ def _flight_export_kml(
     styleUrl: Optional[kml.StyleUrl] = None,
     color: Optional[str] = None,
     alpha: float = 0.5,
-    **kwargs,
+    **kwargs: Any,
 ) -> kml.Placemark:
     if color is not None:
         # the style will be set only if the kml.export context is open

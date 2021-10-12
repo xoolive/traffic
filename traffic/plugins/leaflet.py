@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from ipyleaflet import GeoData, Map, Marker, MarkerCluster, Polygon, Polyline
 from ipywidgets import HTML
@@ -25,7 +25,7 @@ def traffic_map_leaflet(
         Dict[str, Union[str, Flight, Callable[[Flight], Optional[Flight]]]]
     ] = None,
     airport: Union[None, str, Airport] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Optional[Map]:
 
     from traffic.data import airports
@@ -83,7 +83,7 @@ def flight_map_leaflet(
         ]
     ] = None,
     airport: Union[None, str, Airport] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Optional[Map]:
     from traffic.core import Flight
     from traffic.data import airports
@@ -132,7 +132,7 @@ def flight_map_leaflet(
     return m
 
 
-def flight_leaflet(flight: "Flight", **kwargs) -> Optional[Polyline]:
+def flight_leaflet(flight: "Flight", **kwargs: Any) -> Optional[Polyline]:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
@@ -161,7 +161,7 @@ def flight_leaflet(flight: "Flight", **kwargs) -> Optional[Polyline]:
 
 
 def flightplan_leaflet(
-    flightplan: "FlightPlan", **kwargs
+    flightplan: "FlightPlan", **kwargs: Any
 ) -> Optional[Polyline]:
     """Returns a Leaflet layer to be directly added to a Map.
 
@@ -176,7 +176,7 @@ def flightplan_leaflet(
     if shape is None:
         return None
 
-    coords: Iterable = list()
+    coords: Union[List[List[Tuple[float, float]]], List[Tuple[float, float]]]
     if isinstance(shape, LineString):
         coords = list((lat, lon) for (lon, lat, *_) in shape.coords)
     else:
@@ -189,7 +189,7 @@ def flightplan_leaflet(
     return Polyline(locations=coords, **kwargs)
 
 
-def airspace_leaflet(airspace: "Airspace", **kwargs) -> Polygon:
+def airspace_leaflet(airspace: "Airspace", **kwargs: Any) -> Polygon:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
@@ -213,7 +213,7 @@ def airspace_leaflet(airspace: "Airspace", **kwargs) -> Polygon:
     return Polygon(locations=coords, **kwargs)
 
 
-def airport_leaflet(airport: "Airport", **kwargs) -> GeoData:
+def airport_leaflet(airport: "Airport", **kwargs: Any) -> GeoData:
     return GeoData(
         geo_dataframe=airport._openstreetmap()
         .query('aeroway == "runway"')
@@ -222,7 +222,7 @@ def airport_leaflet(airport: "Airport", **kwargs) -> GeoData:
     )
 
 
-def sv_leaflet(sv: "StateVectors", **kwargs) -> MarkerCluster:
+def sv_leaflet(sv: "StateVectors", **kwargs: Any) -> MarkerCluster:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
@@ -235,7 +235,7 @@ def sv_leaflet(sv: "StateVectors", **kwargs) -> MarkerCluster:
     return MarkerCluster(markers=point_list)
 
 
-def point_leaflet(point: "PointMixin", **kwargs) -> Marker:
+def point_leaflet(point: "PointMixin", **kwargs: Any) -> Marker:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
@@ -261,8 +261,18 @@ def point_leaflet(point: "PointMixin", **kwargs) -> Marker:
 
 _old_add_layer = Map.add_layer
 
+MapElement = Union[
+    Airport,
+    Airspace,
+    Flight,
+    FlightIterator,
+    FlightPlan,
+    PointMixin,
+    StateVectors,
+]
 
-def map_add_layer(_map, elt, **kwargs):
+
+def map_add_layer(_map: Map, elt: MapElement, **kwargs: Any) -> Any:
     if any(
         isinstance(elt, c)
         for c in (
@@ -274,7 +284,7 @@ def map_add_layer(_map, elt, **kwargs):
             StateVectors,
         )
     ):
-        layer = elt.leaflet(**kwargs)
+        layer = elt.leaflet(**kwargs)  # type: ignore
         _old_add_layer(_map, layer)
         return layer
     if isinstance(elt, FlightIterator):
@@ -284,7 +294,7 @@ def map_add_layer(_map, elt, **kwargs):
     return _old_add_layer(_map, elt)
 
 
-def _onload():
+def _onload() -> None:
     setattr(Airport, "leaflet", airport_leaflet)
     setattr(Airspace, "leaflet", airspace_leaflet)
     setattr(Flight, "leaflet", flight_leaflet)

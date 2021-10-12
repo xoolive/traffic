@@ -1,5 +1,5 @@
 # flake8: noqa
-from typing import cast
+from typing import Any, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,10 @@ import pyproj
 
 
 def _douglas_peucker_rec(
-    x: np.ndarray, y: np.ndarray, mask: np.ndarray, tolerance: float
+    x: np.ndarray,  # type: ignore
+    y: np.ndarray,  # type: ignore
+    mask: np.ndarray,  # type: ignore
+    tolerance: float,
 ) -> None:
     l = len(x)
     if l < 3:
@@ -15,13 +18,13 @@ def _douglas_peucker_rec(
 
     v = np.array([[y[len(x) - 1] - y[0]], [x[0] - x[len(x) - 1]]])
     d = np.abs(
-        np.dot(
-            np.dstack([x[1:-1] - x[0], y[1:-1] - y[0]])[0],
+        np.dot(  # type: ignore
+            np.dstack([x[1:-1] - x[0], y[1:-1] - y[0]])[0],  # type: ignore
             v / np.sqrt(np.sum(v * v)),
         )
     )
 
-    if np.max(d) < tolerance:
+    if np.max(d) < tolerance:  # type: ignore
         mask[np.s_[1 : l - 1]] = 0
         return
 
@@ -31,10 +34,10 @@ def _douglas_peucker_rec(
 
 
 def _douglas_peucker_rec_3d(
-    x: np.ndarray,
-    y: np.ndarray,
-    z: np.ndarray,
-    mask: np.ndarray,
+    x: np.ndarray,  # type: ignore
+    y: np.ndarray,  # type: ignore
+    z: np.ndarray,  # type: ignore
+    mask: np.ndarray,  # type: ignore
     tolerance: float,
 ) -> None:
     l = len(x)
@@ -43,11 +46,13 @@ def _douglas_peucker_rec_3d(
 
     start = np.array([x[0], y[0], z[0]])
     end = np.array([x[-1], y[-1], z[-1]])
-    point = np.dstack([x[1:], y[1:], z[1:]])[0] - start
-    d = np.cross(point, (start - end) / np.linalg.norm(start - end))
+    point = np.dstack([x[1:], y[1:], z[1:]])[0] - start  # type: ignore
+    d = np.cross(
+        point, (start - end) / np.linalg.norm(start - end)  # type: ignore
+    )
     d = np.sqrt(np.sum(d * d, axis=1))
 
-    if np.max(d) < tolerance:
+    if np.max(d) < tolerance:  # type: ignore
         mask[np.s_[1 : l - 1]] = 0
         return
 
@@ -61,16 +66,16 @@ def _douglas_peucker_rec_3d(
 
 
 def douglas_peucker(
-    *args,
+    *,
     df: pd.DataFrame = None,
     tolerance: float,
-    x="x",
-    y="y",
-    z=None,
+    x: Union[str, pd.Series] = "x",
+    y: Union[str, pd.Series] = "y",
+    z: Union[None, str, pd.Series] = None,
     z_factor: float = 3.048,
-    lat=None,
-    lon=None,
-) -> np.ndarray:
+    lat: Union[None, str, pd.Series] = None,
+    lon: Union[None, str, pd.Series] = None,
+) -> np.ndarray:  # type: ignore
     """Ramer-Douglas-Peucker algorithm for 2D/3D trajectories.
 
     Simplify a trajectory by keeping the points further away from the straight
@@ -109,6 +114,8 @@ def douglas_peucker(
 
     if df is not None and isinstance(lat, str) and isinstance(lon, str):
         lat, lon = df[lat], df[lon]
+    if isinstance(lat, str) or isinstance(lon, str):
+        raise ValueError("lat and lon must now be Pandas Series")
     if df is not None and lat is not None and lon is not None:
         projection = pyproj.Proj(
             proj="lcc",
@@ -122,10 +129,7 @@ def douglas_peucker(
         transformer = pyproj.Transformer.from_proj(
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
-        x, y = transformer.transform(
-            lon.values,
-            lat.values,
-        )
+        x, y = transformer.transform(lon.values, lat.values)
     else:
         if df is not None:
             x, y = df[x].values, df[y].values

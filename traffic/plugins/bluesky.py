@@ -114,5 +114,5 @@ def to_bluesky(
         logging.info(f"Scenario file {filename} written")
 
 
-def _onload():
+def _onload() -> None:
     setattr(Traffic, "to_bluesky", to_bluesky)

@@ -8,8 +8,7 @@ import requests
 
 import pandas as pd
 
-from ... import cache_expiration
-from .. import cache_dir
+from ... import cache_dir, cache_expiration
 
 __all__ = list(p.stem[1:] for p in Path(__file__).parent.glob("_[a-z]*py"))
 
@@ -55,10 +54,10 @@ class ADDS_FAA_OpenData:
         with self.cache_file.open("r") as fh:
             json_contents = json.load(fh)
 
-        return json_contents
+        return json_contents  # type: ignore
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
 
     if name in __all__:
         mod = importlib.import_module("._" + name, package="traffic.data.faa")

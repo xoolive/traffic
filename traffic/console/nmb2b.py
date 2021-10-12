@@ -1,12 +1,13 @@
 import argparse
 import logging
+from typing import List
 
 description = """
 Get data from Network Manager B2B Service.
 """
 
 
-def main(args):
+def main(args_list: List[str]) -> None:
 
     parser = argparse.ArgumentParser(
         prog="traffic nmb2b", description=description
@@ -24,7 +25,7 @@ def main(args):
         "-a", "--airac", dest="airac", default=None, help="AIRAC version"
     )
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(args_list)
 
     logger = logging.getLogger()
     if args.verbose == 1:

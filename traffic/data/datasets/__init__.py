@@ -12,7 +12,7 @@ from ...core import Traffic
 _squawk7700_url = "https://zenodo.org/record/3937483/"
 
 
-def _squawk7700_reader(filename):
+def _squawk7700_reader(filename: str) -> Traffic:
     metadata = get_dataset(
         dict(
             url=f"{_squawk7700_url}/files/squawk7700_metadata.csv",

@@ -3,6 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     List,
@@ -37,7 +38,7 @@ class DataFrameMixin(object):
 
     __slots__ = ()
 
-    def __init__(self, data: pd.DataFrame, *args, **kwargs) -> None:
+    def __init__(self, data: pd.DataFrame, *args: Any, **kwargs: Any) -> None:
         self.data: pd.DataFrame = data
 
     def __sizeof__(self) -> int:
@@ -45,7 +46,7 @@ class DataFrameMixin(object):
 
     @classmethod
     def from_file(
-        cls: Type[T], filename: Union[Path, str], **kwargs
+        cls: Type[T], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[T]:
         """Read data from various formats.
 
@@ -85,19 +86,19 @@ class DataFrameMixin(object):
 
     # --- Special methods ---
 
-    def _repr_html_(self):
-        return self.data._repr_html_()
+    def _repr_html_(self) -> str:
+        return self.data._repr_html_()  # type: ignore
 
-    def __repr__(self):
-        return self.data.__repr__()
+    def __repr__(self) -> str:
+        return repr(self.data)
 
     def __len__(self) -> int:
-        return self.data.shape[0]
+        return self.data.shape[0]  # type: ignore
 
     # --- Redirected to pandas.DataFrame ---
 
     def to_pickle(
-        self, filename: Union[str, Path], *args, **kwargs
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to pickle format.
 
@@ -110,7 +111,7 @@ class DataFrameMixin(object):
         self.data.to_pickle(filename, *args, **kwargs)
 
     def to_csv(
-        self, filename: Union[str, Path], *args, **kwargs
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to CSV format.
 
@@ -123,7 +124,7 @@ class DataFrameMixin(object):
         self.data.to_csv(filename, *args, **kwargs)
 
     def to_hdf(
-        self, filename: Union[str, Path], *args, **kwargs
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to HDF format.
 
@@ -136,7 +137,7 @@ class DataFrameMixin(object):
         self.data.to_hdf(filename, *args, **kwargs)
 
     def to_json(
-        self, filename: Union[str, Path], *args, **kwargs
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to JSON format.
 
@@ -149,7 +150,7 @@ class DataFrameMixin(object):
         self.data.to_json(filename, *args, **kwargs)
 
     def to_parquet(
-        self, filename: Union[str, Path], *args, **kwargs
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to parquet format.
 
@@ -162,7 +163,7 @@ class DataFrameMixin(object):
         self.data.to_parquet(filename, *args, **kwargs)
 
     def to_feather(
-        self, filename: Union[str, Path], *args, **kwargs
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to feather format.
 
@@ -175,7 +176,7 @@ class DataFrameMixin(object):
         self.data.to_feather(filename, *args, **kwargs)
 
     def to_excel(
-        self, filename: Union[str, Path], *args, **kwargs
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to Excel format.
 
@@ -187,14 +188,16 @@ class DataFrameMixin(object):
         """
         self.data.to_excel(filename, *args, **kwargs)
 
-    def sort_values(self: T, by: str, **kwargs) -> T:
+    def sort_values(self: T, by: str, **kwargs: Any) -> T:
         """
         Applies the Pandas ``sort_values()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
         return self.__class__(self.data.sort_values(by, **kwargs))
 
-    def query(self: T, query_str: str, *args, **kwargs) -> Optional[T]:
+    def query(
+        self: T, query_str: str, *args: Any, **kwargs: Any
+    ) -> Optional[T]:
         """
         Applies the Pandas ``query()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
@@ -204,63 +207,63 @@ class DataFrameMixin(object):
             return None
         return self.__class__(df)
 
-    def drop(self: T, *args, **kwargs) -> T:
+    def drop(self: T, *args: Any, **kwargs: Any) -> T:
         """
         Applies the Pandas ``drop()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
         return self.__class__(self.data.drop(*args, **kwargs))
 
-    def rename(self: T, *args, **kwargs) -> T:
+    def rename(self: T, *args: Any, **kwargs: Any) -> T:
         """
         Applies the Pandas ``rename()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
         return self.__class__(self.data.rename(*args, **kwargs))
 
-    def pipe(self: T, func: Callable[..., T], *args, **kwargs) -> T:
+    def pipe(self: T, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         """
         Applies the Pandas ``pipe()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
         return func(self, *args, **kwargs)
 
-    def fillna(self: T, *args, **kwargs) -> T:
+    def fillna(self: T, *args: Any, **kwargs: Any) -> T:
         """
         Applies the Pandas ``fillna()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
         return self.__class__(self.data.fillna(*args, **kwargs))
 
-    def groupby(self, *args, **kwargs):
+    def groupby(self, *args: Any, **kwargs: Any) -> Any:
         """
         Applies the Pandas ``groupby()`` method to the underlying pandas
         DataFrame.
         """
         return self.data.groupby(*args, **kwargs)
 
-    def assign(self: T, *args, **kwargs) -> T:
+    def assign(self: T, *args: Any, **kwargs: Any) -> T:
         """
         Applies the Pandas ``assign()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
         return self.__class__(self.data.assign(*args, **kwargs))
 
-    def drop_duplicates(self: T, *args, **kwargs) -> T:
+    def drop_duplicates(self: T, *args: Any, **kwargs: Any) -> T:
         """
         Applies the Pandas ``drop_duplicates()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
         return self.__class__(self.data.drop_duplicates(*args, **kwargs))
 
-    def merge(self: T, *args, **kwargs) -> T:
+    def merge(self: T, *args: Any, **kwargs: Any) -> T:
         """
         Applies the Pandas ``merge()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
         """
         return self.__class__(self.data.merge(*args, **kwargs))
 
-    def reset_index(self: T, *args, **kwargs) -> T:
+    def reset_index(self: T, *args: Any, **kwargs: Any) -> T:
         """
         Applies the Pandas ``reset_index()`` method to the underlying pandas
         DataFrame and get the result back in the same structure.
@@ -289,7 +292,7 @@ class ShapelyMixin(object):
         Bounds are given in the following order in the origin crs:
         (west, south, east, north)
         """
-        return self.shape.bounds
+        return self.shape.bounds  # type: ignore
 
     @property
     def extent(self) -> Tuple[float, float, float, float]:
@@ -317,29 +320,30 @@ class ShapelyMixin(object):
         The shape is projected to an equivalent local projection before
         computing a value.
         """
-        return self.project_shape().area
+        return self.project_shape().area  # type: ignore
 
     # --- Representations ---
 
     @lru_cache()
-    def _repr_svg_(self):
+    def _repr_svg_(self) -> Optional[str]:
         if self.shape.is_empty:
             return None
         project = self.project_shape()
         if project is not None:
-            return project._repr_svg_()
+            return project._repr_svg_()  # type: ignore
+        return None
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return no_wrap_div.format(self._repr_svg_())
 
-    def geojson(self):
+    def geojson(self) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         """Returns the GeoJSON representation of the shape as a Dict.
         The transformation is delegated to shapely ``mapping`` method.
         """
-        return mapping(self.shape)
+        return mapping(self.shape)  # type: ignore
 
-    def geoencode(self, **kwargs) -> "alt.Chart":  # coverage: ignore
+    def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         Specific plot features, such as line widths, can be passed via **kwargs.
@@ -445,7 +449,7 @@ class GeographyMixin(DataFrameMixin):
         self,
         resolution: Union[Dict[str, float], None],
         projection: Union[pyproj.Proj, "crs.Projection", None] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """Aggregates values of a traffic over a grid of x/y, with x and y
         computed by `traffic.core.GeographyMixin.compute_xy()`.
@@ -504,7 +508,7 @@ class GeographyMixin(DataFrameMixin):
 
         return data
 
-    def geoencode(self, **kwargs) -> "alt.Chart":  # coverage: ignore
+    def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         Specific plot features, such as line widths, can be passed via **kwargs.
@@ -557,7 +561,9 @@ class GeoDBMixin(DataFrameMixin):
         _extent = (0.0, 0.0, 0.0, 0.0)
 
         if isinstance(extent, str):
-            _extent = Nominatim.search(extent).extent  # type: ignore
+            loc = Nominatim.search(extent)
+            if loc is not None:
+                _extent = loc.extent
         if isinstance(extent, ShapelyMixin):
             _extent = extent.extent
         if isinstance(extent, Nominatim):
@@ -573,7 +579,7 @@ class GeoDBMixin(DataFrameMixin):
         )
         return output
 
-    def geoencode(self, **kwargs) -> "alt.Chart":  # coverage: ignore
+    def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization.
         """
@@ -604,7 +610,11 @@ class PointMixin(object):
         return (self.latitude, self.longitude)
 
     def plot(
-        self, ax: "Axes", text_kw=None, shift=None, **kwargs
+        self,
+        ax: "Axes",
+        text_kw: Optional[Dict[str, Any]] = None,
+        shift: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
 
         if shift is None:
@@ -645,10 +655,10 @@ class PointMixin(object):
 
 
 class _HBox(object):
-    def __init__(self, *args):
+    def __init__(self, *args: Any) -> None:
         self.elts = args
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return "".join(
             f"""
     <div style='
@@ -663,13 +673,13 @@ class _HBox(object):
             for elt in self.elts
         )
 
-    def __or__(self, other) -> "_HBox":
+    def __or__(self, other: Any) -> "_HBox":
         if isinstance(other, _HBox):
             return _HBox(*self.elts, *other.elts)
         else:
             return _HBox(*self.elts, other)
 
-    def __ror__(self, other) -> "_HBox":
+    def __ror__(self, other: Any) -> "_HBox":
         if isinstance(other, _HBox):
             return _HBox(*other.elts, *self.elts)
         else:
@@ -679,7 +689,7 @@ class _HBox(object):
 class HBoxMixin(object):
     """Enables a | operator for placing representations next to each other."""
 
-    def __or__(self, other) -> _HBox:
+    def __or__(self, other: Any) -> _HBox:
         if isinstance(other, _HBox):
             return _HBox(self, *other.elts)
         else:
