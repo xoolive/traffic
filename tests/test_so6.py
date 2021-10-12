@@ -4,7 +4,7 @@ from pathlib import Path
 from traffic.data import SO6, eurofirs
 
 
-def test_so6():
+def test_so6() -> None:
     so6_path = Path(__file__).parent.parent / "data" / "sample_m3.so6.7z"
     so6 = SO6.from_file(so6_path)
 
@@ -16,7 +16,7 @@ def test_so6():
     assert hop36pp.origin == "LFML"
     assert hop36pp.destination == "LFBD"
     assert hop36pp.aircraft == "A319"
-    assert hop36pp.flight_id == 332206265
+    assert hop36pp.flight_id == 332206265  # type: ignore
     assert so6[332206265].callsign == "HOP36PP"
 
     assert hop36pp.intersects(eurofirs["LFBB"])

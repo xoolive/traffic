@@ -17,7 +17,7 @@ class ExtraData(Airways):
     name = "extra_for_test"
     available = True
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._data = pd.DataFrame.from_records(
             [
                 {
@@ -129,13 +129,13 @@ flightplans: List[FlightPlan] = [
 ]
 
 
-def test_direct():
+def test_direct() -> None:
     assert Direct.valid("DCT")
     assert not Direct.valid("N0450F340")
     assert type(_ElementaryBlock.parse("DCT")) is Direct
 
 
-def test_speedlevel():
+def test_speedlevel() -> None:
     assert SpeedLevel.valid("N0450F340")
     sl = cast(SpeedLevel, _ElementaryBlock.parse("N0450F340"))
     assert sl is not None
@@ -143,7 +143,7 @@ def test_speedlevel():
     assert sl.altitude == 340
 
 
-def test_airway():
+def test_airway() -> None:
     assert Airway.valid("L888")
     assert not Airway.valid("123456789")
     a = Airway("L888")
@@ -155,7 +155,7 @@ def test_airway():
     # assert r.project_shape().length > 2.9e6
 
 
-def test_point():
+def test_point() -> None:
     assert Point.valid("NARAK")
     p = Point("NARAK")
     assert p.name == "NARAK"
@@ -173,7 +173,7 @@ def test_point():
     assert n.latlon == (61, -70)
 
 
-def test_flightplan():
+def test_flightplan() -> None:
     for fp in flightplans:
         elts = fp.decompose()
 
@@ -187,7 +187,7 @@ def test_flightplan():
             assert not isinstance(cur_, Point) or not isinstance(next_, Point)
 
 
-def test_points():
+def test_points() -> None:
     one_fp = flightplans[0]
     main_points = {"TOU", "LACOU", "CNA", "MANAK", "REVTU", "ROXOG", "OCK"}
     extra_points = {

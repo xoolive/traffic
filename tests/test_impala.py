@@ -8,7 +8,7 @@ from traffic.data import opensky
 from traffic.data.samples import belevingsvlucht, lfbo_tma
 
 
-def test_flightlist():
+def test_flightlist() -> None:
 
     l_aib = opensky.flightlist(
         "2019-11-01",
@@ -23,7 +23,7 @@ def test_flightlist():
     assert all(l_44017c.callsign.str.startswith("EJU"))
 
 
-def test_history():
+def test_history() -> None:
 
     t_aib: Optional[Traffic] = cast(
         Optional[Traffic],
@@ -61,7 +61,7 @@ def test_history():
     assert len(t_decoded) == len(t_tma)
 
 
-def test_complex_queries():
+def test_complex_queries() -> None:
     error_msg = "airport may not be set if arrival_airport is set"
     with pytest.raises(RuntimeError, match=error_msg):
         _ = opensky.history(
@@ -215,7 +215,7 @@ def test_complex_queries():
     assert len(tD) == 9
 
 
-def test_rawdata():
+def test_rawdata() -> None:
 
     r = opensky.rawdata(
         belevingsvlucht.start,

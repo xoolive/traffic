@@ -2,7 +2,7 @@ import numpy as np
 from traffic.core.geodesy import bearing, destination, distance, greatcircle
 
 
-def test_geodesy():
+def test_geodesy() -> None:
 
     assert (
         distance(0, 0, 0, 1 / 60) - 1852

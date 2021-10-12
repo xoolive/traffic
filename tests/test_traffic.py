@@ -20,7 +20,10 @@ def test_properties() -> None:
     assert handle is not None
     assert handle.callsign == "THY7WR"
 
-    selected = max(switzerland, key=lambda flight: flight.min("altitude"))
+    def min_altitude(flight: Flight) -> float:
+        return flight.altitude_min  # type: ignore
+
+    selected = max(switzerland, key=min_altitude)
     assert selected.flight_id is None
     assert selected.min("altitude") == 47000.0
     assert selected.icao24 == "aab6c0"
@@ -76,7 +79,7 @@ def test_aircraft() -> None:
 
 
 def high_altitude(flight: Flight) -> bool:
-    return flight.min("altitude") > 35000
+    return flight.altitude_min > 35000  # type: ignore
 
 
 def test_chaining() -> None:
@@ -105,13 +108,13 @@ def test_chaining() -> None:
     assert handle.callsign == flight_id.split("_")[0]
 
 
-def test_none():
+def test_none() -> None:
     assert switzerland.query("altitude > 60000") is None
     assert switzerland.after("2018-08-01").before("2018-08-01") is None
     assert switzerland.iterate_lazy().query("altitude > 60000").eval() is None
 
 
-def test_aggregate():
+def test_aggregate() -> None:
     s_0 = switzerland[0]
     assert s_0 is not None
     s_0 = s_0.compute_xy()

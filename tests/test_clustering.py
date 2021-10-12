@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 from cartes.crs import CH1903p  # type: ignore
 
@@ -12,15 +12,15 @@ class StupidClustering:
     second to 1, etc.
     """
 
-    def fit(self, X):
+    def fit(self, X: Any) -> None:
         self.labels_ = [i % 2 for i, _ in enumerate(X.T)]
 
-    def predict(self, X):
+    def predict(self, X: Any) -> None:
         pass
 
 
 def test_clustering() -> None:
-    switzerland: Traffic = get_sample(collections, "switzerland")
+    switzerland = cast(Traffic, get_sample(collections, "switzerland"))
 
     smaller = cast(
         Traffic,
@@ -33,7 +33,7 @@ def test_clustering() -> None:
         nb_samples=15,
         projection=CH1903p(),
         features=["x", "y"],
-        clustering=StupidClustering(),
+        clustering=StupidClustering(),  # type: ignore
     ).fit_predict()
 
     v1, v2 = (

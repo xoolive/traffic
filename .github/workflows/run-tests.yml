@@ -62,7 +62,7 @@ jobs:
 
       - name: Type checking
         run: |
-          poetry run mypy traffic
+          poetry run mypy traffic tests
 
       - name: Run tests
         env:

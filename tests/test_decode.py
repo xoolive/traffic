@@ -1,5 +1,6 @@
 import time
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -13,9 +14,9 @@ def long_enough(flight: Flight) -> bool:
     return len(flight) > 100
 
 
-def test_decode():
+def test_decode() -> None:
 
-    switzerland: Traffic = get_sample(collections, "switzerland")
+    switzerland = cast(Traffic, get_sample(collections, "switzerland"))
 
     tap_switzerland = (
         switzerland.query(  # type: ignore
@@ -47,7 +48,7 @@ def test_decode():
         assert sum(f.data.diff_heading + 1 < 0) / len(f) < 1e-3
 
 
-def test_dump1090_bin():
+def test_dump1090_bin() -> None:
     filename = Path(__file__).parent.parent / "data" / "sample_dump1090.bin"
 
     time_0 = pd.Timestamp("2020-02-12 10:07Z")
@@ -56,11 +57,12 @@ def test_dump1090_bin():
     )
     t = decoder.traffic
 
+    assert t is not None
     assert len(t) != 0
 
 
 @pytest.mark.skipif(True, reason="only for local debug")
-def test_dump1090_stream():
+def test_dump1090_stream() -> None:
     decoder = ModeS_Decoder.from_dump1090("LFBO")
     time.sleep(15)
     decoder.stop()
