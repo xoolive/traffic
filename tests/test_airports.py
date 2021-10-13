@@ -24,18 +24,17 @@ def test_getter() -> None:
 
 
 def test_search() -> None:
-    assert (
-        airports.search("denmark")
-        .query('type == "large_airport"')  # type: ignore
-        .data.icao.str.startswith("EK")
-        .all()
-    )
-    assert (
-        airports.search("ITALY")
-        .query('type == "large_airport"')  # type: ignore
-        .data.icao.str.startswith("LI")
-        .all()
-    )
+    denmark = airports.search("denmark")
+    assert denmark is not None
+    denmark_large = denmark.query('type == "large_airport"')
+    assert denmark_large is not None
+    assert denmark_large.data.icao.str.startswith("EK").all()
+
+    italy = airports.search("ITALY")
+    assert italy is not None
+    italy_large = italy.query('type == "large_airport"')
+    assert italy_large is not None
+    assert italy_large.data.icao.str.startswith("LI").all()
 
 
 @pytest.mark.skipif(skip_runways, reason="Failed to download runway data")
