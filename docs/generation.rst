@@ -1,13 +1,11 @@
 Trajectory generation
 =====================
 
+(contribution by Adrien Lafage `@alafage <https://github.com/alafage/>`_)
 
-Introduction
-------------
-
-This library provide a Generation class for creating synthetic traffic data.
-It implements fit() and sample() methods that call the corresponding methods
-in the generative model passed as argument (``generation``).
+This library provide a ``Generation`` class for creating synthetic traffic data.
+It implements ``fit()`` and ``sample()`` methods that call the corresponding
+methods in the generative model passed as argument.
 
 You can import this class with the following code:
 
@@ -17,11 +15,9 @@ You can import this class with the following code:
 
 To instanciate such an object you can pass those arguments:
 
-* ``generation``: Any object implementing fit() and sample() methods. It will
-  define the generative model to use.
+* ``generation``: Any object implementing ``fit()`` and ``sample()`` methods. It will define the generative model to use.
 * ``features``: The list of the features to represent a trajectory.
-* ``scaler``: A scaler that is optional to make sure each feature weights the
-  same during the fitting part.
+* ``scaler``: A scaler that is optional to make sure each feature weights the same during the fitting part.
 
 .. jupyter-execute::
     :hide-code:
@@ -30,31 +26,13 @@ To instanciate such an object you can pass those arguments:
 
     np.random.seed(42)
 
-Training models
----------------
-
-In the case the generative model within your Generation object is not fitted
-to any Traffic, you can use the fit() method.
-Depending on the generative model used, its fit() method can take some time, 
-specifically if you use a deep generative model.
+In the case the generative model within your ``Generation`` object is not fitted
+to any ``Traffic`` object, you can use the ``fit()`` method.  Depending on the
+generative model used, its ``fit()`` method can be rather time consuming, esp.
+with neural network-based generative models.
 
 We load here traffic data of landing trajectories at Zurich airport coming
 from the north.
-
-.. jupyter-execute::
-    :hide-code:
-
-    from traffic.core import Flight
-
-    def coming_from_north(flight: Flight) -> bool:
-        return (
-            flight.data.iloc[0].track > 126 and 
-            flight.data.iloc[0].track < 229 and
-            flight.min("longitude") > 8.20 and
-            flight.max("longitude") < 8.89 and
-            flight.min("latitude") > 47.47 and
-            flight.max("latitude") < 48.13
-        )
 
 .. jupyter-execute::
 
@@ -64,26 +42,24 @@ from the north.
 
     t = (
         landing_zurich_2019
-        .query("runway=='14'")
+        .query("runway == '14' and initial_flow == '162-216'")
         .assign_id()
-        .filter_if(coming_from_north)
-        .resample(100)
         .unwrap()
-        .eval(max_workers=1)
+        .resample(100)
+        .eval()
     )
 
     with plt.style.context("traffic"):
         ax = plt.axes(projection=EuroPP())
         t.plot(ax, alpha=0.05)
         t.centroid(nb_samples=None, projection=EuroPP()).plot(
-            ax, color="red",alpha=1
+            ax, color="#f58518"
         )
 
 Before any fitting we enrich the Traffic DataFrame with the features we might
-want to use to generate trajectories. 
-
-For example, instead of working with ``longitude`` and ``latitude`` values,
-we can compute their projection (``x`` and ``y`` respectively).
+want to use to generate trajectories. For example, instead of working with
+``longitude`` and ``latitude`` values, we can compute their projection (``x``
+and ``y`` respectively).
 
 .. jupyter-execute::
 
@@ -97,16 +73,12 @@ of the trajectory.
 
     from traffic.core import Traffic
 
-    t = Traffic.from_flights(
-        flight.assign(
-            timedelta=lambda r: (r.timestamp - flight.start).apply(
-                lambda t: t.total_seconds()
-            )
-        )
-        for flight in t
-    )
+    def compute_timedelta(df: "pd.DataFrame"):
+        return (df.timestamp - df.timestamp.min()).dt.total_seconds()
 
-Now we can use the fit() method to fit our generative model, here a Gaussian
+    t = t.iterate_lazy().assign(timedelta=compute_timedelta).eval()
+
+Now we can use the ``fit()`` method to fit our generative model, here a Gaussian
 Mixture with two components.
 
 .. jupyter-execute::
@@ -120,71 +92,43 @@ Mixture with two components.
         scaler=MinMaxScaler(feature_range=(-1, 1))
     ).fit(t)
 
-You can also use an API in the Traffic class to fit your model:
+.. note::
 
-.. jupyter-execute::
+    This code is equivalent to the following call on the ``Traffic`` object:
 
-    g2 = t.generation(
-        generation=GaussianMixture(n_components=1),
-        features=["x", "y", "altitude", "timedelta"],
-        scaler=MinMaxScaler(feature_range=(-1, 1))
-    )
+    .. jupyter-execute::
+
+        g2 = t.generation(
+            generation=GaussianMixture(n_components=1),
+            features=["x", "y", "altitude", "timedelta"],
+            scaler=MinMaxScaler(feature_range=(-1, 1))
+        )
 
 .. warning::
-    Make sure the generative model you want to use implements fit() and
-    sample() methods.
 
-.. note::
-    The following codes are equivalent: ``t.generation(...)`` and
-    ``Generation(...).fit(t)``.
+    Make sure the generative model you want to use implements thb ``fit()`` and ``sample()`` methods.
 
 Then we can sample the fitted model to produce new Traffic data.
 
 .. jupyter-execute::
 
-    t_gen1 = Traffic(
-        g1.sample(
-            500,
-            projection=EuroPP(),
-        )
-    )
-    t_gen2 = Traffic(
-        g2.sample(
-            500,
-            projection=EuroPP(),
-        )
-    )
+    t_gen1 = g1.sample(500, projection=EuroPP())
+    t_gen2 = g2.sample(500, projection=EuroPP())
 
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(1, 2, subplot_kw=dict(projection=EuroPP()))
-        t_gen1.plot(ax[0], alpha=0.1)
+
+        t_gen1.plot(ax[0], alpha=0.2)
         t_gen1.centroid(nb_samples=None, projection=EuroPP()).plot(
-            ax[0], color="red",alpha=1
+            ax[0], color="#f58518"
         )
-        t_gen2.plot(ax[1], alpha=0.1)
+
+        t_gen2.plot(ax[1], alpha=0.2)
         t_gen2.centroid(nb_samples=None, projection=EuroPP()).plot(
-            ax[1], color="red",alpha=1
+            ax[1], color="#f58518"
         )
 
-Do not forget to save the model if you want to use it later.
 
-.. jupyter-execute::
+.. warning::
 
-    g1.save("_static/saved_model.pkl")
-
-Loading models
---------------
-
-It is possible to load a previously saved Generation object from a pickle file
-using the from_file() method.
-
-.. jupyter-execute::
-
-    g = Generation.from_file("_static/saved_model.pkl")
-    print(g)
-
-Then you can either use the model to sample new trajectories or fit it on
-another traffic.
-
-Metrics
--------
+    This very naive model obviously does not produce very convincing results. More appropriate methods will be provided in a near future.

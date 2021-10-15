@@ -1,14 +1,19 @@
-import pickle
+import sys
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
-from typing_extensions import Protocol, TypedDict
+if sys.version_info > (3, 7):
+    from typing import Protocol, TypedDict
+else:
+    from typing_extensions import Protocol, TypedDict
+
+from cartopy import crs
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pyproj
-from cartopy import crs
 
 from ..core.geodesy import destination
 
@@ -17,21 +22,29 @@ if TYPE_CHECKING:
 
 
 class ScalerProtocol(Protocol):
-    def fit_transform(self, X: np.ndarray) -> np.ndarray:
+    def fit_transform(
+        self, X: npt.NDArray[np.float_]
+    ) -> npt.NDArray[np.float_]:
         ...
 
-    def transform(self, X: np.ndarray) -> np.ndarray:
+    def transform(self, X: npt.NDArray[np.float_]) -> npt.NDArray[np.float_]:
         ...
 
-    def inverse_transform(self, X: np.ndarray) -> np.ndarray:
+    def inverse_transform(
+        self, X: npt.NDArray[np.float_]
+    ) -> npt.NDArray[np.float_]:
         ...
 
 
 class GenerationProtocol(Protocol):
-    def fit(self, X: np.ndarray, **kwargs) -> "GenerationProtocol":
+    def fit(
+        self, X: npt.NDArray[np.float_], **kwargs: Any
+    ) -> "GenerationProtocol":
         ...
 
-    def sample(self, n_samples: int) -> Tuple[np.ndarray, np.ndarray]:
+    def sample(
+        self, n_samples: int
+    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         ...
 
 
@@ -162,7 +175,7 @@ class Generation:
         self.features = features
         self.scaler = scaler
 
-    def prepare_features(self, t: "Traffic") -> np.ndarray:
+    def prepare_features(self, t: "Traffic") -> npt.NDArray[np.float_]:
         X = np.stack(list(f.data[self.features].values.ravel() for f in t))
         if self.scaler is not None:
             X = self.scaler.fit_transform(X)
@@ -170,14 +183,16 @@ class Generation:
 
     def build_traffic(
         self,
-        X: np.ndarray,
+        X: npt.NDArray[np.float_],
         projection: Union[pyproj.Proj, "crs.Projection", None] = None,
         coordinates: Optional[Coordinates] = None,
         forward: bool = True,
-    ) -> pd.DataFrame:
+    ) -> "Traffic":
         """Build Traffic DataFrame from numpy array according to the list
         of features ```self.features``.
         """
+        from ..core import Traffic
+
         n_samples = X.shape[0]
         X = X.reshape(n_samples, -1, len(self.features))
         n_obs = X.shape[1]
@@ -213,15 +228,15 @@ class Generation:
 
         if not set(self._required_traffic_columns).issubset(set(df.columns)):
             warnings.warn(
-                f"The generated dataframe doesn't contain all required \
+                f"The generated dataframe does not contain all required \
                 columns to instanciate a Traffic object: \
                 {set(self._required_traffic_columns) - set(df.columns)}.",
                 UserWarning,
             )
 
-        return df
+        return Traffic(df)
 
-    def fit(self, t: "Traffic", **kwargs) -> "Generation":
+    def fit(self, t: "Traffic", **kwargs: Any) -> "Generation":
         X = self.prepare_features(t)
         self.generation.fit(X)
         return self
@@ -232,7 +247,7 @@ class Generation:
         projection: Union[pyproj.Proj, "crs.Projection", None] = None,
         coordinates: Optional[Coordinates] = None,
         forward: bool = True,
-    ) -> pd.DataFrame:
+    ) -> "Traffic":
         X, _ = self.generation.sample(n_samples)
         if self.scaler is not None:
             X = self.scaler.inverse_transform(X)
@@ -240,18 +255,10 @@ class Generation:
 
     @classmethod
     def from_file(self, path: Union[str, Path]) -> "Generation":
-        if isinstance(path, str):
-            path = Path(path)
-
-        with open(path, "rb") as f:
-            return pickle.load(f)
+        raise NotImplementedError()
 
     def save(self, path: Union[str, Path]) -> None:
-        if isinstance(path, str):
-            path = Path(path)
-
-        with open(path, "wb") as f:
-            pickle.dump(self, f)
+        raise NotImplementedError()
 
     def __repr__(self) -> str:
         head = "Generation"

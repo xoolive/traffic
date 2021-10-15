@@ -7,12 +7,13 @@ from tqdm.autonotebook import tqdm
 import pandas as pd
 import pyproj
 
+from ..core import Flight
 from ..core.mixins import DataFrameMixin
 
 if TYPE_CHECKING:
     from cartopy import crs
 
-    from ..core import Flight, Traffic
+    from ..core import Traffic
 
 
 def combinations(
