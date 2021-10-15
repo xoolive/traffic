@@ -77,6 +77,7 @@ lxml = "^4.6.3"
 metar = "^1.8.0"
 xarray = { version = "^0.18.2", optional = true }
 libarchive = { version = "^0.4.7", optional = true }
+scikit-learn = { version = "^1.0", optional = true }
 fastkml = { version = "^0.11", optional = true }
 keplergl = { version = "^0.3.2", optional = true }
 pre-commit = { version = "^2.13.0", optional = true }
@@ -86,7 +87,7 @@ flake8 = { version = "^3.9.2", optional = true }
 mypy = { version = "^0.902", optional = true }
 
 [tool.poetry.extras]
-all = ["xarray", "libarchive", "fastkml", "keplergl", "pre-commit", "isort", "black", "flake8", "mypy"]
+all = ["xarray", "libarchive", "scikit-learn", "fastkml", "keplergl", "pre-commit", "isort", "black", "flake8", "mypy"]
 dev = ["pre-commit", "isort", "black", "flake8", "mypy"]
 
 [tool.poetry.dev-dependencies]
@@ -97,6 +98,7 @@ flake8 = "^3.9.2"
 mypy = "^0.902"
 Sphinx = "^4.0.2"
 sphinx-rtd-theme = "^0.5.2"
+jupyter_sphinx = "^0.3.2"
 pytest = "^6.2.4"
 codecov = "^2.1.11"
 pytest-cov = "^2.12.1"

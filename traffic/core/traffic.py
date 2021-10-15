@@ -31,6 +31,7 @@ from shapely.geometry import Polygon, base
 
 from ..algorithms.clustering import Clustering, centroid
 from ..algorithms.cpa import closest_point_of_approach
+from ..algorithms.generation import Generation
 from ..core.cache import property_cache
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight, attrgetter_duration
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
         TransformerProtocol,
     )
     from ..algorithms.cpa import CPA  # noqa: F401
+    from ..algorithms.generation import GenerationProtocol, ScalerProtocol
     from .airspace import Airspace  # noqa: F401
 
 
@@ -1158,6 +1160,29 @@ class Traffic(HBoxMixin, GeographyMixin):
             projection=projection,
             transform=transform,
         )
+
+    def generation(
+        self,
+        generation: "GenerationProtocol",
+        features: Optional[List[str]] = None,
+        scaler: Optional["ScalerProtocol"] = None,
+    ) -> Generation:
+        """Fits a generative model on the traffic.
+
+        The method:
+            - extracts features in underlying Traffic DataFrame to define an
+              `X` matrix.
+            - *if need be,* apply a scaler to the resulting `X` matrix.
+              You may want to consider `StandardScaler()
+              <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html>`_;
+            - returns a Generation object with a generation model fitted on X.
+              You can call sample() on this returned object to generate new
+              trajectories.
+        """
+        if features is None:
+            features = ["latitude", "longitude", "altitude", "timedelta"]
+
+        return Generation(generation, features, scaler).fit(self)
 
     def centroid(
         self,
