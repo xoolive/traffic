@@ -132,3 +132,12 @@ Then we can sample the fitted model to produce new Traffic data.
 .. warning::
 
     This very naive model obviously does not produce very convincing results. More appropriate methods will be provided in a near future.
+
+traffic.algorithms.generation.Generation
+----------------------------------------
+
+.. autoclass:: traffic.algorithms.generation.Generation
+    :members:
+    :inherited-members:
+    :no-undoc-members:
+    :show-inheritance:

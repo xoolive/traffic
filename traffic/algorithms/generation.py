@@ -1,21 +1,20 @@
 import sys
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
+import pyproj
+from cartopy import crs
+
+from ..core.geodesy import destination
 
 if sys.version_info > (3, 7):
     from typing import Protocol, TypedDict
 else:
     from typing_extensions import Protocol, TypedDict
 
-from cartopy import crs
-
-import numpy as np
-import numpy.typing as npt
-import pandas as pd
-import pyproj
-
-from ..core.geodesy import destination
 
 if TYPE_CHECKING:
     from ..core import Traffic
@@ -25,9 +24,6 @@ class ScalerProtocol(Protocol):
     def fit_transform(
         self, X: npt.NDArray[np.float_]
     ) -> npt.NDArray[np.float_]:
-        ...
-
-    def transform(self, X: npt.NDArray[np.float_]) -> npt.NDArray[np.float_]:
         ...
 
     def inverse_transform(
@@ -152,6 +148,20 @@ def compute_latlon_from_trackgs(
 
 
 class Generation:
+    """Generation object to handle trajectory generation.
+
+    Args:
+        generation: generation model, should implement ``fit()`` and
+            ``sample()`` methods.
+        features: List of features to generate, could be
+            ``['latitude', 'longitude', 'altitude', 'timedelta']``.
+        scaler (optional): *if need be*, apply a scaler to the data before
+            fitting the generation model. You may want to consider
+            `StandardScaler()
+            <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html>`_.
+            The scaler object should implement ``fit_transform()`` and
+            ``ìnverse_transform()`` methods.
+    """
 
     _required_traffic_columns = [
         "altitude",
@@ -226,14 +236,6 @@ class Generation:
                     df, n_samples, n_obs, coordinates, forward=forward
                 )
 
-        if not set(self._required_traffic_columns).issubset(set(df.columns)):
-            warnings.warn(
-                f"The generated dataframe does not contain all required \
-                columns to instanciate a Traffic object: \
-                {set(self._required_traffic_columns) - set(df.columns)}.",
-                UserWarning,
-            )
-
         return Traffic(df)
 
     def fit(self, t: "Traffic", **kwargs: Any) -> "Generation":
@@ -248,6 +250,34 @@ class Generation:
         coordinates: Optional[Coordinates] = None,
         forward: bool = True,
     ) -> "Traffic":
+        """Samples trajectories from the generation model.
+
+        Args:
+            n_samples (optional): Number of trajectories to sample. Default to
+                ``1``.
+            projection (optional): Required if the generation model used ``x``
+                and ``y`` projections instead of ``latitude`` and
+                ``longitude``. Default to ``None``.
+            coordinates (optional): Required if the generation model used
+                ``track`` and ```groundspeed`` instead of ```latitude`` and
+                ```longitude``. Default to ``None``.
+            forward (optional): Indicates whether the ``coordinates`` attribute
+                corresponds to the first coordinate of the trajectories or
+                the last one. Ìf ``True`` it is the first, else it is the last.
+                Default to ``True``.
+
+        Usage example:
+            .. code-block:: python
+
+                # Generation of 10 trajectories with track and groundspeed
+                # features, considering some ending coordinates for each
+                # trajectories.
+                t_gen = g.sample(
+                    10,
+                    coordinates={"latitude": 15, "longitude":15},
+                    forward=False,
+                )
+        """
         X, _ = self.generation.sample(n_samples)
         if self.scaler is not None:
             X = self.scaler.inverse_transform(X)

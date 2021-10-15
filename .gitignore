@@ -83,6 +83,8 @@ instance/
 # Sphinx documentation
 docs/_build/
 doc/_build/
+docs/jupyter_execute/
+doc/jupyter_execute/
 
 # Jupyter Notebook
 .ipynb_checkpoints
