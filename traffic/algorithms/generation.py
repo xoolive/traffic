@@ -2,15 +2,16 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
+from cartopy import crs
+
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pyproj
-from cartopy import crs
 
 from ..core.geodesy import destination
 
-if sys.version_info > (3, 7):
+if sys.version_info >= (3, 8):
     from typing import Protocol, TypedDict
 else:
     from typing_extensions import Protocol, TypedDict

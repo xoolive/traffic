@@ -692,8 +692,8 @@ i18n = ["Babel (>=2.7)"]
 name = "joblib"
 version = "1.1.0"
 description = "Lightweight pipelining with Python functions"
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = ">=3.6"
 
 [[package]]
@@ -1567,8 +1567,8 @@ scipy = ">=0.9.0"
 name = "scikit-learn"
 version = "1.0"
 description = "A set of python modules for machine learning and data mining"
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = ">=3.7"
 
 [package.dependencies]
@@ -1627,17 +1627,6 @@ description = "Python 2 and 3 compatibility utilities"
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
-
-[[package]]
-name = "sklearn"
-version = "0.0"
-description = "A set of python modules for machine learning and data mining"
-category = "dev"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-scikit-learn = "*"
 
 [[package]]
 name = "snowballstemmer"
@@ -1803,8 +1792,8 @@ test = ["pytest", "pathlib2"]
 name = "threadpoolctl"
 version = "3.0.0"
 description = "threadpoolctl"
-category = "dev"
-optional = false
+category = "main"
+optional = true
 python-versions = ">=3.6"
 
 [[package]]
@@ -2055,13 +2044,13 @@ docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
 [extras]
-all = ["xarray", "libarchive", "fastkml", "keplergl", "pre-commit", "isort", "black", "flake8", "mypy"]
+all = ["xarray", "libarchive", "scikit-learn", "fastkml", "keplergl", "pre-commit", "isort", "black", "flake8", "mypy"]
 dev = ["pre-commit", "isort", "black", "flake8", "mypy"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1,<3.10"
-content-hash = "8617b978f64714f8ee9185205b012462b9ba751da5653efd83b2c81f2b20bd78"
+content-hash = "c91f09f217613474f93849b3e305c2d98e31555d17929bc24364f748e3e20709"
 
 [metadata.files]
 alabaster = [
@@ -3211,9 +3200,6 @@ shapely = [
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
-]
-sklearn = [
-    {file = "sklearn-0.0.tar.gz", hash = "sha256:e23001573aa194b834122d2b9562459bf5ae494a2d59ca6b8aa22c85a44c0e31"},
 ]
 snowballstemmer = [
     {file = "snowballstemmer-2.1.0-py2.py3-none-any.whl", hash = "sha256:b51b447bea85f9968c13b650126a888aabd4cb4463fca868ec596826325dedc2"},

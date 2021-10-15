@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Tuple, Union
 from cartopy.feature import NaturalEarthFeature
 from cartopy.mpl.geoaxes import GeoAxesSubplot
 
-from shapely.geometry import BaseGeometry
+from shapely.geometry.base import BaseGeometry
 
 from ..core.mixins import PointMixin, ShapelyMixin
 
@@ -79,10 +79,12 @@ GeoAxesSubplot.set_default_extent = _set_default_extent
 def _set_extent(
     self: GeoAxesSubplot,
     shape: Union[
-        str, ShapelyMixin, Nominatim, Tuple[float, float, float, float]
+        str, ShapelyMixin, "Nominatim", Tuple[float, float, float, float]
     ],
     buffer: float = 0.01,
 ) -> None:
+
+    from cartes.osm import Nominatim
 
     if isinstance(shape, str):
         shape_ = Nominatim.search(shape)

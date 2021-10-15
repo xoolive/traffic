@@ -33,6 +33,8 @@ jobs:
 
       - name: Build pages
         run: |
+          # This line installs the theme for matplotlib
+          poetry run python -c "import traffic.drawing"
           curl https://opensky-network.org/api/sensor/list -o docs/_static/sensors.json
           cd docs && poetry run make html
 

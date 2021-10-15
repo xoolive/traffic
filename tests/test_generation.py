@@ -1,6 +1,5 @@
 from typing import Any, Tuple, cast
 
-import pytest
 from cartopy.crs import EuroPP
 
 import numpy as np
@@ -43,7 +42,7 @@ def test_generation() -> None:
         .resample(10)
         .compute_xy(projection=EuroPP())
         .assign(timedelta=compute_timedelta)
-        .eval(max_workers=4)
+        .eval()
     )
 
     assert isinstance(smaller, Traffic)
@@ -67,11 +66,3 @@ def test_generation() -> None:
     assert isinstance(t_gen, Traffic)
     assert len(t_gen) == 6
     assert isinstance(t_gen[0], Flight)
-
-    g = smaller.generation(
-        generation=NaiveGeneration(),
-        features=["altitude", "timedelta"],
-    )
-
-    with pytest.warns(UserWarning):
-        g.sample(2)
