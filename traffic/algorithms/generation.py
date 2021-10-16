@@ -105,13 +105,21 @@ def compute_latlon_from_trackgs(
 
     The coordinates computation is made using pyproj.Geod.fwd() method.
 
-    Args:
-        data (pandas.DataFrame): The DataFrame containing trajectories.
-        n_samples (int): Number of trajectories in data.
-        n_obs (int): Number of coordinates representing a trajectory.
-        coordinates (Coordinates): Some start coordinates.
-        forward (bool): Whether the coordinates correspond to a start or an
-            end.
+    data: pandas.DataFrame
+        The DataFrame containing trajectories.
+    
+    n_samples: int 
+        Number of trajectories in data.
+    
+    n_obs: int 
+        Number of coordinates representing a trajectory.
+    
+    coordinates: Coordinates
+        Some start coordinates.
+    
+    forward: bool, default: True
+        Whether the coordinates correspond to the first or the last
+        coordinates of the trajectories.
     """
     df = data.copy(deep=True)
     if not forward:
@@ -149,19 +157,22 @@ def compute_latlon_from_trackgs(
 
 
 class Generation:
-    """Generation object to handle trajectory generation.
+    """Generation class to handle trajectory generation.
 
-    Args:
-        generation: generation model, should implement ``fit()`` and
-            ``sample()`` methods.
-        features: List of features to generate, could be
-            ``['latitude', 'longitude', 'altitude', 'timedelta']``.
-        scaler (optional): *if need be*, apply a scaler to the data before
-            fitting the generation model. You may want to consider
-            `StandardScaler()
-            <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html>`_.
-            The scaler object should implement ``fit_transform()`` and
-            ``ìnverse_transform()`` methods.
+    generation: GenerationProtocol
+        generation model, should implement ``fit()`` and ``sample()``
+        methods.
+
+    features: List[str]
+        List of features to generate. Example:
+        ``['latitude', 'longitude', 'altitude', 'timedelta']``.
+
+    scaler: ScalerProtocol, default: None
+        *if need be*, apply a scaler to the data before fitting the
+        generation model. You may want to consider `StandardScaler()
+        <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html>`_.
+        The scaler object should implement ``fit_transform()`` and
+        ``inverse_transform()`` methods.
     """
 
     _required_traffic_columns = [
@@ -200,7 +211,7 @@ class Generation:
         forward: bool = True,
     ) -> "Traffic":
         """Build Traffic DataFrame from numpy array according to the list
-        of features ```self.features``.
+        of features ``self.features``.
         """
         from ..core import Traffic
 
@@ -253,21 +264,24 @@ class Generation:
     ) -> "Traffic":
         """Samples trajectories from the generation model.
 
-        Args:
-            n_samples (optional): Number of trajectories to sample. Default to
-                ``1``.
-            projection (optional): Required if the generation model used ``x``
-                and ``y`` projections instead of ``latitude`` and
-                ``longitude``. Default to ``None``.
-            coordinates (optional): Required if the generation model used
-                ``track`` and ```groundspeed`` instead of ```latitude`` and
-                ```longitude``. Default to ``None``.
-            forward (optional): Indicates whether the ``coordinates`` attribute
-                corresponds to the first coordinate of the trajectories or
-                the last one. Ìf ``True`` it is the first, else it is the last.
-                Default to ``True``.
+        n_samples: int, default: 1 
+            Number of trajectories to sample.
 
-        Usage example:
+        projection: pyproj.Proj, cartopy.Projection, default: None
+            Required if the generation model used ``x`` and ``y`` projections
+            instead of ``latitude`` and ``longitude``.
+
+        coordinates: dict, default: None
+            Required if the generation model used ``track`` and ``groundspeed``
+            instead of ``latitude`` and ``longitude``. Example:
+            ``{'latitude': 12.2, 'longitude': 43.5}``.
+
+        forward: bool, default: True 
+            Indicates whether the ``coordinates`` attribute corresponds to
+            the first coordinate of the trajectories or the last one. If
+            ``True`` it is the first, else it is the last.
+
+        Example usage:
             .. code-block:: python
 
                 # Generation of 10 trajectories with track and groundspeed
