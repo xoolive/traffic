@@ -114,8 +114,9 @@ def compute_latlon_from_trackgs(
     n_obs: int 
         Number of coordinates representing a trajectory.
     
-    coordinates: Coordinates
-        Some start coordinates.
+    coordinates: Dict[str, float]
+        Some coordinates. It should have ``'latitude'`` and ``'longitude'``
+        keys.
     
     forward: bool, default: True
         Whether the coordinates correspond to the first or the last
@@ -268,12 +269,13 @@ class Generation:
             Number of trajectories to sample.
 
         projection: pyproj.Proj, cartopy.Projection, default: None
-            Required if the generation model used ``x`` and ``y`` projections
+            Required if the generation model uses ``x`` and ``y`` projections
             instead of ``latitude`` and ``longitude``.
 
-        coordinates: dict, default: None
-            Required if the generation model used ``track`` and ``groundspeed``
-            instead of ``latitude`` and ``longitude``. Example:
+        coordinates: Dict[str, float], default: None
+            Required if the generation model uses ``track`` and ``groundspeed``
+            instead of ``latitude`` and ``longitude``. It should have
+            ``'latitude'`` and ``'longitude'`` keys. Example:
             ``{'latitude': 12.2, 'longitude': 43.5}``.
 
         forward: bool, default: True 
