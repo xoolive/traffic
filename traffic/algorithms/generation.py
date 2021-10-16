@@ -107,21 +107,22 @@ def compute_latlon_from_trackgs(
 
     data: pandas.DataFrame
         The DataFrame containing trajectories.
-    
-    n_samples: int 
+
+    n_samples: int
         Number of trajectories in data.
-    
-    n_obs: int 
+
+    n_obs: int
         Number of coordinates representing a trajectory.
-    
+
     coordinates: Dict[str, float]
         Some coordinates. It should have ``'latitude'`` and ``'longitude'``
         keys.
-    
+
     forward: bool, default: True
         Whether the coordinates correspond to the first or the last
         coordinates of the trajectories.
     """
+
     df = data.copy(deep=True)
     if not forward:
         df["track"] = df["track"].values[::-1] - 180
@@ -265,7 +266,7 @@ class Generation:
     ) -> "Traffic":
         """Samples trajectories from the generation model.
 
-        n_samples: int, default: 1 
+        n_samples: int, default: 1
             Number of trajectories to sample.
 
         projection: pyproj.Proj, cartopy.Projection, default: None
@@ -278,7 +279,7 @@ class Generation:
             ``'latitude'`` and ``'longitude'`` keys. Example:
             ``{'latitude': 12.2, 'longitude': 43.5}``.
 
-        forward: bool, default: True 
+        forward: bool, default: True
             Indicates whether the ``coordinates`` attribute corresponds to
             the first coordinate of the trajectories or the last one. If
             ``True`` it is the first, else it is the last.
