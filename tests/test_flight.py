@@ -212,9 +212,17 @@ def test_clip_iterate() -> None:
         schiphol_shape.buffer(2e-3), strict=False
     )
     takeoff = next(flight_iterate)
-    assert takeoff.stop == pd.Timestamp("2018-05-30 15:21:57+00:00")
+    assert (
+        pd.Timestamp("2018-05-30 15:21:00+00:00")
+        < takeoff.stop
+        < pd.Timestamp("2018-05-30 15:22:00+00:00")
+    )
     landing = next(flight_iterate)
-    assert landing.start == pd.Timestamp("2018-05-30 20:17:55+00:00")
+    assert (
+        pd.Timestamp("2018-05-30 20:17:00+00:00")
+        < landing.start
+        < pd.Timestamp("2018-05-30 20:18:00+00:00")
+    )
 
 
 def test_clip_point() -> None:
@@ -611,9 +619,17 @@ def test_on_taxiway() -> None:
 def test_ground_trajectory() -> None:
     flight_iterate = belevingsvlucht.ground_trajectory("EHAM")
     takeoff = next(flight_iterate)
-    assert takeoff.stop == pd.Timestamp("2018-05-30 15:21:44+00:00")
+    assert (
+        pd.Timestamp("2018-05-30 15:21:00+00:00")
+        < takeoff.stop
+        < pd.Timestamp("2018-05-30 15:22:00+00:00")
+    )
     landing = next(flight_iterate)
-    assert landing.start == pd.Timestamp("2018-05-30 20:17:50+00:00")
+    assert (
+        pd.Timestamp("2018-05-30 20:17:00+00:00")
+        < landing.start
+        < pd.Timestamp("2018-05-30 20:18:00+00:00")
+    )
     assert next(flight_iterate, None) is None
 
     assert belevingsvlucht.ground_trajectory("EHLE").sum() == 0
@@ -623,7 +639,15 @@ def test_ground_trajectory() -> None:
 
     flight_iterate = flight.ground_trajectory("LSZH")
     takeoff = next(flight_iterate)
-    assert takeoff.stop == pd.Timestamp("2019-11-05 13:05:21+00:00")
+    assert (
+        pd.Timestamp("2019-11-05 13:05:00+00:00")
+        < takeoff.stop
+        < pd.Timestamp("2019-11-05 13:06:00+00:00")
+    )
     landing = next(flight_iterate)
-    assert landing.start == pd.Timestamp("2019-11-05 16:36:52+00:00")
+    assert (
+        pd.Timestamp("2019-11-05 16:36:00+00:00")
+        < landing.start
+        < pd.Timestamp("2019-11-05 16:37:00+00:00")
+    )
     assert next(flight_iterate, None) is None
