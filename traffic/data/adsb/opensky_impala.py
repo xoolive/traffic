@@ -656,6 +656,7 @@ class Impala(object):
         other_tables: str = "",
         other_params: str = "",
         nautical_units: bool = True,
+        time_buffer: Union[None, str, pd.Timedelta] = None,
         progressbar: Union[bool, ProgressbarType[Any]] = True,
     ) -> Optional[Union[Traffic, Flight]]:
 
@@ -723,6 +724,11 @@ class Impala(object):
               many sensors received each record;
             - **nautical_units** (boolean, default: True): convert data stored
               in Impala to standard nautical units (ft, ft/min, knots).
+            - **time_buffer** (str or pd.Timedelta, default: None): time buffer
+              used to extend time bounds for flights in the OpenSky flight
+              tables: requests will get flights between ``start - time_buffer``
+              and ``stop + time_buffer``.
+              If no airport is specified, the parameter is ignored.
             - **cached** (boolean, default: True): switch to False to force a
               new request to the database regardless of the cached files;
               delete previous cache files;
@@ -806,11 +812,14 @@ class Impala(object):
         day_max = round_time(stop, how="after", by=timedelta(days=1))
 
         if count_airports_params > 0:
+            if isinstance(time_buffer, str):
+                time_buffer = pd.Timedelta(time_buffer)
+            buffer_s = time_buffer.total_seconds() if time_buffer else 0
             where_clause = (
                 "on icao24 = est.e_icao24 and "
                 "callsign = est.e_callsign and "
-                "est.firstseen <= time and "
-                "time <= est.lastseen "
+                f"est.firstseen - {buffer_s} <= time and "
+                f"time <= est.lastseen + {buffer_s} "
                 "where"
             )
 

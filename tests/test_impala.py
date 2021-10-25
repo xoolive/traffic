@@ -3,7 +3,7 @@ from typing import Optional, cast
 
 import pytest
 
-from traffic.core import Traffic
+from traffic.core import Flight, Traffic
 from traffic.data import opensky
 from traffic.data.samples import belevingsvlucht, lfbo_tma
 
@@ -213,6 +213,28 @@ def test_complex_queries() -> None:
     )
     assert tD is not None
     assert len(tD) == 9
+
+
+def test_timebuffer() -> None:
+
+    f = cast(
+        Flight,
+        opensky.history(
+            "2021-09-06 14:00",
+            "2021-09-07 16:00",
+            callsign="SAS44A",
+            airport="ESSA",
+            time_buffer="1H",
+            return_flight=True,
+        ),
+    )
+    assert f is not None
+
+    g = f.resample("1s").cumulative_distance().query("compute_gs > 5")
+    assert g is not None
+    h = g.on_taxiway("ESSA").max(key="stop")
+    assert h is not None
+    assert h.taxiway_max == "Z"
 
 
 def test_rawdata() -> None:
