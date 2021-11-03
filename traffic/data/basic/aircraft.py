@@ -98,8 +98,8 @@ class Aircraft(object):
     """
 
     `@junzis <https://github.com/junzis/>`_'s `database
-    <https://junzisun.com/adb/download>`_ is available by default in the
-    library as:
+    <https://junzisun.com/adb/download/aircraft_db.zip>`_ is available by
+    default in the library as:
 
     >>> from traffic.data import aircraft
 
@@ -132,11 +132,11 @@ class Aircraft(object):
     def download_junzis(self) -> None:  # coverage: ignore
         """Downloads the latest version of the aircraft database by @junzis.
 
-        url: https://junzisun.com/adb/download
+        url: https://junzisun.com/adb/download/aircraft_db.zip
         """
         from .. import session
 
-        f = session.get("https://junzisun.com/adb/download")
+        f = session.get("https://junzisun.com/adb/download/aircraft_db.zip")
         with zipfile.ZipFile(io.BytesIO(f.content)) as zfile:
             with zfile.open("aircraft_db.csv", "r") as dbfile:
                 self._junzis = (
