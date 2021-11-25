@@ -1563,7 +1563,7 @@ class Flight(
             features = default_angle_features
 
         if isinstance(features, str):
-            features = [features]
+            features = [features].astype(float)
 
         reset = self.reset_index(drop=True)
 
@@ -1575,9 +1575,7 @@ class Flight(
             idx = ~series.isnull()
             result_dict[f"{feature}_unwrapped"] = pd.Series(
                 np.degrees(
-                    np.unwrap(
-                        np.radians(series.astype(float).loc[idx])
-                    )  # type: ignore
+                    np.unwrap(np.radians(series.loc[idx]))  # type: ignore
                 ),
                 index=series.loc[idx].index,
             )
