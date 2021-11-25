@@ -1575,7 +1575,9 @@ class Flight(
             idx = ~series.isnull()
             result_dict[f"{feature}_unwrapped"] = pd.Series(
                 np.degrees(
-                    np.unwrap(np.radians(series.loc[idx]))  # type: ignore
+                    np.unwrap(
+                        np.radians(series.astype(float).loc[idx])
+                    )  # type: ignore
                 ),
                 index=series.loc[idx].index,
             )
