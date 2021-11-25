@@ -1571,7 +1571,7 @@ class Flight(
         for feature in features:
             if feature not in reset.data.columns:
                 continue
-            series = reset.data[feature]
+            series = reset.data[feature].astype(float)
             idx = ~series.isnull()
             result_dict[f"{feature}_unwrapped"] = pd.Series(
                 np.degrees(
