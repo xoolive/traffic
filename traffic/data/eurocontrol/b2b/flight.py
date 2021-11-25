@@ -366,7 +366,7 @@ class FlightInfo(B2BReply):
             + _HBox(*cumul)._repr_html_()
         )
 
-    def __getattr__(self, name: str) -> str:
+    def __getattr__(self, name: str) -> Union[str, pd.Timestamp]:
         cls = type(self)
         assert self.reply is not None
         elt = self.reply.find(name)
@@ -374,7 +374,7 @@ class FlightInfo(B2BReply):
             elt = self.reply.find("flightId/keys/" + name)
         if elt is not None and elt.text is not None:
             if "Time" in name or "time" in name:
-                return repr(pd.Timestamp(elt.text, tz="UTC"))
+                return pd.Timestamp(elt.text, tz="UTC")
             return elt.text
         msg = "{.__name__!r} object has no attribute {!r}"
         raise AttributeError(msg.format(cls, name))
