@@ -888,12 +888,12 @@ class DumpFormat:
     def get_timestamp(self, line: str) -> datetime:
         elts = line.split(self.sep)
         return datetime.fromtimestamp(
-            float(elts[self.time_index]), timezone.utc  # type: ignore
+            float(elts[self.time_index].strip()), timezone.utc  # type: ignore
         )
 
     def get_msg(self, line: str) -> str:
         elts = line.split(self.sep)
-        return elts[self.msg_index][self.splitmsg]  # type: ignore
+        return elts[self.msg_index][self.splitmsg].strip()  # type: ignore
 
 
 class Decoder:
