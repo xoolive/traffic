@@ -23,6 +23,16 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | S. Madar, T. Puranik and D. Mavris
+  | **Application of Trajectory Clustering for Aircraft Conflict Detection**
+  | *Proceedings of the 40th Digital Avionics Systems Conference* (DASC), 2021
+  | https://doi.org/10.1109/DASC52595.2021.9594344
+
+- | R. Koelle, S. Peeters and E. Spinielli
+  | **Building Back Better -- Democratization of Performance Monitoring with Open Data**
+  | *Proceedings of the 40th Digital Avionics Systems Conference* (DASC), 2021
+  | https://doi.org/10.1109/DASC52595.2021.9594320
+
 - | S. Corrado, T. Puranik, O. J. Pinon-Fischer and D. Mavris
   | **A clustering-based quantitative analysis of the interdependent relationship between spatial and energy anomalies in ADS-B trajectory data**
   | *Transportation Research Part C: Emerging Technologies*, vol. 131, pp. 103331, 2021
