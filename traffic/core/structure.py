@@ -203,6 +203,10 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
                 ),
                 windsock=dict(alpha=0),
             )
+            # runways can come from OSM or from the runway database
+            # since options may clash, this should fix it
+            if isinstance(runways, dict):
+                footprint["runway"] = runways
 
         if isinstance(footprint, dict):
             self._openstreetmap().plot(ax, **footprint)
