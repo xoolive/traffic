@@ -18,6 +18,7 @@ import requests
 from cartopy.crs import PlateCarree
 from tqdm.autonotebook import tqdm
 
+import numpy as np
 import pandas as pd
 from shapely.geometry import base, shape
 from shapely.ops import linemerge
@@ -121,13 +122,22 @@ class RunwayAirport(HBoxMixin, ShapelyMixin):
 
             for thr in self.list:
 
+                # Placement of labels
                 lat, lon, _ = destination(
                     thr.latitude, thr.longitude, thr.bearing + 180, shift
                 )
 
-                ax.text(
-                    lon, lat, thr.name, rotation=360 - thr.bearing, **text_kw
+                # Compute the rotation of labels
+                lat2, lon2, _ = destination(lat, lon, thr.bearing + 180, 1000)
+                x1, y1 = ax.projection.transform_point(
+                    thr.longitude, thr.latitude, PlateCarree()
                 )
+                x2, y2 = ax.projection.transform_point(
+                    lon2, lat2, PlateCarree()
+                )
+                rotation = 90 + np.degrees(np.arctan2(y2 - y1, x2 - x1))
+
+                ax.text(lon, lat, thr.name, rotation=rotation, **text_kw)
 
     def geoencode(self, **kwargs: Any) -> alt.Chart:  # coverage: ignore
 
