@@ -23,6 +23,11 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | M. Schultz, J. Rosenow and X. Olive
+  | **Data-driven airport management enabled by operational milestones derived from ADS-B messages**
+  | *Journal of Air Transport Management* 99(11):102164, 2022
+  | https://doi.org/10.1016/j.jairtraman.2021.102164
+
 - | S. Madar, T. Puranik and D. Mavris
   | **Application of Trajectory Clustering for Aircraft Conflict Detection**
   | *Proceedings of the 40th Digital Avionics Systems Conference* (DASC), 2021
