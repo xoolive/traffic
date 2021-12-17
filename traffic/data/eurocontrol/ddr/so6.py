@@ -723,6 +723,20 @@ class SO6(DataFrameMixin):
                 return so6
 
     @classmethod
+    def from_so6_gz(
+        cls: Type[SO6TypeVar], filename: Union[str, Path]
+    ) -> SO6TypeVar:
+        import gzip
+        from io import StringIO
+
+        with gzip.open(filename) as fh:
+            s = StringIO()
+            s.write(fh.read().decode("utf-8"))
+            s.seek(0)
+            so6 = cls.from_so6(s)
+            return so6
+
+    @classmethod
     def from_file(
         cls: Type[SO6TypeVar], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[SO6TypeVar]:  # coverage: ignore
@@ -742,6 +756,8 @@ class SO6(DataFrameMixin):
         path = Path(filename)
         if path.suffixes == [".so6", ".7z"]:
             return cls.from_so6_7z(filename)
+        if path.suffixes == [".so6", ".gz"]:
+            return cls.from_so6_gz(filename)
         if path.suffixes == [".so6"]:
             return cls.from_so6(filename)
         return super().from_file(filename)
