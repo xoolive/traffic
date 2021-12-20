@@ -35,6 +35,7 @@ __all__ = [
     "aixm_airspaces",
     "nm_airspaces",
     "nm_airways",
+    "nm_freeroute",
     "nm_navaids",
     "eurofirs",
     "opensky",
@@ -172,6 +173,15 @@ def __getattr__(name: str) -> Any:
         if nm_path_str != "":  # coverage: ignore
             NMAirspaceParser.nm_path = Path(nm_path_str)
         res = NMAirspaceParser(config_file)
+        _cached_imports[name] = res
+        return res
+
+    if name == "nm_freeroute":  # coverage: ignore
+        from .eurocontrol.ddr.freeroute import NMFreeRouteParser
+
+        if nm_path_str != "":  # coverage: ignore
+            NMFreeRouteParser.nm_path = Path(nm_path_str)
+        res = NMFreeRouteParser(config_file)
         _cached_imports[name] = res
         return res
 
