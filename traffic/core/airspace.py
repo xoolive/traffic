@@ -24,7 +24,7 @@ else:
 import numpy as np
 import pyproj
 from shapely.geometry import Polygon, base, mapping, polygon, shape
-from shapely.ops import cascaded_union, transform
+from shapely.ops import transform, unary_union
 
 from . import Flight, Traffic
 from .lazy import lazy_evaluation
@@ -72,7 +72,7 @@ class Airspace(ShapelyMixin):
 
     def flatten(self) -> Polygon:
         """Returns the 2D footprint of the airspace."""
-        return polygon.orient(cascaded_union([p.polygon for p in self]), -1)
+        return polygon.orient(unary_union([p.polygon for p in self]), -1)
 
     @property
     def shape(self) -> "BaseGeometry":
@@ -86,7 +86,7 @@ class Airspace(ShapelyMixin):
             # useful for compatibility with sum() function
             return self
 
-        union = cascaded_union_with_alt(list(self) + list(other))
+        union = unary_union_with_alt(list(self) + list(other))
         new_name = (
             self.name
             if self.name == other.name
@@ -265,13 +265,13 @@ class Airspace(ShapelyMixin):
             return cls.from_json(json.load(fh))
 
 
-def cascaded_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
+def unary_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
     altitudes = set(
         alt for _, *low_up in polyalt for alt in low_up if alt is not None
     )
     slices = sorted(altitudes)
     if len(slices) == 1 and slices[0] is None:
-        simple_union = cascaded_union([p for p, *_ in polyalt])
+        simple_union = unary_union([p for p, *_ in polyalt])
         return [ExtrudedPolygon(simple_union, float("-inf"), float("inf"))]
     results: List[ExtrudedPolygon] = []
     for low, up in zip(slices, slices[1:]):
@@ -283,7 +283,7 @@ def cascaded_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
             and low_ <= low <= up_
             and low_ <= up <= up_
         ]
-        new_poly = ExtrudedPolygon(cascaded_union(matched_poly), low, up)
+        new_poly = ExtrudedPolygon(unary_union(matched_poly), low, up)
         if len(results) > 0 and new_poly.polygon.equals(results[-1].polygon):
             merged = ExtrudedPolygon(new_poly.polygon, results[-1].lower, up)
             results[-1] = merged

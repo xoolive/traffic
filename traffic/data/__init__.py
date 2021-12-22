@@ -10,12 +10,13 @@ if TYPE_CHECKING:
     from ..core.airspace import Airspace
     from .adsb.decode import Decoder as ModeS_Decoder
     from .adsb.opensky import OpenSky
-    from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
     from .basic.aircraft import Aircraft
     from .basic.airports import Airports
     from .basic.airways import Airways
     from .basic.navaid import Navaids
     from .basic.runways import Runways
+    from .eurocontrol.aixm.eurocontrol_aixm import AIXMAirspaceParser
+    from .eurocontrol.aixm.navpoints import AIXMNavaidParser
     from .eurocontrol.b2b import NMB2B
     from .eurocontrol.ddr.airspaces import NMAirspaceParser
     from .eurocontrol.ddr.allft import AllFT
@@ -33,6 +34,7 @@ __all__ = [
     "navaids",
     "runways",
     "aixm_airspaces",
+    "aixm_navaids",
     "nm_airspaces",
     "nm_airways",
     "nm_freeroute",
@@ -53,6 +55,7 @@ carto_session: Session
 navaids: "Navaids"
 runways: "Runways"
 aixm_airspaces: "AIXMAirspaceParser"
+aixm_navaids: "AIXMNavaidParser"
 nm_airspaces: "NMAirspaceParser"
 nm_airways: "NMRoutes"
 nm_b2b: "NMB2B"
@@ -143,7 +146,7 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "eurofirs":
-        from .airspaces.eurofirs import eurofirs
+        from .eurocontrol.eurofirs import eurofirs
 
         return eurofirs
 
@@ -155,8 +158,16 @@ def __getattr__(name: str) -> Any:
         _cached_imports[name] = res
         return res
 
+    if name == "aixm_navaids":  # coverage: ignore
+        from .eurocontrol.aixm.navpoints import AIXMNavaidParser
+
+        AIXMNavaidParser.cache_dir = cache_dir
+        res = AIXMNavaidParser.from_file(Path(aixm_path_str))
+        _cached_imports[name] = res
+        return res
+
     if name == "aixm_airspaces":  # coverage: ignore
-        from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
+        from .eurocontrol.aixm.eurocontrol_aixm import AIXMAirspaceParser
 
         AIXMAirspaceParser.cache_dir = cache_dir
 

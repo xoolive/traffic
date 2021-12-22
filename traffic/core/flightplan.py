@@ -435,7 +435,7 @@ class FlightPlan(ShapelyMixin):
                 if n is None:
                     n = navaids
 
-                p1, p2 = n[previous.name], n[next_.name]
+                p1, p2 = n.global_get(previous.name), n.global_get(next_.name)
                 if p1 is None or p2 is None:
                     warnings.warn(
                         f"Could not find {previous.name} or {next_.name}"
@@ -455,6 +455,7 @@ class FlightPlan(ShapelyMixin):
                 from traffic.data import navaids
 
                 previous, next_ = elts[i - 1], elts[i + 1]
+
                 if previous is None or next_ is None:
                     warnings.warn(f"Missing information around {elts[i]}")
                     continue
@@ -483,7 +484,7 @@ class FlightPlan(ShapelyMixin):
                 if n is None:
                     n = navaids
 
-                p1, p2 = n[previous.name], n[next_.name]
+                p1, p2 = n.global_get(previous.name), n.global_get(next_.name)
                 if p1 is None or p2 is None:
                     warnings.warn(
                         f"Could not find {previous.name} or {next_.name}"

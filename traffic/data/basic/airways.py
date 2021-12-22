@@ -129,7 +129,11 @@ class Airways(GeoDBMixin):
 
     def global_get(self, name: str) -> Optional[Route]:
         """Search for a route from all alternative data sources."""
-        for _key, value in self.alternatives.items():
+        for _key, value in sorted(
+            self.alternatives.items(),
+            # lowest priority for the default source of information
+            key=lambda key: 1 if key[0] == "default" else 0,
+        ):
             alt = value[name]
             if alt is not None:
                 return alt

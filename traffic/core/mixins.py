@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T", bound="DataFrameMixin")
+G = TypeVar("G", bound="GeoDBMixin")
 
 
 class DataFrameMixin(object):
@@ -529,11 +530,13 @@ class GeographyMixin(DataFrameMixin):
 
 
 class GeoDBMixin(DataFrameMixin):
+    _extent: Optional[Tuple[float, float, float, float]] = None
+
     def extent(
-        self: T,
+        self: G,
         extent: Union[str, ShapelyMixin, Tuple[float, float, float, float]],
         buffer: float = 0.5,
-    ) -> Optional[T]:
+    ) -> Optional[G]:
         """
         Selects the subset of data inside the given extent.
 
@@ -577,6 +580,10 @@ class GeoDBMixin(DataFrameMixin):
             f"{south - buffer} <= latitude <= {north + buffer} and "
             f"{west - buffer} <= longitude <= {east + buffer}"
         )
+
+        if output is not None:
+            output._extent = _extent
+
         return output
 
     def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore

@@ -12,6 +12,7 @@ T = TypeVar("T", bound="NMNavaids")
 class NMNavaids(Navaids):
     name: str = "nm_navaids"
     filename: Optional[Path] = None
+    priority: int = 1
 
     @property
     def available(self) -> bool:
@@ -19,9 +20,6 @@ class NMNavaids(Navaids):
             return False
         nnpt_file = next(self.filename.glob("AIRAC_*.nnpt"), None)
         return nnpt_file is not None
-
-    def __init__(self, data: Optional[pd.DataFrame]) -> None:
-        self._data = data
 
     @property
     def data(self) -> pd.DataFrame:
@@ -45,7 +43,7 @@ class NMNavaids(Navaids):
         if nnpt_file is None:
             return cls(None)
 
-        return cls(
+        instance = cls(
             pd.read_csv(
                 nnpt_file,
                 sep=";",
@@ -53,3 +51,4 @@ class NMNavaids(Navaids):
                 skiprows=1,
             )
         )
+        return instance

@@ -182,7 +182,7 @@ def flightplan_leaflet(
     else:
         # In case a FlightPlan could not resolve all parts
         coords = list(
-            list((lat, lon) for (lon, lat, *_) in s.coords) for s in shape
+            list((lat, lon) for (lon, lat, *_) in s.coords) for s in shape.geoms
         )
 
     kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
@@ -207,7 +207,7 @@ def airspace_leaflet(airspace: "Airspace", **kwargs: Any) -> Polygon:
     else:
         coords = list(
             list((lat, lon) for (lon, lat, *_) in piece.exterior.coords)
-            for piece in shape
+            for piece in shape.geoms
         )
 
     return Polygon(locations=coords, **kwargs)

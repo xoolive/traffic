@@ -7,6 +7,8 @@ from typing import Any, Set, Tuple
 import geopandas as gpd
 
 import pandas as pd
+from shapely.geometry import MultiPoint
+from shapely.ops import unary_union
 
 from ....data import nm_navaids
 from .airspaces import NMAirspaceParser
@@ -52,13 +54,6 @@ class NMFreeRouteParser(NMAirspaceParser):
             )
         self.read_sls(sls_file)
 
-        frp_file = next(self.nm_path.glob("Free_Route_*.frp"), None)
-        if frp_file is None:
-            raise RuntimeError(
-                f"No Free_Route_*.frp file found in {self.nm_path}"
-            )
-        self.read_frp(frp_file)
-
         self.initialized = True
 
         self.fra = gpd.GeoDataFrame.from_records(
@@ -68,7 +63,30 @@ class NMFreeRouteParser(NMAirspaceParser):
             ]
         )
 
+        frp_file = next(self.nm_path.glob("Free_Route_*.frp"), None)
+        if frp_file is None:
+            raise RuntimeError(
+                f"No Free_Route_*.frp file found in {self.nm_path}"
+            )
+        self.read_frp(frp_file)
+
     def read_frp(self, filename: Path) -> None:
+
+        area = unary_union(self.fra.geometry)
+        west, south, east, north = area.bounds
+
+        subset = nm_navaids.extent((west, east, south, north))
+        assert subset is not None
+        coords = subset.data[["longitude", "latitude"]].values
+        europoints = subset.data.merge(
+            pd.DataFrame(
+                [
+                    list(x.coords[0])
+                    for x in area.intersection(MultiPoint(coords)).geoms
+                ],
+                columns=["longitude", "latitude"],
+            )
+        )
 
         df = pd.read_csv(StringIO(filename.read_text()), header=None)
         df_ = (
@@ -94,35 +112,65 @@ class NMFreeRouteParser(NMAirspaceParser):
             .dropna(axis=1, how="all")
             .rename(columns={3: "latitude", 4: "longitude"})
         )
+
+        # Part 1: When coordinates are in the file, decode them
         coords = (
             tab.query("latitude.notnull()")[["latitude", "longitude"]]
             .sum(axis=1)
             .apply(parse_coordinates)
         )
+        decode_coords = tab.query("latitude.notnull()").assign(
+            latitude=coords.str[0], longitude=coords.str[1]
+        )
+
+        # Part 2: Propagate decoded coordinates (avoid slight inconsistencies)
+        propagate_coords = (
+            tab.query("latitude.isnull() and name in @decode_coords.name")
+            .drop(columns=["latitude", "longitude"])
+            .merge(
+                decode_coords[
+                    ["name", "latitude", "longitude"]
+                ].drop_duplicates(),
+                on="name",
+            )
+        )
+
+        # Part 3: Unknown coordinates
+
+        unknown_coords = (
+            tab.query("latitude.isnull() and name not in @decode_coords.name")
+            .drop(columns=["latitude", "longitude"])
+            .merge(europoints.drop(columns=["type", "description"]), on="name")
+        )
+
+        # Part 4: Airport connections
+
+        airport_coords = pd.concat(
+            [
+                df_.query('type in ["AD", "A", "D"]').iloc[:, :3],
+                a.rename("airport"),
+            ],
+            axis=1,
+        )
+
+        propagate_airports = airport_coords.merge(
+            decode_coords[["name", "latitude", "longitude"]].drop_duplicates(),
+            on=["name"],
+        ).explode("airport")
+
+        unknown_airports = (
+            airport_coords.query("name not in @propagate_airports.name").merge(
+                europoints.drop(columns=["type", "description"]), on="name"
+            )
+        ).explode("airport")
 
         self.frp = pd.concat(
             [
-                tab.query("latitude.notnull()").assign(
-                    latitude=coords.str[0], longitude=coords.str[1]
-                ),
-                tab.query("latitude.isnull()")
-                .drop(columns=["latitude", "longitude"])
-                .merge(
-                    nm_navaids.data.drop(columns=["type", "description"]),
-                    on="name",
-                ),
-                pd.concat(
-                    [
-                        df_.query('type in ["AD", "A", "D"]').iloc[:, :3],
-                        a.rename("airport"),
-                    ],
-                    axis=1,
-                )
-                .explode("airport")
-                .merge(
-                    nm_navaids.data.drop(columns=["type", "description"]),
-                    on="name",
-                ),
+                decode_coords,
+                propagate_coords,
+                unknown_coords,
+                propagate_airports,
+                unknown_airports,
             ]
         )
 

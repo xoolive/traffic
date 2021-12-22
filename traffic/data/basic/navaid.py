@@ -3,7 +3,7 @@
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator, Optional, Tuple
 
 import pandas as pd
 
@@ -47,10 +47,11 @@ class Navaids(GeoDBMixin):
     cache_dir: Path
     alternatives: Dict[str, "Navaids"] = dict()
     name: str = "default"
+    priority: int = 0
 
     def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
         self._data: Optional[pd.DataFrame] = data
-        if self.available:
+        if self.name not in Navaids.alternatives:
             Navaids.alternatives[self.name] = self
 
     @property
@@ -221,11 +222,28 @@ class Navaids(GeoDBMixin):
             dic["altitude"] = None
             dic["frequency"] = None
             dic["magnetic_variation"] = None
+        if "id" in dic:
+            del dic["id"]
         return Navaid(**dic)
 
     def global_get(self, name: str) -> Optional[Navaid]:
         """Search for a navaid from all alternative data sources."""
-        for _key, value in self.alternatives.items():
+        for _key, value in reversed(
+            sorted(
+                (
+                    (key, value)
+                    for key, value in self.alternatives.items()
+                    if value is not None
+                ),
+                key=lambda elt: elt[1].priority,
+            )
+        ):
+            # Reapply the extent if it was applied before
+            if self._extent is not None:
+                value_ext = value.extent(self._extent)
+                if value_ext is None:
+                    continue
+                value = value_ext
             alt = value[name]
             if alt is not None:
                 return alt
