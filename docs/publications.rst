@@ -28,6 +28,21 @@ library:
   | *Journal of Air Transport Management* 99(11):102164, 2022
   | https://doi.org/10.1016/j.jairtraman.2021.102164
 
+- | J. Hoole, J. D. Booker and J. Cooper
+  | **Helicopter Flight Manoeuvre Statistics via ADS-B: An Initial Investigation Using the OpenSky Network**
+  | *Proceedings of the 9th OpenSky Symposium*, 2021
+  | https://doi.org/10.3390/engproc2021013010
+
+- | M. Kocour, K. Veselý et al.
+  | **Automatic Processing Pipeline for Collecting and Annotating Air-Traffic Voice Communication Data**
+  | *Proceedings of the 9th OpenSky Symposium*, 2021
+  | https://doi.org/10.3390/engproc2021013008
+
+- | J. Sun and I. Dedoussi
+  | **Evaluation of Aviation Emissions and Environmental Costs in Europe Using OpenSky and OpenAP**
+  | *Proceedings of the 9th OpenSky Symposium*, 2021
+  | https://doi.org/10.3390/engproc2021013005
+
 - | S. Madar, T. Puranik and D. Mavris
   | **Application of Trajectory Clustering for Aircraft Conflict Detection**
   | *Proceedings of the 40th Digital Avionics Systems Conference* (DASC), 2021
