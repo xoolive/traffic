@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from .basic.airways import Airways
     from .basic.navaid import Navaids
     from .basic.runways import Runways
+    from .eurocontrol.aixm.airports import AIXMAirportParser
     from .eurocontrol.aixm.airspaces import AIXMAirspaceParser
     from .eurocontrol.aixm.navpoints import AIXMNavaidParser
     from .eurocontrol.b2b import NMB2B
@@ -33,6 +34,7 @@ __all__ = [
     "carto_session",
     "navaids",
     "runways",
+    "aixm_airports",
     "aixm_airspaces",
     "aixm_navaids",
     "nm_airspaces",
@@ -54,6 +56,7 @@ airways: "Airways"
 carto_session: Session
 navaids: "Navaids"
 runways: "Runways"
+aixm_airports: "AIXMAirportParser"
 aixm_airspaces: "AIXMAirspaceParser"
 aixm_navaids: "AIXMNavaidParser"
 nm_airspaces: "NMAirspaceParser"
@@ -163,6 +166,19 @@ def __getattr__(name: str) -> Any:
 
         AIXMNavaidParser.cache_dir = cache_dir
         res = AIXMNavaidParser.from_file(Path(aixm_path_str))
+        _cached_imports[name] = res
+        return res
+
+    if name == "aixm_airports":  # coverage: ignore
+        from .eurocontrol.aixm.airports import AIXMAirportParser
+
+        AIXMAirportParser.cache_dir = cache_dir
+        res = AIXMAirportParser(
+            data=None,
+            aixm_path=Path(aixm_path_str)
+            if aixm_path_str is not None
+            else None,
+        )
         _cached_imports[name] = res
         return res
 
