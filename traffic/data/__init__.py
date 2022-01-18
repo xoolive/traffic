@@ -7,7 +7,6 @@ from requests import Session
 from .. import cache_dir, config, config_file
 
 if TYPE_CHECKING:
-    from ..core.airspace import Airspace
     from .adsb.decode import Decoder as ModeS_Decoder
     from .adsb.opensky import OpenSky
     from .basic.aircraft import Aircraft
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
     from .basic.airways import Airways
     from .basic.navaid import Navaids
     from .basic.runways import Runways
-    from .eurocontrol.aixm.eurocontrol_aixm import AIXMAirspaceParser
+    from .eurocontrol.aixm.airspaces import AIXMAirspaceParser
     from .eurocontrol.aixm.navpoints import AIXMNavaidParser
     from .eurocontrol.b2b import NMB2B
     from .eurocontrol.ddr.airspaces import NMAirspaceParser
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
     from .eurocontrol.ddr.navpoints import NMNavaids
     from .eurocontrol.ddr.routes import NMRoutes
     from .eurocontrol.ddr.so6 import SO6
+    from .eurocontrol.eurofirs import Eurofirs
 
 # Parse configuration and input specific parameters in below classes
 
@@ -60,7 +60,7 @@ nm_airspaces: "NMAirspaceParser"
 nm_airways: "NMRoutes"
 nm_b2b: "NMB2B"
 nm_navaids: "NMNavaids"
-eurofirs: Dict[Any, "Airspace"]
+eurofirs: "Eurofirs"
 opensky: "OpenSky"
 session: Session
 
@@ -167,14 +167,15 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "aixm_airspaces":  # coverage: ignore
-        from .eurocontrol.aixm.eurocontrol_aixm import AIXMAirspaceParser
+        from .eurocontrol.aixm.airspaces import AIXMAirspaceParser
 
         AIXMAirspaceParser.cache_dir = cache_dir
-
-        if aixm_path_str != "":  # coverage: ignore
-            AIXMAirspaceParser.aixm_path = Path(aixm_path_str)
-
-        res = AIXMAirspaceParser(config_file)
+        res = AIXMAirspaceParser(
+            data=None,
+            aixm_path=Path(aixm_path_str)
+            if aixm_path_str is not None
+            else None,
+        )
         _cached_imports[name] = res
         return res
 

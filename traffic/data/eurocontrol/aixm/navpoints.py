@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import zipfile
 from pathlib import Path
@@ -83,6 +85,14 @@ class AIXMNavaidParser(Navaids):
         instance = cls(None)
         instance.filename = Path(filename)
         return instance
+
+    def id_latlon(self, id_: str) -> None | tuple[float, float]:
+        filtered = self.query(f"id == '{id_}'")
+        if filtered is None:
+            return None
+        else:
+            elt = filtered.data.iloc[0]
+            return (elt.latitude, elt.longitude)
 
     def parse_data(self) -> None:
         dirname = Path(self.filename)
