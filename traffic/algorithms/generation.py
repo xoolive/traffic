@@ -132,7 +132,7 @@ def compute_latlon_from_trackgs(
         ([coordinates["latitude"]] + [np.nan] * (n_obs - 1)) * n_samples
     )
     lon = np.array(
-        ([coordinates["latitude"]] + [np.nan] * (n_obs - 1)) * n_samples
+        ([coordinates["longitude"]] + [np.nan] * (n_obs - 1)) * n_samples
     )
 
     for i in range(len(df)):
