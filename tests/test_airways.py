@@ -20,7 +20,9 @@ def test_through_extent() -> None:
     )
     assert narak_airways == {"UN859", "UN869", "UT122", "UY155", "UZ365"}
 
-    air_ext = airways.extent(eurofirs["LSAS"])
+    LSAS = eurofirs["LSAS"]
+    assert LSAS is not None
+    air_ext = airways.extent(LSAS)
     assert air_ext is not None
     swiss_length = max(
         a.project_shape().length for a in air_ext.through("DITON")
@@ -30,7 +32,9 @@ def test_through_extent() -> None:
     )
     assert swiss_length < 1e6 < full_length
 
-    air_ext = airways.extent(eurofirs["LFBB"])
+    LFBB = eurofirs["LFBB"]
+    assert LFBB is not None
+    air_ext = airways.extent(LFBB)
     assert air_ext is not None
 
     short_un871 = air_ext["UN871"]

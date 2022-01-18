@@ -183,11 +183,16 @@ def test_geometry() -> None:
     simplified_3d = flight.simplify(1e3, altitude="altitude")
     assert len(simplified) < len(simplified_3d) < len(flight)
 
-    assert flight.intersects(eurofirs["EHAA"])
-    assert flight.intersects(eurofirs["EHAA"].flatten())
-    assert not flight.intersects(eurofirs["LFBB"])
+    EHAA = eurofirs["EHAA"]
+    LFBB = eurofirs["LFBB"]
+    assert EHAA is not None
+    assert LFBB is not None
 
-    assert flight.distance(eurofirs["EHAA"]).data.distance.mean() < 0
+    assert flight.intersects(EHAA)
+    assert flight.intersects(EHAA.flatten())
+    assert not flight.intersects(LFBB)
+
+    assert flight.distance(EHAA).data.distance.mean() < 0
 
     airbus_tree = cast(Flight, get_sample(featured, "airbus_tree"))
     clip_dk = airbus_tree.clip(eurofirs["EKDK"])

@@ -14,7 +14,9 @@ def test_extent() -> None:
     gaithersburg = navaids["GAI"]
     assert gaithersburg is not None
     assert gaithersburg.type == "NDB"
-    nav_ext = navaids.extent(eurofirs["LFBB"])
+    LFBB = eurofirs["LFBB"]
+    assert LFBB is not None
+    nav_ext = navaids.extent(LFBB)
     assert nav_ext is not None
     gaillac = nav_ext["GAI"]
     assert gaillac is not None
