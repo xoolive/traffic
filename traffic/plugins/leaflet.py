@@ -213,6 +213,26 @@ def airspace_leaflet(airspace: "Airspace", **kwargs: Any) -> Polygon:
     return Polygon(locations=coords, **kwargs)
 
 
+def airspace_map_leaflet(
+    airspace: "Airspace",
+    *,
+    zoom: int = 6,
+    **kwargs: Any,
+) -> Optional[Map]:
+
+    if "center" not in kwargs:
+        (lon, lat), *_ = airspace.shape.centroid.coords
+        kwargs["center"] = (lat, lon)
+
+    m = Map(zoom=zoom, **kwargs)
+
+    elt = m.add_layer(airspace)
+    elt.popup = HTML()
+    elt.popup.value = airspace.designator
+
+    return m
+
+
 def airport_leaflet(airport: "Airport", **kwargs: Any) -> GeoData:
     return GeoData(
         geo_dataframe=airport._openstreetmap()
@@ -302,7 +322,9 @@ def _onload() -> None:
     setattr(PointMixin, "leaflet", point_leaflet)
     setattr(StateVectors, "leaflet", sv_leaflet)
 
+    setattr(Airspace, "map_leaflet", airspace_map_leaflet)
     setattr(Flight, "map_leaflet", flight_map_leaflet)
+    # setattr(FlightPlan, "map_leaflet", flightplan_map_leaflet)
     setattr(Traffic, "map_leaflet", traffic_map_leaflet)
 
     setattr(Map, "add_layer", map_add_layer)

@@ -24,7 +24,7 @@ else:
 import numpy as np
 import pyproj
 from shapely.geometry import Polygon, base, mapping, polygon, shape
-from shapely.ops import transform, unary_union
+from shapely.ops import orient, transform, unary_union
 
 from . import Flight, Traffic
 from .lazy import lazy_evaluation
@@ -72,7 +72,7 @@ class Airspace(ShapelyMixin):
 
     def flatten(self) -> Polygon:
         """Returns the 2D footprint of the airspace."""
-        return polygon.orient(unary_union([p.polygon for p in self]), -1)
+        return orient(unary_union([p.polygon for p in self]), -1)
 
     @property
     def shape(self) -> "BaseGeometry":

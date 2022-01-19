@@ -200,7 +200,7 @@ def __getattr__(name: str) -> Any:
 
         if nm_path_str != "":  # coverage: ignore
             NMAirspaceParser.nm_path = Path(nm_path_str)
-        res = NMAirspaceParser(config_file)
+        res = NMAirspaceParser(data=None, config_file=config_file)
         _cached_imports[name] = res
         return res
 
