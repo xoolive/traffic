@@ -53,13 +53,14 @@ class DataFrameMixin(object):
 
         This class method dispatches the loading of data in various format to
         the proper ``pandas.read_*`` method based on the extension of the
-        filename.
+        filename. Potential compression of the file is inferred by pandas itself
+        based on the extension.
 
-        - .pkl and .pkl.gz dispatch to ``pandas.read_pickle``;
-        - .parquet and .parquet.gz dispatch to ``pandas.read_parquet``;
-        - .feather and .feather.gz dispatch to ``pandas.read_feather``;
-        - .json and .json.gz dispatch to ``pandas.read_json``;
-        - .csv and .csv.gz dispatch to ``pandas.read_csv``;
+        - .pkl[.gz,.bz2,...] dispatch to ``pandas.read_pickle``;
+        - .parquet[.gz,.bz2,...] dispatch to ``pandas.read_parquet``;
+        - .feather[.gz,.bz2,...] dispatch to ``pandas.read_feather``;
+        - .json[.gz,.bz2,...] dispatch to ``pandas.read_json``;
+        - .csv[.gz,.bz2,...] dispatch to ``pandas.read_csv``;
         - .h5 dispatch to ``pandas.read_hdf``.
 
         Other extensions return ``None``.
@@ -71,17 +72,17 @@ class DataFrameMixin(object):
         >>> t = Traffic.from_file("data/sample_opensky.pkl")
         """
         path = Path(filename)
-        if path.suffixes in [[".pkl"], [".pkl", ".gz"]]:
+        if ".pkl" in path.suffixes:
             return cls(pd.read_pickle(path, **kwargs))
-        if path.suffixes in [[".parquet"], [".parquet", ".gz"]]:
+        if ".parquet" in path.suffixes:
             return cls(pd.read_parquet(path, **kwargs))
-        if path.suffixes in [[".feather"], [".feather", ".gz"]]:
+        if ".feather" in path.suffixes:
             return cls(pd.read_feather(path, **kwargs))
-        if path.suffixes in [[".json"], [".json", ".gz"]]:
+        if ".json" in path.suffixes:
             return cls(pd.read_json(path, **kwargs))
-        if path.suffixes in [[".csv"], [".csv", ".gz"]]:
+        if ".csv" in path.suffixes:
             return cls(pd.read_csv(path, **kwargs))
-        if path.suffixes == [".h5"]:
+        if ".h5" == path.suffixes[-1]:
             return cls(pd.read_hdf(path, **kwargs))
         return None
 
