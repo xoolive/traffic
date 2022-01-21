@@ -13,8 +13,7 @@ from tqdm.autonotebook import tqdm
 
 import pandas as pd
 from shapely.geometry import Polygon
-from shapely.geometry.polygon import orient
-from shapely.ops import unary_union
+from shapely.ops import orient, unary_union
 
 from ....core.airspace import Airspace, ExtrudedPolygon, unary_union_with_alt
 from ....core.mixins import DataFrameMixin

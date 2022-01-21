@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 from ipyleaflet import GeoData, Map, Marker, MarkerCluster, Polygon, Polyline
 from ipywidgets import HTML
@@ -202,12 +202,21 @@ def airspace_leaflet(airspace: "Airspace", **kwargs: Any) -> Polygon:
 
     kwargs = {**dict(weight=3), **kwargs}
     coords: List[Any] = []
+
+    def unfold(shape: Polygon) -> Iterator[Any]:
+        yield shape.exterior
+        yield from shape.interiors
+
     if shape.geom_type == "Polygon":
-        coords = list((lat, lon) for (lon, lat, *_) in shape.exterior.coords)
+        coords = list(
+            list((lat, lon) for (lon, lat, *_) in x.coords)
+            for x in unfold(shape)
+        )
     else:
         coords = list(
-            list((lat, lon) for (lon, lat, *_) in piece.exterior.coords)
+            list((lat, lon) for (lon, lat, *_) in x.coords)
             for piece in shape.geoms
+            for x in unfold(piece)
         )
 
     return Polygon(locations=coords, **kwargs)

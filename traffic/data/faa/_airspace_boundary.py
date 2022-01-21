@@ -1,7 +1,8 @@
 import logging
 from typing import Dict
 
-from shapely.geometry import polygon, shape
+from shapely.geometry import shape
+from shapely.ops import orient
 
 from ...core.airspace import Airspace, ExtrudedPolygon
 from . import ADDS_FAA_OpenData
@@ -24,7 +25,7 @@ class Airspace_Boundary(ADDS_FAA_OpenData):
                 name=name,
                 elements=[
                     ExtrudedPolygon(
-                        polygon.orient(shape(feat["geometry"]), -1),
+                        orient(shape(feat["geometry"]), -1),
                         feat["properties"]["LOWER_VAL"]
                         if feat["properties"]["LOWER_VAL"] != -9998
                         else 0,

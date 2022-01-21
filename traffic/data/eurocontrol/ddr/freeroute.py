@@ -2,7 +2,7 @@ import re
 from functools import lru_cache
 from io import StringIO
 from pathlib import Path
-from typing import Any, Set, Tuple
+from typing import Set, Tuple
 
 import geopandas as gpd
 
@@ -54,14 +54,10 @@ class NMFreeRouteParser(NMAirspaceParser):
             )
         self.read_sls(sls_file)
 
-        self.initialized = True
-
-        self.fra = gpd.GeoDataFrame.from_records(
-            [
-                {"FRA": k, "geometry": self[k].shape}  # type: ignore
-                for k in self.elements.keys()
-            ]
-        )
+        data = gpd.GeoDataFrame.from_records(self.elements_list)
+        if "name" not in data.columns:
+            data = data.assign(name="")
+        self.fra = self.data = data.assign(type="FRA")
 
         frp_file = next(self.nm_path.glob("Free_Route_*.frp"), None)
         if frp_file is None:
@@ -164,7 +160,7 @@ class NMFreeRouteParser(NMAirspaceParser):
             )
         ).explode("airport")
 
-        self.frp = pd.concat(
+        self.frp = self.points = pd.concat(
             [
                 decode_coords,
                 propagate_coords,
@@ -174,12 +170,6 @@ class NMFreeRouteParser(NMAirspaceParser):
             ]
         )
 
-    def __getattr__(self, attr: str) -> Any:
-        if attr in ["fra", "frp"]:
-            self.init_cache()
-            return getattr(self, attr)
-        raise AttributeError(attr)
-
     @lru_cache()
     def _ipython_key_completions_(self) -> Set[str]:
-        return {*self.elements.keys()}
+        return set(elt["designator"] for elt in self.elements_list)

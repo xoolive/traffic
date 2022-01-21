@@ -209,7 +209,7 @@ def __getattr__(name: str) -> Any:
 
         if nm_path_str != "":  # coverage: ignore
             NMFreeRouteParser.nm_path = Path(nm_path_str)
-        res = NMFreeRouteParser(config_file)
+        res = NMFreeRouteParser(data=None, config_file=config_file)
         _cached_imports[name] = res
         return res
 

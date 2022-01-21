@@ -10,8 +10,8 @@ import geopandas as gpd
 from cartes.utils.cache import cached_property
 
 import pandas as pd
-from shapely.geometry import base, polygon, shape
-from shapely.ops import unary_union
+from shapely.geometry import base, shape
+from shapely.ops import orient, unary_union
 
 from ....core.airspace import Airspace, ExtrudedPolygon, unary_union_with_alt
 from ....core.mixins import DataFrameMixin
@@ -144,9 +144,7 @@ class NMAirspaceParser(DataFrameMixin):
                             "type": "Polygon",
                             "coordinates": [area_coords],
                         }
-                        self.polygons[name] = polygon.orient(
-                            shape(geometry), -1
-                        )
+                        self.polygons[name] = orient(shape(geometry), -1)
 
                     area_coords.clear()
                     nb, *_, name = line.split()
@@ -158,7 +156,7 @@ class NMAirspaceParser(DataFrameMixin):
 
             if name is not None:
                 geometry = {"type": "Polygon", "coordinates": [area_coords]}
-                self.polygons[name] = polygon.orient(shape(geometry), -1)
+                self.polygons[name] = orient(shape(geometry), -1)
 
     def read_sls(self, filename: Path) -> None:
         logging.info(f"Reading SLS file {filename}")
