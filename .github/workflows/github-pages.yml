@@ -28,10 +28,21 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt install -y libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
+          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
+          # upgrade to proj>=8.0 for Cartopy 0.20
+          git clone https://github.com/OSGeo/PROJ
+          cd PROJ
+          git checkout 8.2.1
+          mkdir build; cd build
+          cmake ..
+          cmake --build .
+          sudo cmake --build . --target install
+          cd ../..
           poetry install -E all
 
       - name: Build pages
+        env:
+          LD_LIBRARY_PATH: /usr/local/lib
         run: |
           # This line installs the theme for matplotlib
           poetry run python -c "import traffic.drawing"
