@@ -180,7 +180,7 @@ class AIXMAirspaceParser(DataFrameMixin):
 
         name_table = None
         if "name" in new_data.columns:
-            name_table = new_data[["designator", "name"]].drop_duplicates()
+            name_table = new_data[["identifier", "name"]].drop_duplicates()
 
         result = GeoDataFrame(
             new_data.groupby(columns)
