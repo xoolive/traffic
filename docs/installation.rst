@@ -24,15 +24,11 @@ We recommend creating a fresh conda environment for a first installation:
 
 .. parsed-literal::
 
-    # Recommended options if not set up yet
-    conda config --set channel_priority strict
-    conda config --add channels conda-forge
-
     # Installation
     conda create -n traffic -c conda-forge python=3.9 traffic
     conda activate traffic
 
-Adjust the Python version (>=3.7) and append packages you may need for future works (e.g. ``bpython``, ``jupyterlab``, etc.)
+Adjust the Python version (>=3.7) and append packages you may need for future works (e.g. ``jupyterlab``, ``xarray``, etc.)
 
 Then activate the environment each time you need to use the ``traffic`` library:
 

@@ -40,15 +40,10 @@ including CesiumJS or Google Earth.
 You may install `traffic` in a fresh conda environment:
 
 ```sh
-# Recommended options if not set up yet
-conda config --set channel_priority strict
-conda config --add channels conda-forge
-
-# Installation
 conda create -n traffic -c conda-forge python=3.9 traffic
 ```
 
-Adjust the Python version (>=3.7) and append packages you may need for future works (e.g. `bpython`, `jupyterlab`, etc.)
+Adjust the Python version (>=3.7) and append packages you may need for future works (e.g. `jupyterlab`, `xarray`, etc.)
 
 Then activate the environment each time you need to use the `traffic` library:
 
@@ -66,7 +61,6 @@ Please only report installation issues in fresh conda environments.
 # -n option is followed by the name of the environment
 conda update -n traffic -c conda-forge traffic
 ```
-
 
 ### Development version
 
@@ -89,8 +83,6 @@ If you intend to file a pull request, please activate `pre-commit` hooks:
 ```sh
 pre-commit install
 ```
-
-
 
 For troubleshootings, refer to the appropriate
 [documentation section](https://traffic-viz.github.io/installation.html#troubleshooting).
