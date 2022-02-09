@@ -900,7 +900,7 @@ class NavigationFeatures:
 
         segment = segment.split().max()
 
-        parking_positions = _airport.parking_position
+        parking_positions = _airport.parking_position.query("type_ == 'way'")
         for _, p in parking_positions.data.iterrows():
             if segment.intersects(p.geometry.buffer(buffer_size)):
                 parking_part = segment.clip(p.geometry.buffer(buffer_size))
