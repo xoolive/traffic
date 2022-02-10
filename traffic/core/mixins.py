@@ -72,7 +72,7 @@ class DataFrameMixin(object):
         >>> t = Traffic.from_file("data/sample_opensky.pkl")
         """
         path = Path(filename)
-        if ".pkl" in path.suffixes:
+        if ".pkl" in path.suffixes or ".pickle" in path.suffixes:
             return cls(pd.read_pickle(path, **kwargs))
         if ".parquet" in path.suffixes:
             return cls(pd.read_parquet(path, **kwargs))
