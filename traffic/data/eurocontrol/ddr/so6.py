@@ -40,7 +40,7 @@ from shapely.geometry import LineString, base
 
 from ....core import Airspace
 from ....core import Flight as FlightMixin
-from ....core.flight import Position
+from ....core.flight import Entry, Position
 from ....core.mixins import DataFrameMixin
 from ....core.time import time_or_delta, timelike, to_datetime
 
@@ -230,22 +230,56 @@ class Flight(FlightMixin):
     def registration(self) -> None:
         return None
 
-    def coords4d(
-        self, delta_t: bool = False
-    ) -> Iterator[Tuple[float, float, float, float]]:
+    @property
+    def flight(self) -> FlightMixin:
+        return Flight(
+            pd.DataFrame.from_records(self.coords4d()).assign(
+                callsign=self.callsign,
+                flight_id=str(self.flight_id),
+                typecode=self.typecode,
+            )
+        )
+
+    def coords4d(self, delta_t: bool = False) -> Iterator[Entry]:
         t = 0
         if self.data.shape[0] == 0:
             return
-        for _, s in self.data.iterrows():
+        for _, s in self.data.assign(
+            segment=lambda df: df.segment.str.replace("NO_POINT", "NOPOINT")
+        ).iterrows():
             if delta_t:
-                yield t, s.lon1, s.lat1, s.alt1
+                yield {
+                    "timedelta": t,
+                    "longitude": s.lon1,
+                    "latitude": s.lat1,
+                    "altitude": s.alt1,
+                    "name": s.segment.split("_")[0],
+                }
                 t += (s.time2 - s.time1).total_seconds()
             else:
-                yield s.time1, s.lon1, s.lat1, s.alt1
+                yield {
+                    "timestamp": s.time1,
+                    "longitude": s.lon1,
+                    "latitude": s.lat1,
+                    "altitude": s.alt1,
+                    "name": s.segment.split("_")[0],
+                }
         if delta_t:
-            yield t, s.lon2, s.lat2, s.alt2
+            yield {
+                "timedelta": t,
+                "longitude": s.lon2,
+                "latitude": s.lat2,
+                "altitude": s.alt2,
+                "name": s.segment.split("_")[1],
+            }
         else:
-            yield s.time2, s.lon2, s.lat2, s.alt2
+            yield {
+                "timestamp": s.time2,
+                "longitude": s.lon2,
+                "latitude": s.lat2,
+                "altitude": s.alt2,
+                "name": s.segment.split("_")[1],
+            }
 
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
@@ -629,13 +663,14 @@ class SO6(DataFrameMixin):
                 "origin": f.origin,
                 "destination": f.destination,
                 "duration": f.stop - f.start,
+                "start": f.start,
             }
             cumul.append(info)
 
         return (
             pd.DataFrame.from_records(cumul)
             .set_index("flight_id")
-            .sort_values("duration", ascending=False)
+            .sort_values("start", ascending=True)
         )
 
     def __repr__(self) -> str:
@@ -655,7 +690,7 @@ class SO6(DataFrameMixin):
             sep=" ",
             header=None,
             names=[
-                "d1",
+                "segment",
                 "origin",
                 "destination",
                 "aircraft",
@@ -690,7 +725,6 @@ class SO6(DataFrameMixin):
         )
 
         for col in (
-            "d1",
             "d2",
             "d3",
             "d4",

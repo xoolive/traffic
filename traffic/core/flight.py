@@ -25,9 +25,9 @@ from typing import (
 )
 
 if sys.version_info >= (3, 8):
-    from typing import Literal
+    from typing import Literal, TypedDict
 else:
-    from typing_extensions import Literal
+    from typing_extensions import Literal, TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -56,6 +56,15 @@ if TYPE_CHECKING:
     from .airspace import Airspace  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
     from .traffic import Traffic  # noqa: F401
+
+
+class Entry(TypedDict, total=False):
+    timestamp: pd.Timestamp
+    timedelta: pd.Timedelta
+    longitude: float
+    latitude: float
+    altitude: float
+    name: str
 
 
 T = TypeVar("T", bound="Flight")
@@ -480,18 +489,30 @@ class Flight(
             data = data.assign(altitude=0)
         yield from zip(data["longitude"], data["latitude"], data["altitude"])
 
-    def coords4d(
-        self, delta_t: bool = False
-    ) -> Iterator[Tuple[float, float, float, float]]:
+    def coords4d(self, delta_t: bool = False) -> Iterator[Entry]:
         data = self.data.query("longitude == longitude")
         if delta_t:
             time = (data.timestamp - data.timestamp.min()).dt.total_seconds()
         else:
             time = data["timestamp"]
 
-        yield from zip(
+        for t, longitude, latitude, altitude in zip(
             time, data["longitude"], data["latitude"], data["altitude"]
-        )
+        ):
+            if delta_t:
+                yield {
+                    "timedelta": t,
+                    "longitude": longitude,
+                    "latitude": latitude,
+                    "altitude": altitude,
+                }
+            else:
+                yield {
+                    "timestamp": t,
+                    "longitude": longitude,
+                    "latitude": latitude,
+                    "altitude": altitude,
+                }
 
     @property
     def xy_time(self) -> Iterator[Tuple[float, float, float]]:
