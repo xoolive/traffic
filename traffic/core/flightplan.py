@@ -429,6 +429,26 @@ class FlightPlan(ShapelyMixin):
                             lat2 + buf,
                         )
                     )
+                elif self.destination is not None and self.origin is not None:
+                    from traffic.data import airports
+
+                    origin = airports[self.origin]
+                    destination = airports[self.destination]
+                    assert origin is not None and destination is not None
+                    lat1, lon1 = origin.latlon
+                    lat2, lon2 = destination.latlon
+
+                    lat1, lat2 = min(lat1, lat2), max(lat1, lat2)
+                    lon1, lon2 = min(lon1, lon2), max(lon1, lon2)
+                    buf = 2
+                    n = navaids.extent(
+                        (
+                            lon1 - buf,
+                            lon2 + buf,
+                            lat1 - buf,
+                            lat2 + buf,
+                        )
+                    )
                 else:
                     n = None
 
@@ -470,6 +490,27 @@ class FlightPlan(ShapelyMixin):
                     buf = 10  # conservative
                     # this one may return None
                     # (probably no, but mypy is whining)
+                    n = navaids.extent(
+                        (
+                            lon1 - buf,
+                            lon2 + buf,
+                            lat1 - buf,
+                            lat2 + buf,
+                        )
+                    )
+                elif self.destination is not None and self.origin is not None:
+                    from traffic.data import airports
+
+                    origin = airports[self.origin]
+                    destination = airports[self.destination]
+                    assert origin is not None and destination is not None
+
+                    lat1, lon1 = origin.latlon
+                    lat2, lon2 = destination.latlon
+
+                    lat1, lat2 = min(lat1, lat2), max(lat1, lat2)
+                    lon1, lon2 = min(lon1, lon2), max(lon1, lon2)
+                    buf = 2
                     n = navaids.extent(
                         (
                             lon1 - buf,
