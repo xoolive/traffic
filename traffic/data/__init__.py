@@ -92,7 +92,7 @@ pkcs12_password = config.get("nmb2b", "pkcs12_password", fallback="")
 nmb2b_mode = config.get("nmb2b", "mode", fallback="PREOPS")
 if nmb2b_mode not in ["OPS", "PREOPS"]:
     raise RuntimeError("mode must be one of OPS or PREOPS")
-nmb2b_version = config.get("nmb2b", "version", fallback="23.0.0")
+nmb2b_version = config.get("nmb2b", "version", fallback="25.0.0")
 
 
 _cached_imports: Dict[str, Any] = dict()
