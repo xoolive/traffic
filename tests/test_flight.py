@@ -1,6 +1,5 @@
-# fmt: off
-
 import zipfile
+from operator import itemgetter
 from typing import Any, Optional, cast
 
 import pytest
@@ -18,8 +17,6 @@ from traffic.data.samples import (
     get_sample,
     zurich_airport,
 )
-
-# fmt: on
 
 # This part only serves on travis when the downloaded file is corrupted
 # This shouldn't happen much as caching is now activated.
@@ -70,12 +67,12 @@ def test_iterators() -> None:
     assert min(flight.coords)[0] == flight.min("longitude")
     assert max(flight.coords)[0] == flight.max("longitude")
 
-    max_time = max(flight.coords4d())
+    max_time = max(flight.coords4d(), key=itemgetter("timestamp"))
     last_point = flight.at()
     assert last_point is not None
-    assert max_time[1] == last_point.longitude
-    assert max_time[2] == last_point.latitude
-    assert max_time[3] == last_point.altitude
+    assert max_time["longitude"] == last_point.longitude
+    assert max_time["latitude"] == last_point.latitude
+    assert max_time["altitude"] == last_point.altitude
 
     max_xy_time = list(flight.xy_time)[-1]
     assert max_xy_time[0] == last_point.longitude
