@@ -181,3 +181,15 @@ div.bottomnav {
 .gallery .image-title {
   font-size: 0.95em;
 }
+
+div.jupyter_container {
+  background-color: unset;
+  border: unset;
+  box-shadow: unset;
+  -webkit-box-shadow: unset;
+  -moz-box-shadow: unset;
+}
+
+.jupyter_container .output {
+  margin-top: 1em;
+}

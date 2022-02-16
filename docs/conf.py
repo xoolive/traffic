@@ -15,6 +15,9 @@
 import os
 import sys
 
+import traffic
+
+# sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath(".."))
 
 
@@ -25,9 +28,9 @@ copyright = "2018, Xavier Olive"
 author = "Xavier Olive"
 
 # The short X.Y version
-version = ""
+version = traffic.__version__
 # The full version, including alpha/beta/rc tags
-release = ""
+release = traffic.__version__
 
 
 # -- General configuration ---------------------------------------------------

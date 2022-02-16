@@ -55,8 +55,8 @@ conda activate traffic
 
 Dependency resolution may be tricky, esp. if you use an old conda environment where you overwrote `conda` libraries with `pip` installs. **Please only report installation issues in new, fresh conda environments.**
 
-For troubleshootings, refer to the appropriate
-[documentation section](https://traffic-viz.github.io/installation.html#troubleshooting).
+For troubleshooting, refer to the appropriate
+[documentation section](https://traffic-viz.github.io/troubleshooting/installation.html).
 
 ## Credits
 

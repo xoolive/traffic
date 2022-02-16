@@ -16,10 +16,10 @@ relevant efficiently implemented methods for trajectory analysis. Airspaces take
 advantage of `shapely Geometries <https://shapely.readthedocs.io>`_ for
 geometrical analysis.
 
-`FlightIterator <traffic.core.iterator.html>`_ has been introduced in earlier
-versions in order to deal with iteration over pieces of trajectories. This
-structure allows for more flexibility and accuracy when trying to identify
-specific events.
+`FlightIterator <traffic.core.iterator.html>`_ has been introduced in order to
+deal with iteration over pieces of trajectories. This structure allows for more
+flexibility and accuracy when trying to identify specific events which may
+happen several times along a trajectory.
 
 `Lazy iteration <traffic.core.lazy.html>`_ has been implemented on top of
 `Traffic <traffic.core.traffic.html>`_ structures in order to chain operations

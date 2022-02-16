@@ -4,9 +4,6 @@ How to run traffic in a Docker container?
 
 It is quite simple to run the traffic library in a Docker container. The following two examples show how you can use the traffic library in a docker with `jupyter notebook <https://jupyter-docker-stacks.readthedocs.io/en/latest/>`__. If you are completely unfamiliar with Docker and how to modify a Docker image, you can find a good tutorial in the `official documentation <https://docs.docker.com/get-started/>`__. Of course, you can base your Docker container on a different Dockerfile as the one used in the examples.
 
-Basic Docker container
-~~~~~~~~~~~~~~~~~~~~~~
-
 In the simplest case when you just want to run the traffic library in a Docker container, you can install the library and its dependencies directly into the base environment of the container. In that case, the ``Dockerfile`` could look like the following:
 
 .. code:: dockerfile
@@ -28,10 +25,11 @@ The Docker container can now be started:
 
 	docker run -it -p 8888:8888 --name jupyter_traffic jupyter/traffic:latest
 
-Docker container using a conda environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Maybe you have already a working conda environment that you would like to use. In this case, you can install your existing environment into the Docker container. The ``Dockerfile`` could looks like the following:
+If you have already a working conda environment that you would like to use, you
+can install your existing environment into the Docker container.
+
+The ``Dockerfile`` could look like the following:
 
 .. code:: dockerfile
 

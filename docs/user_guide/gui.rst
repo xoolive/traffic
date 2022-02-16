@@ -1,5 +1,5 @@
-Graphical user interface
-========================
+How to use the traffic Graphical User Interface?
+================================================
 
 The traffic library comes with a Qt Graphical user interface (GUI) designed
 to decode and explore historical and live data.
@@ -14,17 +14,13 @@ be automatically generated in future versions)
     pip install traffic_qtgui  # first install the plugin
     traffic gui
 
-
-Data exploration
-----------------
-
 The GUI consists of two panes:
 
 - the **display** pane on the left-hand side, with a *map* and a *plots* tab;
 - the **command** pane on the right-hand side, with selection and filtering
   buttons.
 
-.. image:: _static/gui_start.png
+.. image:: images/gui_start.png
    :scale: 25 %
    :alt: Startup screen for the GUI
    :align: center
@@ -45,11 +41,11 @@ the configuration file, in the ``[projections]`` section:
 .. tip::
     You can implement more projections as `plugins <plugins.html>`_.
 
-You can either pan and zoom the map. Zoom is operated by the mouse or trackpad scrool. Note that on MacOS, the trackpad scroll requires clicking.
+You can either pan and zoom the map. Zoom is operated by the mouse or trackpad scroll. Note that on MacOS, the trackpad scroll requires clicking.
 
 In order to explore data, click on *Open file* and select a .pkl file (like ``sample_opensky.pkl`` in the ``data/`` directory) By default, a scatter of all last recorded points is displayed.
 
-.. image:: _static/gui_map.png
+.. image:: images/gui_map.png
    :scale: 25 %
    :alt: Scatter plot
    :align: center
@@ -57,7 +53,7 @@ In order to explore data, click on *Open file* and select a .pkl file (like ``sa
 - You may select callsigns in order to plot trajectories.
 - Date and altitude sliders operate filters on the full pandas DataFrame.
 
-.. image:: _static/gui_trajectory.png
+.. image:: images/gui_trajectory.png
    :scale: 25 %
    :alt: Trajectories
    :align: center
@@ -66,13 +62,10 @@ In the *Plots* tab, you may select one callsign with different signals (e.g.
 *altitude* on the left-hand side and *ground speed* on the righ-hand side)
 **or (exclusive)** several callsigns with one signal (e.g. *altitude*).
 
-.. image:: _static/gui_plots.png
+.. image:: images/gui_plots.png
    :scale: 25 %
    :alt: Trajectories
    :align: center
-
-Data recording
---------------
 
 The application does not process raw signals from any 1090 MHz antenna. It
 relies on other tools and listen to a standard format of raw data broadcasted on
@@ -87,7 +80,7 @@ options:
 | Then, the second option in the *Open file* dropdown menu is *dump1090*.
 | You should be asked for a reference airport:
 
-.. image:: _static/gui_reference.png
+.. image:: images/gui_reference.png
    :scale: 30 %
    :alt: Select a reference airport
    :align: center
@@ -108,7 +101,7 @@ airports are in your neighbourhood, choose any of them (the closest one?)
        [decoders]
        radarcape = xxx.xxx.xxx.xxx:10003/LFBO
 
-.. image:: _static/gui_live.png
+.. image:: images/gui_live.png
    :scale: 25 %
    :alt: Live recording
    :align: center
@@ -117,7 +110,7 @@ For more details on your map, you may enter a name in the *Area* field and click
 *Plot*. The corresponding boundaries will be downloaded from OpenStreetMap
 servers and added to the map.
 
-.. image:: _static/gui_openstreetmap.png
+.. image:: images/gui_openstreetmap.png
    :scale: 25 %
    :alt: Live recording with Openstreetmap contours
    :align: center
@@ -127,7 +120,7 @@ and click *Airport*. Data is downloaded (and cached) from OpenStreetMap servers.
 
 You can then select a callsign and follow its trajectory:
 
-.. image:: _static/gui_takeoff.png
+.. image:: images/gui_takeoff.png
    :scale: 25 %
    :alt: Live recording of a take-off
    :align: center
@@ -136,7 +129,7 @@ The second tab lets you plot other details of the trajectory for different
 signals: *altitude* shows the climbing profile. *Indicated Airspeed* (IAS) is
 plotted here so as to reflect the 250 knots limit under 10,000 ft.
 
-.. image:: _static/gui_climb.png
+.. image:: images/gui_climb.png
    :scale: 25 %
    :alt: Live recording and display of climb profile
    :align: center
@@ -144,7 +137,7 @@ plotted here so as to reflect the 250 knots limit under 10,000 ft.
 You can automatically zoom to a geographical location by clicking *Extent* and
 observe ground movements on the airfield:
 
-.. image:: _static/gui_airport.png
+.. image:: images/gui_airport.png
    :scale: 25 %
    :alt: Zoom over airport
    :align: center
@@ -153,7 +146,7 @@ If you are closer to bigger airport with a good reception (from the rooftop
 viewing area), you may have fun looking at aircraft ground movements from your
 application.
 
-.. image:: _static/gui_schiphol.png
+.. image:: images/gui_schiphol.png
    :scale: 25 %
    :alt: Zoom over Schiphol airport
    :align: center
