@@ -26,8 +26,8 @@ easily extendable to other sources of data.
 
    installation
    quickstart
-   api_reference
    user_guide
    gallery
+   api_reference
    publications
 
