@@ -3,6 +3,7 @@ from operator import itemgetter
 from typing import Any, Optional, cast
 
 import pytest
+from requests import HTTPError
 
 import pandas as pd
 from traffic.algorithms.douglas_peucker import douglas_peucker
@@ -560,6 +561,7 @@ def test_slow_taxi() -> None:
     assert flight.slow_taxi().next() is None
 
 
+@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
 def test_pushback() -> None:
 
     flight = zurich_airport["AEE5ZH"]
@@ -578,6 +580,7 @@ def test_pushback() -> None:
     assert pushback.stop >= parking_position.stop
 
 
+@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
 def test_on_taxiway() -> None:
     flight = zurich_airport["ACA879"]
     assert flight is not None
