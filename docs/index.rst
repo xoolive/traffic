@@ -21,18 +21,13 @@ sources of ADS-B traffic like the `OpenSky Network
 easily extendable to other sources of data.
 
 
-
 .. toctree::
    :maxdepth: 1
 
    installation
    quickstart
-   core_structure
-   data
-   algorithms
-   export
-   advanced
+   api_reference
+   user_guide
    gallery
-   scenarios
    publications
 

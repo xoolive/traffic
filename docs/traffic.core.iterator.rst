@@ -1,5 +1,5 @@
-traffic.core.FlightIterator
----------------------------
+The FlightIterator structure
+----------------------------
 
 .. autoclass:: traffic.core.FlightIterator
     :members:

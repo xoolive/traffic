@@ -1,5 +1,5 @@
-Plugins
-=======
+How to use and write plugins for the traffic library
+====================================================
 
 Plugins are pieces of software which are designed to extend the 
 basic functionalities of the traffic library. Plugins can be

@@ -23,6 +23,11 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | A. Chevrot, A. Vernotte and B. Legeard
+  | **CAE : Contextual Auto-Encoder for multivariate time-series anomaly detection in air transportation**
+  | *Computers & Security* 102652, 2022
+  | https://doi.org/10.1016/j.cose.2022.102652
+
 - | M. Schultz, J. Rosenow and X. Olive
   | **Data-driven airport management enabled by operational milestones derived from ADS-B messages**
   | *Journal of Air Transport Management* 99(11):102164, 2022

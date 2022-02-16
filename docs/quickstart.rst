@@ -1,6 +1,5 @@
-
-Quickstart
-==========
+Getting started
+===============
 
 The motivation for this page/notebook is to take the reader through all
 basic functionalities of the traffic library. We will cover:

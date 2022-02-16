@@ -1,5 +1,5 @@
-traffic.core.Traffic
---------------------
+The Traffic structure
+---------------------
 
 .. autoclass:: traffic.core.Traffic
     :members:

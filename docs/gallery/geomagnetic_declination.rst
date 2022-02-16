@@ -1,5 +1,5 @@
-Geomagnetic declination in Mode S data
---------------------------------------
+Geomagnetic declination
+-----------------------
 
 .. warning::
 

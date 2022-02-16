@@ -35,54 +35,25 @@ including CesiumJS or Google Earth.
 
 ## Installation
 
-### Latest release
+Full installation instructions are in the [documentation](https://traffic-viz.github.io/installation.html).
 
-You may install `traffic` in a fresh conda environment:
+If you are not familiar/comfortable with your Python environment, please install `traffic` latest release in a new, fresh conda environment.
 
 ```sh
 conda create -n traffic -c conda-forge python=3.9 traffic
 ```
 
-Adjust the Python version (>=3.7) and append packages you may need for future works (e.g. `jupyterlab`, `xarray`, etc.)
+Adjust the Python version you need (>=3.7) and append packages you need for working efficiently, such as Jupyter Lab, xarray, PyTorch or more.
 
-Then activate the environment each time you need to use the `traffic` library:
+Then activate the environment every time you need to use the `traffic` library:
 
 ```sh
 conda activate traffic
 ```
 
-**Warning:**
+**Warning!**
 
-Please only report installation issues in fresh conda environments.
-
-### Updating traffic
-
-```sh
-# -n option is followed by the name of the environment
-conda update -n traffic -c conda-forge traffic
-```
-
-### Development version
-
-You may also install or update `traffic` in an existing environment with pip:
-
-```sh
-pip install --upgrade traffic
-```
-
-For the most recent development version, clone the Github repository:
-
-```sh
-git clone https://github.com/xoolive/traffic
-cd traffic
-pip install .[dev]
-```
-
-If you intend to file a pull request, please activate `pre-commit` hooks:
-
-```sh
-pre-commit install
-```
+Dependency resolution may be tricky, esp. if you use an old conda environment where you overwrote `conda` libraries with `pip` installs. **Please only report installation issues in new, fresh conda environments.**
 
 For troubleshootings, refer to the appropriate
 [documentation section](https://traffic-viz.github.io/installation.html#troubleshooting).
@@ -135,22 +106,6 @@ In addition, code is checked against static typing with [mypy](https://mypy.read
 ([pre-commit](https://pre-commit.com/) hooks are available in the repository) and
 extra quality checks performed by [Codacy](https://www.codacy.com/manual/xoolive/traffic).
 
-## Command line tool
-
-The `traffic` tool scripts around the library for common usecases.
-
-The most basic use case revolves around exploring the embedded data. You may check
-the help with `traffic data -h`.
-
-```
-traffic data -p Tokyo
-     altitude country iata  icao   latitude   longitude                                name
-3820       21   Japan  HND  RJTT  35.552250  139.779602  Tokyo Haneda International Airport
-3821      135   Japan  NRT  RJAA  35.764721  140.386307  Tokyo Narita International Airport
-```
-
-More details in the [documentation](https://traffic-viz.github.io/).
-
 ## Feedback and contribution
 
 Any input, feedback, bug report or contribution is welcome.
@@ -178,34 +133,3 @@ automatically shown in the PR.
 You may find the process troublesome but please keep in mind it is actually
 easier that way to keep track of corrections and to remember why things are the
 way they are.
-
-## Frequently asked questions
-
-[![Join the chat at https://gitter.im/xoolive/traffic](https://badges.gitter.im/xoolive/traffic.svg)](https://gitter.im/xoolive/traffic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-- I want to know more about Eurocontrol NM files
-
-We download these files from Eurocontrol [Network Manager Demand Data
-Repository (DDR)](https://www.eurocontrol.int/ddr) under Dataset Files >
-Airspace Environment Datasets. [Access
-conditions](https://www.eurocontrol.int/ddr#access-conditions) are managed by
-EUROCONTROL.
-
-Should you have no such access, basic FIRs are provided in `eurofirs` from
-`traffic.data`.
-
-- I want to know more about Eurocontrol AIXM files
-
-When you import `aixm_airspaces` from `traffic.data`, you need to set a path
-to a directory containing AIRAC files. These are XML files following the
-[AIXM](http://aixm.aero/) standard and produced by Eurocontrol. We download
-these files from Eurocontrol [Network Manager B2B web
-services](https://eurocontrol.int/service/network-manager-business-business-b2b-web-services).
-You have to own a B2B certificate granted by EUROCONTROL to get access to
-this data.
-
-- What does AIRAC mean?
-
-Aeronautical Information Publications are updated every 28 days according to
-fixed calendar. This cycle is known as AIRAC (Aeronautical Information
-Regulation And Control) cycle.
