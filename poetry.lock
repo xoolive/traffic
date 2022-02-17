@@ -383,6 +383,17 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "commonmark"
+version = "0.9.1"
+description = "Python parser for the CommonMark Markdown spec"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+test = ["flake8 (==3.7.8)", "hypothesis (==3.55.3)"]
+
+[[package]]
 name = "coverage"
 version = "6.3.1"
 description = "Code coverage measurement for Python"
@@ -1634,6 +1645,23 @@ requests = ">=2.26.0"
 dev = ["twine (>=3.4.2)", "wheel (>=0.37.0)"]
 
 [[package]]
+name = "rich"
+version = "11.2.0"
+description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
+category = "main"
+optional = false
+python-versions = ">=3.6.2,<4.0.0"
+
+[package.dependencies]
+colorama = ">=0.4.0,<0.5.0"
+commonmark = ">=0.9.0,<0.10.0"
+pygments = ">=2.6.0,<3.0.0"
+typing-extensions = {version = ">=3.7.4,<5.0", markers = "python_version < \"3.8\""}
+
+[package.extras]
+jupyter = ["ipywidgets (>=7.5.1,<8.0.0)"]
+
+[[package]]
 name = "scikit-fuzzy"
 version = "0.4.2"
 description = "Fuzzy logic toolkit for SciPy"
@@ -2173,7 +2201,7 @@ dev = ["pre-commit", "isort", "black", "flake8", "mypy"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1,<3.11"
-content-hash = "46287535c42b7c7aa8ee594818854b25bc41c9f4f18d197d3415606b877832b9"
+content-hash = "c0b876b8276052b5868b91e05289ac65df7ce8a57cde4c12ed2dafd7137fd9ae"
 
 [metadata.files]
 aiohttp = [
@@ -2433,6 +2461,10 @@ codecov = [
 colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
     {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
+]
+commonmark = [
+    {file = "commonmark-0.9.1-py2.py3-none-any.whl", hash = "sha256:da2f38c92590f83de410ba1a3cbceafbc74fee9def35f9251ba9a971d6d66fd9"},
+    {file = "commonmark-0.9.1.tar.gz", hash = "sha256:452f9dc859be7f06631ddcb328b6919c67984aca654e5fefb3914d54691aed60"},
 ]
 coverage = [
     {file = "coverage-6.3.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:eeffd96882d8c06d31b65dddcf51db7c612547babc1c4c5db6a011abe9798525"},
@@ -3449,6 +3481,10 @@ requests = [
 requests-pkcs12 = [
     {file = "requests_pkcs12-1.13-py3-none-any.whl", hash = "sha256:660a036f629e22ae413df9696eeb513f4456f795e2c25e842977c3ccf454a75d"},
     {file = "requests_pkcs12-1.13.tar.gz", hash = "sha256:adb9ddafefc4b8aacc037222f199803e4149c22491fdaabf6a9b4fc955a1522a"},
+]
+rich = [
+    {file = "rich-11.2.0-py3-none-any.whl", hash = "sha256:d5f49ad91fb343efcae45a2b2df04a9755e863e50413623ab8c9e74f05aee52b"},
+    {file = "rich-11.2.0.tar.gz", hash = "sha256:1a6266a5738115017bb64a66c59c717e7aa047b3ae49a011ede4abdeffc6536e"},
 ]
 scikit-fuzzy = [
     {file = "scikit-fuzzy-0.4.2.tar.gz", hash = "sha256:1ab12424d847ede1bc79670d8058167be7c8dd660b00756e9b844817ceb1e12e"},

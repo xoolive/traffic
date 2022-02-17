@@ -2,6 +2,8 @@ import argparse
 import logging
 from typing import List
 
+from rich.console import Console
+
 
 def main(args_list: List[str]) -> None:
 
@@ -67,21 +69,25 @@ def main(args_list: List[str]) -> None:
 
     from ..data import aircraft, airports, navaids
 
+    console = Console()
+
     if args.aircraft:
         for arg in args.args:
-            print(aircraft[arg])
+            console.print(aircraft[arg])
 
     if args.operator:
-        print(aircraft.operator(" ".join(args.args)))
+        console.print(aircraft.operator(" ".join(args.args)))
 
     if args.stats:
-        print(aircraft.stats(" ".join(args.args)))
+        console.print(aircraft.stats(" ".join(args.args)))
 
     if args.airport:
+        subset = airports
         for arg in args.args:
-            print(airports.search(arg))
+            subset = subset.search(arg)
+        console.print(subset)
 
     if args.navaid:
         for arg in args.args:
             for navaid in navaids.search(arg):
-                print(navaid)
+                console.print(navaid)

@@ -90,7 +90,12 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
                 f"'{self.__class__.__name__}' has no attribute '{name}'"
             )
         else:
-            return self._openstreetmap().query(f"aeroway == '{name}'")
+            res = self._openstreetmap().query(f"aeroway == '{name}'")
+            return res.drop(
+                columns=list(
+                    x for x in res.data.columns if x.startswith("name:")
+                )
+            )
 
     @lru_cache()
     def _openstreetmap(self) -> "Overpass":  # coverage: ignore
@@ -182,27 +187,31 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         labels: Union[bool, Optional[Dict[str, Any]]] = False,
         **kwargs,
     ):  # coverage: ignore
+        default_footprint = dict(
+            by="aeroway",
+            aerodrome=dict(color="gainsboro", alpha=0.5),
+            apron=dict(color="darkgray", alpha=0.5),
+            taxiway=dict(color="darkgray"),
+            terminal=dict(color="black"),
+            # MUTE the rest
+            gate=dict(alpha=0),
+            parking_position=dict(alpha=0),
+            holding_position=dict(alpha=0),
+            tower=dict(alpha=0),
+            helipad=dict(alpha=0),
+            jet_bridge=dict(alpha=0),
+            aerobridge=dict(alpha=0),
+            navigationaid=dict(
+                papi=dict(alpha=0), approach_light=dict(alpha=0)
+            ),
+            windsock=dict(alpha=0),
+        )
+
+        if isinstance(footprint, dict):
+            footprint = {**default_footprint, **footprint}
 
         if footprint is True:
-            footprint = dict(
-                by="aeroway",
-                aerodrome=dict(color="gainsboro", alpha=0.5),
-                apron=dict(color="darkgray", alpha=0.5),
-                taxiway=dict(color="darkgray"),
-                terminal=dict(color="black"),
-                # MUTE the rest
-                gate=dict(alpha=0),
-                parking_position=dict(alpha=0),
-                holding_position=dict(alpha=0),
-                tower=dict(alpha=0),
-                helipad=dict(alpha=0),
-                jet_bridge=dict(alpha=0),
-                aerobridge=dict(alpha=0),
-                navigationaid=dict(
-                    papi=dict(alpha=0), approach_light=dict(alpha=0)
-                ),
-                windsock=dict(alpha=0),
-            )
+            footprint = default_footprint
             # runways can come from OSM or from the runway database
             # since options may clash, this should fix it
             if isinstance(runways, dict):

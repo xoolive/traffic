@@ -12,8 +12,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from __future__ import annotations
+
 import os
 import sys
+from typing import Any
 
 import traffic
 
@@ -144,7 +147,7 @@ htmlhelp_basename = "trafficdoc"
 
 # -- Options for LaTeX output ------------------------------------------------
 
-latex_elements: dict = {
+latex_elements: dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -201,7 +204,7 @@ texinfo_documents = [
 # -- Extension configuration -------------------------------------------------
 
 
-def setup(app):
+def setup(app: Any) -> None:
 
     # <!-- Import Vega & Vega-Lite -->
     app.add_js_file("https://cdn.jsdelivr.net/npm/vega@5")

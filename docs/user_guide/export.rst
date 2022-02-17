@@ -1,9 +1,10 @@
-How to export and store data?
-=============================
+How to export and store trajectory and airspace data?
+=====================================================
 
-The traffic library is based on the `pandas
-<https://pandas.pydata.org/>`_ library for representing and manipulating trajectories and on the `shapely
-<https://shapely.readthedocs.io/en/latest/>`_ library for manipulating geographical information like airways, beacons, airports and airspaces.
+The traffic library is based on the `pandas <https://pandas.pydata.org/>`_
+library for representing and manipulating trajectories and on the `shapely
+<https://shapely.readthedocs.io/en/latest/>`_ library for manipulating
+geographical information like airways, beacons, airports and airspaces.
 
 Various parsers are provided (feel free to file a PR if you use other tools
 with different data sources) but after applying different operations to
@@ -49,7 +50,8 @@ to keep it.
   exportable. You may need extra dependencies to read and write from this
   format.
 
-The `Flight <traffic.core.flight.html>`_ and `Traffic <traffic.core.traffic.html>`_ structures implement the following methods:
+The `Flight <traffic.core.flight.html>`_ and `Traffic
+<traffic.core.traffic.html>`_ structures implement the following methods:
 
 .. autoclass:: traffic.core.mixins.DataFrameMixin()
   :members: from_file, to_csv, to_json, to_pickle, to_hdf, to_parquet

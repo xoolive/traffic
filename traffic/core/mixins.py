@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import warnings
 from functools import lru_cache
+from numbers import Integral, Real
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -13,6 +16,10 @@ from typing import (
     TypeVar,
     Union,
 )
+
+from rich.box import SIMPLE_HEAVY
+from rich.console import Console, ConsoleOptions, RenderResult
+from rich.table import Table
 
 import pandas as pd
 import pyproj
@@ -38,6 +45,10 @@ class DataFrameMixin(object):
     """
 
     __slots__ = ()
+
+    table_options: dict[str, Any] = dict(show_lines=False, box=SIMPLE_HEAVY)
+    max_rows: int = 10
+    columns_options: None | dict[str, dict[str, Any]] = None
 
     def __init__(self, data: pd.DataFrame, *args: Any, **kwargs: Any) -> None:
         self.data: pd.DataFrame = data
@@ -96,6 +107,40 @@ class DataFrameMixin(object):
 
     def __len__(self) -> int:
         return self.data.shape[0]  # type: ignore
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+
+        my_table = Table(**self.table_options)
+
+        if self.columns_options is None:
+            self.columns_options = dict(
+                (column, dict()) for column in self.data.columns
+            )
+
+        for column, opts in self.columns_options.items():
+            my_table.add_column(column, **opts)
+
+        for _, elt in self.data[: self.max_rows].iterrows():
+            my_table.add_row(
+                *list(
+                    format(
+                        elt[column],
+                        ".4g"
+                        if isinstance(elt[column], Real)
+                        and not isinstance(elt[column], Integral)
+                        else "",
+                    )
+                    for column in self.columns_options
+                )
+            )
+
+        yield my_table
+
+        delta = self.data.shape[0] - self.max_rows
+        if delta > 0:
+            yield f"... ({delta} more entries)"
 
     # --- Redirected to pandas.DataFrame ---
 
@@ -550,9 +595,27 @@ class GeoDBMixin(DataFrameMixin):
 
         This works with databases like airways, airports or navaids.
 
-        >>> airways.extent('Switzerland')
+        >>> airways.extent(eurofirs['LFBB'])
+          route    id   navaid   latitude    longitude
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          A25      6    GODAN    47.64       -1.96
+          A25      7    TMA28    47.61       -1.935
+          A25      8    NTS      47.16       -1.613
+          A25      9    TIRAV    46.6        -1.391
+          A25      10   LUSON    46.5        -1.351
+          A25      11   OLERO    45.97       -1.15
+          A25      12   MAREN    45.73       -1.062
+          A25      13   ROYAN    45.67       -1.037
+          A25      14   BMC      44.83       -0.7211
+          A25      15   SAU      44.68       -0.1529
+         ... (703 more lines)
 
-        >>> airports.extent(eurofirs['LFBB'])
+        >>> airports.extent("Bornholm")
+         name                 country   icao      iata   latitude   longitude
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+         Bodilsker Airstrip   Denmark   DK-0027   nan    55.06      15.05
+         Bornholm Airport     Denmark   EKRN      RNN    55.06      14.76
+         Ro Airport           Denmark   EKRR      nan    55.21      14.88
 
         >>> navaids['ZUE']
         ZUE (NDB): 30.9 20.06833333 0 ZUEITINA NDB 369.0kHz

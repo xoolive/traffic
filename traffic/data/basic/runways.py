@@ -25,7 +25,7 @@ from shapely.ops import linemerge
 
 from ... import cache_expiration
 from ...core.geodesy import bearing, destination
-from ...core.mixins import HBoxMixin, PointMixin, ShapelyMixin
+from ...core.mixins import DataFrameMixin, HBoxMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot  # noqa: F401
@@ -51,8 +51,13 @@ class Threshold(ThresholdTuple, PointMixin):
 RunwaysType = Dict[str, List[Tuple[Threshold, Threshold]]]
 
 
-class RunwayAirport(HBoxMixin, ShapelyMixin):
-    def __init__(self, runways: List[Tuple[Threshold, Threshold]]) -> None:
+class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
+    def __init__(
+        self,
+        data: Optional[pd.DataFrame] = None,
+        runways: List[Tuple[Threshold, Threshold]] = list(),
+    ) -> None:
+        self._data: Optional[pd.DataFrame] = data
         self._runways = runways
 
     @property
@@ -208,7 +213,7 @@ class Runways(object):
         elt = self.runways.get(airport_.icao, None)
         if elt is None:
             return None
-        return RunwayAirport(elt)
+        return RunwayAirport(runways=elt)
 
     def download_runways(self) -> None:  # coverage: ignore
         from .. import session

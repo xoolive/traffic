@@ -6,6 +6,9 @@ table {
   line-height: 1.6;
   table-layout: fixed;
 }
+table.dataframe {
+  border-width: 0;
+}
 thead {
   border-bottom: 1px solid #bdbdbd;
   vertical-align: bottom;

@@ -22,10 +22,8 @@ class Airports(GeoDBMixin):
     use the search method.
 
     The representation of an airport is based on its geographical footprint.
-    It subclasses namedtuple so all fields are accessible by the dot
-    operator. It can also be displayed on Matplotlib maps. Contours are
-    fetched from OpenStreetMap (you need an Internet connection the first
-    time you call it) and put in cache.
+    Contours are fetched from OpenStreetMap (you need an Internet connection the
+    first time you call it) and put in cache.
 
     A database of major world airports is available as:
 
@@ -34,24 +32,31 @@ class Airports(GeoDBMixin):
     Any airport can be accessed by the bracket notation:
 
     >>> airports["EHAM"]
-    EHAM/AMS: Amsterdam Schiphol
+    EHAM/AMS: Amsterdam Airport Schiphol
     >>> airports["EHAM"].latlon
     (52.308609, 4.763889)
     >>> airports["EHAM"].iata
     AMS
+    >>> airports["EHAM"].name
+    Amsterdam Airport Schiphol
 
     Runways thresholds are also associated to most airports:
 
-    >>> airports['LFPG'].runways.data
-        latitude  longitude     bearing name
-    0  48.995664   2.552155   85.379257  08L
-    1  48.998757   2.610603  265.423366  26R
-    2  49.024736   2.524890   85.399341  09L
-    3  49.026678   2.561694  265.427128  27R
-    4  48.992929   2.565816   85.399430  08R
-    5  48.994863   2.602438  265.427067  26L
-    6  49.020645   2.513055   85.391641  09R
-    7  49.023665   2.570303  265.434861  27L
+    >>> airports['EHAM'].runways
+      latitude   longitude   bearing   name
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      52.3       4.783       41.36     04
+      52.31      4.803       221.4     22
+      52.29      4.734       57.93     06
+      52.3       4.778       238       24
+      52.32      4.746       86.65     09
+      52.32      4.797       266.7     27
+      52.33      4.74        183       18C
+      52.3       4.737       2.997     36C
+      52.32      4.78        183       18L
+      52.29      4.777       3.002     36R
+    ... (2 more entries)
+
     """
 
     cache_dir: Path
@@ -60,6 +65,15 @@ class Airports(GeoDBMixin):
     src_dict = dict(
         fr24=("airports_fr24.pkl", "download_fr24"),
         open=("airports_ourairports.pkl", "download_airports"),
+    )
+
+    columns_options = dict(
+        name=dict(),
+        country=dict(justify="right"),
+        icao=dict(style="blue bold"),
+        iata=dict(),
+        latitude=dict(justify="left", max_width=10),
+        longitude=dict(justify="left", max_width=10),
     )
 
     def __init__(
@@ -86,9 +100,7 @@ class Airports(GeoDBMixin):
         buffer.seek(0)
         df = pd.read_csv(buffer)
 
-        f = session.get(
-            "https://ourairports.com/data/countries.csv",
-        )
+        f = session.get("https://ourairports.com/data/countries.csv")
         buffer = io.BytesIO(f.content)
         buffer.seek(0)
         countries = pd.read_csv(buffer)
@@ -184,10 +196,11 @@ class Airports(GeoDBMixin):
         Selects the subset of airports matching the given IATA or ICAO code,
         containing the country name or the full name of the airport.
 
-        >>> airports.search('Tokyo')
-            altitude country iata  icao   latitude   longitude                                name
-        3820       21   Japan  HND  RJTT  35.552250  139.779602  Tokyo Haneda International Airport
-        3821      135   Japan  NRT  RJAA  35.764721  140.386307  Tokyo Narita International Airport
+        >>> airports.query('type == "large_airport"').search('Tokyo')
+          name                                 country   icao   iata   latitude   longitude
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          Narita International Airport           Japan   RJAA   NRT    35.76      140.4
+          Tokyo Haneda International Airport     Japan   RJTT   HND    35.55      139.8
 
         """
         if "municipality" in self.data.columns:
