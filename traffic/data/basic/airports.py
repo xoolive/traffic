@@ -44,7 +44,7 @@ class Airports(GeoDBMixin):
 
     >>> airports['EHAM'].runways
       latitude   longitude   bearing   name
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       52.3       4.783       41.36     04
       52.31      4.803       221.4     22
       52.29      4.734       57.93     06

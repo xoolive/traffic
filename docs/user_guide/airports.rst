@@ -1,5 +1,7 @@
-How to access airport information, including runway information and apron layout?
-=================================================================================
+How to access airport information?
+==================================
+
+The traffic library provides an airport database with facilitated access to **runway information** and **apron layout**.
 
 .. autoclass:: traffic.data.basic.airports.Airports
     :members: search, extent
