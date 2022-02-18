@@ -1,5 +1,7 @@
 # flake8: noqa
 
+from __future__ import annotations
+
 import io
 from pathlib import Path
 from typing import Optional
@@ -76,11 +78,9 @@ class Airports(GeoDBMixin):
         longitude=dict(justify="left", max_width=10),
     )
 
-    def __init__(
-        self, data: Optional[pd.DataFrame] = None, src: str = "open"
-    ) -> None:
+    def __init__(self, data: None | pd.DataFrame = None) -> None:
         self._data: Optional[pd.DataFrame] = data
-        self._src = src
+        self._src = "open"
 
     def download_airports(self) -> None:  # coverage: ignore
         from .. import session
@@ -212,7 +212,6 @@ class Airports(GeoDBMixin):
                     "municipality.str.upper().str.contains(@name.upper()) or "
                     "name.str.upper().str.contains(@name.upper())"
                 ),
-                src=self._src,
             )
         else:
             return self.__class__(
@@ -222,5 +221,4 @@ class Airports(GeoDBMixin):
                     "country.str.upper().str.contains(@name.upper()) or "
                     "name.str.upper().str.contains(@name.upper())"
                 ),
-                src=self._src,
             )

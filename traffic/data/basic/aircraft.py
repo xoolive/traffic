@@ -1,3 +1,7 @@
+# flake8: noqa
+
+from __future__ import annotations
+
 import io
 import json
 import logging
@@ -5,11 +9,13 @@ import re
 import zipfile
 from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 from tqdm.autonotebook import tqdm
 
 import pandas as pd
+
+from ...core.mixins import DataFrameMixin
 
 json_path = Path(__file__).parent / "patterns.json"
 
@@ -94,53 +100,91 @@ def country(reg: Dict[str, str]) -> Dict[str, str]:
     return candidate
 
 
-class Aircraft(object):
-    """
+T = TypeVar("T", bound="Aircraft")
 
-    `@junzis <https://github.com/junzis/>`_'s `database
-    <https://junzisun.com/adb/download/aircraft_db.zip>`_ is available by
-    default in the library as:
+
+class Aircraft(DataFrameMixin):
+    """By default, the OpenSky aircraft database is downloaded from
+    https://opensky-network.org/aircraft-database
 
     >>> from traffic.data import aircraft
+
+    The database can be manually downloaded or upgraded (the operation can take
+    up to five minutes with a slow Internet connection):
+
+    >>> aircraft.download_opensky()
+    WARNING:root:Downloading OpenSky aircraft database
+    download: 100%|███████████████████████████| 83433/83433 [01:25<00:00, 972.47it/s]
 
     Basic requests can be made by the bracket notation:
 
     >>> aircraft["F-GFKY"]
-          icao24 registration typecode             model    operator
-    3032  391558       F-GFKY     A320   Airbus A320-211  Air France
+      icao24   registration   typecode   model             operator     owner
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
+
     >>> aircraft["391558"]
-          icao24 registration typecode             model    operator
-    3032  391558       F-GFKY     A320   Airbus A320-211  Air France
+      icao24   registration   typecode   model             operator   owner
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
 
-    A more comprehensive database can be manually downloaded or upgraded (the
-    operation can take up to five minutes with a slow Internet connection):
+    .. tip::
 
-    >>> aircraft.download_opensky()
+        Different custom databases may also be used as a replacement if you
+        provide a path in the configuration file.
 
+    | You may set the path to any file that pandas can open (.csv, .pickle, etc.).
+    | Required columns for the library are:
 
+    - icao24: the hexadecimal transponder identifier
+    - registration: the tail number of the aircraft
+    - typecode: the short identifier for the type of aircraft
+    - model: the full name of the aircraft
+
+    For example, you may download and uncompress Junzi's deprecated database
+    from https://junzis.com/adb/ then edit the configuration file:
+
+    .. parsed-literal::
+
+        [aircraft]
+
+        database = /home/xo/Downloads/aircraft_db/aircraft_db.csv
+
+        icao24 = icao
+        registration = regid
+        typecode = mdl
+        model = type
 
     """
 
     cache_dir: Path
-    basic_columns = ["icao24", "registration", "typecode", "model", "operator"]
+    columns_options: dict[str, dict[str, Any]] = dict(
+        icao24=dict(), registration=dict(), typecode=dict(), model=dict()
+    )
 
-    def __init__(self) -> None:
-        self._junzis: Optional[pd.DataFrame] = None
-        self._opensky: Optional[pd.DataFrame] = None
-        self._merged: Optional[pd.DataFrame] = None
+    def __init__(self, data: None | pd.DataFrame = None) -> None:
+        if data is None:
+            self.data = self.opensky_db
+        else:
+            self.data = data
+        other_columns = ["operator", "owner", "age"]
+        for column in other_columns:
+            if column in self.data.columns:
+                self.columns_options[column] = dict(max_width=30)
 
     def download_junzis(self) -> None:  # coverage: ignore
-        """Downloads the latest version of the aircraft database by @junzis.
-
-        url: https://junzisun.com/adb/download/aircraft_db.zip
-        """
         from .. import session
+
+        filename = self.cache_dir / "junzis_db.pkl"
+        if filename.exists():
+            self.data = pd.read_pickle(filename).fillna("")
 
         f = session.get("https://junzisun.com/adb/download/aircraft_db.zip")
         with zipfile.ZipFile(io.BytesIO(f.content)) as zfile:
             with zfile.open("aircraft_db.csv", "r") as dbfile:
-                self._junzis = (
+                self.data = (
                     pd.read_csv(dbfile, dtype=str)
+                    .fillna("")
                     .assign(
                         regid=lambda df: df.regid.str.upper(),
                         mdl=lambda df: df.mdl.str.upper(),
@@ -154,27 +198,17 @@ class Aircraft(object):
                         }
                     )
                 )
-                self._junzis.to_pickle(self.cache_dir / "junzis_db.pkl")
-
-        if (self.cache_dir / "merged_db.pkl").exists():
-            (self.cache_dir / "merged_db.pkl").unlink()
-
-    @property
-    def junzis_db(self) -> pd.DataFrame:  # coverage: ignore
-        if self._junzis is None:
-            if not (self.cache_dir / "junzis_db.pkl").exists():
-                self.download_junzis()
-            else:
-                logging.info("Loading @junzis aircraft database")
-                self._junzis = pd.read_pickle(self.cache_dir / "junzis_db.pkl")
-
-        assert self._junzis is not None
-        return self._junzis.fillna("")
+                self.data.to_pickle(self.cache_dir / "junzis_db.pkl")
 
     def download_opensky(self) -> None:  # coverage: ignore
         """Downloads the latest version of the OpenSky aircraft database.
 
-        url: https://opensky-network.org/aircraft-database
+        Reference: https://opensky-network.org/aircraft-database
+
+        >>> aircraft.download_opensky()
+        WARNING:root:Downloading OpenSky aircraft database
+        download: 100%|███████████████████████████| 83433/83433 [01:25<00:00, 972.47it/s]
+
         """
         from .. import session
 
@@ -193,58 +227,23 @@ class Aircraft(object):
             buffer.write(chunk)
 
         buffer.seek(0)
-        self._opensky = pd.read_csv(
+        self.data = pd.read_csv(
             buffer,
             dtype={"icao24": str, "operator": str},
             skiprows=[1],
             engine="c",
             keep_default_na=False,
         )
-        self._opensky.to_pickle(self.cache_dir / "opensky_db.pkl")
-
-        if (self.cache_dir / "merged_db.pkl").exists():
-            (self.cache_dir / "merged_db.pkl").unlink()
+        self.data.to_pickle(self.cache_dir / "opensky_db.pkl")
 
     @property
-    def opensky_db(self) -> Optional[pd.DataFrame]:
-        if self._opensky is None:
-            if not (self.cache_dir / "opensky_db.pkl").exists():
-                return None
-            else:
-                logging.info("Loading OpenSky aircraft database")
-                self._opensky = pd.read_pickle(
-                    self.cache_dir / "opensky_db.pkl"
-                )
-        return self._opensky
-
-    @property
-    def data(self) -> pd.DataFrame:
-        if self._merged is not None:
-            return self._merged
-
-        if (self.cache_dir / "merged_db.pkl").exists():
-            logging.info("Loading merged aircraft database")
-            self._merged = pd.read_pickle(self.cache_dir / "merged_db.pkl")
-            return self._merged
-
-        # coverage: ignore
-        # ignore that part below, a correct DB depends on this part anyway
-
+    def opensky_db(self) -> pd.DataFrame:
         if not (self.cache_dir / "opensky_db.pkl").exists():
-            return self.junzis_db
+            self.download_opensky()
+        logging.info("Loading OpenSky aircraft database")
+        return pd.read_pickle(self.cache_dir / "opensky_db.pkl")
 
-        self._merged = self.junzis_db.merge(
-            self.opensky_db,
-            on=["icao24", "registration", "typecode"],
-            how="outer",
-            suffixes=("_jz", "_os"),
-        ).fillna("")
-
-        self._merged.to_pickle(self.cache_dir / "merged_db.pkl")
-
-        return self._merged
-
-    def __getitem__(self, name: Union[str, List[str]]) -> pd.DataFrame:
+    def __getitem__(self: T, name: Union[str, List[str]]) -> Optional[T]:
         """Requests an aircraft by icao24 or registration (exact match)."""
 
         if isinstance(name, str):
@@ -253,175 +252,136 @@ class Aircraft(object):
             )
         else:
             df = self.data.query("icao24 in @name or registration in @name")
-        return self._fmt(df)
+        return self.__class__(df)
 
     def get_unique(self, name: str) -> Optional[Dict[str, str]]:
+        """Returns information about an aircraft based on its icao24 or
+        registration information as a dictionary. Only the first aircraft
+        matching the pattern passed in parameter is returned.
+
+        Country information are based on the icao24 identifier, category
+        information are based on the registration information.
+
+        >>> aircraft.get_unique('F-ZBQB')
+        {
+            'icao24': '3b780f',
+            'registration': 'F-ZBQB',
+            'typecode': 'EC45',
+            'serial': '9058',
+            'operator': 'French Securite Civile',
+            'model': 'Airbus Helicopters H145',
+            'country': 'France',
+            'flag': '🇫🇷',
+            'pattern': '^F-Z',
+            'category': 'State owned',
+            [truncated]
+        }
+        """
         df = self[name]
-
-        if df.shape[0] == 0:
+        if df is None:
             return None
+        return {**dict(df.data.iloc[0]), **country(dict(df.data.iloc[0]))}
 
-        return {**dict(df.iloc[0]), **country(dict(df.iloc[0]))}
-
-    def _fmt(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = df.sort_values("icao24")
-        if self.opensky_db is None:
-            return df[self.basic_columns]
-        else:
-
-            df = df.assign(model=df.model_jz, operator=df.operator_jz)
-            df.loc[
-                df.model_jz.str.len() < df.model_os.str.len(), "model"
-            ] = df.model_os
-
-            df.loc[
-                df.operator_jz.str.len() < df.operator_os.str.len(), "operator"
-            ] = df.operator_os
-
-            return df[
-                [
-                    "icao24",
-                    "registration",
-                    "typecode",
-                    "serialnumber",
-                    "model",
-                    "operator",
-                    "operatoricao",
-                    "owner",
-                ]
-            ]
-
-    def operator(self, name: str) -> pd.DataFrame:
+    def operator(self: T, name: str) -> Optional[T]:
         """Requests an aircraft by owner or operator (fuzzy match).
 
         The query string may match the owner or operator (full name, ICAO
         code or IATA code)
 
-        >>> aircraft.operator("Speedbird").head()
-                icao24 registration typecode serialnumber           model
-        7041    400409       G-BNLJ     B744        24052  Boeing 747-436
-        7042    40040a       G-BNLK     B744        24053  Boeing 747-436
-        7043    40040d       G-BNLN     B744        24056  Boeing 747-436
-        7044    40040e       G-BNLO     B744        24057  Boeing 747-436
-        7045    40040f       G-BNLP     B744        24058  Boeing 747-436
-                       operator operatoricao            owner
-        7041    British Airways          BAW  British Airways
-        7042    British Airways          BAW  British Airways
-        7043    British Airways          BAW  British Airways
-        7044    British Airways          BAW  British Airways
-        7045    British Airways          BAW  British Airways
+        >>> aircraft.operator("British Antarctic")
+          icao24   registration   typecode   model   operator
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          4241f4   VP-FBB         DHC6               British Antarctic Survey
+          4241f5   VP-FBL         DHC6               British Antarctic Survey
+          4241f6   VP-FAZ         DHC6               British Antarctic Survey
+          43be5b   VP-FBQ         DHC7               British Antarctic Survey
 
         """
-        if self.opensky_db is None:
-            return self._fmt(self.data.query("operator.str.contains(@name)"))
-        else:
-            return self._fmt(
-                self.data.query(
-                    "operator_jz.str.contains(@name) or "
-                    "operator_os.str.contains(@name) or "
-                    "@name.upper() == operatoricao or "
-                    "@name.upper() == operatoriata or "
-                    "@name.upper() == operatorcallsign or "
-                    "owner.str.contains(@name)"
-                )
-            )
+        return self.query(f"operator.str.contains('{name}')")
 
-    def stats(self, name: str) -> pd.DataFrame:
+    def stats(self: T, name: str) -> Optional[pd.DataFrame]:
         """Computes stats of owned or operated aircraft (fuzzy match).
 
-        >>> aircraft.stats("HOP")
-                              model  icao24
+        >>> aircraft.stats("Air France")
+                                    model  icao24
         typecode
-        AT45             ATR 42-500      13
-        AT75             ATR 72-500       9
-        AT76             ATR 72-600       5
-        CRJ1       Canadair CRJ-100       5
-        CRJ7       Canadair CRJ-700      13
-        CRJX      Canadair CRJ-1000      14
-        E145      Embraer ERJ-145MP      17
-        E170        Embraer ERJ-170      16
-        E190        Embraer ERJ-190      10
+        A318              Airbus A318-111      16
+        A319              Airbus A319-113      37
+        A320              Airbus A320-214      48
+        A321              Airbus A321-212      20
+        A332              Airbus A330-203      15
+        A343              Airbus A340-313      12
+        A359              Airbus A350-941      12
+        A388              Airbus A380-861      10
+        ...
 
         """
+        subset = self.operator(name)
+        if subset is None:
+            return None
         return (
-            self.operator(name)
-            .drop_duplicates("icao24")
+            subset.drop_duplicates("icao24")
             .groupby("typecode")
             .agg(dict(model="max", icao24="count"))
         )
 
-    def model(self, name: str) -> pd.DataFrame:
+    def model(self: T, name: str) -> Optional[T]:
         """Requests an aircraft by model or typecode (fuzzy match).
 
-        >>> aircraft.model("RJ85").head()
-             icao24 registration typecode serialnumber       model
-        39   0081fb       ZS-ASW     RJ85        E2313   Avro RJ85
-        40   0081fc       ZS-ASX     RJ85        E2314   Avro RJ85
-        41   0081fd       ZS-ASY     RJ85        E2316   Avro RJ85
-        42   0081fe       ZS-ASZ     RJ85        E2318   Avro RJ85
-        240  00b174       ZS-SSH     RJ85        E2285   Avro RJ85
-            operator operatoricao                  owner
-        39   Airlink               South African Airlink
-        40   Airlink               South African Airlink
-        41   Airlink               South African Airlink
-        42   Airlink               South African Airlink
-        240  Airlink               South African Airlink
-        """
-        if self.opensky_db is None:
-            return self._fmt(
-                self.data.query(
-                    "model.str.contains(@name) or "
-                    "typecode.str.contains(@name.upper())"
-                )
-            )
-        else:
-            return self._fmt(
-                self.data.query(
-                    "model_jz.str.contains(@name) or "
-                    "model_os.str.contains(@name) or "
-                    "typecode.str.contains(@name.upper())"
-                )
-            )
-
-    def registration(self, name: str) -> pd.DataFrame:
-        """Requests an aircraft by registration (fuzzy match).
-
-        >>> aircraft.registration("F-ZB").sample(5)
-                icao24 registration typecode serialnumber
-        5617    3b7b77       F-ZBAB     F406     406-0025
-        454188  3b7b6c       F-ZBFX     CL4T         2007
-        94647   3b7ba4       F-ZBPG     EC45         9013
-        245275  3b7b21       F-ZBGP     B350       FL-802
-        5626    3b7ba5       F-ZBPF     EC45         9012
-                                     model operator            owner
-        5617           Reims F406 Vigilant            French Customs
-        454188                    CL-415 T           Securite Civile
-        94647       MBB-BK 117 C-2 (EC145)           Securite Civile
-        245275               King Air B350            French Customs
-        5626    Eurocopter-Kawasaki EC-145           Securite Civile
+        >>> aircraft.model("A320")
+          icao24   registration   typecode   model         operator   owner
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          38005a   F-WWBA         A320       Airbus A320   Airbus     Airbus
+          38009a   F-WWDA         A20N       Airbus A320   Airbus     Airbus
+          38019a   F-WWIA         A20N       Airbus A320   Airbus     Airbus
+          3801ba   F-WWIB         A20N       Airbus A320   Airbus     Airbus
+          3801da   F-WWIC         A20N       Airbus A320   Airbus     Airbus
+          3801fa   F-WWID         A20N       Airbus A320   Airbus     Airbus
+          380d5a   F-WWBB         A20N       Airbus A320   Airbus     Airbus
+          380d7a   F-WWBC         A20N       Airbus A320   Airbus     Airbus
+          380d9a   F-WWBD         A20N       Airbus A320   Airbus     Airbus
+          380dba   F-WWBF         A20N       Airbus A320   Airbus     Airbus
+          ... (7021 more entries)
 
         """
-        return self._fmt(self.data.query("registration.str.contains(@name)"))
 
-    def query(self, **kwargs: Any) -> pd.DataFrame:
+        return self.query(
+            f"model.str.contains('{name.upper()}') or "
+            f"typecode.str.contains('{name.upper()}')"
+        )
+
+    def registration(self: T, name: str) -> Optional[T]:
+        """Requests an aircraft by registration (fuzzy match)."""
+        return self.query(f"registration.str.contains('{name}')")
+
+    def query(
+        self: T, query_str: str = "", *args: Any, **kwargs: Any
+    ) -> Optional[T]:
         """Combines several requests.
 
         The keyword arguments correspond to the name of other methods.
 
-        >>> aircraft.query(registration="^F-ZB", model="EC45").head()
-           icao24 registration typecode serialnumber                   model
-        2  3b7b4a       F-ZBQK     EC45         9372  MBB-BK 117 C-2 (EC145)
-        3  3b7b4b       F-ZBQJ     EC45         9323  MBB-BK 117 C-2 (EC145)
-        4  3b7b50       F-ZBQI     EC45         9240  MBB-BK 117 C-2 (EC145)
-        5  3b7b51       F-ZBQH     EC45         9232  MBB-BK 117 C-2 (EC145)
-        6  3b7b52       F-ZBQG     EC45         9217  MBB-BK 117 C-2 (EC145)
-                          operator operatoricao            owner
-        2          Securite Civile               Securite Civile
-        3          Securite Civile               Securite Civile
-        4          Securite Civile               Securite Civile
-        5          Securite Civile               Securite Civile
-        6          Securite Civile               Securite Civile
+        >>> aircraft.query(registration="^F-ZB", model="EC45")
+          icao24   registration   typecode   model                     operator
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          3b780f   F-ZBQB         EC45       Airbus Helicopters H145   French Securite Civile
+          3b7b49   F-ZBQL         EC45       Airbus Helicopters H145   French Securite Civile
+          3b7b4a   F-ZBQK         EC45       Airbus Helicopters H145   French Securite Civile
+          3b7b50   F-ZBQI         EC45       Airbus Helicopters H145   French Securite Civile
+          3b7b51   F-ZBQH         EC45       Airbus Helicopters H145   French Securite Civile
+          3b7b52   F-ZBQG         EC45       Airbus Helicopters H145   French Securite Civile
+          3b7b8b   F-ZBQF         EC45       Airbus Helicopters H145   French Securite Civile
+          3b7b8c   F-ZBQF         EC45       Airbus Helicopters H145   French Securite Civile
+          3b7b8d   F-ZBQD         EC45       Airbus Helicopters H145   French Securite Civile
+          3b7b8e   F-ZBQC         EC45       Airbus Helicopters H145   French Securite Civile
+          ... (19 more entries)
         """
+        if query_str != "":
+            return super().query(query_str, *args, **kwargs)
+
         subs = (getattr(self, key)(value) for key, value in kwargs.items())
-        res = reduce(lambda a, b: a.merge(b, how="inner"), subs)
-        return res
+        res = reduce(
+            lambda a, b: a.merge(b, how="inner"),
+            (elt.data for elt in subs if elt is not None),
+        )
+        return self.__class__(res)

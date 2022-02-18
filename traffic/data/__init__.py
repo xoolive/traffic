@@ -104,20 +104,32 @@ def __getattr__(name: str) -> Any:
     if name in _cached_imports.keys():
         return _cached_imports[name]
 
-    """This only works for Python >= 3.7, see PEP 562."""
     if name == "aircraft":
         from .basic.aircraft import Aircraft
 
         Aircraft.cache_dir = cache_dir
-        res = Aircraft()
-        _cached_imports[name] = res
-        return res
+
+        filename = config.get("aircraft", "database", fallback="")
+        if filename != "":
+            res = Aircraft.from_file(filename)
+            rename_cols = dict(
+                (value, key)  # yes, reversed...
+                for key, value in config["aircraft"].items()
+                if key != "database"
+            )
+            if len(rename_cols) > 0:
+                res = res.rename(columns=rename_cols)
+        else:
+            res = Aircraft()
+        _cached_imports[name] = res.fillna("")
+        return res.fillna("")
 
     if name == "airports_fr24":
         from .basic.airports import Airports
 
         Airports.cache_dir = cache_dir
-        res = Airports(src="fr24")
+        res = Airports()
+        res._src = "fr24"
         _cached_imports[name] = res
         return res
 

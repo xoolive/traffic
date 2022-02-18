@@ -126,10 +126,10 @@ class DataFrameMixin(object):
             my_table.add_row(
                 *list(
                     format(
-                        elt[column],
+                        elt.get(column, ""),
                         ".4g"
-                        if isinstance(elt[column], Real)
-                        and not isinstance(elt[column], Integral)
+                        if isinstance(elt.get(column, ""), Real)
+                        and not isinstance(elt.get(column, ""), Integral)
                         else "",
                     )
                     for column in self.columns_options

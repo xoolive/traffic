@@ -830,11 +830,10 @@ class Flight(
 
         if not isinstance(self.icao24, str):
             return None
-        res = aircraft[self.icao24]
-        res = res.query("registration == registration and registration != ''")
-        if res.shape[0] == 1:
-            return res.iloc[0].registration  # type: ignore
-        return None
+        res = aircraft.get_unique(self.icao24)
+        if res is None:
+            return None
+        return res.get("registration", None)
 
     @property
     def typecode(self) -> Optional[str]:
@@ -842,11 +841,10 @@ class Flight(
 
         if not isinstance(self.icao24, str):
             return None
-        res = aircraft[self.icao24]
-        res = res.query("typecode == typecode and typecode != ''")
-        if res.shape[0] == 1:
-            return res.iloc[0].typecode  # type: ignore
-        return None
+        res = aircraft.get_unique(self.icao24)
+        if res is None:
+            return None
+        return res.get("typecode", None)
 
     @property
     def aircraft(self) -> Optional[str]:
