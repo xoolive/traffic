@@ -15,7 +15,7 @@ Sources of data
    :maxdepth: 1
 
    user_guide/airports
-   aircraft
+   user_guide/aircraft
    navaids
    airways
    samples

@@ -328,7 +328,9 @@ class FlightInfo(B2BReply):
 
         cumul = list()
         if hasattr(self, "aircraftAddress"):
-            cumul.append(aircraft[self.aircraftAddress.lower()].T)
+            res = aircraft[self.aircraftAddress.lower()]
+            if res is not None:
+                cumul.append(res.data.T)
 
         cumul.append(
             pd.DataFrame.from_dict(
