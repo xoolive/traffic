@@ -1,9 +1,18 @@
 .. raw:: html
-    :file: ../embed_widgets/leaflet.html
+
+  <div style="display: none">
+
+.. jupyter-execute::
+
+  # This trick only helps to trigger the proper Javascript library require queries.
+  from ipyleaflet import Map
+  Map()
 
 .. raw:: html
 
-    <!-- The inclusion above triggers the inclusion of leaflet without conflicting other pages. -->
+  </div>
+
+.. raw:: html
 
     <script src="../_static/calibration.geojson"></script>
 
@@ -166,147 +175,100 @@ We can have a look at the first trajectory in the calibration dataset. The
 aircraft takes off from Ajaccio airport before flying concentric circles and
 radials. There must be a VOR around, we can search in the navaid database:
 
-.. code:: python
+.. jupyter-execute::
 
-   # see https://traffic-viz.github.io/samples.html if any issue on import
    from traffic.data.samples.calibration import ajaccio
    from traffic.data import navaids
 
    navaids.extent(ajaccio).query('type == "VOR"')
-
-.. raw:: html
-
-   <table class="dataframe" border="0">
-     <thead>
-       <tr style="text-align: right;">
-         <th></th>
-         <th>name</th>
-         <th>type</th>
-         <th>latitude</th>
-         <th>longitude</th>
-         <th>altitude</th>
-         <th>frequency</th>
-         <th>description</th>
-       </tr>
-     </thead>
-     <tbody>
-       <tr>
-         <th>126858</th>
-         <td>AJO</td>
-         <td>VOR</td>
-         <td>41.770528</td>
-         <td>8.774667</td>
-         <td>2142.0</td>
-         <td>114.8</td>
-         <td>AJACCIO VOR-DME</td>
-       </tr>
-       <tr>
-         <th>127828</th>
-         <td>FGI</td>
-         <td>VOR</td>
-         <td>41.502194</td>
-         <td>9.083417</td>
-         <td>87.0</td>
-         <td>116.7</td>
-         <td>FIGARI VOR-DME</td>
-       </tr>
-     </tbody>
-   </table>
-
 
 Next step is to compute for each point the distance and bearing from the VOR to
 each point of the trajectory. The parts of the trajectory that are of interest
 are the ones with little to no variation in the distance (circles) and in the
 bearing (radials) to the VOR.
 
-.. code:: python
+Then, we can write a simple .query() followed by a .split() method to select all
+segments with a constant bearing and distance with respect to the selected VOR.
 
-   vor = navaids.extent(ajaccio)['AJO']
+.. jupyter-execute::
+    
+    from functools import reduce
+    from operator import or_
 
-   ajaccio = (
-       ajaccio.distance(vor)  # add a distance column (in nm) w.r.t the VOR
-       .bearing(vor)  # add a bearing column w.r.t the VOR
-       .assign(
-           distance_diff=lambda df: df.distance.diff().abs(),  # large circles
-           bearing_diff=lambda df: df.bearing.diff().abs(),  # long radials
-       )
-   )
+    vor = navaids.extent(ajaccio)['AJO']
 
-We can write a simple .query() followed by a .split() method to select all
-segments with a constant bearing with respect to the selected VOR.
+    ajaccio = (
+        ajaccio.distance(vor)  # add a distance column (in nm) w.r.t the VOR
+        .bearing(vor)  # add a bearing column w.r.t the VOR
+        .assign(
+            distance_diff=lambda df: df.distance.diff().abs(),  # large circles
+            bearing_diff=lambda df: df.bearing.diff().abs(),  # long radials
+        )
+    )
 
-.. code:: python
+    constant_distance = list(
+        segment for segment in ajaccio.query('distance_diff < .02').split('1T')
+        if segment.longer_than('5 minutes')
+    )
 
-    for segment in ajaccio.query('bearing_diff < .01').split('1T'):
-        if segment.longer_than('5 minutes'):
-            print(segment.duration)
-
-    # 0 days 00:05:05
-    # 0 days 00:05:10
-    # 0 days 00:17:20
-    # 0 days 00:22:35
-    # 0 days 00:05:20
-    # 0 days 00:09:40
-    # 0 days 00:08:15
+    # trick to display many trajectories
+    reduce(or_, constant_distance)
 
 
 We have all we need to enhance the interesting parts of the trajectory now:
 
-.. code:: python
+.. jupyter-execute::
 
-   import matplotlib.pyplot as plt
-   import pandas as pd
+    import matplotlib.pyplot as plt
 
-   from cartes.crs import Lambert93
-   from traffic.drawing import countries
-   from traffic.data import airports
+    from cartes.crs import Lambert93, EuroPP
+    from cartes.utils.features import countries
 
-   point_params = dict(zorder=5, text_kw=dict(fontname="Ubuntu", fontsize=15))
-   box_params = dict(boxstyle="round", facecolor="lightpink", alpha=.7, zorder=5)
+    from traffic.data import airports
 
-   with plt.style.context("traffic"):
+    point_params = dict(zorder=5, text_kw=dict(fontname="Ubuntu", fontsize=15))
+    box_params = dict(boxstyle="round", facecolor="lightpink", alpha=0.7, zorder=5)
 
-       fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
+    with plt.style.context("traffic"):
 
-       ax.add_feature(countries(edgecolor="midnightblue"))
+        fig, ax = plt.subplots(subplot_kw=dict(projection=EuroPP()))
 
-       airports["LFKJ"].point.plot(ax, marker="^", **point_params)
-       shift_vor = dict(units="dots", x=20, y=10)
-       vor.plot(ax, marker="h", shift=shift_vor, **point_params)
+        ax.add_feature(countries())
 
-       # background with the full trajectory
-       ajaccio.plot(ax, color="#aaaaaa", linestyle="--")
+        # airport information
+        airports["LFKJ"].point.plot(ax, **point_params)
+        
+        # VOR information
+        shift_vor = dict(units="dots", x=20, y=10)
+        vor.plot(ax, marker="h", shift=shift_vor, **point_params)
 
-       # plot large circles in red
-       for segment in ajaccio.query("distance_diff < .02").split("1 minute"):
-           # only print the segment if it is long enough
-           if segment.longer_than("3 minutes"):
-               segment.plot(ax, color="crimson")
-               distance_vor = segment.data.distance.mean()
+        # full trajectory in dashed lines
+        ajaccio.plot(ax, color="#aaaaaa", linestyle="--")
 
-               # an annotation with the radius of the circle
-               segment.at().plot(
-                   ax, alpha=0,  # We don't need the point, only the text
-                   text_kw=dict(s=f"{distance_vor:.1f} nm", bbox=box_params)
-               )
+        # constant distance segments
+        for segment in ajaccio.query("distance_diff < .02").split("1 minute"):
+            if segment.longer_than("3 minutes"):
+                segment.plot(ax, color="crimson")
 
-       for segment in ajaccio.query("bearing_diff < .01").split("1 minute"):
-           # only print the segment if it is long enough
-           if segment.longer_than("3 minutes"):
-               segment.plot(ax, color="forestgreen")
+                # an annotation with the radius of the circle
+                distance_vor = segment.data.distance.mean()
+                segment.at().plot(
+                    ax,
+                    alpha=0,  # We don't need the point, only the text
+                    text_kw=dict(s=f"{distance_vor:.1f} nm", bbox=box_params),
+                )
 
-       ax.set_extent((7.6, 9.9, 41.3, 43.3))
-       ax.spines['geo'].set_visible(False)
-       ax.background_patch.set_visible(False)
+        # constant bearing segments
+        for segment in ajaccio.query("bearing_diff < .01").split("1 minute"):
+            if segment.longer_than("3 minutes"):
+                segment.plot(ax, color="forestgreen")
 
-.. image:: images/ajaccio_map.png
-   :scale: 70%
-   :alt: Situational map
-   :align: center
+        ax.set_extent((7.6, 9.9, 41.2, 43.3))
+        ax.spines["geo"].set_visible(False)
+
 
 The following map displays the result of a similar processing on the other VOR
 calibration trajectories from the sample dataset. [3]_
-
 
 .. raw:: html
 
@@ -431,104 +393,27 @@ of the writing, so we added them manually.
    <!--<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>-->
 
 
-.. code:: python
+.. jupyter-execute::
 
-    from traffic.data.samples.calibration import traffic as calibration
+    from traffic.core import Traffic
     from traffic.data import aircraft
-
-    # aircraft not in junzis database
-    other_aircraft = {"4076f1": "G-TACN (DA62)", "750093": "9M-FCL (LJ60)"}
+    from traffic.data.samples import calibration
 
     (
-        calibration.groupby(["flight_id"], as_index=False)
-        .agg({"timestamp": "min", "icao24": "first"})
-        .assign(
-            registration=lambda df: df.icao24.apply(
-                lambda x: f"{aircraft[x].regid.item()} ({aircraft[x].mdl.item()})"
-                if aircraft[x].shape[0] > 0
-                else other_aircraft.get(x, None)
-            ),
-            flight_id=lambda df: df.agg(
-                # not the most efficient way but quite readable
-                lambda x: f"{x.flight_id} ({x.timestamp:%Y-%M-%d})", axis=1
+        Traffic.from_flights(
+            getattr(calibration, name).assign(
+                # create a flight_id which includes the date of the flight
+                flight_id=lambda df: f"{name} ({df.timestamp.min():%Y-%m-%d})"
             )
+            for name in calibration.__all__
         )
-        .sort_values(["registration", "timestamp"])
-        .groupby(["registration", "icao24"])
+        .summary(["flight_id", "icao24", "start"])
+        .merge(aircraft.data)
+        .sort_values(["registration", "start"])
+        .groupby(["registration", "typecode", "icao24"])
         .apply(lambda df: ", ".join(df.flight_id))
-        .pipe(lambda series: pd.DataFrame({"flights": series}))
+        .to_frame()
     )
-
-
-.. raw:: html
-
-   <table class="dataframe" border="0">
-     <thead>
-       <tr style="text-align: left;">
-         <th></th>
-         <th></th>
-         <th>flights</th>
-       </tr>
-       <tr>
-         <th>registration</th>
-         <th>icao24</th>
-         <th></th>
-       </tr>
-     </thead>
-     <tbody>
-       <tr>
-         <th>9M-FCL (LJ60)</th>
-         <th>750093</th>
-         <td>kota_kinabalu (2017-03-08)</td>
-       </tr>
-       <tr>
-         <th>C-GFIO (CRJ2)</th>
-         <th>c052bb</th>
-         <td>vancouver (2018-10-06)</td>
-       </tr>
-       <tr>
-         <th>C-GNVC (CRJ2)</th>
-         <th>c06921</th>
-         <td>montreal (2018-12-11)</td>
-       </tr>
-       <tr>
-         <th>D-CFMD (B350)</th>
-         <th>3cce6f</th>
-         <td>munich (2019-03-04), vienna (2018-11-20)</td>
-       </tr>
-       <tr>
-         <th>F-HNAV (BE20)</th>
-         <th>39b415</th>
-         <td>ajaccio (2018-01-12), monastir (2018-11-21), toulouse (2017-06-16), ...</td>
-       </tr>
-       <tr>
-         <th>G-GBAS (DA62)</th>
-         <th>4070f4</th>
-         <td>london_heathrow (2018-01-12), lisbon (2018-11-13), funchal (2018-11-23)</td>
-       </tr>
-       <tr>
-         <th>G-TACN (DA62)</th>
-         <th>4076f1</th>
-         <td>cardiff (2019-02-15), london_gatwick (2019-02-28)</td>
-       </tr>
-       <tr>
-         <th>SE-LKY (BE20)</th>
-         <th>4ab179</th>
-         <td>bornholm (2018-11-26), kiruna (2019-01-30)</td>
-       </tr>
-       <tr>
-         <th>VH-FIZ (B350)</th>
-         <th>7c1a89</th>
-         <td>noumea (2017-11-05), perth (2019-01-22)</td>
-       </tr>
-       <tr>
-         <th>YS-111-N (BE20)</th>
-         <th>0b206f</th>
-         <td>guatemala (2018-03-26), kingston (2018-06-26)</td>
-       </tr>
-     </tbody>
-   </table>
-
 
 .. raw:: html
 
@@ -536,4 +421,3 @@ of the writing, so we added them manually.
    <a class="reference internal image-reference" href="https://cdn.jetphotos.com/full/6/55737_1538774410.jpg" target='_blank'><img alt="F-HNAV" class="align-center" src="https://cdn.jetphotos.com/full/6/55533_1526410235.jpg" title="© Kris Van Craenenbroeck | Jetphotos" style="max-height: 200px; float: left; padding: 20px"></a>
    <a class="reference internal image-reference" href="https://www.jetphotos.com/photo/9094827" target='_blank'><img alt="C-GFIO" class="align-center" src="https://cdn.jetphotos.com/full/6/55737_1538774410.jpg" title="© Keeper1 | Jetphotos" style="max-height: 200px; display: block; padding: 20px"></a>
    </div>
-

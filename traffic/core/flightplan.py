@@ -461,14 +461,7 @@ class FlightPlan(ShapelyMixin):
                         f"Could not find {previous.name} or {next_.name}"
                     )
                     continue
-                coords = [(p1.lon, p1.lat), (p2.lon, p2.lat)]
-                cumul.append(
-                    Route(
-                        LineString(coordinates=coords),
-                        "DCT",
-                        [previous.name, next_.name],
-                    )
-                )
+                cumul.append(Route("DCT", [p1, p2]))
                 continue
 
             if isinstance(e, Direct):
@@ -531,14 +524,7 @@ class FlightPlan(ShapelyMixin):
                         f"Could not find {previous.name} or {next_.name}"
                     )
                     continue
-                coords = [(p1.lon, p1.lat), (p2.lon, p2.lat)]
-                cumul.append(
-                    Route(
-                        LineString(coordinates=coords),
-                        "DCT",
-                        [previous.name, next_.name],
-                    )
-                )
+                cumul.append(Route("DCT", [p1, p2]))
 
         return cumul
 
@@ -547,12 +533,18 @@ class FlightPlan(ShapelyMixin):
 
         for elt in self._parse():
             if elt is not None:
-                first, *args, last = list(zip(elt.shape.coords, elt.navaids))
-                for (lon, lat), name in (first, last):
-                    cumul[name] = _Point(lat, lon, name)
+                first, *args, last = elt.navaids
+                cumul[first.name] = _Point(
+                    first.latitude, first.longitude, first.name
+                )
+                cumul[last.name] = _Point(
+                    last.latitude, last.longitude, last.name
+                )
                 if all_points:
-                    for (lon, lat), name in args:
-                        cumul[name] = _Point(lat, lon, name)
+                    for elt in args:
+                        cumul[elt.name] = _Point(
+                            elt.latitude, elt.longitude, elt.name
+                        )
 
         return cumul
 

@@ -19,10 +19,9 @@ How to troubleshoot data access issues?
 
 - **I want to know more about Eurocontrol AIXM files**
 
-  When you import ``aixm_airspaces`` from ``traffic.data``, you need to set a
-  path to a directory containing AIRAC files. These are XML files following the
-  `AIXM <http://aixm.aero/>`_ standard and produced by Eurocontrol. We download
-  these files from Eurocontrol `Network Manager B2B web services
+  These are XML files following the `AIXM <http://aixm.aero/>`_ standard and
+  produced by Eurocontrol. We download these files from Eurocontrol `Network
+  Manager B2B web services
   <https://eurocontrol.int/service/network-manager-business-business-b2b-web-services>`_.
   
   You have to own a B2B certificate granted by EUROCONTROL to get access to this

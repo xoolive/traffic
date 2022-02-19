@@ -46,12 +46,12 @@ This page contains some visualisations on recreational examples.
      <span class="image" alt="Zero gravity flights" style="background-image: url(./_static/zero_gravity-thumb.png);"></span>
      <span class="image-title">Zero gravity flights</span>
    </a>
-   
+
    <a class="imagegroup" href="gallery/geomagnetic_declination.html">
      <span class="image" alt="Geomagnetic declination" style="background-image: url(./_images/magnetic_delta.png);"></span>
      <span class="image-title">Geomagnetic declination</span>
    </a>
-   
+
    <a class="imagegroup" href="gallery/tour_de_france.html">
      <span class="image" alt="Tour de France 2020" style="background-image: url(./_static/tour_de_france-thumb.png);"></span>
      <span class="image-title">Tour de France 2020</span>

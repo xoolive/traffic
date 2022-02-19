@@ -2389,10 +2389,7 @@ class Flight(
         import altair as alt
 
         base = alt.Chart(self.data).encode(
-            alt.X(
-                "utcyearmonthdatehoursminutesseconds(timestamp)",
-                title='alt.X("utcyearmonthdatehoursminutesseconds(timestamp)")',
-            ),
+            alt.X("utcyearmonthdatehoursminutesseconds(timestamp)"),
         )
         if len(features) > 0:
             base = base.transform_fold(

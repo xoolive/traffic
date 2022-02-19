@@ -14,18 +14,18 @@ Sources of data
 .. toctree::
    :maxdepth: 1
 
-   user_guide/airports
-   user_guide/aircraft
-   navaids
-   airways
-   samples
+   data_sources/samples
+   data_sources/airports
+   data_sources/aircraft
+   data_sources/navigation
    firs
    opensky_rest
    opensky_impala
+   data_sources/eurocontrol
    airac_usage
    so6_usage
    b2b_usage
-   user_guide/export
+   data_sources/export
 
 
 Navigation events

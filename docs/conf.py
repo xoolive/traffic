@@ -211,13 +211,5 @@ def setup(app: Any) -> None:
     app.add_js_file("https://cdn.jsdelivr.net/npm/vega-lite@4")
     app.add_js_file("https://cdn.jsdelivr.net/npm/vega-embed@6")
 
-    # <!-- Necessary to include jupyter widgets -->
-    app.add_js_file(
-        "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
-    )
-    app.add_js_file(
-        "https://unpkg.com/@jupyter-widgets/html-manager/dist/embed-amd.js"
-    )
-
     # Specific stylesheet
     app.add_css_file("main_stylesheet.css")

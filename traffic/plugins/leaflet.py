@@ -14,7 +14,7 @@ from ..core import (
     Traffic,
 )
 from ..core.mixins import PointMixin
-from ..core.structure import Airport
+from ..core.structure import Airport, Route
 
 
 def traffic_map_leaflet(
@@ -189,6 +189,24 @@ def flightplan_leaflet(
     return Polyline(locations=coords, **kwargs)
 
 
+def route_leaflet(route: "Route", **kwargs: Any) -> Optional[Polyline]:
+    """Returns a Leaflet layer to be directly added to a Map.
+
+    .. warning::
+        This is only available if the Leaflet `plugin <plugins.html>`_ is
+        activated. (true by default)
+
+    The elements passed as kwargs as passed as is to the PolyLine constructor.
+    """
+
+    if route.shape is None:
+        return None
+
+    coords = list((lat, lon) for (lon, lat, *_) in route.shape.coords)
+    kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
+    return Polyline(locations=coords, **kwargs)
+
+
 def airspace_leaflet(airspace: "Airspace", **kwargs: Any) -> Polygon:
     """Returns a Leaflet layer to be directly added to a Map.
 
@@ -297,6 +315,7 @@ MapElement = Union[
     FlightIterator,
     FlightPlan,
     PointMixin,
+    Route,
     StateVectors,
 ]
 
@@ -316,6 +335,12 @@ def map_add_layer(_map: Map, elt: MapElement, **kwargs: Any) -> Any:
         layer = elt.leaflet(**kwargs)  # type: ignore
         _old_add_layer(_map, layer)
         return layer
+    if isinstance(elt, Route):
+        layer = elt.leaflet(**kwargs)  # type: ignore
+        _old_add_layer(_map, layer)
+        for point in elt.navaids:
+            map_add_layer(_map, point, **kwargs)
+        return layer
     if isinstance(elt, FlightIterator):
         for segment in elt:
             map_add_layer(_map, segment, **kwargs)
@@ -329,6 +354,7 @@ def _onload() -> None:
     setattr(Flight, "leaflet", flight_leaflet)
     setattr(FlightPlan, "leaflet", flightplan_leaflet)
     setattr(PointMixin, "leaflet", point_leaflet)
+    setattr(Route, "leaflet", route_leaflet)
     setattr(StateVectors, "leaflet", sv_leaflet)
 
     setattr(Airspace, "map_leaflet", airspace_map_leaflet)

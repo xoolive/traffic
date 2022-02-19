@@ -340,7 +340,7 @@ def _flight_intersects(
     - If an Airspace is passed, the 3D trajectory is compared to each layers
       constituting the airspace, with corresponding altitude limits.
     - If a shapely Geometry is passed, the 2D trajectory alone is
-    considered.
+      considered.
     """
     linestring = flight.linestring
     if linestring is None:

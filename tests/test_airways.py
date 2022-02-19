@@ -16,7 +16,9 @@ def test_basic() -> None:
 def test_through_extent() -> None:
 
     narak_airways = set(
-        a.name for a in airways.through("NARAK") if a.name.startswith("U")
+        route
+        for route in airways.search("NARAK").data.route
+        if route.startswith("U")
     )
     assert narak_airways == {"UN859", "UN869", "UT122", "UY155", "UZ365"}
 
@@ -25,10 +27,12 @@ def test_through_extent() -> None:
     air_ext = airways.extent(LSAS)
     assert air_ext is not None
     swiss_length = max(
-        a.project_shape().length for a in air_ext.through("DITON")
+        air_ext[route].project_shape().length  # type: ignore
+        for route in air_ext.search("DITON").data.route
     )
     full_length = max(
-        a.project_shape().length for a in airways.through("DITON")
+        airways[route].project_shape().length  # type: ignore
+        for route in airways.search("DITON").data.route
     )
     assert swiss_length < 1e6 < full_length
 
@@ -39,7 +43,7 @@ def test_through_extent() -> None:
 
     short_un871 = air_ext["UN871"]
     assert short_un871 is not None
-    assert short_un871.navaids == [
+    assert list(navaid.name for navaid in short_un871.navaids) == [
         "LARDA",
         "RONNY",
         "TOPTU",

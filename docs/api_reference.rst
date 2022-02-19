@@ -39,11 +39,11 @@ being monkey-patched on `Flight <traffic.core.flight.html>`_ and `Traffic
 .. toctree::
    :hidden:
 
-   traffic.core.flight
-   traffic.core.traffic
-   traffic.core.airspace
-   traffic.core.iterator
-   traffic.core.lazy
+   api_reference/traffic.core.flight
+   api_reference/traffic.core.traffic
+   api_reference/traffic.core.airspace
+   api_reference/traffic.core.iterator
+   api_reference/traffic.core.lazy
    navigation
    clustering
    generation

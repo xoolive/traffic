@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from ....core import Flight, Traffic
 
 _current_dir = Path(__file__).parent
-__all__ = list(f.stem[:-5] for f in _current_dir.glob("*.json.gz"))
+__all__ = sorted(f.stem[:-5] for f in _current_dir.glob("*.json.gz"))
 
 
 def __getattr__(name: str) -> Union[None, "Flight", "Traffic"]:

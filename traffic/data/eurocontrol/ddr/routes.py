@@ -36,12 +36,17 @@ class NMRoutes(Airways):
             from ....data import nm_navaids
 
             assert nm_navaids is not None
-            self._data = pd.read_csv(
-                route_file,
-                sep=";",
-                skiprows=1,
-                usecols=["route", "type", "navaid", "id"],
-                names=["_", "route", "type", "_1", "_2", "navaid", "_3", "id"],
-            ).merge(nm_navaids.data, left_on=["navaid"], right_on=["name"])
+            columns = ["_", "route", "type", "_1", "_2", "navaid", "_3", "id"]
+            self._data = (
+                pd.read_csv(
+                    route_file,
+                    sep=";",
+                    skiprows=1,
+                    usecols=["route", "navaid", "id"],
+                    names=columns,
+                )
+                .merge(nm_navaids.data, left_on=["navaid"], right_on=["name"])
+                .drop(columns=["name"])
+            )
 
         return self._data

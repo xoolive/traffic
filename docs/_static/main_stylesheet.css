@@ -196,3 +196,7 @@ div.jupyter_container {
 .jupyter_container .output {
   margin-top: 1em;
 }
+
+.widget-subarea {
+  margin-bottom: 2em;
+}

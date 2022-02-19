@@ -393,8 +393,8 @@ class ShapelyMixin(object):
 
     def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
-        shape to be composed in an interactive visualization.
-        Specific plot features, such as line widths, can be passed via **kwargs.
+        shape to be composed in an interactive visualization. Specific plot
+        features, such as line widths, can be passed with the kwargs argument.
         See `documentation
         <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
@@ -558,8 +558,8 @@ class GeographyMixin(DataFrameMixin):
 
     def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
-        shape to be composed in an interactive visualization.
-        Specific plot features, such as line widths, can be passed via **kwargs.
+        shape to be composed in an interactive visualization. Specific plot
+        features, such as line widths, can be passed with the kwargs argument.
         See `documentation
         <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
@@ -619,9 +619,25 @@ class GeoDBMixin(DataFrameMixin):
          Ro Airport           Denmark   EKRR      nan    55.21      14.88
 
         >>> navaids['ZUE']
-        ZUE (NDB): 30.9 20.06833333 0 ZUEITINA NDB 369.0kHz
+        Navaid(
+            'ZUE',
+            type='NDB',
+            latitude=30.9,
+            longitude=20.06833333,
+            altitude=0.0,
+            description='ZUEITINA NDB',
+            frequency=' 369.0kHz'
+        )
         >>> navaids.extent('Switzerland')['ZUE']
-        ZUE (VOR): 47.59216667 8.81766667 1730 ZURICH EAST VOR-DME 110.05MHz
+        Navaid(
+            'ZUE',
+            type='VOR',
+            latitude=47.59216667,
+            longitude=8.81766667,
+            altitude=1730.0,
+            description='ZURICH EAST VOR-DME',
+            frequency='110.05MHz'
+        )
 
         """
         from cartes.osm import Nominatim

@@ -10,6 +10,8 @@ from typing import (
     Union,
 )
 
+import rich.repr
+
 from shapely.geometry import GeometryCollection, LineString
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
@@ -260,6 +262,20 @@ class Navaid(NavaidTuple, PointMixin):
             return self.altitude
         raise AttributeError()
 
+    def __rich_repr__(self) -> rich.repr.Result:
+        yield self.name
+        yield "type", self.type
+        yield "latitude", self.latitude
+        yield "longitude", self.longitude
+        if self.type in {"DME", "NDB", "TACAN", "VOR"}:
+            yield "altitude", self.altitude
+            if self.description is not None:
+                yield "description", self.description
+            yield (
+                "frequency",
+                f"{self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}",
+            )
+
     def __repr__(self) -> str:
         if self.type not in {"DME", "NDB", "TACAN", "VOR"}:
             return (
@@ -275,17 +291,21 @@ class Navaid(NavaidTuple, PointMixin):
 
 
 class Route(HBoxMixin, ShapelyMixin):
-    def __init__(self, shape: BaseGeometry, name: str, navaids: List[str]):
-        self.shape = shape
+    def __init__(self, name: str, navaids: List[Navaid]):
         self.name = name
         self.navaids = navaids
 
-    def __repr__(self) -> str:
-        return f"{self.name} ({', '.join(self.navaids)})"
+    def __rich_repr__(self) -> rich.repr.Result:
+        yield self.name
+        yield "navaids", [navaid.name for navaid in self.navaids]
+
+    @property
+    def shape(self) -> LineString:
+        return LineString(list((x.longitude, x.latitude) for x in self.navaids))
 
     def _info_html(self) -> str:
         title = f"<b>Route {self.name}</b><br/>"
-        title += f"flies through {', '.join(self.navaids)}.<br/>"
+        # title += f"flies through {', '.join(self.navaids)}.<br/>"
         return title
 
     def _repr_html_(self) -> str:
@@ -295,14 +315,14 @@ class Route(HBoxMixin, ShapelyMixin):
 
     def __getitem__(self, elts: Tuple[str, str]) -> "Route":
         elt1, elt2 = elts
-        idx1, idx2 = self.navaids.index(elt1), self.navaids.index(elt2)
+        names = list(navaid.name for navaid in self.navaids)
+        idx1, idx2 = names.index(elt1), names.index(elt2)
         if idx1 == idx2:
             raise RuntimeError("The two references must be different")
         if idx1 > idx2:
             idx2, idx1 = idx1, idx2
         # fmt: off
         return Route(
-            LineString(self.shape.coords[idx1: idx2 + 1]),
             name=self.name + f" between {elt1} and {elt2}",
             navaids=self.navaids[idx1: idx2 + 1],
         )
