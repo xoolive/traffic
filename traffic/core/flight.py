@@ -2495,6 +2495,7 @@ class Flight(
 
         Example usage:
 
+        >>> from traffic.core import Flight
         >>> t = Flight.from_file("example_flight.csv")
         """
 

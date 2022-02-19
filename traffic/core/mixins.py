@@ -80,6 +80,7 @@ class DataFrameMixin(object):
 
         Example usage:
 
+        >>> from traffic.core import Traffic
         >>> t = Traffic.from_file("data/sample_opensky.pkl")
         """
         path = Path(filename)
