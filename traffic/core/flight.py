@@ -400,7 +400,7 @@ class Flight(
     def sum(
         self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
     ) -> int:
-        """Returns the number of segments returns by flight.method().
+        """Returns the number of segments returned by flight.method().
 
         Example usage:
 
@@ -418,7 +418,7 @@ class Flight(
     def all(
         self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
     ) -> Optional["Flight"]:
-        """Returns the concatenation of segments returns by flight.method().
+        """Returns the concatenation of segments returned by flight.method().
 
         Example usage:
 
