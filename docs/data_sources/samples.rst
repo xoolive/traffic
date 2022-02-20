@@ -70,6 +70,8 @@ steps in the altitude profile are due to the low sampling rate in the data:
 
 .. jupyter-execute::
 
+    import altair as alt
+
     chart = (
         alt.layer(
             *list(

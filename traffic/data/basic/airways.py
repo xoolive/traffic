@@ -50,6 +50,8 @@ class Airways(GeoDBMixin):
 
     .. jupyter-execute::
 
+        import matplotlib.pyplot as plt
+
         from traffic.data import airways
         from cartes.crs import Orthographic
 
