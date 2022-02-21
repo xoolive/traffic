@@ -3,10 +3,9 @@ from __future__ import annotations
 import re
 import zipfile
 from pathlib import Path
-from typing import Any, Iterable, Iterator, List, Tuple, TypeVar
+from typing import Any, Iterable, List, Tuple, TypeVar
 
 import geopandas as gpd
-from cartes.utils.cache import cached_property
 from geopandas.geodataframe import GeoDataFrame
 from lxml import etree
 from tqdm.autonotebook import tqdm
@@ -15,8 +14,12 @@ import pandas as pd
 from shapely.geometry import Polygon
 from shapely.ops import orient, unary_union
 
-from ....core.airspace import Airspace, ExtrudedPolygon, unary_union_with_alt
-from ....core.mixins import DataFrameMixin
+from ....core.airspace import (
+    Airspace,
+    Airspaces,
+    ExtrudedPolygon,
+    unary_union_with_alt,
+)
 from ... import aixm_navaids
 
 T = TypeVar("T", bound="AIXMAirspaceParser")
@@ -39,7 +42,7 @@ def get_coordinates(lr: Any, ns: dict[str, str]) -> Polygon:
     return orient(Polygon([(lon, lat) for lat, lon in coords]), -1)
 
 
-class AIXMAirspaceParser(DataFrameMixin):
+class AIXMAirspaceParser(Airspaces):
 
     cache_dir: Path
 
@@ -80,13 +83,9 @@ class AIXMAirspaceParser(DataFrameMixin):
             self.data = gpd.GeoDataFrame.from_records(self.parse_tree(tree, ns))
             self.data.to_pickle(airspace_file)
 
-    @cached_property
-    def __geo_interface__(self) -> Any:
-        if self.data.geometry.notnull().any():
-            return self.data.__geo_interface__
-        return self.consolidate().data.__geo_interface__
-
     def __getitem__(self, name: str) -> None | Airspace:
+        # in this case, running consolidate() on the whole dataset is not
+        # reasonable, but it still works if we run it after the query
         subset = self.query(f'designator == "{name}"')
         if subset is None:
             return None
@@ -98,26 +97,15 @@ class AIXMAirspaceParser(DataFrameMixin):
                     for _, line in subset.consolidate().data.iterrows()
                 ]
             ),
-            name=subset.data.name.max(),
+            name=subset.data["name"].max(),
             type_=subset.data["type"].max(),
-            designator=subset.data.designator.max(),
+            designator=subset.data["designator"].max(),
         )
 
-    def __iter__(self) -> Iterator[Airspace]:
-        for _, subset in self.consolidate().groupby("identifier"):
-            yield Airspace(
-                elements=unary_union_with_alt(
-                    [
-                        ExtrudedPolygon(line.geometry, line.lower, line.upper)
-                        for _, line in subset.iterrows()
-                    ]
-                ),
-                name=subset.name.max(),
-                type_=subset["type"].max(),
-                designator=subset.designator.max(),
-            )
-
     def consolidate(self: T) -> T:
+        if self.data.geometry.notnull().any():
+            return self
+
         # Beware of circular import
         from ... import aixm_airspaces
 

@@ -1,29 +1,23 @@
 from __future__ import annotations
 
 import logging
-import re
-from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, TypeVar
 
 import geopandas as gpd
-from cartes.utils.cache import cached_property
 
 import pandas as pd
 from shapely.geometry import base, shape
-from shapely.ops import orient, unary_union
+from shapely.ops import orient
 
-from ....core.airspace import Airspace, ExtrudedPolygon, unary_union_with_alt
-from ....core.mixins import DataFrameMixin
+from ....core.airspace import Airspaces
 
-# https://www.nm.eurocontrol.int/HELP/Airspaces.html
-
-
-def _re_match_ignorecase(x: str, y: str) -> Optional[re.Match[str]]:
-    return re.match(x, y, re.IGNORECASE)
+A = TypeVar("A", bound="NMAirspaceParser")
 
 
-class NMAirspaceParser(DataFrameMixin):
+class NMAirspaceParser(Airspaces):
+
+    # https://www.nm.eurocontrol.int/HELP/Airspaces.html
 
     nm_path: Optional[Path] = None
 
@@ -45,52 +39,6 @@ class NMAirspaceParser(DataFrameMixin):
         self.spc_list: list[dict[str, Any]] = list()
 
         self.init_cache()
-
-    @cached_property
-    def __geo_interface__(self) -> Any:
-        return self.dissolve().__geo_interface__
-
-    def dissolve(self) -> gpd.GeoDataFrame:
-        columns = ["designator", "type", "upper", "lower"]
-        name_table = self.data[["designator", "name"]].drop_duplicates()
-
-        return gpd.GeoDataFrame(
-            self.data.groupby(columns)
-            .agg(dict(geometry=unary_union))
-            .reset_index()
-            .merge(name_table)
-        )
-
-    def __getitem__(self, name: str) -> None | Airspace:
-        subset = self.query(f'designator == "{name}"')
-        if subset is None:
-            return None
-
-        return Airspace(
-            elements=unary_union_with_alt(
-                [
-                    ExtrudedPolygon(line.geometry, line.lower, line.upper)
-                    for _, line in subset.data.iterrows()
-                ]
-            ),
-            name=subset.data.name.max(),
-            type_=subset.data["type"].max(),
-            designator=subset.data.designator.max(),
-        )
-
-    def __iter__(self) -> Iterator[Airspace]:
-        for _, subset in self.groupby("designator"):
-            yield Airspace(
-                elements=unary_union_with_alt(
-                    [
-                        ExtrudedPolygon(line.geometry, line.lower, line.upper)
-                        for _, line in subset.iterrows()
-                    ]
-                ),
-                name=subset.name.max(),
-                type_=subset["type"].max(),
-                designator=subset.designator.max(),
-            )
 
     def update_path(self, path: Path) -> None:
         self.nm_path = path
@@ -127,9 +75,8 @@ class NMAirspaceParser(DataFrameMixin):
                 on="component",
             )
             .query("designator != component or geometry.notnull()")
+            .assign(upper=lambda df: df.upper.replace(999, float("inf")))
         )
-
-        self.consolidate()
 
     def read_are(self, filename: Path) -> None:
         logging.info(f"Reading ARE file {filename}")
@@ -194,11 +141,7 @@ class NMAirspaceParser(DataFrameMixin):
                         type=after[0].strip(),
                     )
 
-    @lru_cache()
-    def _ipython_key_completions_(self) -> Set[str]:
-        return set(self.data.designator)
-
-    def consolidate(self) -> gpd.GeoDataFrame:
+    def consolidate(self: "A") -> "A":
         def consolidate_rec(df: pd.DataFrame) -> pd.DataFrame:
 
             if df.geometry.notnull().all():
@@ -222,5 +165,5 @@ class NMAirspaceParser(DataFrameMixin):
             )
 
         new_data = pd.DataFrame(self.data).pipe(consolidate_rec)
-        self.data = gpd.GeoDataFrame(new_data)
-        return self.data
+
+        return self.__class__(gpd.GeoDataFrame(new_data))

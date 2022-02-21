@@ -43,6 +43,8 @@ jobs:
       - name: Build pages
         env:
           LD_LIBRARY_PATH: /usr/local/lib
+          OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
+          OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
         run: |
           # This line installs the theme for matplotlib
           poetry run python -c "import traffic.drawing"

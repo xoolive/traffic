@@ -1,5 +1,34 @@
-Web services from Eurocontrol NM
---------------------------------
+How to access flight plan information?
+======================================
+
+.. warning::
+
+   Documentation under refactoring, still work in progress
+
+
+Flight Plan structures
+----------------------
+
+.. autoclass:: traffic.core.FlightPlan
+    :members:
+    :no-undoc-members:
+    :show-inheritance:
+
+EUROCONTROL DDR SO6 files
+-------------------------
+
+.. autoclass:: traffic.data.SO6
+    :members:
+    :no-undoc-members:
+    :show-inheritance:
+
+.. autoclass:: traffic.data.eurocontrol.ddr.so6.Flight
+    :members:
+    :no-undoc-members:
+    :show-inheritance:
+
+EUROCONTROL B2B web services
+----------------------------
 
 The `NM B2B web services
 <https://www.eurocontrol.int/service/network-manager-business-business-b2b-web-services>`_

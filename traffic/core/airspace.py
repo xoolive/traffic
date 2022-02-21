@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import json
 import sys
-from collections import defaultdict
+from functools import lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -10,16 +12,20 @@ from typing import (
     List,
     NamedTuple,
     Optional,
-    Set,
     Tuple,
     TypeVar,
     Union,
 )
 
+import rich.repr
+from cartes.utils.cache import cached_property
+
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
+
+import geopandas as gpd
 
 import numpy as np
 import pyproj
@@ -28,7 +34,7 @@ from shapely.ops import orient, transform, unary_union
 
 from . import Flight, Traffic
 from .lazy import lazy_evaluation
-from .mixins import GeographyMixin, PointMixin, ShapelyMixin  # noqa: F401
+from .mixins import DataFrameMixin, GeographyMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
@@ -49,7 +55,87 @@ class AirspaceInfo(NamedTuple):
 
 
 AirspaceList = List[ExtrudedPolygon]
-components: Dict[str, Set[AirspaceInfo]] = defaultdict(set)
+
+
+A = TypeVar("A", bound="Airspaces")
+
+
+class Airspaces(DataFrameMixin):
+    columns_options: dict[str, dict[str, Any]] = dict(
+        designator=dict(),
+        name=dict(),
+        type=dict(),
+        upper=dict(),
+        lower=dict(),
+    )
+
+    def __getitem__(self, name: str) -> None | Airspace:
+        subset = self.consolidate().query(f'designator == "{name}"')
+        if subset is None:
+            return None
+
+        return Airspace(
+            elements=unary_union_with_alt(
+                [
+                    ExtrudedPolygon(line.geometry, line.lower, line.upper)
+                    for _, line in subset.data.iterrows()
+                ]
+            ),
+            name=subset.data["name"].max(),
+            type_=subset.data["type"].max(),
+            designator=subset.data["designator"].max(),
+        )
+
+    def __iter__(self) -> Iterator[Airspace]:
+        for _, subset in self.consolidate().groupby("designator"):
+            yield Airspace(
+                elements=unary_union_with_alt(
+                    [
+                        ExtrudedPolygon(line.geometry, line.lower, line.upper)
+                        for _, line in subset.iterrows()
+                    ]
+                ),
+                name=subset.name.max(),
+                type_=subset["type"].max(),
+                designator=subset.designator.max(),
+            )
+
+    @lru_cache()
+    def _ipython_key_completions_(self) -> set[str]:
+        return set(self.data.designator)
+
+    @cached_property
+    def __geo_interface__(self) -> Any:
+        return self.consolidate().dissolve().__geo_interface__
+
+    def head(self: A, *args: Any, **kwargs: Any) -> A:
+        return self.__class__(self.data.head(*args, **kwargs))
+
+    def tail(self: A, *args: Any, **kwargs: Any) -> A:
+        return self.__class__(self.data.tail(*args, **kwargs))
+
+    def consolidate(self: A) -> A:
+        return self
+
+    def at_level(self: A, level: float) -> None | A:
+        level_data = self.consolidate().query(f"lower <= {level} <= upper")
+        if level_data is None:
+            return None
+        return level_data
+
+    def dissolve(self) -> gpd.GeoDataFrame:
+        columns = ["designator", "type", "upper", "lower"]
+        name_table = self.data[["designator", "name"]].drop_duplicates()
+
+        return gpd.GeoDataFrame(
+            self.data.groupby(columns)
+            .agg(dict(geometry=unary_union))
+            .reset_index()
+            .merge(name_table)
+        ).assign(  # centroid is only accessible on a GeoDataFrame...
+            longitude=lambda df: df.centroid.x,
+            latitude=lambda df: df.centroid.y,
+        )
 
 
 class Airspace(ShapelyMixin):
@@ -130,17 +216,20 @@ class Airspace(ShapelyMixin):
                 pyproj.Proj("epsg:4326"), projection, always_xy=True
             )
             projected_shape = transform(transformer.transform, polygon_.polygon)
-            title += f"<li>{polygon_.lower}, {polygon_.upper}</li>"
+            title += (
+                f"<li>lower: {polygon_.lower:.0f} |"
+                f" upper: {polygon_.upper:.0f}</li>"
+            )
             shapes += projected_shape.simplify(1e3)._repr_svg_()
         title += "</ul>"
         no_wrap_div = '<div style="white-space: nowrap; width: 12%">{}</div>'
         return title + no_wrap_div.format(shapes)
 
-    def __repr__(self) -> str:
-        return f"Airspace {self.name} [{self.designator}] ({self.type})"
-
-    def __str__(self) -> str:
-        return f"""Airspace {self.name} with {len(self.elements)} parts"""
+    def __rich_repr__(self) -> rich.repr.Result:
+        yield self.designator
+        yield "type", self.type
+        yield "name", self.name
+        yield "elements", len(self.elements)
 
     def annotate(
         self, ax: "GeoAxesSubplot", **kwargs: Any
@@ -158,7 +247,7 @@ class Airspace(ShapelyMixin):
     ) -> None:  # coverage: ignore
         flat = self.flatten()
         if isinstance(flat, base.BaseMultipartGeometry):
-            for poly in flat:
+            for poly in flat.geoms:
                 # quick and dirty
                 sub = Airspace("", [ExtrudedPolygon(poly, 0, 0)])
                 sub.plot(ax, **kwargs)
@@ -181,10 +270,6 @@ class Airspace(ShapelyMixin):
         p = PointMixin()
         p.longitude, p.latitude = list(self.centroid.coords)[0]
         return p
-
-    @property
-    def components(self) -> Set[AirspaceInfo]:
-        return components[self.name]
 
     def decompose(self, extr_p: ExtrudedPolygon) -> Iterator[Polygon]:
         c = np.stack(extr_p.polygon.exterior.coords)

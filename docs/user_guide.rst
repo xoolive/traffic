@@ -3,9 +3,16 @@ User guide
 
 The user guide covers all of traffic by topic area.
 
-Each of the subsections introduces a topic (such as flight trajectory labelling,
-trajectory generation, statistical analysis, etc.) and discusses how traffic
-approaches the problem with as many examples as possible.
+Each of the entries introduces a topic (such as data sources, flight trajectory
+labelling, trajectory generation, statistical analysis, etc.) and discusses how
+traffic approaches the problem with as many examples as possible.
+
+.. tip::
+
+   | There are obviously as many possible use cases as you can imagine for the
+     library.
+   | **Contributions are open** in this part of the documentation. Do consider
+     sharing your experience with the library where it is the less documented.
 
 
 Sources of data
@@ -18,13 +25,15 @@ Sources of data
    data_sources/airports
    data_sources/aircraft
    data_sources/navigation
-   firs
-   opensky_rest
-   opensky_impala
+   data_sources/airspaces
+   data_sources/flightplans
+   data_sources/opensky_rest
+   data_sources/opensky_impala
+
+.. toctree::
+   :maxdepth: 1
+
    data_sources/eurocontrol
-   airac_usage
-   so6_usage
-   b2b_usage
    data_sources/export
 
 
@@ -41,9 +50,10 @@ Navigation events
    tutorial/flight_plan
    tutorial/fuel_burn
    tutorial/occupancy
+   airac_usage
 
 
-Extend the library
+Beyond the library
 ------------------
 
 .. toctree::

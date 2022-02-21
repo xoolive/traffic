@@ -48,6 +48,7 @@ release = traffic.__version__
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.githubpages",
+    "sphinx_autodoc_typehints",
     "jupyter_sphinx",
 ]
 

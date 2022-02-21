@@ -1,9 +1,16 @@
-ADS-B data -- OpenSky Impala shell
-----------------------------------
+How to access ADS-B data from OpenSky history database?
+=======================================================
 
 For more advanced request or a dig in further history, you may be
 eligible for an direct access to the history database through their
 `Impala <https://opensky-network.org/impala-guide>`__ shell.
+
+.. warning::
+
+  OpenSky data are subject to particular `terms of use
+  <https://opensky-network.org/about/terms-of-use>`_. In particular, if you plan
+  to use data for commercial purposes, you should mention it when you ask for
+  access
 
 Provided functions are here to help:
 
@@ -15,7 +22,8 @@ Provided functions are here to help:
 The first thing to do is to put your credentials in you configuration
 file. Edit the following lines to your configuration file.
 
-::
+
+.. parsed-literal::
 
     [opensky]
     username =
@@ -31,8 +39,9 @@ the contents of the variable.
     >>> traffic.config_file
     PosixPath('/home/xo/.config/traffic/traffic.conf')
 
+
 Historical traffic data
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 .. automethod:: traffic.data.adsb.opensky_impala.Impala.history
 
@@ -41,7 +50,7 @@ Examples of requests
 
 First, the `opensky` instance parses your configuration file upon import:
 
-.. code:: python
+.. jupyter-execute::
 
     from traffic.data import opensky
 
@@ -49,14 +58,16 @@ Then you may send requests:
 
 - based on callsign:
 
-    .. code:: python
+    .. jupyter-execute::
 
         flight = opensky.history(
             "2017-02-05",
             # stop is implicit, i.e. stop="2017-02-06"
             callsign="EZY158T",
+            # returns a Flight instead of a Traffic
             return_flight=True
         )
+        flight
 
 - based on bounding box:
 
@@ -94,86 +105,58 @@ Then you may send requests:
 
 - with information about coverage:
 
-    .. code:: python
+    .. jupyter-execute::
+        :hide-output:
 
-        from cartopy.crs import EuroPP
-        from traffic.drawing import countries, rivers
+        from cartes.crs import EuroPP, PlateCarree
+        from traffic.drawing import countries
 
         flight = opensky.history(
             "2018-06-11 15:00",
             "2018-06-11 17:00",
-            callsign='KLM1308',
+            callsign="KLM1308",
             count=True,
-            return_flight=True
+            return_flight=True,
         )
 
-        with plt.style.context('traffic'):
-            fig, ax = plt.subplots(
-                subplot_kw=dict(projection=EuroPP())
-            )
+    .. jupyter-execute::
+
+        with plt.style.context("traffic"):
+            fig, ax = plt.subplots(subplot_kw=dict(projection=EuroPP()))
             ax.add_feature(countries())
-            ax.add_feature(rivers())
             ax.set_extent((-7, 13, 40, 55))
+            ax.spines["geo"].set_visible(False)
 
             # no specific method for that in traffic
             # but switch back to pandas DataFrame for manual plot
             flight.data.plot.scatter(
-                    ax=ax, x='longitude', y='latitude', c='count',
-                    transform=PlateCarree(), s=5, cmap='viridis'
+                ax=ax,
+                x="longitude",
+                y="latitude",
+                c="count",
+                transform=PlateCarree(),
+                s=5,
+                cmap="viridis",
             )
 
-.. image:: _static/opensky_mapcount.png
-   :scale: 70 %
-   :alt: KLM1308
-   :align: center
-
 Extended Mode-S (EHS)
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 EHS messages are not automatically decoded for you in the OpenSky
 Database but you may access them and decode them from your computer.
 
-.. alert::
-
-    **Some examples here may be outdated**. Today, only EHS data **after January 1st 2020** are available!
-
 .. warning::
 
-    ``Flight.query_ehs()`` messages also takes a dataframe argument to avoid
-    making possibly numerous requests to the Impala database.
+    **Some examples here may be outdated**. To our knowledge at this time, only
+    EHS data **after January 1st 2020** are available!
 
-    Consider using `opensky.extended()
-    <#traffic.data.adsb.opensky_impala.Impala.extended>`_ and request all necessary data, then pass the resulting dataframe as an argument.
+.. tip::
 
-.. code:: python
-
-    ehs_flight = (
-        flight
-        # this triggers a new specific call to OpenSky Impala
-        .query_ehs()
-        # avoid big gaps in angle
-        .unwrap()
-        # cascade of median filters
-        .filter()
-        .filter(groundspeed=53, tas=53, ias=53, heading=53, track=53)
-    )
-
-    with plt.style.context('traffic'):
-
-        fig, (ax1, ax2) = plt.subplots(
-            2, 1, sharex=True, figsize=(15, 8)
-        )
-
-        ehs_flight.plot_time(ax1, ['groundspeed', 'ias', 'tas'])
-        ehs_flight.plot_time(ax2, ['heading', 'track'])
-
-        ax1.legend()
-        ax2.legend()
-
-.. image:: _static/opensky_ehs.png
-   :scale: 70 %
-   :alt: EHS
-   :align: center
+    | ``Flight.query_ehs()`` messages also takes a dataframe argument to avoid
+      making possibly numerous requests to the Impala database.
+    | Consider using `opensky.extended()
+      <#traffic.data.adsb.opensky_impala.Impala.extended>`_ and request all
+      necessary data, then pass the resulting dataframe as an argument.
 
 .. automethod:: traffic.data.adsb.opensky_impala.Impala.extended
 
@@ -241,16 +224,16 @@ Examples of requests
 
 
 Flight list by airport
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 .. automethod:: traffic.data.adsb.opensky_impala.Impala.flightlist
 
 Requests for raw data
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 .. automethod:: traffic.data.adsb.opensky_impala.Impala.rawdata
 
 Custom requests
-~~~~~~~~~~~~~~~
+---------------
 
 .. automethod:: traffic.data.adsb.opensky_impala.Impala.request

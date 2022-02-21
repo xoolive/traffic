@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
@@ -71,8 +72,16 @@ session: Session
 aixm_path_str = config.get("global", "aixm_path", fallback="")
 nm_path_str = config.get("global", "nm_path", fallback="")
 
-opensky_username = config.get("opensky", "username", fallback="")
-opensky_password = config.get("opensky", "password", fallback="")
+opensky_username = config.get(
+    "opensky",
+    "username",
+    fallback=os.environ.get("OPENSKY_USERNAME", ""),
+)
+opensky_password = config.get(
+    "opensky",
+    "password",
+    fallback=os.environ.get("OPENSKY_PASSWORD", ""),
+)
 
 # We keep "" for forcing to no proxy
 
