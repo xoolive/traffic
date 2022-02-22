@@ -190,14 +190,14 @@ class OpenSky(Impala):
         Official documentation
         ----------------------
 
-        Limitiations for anonymous (unauthenticated) users
+        Limitations for anonymous (unauthenticated) users
 
         Anonymous are those users who access the API without using credentials.
         The limitations for anonymous users are:
 
         Anonymous users can only get the most recent state vectors, i.e. the
         time parameter will be ignored.  Anonymous users can only retrieve data
-        with a time resultion of 10 seconds. That means, the API will return
+        with a time resolution of 10 seconds. That means, the API will return
         state vectors for time now − (now mod 10)
 
         Limitations for OpenSky users
@@ -209,7 +209,7 @@ class OpenSky(Impala):
         time parameter has a value t < now−3600 the API will return
         400 Bad Request.
 
-        - OpenSky users can retrieve data with a time resultion of 5 seconds.
+        - OpenSky users can retrieve data with a time resolution of 5 seconds.
         That means, if the time parameter was set to t , the API will return
         state vectors for time t−(t mod 5).
 
@@ -260,7 +260,7 @@ class OpenSky(Impala):
         available state vectors given the following set of rules:
 
         - The first point is set immediately after the the aircraft’s expected
-        departure, or after the network received the first poisition when the
+        departure, or after the network received the first position when the
         aircraft entered its reception range.
         - The last point is set right before the aircraft’s expected arrival, or
         the aircraft left the networks reception range.
@@ -273,7 +273,7 @@ class OpenSky(Impala):
 
         Tracks are strongly related to flights. Internally, we compute flights
         and tracks within the same processing step. As such, it may be
-        benificial to retrieve a list of flights with the API methods from
+        beneficial to retrieve a list of flights with the API methods from
         above, and use these results with the given time stamps to retrieve
         detailed track information.
 

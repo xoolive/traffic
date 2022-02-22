@@ -68,11 +68,11 @@ Altair representation
 - ``footprint`` is True by default and shows the OpenStreetMap representation;
 - | ``runways`` is True by default and represents the runways in bold lines.
   | Default parameters are ``strokeWidth=4, stroke="black"`` which can be
-    overriden if a dictionary is passed in place of the boolean;
+    overridden if a dictionary is passed in place of the boolean;
 - | ``labels`` is True by default and represents the runway numbers.
   | Labels are automatically rotated along the runway bearing.
   | Default parameters are ``baseline="middle", dy=20, fontSize=18`` which can
-    be overriden if a dictionary is passed in place of the boolean;
+    be overridden if a dictionary is passed in place of the boolean;
 
 .. jupyter-execute::
 

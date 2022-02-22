@@ -57,6 +57,7 @@ def compute_latlon_from_xy(
     The destination projection is WGS84 (EPSG 4326).
 
     .. warning::
+
         Make sure to use as source projection the one used to compute ``'x'``
         and ``'y'`` columns in the first place.
     """

@@ -15,7 +15,7 @@ How to troubleshoot network issues?
   ``traffic.config_file`` variable.
   
   - The ``http.proxy`` options refers to usually HTTP and REST API calls;
-  - The ``ssh.proxycommand`` option is used to proxy the SSH connexion through
+  - The ``ssh.proxycommand`` option is used to proxy the SSH connection through
     a specific ssh tunnel or through an http proxy (with ``connect.exe`` or
     ``nc -X connect``). According to your configuration, you may prefer to do
     the settings in your ``.ssh/config`` file.

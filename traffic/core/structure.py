@@ -54,12 +54,24 @@ class AirportPoint(PointMixin):
 
 class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
     def __repr__(self) -> str:
-        short_name = (
-            self.name.replace("International", "")
-            .replace("Airport", "")
-            .strip()
-        )
+        short_name = self.name.strip()
         return f"{self.icao}/{self.iata}: {short_name}"
+
+    def __rich_repr__(self) -> rich.repr.Result:
+        yield self.icao
+        if self.iata:
+            yield "iata", self.iata
+        if self.name:
+            yield "name", self.name
+        if self.country:
+            yield "country", self.country
+        if self.latitude and self.longitude:
+            yield "latitude", self.latitude
+            yield "longitude", self.longitude
+        if self.altitude:
+            yield "altitude", self.altitude
+        if self.runways:
+            yield "runways", list(self.runways.data.name)
 
     def _repr_html_(self) -> str:
         title = ""
@@ -82,7 +94,8 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
             title += " create an account there to be able to edit.</p></div>"
 
         title += f"<b>{self.name.strip()}</b> ({self.country}) "
-        title += f"<code>{self.icao}/{self.iata}</code>"
+        title += f"<code>{self.icao}/{self.iata}</code><br/>"
+        title += f"    {self.latlon}, altitude: {self.altitude}"
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 

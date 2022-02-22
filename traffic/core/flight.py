@@ -24,6 +24,8 @@ from typing import (
     overload,
 )
 
+from rich.console import Console, ConsoleOptions, RenderResult
+
 if sys.version_info >= (3, 8):
     from typing import Literal, TypedDict
 else:
@@ -191,6 +193,7 @@ class Flight(
     - ``altitude``: in feet.
 
     .. note::
+
         The ``flight_id`` (identifier for a trajectory) may be used in place of
         a pair of (``icao24``, ``callsign``). More features may also be provided
         for further processing, e.g. ``groundspeed``, ``vertical_rate``,
@@ -246,6 +249,7 @@ class Flight(
           `plot_time() <#traffic.core.Flight.plot_time>`_
 
     .. tip::
+
         Sample flights are provided for testing purposes in module
         ``traffic.data.samples``
 
@@ -302,21 +306,56 @@ class Flight(
             return self.data.shape[0]  # type: ignore
 
     def _info_html(self) -> str:
-        title = f"<b>Flight {self.title}</b>"
+        title = "<b>Flight()</b>"
+        if self.flight_id:
+            title += f" {self.flight_id}"
+
         title += "<ul>"
+        title += f"<li><b>callsign:</b> {self.callsign} {self.trip}</li>"
         title += f"<li><b>aircraft:</b> {self.aircraft}</li>"
-        if self.origin is not None:
-            title += f"<li><b>from:</b> {self.origin} ({self.start})</li>"
-        else:
-            title += f"<li><b>from:</b> {self.start}</li>"
-        if self.destination is not None:
-            title += f"<li><b>to:</b> {self.destination} ({self.stop})</li>"
-        else:
-            title += f"<li><b>to:</b> {self.stop}</li>"
+        title += f"<li><b>start:</b> {self.start}</li>"
+        title += f"<li><b>stop:</b> {self.stop}</li>"
+        title += f"<li><b>duration:</b> {self.duration}</li>"
+
         if self.diverted is not None:
             title += f"<li><b>diverted to: {self.diverted}</b></li>"
+
+        sampling_rate = self.data.timestamp.diff().mean().total_seconds()
+        title += f"<li><b>sampling rate:</b> {sampling_rate:.0f} second(s)</li>"
+
         title += "</ul>"
         return title
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+
+        yield f"[bold blue]Flight {self.flight_id if self.flight_id else ''}"
+
+        yield f"  - [b]callsign:[/b] {self.callsign} {self.trip}"
+        yield f"  - [b]aircraft:[/b] {self.aircraft}"
+
+        yield f"  - [b]start:[/b] {self.start:%Y-%m-%d %H:%M:%S}Z "
+        yield f"  - [b]stop:[/b] {self.stop:%Y-%m-%d %H:%M:%S}Z"
+        yield f"  - [b]duration:[/b] {self.duration}"
+
+        sampling_rate = self.data.timestamp.diff().mean().total_seconds()
+        yield f"  - [b]sampling rate:[/b] {sampling_rate:.0f} second(s)"
+
+        features = set(self.data.columns) - {
+            "start",
+            "stop",
+            "icao24",
+            "callsign",
+            "flight_id",
+            "destination",
+            "origin",
+            "track_unwrapped",
+            "heading_unwrapped",
+        }
+        yield "  - [b]features:[/b]"
+        for feat in sorted(features):
+            yield f"    o {feat}, [i]{self.data[feat].dtype}"
 
     def _repr_html_(self) -> str:
         title = self._info_html()
@@ -753,6 +792,28 @@ class Flight(
             title += f" ({flight_id})"
 
         return title
+
+    @property
+    def trip(self) -> str:
+        return (
+            (
+                "("
+                if self.origin is not None or self.destination is not None
+                else ""
+            )
+            + (f"{self.origin}" if self.origin else " ")
+            + (
+                " to "
+                if self.origin is not None or self.destination is not None
+                else ""
+            )
+            + (f"{self.destination}" if self.destination else " ")
+            + (
+                ")"
+                if self.origin is not None or self.destination is not None
+                else ""
+            )
+        )
 
     @property
     def origin(self) -> Union[str, Set[str], None]:
@@ -1360,6 +1421,7 @@ class Flight(
         nothing*: ``None``; or *interpolate*: ``lambda x: x.interpolate()``.
 
         .. note::
+
             This method if often more efficient when applied several times with
             different kernel values.Kernel values may be passed as integers, or
             list/tuples of integers for cascade of filters:
@@ -1411,7 +1473,7 @@ class Flight(
             and measures the difference between the raw and the filtered signal.
 
             The average of the squared differences is then produced (sq_eps) and
-            used as a threashold for filtering.
+            used as a threshold for filtering.
 
             Errors may raised if the kernel_size is too large
             """
@@ -1610,6 +1672,7 @@ class Flight(
         airspeed may be decoded in EHS messages.
 
         .. note::
+
             Check the `query_ehs() <#traffic.core.Flight.query_ehs>`_ method to
             find a way to enrich your flight with such features. Note that this
             data is not necessarily available depending on the location.
@@ -2093,6 +2156,7 @@ class Flight(
         shape.
 
         .. warning::
+
             Altitudes are not taken into account.
 
         """
@@ -2149,6 +2213,7 @@ class Flight(
         Returns None if no data is found.
 
         .. note::
+
             Read more about access to the OpenSky Network database `here
             <opensky_impala.html>`_
         """
@@ -2177,6 +2242,7 @@ class Flight(
         database.
 
         .. warning::
+
             Making a lot of small requests can be very inefficient and may look
             like a denial of service. If you get the raw messages using a
             different channel, you can provide the resulting dataframe as a
@@ -2187,6 +2253,7 @@ class Flight(
         ``mintime``, in conformance with the OpenSky API.
 
         .. note::
+
             Read more about access to the OpenSky Network database `here
             <opensky_impala.html>`_
         """
@@ -2313,6 +2380,7 @@ class Flight(
             flight.plot(ax, alpha=.5)
 
         .. note::
+
             See also `geoencode() <#traffic.core.Flight.geoencode>`_ for the
             altair equivalent.
 
@@ -2382,6 +2450,7 @@ class Flight(
             )
 
         .. note::
+
             See also `plot_time() <#traffic.core.Flight.plot_time>`_ for the
             Matplotlib equivalent.
 
@@ -2432,6 +2501,7 @@ class Flight(
             )
 
         .. note::
+
             See also `chart() <#traffic.core.Flight.chart>`_ for the altair
             equivalent.
 

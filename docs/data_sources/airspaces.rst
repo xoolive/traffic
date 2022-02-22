@@ -29,7 +29,7 @@ activities allowed (civil, military, glider, etc.) or services provided.
 - | an **Air Route Traffic Control Center (ARTCC)** or an **Air Control Center
     (ACC)** represents the area that is controlled by people located in the same
     center;
-- | an **elementary sector** is usally the smallest subdivision of airspace that can
+- | an **elementary sector** is usually the smallest subdivision of airspace that can
     be controlled by a pair of air traffic controllers.
 
 FIRs from countries in the EUROCONTROL area

@@ -13,7 +13,7 @@ You can import this class with the following code:
 
     from traffic.algorithms.generation import Generation
 
-To instanciate such an object you can pass those arguments:
+To instantiate such an object you can pass those arguments:
 
 * ``generation``: Any object implementing ``fit()`` and ``sample()`` methods. It will define the generative model to use.
 * ``features``: The list of the features to represent a trajectory.

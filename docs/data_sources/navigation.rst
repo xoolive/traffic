@@ -8,7 +8,7 @@ some parts of the world, Oceanic areas, mountainous areas, and free route
 navigation remains based on navigational beacons.
 
 Navigational beacons (called ``navaids`` in the library) are of different types:
-historically the first ones were attached to VOR equipments, but we can mostly
+historically the first ones were attached to VOR equipment, but we can mostly
 consider they are a name attached to geographic coordinates.
 
 Basic data of questionable accuracy is provided with the library:
