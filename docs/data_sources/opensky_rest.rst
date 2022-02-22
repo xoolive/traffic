@@ -88,37 +88,3 @@ A basic route database is also accessible through the REST API:
 .. jupyter-execute::
 
   opensky.api_routes("AFR292")
-
-Receivers (requires authentication)
------------------------------------
-
-You may get the serial numbers associated to your account and also plot
-the polygon of their range (by default on the current day).
-
-.. jupyter-execute::
-
-    my_sensors = opensky.api_sensors
-
-.. jupyter-execute::
-
-    with plt.style.context('traffic'):
-        fig, ax = plt.subplots(subplot_kw=dict(projection=EuroPP()))
-        ax.add_feature(countries())
-
-        ax.gridlines()
-        ax.set_extent((-7, 15, 40, 55))
-        ax.spines['geo'].set_visible(False)
-
-        sv = opensky.api_states(own=True)
-        sv.plot(ax, s=10, color="#4c78a8")
-
-        for i, sensor in enumerate(my_sensors):
-            c = opensky.api_range(sensor)
-            c.plot(ax, edgecolor='#bab0ac', linestyle='dashed')
-            c.point.plot(ax, marker='x', text_kw=dict(s=f"Sensor #{i+1}"))
-
-        now = pd.Timestamp("now", tz="utc")
-        ax.set_title(
-          f"Snapshot generated at {now:%Y-%m-%d %H:%MZ}",
-          fontsize=14
-        )

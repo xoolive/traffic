@@ -1,3 +1,10 @@
+.. jupyter-execute::
+    :hide-code:
+
+    from traffic.data import opensky
+    print(opensky.cache_dir)
+
+
 How to access ADS-B data from OpenSky history database?
 =======================================================
 
@@ -61,8 +68,8 @@ Then you may send requests:
     .. jupyter-execute::
 
         flight = opensky.history(
-            "2017-02-05",
-            # stop is implicit, i.e. stop="2017-02-06"
+            "2017-02-05 15:45",
+            stop="2017-02-05 16:45",
             callsign="EZY158T",
             # returns a Flight instead of a Traffic
             return_flight=True
@@ -120,6 +127,8 @@ Then you may send requests:
         )
 
     .. jupyter-execute::
+
+        import matplotlib.pyplot as plt
 
         with plt.style.context("traffic"):
             fig, ax = plt.subplots(subplot_kw=dict(projection=EuroPP()))

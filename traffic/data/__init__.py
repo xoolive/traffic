@@ -72,16 +72,14 @@ session: Session
 aixm_path_str = config.get("global", "aixm_path", fallback="")
 nm_path_str = config.get("global", "nm_path", fallback="")
 
-opensky_username = config.get(
-    "opensky",
-    "username",
-    fallback=os.environ.get("OPENSKY_USERNAME", ""),
+# Give priority to environment variables
+opensky_username = os.environ.get(
+    "OPENSKY_USERNAME", config.get("opensky", "username", fallback="")
 )
-opensky_password = config.get(
-    "opensky",
-    "password",
-    fallback=os.environ.get("OPENSKY_PASSWORD", ""),
+opensky_password = os.environ.get(
+    "OPENSKY_PASSWORD", config.get("opensky", "password", fallback="")
 )
+
 
 # We keep "" for forcing to no proxy
 
@@ -254,10 +252,19 @@ def __getattr__(name: str) -> Any:
         from . import session
         from .adsb.opensky import OpenSky
 
+        # give priority to the OPENSKY_CACHE environment variable
+        opensky_cache = os.environ.get("OPENSKY_CACHE", None)
+        if opensky_cache is not None:
+            opensky_cache_path = Path(opensky_cache)
+        else:
+            opensky_cache_path = cache_dir / "opensky"
+        if not opensky_cache_path.exists():
+            opensky_cache_path = cache_dir / "opensky"
+
         opensky = OpenSky(
             opensky_username,
             opensky_password,
-            cache_dir / "opensky",
+            opensky_cache_path,
             session,
             paramiko_proxy,
         )

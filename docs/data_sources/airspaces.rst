@@ -207,6 +207,8 @@ computed.
 
 .. jupyter-execute::
 
+   import altair as alt
+
    base = (
        alt.Chart(france_fir)
        .mark_geoshape(stroke="white")

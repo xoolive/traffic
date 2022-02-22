@@ -17,6 +17,34 @@ jobs:
         with:
           python-version: "3.9"
 
+      - name: Download extra data from private repository
+        uses: actions/checkout@v2
+        with:
+          repository: xoolive/traffic_data
+          token: ${{ secrets.PRIVATE_TOKEN }}
+          persist-credentials: false
+          path: ./data/traffic_data
+
+      - name: Create LFS file list (private repository)
+        working-directory: ./data/traffic_data
+        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+        shell: bash
+
+      - name: Restore LFS cache (private repository)
+        uses: actions/cache@v2
+        id: lfs-cache
+        with:
+          path: ./data/traffic_data/.git/lfs
+          key: lfs-${{ hashFiles('./data/traffic_data/.lfs-assets-id') }}-v1
+
+      - name: Git LFS Pull (private repository)
+        working-directory: ./data/traffic_data
+        run: |
+          git remote set-url origin https://xoolive:${{ secrets.PRIVATE_TOKEN }}@github.com/xoolive/traffic_data.git
+          git lfs pull
+          unzip ENV_PostOPS_AIRAC_2111_04NOV2021_With_Airspace_Closure.zip -d airac_2111
+        shell: bash
+
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1.1.6
         with:
@@ -48,8 +76,11 @@ jobs:
         run: |
           # This line installs the theme for matplotlib
           poetry run python -c "import traffic.drawing"
-          curl https://opensky-network.org/api/sensor/list -o docs/_static/sensors.json
-          cd docs && poetry run make html
+          # Update the configuration for NM DDR airspace files
+          export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
+          sed -i "/nm_path =/ s,= $,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
+          # Run the documentation
+          cd docs && OPENSKY_CACHE=../data/opensky_cache poetry run make html
 
       - name: Deploy pages
         uses: peaceiris/actions-gh-pages@v3
