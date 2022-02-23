@@ -62,10 +62,43 @@ For the most recent development version, clone the Github repository:
 
     git clone https://github.com/xoolive/traffic
     cd traffic/
-    pip install .[dev]
+    pip install .
 
-If you intend to file a pull request, please activate ``pre-commit`` hooks:
+.. note::
 
-.. code:: bash
+    It should be easier to install the development version inside your conda
+    environment where you installed the latest release.
 
-    pre-commit install
+
+Contribute to traffic
+---------------------
+
+If you intend to contribute to traffic or file a pull request, the best way to
+ensure continuous integration does not break is to reproduce an environment with
+the same exact versions of all dependency libraries.
+
+The following steps **are not mandatory**, but they will ensure a swift
+reviewing process:
+
+- install `poetry <https://python-poetry.org/>`_ on your workstation
+- install traffic with poetry:
+
+  .. code:: bash
+
+      git clone https://github.com/xoolive/traffic
+      cd traffic/
+      poetry install -E all
+
+  Then, you may:
+
+  - prefix all your commands with ``poetry run``
+  - or run a shell with all environment variables properly set with ``poetry
+    shell``
+
+- install the `pre-commit <https://pre-commit.com/>`_ hooks so a minimum set of 
+  sanity checks can be performed and so you can fix issues before continuous
+  integration (GitHub Actions) fails.
+
+  .. code:: bash
+
+      poetry run pre-commit install

@@ -209,51 +209,72 @@ class Flight(
     **Abridged contents:**
 
         - properties:
-          `callsign <#traffic.core.Flight.callsign>`_,
-          `flight_id <#traffic.core.Flight.flight_id>`_,
-          `icao24 <#traffic.core.Flight.icao24>`_,
-          `number <#traffic.core.Flight.number>`_,
-          `registration <#traffic.core.Flight.registration>`_,
-          `start <#traffic.core.Flight.start>`_,
-          `stop <#traffic.core.Flight.stop>`_,
-          `typecode <#traffic.core.Flight.typecode>`_
+          :meth:`callsign`,
+          :meth:`flight_id`,
+          :meth:`icao24`,
+          :meth:`number`,
+          :meth:`start`,
+          :meth:`stop`,
+
         - time related methods:
-          `after() <#traffic.core.Flight.after>`_,
-          `at() <#traffic.core.Flight.at>`_,
-          `at_ratio() <#traffic.core.Flight.at_ratio>`_,
-          `before() <#traffic.core.Flight.before>`_,
-          `between() <#traffic.core.Flight.between>`_,
-          `first() <#traffic.core.Flight.first>`_,
-          `last() <#traffic.core.Flight.last>`_,
-          `skip() <#traffic.core.Flight.skip>`_,
-          `shorten() <#traffic.core.Flight.shorten>`_
+          :meth:`after`,
+          :meth:`at`,
+          :meth:`at_ratio`,
+          :meth:`before`,
+          :meth:`between`,
+          :meth:`first`,
+          :meth:`last`,
+          :meth:`skip`,
+          :meth:`shorten`
+
         - geometry related methods:
-          `airborne() <#traffic.core.Flight.airborne>`_,
-          `clip() <#traffic.core.Flight.clip>`_,
-          `compute_wind() <#traffic.core.Flight.compute_wind>`_,
-          `compute_xy() <#traffic.core.Flight.compute_xy>`_,
-          `distance() <#traffic.core.Flight.distance>`_,
-          `inside_bbox() <#traffic.core.Flight.inside_bbox>`_,
-          `intersects() <#traffic.core.Flight.intersects>`_,
-          `project_shape() <#traffic.core.Flight.project_shape>`_,
-          `simplify() <#traffic.core.Flight.simplify>`_,
-          `unwrap() <#traffic.core.Flight.unwrap>`_
+          :meth:`airborne`,
+          :meth:`clip`,
+          :meth:`compute_wind`,
+          :meth:`compute_xy`,
+          :meth:`distance`,
+          :meth:`inside_bbox`,
+          :meth:`intersects`,
+          :meth:`project_shape`,
+          :meth:`simplify`,
+          :meth:`unwrap`
+
         - filtering and resampling methods:
-          `comet() <#traffic.core.Flight.comet>`_,
-          `filter() <#traffic.core.Flight.filter>`_,
-          `resample() <#traffic.core.Flight.resample>`_,
+          :meth:`comet`,
+          :meth:`filter`,
+          :meth:`resample`
+
+        - TMA events:
+          :meth:`takeoff_from_runway`,
+          :meth:`aligned_on_ils`,
+          :meth:`go_around`,
+          :meth:`runway_change`
+
+        - airborne events:
+          :meth:`aligned_on_navpoint`,
+          :meth:`compute_navpoints`,
+          :meth:`emergency`
+
+        - ground trajectory methods:
+          :meth:`aligned_on_runway`,
+          :meth:`on_parking_position`,
+          :meth:`pushback`,
+          :meth:`slow_taxi`,
+          :meth:`moving`
+
         - visualisation with altair:
-          `chart() <#traffic.core.Flight.chart>`_,
-          `geoencode() <#traffic.core.Flight.geoencode>`_
-        - visualisation with leaflet: `map_leaflet() <leaflet.html>`_
+          :meth:`chart`,
+          :meth:`geoencode`
+
+        - visualisation with leaflet: :meth:`map_leaflet`
         - visualisation with Matplotlib:
-          `plot() <#traffic.core.Flight.plot>`_,
-          `plot_time() <#traffic.core.Flight.plot_time>`_
+          :meth:`plot`,
+          :meth:`plot_time`
 
     .. tip::
 
-        Sample flights are provided for testing purposes in module
-        ``traffic.data.samples``
+        :ref:`Sample flights <How to access sample trajectories?>` are provided
+        for testing purposes in module ``traffic.data.samples``
 
     """
 

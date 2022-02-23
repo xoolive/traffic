@@ -1,4 +1,4 @@
-How to use the traffic Graphical User Interface?
+How to use the traffic graphical user interface?
 ================================================
 
 The traffic library comes with a Qt Graphical user interface (GUI) designed

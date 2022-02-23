@@ -209,4 +209,5 @@ a.reference code.literal span {
 .rst-content code {
   border: unset;
   padding: 0;
+  background-color: unset;
 }

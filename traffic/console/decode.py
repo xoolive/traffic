@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import List
 
-from ..data.adsb.decode import Decoder
+from ..data.adsb.decode import ModeS_Decoder
 
 
 def main(args_list: List[str]) -> None:
@@ -36,7 +36,7 @@ def main(args_list: List[str]) -> None:
     elif args.verbose >= 2:
         logger.setLevel(logging.DEBUG)
 
-    decoder = Decoder.from_file(args.file, args.reference)
+    decoder = ModeS_Decoder.from_file(args.file, args.reference)
     assert decoder.traffic is not None
     decoder.traffic.to_pickle(
         args.output

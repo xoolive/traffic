@@ -29,6 +29,7 @@ Sources of data
    data_sources/flightplans
    data_sources/opensky_rest
    data_sources/opensky_impala
+   data_sources/decode
 
 .. toctree::
    :maxdepth: 1
@@ -44,12 +45,12 @@ Navigation events
    :maxdepth: 1
 
    tutorial/flight_phases
+   airac_usage
    tutorial/go_around
    tutorial/runway_changes
    tutorial/top_of_climb
    tutorial/flight_plan
    tutorial/fuel_burn
-   airac_usage
 
 Statistical analysis
 --------------------
@@ -70,6 +71,7 @@ Beyond the library
 .. toctree::
    :maxdepth: 1
 
+   user_guide/projection
    user_guide/own_data
    user_guide/plugins
 
@@ -79,6 +81,7 @@ Standalone applications
 .. toctree::
    :maxdepth: 1
 
+   user_guide/cli_tui
    user_guide/gui
    user_guide/docker
 

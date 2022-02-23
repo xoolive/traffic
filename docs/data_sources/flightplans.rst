@@ -1,9 +1,9 @@
 How to access flight plan information?
 ======================================
 
-:class:`~traffic.core.FlightPlan` are structures designed to parse flight plans
-in the ICAO format. Access to such field may be complicated for non operational
-fellows, who may have access to different sources of data.
+A :class:`~traffic.core.flightplan.FlightPlan` is a structure designed to parse
+flight plans in the ICAO format. Access to such field may be complicated for non
+operational fellows, who may have access to different sources of data.
 
 EUROCONTROL DDR SO6 files
 -------------------------
@@ -33,10 +33,6 @@ added in the future.
 
 .. automodule:: traffic.data.eurocontrol.b2b
     :members:
-    :no-inherited-members:
+    :inherited-members:
     :no-undoc-members:
 
-    .. automethod:: NMB2B.flight_search
-    .. automethod:: NMB2B.flight_list
-    .. automethod:: NMB2B.flight_get
-    .. automethod:: NMB2B.regulation_list

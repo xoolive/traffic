@@ -8,7 +8,7 @@ from requests import Session
 from .. import cache_dir, config, config_file
 
 if TYPE_CHECKING:
-    from .adsb.decode import Decoder as ModeS_Decoder
+    from .adsb.decode import ModeS_Decoder as ModeS_Decoder
     from .adsb.opensky import OpenSky
     from .basic.aircraft import Aircraft
     from .basic.airports import Airports
@@ -313,7 +313,7 @@ def __getattr__(name: str) -> Any:
         return AllFT
 
     if name == "ModeS_Decoder":
-        from .adsb.decode import Decoder as ModeS_Decoder
+        from .adsb.decode import ModeS_Decoder
 
         return ModeS_Decoder
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import signal
@@ -13,10 +15,8 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
-    List,
     Optional,
     TextIO,
-    Tuple,
     Union,
     cast,
 )
@@ -100,7 +100,7 @@ def decode_time_dump1090(
     return now
 
 
-decode_time: Dict[str, Callable[[str, Optional[datetime]], datetime]] = {
+decode_time: dict[str, Callable[[str, Optional[datetime]], datetime]] = {
     "radarcape": decode_time_radarcape,
     "dump1090": decode_time_dump1090,
     "default": decode_time_default,
@@ -187,7 +187,7 @@ class Aircraft(object):
         self.icao24 = icao24
         self._callsign: Optional[str] = None
         self._flight: Optional[Flight] = None
-        self.cumul: List[Entry] = []
+        self.cumul: list[Entry] = []
 
         self.t0: Optional[datetime] = None
         self.t1: Optional[datetime] = None
@@ -245,7 +245,7 @@ class Aircraft(object):
         return self._callsign
 
     @callsign.setter
-    def callsign(self, args: Tuple[datetime, str]) -> None:
+    def callsign(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         callsign = pms.adsb.callsign(msg).strip("_")
         if callsign == "":
@@ -261,7 +261,7 @@ class Aircraft(object):
         pass
 
     @speed.setter
-    def speed(self, args: Tuple[datetime, str]) -> None:
+    def speed(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         vdata = pms.adsb.velocity(msg)
         if vdata is None:
@@ -297,7 +297,7 @@ class Aircraft(object):
         pass
 
     @position.setter
-    def position(self, args: Tuple[datetime, str]) -> None:
+    def position(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         oe = pms.adsb.oe_flag(msg)
         setattr(self, "m" + str(oe), msg)
@@ -336,7 +336,7 @@ class Aircraft(object):
         pass
 
     @surface.setter
-    def surface(self, args: Tuple[datetime, str]) -> None:
+    def surface(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         self.lat, self.lon = pms.adsb.surface_position_with_ref(
             msg, self.lat0, self.lon0
@@ -362,7 +362,7 @@ class Aircraft(object):
         pass
 
     @altcode.setter
-    def altcode(self, args: Tuple[datetime, str]) -> None:
+    def altcode(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         from pyModeS import hex2bin
 
@@ -379,7 +379,7 @@ class Aircraft(object):
         pass
 
     @idcode.setter
-    def idcode(self, args: Tuple[datetime, str]) -> None:
+    def idcode(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         from pyModeS import hex2bin
 
@@ -400,7 +400,7 @@ class Aircraft(object):
         pass
 
     @bds20.setter
-    def bds20(self, args: Tuple[datetime, str]) -> None:
+    def bds20(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         callsign = pms.commb.cs20(msg).strip("_")
         if callsign == "":
@@ -426,7 +426,7 @@ class Aircraft(object):
         pass
 
     @bds40.setter
-    def bds40(self, args: Tuple[datetime, str]) -> None:
+    def bds40(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
@@ -464,7 +464,7 @@ class Aircraft(object):
         pass
 
     @bds44.setter
-    def bds44(self, args: Tuple[datetime, str]) -> None:
+    def bds44(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         wind = pms.commb.wind44(msg)
         wind = wind if wind is not None else (None, None)
@@ -512,7 +512,7 @@ class Aircraft(object):
         pass
 
     @bds45.setter
-    def bds45(self, args: Tuple[datetime, str]) -> None:
+    def bds45(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
@@ -570,7 +570,7 @@ class Aircraft(object):
         pass
 
     @bds50.setter
-    def bds50(self, args: Tuple[datetime, str]) -> None:
+    def bds50(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
@@ -617,7 +617,7 @@ class Aircraft(object):
         pass
 
     @bds60.setter
-    def bds60(self, args: Tuple[datetime, str]) -> None:
+    def bds60(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
@@ -663,7 +663,7 @@ class Aircraft(object):
         pass
 
     @nuc_p.setter
-    def nuc_p(self, args: Tuple[datetime, str]) -> None:
+    def nuc_p(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             hpl, rcu, rcv = pms.adsb.nuc_p(msg)
@@ -690,7 +690,7 @@ class Aircraft(object):
         pass
 
     @nic_v1.setter
-    def nic_v1(self, args: Tuple[datetime, str]) -> None:
+    def nic_v1(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         if self.nic_s is None:
             return
@@ -717,7 +717,7 @@ class Aircraft(object):
         pass
 
     @nic_v2.setter
-    def nic_v2(self, args: Tuple[datetime, str]) -> None:
+    def nic_v2(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         if self.nic_a is None or self.nic_bc is None:
             return
@@ -743,7 +743,7 @@ class Aircraft(object):
         pass
 
     @nuc_r.setter
-    def nuc_r(self, args: Tuple[datetime, str]) -> None:
+    def nuc_r(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             hve, vve = pms.adsb.nuc_v(msg)
@@ -768,7 +768,7 @@ class Aircraft(object):
         pass
 
     @nac_v.setter
-    def nac_v(self, args: Tuple[datetime, str]) -> None:
+    def nac_v(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             hfm, vfm = pms.adsb.nac_v(msg)
@@ -793,7 +793,7 @@ class Aircraft(object):
         pass
 
     @nac_p.setter
-    def nac_p(self, args: Tuple[datetime, str]) -> None:
+    def nac_p(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             epu, vepu = pms.adsb.nac_p(msg)
@@ -818,7 +818,7 @@ class Aircraft(object):
         pass
 
     @sil.setter
-    def sil(self, args: Tuple[datetime, str]) -> None:
+    def sil(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
             phcr, pvpl, base = pms.adsb.sil(msg, self.version)
@@ -896,13 +896,41 @@ class DumpFormat:
         return elts[self.msg_index][self.splitmsg].strip()  # type: ignore
 
 
-class Decoder:
+class ModeS_Decoder:
+    """
+
+    This class implements the full data decoding process with the `pyModeS
+    library <https://mode-s.org/api/>`_
+
+    Data is first available as a list of messages per aircraft, but can be
+    exported as a :class:`~traffic.core.Traffic` object.
+
+    .. warning::
+
+        The :meth:`from_address`, :meth:`from_dump1090`, and :meth:`from_rtlsdr`
+        classmethods start a decoding thread on the creation of the object.  The
+        thread can be stopped with a ``decoder.thread.stop()`` call.
+
+    :param reference: A reference location must be provided to decode ground
+        messages. A reference can be set as:
+
+        - a tuple of latitude/longitude coordinates
+        - a str calling for an :class:`~traffic.core.structure.Airport`
+          structure
+
+        If no reference is provided (None), then reference location (latitude=0,
+        longitude=0) is considered until more data can be used to readjust the
+        reference.
+
+    """
+
     thread: Optional[StoppableThread]
 
     def __init__(
         self,
-        reference: Union[None, str, Airport, Tuple[float, float]] = None,
+        reference: None | str | Airport | tuple[float, float] = None,
     ) -> None:
+        """ """
         if isinstance(reference, str):
             from ...data import airports
 
@@ -925,12 +953,38 @@ class Decoder:
     @classmethod
     def from_file(
         cls,
-        filename: Union[str, Path],
-        reference: Union[str, Airport, Tuple[float, float]],
+        filename: str | Path,
+        reference: str | Airport | tuple[float, float],
         uncertainty: bool = False,
         template: str = "time, longmsg",
         sep: str = ",",
-    ) -> "Decoder":
+    ) -> "ModeS_Decoder":
+        """Decode raw messages dumped in a text file.
+
+        The file should contain for each line at least a timestamp and an
+        hexadecimal message, as a CSV-like format.
+
+        :param filename: the path to the file containing the data
+
+        :param reference: the reference location, as specified above
+
+        :param uncertainty: if True, decode also `uncertainty information
+            <https://mode-s.org/decode/content/ads-b/7-uncertainty.html>`_
+
+        :param template: the header explaining how data is organised
+
+            Three parameters are accepted:
+
+            - ``time`` represents the timestamp in seconds (float)
+            - ``shortmsg`` represents the regular version of the ADS-B
+              hexadecimal message (messages of length 28 for ADS-B)
+            - ``longmsg`` represents messages containing timestamp information
+              as a prefix, as dumped by many decoding softwares, such as
+              `dump1090 <https://github.com/MalcolmRobb/dump1090/>`_ or other
+              receivers.
+
+            By default, the expected format is ``time, longmsg``
+        """
 
         if isinstance(filename, str):
             filename = Path(filename)
@@ -956,14 +1010,14 @@ class Decoder:
     def from_binary(
         cls,
         filename: Union[str, Path],
-        reference: Union[str, Airport, Tuple[float, float]],
+        reference: Union[str, Airport, tuple[float, float]],
         *,
         uncertainty: bool = False,
         time_fmt: str = "dump1090",
         time_0: Optional[datetime] = None,
         redefine_mag: int = 10,
         fh: Optional[TextIO] = None,
-    ) -> "Decoder":
+    ) -> "ModeS_Decoder":
 
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
@@ -999,10 +1053,30 @@ class Decoder:
     @classmethod
     def from_rtlsdr(
         cls,
-        reference: Union[str, Airport, Tuple[float, float]],
-        file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
+        reference: Union[str, Airport, tuple[float, float]],
+        file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_rtlsdr.csv",
         uncertainty: bool = False,
-    ) -> "Decoder":  # coverage: ignore
+    ) -> "ModeS_Decoder":  # coverage: ignore
+        """Decode raw messages dumped from a RTL-SDR receiver.
+
+        :param reference: the reference location, as specified above
+        :param file_pattern: the filename where to dump received hexadecimal
+            messages
+
+            Timestamp format specifiers are accepted.
+
+            | Default value: ``"~/ADSB_EHS_RAW_%Y%m%d_rtlsdr.csv"``
+            | (The ``~`` character gets expanded as your home directory)
+
+        :param uncertainty: if True, decode also `uncertainty information
+            <https://mode-s.org/decode/content/ads-b/7-uncertainty.html>`_
+
+        .. warning::
+
+            This method requires the `pyrtlsdr
+            <https://github.com/roger-/pyrtlsdr>`_ optional dependency.
+
+        """
 
         from .rtlsdr import MyRtlReader
 
@@ -1024,14 +1098,14 @@ class Decoder:
     def from_socket(
         cls,
         socket: socket.socket,
-        reference: Union[str, Airport, Tuple[float, float]],
+        reference: Union[str, Airport, tuple[float, float]],
         *,
         uncertainty: bool,
         time_fmt: str = "default",
         time_0: Optional[datetime] = None,
         redefine_mag: int = 7,
         fh: Optional[TextIO] = None,
-    ) -> "Decoder":  # coverage: ignore
+    ) -> "ModeS_Decoder":  # coverage: ignore
 
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
@@ -1081,10 +1155,30 @@ class Decoder:
     @classmethod
     def from_dump1090(
         cls,
-        reference: Union[str, Airport, Tuple[float, float]],
+        reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
         uncertainty: bool = False,
-    ) -> "Decoder":  # coverage: ignore
+    ) -> "ModeS_Decoder":  # coverage: ignore
+        """Decode raw messages dumped from `dump1090
+        <https://github.com/MalcolmRobb/dump1090/>`_
+
+        :param reference: the reference location, as specified above
+        :param file_pattern: the filename where to dump received hexadecimal
+            messages
+
+            Timestamp format specifiers are accepted.
+
+            | Default value: ``"~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv"``
+            | (The ``~`` character gets expanded as your home directory)
+
+        :param uncertainty: if True, decode also `uncertainty information
+            <https://mode-s.org/decode/content/ads-b/7-uncertainty.html>`_
+
+        .. warning::
+
+            dump1090 must be run the ``--net`` option.
+
+        """
         now = datetime.now(timezone.utc)
         filename = now.strftime(file_pattern)
         today = os.path.expanduser(filename)
@@ -1105,10 +1199,42 @@ class Decoder:
         cls,
         host: str,
         port: int,
-        reference: Union[str, Airport, Tuple[float, float]],
+        reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_tcp.csv",
+        time_fmt: str = "radarcape",
         uncertainty: bool = False,
-    ) -> "Decoder":  # coverage: ignore
+    ) -> "ModeS_Decoder":  # coverage: ignore
+        """Decode raw messages transmitted over a TCP network.
+
+        The file should contain for each line at least a timestamp and an
+        hexadecimal message, as a CSV-like format.
+
+        :param host: the IP address of the host to connect
+        :param port: the port of the host to connect
+        :param reference: the reference location, as specified above
+        :param file_pattern: the filename where to dump received hexadecimal
+            messages
+
+            Timestamp format specifiers are accepted.
+
+            | Default value: ``"~/ADSB_EHS_RAW_%Y%m%d_tcp.csv"``
+            | (The ``~`` character gets expanded as your home directory)
+
+        :param time_fmt: (default: ``"radarcape"``)
+
+            - if set to ``"radarcape"``, timestamp information included in the
+              long message is assumed to be GPS adjusted and is therefore used
+              to adjust the timestamp of each message;
+            - if set to ``"dump1090"``, clock information provided by the
+              software is used to adjust the timestamp of each message, but the
+              first timestamp is based on the computer clock;
+            - if set to ``"default"``, the timestamp from the computer is used
+              for all decoded messages
+
+        :param uncertainty: if True, decode also `uncertainty information
+            <https://mode-s.org/decode/content/ads-b/7-uncertainty.html>`_
+
+        """
         now = datetime.now(timezone.utc)
         filename = now.strftime(file_pattern)
         today = os.path.expanduser(filename)
@@ -1116,7 +1242,7 @@ class Decoder:
         s.connect((host, port))
         fh = open(today, "a", 1)
         return cls.from_socket(
-            s, reference, uncertainty=uncertainty, time_fmt="radarcape", fh=fh
+            s, reference, uncertainty=uncertainty, time_fmt=time_fmt, fh=fh
         )
 
     def redefine_reference(self, time: datetime) -> None:
@@ -1135,7 +1261,7 @@ class Decoder:
             self.acs.set_latlon(sum_lat / n, sum_lon / n)
 
     def process_msgs(
-        self, msgs: Iterable[Tuple[datetime, str]], uncertainty: bool = False
+        self, msgs: Iterable[tuple[datetime, str]], uncertainty: bool = False
     ) -> None:
 
         for i, (time, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
@@ -1284,7 +1410,7 @@ class Decoder:
                 return
 
     @property
-    def aircraft(self) -> List[Dict[str, Any]]:
+    def aircraft(self) -> list[Dict[str, Any]]:
         return sorted(
             (
                 dict(
@@ -1306,7 +1432,12 @@ class Decoder:
         )
 
     @property
-    def traffic(self) -> Optional[Traffic]:
+    def traffic(self) -> None | Traffic:
+        """
+        :return: All decoded data is converted into a
+            :class:`~traffic.core.Traffic` object.
+
+        """
         try:
             return Traffic.from_flights(
                 self[elt["icao24"]] for elt in self.aircraft
