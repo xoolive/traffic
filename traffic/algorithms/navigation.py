@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from operator import attrgetter
 from typing import (
@@ -27,8 +29,8 @@ if TYPE_CHECKING:
     from ..core import Flight, FlightPlan  # noqa: 401
     from ..core.mixins import PointMixin  # noqa: 401
     from ..core.structure import Airport, Navaid  # noqa: 401
-    from ..data import Navaids  # noqa: 401
     from ..data.basic.airports import Airports  # noqa: 401
+    from ..data.basic.navaid import Navaids  # noqa: 401
 
 
 class NavigationFeatures:
@@ -502,7 +504,7 @@ class NavigationFeatures:
 
         from ..data import airports
 
-        # Donne les fonctions possibles sur un flight object
+        # Access completion on Flight objects
         self = cast("Flight", self).phases()
 
         _airport = airports[airport] if isinstance(airport, str) else airport
@@ -517,7 +519,7 @@ class NavigationFeatures:
         alt = _airport.altitude + threshold_alt
         base = zone_length * np.tan(opening * np.pi / 180) + little_base
 
-        # Il faut créer les formes autour de chaque runway
+        # Create shapes around each runway
         list_p0 = destination(
             list(_airport.runways.data.latitude),
             list(_airport.runways.data.longitude),
@@ -883,7 +885,7 @@ class NavigationFeatures:
         """
         from ..data import airports
 
-        # Donne les fonctions possibles sur un flight object
+        # Access completion on Flight objects
         self = cast("Flight", self)
 
         _airport = airports[airport] if isinstance(airport, str) else airport
@@ -976,7 +978,7 @@ class NavigationFeatures:
 
         from ..data import airports
 
-        # Donne les fonctions possibles sur un flight object
+        # Access completion on Flight objects
         self = cast("Flight", self)
 
         _airport = airports[airport] if isinstance(airport, str) else airport

@@ -1,7 +1,7 @@
-traffic.core.traffic
---------------------
+traffic.core.geodesy
+====================
 
-.. autoclass:: traffic.core.Traffic
+.. automodule:: traffic.core.geodesy
     :members:
     :inherited-members:
     :no-undoc-members:

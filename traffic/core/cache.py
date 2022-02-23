@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import json
 
 # from collections import UserDict
 from hashlib import md5
 from inspect import currentframe, signature
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, TypeVar
 
 import pandas as pd
 
@@ -14,8 +16,9 @@ if TYPE_CHECKING:
 
 class property_cache(object):
     """Computes attribute value and caches it in the instance.
-    Python Cookbook (Denis Otkidach)
-    https://stackoverflow.com/users/168352/denis-otkidach
+
+    | **Reference:** Python Cookbook (Denis Otkidach)
+    | https://stackoverflow.com/users/168352/denis-otkidach
 
     This decorator allows you to create a property which can be computed once
     and accessed many times. Sort of like memoization, but by instance.
@@ -70,17 +73,28 @@ T = TypeVar("T", pd.DataFrame, "Traffic", "Flight")
 
 
 def cache_results(
-    fun: Optional[Callable[..., T]] = None,
+    fun: None | Callable[..., T] = None,
     cache_directory: Path = Path("."),
     loader: Callable[[Path], T] = pd.read_pickle,
     pd_varnames: bool = False,
-) -> Callable[[Callable[..., T]], Union[T, Callable[..., T]]]:
+) -> Callable[[Callable[..., T]], T | Callable[..., T]]:
     """
     The point of this method is to be able to cache results of some costly
-    functions on pd.DataFrame, Flight or Traffic structures.
+    functions on :class:`pd.DataFrame`, :class:`~traffic.core.Flight` or
+    :class:`~traffic.core.Traffic` structures.
 
     Decorate your function with the cache_results method and go ahead!
 
+    :param fun: the function to decorate
+
+    :param cache_directory: (default: current directory)
+        where to store the results
+
+    :param loader: (default: :meth:`pd.read_pickle`)
+        the function used to load the data from a cache file
+
+    :param pd_varnames: (default: False)
+        when True, try to use the name of the local variable as a cache key
 
     """
 

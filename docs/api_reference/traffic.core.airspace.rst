@@ -1,5 +1,5 @@
-The Airspace structure
-----------------------
+traffic.core.airspace
+---------------------
 
 .. autoclass:: traffic.core.Airspace
     :members:

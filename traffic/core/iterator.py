@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import operator
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
@@ -249,8 +251,14 @@ def flight_iterator(
     msg = (
         "The @flight_iterator decorator can only be set on methods "
         ' annotated with an Iterator["Flight"] return type.'
+        f' Got {fun.__annotations__["return"]}'
     )
-    if fun.__annotations__["return"] != Iterator["Flight"]:
+    if not (
+        fun.__annotations__["return"] == Iterator["Flight"]
+        or eval(fun.__annotations__["return"]) == Iterator["Flight"]
+    ):
+        print(eval(fun.__annotations__["return"]))
+        print(Iterator["Flight"])
         raise TypeError(msg)
 
     @functools.wraps(fun, updated=("__dict__", "__annotations__"))

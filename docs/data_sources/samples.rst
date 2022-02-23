@@ -6,16 +6,16 @@ the library for reference, testing and for providing a baseline to compare the
 performance of various methods and algorithms.
 
 All sample trajectories are available in the `traffic.data.samples` module. The
-import automatically dispatch to Flight or Traffic according to the nature of
-the data.
+import automatically dispatch to :class:`~traffic.core.Flight` or
+:class:`~traffic.core.Traffic` according to the nature of the data.
 
 .. note::
 
-    A subset of the sample trajectories are presented on this page. Other parts of
-    the documentation (e.g. `calibration flights
-    <scenarios/calibration.html>`_ or `trajectory clustering <clustering.html>`_)
-    may refer to other available sample trajectories.
-
+    A subset of the sample trajectories are presented on this page. Other parts
+    of the documentation (e.g. :ref:`calibration flights <calibration flights>`
+    or :ref:`trajectory clustering <trajectory clustering>`) may refer to other
+    available sample trajectories.
+    
 Belevingsvlucht
 ~~~~~~~~~~~~~~~
 

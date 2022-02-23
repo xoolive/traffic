@@ -1,7 +1,7 @@
-traffic.core.traffic
---------------------
+traffic.core.structure
+======================
 
-.. autoclass:: traffic.core.Traffic
+.. automodule:: traffic.core.structure
     :members:
     :inherited-members:
     :no-undoc-members:

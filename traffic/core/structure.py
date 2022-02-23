@@ -144,6 +144,23 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
     @property
     def runways(self) -> Optional[RunwayAirport]:
+        """
+        Get runway information associated with the airport.
+
+        >>> airports['EHAM'].runways
+          latitude   longitude   bearing   name
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          52.3       4.783       41.36     04
+          52.31      4.803       221.4     22
+          52.29      4.734       57.93     06
+          52.3       4.778       238       24
+          52.32      4.746       86.65     09
+          52.32      4.797       266.7     27
+          52.33      4.74        183       18C
+          52.3       4.737       2.997     36C
+          52.32      4.78        183       18L
+          52.29      4.777       3.002     36R
+        ... (2 more entries)"""
         from ..data import runways
 
         return runways[self]

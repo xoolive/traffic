@@ -47,7 +47,9 @@ release = traffic.__version__
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosectionlabel",
     "sphinx.ext.githubpages",
+    "sphinx.ext.intersphinx",
     "sphinx_autodoc_typehints",
     "jupyter_sphinx",
 ]
@@ -203,6 +205,11 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/dev", None),
+}
 
 
 def setup(app: Any) -> None:

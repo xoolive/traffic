@@ -14,6 +14,7 @@ from typing import Any, Dict, Optional
 from .flight import Flight
 from .iterator import FlightIterator
 from .traffic import Traffic
+from .lazy import LazyTraffic
 from .airspace import Airspace
 from .sv import StateVectors
 from .flightplan import FlightPlan
@@ -25,6 +26,7 @@ __all__ = [
     "Airspace",
     "StateVectors",
     "FlightPlan",
+    "LazyTraffic",
     "loglevel",
     "faulty_flight",
 ]

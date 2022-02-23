@@ -58,7 +58,7 @@ pandas = "^1.2.4"
 pyproj = "^3.1.0"
 Cartopy = ">=0.19.0,<1.0.0"
 cartes = ">=0.5,<1.0"
-Shapely = "^1.7.1"
+Shapely = "^1.7.1,<1.8.1"  # bug with that version for now...
 requests = "^2.25.1"
 requests-pkcs12 = "^1.10"
 pyOpenSSL = "^20.0"

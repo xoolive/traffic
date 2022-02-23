@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import sys
 import warnings
@@ -1362,7 +1364,6 @@ class Flight(
             data = (
                 self.handle_last_position()
                 .unwrap()  # avoid filled gaps in track and heading
-                .assign(start=self.start, stop=self.stop)
                 .data.set_index("timestamp")
                 .resample(rule)
                 .first()  # better performance than min() for duplicate index

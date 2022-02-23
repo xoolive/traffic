@@ -200,3 +200,13 @@ div.jupyter_container {
 .widget-subarea {
   margin-bottom: 2em;
 }
+a.reference code.literal span {
+  font-family: Lato, proxima-nova, Helvetica Neue, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #2980b9;
+}
+.rst-content code {
+  border: unset;
+  padding: 0;
+}

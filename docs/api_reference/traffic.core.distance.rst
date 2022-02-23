@@ -1,7 +1,8 @@
-traffic.core.traffic
---------------------
 
-.. autoclass:: traffic.core.Traffic
+traffic.core.distance
+=======================
+
+.. automodule:: traffic.core.distance
     :members:
     :inherited-members:
     :no-undoc-members:

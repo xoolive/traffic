@@ -9,7 +9,7 @@ import re
 import zipfile
 from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Any, Dict, Optional, TypeVar
 
 from tqdm.autonotebook import tqdm
 
@@ -243,7 +243,7 @@ class Aircraft(DataFrameMixin):
         logging.info("Loading OpenSky aircraft database")
         return pd.read_pickle(self.cache_dir / "opensky_db.pkl")
 
-    def __getitem__(self: T, name: Union[str, List[str]]) -> Optional[T]:
+    def __getitem__(self: T, name: str | list[str]) -> None | T:
         """Requests an aircraft by icao24 or registration (exact match)."""
 
         if isinstance(name, str):
@@ -254,13 +254,15 @@ class Aircraft(DataFrameMixin):
             df = self.data.query("icao24 in @name or registration in @name")
         return self.__class__(df)
 
-    def get_unique(self, name: str) -> Optional[Dict[str, str]]:
+    def get_unique(self, name: str) -> None | dict[str, str]:
         """Returns information about an aircraft based on its icao24 or
         registration information as a dictionary. Only the first aircraft
         matching the pattern passed in parameter is returned.
 
         Country information are based on the icao24 identifier, category
         information are based on the registration information.
+
+        :param name: the icao24 identifier or the tail number of the aircraft
 
         >>> aircraft.get_unique('F-ZBQB')
         {
@@ -282,11 +284,10 @@ class Aircraft(DataFrameMixin):
             return None
         return {**dict(df.data.iloc[0]), **country(dict(df.data.iloc[0]))}
 
-    def operator(self: T, name: str) -> Optional[T]:
+    def operator(self: T, name: str) -> None | T:
         """Requests an aircraft by owner or operator (fuzzy match).
 
-        The query string may match the owner or operator (full name, ICAO
-        code or IATA code)
+        :param name: the owner or operator of the aircraft
 
         >>> aircraft.operator("British Antarctic")
           icao24   registration   typecode   model   operator
@@ -299,8 +300,10 @@ class Aircraft(DataFrameMixin):
         """
         return self.query(f"operator.str.contains('{name}')")
 
-    def stats(self: T, name: str) -> Optional[pd.DataFrame]:
+    def stats(self: T, name: str) -> None | pd.DataFrame:
         """Computes stats of owned or operated aircraft (fuzzy match).
+
+        :param name: the owner or operator of the aircraft
 
         >>> aircraft.stats("Air France")
                                     model  icao24
@@ -325,8 +328,10 @@ class Aircraft(DataFrameMixin):
             .agg(dict(model="max", icao24="count"))
         )
 
-    def model(self: T, name: str) -> Optional[T]:
+    def model(self: T, name: str) -> None | T:
         """Requests an aircraft by model or typecode (fuzzy match).
+
+        :param name: the model or the typecode of the aircraft
 
         >>> aircraft.model("A320")
           icao24   registration   typecode   model         operator   owner
@@ -350,16 +355,23 @@ class Aircraft(DataFrameMixin):
             f"typecode.str.contains('{name.upper()}')"
         )
 
-    def registration(self: T, name: str) -> Optional[T]:
-        """Requests an aircraft by registration (fuzzy match)."""
+    def registration(self: T, name: str) -> None | T:
+        """Requests an aircraft by registration (fuzzy match).
+
+        :param name: the tail number of the aircraft
+        """
         return self.query(f"registration.str.contains('{name}')")
 
     def query(
         self: T, query_str: str = "", *args: Any, **kwargs: Any
-    ) -> Optional[T]:
+    ) -> None | T:
         """Combines several requests.
 
-        The keyword arguments correspond to the name of other methods.
+        :param query_str: (default: empty)
+            if non empty, is passed to the :py:meth:`~pd.DataFrame.query` method
+
+        :param kwargs: all keyword arguments correspond to the name of
+            other methods which are chained if query_str is non empty
 
         >>> aircraft.query(registration="^F-ZB", model="EC45")
           icao24   registration   typecode   model                     operator

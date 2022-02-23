@@ -1,5 +1,5 @@
-Trajectory generation
-=====================
+How to implement trajectory generation?
+=======================================
 
 (contribution by Adrien Lafage `@alafage <https://github.com/alafage/>`_)
 

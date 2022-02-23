@@ -1,5 +1,5 @@
-The Flight structure
---------------------
+traffic.core.flight
+-------------------
 
 .. autoclass:: traffic.core.Flight
     :members:

@@ -1,8 +1,9 @@
-traffic.core.traffic
---------------------
+traffic.core.mixins
+===================
 
-.. autoclass:: traffic.core.Traffic
+.. automodule:: traffic.core.mixins
     :members:
     :inherited-members:
     :no-undoc-members:
     :show-inheritance:
+

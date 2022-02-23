@@ -1,7 +1,7 @@
-traffic.core.traffic
---------------------
+traffic.core.sv
+===============
 
-.. autoclass:: traffic.core.Traffic
+.. automodule:: traffic.core.sv
     :members:
     :inherited-members:
     :no-undoc-members:

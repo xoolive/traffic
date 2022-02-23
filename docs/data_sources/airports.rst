@@ -6,6 +6,7 @@ The traffic library provides an airport database with facilitated access to
 
 .. autoclass:: traffic.data.basic.airports.Airports
     :members: search, extent
+    :special-members: __getitem__
     :no-inherited-members:
     :no-undoc-members:
 

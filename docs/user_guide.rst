@@ -49,9 +49,20 @@ Navigation events
    tutorial/top_of_climb
    tutorial/flight_plan
    tutorial/fuel_burn
-   tutorial/occupancy
    airac_usage
 
+Statistical analysis
+--------------------
+
+.. navigation
+
+.. toctree::
+   :maxdepth: 1
+
+   tutorial/occupancy
+   clustering
+   tutorial/generation
+   tutorial/cpa
 
 Beyond the library
 ------------------

@@ -966,7 +966,7 @@ class Decoder:
     ) -> "Decoder":
 
         decoder = cls(reference)
-        redefine_freq = 2 ** redefine_mag - 1
+        redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
         def next_in_binary(filename: Union[str, Path]) -> Iterator[bytes]:
@@ -1034,7 +1034,7 @@ class Decoder:
     ) -> "Decoder":  # coverage: ignore
 
         decoder = cls(reference)
-        redefine_freq = 2 ** redefine_mag - 1
+        redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
         def next_in_socket() -> Iterator[bytes]:

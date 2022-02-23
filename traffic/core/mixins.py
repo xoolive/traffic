@@ -4,18 +4,7 @@ import warnings
 from functools import lru_cache
 from numbers import Integral, Real
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console, ConsoleOptions, RenderResult
@@ -58,7 +47,7 @@ class DataFrameMixin(object):
 
     @classmethod
     def from_file(
-        cls: Type[T], filename: Union[Path, str], **kwargs: Any
+        cls: Type[T], filename: str | Path, **kwargs: Any
     ) -> Optional[T]:
         """Read data from various formats.
 
@@ -146,7 +135,7 @@ class DataFrameMixin(object):
     # --- Redirected to pandas.DataFrame ---
 
     def to_pickle(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to pickle format.
 
@@ -159,7 +148,7 @@ class DataFrameMixin(object):
         self.data.to_pickle(filename, *args, **kwargs)
 
     def to_csv(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to CSV format.
 
@@ -172,7 +161,7 @@ class DataFrameMixin(object):
         self.data.to_csv(filename, *args, **kwargs)
 
     def to_hdf(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to HDF format.
 
@@ -185,7 +174,7 @@ class DataFrameMixin(object):
         self.data.to_hdf(filename, *args, **kwargs)
 
     def to_json(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to JSON format.
 
@@ -198,7 +187,7 @@ class DataFrameMixin(object):
         self.data.to_json(filename, *args, **kwargs)
 
     def to_parquet(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to parquet format.
 
@@ -211,7 +200,7 @@ class DataFrameMixin(object):
         self.data.to_parquet(filename, *args, **kwargs)
 
     def to_feather(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to feather format.
 
@@ -335,7 +324,7 @@ class ShapelyMixin(object):
     # --- Properties ---
 
     @property
-    def bounds(self) -> Tuple[float, float, float, float]:
+    def bounds(self) -> tuple[float, float, float, float]:
         """Returns the bounds of the (bounding box of the) shape.
         Bounds are given in the following order in the origin crs:
         (west, south, east, north)
@@ -343,16 +332,19 @@ class ShapelyMixin(object):
         return self.shape.bounds  # type: ignore
 
     @property
-    def extent(self) -> Tuple[float, float, float, float]:
+    def extent(self) -> tuple[float, float, float, float]:
         """Returns the extent of the (bounding box of the) shape.
-        Extent is given in the following order in the origin crs:
-        (west, east, south, north)
 
         .. note::
             When plotting with Matplotlib and Cartopy, the extent property is
             convenient in the following use case:
 
             >>> ax.set_extent(obj.extent)
+
+        :return:
+            Extent is given in the following order in the origin crs:
+            (west, east, south, north)
+
         """
         west, south, east, north = self.bounds
         return west, east, south, north
@@ -373,7 +365,7 @@ class ShapelyMixin(object):
     # --- Representations ---
 
     @lru_cache()
-    def _repr_svg_(self) -> Optional[str]:
+    def _repr_svg_(self) -> None | str:
         if self.shape.is_empty:
             return None
         project = self.project_shape()
@@ -385,7 +377,7 @@ class ShapelyMixin(object):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return no_wrap_div.format(self._repr_svg_())
 
-    def geojson(self) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    def geojson(self) -> dict[str, Any] | list[dict[str, Any]]:
         """Returns the GeoJSON representation of the shape as a Dict.
         The transformation is delegated to shapely ``mapping`` method.
         """
@@ -405,7 +397,7 @@ class ShapelyMixin(object):
         )
 
     def project_shape(
-        self, projection: Union[pyproj.Proj, "crs.Projection", None] = None
+        self, projection: None | pyproj.Proj | "crs.Projection" = None
     ) -> base.BaseGeometry:
         """Returns a projected representation of the shape.
 
@@ -454,14 +446,14 @@ class GeographyMixin(DataFrameMixin):
     """Adds Euclidean coordinates to a latitude/longitude DataFrame."""
 
     def compute_xy(
-        self: T, projection: Union[pyproj.Proj, "crs.Projection", None] = None
+        self: T, projection: None | pyproj.Proj | "crs.Projection" = None
     ) -> T:
         """Enrich the structure with new x and y columns computed through a
         projection of the latitude and longitude columns.
 
         The source projection is WGS84 (EPSG 4326).
         The default destination projection is a Lambert Conformal Conical
-        projection centered on the data inside the dataframe.
+        projection centred on the data inside the dataframe.
 
         Other valid projections are available:
 
@@ -495,8 +487,8 @@ class GeographyMixin(DataFrameMixin):
 
     def agg_xy(
         self,
-        resolution: Union[Dict[str, float], None],
-        projection: Union[pyproj.Proj, "crs.Projection", None] = None,
+        resolution: None | dict[str, float],
+        projection: None | pyproj.Proj | "crs.Projection" = None,
         **kwargs: Any,
     ) -> pd.DataFrame:
         """Aggregates values of a traffic over a grid of x/y, with x and y
@@ -577,25 +569,38 @@ class GeographyMixin(DataFrameMixin):
 
 
 class GeoDBMixin(DataFrameMixin):
-    _extent: Optional[Tuple[float, float, float, float]] = None
+    _extent: None | tuple[float, float, float, float] = None
 
     def extent(
         self: G,
-        extent: Union[str, ShapelyMixin, Tuple[float, float, float, float]],
+        extent: str | ShapelyMixin | tuple[float, float, float, float],
         buffer: float = 0.5,
     ) -> Optional[G]:
         """
         Selects the subset of data inside the given extent.
 
-        The parameter extent may be passed as:
+        :param extent:
+            The parameter extent may be passed as:
 
             - a string to query OSM Nominatim service;
-            - the result of an OSM Nominatim query;
-            - any kind of shape (including airspaces);
-            - extents (west, east, south, north)
+            - the result of an OSM Nominatim query
+              (:class:`~traffic.core.mixins.ShapelyMixin`);
+            - any kind of shape (:class:`~traffic.core.mixins.ShapelyMixin`,
+              including :class:`~traffic.core.Airspace`);
+            - extent in the order:  (west, east, south, north)
 
-        This works with databases like airways, airports or navaids.
+        :param buffer:
+            As the extent of a given shape may be a little too strict to catch
+            elements we may expect when we look into an area, the buffer
+            parameter (by default, 0.5 degree) helps enlarging the area of
+            interest.
 
+        This works with databases like
+        :class:`~traffic.data.basic.airways.Airways`,
+        :class:`~traffic.data.basic.airports.Airports` or
+        :class:`~traffic.data.basic.navaid.Navaids`.
+
+        >>> from traffic.data import airways
         >>> airways.extent(eurofirs['LFBB'])
           route    id   navaid   latitude    longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -611,6 +616,7 @@ class GeoDBMixin(DataFrameMixin):
           A25      15   SAU      44.68       -0.1529
          ... (703 more lines)
 
+        >>> from traffic.data import airports
         >>> airports.extent("Bornholm")
          name                 country   icao      iata   latitude   longitude
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -618,6 +624,7 @@ class GeoDBMixin(DataFrameMixin):
          Bornholm Airport     Denmark   EKRN      RNN    55.06      14.76
          Ro Airport           Denmark   EKRR      nan    55.21      14.88
 
+        >>> from traffic.data import navaids
         >>> navaids['ZUE']
         Navaid(
             'ZUE',
@@ -694,16 +701,17 @@ class PointMixin(object):
     name: str
 
     @property
-    def latlon(self) -> Tuple[float, float]:
+    def latlon(self) -> tuple[float, float]:
+        """A tuple for latitude and longitude, in degrees, in this order."""
         return (self.latitude, self.longitude)
 
     def plot(
         self,
         ax: "Axes",
-        text_kw: Optional[Dict[str, Any]] = None,
-        shift: Optional[Dict[str, Any]] = None,
+        text_kw: None | dict[str, Any] = None,
+        shift: None | dict[str, Any] = None,
         **kwargs: Any,
-    ) -> List["Artist"]:  # coverage: ignore
+    ) -> list["Artist"]:  # coverage: ignore
 
         if shift is None:
             # flake B006
@@ -732,7 +740,7 @@ class PointMixin(object):
             if hasattr(self, "name"):
                 text_kw["s"] = getattr(self, "name")  # noqa: B009
 
-        cumul: List["Artist"] = []
+        cumul: list["Artist"] = []
         cumul.append(ax.scatter(self.longitude, self.latitude, **kwargs))
 
         west, east, south, north = ax.get_extent(PlateCarree())

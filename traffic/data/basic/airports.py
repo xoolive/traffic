@@ -31,33 +31,14 @@ class Airports(GeoDBMixin):
 
     >>> from traffic.data import airports
 
-    Any airport can be accessed by the bracket notation:
+    Airports information can be accessed with attributes:
 
-    >>> airports["EHAM"]
-    EHAM/AMS: Amsterdam Airport Schiphol
     >>> airports["EHAM"].latlon
     (52.308609, 4.763889)
     >>> airports["EHAM"].iata
     AMS
     >>> airports["EHAM"].name
     Amsterdam Airport Schiphol
-
-    Runways thresholds are also associated to most airports:
-
-    >>> airports['EHAM'].runways
-      latitude   longitude   bearing   name
-     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      52.3       4.783       41.36     04
-      52.31      4.803       221.4     22
-      52.29      4.734       57.93     06
-      52.3       4.778       238       24
-      52.32      4.746       86.65     09
-      52.32      4.797       266.7     27
-      52.33      4.74        183       18C
-      52.3       4.737       2.997     36C
-      52.32      4.78        183       18L
-      52.29      4.777       3.002     36R
-    ... (2 more entries)
 
     """
 
@@ -83,6 +64,10 @@ class Airports(GeoDBMixin):
         self._src = "open"
 
     def download_airports(self) -> None:  # coverage: ignore
+        """
+        Download an up to date version of the airports database from
+        `ourairports.com <https://ourairports.com/>`_
+        """
         from .. import session
 
         f = session.get(
@@ -176,7 +161,24 @@ class Airports(GeoDBMixin):
 
         return self._data
 
-    def __getitem__(self, name: str) -> Optional[Airport]:
+    def __getitem__(self, name: str) -> None | Airport:
+        """
+        Any airport can be accessed by the bracket notation.
+
+        :param name: the IATA or ICAO code of the airport
+
+        >>> airports["EHAM"]
+        Airport(
+            'EHAM',
+            iata='AMS',
+            name='Amsterdam Airport Schiphol',
+            country='Netherlands',
+            latitude=52.308601,
+            longitude=4.76389,
+            altitude=-11.0,
+            runways=['04', '22', '06', '24', '09', '27', '18C', '36C', '18L', '36R', '18R', '36L']
+        )
+        """
         x = self.data.query("iata == @name.upper() or icao == @name.upper()")
         if x.shape[0] == 0:
             return None
@@ -193,8 +195,8 @@ class Airports(GeoDBMixin):
 
     def search(self, name: str) -> "Airports":
         """
-        Selects the subset of airports matching the given IATA or ICAO code,
-        containing the country name or the full name of the airport.
+        :param name: refers to the IATA or ICAO code, or part of the country
+        name, city name of full name of the airport.
 
         >>> airports.query('type == "large_airport"').search('Tokyo')
           name                                 country   icao   iata   latitude   longitude

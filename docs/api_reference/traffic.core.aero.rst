@@ -1,8 +1,9 @@
-traffic.core.traffic
---------------------
+traffic.core.aero
+=================
 
-.. autoclass:: traffic.core.Traffic
+.. automodule:: traffic.core.aero
     :members:
     :inherited-members:
     :no-undoc-members:
     :show-inheritance:
+

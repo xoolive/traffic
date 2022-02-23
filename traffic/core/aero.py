@@ -1,32 +1,23 @@
 # flake8: noqa
 """
-Functions for aeronautics in this module
-    - physical quantities always in SI units
-    - lat,lon,course and heading in degrees
-International Standard Atmosphere
-    p,rho,T = atmos(H)    # atmos as function of geopotential altitude H [m]
-    a = vsound(H)         # speed of sound [m/s] as function of H[m]
-    p = pressure(H)       # calls atmos but returns only pressure [Pa]
-    T = temperature(H)    # calculates temperature [K]
-    rho = density(H)      # calls atmos but returns only pressure [Pa]
-Speed conversion at altitude H[m] in ISA:
-    Mach = tas2mach(Vtas,H)    # true airspeed (Vtas) to mach number conversion
-    Vtas = mach2tas(Mach,H)    # true airspeed (Vtas) to mach number conversion
-    Vtas = eas2tas(Veas,H)     # equivalent airspeed to true airspeed, H in [m]
-    Veas = tas2eas(Vtas,H)     # true airspeed to equivent airspeed, H in [m]
-    Vtas = cas2tas(Vcas,H)     # Vcas  to Vtas conversion both m/s, H in [m]
-    Vcas = tas2cas(Vtas,H)     # Vtas to Vcas conversion both m/s, H in [m]
-    Vcas = mach2cas(Mach,H)    # Mach to Vcas conversion Vcas in m/s, H in [m]
-    Mach   = cas2mach(Vcas,H)  # Vcas to mach copnversion Vcas in m/s, H in [m]
+This module implements functions for aeronautics, conversions between:
+
+- altitude, temperature, pressure, density in the International Standard
+  Atmosphere model
+- computed air speed (CAS), true air speed (TAS), equivalent air speed (EAS),
+  Mach number
+
+All physical quantities assume **standard units** (SI), angles are all in
+degrees.
+
 """
 
-from typing import Tuple, TypeVar, cast
+from typing import Tuple, cast
 
 import numpy as np
 import numpy.typing as npt
-import pandas._typing as pdt
 
-Numeric = TypeVar("Numeric", npt.NDArray[np.float64], pdt.ArrayLike[np.float64])
+Numeric = npt.NDArray[np.float64]
 
 # -- Constants Aeronautics --
 
@@ -54,6 +45,16 @@ a0 = np.sqrt(gamma * R * T0)  # sea level speed of sound ISA
 
 
 def vatmos(h: Numeric) -> Tuple[Numeric, Numeric, Numeric]:  # h in m
+    """International Standard Atmosphere calculator
+
+    :param h:  altitude in meters 0.0 < h < 84852.
+        (will be clipped when outside range, integer input allowed)
+
+    :return:
+        - the pressure (in Pa)
+        - the air density :math:`\\rho` (in kg/m3)
+        - the temperature (in K)
+    """
     # Temp
     T = vtemp(h)
 
@@ -69,22 +70,54 @@ def vatmos(h: Numeric) -> Tuple[Numeric, Numeric, Numeric]:  # h in m
 
 
 def vtemp(h: Numeric) -> Numeric:  # h [m]
+    """Temperature only version of ISA atmosphere
+
+    :param h: the altitude in meters, :math:`0 < h < 84852`
+        (will be clipped when outside range, integer input allowed)
+
+    :return: the temperature (in K)
+
+    """
     T = np.maximum(288.15 - 0.0065 * h, Tstrat)
     return T  # type: ignore
 
 
 # Atmos wrappings:
 def vpressure(h: Numeric) -> Numeric:  # h [m]
+    """Pressure only version of ISA atmosphere
+
+    :param h: the altitude in meters, :math:`0 < h < 84852`
+        (will be clipped when outside range, integer input allowed)
+
+    :return: the pressure, in Pa
+
+    """
     p, r, T = vatmos(h)
-    return p  # type: ignore
+    return p
 
 
 def vdensity(h: Numeric) -> Numeric:  # air density at given altitude h [m]
+    """Density only version of ISA atmosphere
+
+    :param h: the altitude in meters, :math:`0 < h < 84852`
+        (will be clipped when outside range, integer input allowed)
+
+    :return: the density :math:`\\rho`, in kg/m3
+
+    """
     p, r, T = vatmos(h)
-    return r  # type: ignore
+    return r
 
 
 def vvsound(h: Numeric) -> Numeric:  # Speed of sound for given altitude h [m]
+    """Speed of sound in ISA atmosphere
+
+    :param h: the altitude in meters, :math:`0 < h < 84852`
+        (will be clipped when outside range, integer input allowed)
+
+    :return: the speed of sound :math:`a`, in m/s
+
+    """
     T = vtemp(h)
     a = np.sqrt(gamma * R * T)
     return a  # type: ignore
@@ -94,35 +127,60 @@ def vvsound(h: Numeric) -> Numeric:  # Speed of sound for given altitude h [m]
 
 
 def vtas2mach(tas: Numeric, h: Numeric) -> Numeric:
-    """True airspeed (tas) to mach number conversion"""
+    """
+    :param tas: True Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: Mach number
+    """
     a = vvsound(h)
-    M = tas / a
-    return M  # type: ignore
+    M: Numeric = tas / a
+    return M
 
 
 def vmach2tas(M: Numeric, h: Numeric) -> Numeric:
-    """True airspeed (tas) to mach number conversion"""
+    """
+    :param M: Mach number
+    :param h: altitude, (in m)
+
+    :return: True Air Speed, (in m/s)
+    """
     a = vvsound(h)
-    tas = M * a
-    return tas  # type: ignore
+    tas: Numeric = M * a
+    return tas
 
 
 def veas2tas(eas: Numeric, h: Numeric) -> Numeric:
-    """Equivalent airspeed to true airspeed"""
+    """
+    :param eas: Equivalent Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: True Air Speed, (in m/s)
+    """
     rho = vdensity(h)
     tas = eas * np.sqrt(rho0 / rho)
     return tas  # type: ignore
 
 
 def vtas2eas(tas: Numeric, h: Numeric) -> Numeric:
-    """True airspeed to equivent airspeed"""
+    """
+    :param tas: True Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: Equivalent Air Speed, (in m/s)
+    """
     rho = vdensity(h)
     eas = tas * np.sqrt(rho / rho0)
     return eas  # type: ignore
 
 
 def vcas2tas(cas: Numeric, h: Numeric) -> Numeric:
-    """cas2tas conversion both m/s"""
+    """
+    :param cas: Computed Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: True Air Speed, (in m/s)
+    """
     p, rho, T = vatmos(h)
     qdyn = p0 * ((1.0 + rho0 * cas * cas / (7.0 * p0)) ** 3.5 - 1.0)
     tas = np.sqrt(7.0 * p / rho * ((1.0 + qdyn / p) ** (2.0 / 7.0) - 1.0))
@@ -133,9 +191,16 @@ def vcas2tas(cas: Numeric, h: Numeric) -> Numeric:
 
 
 def vtas2cas(tas: Numeric, h: Numeric) -> Numeric:
-    """tas2cas conversion both m/s"""
+    """
+    :param tas: True Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: Computed Air Speed, (in m/s)
+    """
     p, rho, T = vatmos(h)
-    qdyn = p * ((1.0 + rho * tas * tas / (7.0 * p)) ** 3.5 - 1.0)
+    qdyn = p * (
+        (1.0 + rho * tas * tas / (7.0 * p)) ** 3.5 - 1.0  # type: ignore
+    )
     cas = np.sqrt(7.0 * p0 / rho0 * ((qdyn / p0 + 1.0) ** (2.0 / 7.0) - 1.0))
 
     # cope with negative speed
@@ -144,17 +209,27 @@ def vtas2cas(tas: Numeric, h: Numeric) -> Numeric:
 
 
 def vmach2cas(M: Numeric, h: Numeric) -> Numeric:
-    """Mach to CAS conversion"""
+    """
+    :param M: Mach number
+    :param h: altitude, (in m)
+
+    :return: Computed Air Speed, (in m/s)
+    """
     tas = vmach2tas(M, h)
     cas = vtas2cas(tas, h)
-    return cas  # type: ignore
+    return cas
 
 
 def vcas2mach(cas: Numeric, h: Numeric) -> Numeric:
-    """CAS to Mach conversion"""
+    """
+    :param cas: Computed Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: Mach number
+    """
     tas = vcas2tas(cas, h)
     M = vtas2mach(tas, h)
-    return M  # type: ignore
+    return M
 
 
 def vcasormach(spd: Numeric, h: Numeric) -> Tuple[Numeric, Numeric, Numeric]:
@@ -174,13 +249,17 @@ def vcasormach2tas(spd: Numeric, h: Numeric) -> Numeric:
 
 
 def atmos(h: float) -> Tuple[float, float, float]:
-    """atmos(altitude): International Standard Atmosphere calculator
+    """International Standard Atmosphere calculator
 
-    Input:
-          h =  altitude in meters 0.0 < h < 84852.
-    (will be clipped when outside range, integer input allowed)
-    Output:
-          [p, rho, T]    (in SI-units: Pa, kg/m3 and K)"""
+    :param h:  altitude in meters :math:`0 < h < 84852`
+        (will be clipped when outside range, integer input allowed)
+
+    :return:
+        - the pressure (in Pa)
+        - the air density :math:`\\rho` (in kg/m3)
+        - the temperature (in K)
+
+    """
 
     # Constants
 
@@ -244,13 +323,14 @@ def atmos(h: float) -> Tuple[float, float, float]:
 
 
 def temp(h: float) -> float:
-    """temp (altitude): Temperature only version of ISA atmos
+    """Temperature only version of ISA atmosphere
 
-    Input:
-          h =  altitude in meters 0.0 < h < 84852.
-    (will be clipped when outside range, integer input allowed)
-    Output:
-          T    (in SI-unit: K)"""
+    :param h: the altitude in meters, :math:`0 < h < 84852`
+        (will be clipped when outside range, integer input allowed)
+
+    :return: the temperature (in K)
+
+    """
 
     # Base values and gradient in table from hand-out
     # (but corrected to avoid small discontinuities at borders of layers)
@@ -299,16 +379,40 @@ def temp(h: float) -> float:
 
 # Atmos wrappings:
 def pressure(h: float) -> float:  # h [m]
+    """Pressure only version of ISA atmosphere
+
+    :param h: the altitude in meters, :math:`0 < h < 84852`
+        (will be clipped when outside range, integer input allowed)
+
+    :return: the pressure, in Pa
+
+    """
     p, r, T = atmos(h)
     return p
 
 
 def density(h: float) -> float:  # air density at given altitude h [m]
+    """Density only version of ISA atmosphere
+
+    :param h: the altitude in meters, :math:`0 < h < 84852`
+        (will be clipped when outside range, integer input allowed)
+
+    :return: the density :math:`\\rho`, in kg/m3
+
+    """
     p, r, T = atmos(h)
     return r
 
 
 def vsound(h: float) -> float:  # Speed of sound for given altitude h [m]
+    """Speed of sound in ISA atmosphere
+
+    :param h: the altitude in meters, :math:`0 < h < 84852`
+        (will be clipped when outside range, integer input allowed)
+
+    :return: the speed of sound :math:`a`, in m/s
+
+    """
     T = temp(h)
     a = np.sqrt(gamma * R * T)
     return a  # type: ignore
@@ -318,35 +422,60 @@ def vsound(h: float) -> float:  # Speed of sound for given altitude h [m]
 
 
 def tas2mach(tas: float, h: float) -> float:
-    """True airspeed (tas) to mach number conversion"""
+    """
+    :param tas: True Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: Mach number
+    """
     a = vsound(h)
     M = tas / a
     return M
 
 
 def mach2tas(M: float, h: float) -> float:
-    """True airspeed (tas) to mach number conversion"""
+    """
+    :param M: Mach number
+    :param h: altitude, (in m)
+
+    :return: True Air Speed, (in m/s)
+    """
     a = vsound(h)
     tas = M * a
     return tas
 
 
 def eas2tas(eas: float, h: float) -> float:
-    """Equivalent airspeed to true airspeed"""
+    """
+    :param eas: Equivalent Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: True Air Speed, (in m/s)
+    """
     rho = density(h)
     tas = eas * np.sqrt(rho0 / rho)
     return tas  # type: ignore
 
 
 def tas2eas(tas: float, h: float) -> float:
-    """True airspeed to equivent airspeed"""
+    """
+    :param tas: True Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: Equivalent Air Speed, (in m/s)
+    """
     rho = density(h)
     eas = tas * np.sqrt(rho / rho0)
     return eas  # type: ignore
 
 
 def cas2tas(cas: float, h: float) -> float:
-    """cas2tas conversion both m/s h in m"""
+    """
+    :param cas: Computed Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: True Air Speed, (in m/s)
+    """
     p, rho, T = atmos(h)
     qdyn = p0 * ((1.0 + rho0 * cas * cas / (7.0 * p0)) ** 3.5 - 1.0)
     tas = np.sqrt(7.0 * p / rho * ((1.0 + qdyn / p) ** (2.0 / 7.0) - 1.0))
@@ -355,7 +484,12 @@ def cas2tas(cas: float, h: float) -> float:
 
 
 def tas2cas(tas: float, h: float) -> float:
-    """tas2cas conversion both m/s"""
+    """
+    :param tas: True Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: Computed Air Speed, (in m/s)
+    """
     p, rho, T = atmos(h)
     qdyn = p * ((1.0 + rho * tas * tas / (7.0 * p)) ** 3.5 - 1.0)
     cas = np.sqrt(7.0 * p0 / rho0 * ((qdyn / p0 + 1.0) ** (2.0 / 7.0) - 1.0))
@@ -364,14 +498,24 @@ def tas2cas(tas: float, h: float) -> float:
 
 
 def mach2cas(M: float, h: float) -> float:
-    """Mach to CAS conversion"""
+    """
+    :param M: Mach number
+    :param h: altitude, (in m)
+
+    :return: Computed Air Speed, (in m/s)
+    """
     tas = mach2tas(M, h)
     cas = tas2cas(tas, h)
     return cas
 
 
 def cas2mach(cas: float, h: float) -> float:
-    """CAS Mach conversion"""
+    """
+    :param cas: Computed Air Speed, (in m/s)
+    :param h: altitude, (in m)
+
+    :return: Mach number
+    """
     tas = cas2tas(cas, h)
     M = tas2mach(tas, h)
     return M

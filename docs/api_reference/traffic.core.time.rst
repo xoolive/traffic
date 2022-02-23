@@ -1,8 +1,9 @@
-traffic.core.traffic
---------------------
+traffic.core.time
+=================
 
-.. autoclass:: traffic.core.Traffic
+.. automodule:: traffic.core.time
     :members:
     :inherited-members:
     :no-undoc-members:
     :show-inheritance:
+
