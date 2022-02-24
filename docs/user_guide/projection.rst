@@ -81,7 +81,6 @@ Example with Altair
 
     import altair as alt
     from cartes.atlas import benelux
-    from traffic.data import airports
 
     alt.data_transformers.disable_max_rows()
 
