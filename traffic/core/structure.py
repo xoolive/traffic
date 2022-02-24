@@ -52,11 +52,8 @@ class AirportPoint(PointMixin):
         )
 
 
+@rich.repr.auto()
 class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
-    def __repr__(self) -> str:
-        short_name = self.name.strip()
-        return f"{self.icao}/{self.iata}: {short_name}"
-
     def __rich_repr__(self) -> rich.repr.Result:
         yield self.icao
         if self.iata:
@@ -70,8 +67,6 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
             yield "longitude", self.longitude
         if self.altitude:
             yield "altitude", self.altitude
-        if self.runways:
-            yield "runways", list(self.runways.data.name)
 
     def _repr_html_(self) -> str:
         title = ""
@@ -282,6 +277,7 @@ class NavaidTuple(NamedTuple):
         self.__dict__.update(d)
 
 
+@rich.repr.auto()
 class Navaid(NavaidTuple, PointMixin):
     def __getattr__(self, name: str) -> float:
         if name == "lat":
@@ -320,6 +316,7 @@ class Navaid(NavaidTuple, PointMixin):
             )
 
 
+@rich.repr.auto()
 class Route(HBoxMixin, ShapelyMixin):
     def __init__(self, name: str, navaids: List[Navaid]):
         self.name = name

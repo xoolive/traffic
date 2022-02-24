@@ -92,8 +92,8 @@ class DataFrameMixin(object):
     def _repr_html_(self) -> str:
         return self.data._repr_html_()  # type: ignore
 
-    def __repr__(self) -> str:
-        return repr(self.data)
+    # def __repr__(self) -> str:
+    #    return repr(self.data)
 
     def __len__(self) -> int:
         return self.data.shape[0]  # type: ignore
