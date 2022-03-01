@@ -22,7 +22,7 @@ Latest release
 
 We recommend creating a fresh conda environment for a first installation:
 
-.. parsed-literal::
+.. code:: bash
 
     # Installation
     conda create -n traffic -c conda-forge python=3.9 traffic
@@ -32,7 +32,7 @@ Adjust the Python version you need (>=3.7) and append packages you need for work
 
 Then activate the environment each time you need to use the ``traffic`` library:
 
-.. parsed-literal::
+.. code:: bash
 
     conda activate traffic
 
@@ -47,27 +47,26 @@ Then activate the environment each time you need to use the ``traffic`` library:
 Updating traffic
 ----------------
 
-.. parsed-literal::
+- To update traffic in your conda environment:
 
-    # -n option is followed by the name of the environment
-    conda update -n traffic -c conda-forge traffic
+  .. code:: bash
+  
+      # -n option is followed by the name of the environment
+      conda update -n traffic -c conda-forge traffic
 
 
-Development version
--------------------
+- For the most recent development version, clone the Github repository:
 
-For the most recent development version, clone the Github repository:
-
-.. code:: bash
-
-    git clone https://github.com/xoolive/traffic
-    cd traffic/
-    pip install .
-
-.. note::
-
-    It should be easier to install the development version inside your conda
-    environment where you installed the latest release.
+  .. code:: bash
+  
+      git clone https://github.com/xoolive/traffic
+      cd traffic/
+      pip install .
+  
+  .. note::
+  
+      It should be easier to install the development version inside your conda
+      environment where you installed the latest release.
 
 
 Contribute to traffic

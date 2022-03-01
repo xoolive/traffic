@@ -103,6 +103,7 @@ types-requests = "^2.25.0"
 types-paramiko = "^0.1.7"
 types-pyOpenSSL = "^20.0.7"
 requests = {extras = ["socks"], version = "^2.25.1"}
+pytest-timeout = "^2.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

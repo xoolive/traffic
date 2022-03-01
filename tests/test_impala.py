@@ -8,6 +8,7 @@ from traffic.data import opensky
 from traffic.data.samples import belevingsvlucht, lfbo_tma
 
 
+@pytest.mark.timeout(300)
 def test_flightlist() -> None:
 
     l_aib = opensky.flightlist(
@@ -23,6 +24,7 @@ def test_flightlist() -> None:
     assert all(l_44017c.callsign.str.startswith("EJU"))
 
 
+@pytest.mark.timeout(300)
 def test_history() -> None:
 
     t_aib: Optional[Traffic] = cast(
@@ -61,6 +63,7 @@ def test_history() -> None:
     assert len(t_decoded) == len(t_tma)
 
 
+@pytest.mark.timeout(300)
 def test_complex_queries() -> None:
     error_msg = "airport may not be set if arrival_airport is set"
     with pytest.raises(RuntimeError, match=error_msg):
@@ -215,6 +218,7 @@ def test_complex_queries() -> None:
     assert len(tD) == 9
 
 
+@pytest.mark.timeout(300)
 def test_timebuffer() -> None:
 
     f = cast(
@@ -237,6 +241,7 @@ def test_timebuffer() -> None:
     assert h.taxiway_max == "Z"
 
 
+@pytest.mark.timeout(300)
 def test_rawdata() -> None:
 
     r = opensky.rawdata(

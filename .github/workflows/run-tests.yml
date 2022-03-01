@@ -29,7 +29,15 @@ jobs:
         uses: snok/install-poetry@v1.1.6
         with:
           version: 1.1.6
+          virtualenvs-create: true
           virtualenvs-in-project: true
+
+      - name: Load cached Poetry dependencies
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Display Python version
         run: poetry run python -c "import sys; print(sys.version)"
@@ -49,16 +57,27 @@ jobs:
           mkdir -p ~/.cache/traffic/
           cp data/navdata/earth_*.dat ~/.cache/traffic/
 
-      - name: Install dependencies
+      - name: Cache folder for libproj >=8.0
+        uses: actions/cache@v2
+        id: projlib-folder
+        with:
+          path: PROJ
+          key: ${{ runner.os }}-cache_libproj
+
+      - name: Populate first cache files
+        if: steps.projlib-folder.outputs.cache-hit != 'true'
         run: |
-          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
           # upgrade to proj>=8.0 for Cartopy 0.20
           git clone https://github.com/OSGeo/PROJ
           cd PROJ
           git checkout 8.2.1
-          mkdir build; cd build
-          cmake ..
-          cmake --build .
+          mkdir build
+
+      - name: Install dependencies
+        run: |
+          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
+          cd PROJ/build
+          cmake ..; cmake --build .
           sudo cmake --build . --target install
           cd ../..
           poetry install -E all
