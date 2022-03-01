@@ -37,6 +37,16 @@ Sources of data
    data_sources/eurocontrol
    data_sources/export
 
+Good practices
+--------------
+
+.. toctree::
+   :maxdepth: 1
+
+   user_guide/projection
+   user_guide/processing
+   user_guide/simplify
+   user_guide/own_data
 
 Navigation events
 -----------------
@@ -55,8 +65,6 @@ Navigation events
 Statistical analysis
 --------------------
 
-.. navigation
-
 .. toctree::
    :maxdepth: 1
 
@@ -65,28 +73,19 @@ Statistical analysis
    tutorial/generation
    tutorial/cpa
 
-Beyond the library
-------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   user_guide/projection
-   user_guide/own_data
-   user_guide/plugins
-
 Standalone applications
 -----------------------
 
 .. toctree::
    :maxdepth: 1
 
+   user_guide/plugins
    user_guide/cli_tui
    user_guide/gui
    user_guide/docker
 
-Frequently asked questions
---------------------------
+Troubleshooting
+---------------
 
 .. toctree::
    :maxdepth: 1

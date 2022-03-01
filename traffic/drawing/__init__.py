@@ -20,10 +20,10 @@ lines.dash_capstyle: butt
 legend.fancybox: True
 font.size: 13
 
-axes.prop_cycle: cycler('color', ['779ae3', 'e77074', '74c863', 'c2c55e', 'd27bcd', '60ceaf', 'd49146'])
+axes.prop_cycle: cycler('color', ['4c78a8', 'f58518', '54a24b', 'b79a20', '439894', 'e45756', 'd67195', 'b279a2', '9e765f', '7970ce'])
 axes.linewidth: 0
-axes.titlesize: 22
-axes.labelsize: 16
+axes.titlesize: 16
+axes.labelsize: 14
 
 xtick.labelsize: 14
 ytick.labelsize: 14

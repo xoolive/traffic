@@ -55,7 +55,7 @@ class AirportPoint(PointMixin):
 @rich.repr.auto()
 class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
     def __rich_repr__(self) -> rich.repr.Result:
-        yield self.icao
+        yield "icao", self.icao
         if self.iata:
             yield "iata", self.iata
         if self.name:

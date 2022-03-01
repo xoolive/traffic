@@ -210,10 +210,6 @@ class SO6Flight(Flight):
         yield s.time2
 
     @property
-    def aircraft(self) -> str:
-        return cast(str, self.data.iloc[0].aircraft)
-
-    @property
     def typecode(self) -> str:
         return cast(str, self.data.iloc[0].aircraft)
 

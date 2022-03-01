@@ -11,6 +11,7 @@ from functools import reduce
 from pathlib import Path
 from typing import Any, Dict, Optional, TypeVar
 
+import rich.repr
 from tqdm.autonotebook import tqdm
 
 import pandas as pd
@@ -98,6 +99,33 @@ def country(reg: Dict[str, str]) -> Dict[str, str]:
             candidate = {**candidate, **precise}
 
     return candidate
+
+
+@rich.repr.auto()
+class Tail(Dict[str, str]):
+    def __getattr__(self, name: str) -> None | str:
+        if name in self.keys():
+            return self[name]
+        return None
+
+    def __format__(self, _format_str: str) -> str:
+        res = str(self.icao24)
+        registration = self.registration
+        typecode = self.typecode
+        flag = self.flag
+        if registration is not None:
+            res += f" · {flag} {registration}"
+        else:
+            res = f"{flag} {res}"
+        if typecode is not None:
+            res += f" ({typecode})"
+        return res
+
+    def __rich_repr__(self) -> rich.repr.Result:
+        yield "icao24", self["icao24"]
+        yield "registration", self["registration"]
+        yield "typecode", self["typecode"]
+        yield "flag", self["flag"]
 
 
 T = TypeVar("T", bound="Aircraft")
@@ -252,9 +280,11 @@ class Aircraft(DataFrameMixin):
             )
         else:
             df = self.data.query("icao24 in @name or registration in @name")
+        if df.shape[0] == 0:
+            return None
         return self.__class__(df)
 
-    def get_unique(self, name: str) -> None | dict[str, str]:
+    def get_unique(self, name: str) -> None | Tail:
         """Returns information about an aircraft based on its icao24 or
         registration information as a dictionary. Only the first aircraft
         matching the pattern passed in parameter is returned.
@@ -265,24 +295,12 @@ class Aircraft(DataFrameMixin):
         :param name: the icao24 identifier or the tail number of the aircraft
 
         >>> aircraft.get_unique('F-ZBQB')
-        {
-            'icao24': '3b780f',
-            'registration': 'F-ZBQB',
-            'typecode': 'EC45',
-            'serial': '9058',
-            'operator': 'French Securite Civile',
-            'model': 'Airbus Helicopters H145',
-            'country': 'France',
-            'flag': '🇫🇷',
-            'pattern': '^F-Z',
-            'category': 'State owned',
-            [truncated]
-        }
+        Tail(icao24='3b780f', registration='F-ZBQB', typecode='EC45', flag='🇫🇷')
         """
         df = self[name]
         if df is None:
             return None
-        return {**dict(df.data.iloc[0]), **country(dict(df.data.iloc[0]))}
+        return Tail({**dict(df.data.iloc[0]), **country(dict(df.data.iloc[0]))})
 
     def operator(self: T, name: str) -> None | T:
         """Requests an aircraft by owner or operator (fuzzy match).

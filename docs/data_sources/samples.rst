@@ -13,8 +13,8 @@ import automatically dispatch to :class:`~traffic.core.Flight` or
 
     A subset of the sample trajectories are presented on this page. Other parts
     of the documentation (e.g. :ref:`calibration flights <calibration flights>`
-    or :ref:`trajectory clustering <trajectory clustering>`) may refer to other
-    available sample trajectories.
+    or :ref:`trajectory clustering <How to implement trajectory clustering?>`)
+    may refer to other available sample trajectories.
     
 Belevingsvlucht
 ~~~~~~~~~~~~~~~

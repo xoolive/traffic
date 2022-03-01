@@ -46,7 +46,10 @@ def test_properties() -> None:
     assert flight.icao24 == "484506"
     assert flight.registration == "PH-HZO"
     assert flight.typecode == "B738"
-    assert flight.aircraft == "484506 · 🇳🇱 PH-HZO (B738)"
+    assert (
+        repr(flight.aircraft) == "Tail(icao24='484506', registration='PH-HZO',"
+        " typecode='B738', flag='🇳🇱')"
+    )
     assert flight.flight_id is None
 
 

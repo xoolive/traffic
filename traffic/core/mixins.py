@@ -561,7 +561,7 @@ class GeographyMixin(DataFrameMixin):
             alt.Chart(
                 self.data.query(
                     "latitude == latitude and longitude == longitude"
-                )[["latitude", "longitude"]]
+                )
             )
             .encode(latitude="latitude", longitude="longitude")
             .mark_line(**kwargs)

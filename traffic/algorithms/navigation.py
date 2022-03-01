@@ -201,7 +201,7 @@ class NavigationFeatures:
                 LineString(list(self.xy_time)).intersection(
                     on_runway.buffer(5e-4)
                 )
-                for on_runway in _airport.runways.shape
+                for on_runway in _airport.runways.shape.geoms
             ]
 
         for intersection in candidate_shapes:

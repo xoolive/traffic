@@ -195,6 +195,13 @@ div.jupyter_container {
 
 .jupyter_container .output {
   margin-top: 1em;
+  font-size: 90%;
+}
+.output li {
+  margin-top: -0.5ex;
+}
+.output pre {
+  font-size: 90%;
 }
 
 .widget-subarea {
@@ -210,4 +217,8 @@ a.reference code.literal span {
   border: unset;
   padding: 0;
   background-color: unset;
+}
+
+.title-image {
+  margin: 30px;
 }

@@ -26,6 +26,7 @@ from typing import (
     overload,
 )
 
+import rich.repr
 from rich.console import Console, ConsoleOptions, RenderResult
 
 if sys.version_info >= (3, 8):
@@ -57,6 +58,7 @@ if TYPE_CHECKING:
     from matplotlib.axes._subplots import Axes  # noqa: F401
 
     from ..data.adsb.raw_data import RawData  # noqa: F401
+    from ..data.basic.aircraft import Tail  # noqa: F401
     from .airspace import Airspace  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
     from .traffic import Traffic  # noqa: F401
@@ -157,6 +159,10 @@ class Position(PointMixin, pd.core.series.Series):  # type: ignore
 
 class MetaFlight(type):
     def __getattr__(cls, name: str) -> Callable[..., Any]:
+        if "(" in name:
+            start, stop = name.index("("), name.index(")") + 1
+            args = eval(name[start:stop])
+            return lambda flight: getattr(Flight, name[:start])(flight, args)
         if name.startswith("aligned_on_"):
             return lambda flight: cls.aligned_on_ils(flight, name[11:])
         if name.startswith("takeoff_runway_"):
@@ -172,6 +178,7 @@ class MetaFlight(type):
         raise AttributeError
 
 
+@rich.repr.auto()
 class Flight(
     HBoxMixin,
     GeographyMixin,
@@ -329,7 +336,7 @@ class Flight(
             return self.data.shape[0]  # type: ignore
 
     def _info_html(self) -> str:
-        title = "<b>Flight()</b>"
+        title = "<b>Flight</b>"
         if self.flight_id:
             title += f" {self.flight_id}"
 
@@ -400,18 +407,11 @@ class Flight(
             cast(Flight, self.resample("1s").simplify(25)),
         )._repr_svg_()
 
-    def __repr__(self) -> str:
-        output = f"Flight {self.title}"
-        output += f"\naircraft: {self.aircraft}"
-        if self.origin is not None:
-            output += f"\norigin: {self.origin} ({self.start})"
-        else:
-            output += f"\norigin: {self.start}"
-        if self.destination is not None:
-            output += f"\ndestination: {self.destination} ({self.stop})"
-        else:
-            output += f"\ndestination: {self.stop}"
-        return output
+    def __rich_repr__(self) -> rich.repr.Result:
+        if self.flight_id:
+            yield self.flight_id
+        yield "icao24", self.icao24
+        yield "callsign", self.callsign
 
     @property
     def __geo_interface__(self) -> Dict[str, Any]:
@@ -419,6 +419,24 @@ class Flight(
             # Returns an empty geometry
             return {"type": "GeometryCollection", "geometries": []}
         return self.shape.__geo_interface__  # type: ignore
+
+    def keys(self) -> list[str]:
+        # This is for allowing dict(Flight)
+        keys = ["callsign", "icao24", "aircraft", "start", "stop", "duration"]
+        if self.flight_id:
+            keys = ["flight_id"] + keys
+        if self.origin:
+            keys.append("origin")
+        if self.destination:
+            keys.append("destination")
+        if self.diverted:
+            keys.append("diverted")
+        return keys
+
+    def __getitem__(self, name: str) -> Any:
+        if name in self.keys():
+            return getattr(self, name)
+        raise NotImplementedError()
 
     def __getattr__(self, name: str) -> Any:
         """Helper to facilitate method chaining without lambda.
@@ -931,31 +949,13 @@ class Flight(
         return res.get("typecode", None)
 
     @property
-    def aircraft(self) -> Optional[str]:
+    def aircraft(self) -> None | Tail:
         from ..data import aircraft
 
-        if not isinstance(self.icao24, str):
-            return None
+        if isinstance(self.icao24, str):
+            return aircraft.get_unique(self.icao24)
 
-        res = str(self.icao24)
-        ac = aircraft.get_unique(res)
-
-        if ac is None:
-            return res
-
-        registration = ac["registration"]
-        typecode = ac["typecode"]
-        flag = ac["flag"]
-
-        if registration is not None:
-            res += f" · {flag} {registration}"
-        else:
-            res = f"{flag} {res}"
-
-        if typecode is not None:
-            res += f" ({typecode})"
-
-        return res
+        return None
 
     # -- Time handling, splitting, interpolation and resampling --
 
@@ -2137,7 +2137,7 @@ class Flight(
             return None
 
         def _clip_generator() -> Iterable[Tuple[datetime, datetime]]:
-            for segment in intersection:
+            for segment in intersection.geoms:
                 times: List[datetime] = list(
                     datetime.fromtimestamp(t, timezone.utc)
                     for t in np.stack(segment.coords)[:, 2]

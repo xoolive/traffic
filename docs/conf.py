@@ -20,14 +20,13 @@ from typing import Any
 
 import traffic
 
-# sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath(".."))
 
 
 # -- Project information -----------------------------------------------------
 
 project = "traffic"
-copyright = "2018, Xavier Olive"
+copyright = "2022, Xavier Olive"
 author = "Xavier Olive"
 
 # The short X.Y version
@@ -135,48 +134,12 @@ html_static_path = ["_static"]
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "_static/logo_traffic.png"
+# html_logo = "_static/logo_traffic.png"
 
 # The name of an image file (relative to this directory) to use as a favicon of
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = "_static/favicon.ico"
-
-# -- Options for HTMLHelp output ---------------------------------------------
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = "trafficdoc"
-
-
-# -- Options for LaTeX output ------------------------------------------------
-
-latex_elements: dict[str, str] = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (
-        master_doc,
-        "traffic.tex",
-        "traffic Documentation",
-        "Xavier Olive",
-        "manual",
-    )
-]
+html_favicon = "_static/favicon/favicon.ico"
 
 
 # -- Options for manual page output ------------------------------------------
@@ -184,24 +147,6 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [(master_doc, "traffic", "traffic Documentation", [author], 1)]
-
-
-# -- Options for Texinfo output ----------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "traffic",
-        "traffic Documentation",
-        author,
-        "traffic",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
 
 
 # -- Extension configuration -------------------------------------------------

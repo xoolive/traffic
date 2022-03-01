@@ -15,7 +15,7 @@ def test_so6() -> None:
 
     assert hop36pp.origin == "LFML"
     assert hop36pp.destination == "LFBD"
-    assert hop36pp.aircraft == "A319"
+    assert hop36pp.typecode == "A319"
     assert hop36pp.flight_id == 332206265  # type: ignore
     assert so6[332206265].callsign == "HOP36PP"
 

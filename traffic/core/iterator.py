@@ -51,12 +51,19 @@ class FlightIterator:
 
     def __init__(self, generator: Iterator["Flight"]) -> None:
         self.generator = generator
+        self.cache: list["Flight"] = list()
+        self.iterator: None | Iterator["Flight"] = None
 
     def __next__(self) -> "Flight":
-        return next(self.generator)
+        if self.iterator is None:
+            self.iterator = iter(self)
+        return next(self.iterator)
 
     def __iter__(self) -> Iterator["Flight"]:
-        yield from self.generator
+        yield from self.cache
+        for elt in self.generator:
+            self.cache.append(elt)
+            yield elt
 
     def __len__(self) -> int:
         return sum(1 for _ in self)
@@ -65,17 +72,16 @@ class FlightIterator:
         try:
             concat = functools.reduce(operator.or_, self)._repr_html_()
         except TypeError:  # reduce() of empty sequence with no initial value
+            raise
             concat = "Empty sequence"
         return (
             """<div class='alert alert-warning'>
             <b>Warning!</b>
             This iterable structure is neither a Flight nor a Traffic structure.
             Each corresponding segment of the flight (if any) is displayed
-            below.
-            <br/>
-            Possible utilisations include iterating (for loop, next keyword),
-            indexing with the bracket notation (slices supported) and most
-            native built-ins made for iterable structures.
+            below. Possible utilisations include iterating (for loop, next
+            keyword), indexing with the bracket notation (slices supported) and
+            most native built-ins made for iterable structures.
             </div>"""
             + concat
         )
@@ -135,7 +141,7 @@ class FlightIterator:
 
         >>> flight.next("runway_change")
         """
-        return next((segment for segment in self), None)
+        return next(self, None)
 
     def final(self) -> Optional["Flight"]:
         """Returns the final (last) element in the FlightIterator.

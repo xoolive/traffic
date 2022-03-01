@@ -169,14 +169,13 @@ class Airports(GeoDBMixin):
 
         >>> airports["EHAM"]
         Airport(
-            'EHAM',
+            icao='EHAM',
             iata='AMS',
             name='Amsterdam Airport Schiphol',
             country='Netherlands',
             latitude=52.308601,
             longitude=4.76389,
             altitude=-11.0,
-            runways=['04', '22', '06', '24', '09', '27', '18C', '36C', '18L', '36R', '18R', '36L']
         )
         """
         x = self.data.query("iata == @name.upper() or icao == @name.upper()")
