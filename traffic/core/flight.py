@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import logging
 import sys
 import warnings
@@ -159,10 +160,22 @@ class Position(PointMixin, pd.core.series.Series):  # type: ignore
 
 class MetaFlight(type):
     def __getattr__(cls, name: str) -> Callable[..., Any]:
-        if "(" in name:
-            start, stop = name.index("("), name.index(")") + 1
-            args = eval(name[start:stop])
-            return lambda flight: getattr(Flight, name[:start])(flight, args)
+
+        # if the string is callable, apply this on a flight
+        # parsing the AST is a much safer option than raw eval()
+        for node in ast.walk(ast.parse(name)):
+            if isinstance(node, ast.Call):
+                func_name = node.func.id  # type: ignore
+                args = [ast.literal_eval(arg) for arg in node.args]
+                kwargs = dict(
+                    (keyword.arg, ast.literal_eval(keyword.value))
+                    for keyword in node.keywords
+                )
+                return lambda flight: getattr(Flight, func_name)(
+                    flight, *args, **kwargs
+                )
+
+        # We should think about deprecating what comes below...
         if name.startswith("aligned_on_"):
             return lambda flight: cls.aligned_on_ils(flight, name[11:])
         if name.startswith("takeoff_runway_"):
@@ -175,6 +188,7 @@ class MetaFlight(type):
             return lambda flight: cls.landing_at(flight, name[11:])
         if name.startswith("takeoff_from_"):
             return lambda flight: cls.takeoff_from(flight, name[13:])
+
         raise AttributeError
 
 
@@ -496,7 +510,9 @@ class Flight(
         return sum(1 for _ in fun(self))
 
     def all(
-        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+        self,
+        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+        flight_id: None | str = None,
     ) -> Optional["Flight"]:
         """Returns the concatenation of segments returned by flight.method().
 
@@ -504,6 +520,7 @@ class Flight(
 
         >>> flight.all("go_around")
         >>> flight.all("runway_change")
+        >>> flight.all('aligned_on_ils("LFBO")')
         >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
         """
         fun = (
@@ -511,7 +528,15 @@ class Flight(
             if isinstance(method, str)
             else method
         )
-        t = sum(flight.assign(index_=i) for i, flight in enumerate(fun(self)))
+        if flight_id is None:
+            t = sum(
+                flight.assign(index_=i) for i, flight in enumerate(fun(self))
+            )
+        else:
+            t = sum(
+                flight.assign(flight_id=flight_id.format(self=flight, i=i))
+                for i, flight in enumerate(fun(self))
+            )
         if t == 0:
             return None
         return Flight(t.data)  # type: ignore

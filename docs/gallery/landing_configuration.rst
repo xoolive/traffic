@@ -1,48 +1,54 @@
 Landing configurations
 ======================
 
-A visualisation attempt at showing which landing configurations are the most commonly used at Zurich airport. Can you spot the day when summer time CEST changes to CET?
+A visualisation attempt at showing which landing configurations are the most
+commonly used at Zurich airport. The analysis uses one of the datasets made
+available in the traffic library.
 
-.. raw:: html
-
-    <div id="landing_configuration"></div>
-
-    <script type="text/javascript">
-      var spec = "../_static/landing_configuration.json";
-      vegaEmbed('#landing_configuration', spec)
-      .then(result => console.log(result))
-      .catch(console.warn);
-    </script>
-
-.. code:: python
+.. jupyter-execute::
+    :code-below:
 
     from traffic.data.datasets import landing_zurich_2019
+
     import altair as alt
 
     stats = (
-        landing_zurich_2019.all("aligned_on_LSZH")
-        .eval(desc="", max_workers=8)
-        .rename(columns=dict(flight_id="old_flight_id"))
-        .summary(["old_flight_id_max", "stop", "ILS_max"])
-        .query("stop.dt.month == 10")
-        .rename(columns=dict(ILS_max="ILS", old_flight_id_max="flight_id"))
+        landing_zurich_2019.before("2019-10-10 00:00Z")
+        .all("aligned_on_ils('LSZH')", flight_id="{self.flight_id}_{i}")
+        .eval(max_workers=4)
+        .summary(["flight_id", "stop", "ILS_max"])
         .sort_values("stop")
     )
 
-    data = (
-        stats.assign(hour=lambda df: df.stop.dt.round("1H"))
-        .groupby(["ILS", "hour"])
-        .agg(dict(stop="count"))
-        .rename(columns=dict(stop="count"))
-        .reset_index()
+    chart = (
+        alt.Chart(stats)
+        .encode(
+            alt.X("utchours(stop)", title=""),
+            alt.Y("ILS_max", title=""),
+            alt.Row("utcmonthdate(stop)", title=""),
+            alt.Color("ILS_max", legend=None),
+            alt.Size("count()", scale=alt.Scale(type="symlog"), title="Number of landings"),
+        )
+        .mark_circle()
+        .properties(width=600, height=50)
+        .configure_legend(orient="bottom")
+        .configure_header(
+            labelOrient="top", labelAnchor="start", labelFontWeight="bold", labelFontSize=12
+        )
+        .resolve_scale(x="independent", y="independent")
     )
 
-    selection = alt.selection_multi(fields=["ILS"], bind="legend")
+    display(chart)
+    display(stats)
 
-    alt.Chart(data).encode(
-        alt.X("utchours(hour):O", title="hour of day (UTC)",),
-        alt.Y("utcmonthdate(hour):O", title=""),
-        color="ILS",
-        size="count",
-        opacity=alt.condition(selection, alt.value(0.9), alt.value(0.2)),
-    ).mark_circle().add_selection(selection)
+.. jupyter-execute:: 
+    :hide-code:
+    :hide-output:
+
+    chart.transform_filter(
+        "(utcdate(datum.stop) < 4) & (utchours(datum.stop) < 9) "
+    ).configure_legend(disable=True).properties(width=200).save(
+        "_static/landing_configuration-thumb.png"
+    )
+
+

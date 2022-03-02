@@ -89,12 +89,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
+          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev npm
           cd PROJ/build
           cmake ..; cmake --build .
           sudo cmake --build . --target install
           cd ../..
           poetry install -E all
+          npm install vega-lite vega-cli canvas  # necessary dependency for altair-save
 
       - name: Build pages
         env:

@@ -309,7 +309,7 @@ def test_landing_ils() -> None:
     assert aligned is not None
     assert aligned.max("ILS") == "06"
 
-    aligned = belevingsvlucht.final("aligned_on_EHLE")
+    aligned = belevingsvlucht.final("aligned_on_ils('EHLE')")
     assert aligned is not None
     assert aligned.ILS_max == "23"
 

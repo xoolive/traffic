@@ -174,7 +174,7 @@ class FlightIterator:
 
         return len(self)
 
-    def all(self) -> Optional["Flight"]:
+    def all(self, flight_id: None | str = None) -> Optional["Flight"]:
         """Returns the concatenation of elements in the FlightIterator.
 
         >>> flight.aligned_on_ils("LFBO").all()
@@ -182,13 +182,22 @@ class FlightIterator:
         This is equivalent to:
 
         >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
+        >>> flight.all('aligned_on_ils("LFBO")')
 
         """
         from traffic.core import Flight  # noqa: F811
 
-        t = sum(flight.assign(index_=i) for i, flight in enumerate(self))
+        if flight_id is None:
+            t = sum(flight.assign(index_=i) for i, flight in enumerate(self))
+        else:
+            t = sum(
+                flight.assign(flight_id=flight_id.format(self=flight, i=i))
+                for i, flight in enumerate(self)
+            )
+
         if t == 0:
             return None
+
         return Flight(t.data)  # type: ignore
 
     def max(self, key: str = "duration") -> Optional["Flight"]:
