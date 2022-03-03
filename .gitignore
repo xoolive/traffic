@@ -9,6 +9,7 @@ bibliography/
 sandbox/
 stubs/
 todo/
+data/traffic_data
 docs/*.ipynb
 ./traffic.conf
 
