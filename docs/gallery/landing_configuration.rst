@@ -15,7 +15,7 @@ available in the traffic library.
     stats = (
         landing_zurich_2019.before("2019-10-10 00:00Z")
         .all("aligned_on_ils('LSZH')", flight_id="{self.flight_id}_{i}")
-        .eval(max_workers=4)
+        .eval()
         .summary(["flight_id", "stop", "ILS_max"])
         .sort_values("stop")
     )

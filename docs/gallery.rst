@@ -38,7 +38,7 @@ This page contains some visualisations on recreational examples.
    </a>
 
    <a class="imagegroup" href="gallery/calibration.html">
-     <span class="image" alt="Calibration flights" style="background-image: url(./_images/ajaccio_map.png);"></span>
+     <span class="image" alt="Calibration flights" style="background-image: url(./_static/calibration-thumb.png);"></span>
      <span class="image-title">Calibration flights</span>
    </a>
 

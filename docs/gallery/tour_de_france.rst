@@ -23,7 +23,7 @@ official map at the bottom of the page.
         .query("straight_ratio < .5")
         .max_split()
         .longer_than("1H")
-        .eval(desc="processing")
+        .eval()
     )
 
     stats = preprocessed.summary(["flight_id", "start", "stop", "duration"])
