@@ -30,6 +30,7 @@ With the same dataset, we found:
 - `How have SARS-CoV-2's limitations impacted global aviation traffic? <https://sirbenedick.github.io/corona-aviation-impact/>`_ by `@sirbenedick <https://github.com/SirBenedick>`_
 - `Visualization of Air Traffic during Covid-19 Pandemic <https://towardsdatascience.com/visualization-of-air-traffic-during-covid-19-pandemic-c5941b049401>`_ 
 - `What Explains Temporal and Geographic Variation in the Early US Coronavirus Pandemic? <https://www.nber.org/papers/w27965>`_, DOI: `10.3386/w27965 <https://doi.org/10.3386/w27965>`_
+- `Air Traffic during the Covid Pandemic <https://linnea.cloud/aviation-intelligence/covid-traffic>`_ by Linnea Cloud
 
 This list may not be exhaustive. You may `open an issue <https://github.com/xoolive/traffic/issues/new>`_ on the github of the library in order to reference more websites.
 

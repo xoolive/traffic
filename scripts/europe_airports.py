@@ -7,6 +7,9 @@ from cartes.osm import Overpass
 
 def main() -> None:
 
+    nrows = 5
+    ncols = 4
+
     icaos = [
         "EGLL",  # Heathrow Airport
         "LFPG",  # Charles de Gaulle Airport
@@ -33,13 +36,14 @@ def main() -> None:
     cm = 1 / 2.54  # centimeters in inches
     fig, axs = plt.subplots(
         subplot_kw=dict(projection=Mercator()),
-        nrows=4,
-        ncols=5,
-        figsize=(118.9 * cm, 84.1 * cm),  # A0
+        nrows=nrows,
+        ncols=ncols,
+        # figsize=(118.9 * cm, 84.1 * cm),  # A0
+        figsize=(59.45 * cm, 84.1 * cm),  # A1
     )
 
-    for i, ax, ap in zip(count(), axs.flat, icaos):
-        airport = Overpass.request(area=dict(icao=ap), aeroway=True)
+    for i, ax, icao in zip(count(), axs.flat, icaos):
+        airport = Overpass.request(area=dict(icao=icao), aeroway=True)
         airport.plot(
             ax,
             by="aeroway",
@@ -58,14 +62,13 @@ def main() -> None:
             runway=dict(color="sienna"),
         )
         ax.spines["geo"].set_visible(False)
-        # ax.set_title(ap)
         ax.text(
-            (i % 5 + 0.9) / 6,
-            4.5 / 5 - (i // 5) / 5,
-            ap,
+            (i % ncols + 0.9) / (ncols + 1),
+            (nrows + 0.4) / (nrows + 1) - (i // ncols) / (nrows + 1),
+            icao,
             transform=fig.transFigure,
-            fontSize=40,
-            fontFamily="B612",
+            fontsize=40,
+            font="B612",
             color="0.1",
         )
 

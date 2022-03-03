@@ -52,10 +52,9 @@ Flight objects
 
     - in a Python interpreter:
 
-        .. code::  python
+        .. jupyter-execute::
 
-            >>> belevingsvlucht
-            Flight(icao24='484506', callsign='TRA051')
+            print(belevingsvlucht)
 
     - with `rich <https://rich.readthedocs.io/en/latest/>`_ simple or advanced
       representations:
