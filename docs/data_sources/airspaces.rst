@@ -224,7 +224,7 @@ computed.
            alt.layer(
                base.encode(alt.Color("designator:N", title="FIR"))
                .transform_filter("datum.suffix == 'FIR'"),
-               base.mark_text(fontSize=15)
+               base.mark_text(fontSize=14, font="Lato")
                .encode(
                    alt.Latitude("latitude:Q"),
                    alt.Longitude("longitude:Q"),
@@ -235,11 +235,68 @@ computed.
            base.encode(alt.Color("designator:N"))
            .transform_filter("datum.suffix == 'UIR'"),
        )
-       .configure_legend(orient="bottom", titleFontSize=14)
+       .configure_legend(orient="bottom", labelFontSize=12, titleFontSize=12)
        .configure_view(stroke=None)
    )
 
    chart
+
+.. warning::
+
+    Note that the FIR and UIR boundaries do not presume anything about how air
+    traffic control is organised in that area. See below a map of the areas
+    controlled by different en-route air traffic control centres in France.
+
+.. jupyter-execute::
+
+    from cartes.atlas import europe
+
+    france = alt.Chart(europe.topo_feature).transform_filter(
+        "datum.properties.geounit == 'France'"
+    )
+
+
+    centres = ["LFBBBDX", "LFRRBREST", "LFEERMS", "LFFFPARIS", "LFMMRAW", "LFMMRAE"]
+    subset = (
+        nm_airspaces.query(f"designator in {centres}")
+        .replace("LFMMRAW", "Aix-en-Provence (Sud-Est)")
+        .replace("LFMMRAE", "Aix-en-Provence (Sud-Est)")
+        .replace("LFBBBDX", "Bordeaux (Sud-Ouest)")
+        .replace("LFEERMS", "Reims (Est)")
+        .replace("LFFFPARIS", "Athis-Mons (Nord)")
+        .replace("LFRRBREST", "Brest (Ouest)")
+    )
+
+
+    chart = (
+        alt.hconcat(
+            alt.layer(
+                alt.Chart(subset.at_level(220))
+                .mark_geoshape(stroke="white")
+                .encode(
+                    alt.Tooltip(["designator:N"]),
+                    alt.Color("designator:N", title="CRNA"),
+                ),
+                france.mark_geoshape(stroke="#ffffff", strokeWidth=3, fill="#ffffff00"),
+                france.mark_geoshape(stroke="#79706e", strokeWidth=1, fill="#ffffff00"),
+            ).properties(title="FL 220", width=300),
+            alt.layer(
+                alt.Chart(subset.at_level(320))
+                .mark_geoshape(stroke="white")
+                .encode(
+                    alt.Tooltip(["designator:N"]),
+                    alt.Color("designator:N", title="CRNA"),
+                ),
+                france.mark_geoshape(stroke="#ffffff", strokeWidth=3, fill="#ffffff00"),
+                france.mark_geoshape(stroke="#79706e", strokeWidth=1, fill="#ffffff00"),
+            ).properties(title="FL320", width=300),
+        )
+        .configure_legend(orient="bottom", labelFontSize=12, titleFontSize=12)
+        .configure_view(stroke=None)
+        .configure_title(fontSize=16, font="Lato", anchor="start")
+    )
+
+    chart
 
 Iterate through many airspaces
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

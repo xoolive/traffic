@@ -139,7 +139,7 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to pickle format.
 
-        Options can be passed to ``pandas.to_pickle``
+        Options can be passed to :meth:`pandas.DataFrame.to_pickle`
         as args and kwargs arguments.
 
         Read more about export formats in the `Exporting and Storing data
@@ -152,7 +152,7 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to CSV format.
 
-        Options can be passed to ``pandas.to_csv``
+        Options can be passed to :meth:`pandas.DataFrame.to_csv`
         as args and kwargs arguments.
 
         Read more about export formats in the `Exporting and Storing data
@@ -165,7 +165,7 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to HDF format.
 
-        Options can be passed to ``pandas.to_hdf``
+        Options can be passed to :meth:`pandas.DataFrame.to_hdf`
         as args and kwargs arguments.
 
         Read more about export formats in the `Exporting and Storing data
@@ -178,7 +178,7 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to JSON format.
 
-        Options can be passed to ``pandas.to_json``
+        Options can be passed to :meth:`pandas.DataFrame.to_json`
         as args and kwargs arguments.
 
         Read more about export formats in the `Exporting and Storing data
@@ -191,7 +191,7 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to parquet format.
 
-        Options can be passed to ``pandas.to_parquet``
+        Options can be passed to :meth:`pandas.DataFrame.to_parquet`
         as args and kwargs arguments.
 
         Read more about export formats in the `Exporting and Storing data
@@ -204,7 +204,7 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to feather format.
 
-        Options can be passed to ``pandas.to_feather``
+        Options can be passed to :meth:`pandas.DataFrame.to_feather`
         as args and kwargs arguments.
 
         Read more about export formats in the `Exporting and Storing data
@@ -217,7 +217,7 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to Excel format.
 
-        Options can be passed to ``pandas.to_excel``
+        Options can be passed to :meth:`pandas.DataFrame.to_excel`
         as args and kwargs arguments.
 
         Read more about export formats in the `Exporting and Storing data
@@ -227,8 +227,9 @@ class DataFrameMixin(object):
 
     def sort_values(self: T, by: str, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``sort_values()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.sort_values` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.sort_values(by, **kwargs))
 
@@ -236,8 +237,9 @@ class DataFrameMixin(object):
         self: T, query_str: str, *args: Any, **kwargs: Any
     ) -> Optional[T]:
         """
-        Applies the Pandas ``query()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.query` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         df = self.data.query(query_str, *args, **kwargs)
         if df.shape[0] == 0:
@@ -246,64 +248,80 @@ class DataFrameMixin(object):
 
     def drop(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``drop()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.drop` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.drop(*args, **kwargs))
 
     def rename(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``rename()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.rename` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.rename(*args, **kwargs))
 
     def pipe(self: T, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``pipe()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.pipe` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return func(self, *args, **kwargs)
 
     def fillna(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``fillna()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.fillna` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.fillna(*args, **kwargs))
 
     def groupby(self, *args: Any, **kwargs: Any) -> Any:
         """
-        Applies the Pandas ``groupby()`` method to the underlying pandas
-        DataFrame.
+        Applies the Pandas :meth:`~pandas.DataFrame.groupby` method to the
+        underlying pandas DataFrame.
         """
         return self.data.groupby(*args, **kwargs)
 
     def assign(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``assign()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.assign` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.assign(*args, **kwargs))
 
     def drop_duplicates(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``drop_duplicates()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.drop_duplicates` method to
+        the underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.drop_duplicates(*args, **kwargs))
 
     def merge(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``merge()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.merge` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.merge(*args, **kwargs))
 
+    def replace(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.replace` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.replace(*args, **kwargs))
+
     def reset_index(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``reset_index()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.reset_index` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.reset_index(*args, **kwargs))
 

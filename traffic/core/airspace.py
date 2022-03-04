@@ -123,8 +123,10 @@ class Airspaces(DataFrameMixin):
             return None
         return level_data
 
-    def dissolve(self) -> gpd.GeoDataFrame:
-        columns = ["designator", "type", "upper", "lower"]
+    def dissolve(self, keep_levels: bool = False) -> gpd.GeoDataFrame:
+        columns = ["designator", "type"]
+        if keep_levels:
+            columns += ["upper", "lower"]
         name_table = self.data[["designator", "name"]].drop_duplicates()
 
         return gpd.GeoDataFrame(
