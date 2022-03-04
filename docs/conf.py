@@ -154,6 +154,10 @@ man_pages = [(master_doc, "traffic", "traffic Documentation", [author], 1)]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/dev", None),
+    "shapely": ("https://shapely.readthedocs.io/en/latest", None),
+    "cartopy": ("https://scitools.org.uk/cartopy/docs/latest", None),
+    "pyproj": ("https://pyproj4.github.io/pyproj/stable", None),
+    "altair": ("https://altair-viz.github.io", None),
 }
 
 

@@ -47,7 +47,7 @@ class DataFrameMixin(object):
 
     @classmethod
     def from_file(
-        cls: Type[T], filename: str | Path, **kwargs: Any
+        cls: Type[T], filename: Union[str, Path], **kwargs: Any
     ) -> Optional[T]:
         """Read data from various formats.
 
@@ -56,21 +56,20 @@ class DataFrameMixin(object):
         filename. Potential compression of the file is inferred by pandas itself
         based on the extension.
 
-        - .pkl[.gz,.bz2,...] dispatch to ``pandas.read_pickle``;
-        - .parquet[.gz,.bz2,...] dispatch to ``pandas.read_parquet``;
-        - .feather[.gz,.bz2,...] dispatch to ``pandas.read_feather``;
-        - .json[.gz,.bz2,...] dispatch to ``pandas.read_json``;
-        - .csv[.gz,.bz2,...] dispatch to ``pandas.read_csv``;
-        - .h5 dispatch to ``pandas.read_hdf``.
+        - .pkl.* or .parquet.* dispatch to :func:`pandas.read_pickle`;
+        - .parquet.* dispatch to :func:`pandas.read_parquet`;
+        - .feather.* dispatch to :func:`pandas.read_feather`;
+        - .json.* dispatch to :func:`pandas.read_json`;
+        - .csv.* dispatch to :func:`pandas.read_csv`;
+        - .h5.* dispatch to :func:`pandas.read_hdf`.
 
-        Other extensions return ``None``.
-        Specific arguments may be passed to the underlying ``pandas.read_*``
-        method with the kwargs argument.
+        Other extensions return None.  Specific arguments may be passed to the
+        underlying ``pandas.read_*`` method with the kwargs argument.
 
         Example usage:
 
         >>> from traffic.core import Traffic
-        >>> t = Traffic.from_file("data/sample_opensky.pkl")
+        >>> t = Traffic.from_file(filename)
         """
         path = Path(filename)
         if ".pkl" in path.suffixes or ".pickle" in path.suffixes:
@@ -135,80 +134,80 @@ class DataFrameMixin(object):
     # --- Redirected to pandas.DataFrame ---
 
     def to_pickle(
-        self, filename: str | Path, *args: Any, **kwargs: Any
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to pickle format.
 
         Options can be passed to :meth:`pandas.DataFrame.to_pickle`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_pickle(filename, *args, **kwargs)
 
     def to_csv(
-        self, filename: str | Path, *args: Any, **kwargs: Any
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to CSV format.
 
         Options can be passed to :meth:`pandas.DataFrame.to_csv`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_csv(filename, *args, **kwargs)
 
     def to_hdf(
-        self, filename: str | Path, *args: Any, **kwargs: Any
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to HDF format.
 
         Options can be passed to :meth:`pandas.DataFrame.to_hdf`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_hdf(filename, *args, **kwargs)
 
     def to_json(
-        self, filename: str | Path, *args: Any, **kwargs: Any
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to JSON format.
 
         Options can be passed to :meth:`pandas.DataFrame.to_json`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_json(filename, *args, **kwargs)
 
     def to_parquet(
-        self, filename: str | Path, *args: Any, **kwargs: Any
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to parquet format.
 
         Options can be passed to :meth:`pandas.DataFrame.to_parquet`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_parquet(filename, *args, **kwargs)
 
     def to_feather(
-        self, filename: str | Path, *args: Any, **kwargs: Any
+        self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to feather format.
 
         Options can be passed to :meth:`pandas.DataFrame.to_feather`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_feather(filename, *args, **kwargs)
 
@@ -220,8 +219,8 @@ class DataFrameMixin(object):
         Options can be passed to :meth:`pandas.DataFrame.to_excel`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_excel(filename, *args, **kwargs)
 
@@ -278,7 +277,9 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.fillna(*args, **kwargs))
 
-    def groupby(self, *args: Any, **kwargs: Any) -> Any:
+    def groupby(
+        self, *args: Any, **kwargs: Any
+    ) -> pd.core.groupby.generic.DataFrameGroupBy:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.groupby` method to the
         underlying pandas DataFrame.
@@ -419,13 +420,9 @@ class ShapelyMixin(object):
     ) -> base.BaseGeometry:
         """Returns a projected representation of the shape.
 
-        By default, an equivalent projection is applied. Equivalent projections
-        locally respect areas, which is convenient for the area attribute.
-
-        Other valid projections are available:
-
-        - as ``pyproj.Proj`` objects;
-        - as ``cartopy.crs.Projection`` objects.
+        :param projection: By default (None), an equivalent projection is
+            applied. Equivalent projections locally respect areas, which is
+            convenient for the area attribute.
 
         """
 

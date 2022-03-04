@@ -72,6 +72,12 @@ Visualise activities of air traffic controllers operating our skies and airports
      <span class="image-title">Landing sequence</span>
    </a>
 
+   <a class="imagegroup" href="gallery/squawk7700.html">
+     <span class="image" alt="In-flight emergencies"
+      style="background-image: url(./_static/squawk7700-thumb.png);"></span>
+     <span class="image-title">In-flight emergencies</span>
+   </a>
+
    </span>
 
    <div style='clear:both;'></div>
@@ -84,6 +90,7 @@ Visualise activities of air traffic controllers operating our skies and airports
    gallery/is_this_a_plane
    gallery/landing_configuration
    gallery/landing_sequence
+   gallery/squawk7700
 
 Air traffic density
 -------------------

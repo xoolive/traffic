@@ -4,7 +4,13 @@ on:
   push:
     branches:
       - master
+  schedule:
+    - cron: "00 12 * * 0" # Every Sunday noon (preserve the cache folders)
   workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.10"
+  POETRY_VERSION: "1.1.13"
 
 jobs:
   deploy:
@@ -15,7 +21,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.9"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Download extra data from private repository
         uses: actions/checkout@v2
@@ -45,24 +51,31 @@ jobs:
           unzip ENV_PostOPS_AIRAC_2111_04NOV2021_With_Airspace_Closure.zip -d airac_2111
         shell: bash
 
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1.1.6
-        with:
-          version: 1.1.6
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached Poetry dependencies
-        id: cached-poetry-dependencies
+      # Poetry cache depends on OS, Python version and Poetry version.
+      - name: Cache Poetry cache
         uses: actions/cache@v2
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          path: ~/.cache/pypoetry
+          key: poetry-cache-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
+
+      # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
+      - name: Cache Packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.local
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
 
       - name: Display Python version
         run: poetry run python -c "import sys; print(sys.version)"
 
-      - name: Cache folder
+      - name: Cache folder for traffic
         uses: actions/cache@v2
         id: cache-folder
         with:
@@ -89,7 +102,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev npm
+          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev npm fonts-ubuntu
           cd PROJ/build
           cmake ..; cmake --build .
           sudo cmake --build . --target install
