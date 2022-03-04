@@ -209,6 +209,12 @@ computed.
 
    import altair as alt
 
+   from cartes.atlas import europe
+
+   france = alt.Chart(europe.topo_feature).transform_filter(
+       "datum.properties.geounit == 'France'"
+   )
+
    base = (
        alt.Chart(france_fir)
        .mark_geoshape(stroke="white")
@@ -224,6 +230,8 @@ computed.
            alt.layer(
                base.encode(alt.Color("designator:N", title="FIR"))
                .transform_filter("datum.suffix == 'FIR'"),
+               france.mark_geoshape(stroke="#ffffff", strokeWidth=3, fill="#ffffff00"),
+               france.mark_geoshape(stroke="#79706e", strokeWidth=1, fill="#ffffff00"),
                base.mark_text(fontSize=14, font="Lato")
                .encode(
                    alt.Latitude("latitude:Q"),
@@ -232,8 +240,12 @@ computed.
                )
                .transform_filter("datum.suffix == 'FIR'"),
            ),
-           base.encode(alt.Color("designator:N"))
-           .transform_filter("datum.suffix == 'UIR'"),
+           alt.layer(
+               base.encode(alt.Color("designator:N"))
+               .transform_filter("datum.suffix == 'UIR'"),
+               france.mark_geoshape(stroke="#ffffff", strokeWidth=3, fill="#ffffff00"),
+               france.mark_geoshape(stroke="#79706e", strokeWidth=1, fill="#ffffff00"),
+           )
        )
        .configure_legend(orient="bottom", labelFontSize=12, titleFontSize=12)
        .configure_view(stroke=None)
@@ -248,12 +260,6 @@ computed.
     controlled by different en-route air traffic control centres in France.
 
 .. jupyter-execute::
-
-    from cartes.atlas import europe
-
-    france = alt.Chart(europe.topo_feature).transform_filter(
-        "datum.properties.geounit == 'France'"
-    )
 
 
     centres = ["LFBBBDX", "LFRRBREST", "LFEERMS", "LFFFPARIS", "LFMMRAW", "LFMMRAE"]
