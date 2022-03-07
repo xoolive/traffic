@@ -114,8 +114,8 @@ Measure and visualise how many aircraft fly in the sky
    </a>
 
    <a class="imagegroup" href="gallery/kaliningrad.html">
-     <span class="image" alt="COVID-19"
-      style="background-image: url(./_static/kaliningrad.png);"></span>
+     <span class="image" alt="Flying to Kaliningrad"
+      style="background-image: url(./_static/kaliningrad-thumb.png);"></span>
      <span class="image-title">Flying to Kaliningrad during the Russian flight ban</span>
    </a>
 

@@ -8,10 +8,16 @@ February 27, commercial flights between mainland Russia and Kaliningrad have
 been flying on the thin border between Finland, Sweden and Baltic states 
 :ref:`Flight Information Regions (FIR) <How to access airspace information?>`.
 
-All what is more than 12 nautical miles beyond the coasts is technically
-international airspace, so the flight plan might actually be legit...
+Actually, operations are almost in a "business as usual" situation:
+
+- all what is more than 12 nautical miles beyond the coasts is international
+  airspace, the ban only applies within that limit;
+- flight plans are filed along this thin strip;
+- air traffic control provide services and keep in constant communication with
+  all aircraft.
 
 .. jupyter-execute::
+    :hide-output:
 
     from traffic.data import opensky
     import pandas as pd
@@ -54,6 +60,7 @@ international airspace, so the flight plan might actually be legit...
         ax_.spines["geo"].set_visible(False)
 
         for fir in eurofirs:
+            fir.plot(ax_, color="#4c78a833")
             fir.plot(ax_, edgecolor="#4c78a8")
 
         airports["UUEE"].point.plot(ax_, text_kw=dict(s="  Moscow", fontsize=12))
@@ -71,4 +78,5 @@ international airspace, so the flight plan might actually be legit...
 .. jupyter-execute::
     :hide-code:
 
-    fig.savefig("_static/kaliningrad.png")
+    extent = ax[1].get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    fig.savefig("_static/kaliningrad-thumb.png", bbox_inches=extent)
