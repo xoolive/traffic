@@ -113,6 +113,12 @@ Measure and visualise how many aircraft fly in the sky
      <span class="image-title">Impact of COVID-19 on worldwide aviation</span>
    </a>
 
+   <a class="imagegroup" href="gallery/kaliningrad.html">
+     <span class="image" alt="COVID-19"
+      style="background-image: url(./_static/kaliningrad.png);"></span>
+     <span class="image-title">Flying to Kaliningrad during the Russian flight ban</span>
+   </a>
+
    </span>
 
    <div style='clear:both;'></div>
@@ -123,6 +129,7 @@ Measure and visualise how many aircraft fly in the sky
 
    gallery/heatmaps
    gallery/covid19
+   gallery/kaliningrad
 
 
 Planet Earth
