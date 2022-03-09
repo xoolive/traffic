@@ -188,7 +188,7 @@ class FlightIterator:
         from traffic.core import Flight  # noqa: F811
 
         if flight_id is None:
-            t = sum(flight.assign(index_=i) for i, flight in enumerate(self))
+            t = sum(flight for i, flight in enumerate(self))
         else:
             t = sum(
                 flight.assign(flight_id=flight_id.format(self=flight, i=i))

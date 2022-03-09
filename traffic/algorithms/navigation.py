@@ -664,14 +664,23 @@ class NavigationFeatures:
     @flight_iterator
     def go_around(
         self,
-        airport: Union[str, "Airport", None] = None,
-        dataset: Optional["Airports"] = None,
+        airport: None | str | "Airport" = None,
+        dataset: None | "Airports" = None,
     ) -> Iterator["Flight"]:
         """Detects go-arounds.
 
         The method yields pieces of trajectories with exactly two landing
         attempts (aligned on one runway) on the same airport separated by
         exactly one climbing phase.
+
+        :param airport: If None, the method tries to guess the landing airport
+            based on the ``dataset`` parameter. (see
+            :meth:`~traffic.core.Flight.landing_airport`)
+        :param dataset: database of candidate airports, only used if ``airport``
+            is None
+
+        **See also:** :ref:`How to select go-arounds from a set of
+        trajectories?`
         """
 
         # The following cast secures the typing
