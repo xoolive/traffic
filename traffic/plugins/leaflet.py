@@ -136,8 +136,9 @@ def flight_leaflet(flight: "Flight", **kwargs: Any) -> Optional[Polyline]:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the PolyLine constructor.
 
@@ -166,8 +167,9 @@ def flightplan_leaflet(
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the PolyLine constructor.
     """
@@ -193,8 +195,9 @@ def route_leaflet(route: "Route", **kwargs: Any) -> Optional[Polyline]:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the PolyLine constructor.
     """
@@ -211,8 +214,9 @@ def airspace_leaflet(airspace: "Airspace", **kwargs: Any) -> Polygon:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the Polygon constructor.
     """
@@ -273,8 +277,9 @@ def sv_leaflet(sv: "StateVectors", **kwargs: Any) -> MarkerCluster:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the Marker constructor.
     """
@@ -286,8 +291,9 @@ def point_leaflet(point: "PointMixin", **kwargs: Any) -> Marker:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin  is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the Marker constructor.
     """
