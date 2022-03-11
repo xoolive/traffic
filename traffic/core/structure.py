@@ -17,7 +17,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from ..data.basic.runways import RunwayAirport
-from .mixins import HBoxMixin, PointMixin, ShapelyMixin
+from .mixins import FormatMixin, HBoxMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
     import altair as alt
@@ -53,7 +53,9 @@ class AirportPoint(PointMixin):
 
 
 @rich.repr.auto()
-class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
+class Airport(
+    FormatMixin, HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin
+):
     def __rich_repr__(self) -> rich.repr.Result:
         yield "icao", self.icao
         if self.iata:

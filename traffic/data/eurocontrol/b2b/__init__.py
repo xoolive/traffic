@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,6 +41,9 @@ class NMB2B(FlightManagement, Measures):
         [nmb2b]
         pkcs12_filename =
         pkcs12_password =
+        # mode = OPS  # default: PREOPS
+        # version = 25.0.0 # default: 25.0.0
+
 
     """
 
@@ -102,6 +107,17 @@ class NMB2B(FlightManagement, Measures):
         if output_dir is None:
             output_dir = Path("~").expanduser()
 
+        if isinstance(output_dir, str):
+            output_dir = Path(output_dir)
+        output_dir = output_dir.expanduser()
+
+        if not output_dir.exists():
+            output_dir.mkdir()
+
+        filename = output_dir / path.split("/")[-1]
+        if filename.exists():
+            return
+
         res = self.session.get(self.mode["file_url"] + path, stream=True)
         res.raise_for_status()
 
@@ -114,22 +130,23 @@ class NMB2B(FlightManagement, Measures):
         ):
             buffer.write(chunk)
 
-        if isinstance(output_dir, str):
-            output_dir = Path(output_dir)
-        output_dir = output_dir.expanduser()
-
-        if not output_dir.exists():
-            output_dir.mkdir()
-
-        with (output_dir / path.split("/")[-1]).open("wb") as fh:
+        with filename.open("wb") as fh:
             buffer.seek(0)
             fh.write(buffer.read())
 
     def aixm_dataset(
         self,
-        airac_id: Union[str, int],
-        output_dir: Union[None, Path, str] = None,
+        airac_id: str | int,
+        output_dir: None | Path | str = None,
     ) -> None:
+        """
+        Downloads the EUROCONTROL data files following the AIXM standard.
+
+        :param airac_id: the AIRAC cycle, e.g. 2201 (1st cycle of 2022)
+        :param output_dir: where to download the data.
+
+        **See also**: :ref:`How to configure EUROCONTROL data files?`
+        """
         data = REQUESTS["CompleteAIXMDatasetRequest"].format(
             airac_id=airac_id, send_time=datetime.now(timezone.utc)
         )

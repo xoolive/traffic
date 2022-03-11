@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import warnings
 from functools import lru_cache
 from numbers import Integral, Real
@@ -38,6 +39,7 @@ class DataFrameMixin(object):
     table_options: dict[str, Any] = dict(show_lines=False, box=SIMPLE_HEAVY)
     max_rows: int = 10
     columns_options: None | dict[str, dict[str, Any]] = None
+    _obfuscate: None | list[str] = None
 
     def __init__(self, data: pd.DataFrame, *args: Any, **kwargs: Any) -> None:
         self.data: pd.DataFrame = data
@@ -111,7 +113,14 @@ class DataFrameMixin(object):
         for column, opts in self.columns_options.items():
             my_table.add_column(column, **opts)
 
-        for _, elt in self.data[: self.max_rows].iterrows():
+        # This is only for documentation purposes, shouldn't be considered for
+        # real-life code
+        data = self.data[: self.max_rows]
+        if self._obfuscate:
+            for column in self._obfuscate:
+                data = data.assign(**{column: "xxxxxx"})
+
+        for _, elt in data.iterrows():
             my_table.add_row(
                 *list(
                     format(
@@ -763,6 +772,17 @@ class PointMixin(object):
             cumul.append(ax.text(self.longitude, self.latitude, **text_kw))
 
         return cumul
+
+
+class FormatMixin(object):
+    def __format__(self, pattern: str) -> str:
+        if pattern == "":
+            return repr(self)
+        for match in re.finditer(r"%(\w+)", pattern):
+            pattern = pattern.replace(
+                match.group(0), getattr(self, match.group(1), "")
+            )
+        return pattern
 
 
 class _HBox(object):

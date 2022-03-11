@@ -25,6 +25,8 @@ conditions**, by EUROCONTROL:
 
     from traffic.data import aixm_airspaces, aixm_navaids
 
+  **See also**: download AIXM data with
+  :meth:`~traffic.data.eurocontrol.b2b.NMB2B.aixm_dataset`
 
 The first thing to do is to put the path to a directory containing your files
 from EUROCONTROL in your configuration file.

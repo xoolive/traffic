@@ -16,7 +16,7 @@ from tqdm.autonotebook import tqdm
 
 import pandas as pd
 
-from ...core.mixins import DataFrameMixin
+from ...core.mixins import DataFrameMixin, FormatMixin
 
 json_path = Path(__file__).parent / "patterns.json"
 
@@ -102,24 +102,11 @@ def country(reg: Dict[str, str]) -> Dict[str, str]:
 
 
 @rich.repr.auto()
-class Tail(Dict[str, str]):
+class Tail(Dict[str, str], FormatMixin):
     def __getattr__(self, name: str) -> None | str:
         if name in self.keys():
             return self[name]
         return None
-
-    def __format__(self, _format_str: str) -> str:
-        res = str(self.icao24)
-        registration = self.registration
-        typecode = self.typecode
-        flag = self.flag
-        if registration is not None:
-            res += f" · {flag} {registration}"
-        else:
-            res = f"{flag} {res}"
-        if typecode is not None:
-            res += f" ({typecode})"
-        return res
 
     def __rich_repr__(self) -> rich.repr.Result:
         yield "icao24", self["icao24"]

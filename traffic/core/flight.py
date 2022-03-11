@@ -354,9 +354,16 @@ class Flight(
         if self.flight_id:
             title += f" {self.flight_id}"
 
+        aircraft_fmt = "<code>%icao24</code> · %flag %registration (%typecode)"
+
         title += "<ul>"
         title += f"<li><b>callsign:</b> {self.callsign} {self.trip}</li>"
-        title += f"<li><b>aircraft:</b> {self.aircraft}</li>"
+        if self.aircraft is not None:
+            title += "<li><b>aircraft:</b> {aircraft}</li>".format(
+                aircraft=format(self.aircraft, aircraft_fmt)
+            )
+        else:
+            title += "<li><b>aircraft:</b> <code>{self.icao24}</code></li>"
         title += f"<li><b>start:</b> {self.start}</li>"
         title += f"<li><b>stop:</b> {self.stop}</li>"
         title += f"<li><b>duration:</b> {self.duration}</li>"
@@ -373,11 +380,17 @@ class Flight(
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
+        aircraft_fmt = "%icao24 · %flag %registration (%typecode)"
 
         yield f"[bold blue]Flight {self.flight_id if self.flight_id else ''}"
 
         yield f"  - [b]callsign:[/b] {self.callsign} {self.trip}"
-        yield f"  - [b]aircraft:[/b] {self.aircraft}"
+        if self.aircraft is not None:
+            yield "  - [b]aircraft:[/b] {aircraft}".format(
+                aircraft=format(self.aircraft, aircraft_fmt)
+            )
+        else:
+            yield "  - [b]aircraft:[/b] {self.icao24}"
 
         yield f"  - [b]start:[/b] {self.start:%Y-%m-%d %H:%M:%S}Z "
         yield f"  - [b]stop:[/b] {self.stop:%Y-%m-%d %H:%M:%S}Z"
