@@ -1,5 +1,5 @@
 from traffic.core import Airspace
-from traffic.data import eurofirs
+from traffic.data import eurofirs, nm_airspaces
 
 
 def test_airspace() -> None:
@@ -22,3 +22,14 @@ def test_airspace() -> None:
     json = summed.export_json()
     assert json["name"] == "BRUSSELS FIR, AMSTERDAM FIR"
     assert Airspace.from_json(json).area == summed.area
+
+
+def test_area() -> None:
+    for fir in eurofirs:
+        assert fir.area > 1e6
+
+
+def test_nm() -> None:
+    maastricht = nm_airspaces["EDYYUTAX"]
+    assert maastricht is not None
+    assert maastricht.area > 1e11

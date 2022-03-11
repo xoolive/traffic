@@ -36,6 +36,10 @@ retrieve and use the information in their own systems.
 .. jupyter-execute::
     :hide-code:
 
+    from rich import pretty
+
+    pretty.install()
+
     def repr_html(self):
         raise AttributeError
 

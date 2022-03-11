@@ -8,6 +8,9 @@ on:
     # This is useful for keeping the cache fit and ready
   workflow_dispatch:
 
+env:
+  POETRY_VERSION: "1.1.13"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest # ${{ matrix.os }}
@@ -16,7 +19,7 @@ jobs:
         # os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
     env:
-      PYTHON: ${{ matrix.python-version }}
+      PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v2
 
@@ -25,24 +28,59 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Download extra data from private repository
+        uses: actions/checkout@v2
+        with:
+          repository: xoolive/traffic_data
+          token: ${{ secrets.PRIVATE_TOKEN }}
+          persist-credentials: false
+          path: ./data/traffic_data
+
+      - name: Create LFS file list (private repository)
+        working-directory: ./data/traffic_data
+        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+        shell: bash
+
+      - name: Restore LFS cache (private repository)
+        uses: actions/cache@v2
+        id: lfs-cache
+        with:
+          path: ./data/traffic_data/.git/lfs
+          key: lfs-${{ hashFiles('./data/traffic_data/.lfs-assets-id') }}-v1
+
+      - name: Git LFS Pull (private repository)
+        working-directory: ./data/traffic_data
+        run: |
+          git remote set-url origin https://xoolive:${{ secrets.PRIVATE_TOKEN }}@github.com/xoolive/traffic_data.git
+          git lfs pull
+          unzip ENV_PostOPS_AIRAC_2111_04NOV2021_With_Airspace_Closure.zip -d airac_2111
+        shell: bash
+
+      # Poetry cache depends on OS, Python version and Poetry version.
+      - name: Cache Poetry cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-cache-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
+
+      # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
+      - name: Cache Packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.local
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1.1.6
         with:
-          version: 1.1.6
+          version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
-
-      - name: Load cached Poetry dependencies
-        id: cached-poetry-dependencies
-        uses: actions/cache@v2
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Display Python version
         run: poetry run python -c "import sys; print(sys.version)"
 
-      - name: Cache folder
+      - name: Cache folder for traffic
         uses: actions/cache@v2
         id: cache-folder
         with:
@@ -99,10 +137,13 @@ jobs:
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
         run: |
+          # Update the configuration for NM DDR airspace files
+          export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
+          sed -i "/nm_path =/ s,= $,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
           poetry run pytest --cov --cov-report term-missing
 
       - name: Upload coverage to Codecov
-        if: ${{ github.event_name != 'pull_request_target' }}
-        uses: codecov/codecov-action@v1
+        if: ${{ github.event_name != 'pull_request_target' && env.PYTHON_VERSION == '3.10' }}
+        uses: codecov/codecov-action@v2
         with:
-          env_vars: PYTHON
+          env_vars: PYTHON_VERSION
