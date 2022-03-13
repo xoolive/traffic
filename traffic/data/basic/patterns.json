@@ -2275,11 +2275,17 @@
       ]
     },
     {
-      "pattern": "^9(O|Q|S)-",
+      "pattern": "^9(O|Q|S|T)-",
       "start": "0x8c000",
       "end": "0x8cfff",
       "country": "Democratic Republic of the Congo",
-      "flag": "\ud83c\udde8\ud83c\udde9"
+      "flag": "\ud83c\udde8\ud83c\udde9",
+      "categories": [
+        {
+          "pattern": "^9T-",
+          "category": "State owned"
+        }
+      ]
     },
     {
       "pattern": "^9U-",
