@@ -535,6 +535,10 @@
           "category": "Gliders"
         },
         {
+          "pattern": "^F-D",
+          "category": "Radio controlled"
+        },
+        {
           "pattern": "^F-J",
           "category": "Ultralights"
         },
