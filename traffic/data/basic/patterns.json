@@ -670,7 +670,7 @@
           "category": "single engine Cessna, <5.7t"
         },
         {
-          "pattern": "^HB-D",
+          "pattern": "^HB-[DK]",
           "category": "single engine, <5.7t"
         },
         {
@@ -682,6 +682,14 @@
           "category": ">15t"
         },
         {
+          "pattern": "^HB-[NP]",
+          "category": "single engine Piper, <5.7t"
+        },
+        {
+          "pattern": "^HB-V",
+          "category": "Business jet, <15t"
+        },
+        {
           "pattern": "^HB-[XZ]",
           "category": "Helicopters"
         },
@@ -690,7 +698,7 @@
           "category": "Experimental"
         },
         {
-          "pattern": "^HB-\\d{3}",
+          "pattern": "^HB-\\d",
           "category": "Gliders"
         }
       ]
