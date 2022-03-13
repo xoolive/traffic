@@ -208,12 +208,28 @@
       "flag": "\ud83c\udde8\ud83c\uddfa",
       "categories": [
         {
-          "pattern": "^CU-H",
+          "pattern": "^CU-H1\\d{3}",
           "category": "Helicopters"
         },
         {
-          "pattern": "^CU-U",
+          "pattern": "^CU-U1\\d{3}",
           "category": "Ultralights"
+        },
+        {
+          "pattern": "^CU-A1\\d{3}",
+          "category": "Agriculture"
+        },
+        {
+          "pattern": "^CU-C1\\d{3}",
+          "category": "Cargo airline"
+        },
+        {
+          "pattern": "^CU-N1\\d{3}",
+          "category": "Private"
+        },
+        {
+          "pattern": "^CU-T1\\d{3}",
+          "category": "Passenger airline"
         }
       ]
     },
