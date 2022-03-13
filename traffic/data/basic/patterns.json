@@ -758,12 +758,48 @@
           "category": "Ultralights"
         },
         {
+          "pattern": "^HL0[0-5]\\d{2}",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^HL0[6-7]\\d{2}",
+          "category": "Airship"
+        },
+        {
+          "pattern": "^HL1[0-7]\\d{2}",
+          "category": "Piston engine"
+        },
+        {
+          "pattern": "^HL20\\d{2}",
+          "category": "Piston engine"
+        },
+        {
           "pattern": "^HL(9[1-6]|61)",
           "category": "Helicopters"
         },
         {
-          "pattern": "^HL0[0-5]",
-          "category": "Gliders"
+          "pattern": "^HL5[1-4]",
+          "category": "Turboprop"
+        },
+        {
+          "pattern": "^HL61",
+          "category": "Helicopter"
+        },
+        {
+          "pattern": "^HL71",
+          "category": "Single turbojet"
+        },
+        {
+          "pattern": "^(HL72|HL75|HL77|HL80|HL82|HL83)",
+          "category": "Twin-jet"
+        },
+        {
+          "pattern": "^HL73",
+          "category": "Tri-jet"
+        },
+        {
+          "pattern": "^(HL74|HL76|HL84|HL86)",
+          "category": "Quad-jet"
         }
       ]
     },
