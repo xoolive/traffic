@@ -282,7 +282,7 @@
       "flag": "\ud83c\udde9\ud83c\uddea",
       "categories": [
         {
-          "pattern": "^D-AU",
+          "pattern": "^D-A[UZ]",
           "category": "Finkenwerder Airbus Test"
         },
         {
@@ -320,6 +320,10 @@
         {
           "pattern": "^D-K",
           "category": "Powered Gliders"
+        },
+        {
+          "pattern": "^D-L",
+          "category": "Airships"
         },
         {
           "pattern": "^D-M",
