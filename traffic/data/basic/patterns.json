@@ -282,7 +282,7 @@
       "flag": "\ud83c\udde9\ud83c\uddea",
       "categories": [
         {
-          "pattern": "^D-A[UZ]",
+          "pattern": "^D-A[U-Z]",
           "category": "Finkenwerder Airbus Test"
         },
         {
@@ -372,7 +372,7 @@
       "flag": "\ud83c\uddf0\ud83c\uddf2"
     },
     {
-      "pattern": "^E[CM]-",
+      "pattern": "^E(C|M)-",
       "start": "0x340000",
       "end": "0x37ffff",
       "country": "Spain",
@@ -449,7 +449,27 @@
       "start": "0x510000",
       "end": "0x5103ff",
       "country": "Belarus",
-      "flag": "\ud83c\udde7\ud83c\uddfe"
+      "flag": "\ud83c\udde7\ud83c\uddfe",
+      "categories": [
+        {
+          "pattern": "^EW-\\d{4}L",
+          "country": "Balloons"
+        },
+        {
+          "pattern": "^EW-2\\d{2}PA",
+          "country": "Boeing 737"
+        },
+        {
+          "pattern": "^EW-(1|2)\\d{2}PJ",
+          "country": "Bombardier CRJ"
+        },
+        {
+          "pattern": "^(EW-001DA|EW-001PA|EW-001PB|EW-85815)",
+          "country": "State owned"
+        }
+
+      ]
+
     },
     {
       "pattern": "^EX-",
