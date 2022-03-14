@@ -56,4 +56,4 @@ def test_country() -> None:
         'registration' : [reg],
     }
     a = Aircraft(pd.DataFrame(act)).get_unique(reg)
-    a["country"] == "Democratic Republic of the Congo"
+    assert a["country"] == "Democratic Republic of the Congo"
