@@ -1,6 +1,8 @@
 import pytest
 
 from traffic.data import aircraft
+from traffic.data.basic.aircraft import Aircraft
+import pandas as pd
 
 aircraft.download_junzis()  # make tests based on Junzi's (light) database
 
@@ -45,3 +47,13 @@ def test_query() -> None:
     assert df is not None
     assert (df.data.typecode == "B789").all()
     assert df.data.registration.str.startswith("PH-").all()
+
+
+def test_country() -> None:
+    reg = "9T-ABC"
+    act = {
+        'icao24'       : ["000001"],
+        'registration' : [reg],
+    }
+    a = Aircraft(pd.DataFrame(act)).get_unique(reg)
+    a["country"] == "Democratic Republic of the Congo"
