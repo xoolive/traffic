@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import warnings
 from operator import attrgetter
+from pathlib import Path
+from pkgutil import get_data
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -811,59 +813,74 @@ class NavigationFeatures:
     @flight_iterator
     def holding_pattern(
         self,
-        min_altitude: float = 7000,
-        turning_threshold: float = 0.5,
-        low_limit: pd.Timedelta = pd.Timedelta("30 seconds"),  # noqa: B008
-        high_limit: pd.Timedelta = pd.Timedelta("10 minutes"),  # noqa: B008
-        turning_limit: pd.Timedelta = pd.Timedelta("5 minutes"),  # noqa: B008
+        duration: str = "6T",
+        step: str = "2T",
+        threshold: str = "5T",
+        samples: int = 30,
+        model_path: None | str | Path = None,
     ) -> Iterator["Flight"]:
-        """Iterates on parallel segments candidates for identifying
-        a holding pattern.
-
-        .. warning::
-
-            This API is not stable yet. The interface may change in a near
-            future.
-
+        """Returns the holding patterns segments.
+        Based on a classifier trained on EGLL and stored in a ONNX file.
         """
-        # avoid parts that are really way too low
-        alt_above = self.query(f"altitude > {min_altitude}")  # type: ignore
-        if alt_above is None:
-            return
+        try:
+            import onnxruntime as rt
+        except ImportError:
+            warnings.warn("'onnxruntime' optional dependency is necessary")
+            raise
 
-        straight_line = (
-            alt_above.unwrap()
-            .assign(
-                turning_rate=lambda x: x.track_unwrapped.diff()
-                / x.timestamp.diff().dt.total_seconds()
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if model_path is None:
+            pkg = "traffic.algorithms.onnx"
+            data = get_data(pkg, "scaler.onnx")
+            scaler_sess = rt.InferenceSession(data)
+            data = get_data(pkg, "classifier.onnx")
+            classifier_sess = rt.InferenceSession(data)
+        else:
+            model_path = Path(model_path)
+            scaler_sess = rt.InferenceSession(
+                (model_path / "scaler.onnx").read_bytes()
             )
-            .filter(turning_rate=17)
-            .query(f"turning_rate.abs() < {turning_threshold}")
-        )
-        if straight_line is None:
-            return
+            classifier_sess = rt.InferenceSession(
+                (model_path / "classifier.onnx").read_bytes()
+            )
 
-        chunk_candidates = list(
-            (chunk.start, chunk.duration, chunk.mean("track_unwrapped"), chunk)
-            for chunk in straight_line.split("10s")
-            if low_limit <= chunk.duration < high_limit
-        )
+        start, stop = None, None
 
-        next_ = None
-        for (
-            (start1, duration1, track1, chunk1),
-            (start2, _, track2, chunk2),
-        ) in zip(chunk_candidates, chunk_candidates[1:]):
-            if (
-                start2 - start1 - duration1 < turning_limit
-                and abs(abs(track1 - track2) - 180) < 15
-            ):
-                yield chunk1
-                next_ = chunk2
-            else:
-                if next_ is not None:
-                    yield next_
-                next_ = None
+        for i, window in enumerate(self.sliding_windows(duration, step)):
+            if window.duration >= pd.Timedelta(threshold):
+
+                window = window.assign(flight_id=str(i))
+                resampled = window.resample(samples)
+
+                if resampled.data.eval("track != track").any():
+                    continue
+
+                tracks = (
+                    resampled.data.track_unwrapped
+                    - resampled.data.track_unwrapped[0]
+                ).values.reshape(1, -1)
+
+                name = scaler_sess.get_inputs()[0].name
+                value = tracks.astype(np.float32)
+
+                x = scaler_sess.run(None, {name: value})[0]
+
+                name = classifier_sess.get_inputs()[0].name
+                value = x.astype(np.float32)
+                pred = classifier_sess.run(None, {name: value})[0]
+
+                if bool(pred.round().item()):
+                    if start is None:
+                        start, stop = window.start, window.stop
+                    elif start < stop:
+                        stop = window.stop
+                    else:
+                        yield self.between(start, stop)
+                        start, stop = window.start, window.stop
+        if start is not None:
+            yield self.between(start, stop)  # type: ignore
 
     # -- Airport ground operations specific methods --
 
