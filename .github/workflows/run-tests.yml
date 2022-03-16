@@ -140,6 +140,8 @@ jobs:
           # Update the configuration for NM DDR airspace files
           export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
           sed -i "/nm_path =/ s,= $,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
+          # Don't purge OpenSky cache files here :)
+          sed -i "/purge = / d" $TRAFFIC_CONFIG
           poetry run pytest --cov --cov-report term-missing
 
       - name: Upload coverage to Codecov

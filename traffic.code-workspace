@@ -11,6 +11,31 @@
 
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["tests"],
+
+    "restructuredtext.confPath": "${workspaceFolder}/docs",
+
+    "esbonio.sphinx.confDir": "${workspaceFolder}/docs",
+    "esbonio.server.enabled": false,
+
+    "cSpell.customDictionaries": {
+      "project-words": {
+        "name": "project-words",
+        "path": "${workspaceRoot}/.vscode/custom-spell.txt",
+        "description": "Words used in this project",
+        "addWords": true
+      },
+      "custom": true, // Enable the `custom` dictionary
+      "internal-terms": false // Disable the `internal-terms` dictionary
+    },
+    "cSpell.ignorePaths": [
+      ".git/",
+      ".vscode",
+      ".vscode-insiders",
+      "traffic/core/aero.py",
+      "docs/conf.py",
+      "docs/_static/main_stylesheet.css"
+    ]
   }
 }

@@ -3,7 +3,10 @@
 *.bak.[a-z]*
 *.pkl
 
-.vscode
+.vscode/launch.json
+.vscode/settings.json
+
+.ropeproject
 
 bibliography/
 sandbox/
