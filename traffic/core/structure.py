@@ -71,7 +71,7 @@ class Airport(
             yield "altitude", self.altitude
 
     def _repr_html_(self) -> str:
-        title = ""
+        title = "<h4><b>Airport</b></h4>"
         if (
             self.runways is not None
             and self.runways.shape.is_empty
@@ -333,7 +333,7 @@ class Route(HBoxMixin, ShapelyMixin):
         return LineString(list((x.longitude, x.latitude) for x in self.navaids))
 
     def _info_html(self) -> str:
-        title = f"<b>Route {self.name}</b><br/>"
+        title = f"<h4><b>Route {self.name}</b></h4>"
         # title += f"flies through {', '.join(self.navaids)}.<br/>"
         return title
 

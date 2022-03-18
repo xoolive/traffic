@@ -448,7 +448,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             # stylers are not efficient on big dataframes...
             basic_stats = basic_stats.head(10)
         styler = basic_stats.style.bar(align="mid", color="#5fba7d")
-        rep = f"<b>Traffic with {shape} identifiers</b>"
+        rep = f"<h4><b>Traffic</b></h4> with {shape} identifiers"
         return rep + styler._repr_html_()  # type: ignore
 
     def aircraft_data(self) -> "Traffic":

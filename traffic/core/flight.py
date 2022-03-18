@@ -350,7 +350,7 @@ class Flight(
             return self.data.shape[0]  # type: ignore
 
     def _info_html(self) -> str:
-        title = "<b>Flight</b>"
+        title = "<h4><b>Flight</b></h4>"
         if self.flight_id:
             title += f" {self.flight_id}"
 

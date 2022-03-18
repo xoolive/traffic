@@ -4,12 +4,15 @@ import functools
 import operator
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 
+import rich.repr
+
 if TYPE_CHECKING:
     from . import Flight  # noqa: F401
     from . import Traffic  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
 
 
+@rich.repr.auto()
 class FlightIterator:
     """
     A FlightIterator is a specific structure providing helpers after methods
@@ -68,23 +71,25 @@ class FlightIterator:
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
+    @functools.lru_cache()
     def _repr_html_(self) -> str:
-        try:
+        title = "<h3><b>FlightIterator</b></h3>"
+        if self.next() is not None:
             concat = functools.reduce(operator.or_, self)._repr_html_()
-        except TypeError:  # reduce() of empty sequence with no initial value
-            raise
+        else:
             concat = "Empty sequence"
-        return (
-            """<div class='alert alert-warning'>
-            <b>Warning!</b>
-            This iterable structure is neither a Flight nor a Traffic structure.
-            Each corresponding segment of the flight (if any) is displayed
-            below. Possible utilisations include iterating (for loop, next
-            keyword), indexing with the bracket notation (slices supported) and
-            most native built-ins made for iterable structures.
-            </div>"""
-            + concat
-        )
+        return title + concat
+
+    def __rich_repr__(self) -> rich.repr.Result:
+        for i, segment in enumerate(self):
+            if i == 0:
+                if segment.flight_id:
+                    yield segment.flight_id
+                else:
+                    yield "icao24", segment.icao24
+                    yield "callsign", segment.callsign
+                    yield "start", format(segment.start)
+            yield f"duration_{i}", format(segment.duration)
 
     def __getitem__(
         self, index: Union[int, slice]
