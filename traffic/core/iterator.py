@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import functools
-import operator
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 
 import rich.repr
@@ -10,6 +9,7 @@ if TYPE_CHECKING:
     from . import Flight  # noqa: F401
     from . import Traffic  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
+    from .mixins import _HBox  # noqa: F401
 
 
 @rich.repr.auto()
@@ -74,11 +74,12 @@ class FlightIterator:
     @functools.lru_cache()
     def _repr_html_(self) -> str:
         title = "<h3><b>FlightIterator</b></h3>"
-        if self.next() is not None:
-            concat = functools.reduce(operator.or_, self)._repr_html_()
-        else:
-            concat = "Empty sequence"
-        return title + concat
+        concat: None | "Flight" | "_HBox" = None
+        for segment in self:
+            concat = segment if concat is None else concat | segment
+        return title + (
+            concat._repr_html_() if concat is not None else "Empty sequence"
+        )
 
     def __rich_repr__(self) -> rich.repr.Result:
         for i, segment in enumerate(self):

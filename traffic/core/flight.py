@@ -349,10 +349,15 @@ class Flight(
         else:
             return self.data.shape[0]  # type: ignore
 
+    @property
+    def count(self) -> int:
+        return len(self)
+
     def _info_html(self) -> str:
-        title = "<h4><b>Flight</b></h4>"
+        title = "<h4><b>Flight</b>"
         if self.flight_id:
             title += f" {self.flight_id}"
+        title += "</h4>"
 
         aircraft_fmt = "<code>%icao24</code> · %flag %registration (%typecode)"
 
@@ -363,7 +368,7 @@ class Flight(
                 aircraft=format(self.aircraft, aircraft_fmt)
             )
         else:
-            title += "<li><b>aircraft:</b> <code>{self.icao24}</code></li>"
+            title += f"<li><b>aircraft:</b> <code>{self.icao24}</code></li>"
         title += f"<li><b>start:</b> {self.start}</li>"
         title += f"<li><b>stop:</b> {self.stop}</li>"
         title += f"<li><b>duration:</b> {self.duration}</li>"
@@ -390,7 +395,7 @@ class Flight(
                 aircraft=format(self.aircraft, aircraft_fmt)
             )
         else:
-            yield "  - [b]aircraft:[/b] {self.icao24}"
+            yield f"  - [b]aircraft:[/b] {self.icao24}"
 
         yield f"  - [b]start:[/b] {self.start:%Y-%m-%d %H:%M:%S}Z "
         yield f"  - [b]stop:[/b] {self.stop:%Y-%m-%d %H:%M:%S}Z"
@@ -1441,7 +1446,7 @@ class Flight(
             data = (
                 self.handle_last_position()
                 .unwrap()  # avoid filled gaps in track and heading
-                .assign(tz_naive=lambda d: d.timestamp.astype("datetime64[ns]"))
+                .assign(tz_naive=lambda d: d.timestamp.dt.tz_localize(None))
                 .data.set_index("tz_naive")
                 .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
                 .reset_index()
