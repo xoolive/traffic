@@ -818,6 +818,7 @@ class NavigationFeatures:
         threshold: str = "5T",
         samples: int = 30,
         model_path: None | str | Path = None,
+        vertical_rate: bool = False,
     ) -> Iterator["Flight"]:
         """Returns the holding patterns segments.
         Based on a classifier trained on EGLL and stored in a ONNX file.
@@ -857,14 +858,25 @@ class NavigationFeatures:
                 if resampled.data.eval("track != track").any():
                     continue
 
-                tracks = (
+                features = (
                     resampled.data.track_unwrapped
                     - resampled.data.track_unwrapped[0]
                 ).values.reshape(1, -1)
 
-                name = scaler_sess.get_inputs()[0].name
-                value = tracks.astype(np.float32)
+                if vertical_rate:
+                    if resampled.data.eval(
+                        "vertical_rate != vertical_rate"
+                    ).any():
+                        continue
+                    vertical_rates = (
+                        resampled.data.vertical_rate.values.reshape(1, -1)
+                    )
+                    features = np.concatenate(
+                        (features, vertical_rates), axis=1
+                    )  # type: ignore
 
+                name = scaler_sess.get_inputs()[0].name
+                value = features.astype(np.float32)
                 x = scaler_sess.run(None, {name: value})[0]
 
                 name = classifier_sess.get_inputs()[0].name
