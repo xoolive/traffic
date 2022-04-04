@@ -23,6 +23,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      # Update full Python version
+      - name: Full Python version
+        run: |
+          echo "PYTHON_VERSION=$(python -c "import sys; print(sys.version)")"
+          echo "PYTHON_VERSION=$(python -c "import sys; print(sys.version)")" >> $GITHUB_ENV
+
       - name: Download extra data from private repository
         uses: actions/checkout@v2
         with:
