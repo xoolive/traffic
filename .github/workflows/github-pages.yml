@@ -26,8 +26,8 @@ jobs:
       # Update full Python version
       - name: Full Python version
         run: |
-          echo "PYTHON_VERSION=$(python -c "import sys; print(sys.version)")"
-          echo "PYTHON_VERSION=$(python -c "import sys; print(sys.version)")" >> $GITHUB_ENV
+          echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")"
+          echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")" >> $GITHUB_ENV
 
       - name: Download extra data from private repository
         uses: actions/checkout@v2
