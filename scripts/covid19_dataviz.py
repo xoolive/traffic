@@ -1,49 +1,20 @@
 # %%
+from __future__ import annotations
 
 import sys
 from pathlib import Path
 from typing import List
 
 import altair as alt
-import pandas as pd
+from tqdm.rich import tqdm
 
+import pandas as pd
 from traffic.data import airports
 
 alt.renderers.set_embed_options(actions=False)
 
 # %%
 
-dataset_path = sys.argv[1]
-dates = [
-    "20200101",
-    "20200201",
-    "20200301",
-    "20200401",
-    "20200501",
-    "20200601",
-    "20200701",
-    "20200801",
-    "20200901",
-    "20201001",
-    "20201101",
-    "20201201",
-    "20210101",
-    "20210201",
-    "20210301",
-    "20210401",
-    "20210501",
-    "20210601",
-]
-flightlist = pd.concat(
-    pd.read_csv(
-        # only take the latest version of the file
-        max(Path(dataset_path).glob(f"flightlist_{date}_*.csv.gz")),
-        parse_dates=["firstseen", "lastseen", "day"],
-    )
-    for date in dates
-)
-
-# %%
 
 airlines_subset = [
     # European airlines
@@ -57,6 +28,44 @@ airlines_subset = [
     # Cargo
     ["FDX", "UPS", "GTI", "CLX", "GEC"],
 ]
+airlines_flat: list[str] = sum(airlines_subset, [])
+
+airports_subset = [
+    # Europe
+    ["LFPG", "EGLL", "EHAM", "EDDF", "LEMD", "LIRF", "LSZH", "UUEE"],
+    # Eastern Asia
+    ["VHHH", "RJBB", "RJTT", "RKSI", "RCTP", "RPLL"],
+    # Asia/Pacific
+    ["YSSY", "YMML", "OMDB", "VABB", "VIDP", "WSSS"],
+    # Americas
+    ["CYYZ", "KSFO", "KLAX", "KATL", "KJFK", "SBGR"],
+]
+airports_flat: list[str] = sum(airports_subset, [])
+
+# %%
+
+dataset_path = Path(sys.argv[1])
+dates = sorted(
+    set(
+        f.stem.split("_")[1]
+        for f in dataset_path.glob("*")
+        if f.stem.startswith("flightlist")
+    )
+)
+flightlist = pd.concat(
+    pd.read_csv(
+        # only take the latest version of the file
+        max((dataset_path).glob(f"flightlist_{date}_*.csv.gz")),
+        parse_dates=["firstseen", "lastseen", "day"],
+    )
+    .assign(airline=lambda df: df.callsign.str[:3])
+    .query("airline in @airlines_flat or origin in @airports_flat")
+    .drop(columns=["airline"])
+    for date in tqdm(dates)
+)
+
+# %%
+
 
 data = pd.concat(
     (
@@ -83,7 +92,7 @@ source = (
 
 
 def airline_chart(
-    source: alt.Chart, subset: List[str], name: str, loess=True
+    source: alt.Chart, subset: List[str], name: str, loess: bool = True
 ) -> alt.Chart:
 
     chart = source.transform_filter(
@@ -140,17 +149,6 @@ result = alt.vconcat(
 result.save("covid19_airlines.json", indent=2)
 
 # %%
-
-airports_subset = [
-    # Europe
-    ["LFPG", "EGLL", "EHAM", "EDDF", "LEMD", "LIRF", "LSZH", "UUEE"],
-    # Eastern Asia
-    ["VHHH", "RJBB", "RJTT", "RKSI", "RCTP", "RPLL"],
-    # Asia/Pacific
-    ["YSSY", "YMML", "OMDB", "VABB", "VIDP", "WSSS"],
-    # Americas
-    ["CYYZ", "KSFO", "KLAX", "KATL", "KJFK", "SBGR"],
-]
 
 
 data = pd.concat(

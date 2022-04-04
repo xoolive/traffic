@@ -1,8 +1,8 @@
 Impact of COVID-19 on worldwide aviation
 ----------------------------------------
 
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3928550.svg
-   :target: https://doi.org/10.5281/zenodo.3928550
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.6411336.svg
+   :target: https://doi.org/10.5281/zenodo.6411336
 
 .. admonition:: Information
 
