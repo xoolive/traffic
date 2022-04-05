@@ -2107,7 +2107,7 @@ class Flight(
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
         return_mask: bool = False,
-    ) -> Union[npt.NDArray[np.float64], "Flight"]:
+    ) -> npt.NDArray[np.float64] | "Flight":
         """Simplifies a trajectory with Douglas-Peucker algorithm.
 
         The method uses latitude and longitude, projects the trajectory to a
@@ -2116,12 +2116,18 @@ class Flight(
         <#traffic.core.Flight.compute_xy>`_ for instance) then this projection
         is taken into account.
 
-        - By default, a 2D version is called, unless you pass a column name for
-          ``altitude``.
+        The tolerance parameter must be defined in meters.
+
+        - By default, a 2D version of the algorithm is called, unless you pass a
+          column name for ``altitude``.
         - You may scale the z-axis for more relevance (``z_factor``). The
           default value works well in most situations.
 
-        The method returns a Flight unless you specify ``return_mask=True``.
+        The method returns a :class:`~traffic.core.Flight` or a 1D mask if you
+        specify ``return_mask=True``.
+
+        **See also**: :ref:`How to simplify or resample a trajectory?`
+
         """
 
         if "x" in self.data.columns and "y" in self.data.columns:
