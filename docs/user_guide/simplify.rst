@@ -200,7 +200,7 @@ time axis.
                     alt.X(
                         "cumdist",
                         scale=alt.Scale(reverse=True),
-                        title="Cumulative distance to runway threshold(in nm)",
+                        title="Cumulative distance to runway threshold (in nm)",
                     ),
                     alt.Y(
                         "altitude",
