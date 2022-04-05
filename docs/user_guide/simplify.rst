@@ -46,6 +46,8 @@ trajectories. The two most famous methods are the `Ramer-Douglas-Peucker
 .. jupyter-execute::
     :code-below:
 
+    import altair as alt
+
     encoding = [
         alt.X(
             "utcyearmonthdatehoursminutesseconds(timestamp):T",
