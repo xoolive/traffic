@@ -57,6 +57,7 @@ def compute_latlon_from_xy(
     The destination projection is WGS84 (EPSG 4326).
 
     .. warning::
+
         Make sure to use as source projection the one used to compute ``'x'``
         and ``'y'`` columns in the first place.
     """
@@ -132,7 +133,7 @@ def compute_latlon_from_trackgs(
         ([coordinates["latitude"]] + [np.nan] * (n_obs - 1)) * n_samples
     )
     lon = np.array(
-        ([coordinates["latitude"]] + [np.nan] * (n_obs - 1)) * n_samples
+        ([coordinates["longitude"]] + [np.nan] * (n_obs - 1)) * n_samples
     )
 
     for i in range(len(df)):

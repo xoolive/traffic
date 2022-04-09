@@ -1,9 +1,10 @@
 # flake8: noqa
+from __future__ import annotations
 
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Iterator, Optional
+from typing import Iterator
 
 import pandas as pd
 
@@ -27,10 +28,11 @@ class Navaids(GeoDBMixin):
     progress in GNSS systems helped define more positions by their latitudes and
     longitudes, referred to as FIX.
 
-    - Read more `here <https://aerosavvy.com/navigation-name-nonsense/>`_ about
-      navigational beacons and how FIX names are decided.
+    - Read more about `navigational beacons
+      <https://aerosavvy.com/navigation-name-nonsense/>`_ and how FIX names are
+      decided.
 
-    - Read more `here <scenarios/calibration.html>`_ about calibration of such
+    - Read more about `calibration <scenarios/calibration.html>`_ of such
       equipment.
 
     A (deprecated) database of world navigational beacons is available as:
@@ -40,17 +42,18 @@ class Navaids(GeoDBMixin):
     Any navigational beacon can be accessed by the bracket notation:
 
     >>> navaids['NARAK']
-    NARAK (FIX): 44.29527778 1.74888889
+    Navaid('NARAK', type='FIX', latitude=44.29527778, longitude=1.74888889)
 
     """
 
     cache_dir: Path
-    alternatives: Dict[str, "Navaids"] = dict()
+    alternatives: dict[str, "Navaids"] = dict()
     name: str = "default"
+    priority: int = 0
 
-    def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
-        self._data: Optional[pd.DataFrame] = data
-        if self.available:
+    def __init__(self, data: None | pd.DataFrame = None) -> None:
+        self._data: None | pd.DataFrame = data
+        if self.name not in Navaids.alternatives:
             Navaids.alternatives[self.name] = self
 
     @property
@@ -163,7 +166,7 @@ class Navaids(GeoDBMixin):
             # Find description
             try:
                 idesc = line.index(fields[7]) + len(fields[7])
-                description: Optional[str] = line[idesc:].strip().upper()
+                description: None | str = line[idesc:].strip().upper()
             except Exception:
                 description = None
 
@@ -210,7 +213,7 @@ class Navaids(GeoDBMixin):
         return self._data
 
     @lru_cache()
-    def __getitem__(self, name: str) -> Optional[Navaid]:
+    def __getitem__(self, name: str) -> None | Navaid:
         x = self.data.query(
             "description == @name.upper() or name == @name.upper()"
         )
@@ -221,11 +224,50 @@ class Navaids(GeoDBMixin):
             dic["altitude"] = None
             dic["frequency"] = None
             dic["magnetic_variation"] = None
+        if "id" in dic:
+            del dic["id"]
         return Navaid(**dic)
 
-    def global_get(self, name: str) -> Optional[Navaid]:
-        """Search for a navaid from all alternative data sources."""
-        for _key, value in self.alternatives.items():
+    def global_get(self, name: str) -> None | Navaid:
+        """Search for a navaid from all alternative data sources.
+
+        >>> navaids.global_get("ZUE")
+        Navaid(
+            'ZUE',
+            type='NDB',
+            latitude=30.9,
+            longitude=20.06833333,
+            altitude=0.0,
+            description='ZUEITINA NDB',
+            frequency=' 369.0kHz'
+        )
+        >>> navaids.extent("Switzerland").global_get("ZUE")
+        Navaid(
+            'ZUE',
+            type='VOR',
+            latitude=47.59216667,
+            longitude=8.81766667,
+            altitude=1730.0,
+            description='ZURICH EAST VOR-DME',
+            frequency='110.05MHz'
+        )
+        """
+        for _key, value in reversed(
+            sorted(
+                (
+                    (key, value)
+                    for key, value in self.alternatives.items()
+                    if value is not None
+                ),
+                key=lambda elt: elt[1].priority,
+            )
+        ):
+            # Reapply the extent if it was applied before
+            if self._extent is not None:
+                value_ext = value.extent(self._extent)
+                if value_ext is None:
+                    continue
+                value = value_ext
             alt = value[name]
             if alt is not None:
                 return alt
@@ -242,12 +284,19 @@ class Navaids(GeoDBMixin):
 
         .. warning::
             The same name may match several navigational beacons in the world.
+            Use the extent() method to limit the search to an area of interest.
 
         >>> navaids.search("ZUE")
-                name  type  lat       lon       alt     frequency     description
-        272107  ZUE   NDB   30.900000 20.068333 0.0     369.00  0.0   ZUEITINA NDB
-        275948  ZUE   VOR   47.592167 8.817667  1730.0  110.05  2.0   ZURICH EAST VOR-DME
-        290686  ZUE   DME   47.592167 8.817667  1730.0  110.05  NaN   ZURICH EAST VOR-DME
+          name   type   latitude   longitude   altitude   frequency   description
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          ZUE    NDB    30.9       20.07       0          369         ZUEITINA NDB
+          ZUE    VOR    47.59      8.818       1730       110         ZURICH EAST VOR-DME
+          ZUE    DME    47.59      8.818       1730       110         ZURICH EAST VOR-DME
+        >>> navaids.extent("Switzerland").search("ZUE")
+          name   type   latitude   longitude   altitude   frequency   description
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          ZUE    VOR    47.59      8.818       1730       110         ZURICH EAST VOR-DME
+          ZUE    DME    47.59      8.818       1730       110         ZURICH EAST VOR-DME
         """
         return self.__class__(
             self.data.query(

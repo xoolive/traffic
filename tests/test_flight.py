@@ -1,9 +1,9 @@
-# fmt: off
-
 import zipfile
+from operator import itemgetter
 from typing import Any, Optional, cast
 
 import pytest
+from requests import HTTPError
 
 import pandas as pd
 from traffic.algorithms.douglas_peucker import douglas_peucker
@@ -18,8 +18,6 @@ from traffic.data.samples import (
     get_sample,
     zurich_airport,
 )
-
-# fmt: on
 
 # This part only serves on travis when the downloaded file is corrupted
 # This shouldn't happen much as caching is now activated.
@@ -48,7 +46,10 @@ def test_properties() -> None:
     assert flight.icao24 == "484506"
     assert flight.registration == "PH-HZO"
     assert flight.typecode == "B738"
-    assert flight.aircraft == "484506 · 🇳🇱 PH-HZO (B738)"
+    assert (
+        repr(flight.aircraft) == "Tail(icao24='484506', registration='PH-HZO',"
+        " typecode='B738', flag='🇳🇱')"
+    )
     assert flight.flight_id is None
 
 
@@ -70,12 +71,12 @@ def test_iterators() -> None:
     assert min(flight.coords)[0] == flight.min("longitude")
     assert max(flight.coords)[0] == flight.max("longitude")
 
-    max_time = max(flight.coords4d())
+    max_time = max(flight.coords4d(), key=itemgetter("timestamp"))
     last_point = flight.at()
     assert last_point is not None
-    assert max_time[1] == last_point.longitude
-    assert max_time[2] == last_point.latitude
-    assert max_time[3] == last_point.altitude
+    assert max_time["longitude"] == last_point.longitude
+    assert max_time["latitude"] == last_point.latitude
+    assert max_time["altitude"] == last_point.altitude
 
     max_xy_time = list(flight.xy_time)[-1]
     assert max_xy_time[0] == last_point.longitude
@@ -183,11 +184,16 @@ def test_geometry() -> None:
     simplified_3d = flight.simplify(1e3, altitude="altitude")
     assert len(simplified) < len(simplified_3d) < len(flight)
 
-    assert flight.intersects(eurofirs["EHAA"])
-    assert flight.intersects(eurofirs["EHAA"].flatten())
-    assert not flight.intersects(eurofirs["LFBB"])
+    EHAA = eurofirs["EHAA"]
+    LFBB = eurofirs["LFBB"]
+    assert EHAA is not None
+    assert LFBB is not None
 
-    assert flight.distance(eurofirs["EHAA"]).data.distance.mean() < 0
+    assert flight.intersects(EHAA)
+    assert flight.intersects(EHAA.flatten())
+    assert not flight.intersects(LFBB)
+
+    assert flight.distance(EHAA).data.distance.mean() < 0
 
     airbus_tree = cast(Flight, get_sample(featured, "airbus_tree"))
     clip_dk = airbus_tree.clip(eurofirs["EKDK"])
@@ -303,7 +309,7 @@ def test_landing_ils() -> None:
     assert aligned is not None
     assert aligned.max("ILS") == "06"
 
-    aligned = belevingsvlucht.final("aligned_on_EHLE")
+    aligned = belevingsvlucht.final("aligned_on_ils('EHLE')")
     assert aligned is not None
     assert aligned.ILS_max == "23"
 
@@ -558,6 +564,7 @@ def test_slow_taxi() -> None:
     assert flight.slow_taxi().next() is None
 
 
+@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
 def test_pushback() -> None:
 
     flight = zurich_airport["AEE5ZH"]
@@ -576,6 +583,7 @@ def test_pushback() -> None:
     assert pushback.stop >= parking_position.stop
 
 
+@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
 def test_on_taxiway() -> None:
     flight = zurich_airport["ACA879"]
     assert flight is not None

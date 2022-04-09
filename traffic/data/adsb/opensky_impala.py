@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import logging
 import re
@@ -7,7 +9,7 @@ from datetime import timedelta
 from io import StringIO
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterable, List, Tuple, cast
 
 import paramiko
 from tqdm.autonotebook import tqdm
@@ -107,7 +109,7 @@ class Impala(object):
             file.unlink()
 
     @staticmethod
-    def _read_cache(cachename: Path) -> Optional[pd.DataFrame]:
+    def _read_cache(cachename: Path) -> None | pd.DataFrame:
 
         logging.info("Reading request in cache {}".format(cachename))
         with cachename.open("r") as fh:
@@ -155,7 +157,7 @@ class Impala(object):
                 if df.shape[0] > 0:
                     return df.drop_duplicates()
 
-        error_msg: Optional[str] = None
+        error_msg: None | str = None
         with cachename.open("r") as fh:
             output = fh.readlines()
             if any(elt.startswith("ERROR:") for elt in output):
@@ -257,7 +259,7 @@ class Impala(object):
 
     def _impala(
         self, request: str, columns: str, cached: bool = True
-    ) -> Optional[pd.DataFrame]:  # coverage: ignore
+    ) -> None | pd.DataFrame:  # coverage: ignore
 
         digest = hashlib.md5(request.encode("utf8")).hexdigest()
         cachename = self.cache_dir / digest
@@ -366,32 +368,28 @@ class Impala(object):
         start: timelike,
         stop: timelike,
         *args: Any,  # more reasonable to be explicit about arguments
-        columns: List[str],
+        columns: list[str],
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         cached: bool = True,
-        progressbar: Union[bool, ProgressbarType[Any]] = True,
+        progressbar: bool | ProgressbarType[Any] = True,
     ) -> pd.DataFrame:
         """Splits and sends a custom request.
 
-        Args:
-            - **request_pattern**: a string containing the basic request you
-              wish to make on Impala shell. Use {before_hour} and {after_hour}
-              place holders to write your hour constraints: they will be
-              automatically replaced by appropriate values.
-            - **start**: a string (default to UTC), epoch or datetime (native
-              Python or pandas)
-            - **stop** (optional): a string (default to UTC), epoch or datetime
+        :param request_pattern: a string containing the basic request you
+            wish to make on Impala shell. Use {before_hour} and {after_hour}
+            place holders to write your hour constraints: they will be
+            automatically replaced by appropriate values.
+        :param start: a string (default to UTC), epoch or datetime (native
+            Python or pandas)
+        :param stop: a string (default to UTC), epoch or datetime
               (native Python or pandas), *by default, one day after start*
-            - **columns**: the list of expected columns in the result. This
+        :param columns: the list of expected columns in the result. This
               helps naming the columns in the resulting dataframe.
-
-        **Useful options**
-
-            - **date_delta** (optional): a timedelta representing how to split
-              the requests, *by default: per hour*
-            - **cached** (boolean, default: True): switch to False to force a
-              new request to the database regardless of the cached files;
-              delete previous cache files;
+        :param date_delta: a timedelta representing how to split the requests,
+            *by default: per hour*
+        :param cached: (default: True) switch to False to force a new request to
+            the database regardless of the cached files; delete previous cache
+            files;
 
         """
 
@@ -445,16 +443,16 @@ class Impala(object):
     def flightlist(
         self,
         start: timelike,
-        stop: Optional[timelike] = None,
+        stop: None | timelike = None,
         *args: Any,  # more reasonable to be explicit about arguments
-        departure_airport: Union[None, str, Iterable[str]] = None,
-        arrival_airport: Union[None, str, Iterable[str]] = None,
-        airport: Union[None, str, Iterable[str]] = None,
-        callsign: Union[None, str, Iterable[str]] = None,
-        icao24: Union[None, str, Iterable[str]] = None,
+        departure_airport: None | str | list[str] = None,
+        arrival_airport: None | str | list[str] = None,
+        airport: None | str | list[str] = None,
+        callsign: None | str | list[str] = None,
+        icao24: None | str | list[str] = None,
         cached: bool = True,
-        limit: Optional[int] = None,
-        progressbar: Union[bool, ProgressbarType[Any]] = True,
+        limit: None | int = None,
+        progressbar: bool | ProgressbarType[Any] = True,
     ) -> pd.DataFrame:
         """Lists flights departing or arriving at a given airport.
 
@@ -465,43 +463,39 @@ class Impala(object):
         data into a proper pandas DataFrame. Requests are split by hour (by
         default) in case the connection fails.
 
-        Args:
-            - **start**: a string (default to UTC), epoch or datetime (native
-              Python or pandas)
-            - **stop** (optional): a string (default to UTC), epoch or datetime
-              (native Python or pandas), *by default, one day after start*
+        :param start: a string (default to UTC), epoch or datetime (native
+            Python or pandas)
+        :param stop: a string (default to UTC), epoch or datetime (native Python
+            or pandas), *by default, one day after start*
 
-            More arguments to filter resulting data:
+        More arguments to filter resulting data:
 
-            - **departure_airport** (optional): a string for the ICAO
-              identifier of the airport. Selects flights departing from the
-              airport between the two timestamps;
-            - **arrival_airport** (optional): a string for the ICAO identifier
-              of the airport. Selects flights arriving at the airport between
-              the two timestamps;
-            - **airport** (optional): a string for the ICAO identifier of the
-              airport. Selects flights departing from or arriving at the
-              airport between the two timestamps;
-            - **callsign** (optional): a string or a list of strings (wildcards
-              accepted, _ for any character, % for any sequence of characters);
-            - **icao24** (optional): a string or a list of strings identifying i
-              the transponder code of the aircraft;
+        :param departure_airport: a string for the ICAO identifier of the
+            airport. Selects flights departing from the airport between the two
+            timestamps;
+        :param arrival_airport: a string for the ICAO identifier of the airport.
+            Selects flights arriving at the airport between the two timestamps;
+        :param airport: a string for the ICAO identifier of the airport. Selects
+            flights departing from or arriving at the airport between the two
+            timestamps;
+        :param callsign: a string or a list of strings (wildcards
+            accepted, _ for any character, % for any sequence of characters);
+        :param icao24: a string or a list of strings identifying the transponder
+            code of the aircraft;
 
-            .. warning::
+        .. warning::
 
-                - If both departure_airport and arrival_airport are set,
-                  requested timestamps match the arrival time;
-                - If airport is set, departure_airport and
-                  arrival_airport cannot be specified (a RuntimeException is
-                  raised).
+            - If both departure_airport and arrival_airport are set, requested
+              timestamps match the arrival time;
+            - If airport is set, ``departure_airport`` and ``arrival_airport``
+              cannot be specified (a RuntimeException is raised).
 
-            **Useful options for debug**
+        **Useful options for debug**
 
-            - **cached** (boolean, default: True): switch to False to force a
-              new request to the database regardless of the cached files;
-              delete previous cache files;
-            - **limit** (optional, int): maximum number of records requested
-              LIMIT keyword in SQL.
+        :param cached: (default: True) switch to False to force a new request to
+            the database regardless of the cached files. This option also
+            deletes previous cache files;
+        :param limit: maximum number of records requested, LIMIT keyword in SQL.
 
         """
 
@@ -637,28 +631,26 @@ class Impala(object):
     def history(
         self,
         start: timelike,
-        stop: Optional[timelike] = None,
+        stop: None | timelike = None,
         *args: Any,  # more reasonable to be explicit about arguments
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         return_flight: bool = False,
-        callsign: Union[None, str, Iterable[str]] = None,
-        icao24: Union[None, str, Iterable[str]] = None,
-        serials: Union[None, int, Iterable[int]] = None,
-        bounds: Union[
-            BaseGeometry, Tuple[float, float, float, float], None
-        ] = None,
-        departure_airport: Optional[str] = None,
-        arrival_airport: Optional[str] = None,
-        airport: Optional[str] = None,
+        callsign: None | str | Iterable[str] = None,
+        icao24: None | str | Iterable[str] = None,
+        serials: None | int | Iterable[int] = None,
+        bounds: None | BaseGeometry | Tuple[float, float, float, float] = None,
+        departure_airport: None | str = None,
+        arrival_airport: None | str = None,
+        airport: None | str = None,
         count: bool = False,
         cached: bool = True,
-        limit: Optional[int] = None,
+        limit: None | int = None,
         other_tables: str = "",
         other_params: str = "",
         nautical_units: bool = True,
-        time_buffer: Union[None, str, pd.Timedelta] = None,
-        progressbar: Union[bool, ProgressbarType[Any]] = True,
-    ) -> Optional[Union[Traffic, Flight]]:
+        time_buffer: None | str | pd.Timedelta = None,
+        progressbar: bool | ProgressbarType[Any] = True,
+    ) -> None | Traffic | Flight:
 
         """Get Traffic from the OpenSky Impala shell.
 
@@ -669,71 +661,66 @@ class Impala(object):
         data into a proper pandas DataFrame. Requests are split by hour (by
         default) in case the connection fails.
 
-        Args:
-            - **start**: a string (default to UTC), epoch or datetime (native
-              Python or pandas)
-            - **stop** (optional): a string (default to UTC), epoch or datetime
-              (native Python or pandas), *by default, one day after start*
-            - **date_delta** (optional): a timedelta representing how to split
-              the requests, *by default: per hour*
-            - **return_flight** (boolean, default: False): returns a Flight
-              instead of a Traffic structure if switched to True
+        :param start: a string (default to UTC), epoch or datetime (native
+            Python or pandas)
+        :param stop: a string (default to UTC), epoch or datetime (native Python
+            or pandas), *by default, one day after start*
+        :param date_delta: a timedelta representing how to split the requests,
+            *by default: per hour*
+        :param return_flight: returns a Flight instead of a Traffic structure if
+            switched to True
 
-            More arguments to filter resulting data:
+        More arguments to filter resulting data:
 
-            - **callsign** (optional): a string or a list of strings (wildcards
-              accepted, _ for any character, % for any sequence of characters);
-            - **icao24** (optional): a string or a list of strings identifying i
-              the transponder code of the aircraft;
-            - **serials** (optional): an integer or a list of integers
-              identifying the sensors receiving the data;
-            - **bounds** (optional), sets a geographical footprint. Either
-              an **airspace or shapely shape** (requires the bounds attribute);
-              or a **tuple of float** (west, south, east, north);
+        :param callsign: a string or a list of strings (wildcards
+            accepted, _ for any character, % for any sequence of characters);
+        :param icao24: a string or a list of strings identifying the transponder
+            code of the aircraft;
+        :param serials: an integer or a list of integers identifying the sensors
+            receiving the data;
+        :param bounds: sets a geographical footprint. Either an **airspace or
+            shapely shape** (requires the bounds attribute); or a **tuple of
+            float** (west, south, east, north);
 
-            **Airports**
+        **Airports**
 
-            The following options build more complicated requests by merging
-            information from two tables in the Impala database, resp.
-            `state_vectors_data4` and `flights_data4`.
+        The following options build more complicated requests by merging
+        information from two tables in the Impala database, resp.
+        ``state_vectors_data4`` and ``flights_data4``.
 
-            - **departure_airport** (optional): a string for the ICAO
-              identifier of the airport. Selects flights departing from the
-              airport between the two timestamps;
-            - **arrival_airport** (optional): a string for the ICAO identifier
-              of the airport. Selects flights arriving at the airport between
-              the two timestamps;
-            - **airport** (optional): a string for the ICAO identifier of the
-              airport. Selects flights departing from or arriving at the
-              airport between the two timestamps;
+        :param departure_airport: a string for the ICAO identifier of the
+            airport. Selects flights departing from the airport between the two
+            timestamps;
+        :param arrival_airport: a string for the ICAO identifier of the airport.
+            Selects flights arriving at the airport between the two timestamps;
+        :param airport: a string for the ICAO identifier of the airport. Selects
+            flights departing from or arriving at the airport between the two
+            timestamps;
 
-            .. warning::
+        .. warning::
 
-                - See `opensky.flightlist
-                  <#traffic.data.adsb.opensky_impala.Impala.flightlist>`__ if
-                  you do not need any trajectory information.
-                - If both departure_airport and arrival_airport are set,
-                  requested timestamps match the arrival time;
-                - If airport is set, departure_airport and
-                  arrival_airport cannot be specified (a RuntimeException is
-                  raised).
+            - See `opensky.flightlist
+              <#traffic.data.adsb.opensky_impala.Impala.flightlist>`__ if you do
+              not need any trajectory information.
+            - If both departure_airport and arrival_airport are set, requested
+              timestamps match the arrival time;
+            - If airport is set, departure_airport and arrival_airport cannot be
+              specified (a RuntimeException is raised).
 
-            **Useful options for debug**
+        **Useful options for debug**
 
-            - **count** (boolean, default: False): add a column stating how
-              many sensors received each record;
-            - **nautical_units** (boolean, default: True): convert data stored
-              in Impala to standard nautical units (ft, ft/min, knots).
-            - **time_buffer** (str or pd.Timedelta, default: None): time buffer
-              used to extend time bounds for flights in the OpenSky flight
-              tables: requests will get flights between ``start - time_buffer``
-              and ``stop + time_buffer``.
-              If no airport is specified, the parameter is ignored.
-            - **cached** (boolean, default: True): switch to False to force a
-              new request to the database regardless of the cached files;
-              delete previous cache files;
-            - **limit** (optional, int): maximum number of records requested
-              LIMIT keyword in SQL.
+        :param count: (default: False) add a column stating how many sensors
+            received each record;
+        :param nautical_units: (default: True) convert data stored in Impala to
+            standard nautical units (ft, ft/min, knots).
+        :param time_buffer: (default: None) time buffer used to extend time
+            bounds for flights in the OpenSky flight tables: requests will get
+            flights between ``start - time_buffer`` and ``stop + time_buffer``.
+            If no airport is specified, the parameter is ignored.
+        :param cached: (default: True) switch to False to force a new request to
+            the database regardless of the cached files. This option also
+            deletes previous cache files;
+        :param limit: maximum number of records requested, LIMIT keyword in SQL.
 
         """
 
@@ -968,26 +955,24 @@ class Impala(object):
     def rawdata(
         self,
         start: timelike,
-        stop: Optional[timelike] = None,
+        stop: None | timelike = None,
         *args: Any,  # more reasonable to be explicit about arguments
-        table_name: Union[None, str, List[str]] = None,
+        table_name: None | str | list[str] = None,
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
-        icao24: Union[None, str, Iterable[str]] = None,
-        serials: Union[None, int, Iterable[int]] = None,
-        bounds: Union[
-            BaseGeometry, Tuple[float, float, float, float], None
-        ] = None,
-        callsign: Union[None, str, Iterable[str]] = None,
-        departure_airport: Optional[str] = None,
-        arrival_airport: Optional[str] = None,
-        airport: Optional[str] = None,
+        icao24: None | str | Iterable[str] = None,
+        serials: None | int | Iterable[int] = None,
+        bounds: None | BaseGeometry | Tuple[float, float, float, float] = None,
+        callsign: None | str | list[str] = None,
+        departure_airport: None | str = None,
+        arrival_airport: None | str = None,
+        airport: None | str = None,
         cached: bool = True,
-        limit: Optional[int] = None,
+        limit: None | int = None,
         other_tables: str = "",
-        other_columns: Union[None, str, List[str]] = None,
+        other_columns: None | str | list[str] = None,
         other_params: str = "",
-        progressbar: Union[bool, ProgressbarType[Any]] = True,
-    ) -> Optional[RawData]:
+        progressbar: bool | ProgressbarType[Any] = True,
+    ) -> None | RawData:
         """Get raw message from the OpenSky Impala shell.
 
         You may pass requests based on time ranges, callsigns, aircraft, areas,
@@ -997,59 +982,56 @@ class Impala(object):
         data into a proper pandas DataFrame. Requests are split by hour (by
         default) in case the connection fails.
 
-        Args:
-            - **start**: a string (default to UTC), epoch or datetime (native
-              Python or pandas)
-            - **stop** (optional): a string (default to UTC), epoch or datetime
-              (native Python or pandas), *by default, one day after start*
-            - **date_delta** (optional): a timedelta representing how to split
-              the requests, *by default: per hour*
 
-            More arguments to filter resulting data:
+        :param start: a string (default to UTC), epoch or datetime (native
+            Python or pandas)
+        :param stop: a string (default to UTC), epoch or datetime (native Python
+            or pandas), *by default, one day after start*
+        :param date_delta: a timedelta representing how to split the requests,
+            *by default: per hour*
 
-            - **callsign** (optional): a string or a list of strings (wildcards
-              accepted, _ for any character, % for any sequence of characters);
-            - **icao24** (optional): a string or a list of strings identifying i
-              the transponder code of the aircraft;
-            - **serials** (optional): an integer or a list of integers
-              identifying the sensors receiving the data;
-            - **bounds** (optional), sets a geographical footprint. Either
-              an **airspace or shapely shape** (requires the bounds attribute);
-              or a **tuple of float** (west, south, east, north);
+        More arguments to filter resulting data:
 
-            **Airports**
+        :param callsign: a string or a list of strings (wildcards
+            accepted, _ for any character, % for any sequence of characters);
+        :param icao24: a string or a list of strings identifying the transponder
+            code of the aircraft;
+        :param serials: an integer or a list of integers identifying the sensors
+            receiving the data;
+        :param bounds: sets a geographical footprint. Either an **airspace or
+            shapely shape** (requires the bounds attribute); or a **tuple of
+            float** (west, south, east, north);
 
-            The following options build more complicated requests by merging
-            information from two tables in the Impala database, resp.
-            `rollcall_replies_data4` and `flights_data4`.
+        **Airports**
 
-            - **departure_airport** (optional): a string for the ICAO
-              identifier of the airport. Selects flights departing from the
-              airport between the two timestamps;
-            - **arrival_airport** (optional): a string for the ICAO identifier
-              of the airport. Selects flights arriving at the airport between
-              the two timestamps;
-            - **airport** (optional): a string for the ICAO identifier of the
-              airport. Selects flights departing from or arriving at the
-              airport between the two timestamps;
+        The following options build more complicated requests by merging
+        information from two tables in the Impala database, resp.
+        ``rollcall_replies_data4`` and ``flights_data4``.
 
-            .. warning::
+        :param departure_airport: a string for the ICAO identifier of the
+            airport. Selects flights departing from the airport between the two
+            timestamps;
+        :param arrival_airport: a string for the ICAO identifier of the airport.
+            Selects flights arriving at the airport between the two timestamps;
+        :param airport: a string for the ICAO identifier of the airport. Selects
+            flights departing from or arriving at the airport between the two
+            timestamps;
 
-                - If both departure_airport and arrival_airport are set,
-                  requested timestamps match the arrival time;
-                - If airport is set, departure_airport and
-                  arrival_airport cannot be specified (a RuntimeException is
-                  raised).
-                - It is not possible at the moment to filter both on airports
-                  and on geographical bounds (help welcome!).
+        .. warning::
 
-            **Useful options for debug**
+            - If both departure_airport and arrival_airport are set, requested
+              timestamps match the arrival time;
+            - If airport is set, departure_airport and arrival_airport cannot be
+              specified (a RuntimeException is raised).
+            - It is not possible at the moment to filter both on airports and on
+              geographical bounds (help welcome!).
 
-            - **cached** (boolean, default: True): switch to False to force a
-              new request to the database regardless of the cached files;
-              delete previous cache files;
-            - **limit** (optional, int): maximum number of records requested
-              LIMIT keyword in SQL.
+        **Useful options for debug**
+
+        :param cached: (default: True) switch to False to force a new request to
+            the database regardless of the cached files. This option also
+            deletes previous cache files;
+        :param limit: maximum number of records requested, LIMIT keyword in SQL.
 
         """
 
@@ -1342,7 +1324,7 @@ class Impala(object):
 
         return RawData(pd.concat(cumul).sort_values("mintime"))
 
-    def extended(self, *args: Any, **kwargs: Any) -> Optional[RawData]:
+    def extended(self, *args: Any, **kwargs: Any) -> None | RawData:
         return self.rawdata(
             table_name="rollcall_replies_data4", *args, **kwargs
         )

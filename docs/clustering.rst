@@ -1,5 +1,5 @@
-Trajectory clustering
----------------------
+How to implement trajectory clustering?
+=======================================
 
 An API for trajectory clustering is provided in the Traffic class. Regular
 clustering methods from scikit-learn can be passed as parameters, or any object

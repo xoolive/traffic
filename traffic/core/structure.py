@@ -10,12 +10,14 @@ from typing import (
     Union,
 )
 
+import rich.repr
+
 from shapely.geometry import GeometryCollection, LineString
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from ..data.basic.runways import RunwayAirport
-from .mixins import HBoxMixin, PointMixin, ShapelyMixin
+from .mixins import FormatMixin, HBoxMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
     import altair as alt
@@ -50,17 +52,26 @@ class AirportPoint(PointMixin):
         )
 
 
-class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
-    def __repr__(self) -> str:
-        short_name = (
-            self.name.replace("International", "")
-            .replace("Airport", "")
-            .strip()
-        )
-        return f"{self.icao}/{self.iata}: {short_name}"
+@rich.repr.auto()
+class Airport(
+    FormatMixin, HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin
+):
+    def __rich_repr__(self) -> rich.repr.Result:
+        yield "icao", self.icao
+        if self.iata:
+            yield "iata", self.iata
+        if self.name:
+            yield "name", self.name
+        if self.country:
+            yield "country", self.country
+        if self.latitude and self.longitude:
+            yield "latitude", self.latitude
+            yield "longitude", self.longitude
+        if self.altitude:
+            yield "altitude", self.altitude
 
     def _repr_html_(self) -> str:
-        title = ""
+        title = "<h4><b>Airport</b></h4>"
         if (
             self.runways is not None
             and self.runways.shape.is_empty
@@ -80,7 +91,8 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
             title += " create an account there to be able to edit.</p></div>"
 
         title += f"<b>{self.name.strip()}</b> ({self.country}) "
-        title += f"<code>{self.icao}/{self.iata}</code>"
+        title += f"<code>{self.icao}/{self.iata}</code><br/>"
+        title += f"    {self.latlon}, altitude: {self.altitude}"
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return title + no_wrap_div.format(self._repr_svg_())
 
@@ -90,7 +102,12 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
                 f"'{self.__class__.__name__}' has no attribute '{name}'"
             )
         else:
-            return self._openstreetmap().query(f"aeroway == '{name}'")
+            res = self._openstreetmap().query(f"aeroway == '{name}'")
+            return res.drop(
+                columns=list(
+                    x for x in res.data.columns if x.startswith("name:")
+                )
+            )
 
     @lru_cache()
     def _openstreetmap(self) -> "Overpass":  # coverage: ignore
@@ -124,6 +141,23 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
 
     @property
     def runways(self) -> Optional[RunwayAirport]:
+        """
+        Get runway information associated with the airport.
+
+        >>> airports['EHAM'].runways
+          latitude   longitude   bearing   name
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          52.3       4.783       41.36     04
+          52.31      4.803       221.4     22
+          52.29      4.734       57.93     06
+          52.3       4.778       238       24
+          52.32      4.746       86.65     09
+          52.32      4.797       266.7     27
+          52.33      4.74        183       18C
+          52.3       4.737       2.997     36C
+          52.32      4.78        183       18L
+          52.29      4.777       3.002     36R
+        ... (2 more entries)"""
         from ..data import runways
 
         return runways[self]
@@ -182,27 +216,35 @@ class Airport(HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin):
         labels: Union[bool, Optional[Dict[str, Any]]] = False,
         **kwargs,
     ):  # coverage: ignore
+        default_footprint = dict(
+            by="aeroway",
+            aerodrome=dict(color="gainsboro", alpha=0.5),
+            apron=dict(color="darkgray", alpha=0.5),
+            taxiway=dict(color="darkgray"),
+            terminal=dict(color="black"),
+            # MUTE the rest
+            gate=dict(alpha=0),
+            parking_position=dict(alpha=0),
+            holding_position=dict(alpha=0),
+            tower=dict(alpha=0),
+            helipad=dict(alpha=0),
+            jet_bridge=dict(alpha=0),
+            aerobridge=dict(alpha=0),
+            navigationaid=dict(
+                papi=dict(alpha=0), approach_light=dict(alpha=0)
+            ),
+            windsock=dict(alpha=0),
+        )
+
+        if isinstance(footprint, dict):
+            footprint = {**default_footprint, **footprint}
 
         if footprint is True:
-            footprint = dict(
-                by="aeroway",
-                aerodrome=dict(color="gainsboro", alpha=0.5),
-                apron=dict(color="darkgray", alpha=0.5),
-                taxiway=dict(color="darkgray"),
-                terminal=dict(color="black"),
-                # MUTE the rest
-                gate=dict(alpha=0),
-                parking_position=dict(alpha=0),
-                holding_position=dict(alpha=0),
-                tower=dict(alpha=0),
-                helipad=dict(alpha=0),
-                jet_bridge=dict(alpha=0),
-                aerobridge=dict(alpha=0),
-                navigationaid=dict(
-                    papi=dict(alpha=0), approach_light=dict(alpha=0)
-                ),
-                windsock=dict(alpha=0),
-            )
+            footprint = default_footprint
+            # runways can come from OSM or from the runway database
+            # since options may clash, this should fix it
+            if isinstance(runways, dict):
+                footprint["runway"] = runways
 
         if isinstance(footprint, dict):
             self._openstreetmap().plot(ax, **footprint)
@@ -237,6 +279,7 @@ class NavaidTuple(NamedTuple):
         self.__dict__.update(d)
 
 
+@rich.repr.auto()
 class Navaid(NavaidTuple, PointMixin):
     def __getattr__(self, name: str) -> float:
         if name == "lat":
@@ -246,6 +289,20 @@ class Navaid(NavaidTuple, PointMixin):
         if name == "alt":
             return self.altitude
         raise AttributeError()
+
+    def __rich_repr__(self) -> rich.repr.Result:
+        yield self.name
+        yield "type", self.type
+        yield "latitude", self.latitude
+        yield "longitude", self.longitude
+        if self.type in {"DME", "NDB", "TACAN", "VOR"}:
+            yield "altitude", self.altitude
+            if self.description is not None:
+                yield "description", self.description
+            yield (
+                "frequency",
+                f"{self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}",
+            )
 
     def __repr__(self) -> str:
         if self.type not in {"DME", "NDB", "TACAN", "VOR"}:
@@ -261,18 +318,23 @@ class Navaid(NavaidTuple, PointMixin):
             )
 
 
+@rich.repr.auto()
 class Route(HBoxMixin, ShapelyMixin):
-    def __init__(self, shape: BaseGeometry, name: str, navaids: List[str]):
-        self.shape = shape
+    def __init__(self, name: str, navaids: List[Navaid]):
         self.name = name
         self.navaids = navaids
 
-    def __repr__(self) -> str:
-        return f"{self.name} ({', '.join(self.navaids)})"
+    def __rich_repr__(self) -> rich.repr.Result:
+        yield self.name
+        yield "navaids", [navaid.name for navaid in self.navaids]
+
+    @property
+    def shape(self) -> LineString:
+        return LineString(list((x.longitude, x.latitude) for x in self.navaids))
 
     def _info_html(self) -> str:
-        title = f"<b>Route {self.name}</b><br/>"
-        title += f"flies through {', '.join(self.navaids)}.<br/>"
+        title = f"<h4><b>Route {self.name}</b></h4>"
+        # title += f"flies through {', '.join(self.navaids)}.<br/>"
         return title
 
     def _repr_html_(self) -> str:
@@ -282,14 +344,14 @@ class Route(HBoxMixin, ShapelyMixin):
 
     def __getitem__(self, elts: Tuple[str, str]) -> "Route":
         elt1, elt2 = elts
-        idx1, idx2 = self.navaids.index(elt1), self.navaids.index(elt2)
+        names = list(navaid.name for navaid in self.navaids)
+        idx1, idx2 = names.index(elt1), names.index(elt2)
         if idx1 == idx2:
             raise RuntimeError("The two references must be different")
         if idx1 > idx2:
             idx2, idx1 = idx1, idx2
         # fmt: off
         return Route(
-            LineString(self.shape.coords[idx1: idx2 + 1]),
             name=self.name + f" between {elt1} and {elt2}",
             navaids=self.navaids[idx1: idx2 + 1],
         )

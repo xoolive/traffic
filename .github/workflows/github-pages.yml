@@ -4,7 +4,13 @@ on:
   push:
     branches:
       - master
+  schedule:
+    - cron: "00 12 * * 0" # Every Sunday noon (preserve the cache folders)
   workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.10"
+  POETRY_VERSION: "1.1.13"
 
 jobs:
   deploy:
@@ -15,28 +21,119 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.9"
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Update full Python version
+      - name: Full Python version
+        run: |
+          echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")"
+          echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")" >> $GITHUB_ENV
+
+      - name: Download extra data from private repository
+        uses: actions/checkout@v2
+        with:
+          repository: xoolive/traffic_data
+          token: ${{ secrets.PRIVATE_TOKEN }}
+          persist-credentials: false
+          path: ./data/traffic_data
+
+      - name: Create LFS file list (private repository)
+        working-directory: ./data/traffic_data
+        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+        shell: bash
+
+      - name: Restore LFS cache (private repository)
+        uses: actions/cache@v2
+        id: lfs-cache
+        with:
+          path: ./data/traffic_data/.git/lfs
+          key: lfs-${{ hashFiles('./data/traffic_data/.lfs-assets-id') }}-v1
+
+      - name: Git LFS Pull (private repository)
+        working-directory: ./data/traffic_data
+        run: |
+          git remote set-url origin https://xoolive:${{ secrets.PRIVATE_TOKEN }}@github.com/xoolive/traffic_data.git
+          git lfs pull
+          unzip ENV_PostOPS_AIRAC_2111_04NOV2021_With_Airspace_Closure.zip -d airac_2111
+        shell: bash
+
+      # Poetry cache depends on OS, Python version and Poetry version.
+      - name: Cache Poetry cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-cache-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
+
+      # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
+      - name: Cache Packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.local
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install and configure Poetry
-        uses: snok/install-poetry@v1.1.6
+        uses: snok/install-poetry@v1
         with:
-          version: 1.1.6
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
           virtualenvs-in-project: true
 
       - name: Display Python version
         run: poetry run python -c "import sys; print(sys.version)"
 
+      - name: Cache folder for traffic
+        uses: actions/cache@v2
+        id: cache-folder
+        with:
+          path: |
+            ~/.cache/traffic/
+            ~/.cache/cartes/
+          key: ${{ runner.os }}-${{ matrix.python-version }}-cache_traffic
+
+      - name: Cache folder for libproj >=8.0
+        uses: actions/cache@v2
+        id: projlib-folder
+        with:
+          path: PROJ
+          key: ${{ runner.os }}-cache_libproj
+
+      - name: Populate first cache files
+        if: steps.projlib-folder.outputs.cache-hit != 'true'
+        run: |
+          # upgrade to proj>=8.0 for Cartopy 0.20
+          git clone https://github.com/OSGeo/PROJ
+          cd PROJ
+          git checkout 8.2.1
+          mkdir build
+
       - name: Install dependencies
         run: |
-          sudo apt install -y libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
+          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev npm fonts-ubuntu
+          cd PROJ/build
+          cmake ..; cmake --build .
+          sudo cmake --build . --target install
+          cd ../..
           poetry install -E all
+          npm install vega-lite vega-cli canvas  # necessary dependency for altair-save
 
       - name: Build pages
+        env:
+          LD_LIBRARY_PATH: /usr/local/lib
+          OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
+          OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
+          PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
         run: |
           # This line installs the theme for matplotlib
           poetry run python -c "import traffic.drawing"
-          curl https://opensky-network.org/api/sensor/list -o docs/_static/sensors.json
-          cd docs && poetry run make html
+          # This downloads the cache for cartes atlas
+          poetry run python -c "from cartes.atlas import default, world_atlas"
+          # Update the configuration for NM DDR airspace files
+          export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
+          sed -i "/nm_path =/ s,= $,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
+          sed -i "/pkcs12_filename =/ s,= .*$,= $PWD/data/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
+          sed -i "/pkcs12_password =/ s,= $,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
+          # Run the documentation
+          cd docs && OPENSKY_CACHE=../data/opensky_cache poetry run make html
 
       - name: Deploy pages
         uses: peaceiris/actions-gh-pages@v3

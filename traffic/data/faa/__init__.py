@@ -61,6 +61,6 @@ def __getattr__(name: str) -> Any:
 
     if name in __all__:
         mod = importlib.import_module("._" + name, package="traffic.data.faa")
-        return getattr(mod, name.title())().get_data()
+        return getattr(mod, name.title())()
 
     raise AttributeError()

@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING, Any, Iterable, Optional, TextIO, Tuple
 from pyModeS.extra.rtlreader import RtlReader
 
 if TYPE_CHECKING:
-    from .decode import Decoder
+    from .decode import ModeS_Decoder
 
 
 class MyRtlReader(RtlReader):  # type: ignore
     def __init__(
         self,
-        decoder: "Decoder",
+        decoder: "ModeS_Decoder",
         fh: Optional[TextIO] = None,
         uncertainty: bool = False,
         **kwargs: Any,

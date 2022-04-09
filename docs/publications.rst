@@ -23,6 +23,31 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | A. Chevrot, A. Vernotte and B. Legeard
+  | **CAE : Contextual Auto-Encoder for multivariate time-series anomaly detection in air transportation**
+  | *Computers & Security* 102652, 2022
+  | https://doi.org/10.1016/j.cose.2022.102652
+
+- | M. Schultz, J. Rosenow and X. Olive
+  | **Data-driven airport management enabled by operational milestones derived from ADS-B messages**
+  | *Journal of Air Transport Management* 99(11):102164, 2022
+  | https://doi.org/10.1016/j.jairtraman.2021.102164
+
+- | J. Hoole, J. D. Booker and J. Cooper
+  | **Helicopter Flight Manoeuvre Statistics via ADS-B: An Initial Investigation Using the OpenSky Network**
+  | *Proceedings of the 9th OpenSky Symposium*, 2021
+  | https://doi.org/10.3390/engproc2021013010
+
+- | M. Kocour, K. Veselý et al.
+  | **Automatic Processing Pipeline for Collecting and Annotating Air-Traffic Voice Communication Data**
+  | *Proceedings of the 9th OpenSky Symposium*, 2021
+  | https://doi.org/10.3390/engproc2021013008
+
+- | J. Sun and I. Dedoussi
+  | **Evaluation of Aviation Emissions and Environmental Costs in Europe Using OpenSky and OpenAP**
+  | *Proceedings of the 9th OpenSky Symposium*, 2021
+  | https://doi.org/10.3390/engproc2021013005
+
 - | S. Madar, T. Puranik and D. Mavris
   | **Application of Trajectory Clustering for Aircraft Conflict Detection**
   | *Proceedings of the 40th Digital Avionics Systems Conference* (DASC), 2021
@@ -73,7 +98,7 @@ library:
 - | X. Olive, A. Tanner, M. Strohmeier, M. Schäfer, M. Feridun, A. Tart, I. Martinovic and V. Lenders.
   | **OpenSky Report 2020: Analysing in-flight emergencies using big data**.
   | *Proceedings of the 39th Digital Avionics Systems Conference* (DASC), 2020
-  | `(paper) <http://www.cs.ox.ac.uk/files/12039/OpenSky%20Report%202020.pdf>`__ `(notebook) <paper/squawk7700.html>`__
+  | `(paper) <http://www.cs.ox.ac.uk/files/12039/OpenSky%20Report%202020.pdf>`__ :ref:`(notebook) <Analysing in-flight emergencies using big data>`
 
 - | G. Lui, R. Liem and K. Hon.
   | **Towards understanding the impact of convective weather on aircraft arrival traffic at the Hong Kong International Airport**
@@ -150,4 +175,3 @@ library:
    paper/sectflow
    paper/atc_detect
    paper/runway_excursion
-   paper/squawk7700

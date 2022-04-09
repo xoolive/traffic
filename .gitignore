@@ -3,12 +3,16 @@
 *.bak.[a-z]*
 *.pkl
 
-.vscode
+.vscode/launch.json
+.vscode/settings.json
+
+.ropeproject
 
 bibliography/
 sandbox/
 stubs/
 todo/
+data/traffic_data
 docs/*.ipynb
 ./traffic.conf
 
@@ -112,3 +116,6 @@ dmypy.json
 [._]s[a-rt-v][a-z]
 [._]ss[a-gi-z]
 [._]sw[a-p]
+
+node_modules/
+package-lock.json

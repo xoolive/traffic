@@ -185,6 +185,7 @@ def centroid(
     trajectories.
 
     .. warning::
+
         Remember the time and space complexity of this method is **quadratic**.
 
     """

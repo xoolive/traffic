@@ -1,39 +1,44 @@
+from __future__ import annotations
+
 import logging
-import re
-from collections import defaultdict
-from functools import lru_cache
 from pathlib import Path
-from typing import Callable, Dict, Iterator, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, TypeVar
 
-from shapely.geometry import base, polygon, shape
+import geopandas as gpd
 
-from ....core.airspace import (
-    Airspace,
-    AirspaceInfo,
-    ExtrudedPolygon,
-    components,
-)
+import pandas as pd
+from shapely.geometry import base, shape
+from shapely.ops import orient
 
-# https://www.nm.eurocontrol.int/HELP/Airspaces.html
+from ....core.airspace import Airspaces
 
-
-def _re_match_ignorecase(x: str, y: str) -> Optional[re.Match[str]]:
-    return re.match(x, y, re.IGNORECASE)
+A = TypeVar("A", bound="NMAirspaceParser")
 
 
-class NMAirspaceParser(object):
+class NMAirspaceParser(Airspaces):
+
+    # https://www.nm.eurocontrol.int/HELP/Airspaces.html
 
     nm_path: Optional[Path] = None
 
-    def __init__(self, config_file: Path) -> None:
+    def __init__(
+        self,
+        data: pd.DataFrame | None,
+        config_file: Path | None = None,
+    ) -> None:
+
+        super().__init__(data, config_file)
+
+        if self.data is not None:
+            return
+
         self.config_file = config_file
 
         self.polygons: Dict[str, base.BaseGeometry] = {}
-        self.elements: Dict[str, List[Airspace]] = defaultdict(list)
-        self.airspaces: Dict[str, List[str]] = defaultdict(list)
-        self.description: Dict[str, str] = dict()
-        self.types: Dict[str, str] = dict()
-        self.initialized = False
+        self.elements_list: list[dict[str, Any]] = list()
+        self.spc_list: list[dict[str, Any]] = list()
+
+        self.init_cache()
 
     def update_path(self, path: Path) -> None:
         self.nm_path = path
@@ -58,9 +63,20 @@ class NMAirspaceParser(object):
         spc_file = next(self.nm_path.glob("Sectors_*.spc"), None)
         if spc_file is None:
             raise RuntimeError(f"No Sectors_*.spc file found in {self.nm_path}")
-        self.read_spc(spc_file)
+        # self.read_spc(spc_file)
 
-        self.initialized = True
+        self.data = gpd.GeoDataFrame(
+            pd.DataFrame.from_records(self.read_spc(spc_file))
+            .merge(
+                gpd.GeoDataFrame.from_records(self.elements_list).rename(
+                    columns=dict(designator="component")
+                ),
+                how="left",
+                on="component",
+            )
+            .query("designator != component or geometry.notnull()")
+            .assign(upper=lambda df: df.upper.replace(999, float("inf")))
+        )
 
     def read_are(self, filename: Path) -> None:
         logging.info(f"Reading ARE file {filename}")
@@ -75,9 +91,7 @@ class NMAirspaceParser(object):
                             "type": "Polygon",
                             "coordinates": [area_coords],
                         }
-                        self.polygons[name] = polygon.orient(
-                            shape(geometry), -1
-                        )
+                        self.polygons[name] = orient(shape(geometry), -1)
 
                     area_coords.clear()
                     nb, *_, name = line.split()
@@ -89,125 +103,67 @@ class NMAirspaceParser(object):
 
             if name is not None:
                 geometry = {"type": "Polygon", "coordinates": [area_coords]}
-                self.polygons[name] = polygon.orient(shape(geometry), -1)
+                self.polygons[name] = orient(shape(geometry), -1)
 
     def read_sls(self, filename: Path) -> None:
         logging.info(f"Reading SLS file {filename}")
         with filename.open("r") as fh:
             for line in fh.readlines():
                 name, _, polygon, lower, upper = line.split()
-                self.elements[name].append(
-                    Airspace(
-                        name,
-                        [
-                            ExtrudedPolygon(
-                                self.polygons[polygon],
-                                float(lower),
-                                float(upper),
-                            )
-                        ],
+                self.elements_list.append(
+                    dict(
+                        geometry=self.polygons[polygon],
+                        designator=name,
+                        upper=float(upper),
+                        lower=float(lower),
                     )
                 )
 
-    def read_spc(self, filename: Path) -> None:
+    def read_spc(self, filename: Path) -> Iterator[dict[str, Any]]:
         logging.info(f"Reading SPC file {filename}")
         with open(filename, "r") as fh:
             for line in fh.readlines():
-                letter, name, *after = line.split(";")
+                letter, component, *after = line.split(";")
                 if letter == "A":
-                    cur = self.airspaces[name]
-                    self.description[name] = after[0]
-                    self.types[name] = after[1]
+                    description = after[0]
+                    type_ = after[1]
+                    name = component
                 elif letter == "S":
-                    cur.append(name)
-                    self.types[name] = after[0].strip()
+                    yield dict(
+                        designator=name,
+                        component=component,
+                        name=description,
+                        type=type_,
+                    )
+                    yield dict(
+                        designator=component,
+                        component=component,
+                        type=after[0].strip(),
+                    )
 
-    @lru_cache()
-    def _ipython_key_completions_(self) -> Set[str]:
-        return {*self.types.keys()}
+    def consolidate(self: "A") -> "A":
+        def consolidate_rec(df: pd.DataFrame) -> pd.DataFrame:
 
-    @lru_cache()
-    def __getitem__(self, name: str) -> Optional[Airspace]:
-
-        if not self.initialized:
-            self.init_cache()
-
-        list_names = self.airspaces.get(name, None)
-
-        if list_names is None:
-            elts = self.elements.get(name, None)
-            if elts is None:
-                return None
-            else:
-                airspace = sum(elts[1:], elts[0])
-                airspace.name = self.description.get(name, name)
-                airspace.type = self.types.get(name, "")
-                return airspace
-
-        list_airspaces: List[Airspace] = list()
-        components_info: Set[AirspaceInfo] = set()
-        for elt_name in list_names:
-            element = self[elt_name]
-            if element is not None:
-                list_airspaces.append(element)
-                components_info.add(
-                    AirspaceInfo(elt_name, self.types[elt_name])
+            if df.geometry.notnull().all():
+                return df
+            return consolidate_rec(
+                pd.concat(
+                    [
+                        df.query("geometry.notnull()"),
+                        df.query("geometry.isnull()")
+                        .drop(columns=["geometry", "upper", "lower"])
+                        .drop_duplicates()
+                        .merge(
+                            df.drop(columns=["component", "name", "type"]),
+                            left_on="component",
+                            right_on="designator",
+                            suffixes=["", "_2"],
+                        )
+                        .drop(columns=["designator_2"]),
+                    ]
                 )
+            )
 
-        components[name] = components_info
-        airspace = sum(list_airspaces[1:], list_airspaces[0])
-        airspace.designator = name
-        airspace.name = self.description.get(name, name)
-        airspace.type = self.types[name]
+        new_data = pd.DataFrame(self.data).pipe(consolidate_rec)
 
-        return airspace
-
-    def parse(
-        self,
-        pattern: str,
-        cmp: Callable[
-            [str, str], Optional[re.Match[str]]
-        ] = _re_match_ignorecase,
-    ) -> Iterator[AirspaceInfo]:
-
-        if not self.initialized:
-            self.init_cache()
-
-        name = pattern
-        names = name.split("/")
-        type_pattern: Optional[str] = None
-
-        if len(names) > 1:
-            name, type_pattern = names
-
-        for key, value in self.types.items():
-            if cmp(name, key) and (
-                type_pattern is None or value == type_pattern
-            ):
-                yield AirspaceInfo(key, value)
-
-    def search(
-        self,
-        pattern: str,
-        cmp: Callable[
-            [str, str], Optional[re.Match[str]]
-        ] = _re_match_ignorecase,
-    ) -> Iterator[Airspace]:
-
-        if not self.initialized:
-            self.init_cache()
-
-        name = pattern
-        names = name.split("/")
-        type_pattern: Optional[str] = None
-
-        if len(names) > 1:
-            name, type_pattern = names
-
-        for key, value in self.types.items():
-            if cmp(name, key) and (
-                type_pattern is None or value == type_pattern
-            ):
-                airspace = self[key]
-                if airspace is not None:
-                    yield airspace
+        return self.__class__(gpd.GeoDataFrame(new_data))

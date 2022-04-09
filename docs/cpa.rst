@@ -1,2 +1,0 @@
-Closest point of approach
--------------------------

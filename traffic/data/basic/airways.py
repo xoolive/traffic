@@ -1,14 +1,15 @@
+from __future__ import annotations
+
 import logging
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Tuple, Union
 
 import pandas as pd
-from shapely.geometry import LineString
 from shapely.geometry.base import BaseGeometry
 
 from ...core.mixins import GeoDBMixin
-from ...core.structure import Route
+from ...core.structure import Navaid, Route
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"
@@ -36,47 +37,51 @@ class Airways(GeoDBMixin):
 
     Any ATS route can be accessed by the bracket notation:
 
-    >>> airways['UN869']
-    UN869 (FTV, RUSIK, ADM, MABAP, PELAX, SLK, RBT, GALTO, PIMOS, MGA, BLN,
-    ANZAN, NASOS, ADUXO, EDIMU, PISUS, EXEMU, ZAR, ELSAP, XOMBO, TIVLI, AGN,
-    NARAK, NASEP, ROMAK, MINSO, MOKDI, LERGA, TITVA, REPSI, MEBAK, NINTU, MILPA,
-    GVA10, VEROX, NEMOS, BENOT, LUTIX, OLBEN, RINLI, NATOR, TEDGO, GUPIN, DKB,
-    ODEGU, AMOSA, KEGOS, ANELA, KEPOM, NOGRA, RONIG, OKG)
+    >>> airways['Z50']
+    Route('Z50', navaids=['EGOBA', 'SOT', 'BULTI', 'AYE', 'AVMON', ...])
+
+    >>> airways.extent("Occitanie")["UN869"]
+    Route('UN869', navaids=['XOMBO', 'TIVLI', 'AGN', 'NARAK', 'NASEP', ...])
 
     .. note::
         The following snippet plots the (in)famous `Silk Road Airway (L888)
         <https://flugdienstberater.org/l888>`_ over the Himalaya mountains,
         which requires special qualifications.
 
-    >>> from traffic.data import navaids
-    >>> from traffic.drawing import Orthographic
-    >>> with plt.style.context("traffic"):
-    ...     fig, ax = plt.subplots(
-    ...         1, figsize=(15, 15),
-    ...         subplot_kw=dict(projection=Orthographic(95, 30))
-    ...     )
-    ...     ax.stock_img()
-    ...     ax.coastlines()
-    ...
-    ...     airways["L888"].plot(
-    ...         ax, linewidth=2, linestyle="solid", color="crimson"
-    ...     )
-    ...
-    ...     for i, name in enumerate(airways["L888"].navaids):
-    ...         navaids[name].plot(ax, s=20, marker="^", color="crimson")
+    .. jupyter-execute::
 
-    .. image:: _static/airways_l888.png
-        :scale: 50%
-        :alt: L888 route
-        :align: center
+        import matplotlib.pyplot as plt
+
+        from traffic.data import airways
+        from cartes.crs import Orthographic
+
+        with plt.style.context("traffic"):
+
+            fig, ax = plt.subplots(
+                figsize=(7, 7),
+                subplot_kw=dict(projection=Orthographic(95, 30)),
+            )
+
+            ax.stock_img()
+            ax.coastlines()
+
+            airways["L888"].plot(
+                ax, linewidth=2, linestyle="solid", color="crimson"
+                )
+
+            for navaid in airways["L888"].navaids:
+                navaid.plot(
+                    ax, s=20, marker=".", color="crimson",
+                    text_kw=dict(fontsize=8)
+                )
 
     """
 
     cache_dir: Path
-    alternatives: Dict[str, "Airways"] = dict()
+    alternatives: dict[str, "Airways"] = dict()
     name: str = "default"
 
-    def __init__(self, data: Optional[pd.DataFrame] = None) -> None:
+    def __init__(self, data: None | pd.DataFrame = None) -> None:
         self._data = data
         if self.available:
             Airways.alternatives[self.name] = self
@@ -118,41 +123,38 @@ class Airways(GeoDBMixin):
 
         return self._data
 
-    def __getitem__(self, name: str) -> Optional[Route]:
+    def __getitem__(self, name: str) -> None | Route:
         output = self.data.query("route == @name").sort_values("id")
         if output.shape[0] == 0:
             return None
-        ls = LineString(
-            list((x["longitude"], x["latitude"]) for _, x in output.iterrows())
+        return Route(
+            name,
+            list(
+                Navaid(
+                    x["navaid"],
+                    "FIX",
+                    x["latitude"],
+                    x["longitude"],
+                    0,
+                    None,
+                    None,
+                    None,
+                )
+                for _, x in output.iterrows()
+            ),
         )
-        return Route(ls, name, list(output.navaid))
 
-    def global_get(self, name: str) -> Optional[Route]:
+    def global_get(self, name: str) -> None | Route:
         """Search for a route from all alternative data sources."""
-        for _key, value in self.alternatives.items():
+        for _key, value in sorted(
+            self.alternatives.items(),
+            # lowest priority for the default source of information
+            key=lambda key: 1 if key[0] == "default" else 0,
+        ):
             alt = value[name]
             if alt is not None:
                 return alt
         return None
-
-    def through(self, name: str) -> List[Route]:
-        """Selects all routes going through the given navigational beacon.
-
-        >>> airways.through('NARAK')
-        [N869 (ROMAK, NASEP, NARAK),
-         UN859 (PUMAL, ROCAN, LOMRA, GAI, NARAK, EVPOK, BALAN, AMB),
-         UN869 (ELSAP, XOMBO, TIVLI, AGN, NARAK, NASEP, ROMAK, MINSO, MOKDI),
-         UT122 (SECHE, NARAK, DITEV),
-         UY155 (ETENU, NARAK),
-         UZ365 (DIRMO, GUERE, NARAK)]
-
-        """
-        output: List[Route] = list()
-        for id_ in self.search(name).data["route"]:
-            item = self[id_]
-            if item is not None:
-                output.append(item)
-        return output
 
     def search(self, name: str) -> "Airways":
         """
@@ -160,13 +162,23 @@ class Airways(GeoDBMixin):
         passed navigational beacon.
 
         >>> airways.extent('Switzerland').search("Z50")
-                route   id   navaid  lat          lon
-        101157  Z50     7    GERSA   47.039375    8.532114
-        101158  Z50     8    KELIP   46.956194    8.761667
-        101159  Z50     9    SOPER   46.889444    8.944444
-        101160  Z50     10   PELAD   46.598889    9.725833
-        101161  Z50     11   RESIA   46.478333    10.043333
+          route   id   navaid   latitude   longitude
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          Z50     7    GERSA    47.04      8.532
+          Z50     8    KELIP    46.96      8.762
+          Z50     9    SOPER    46.89      8.944
+          Z50     10   PELAD    46.6       9.726
+          Z50     11   RESIA    46.48      10.04
 
+        >>> airways.search("NARAK")
+          route   id   navaid   latitude   longitude
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          N869    88   NARAK    44.3       1.749
+          UN859   15   NARAK    44.3       1.749
+          UN869   23   NARAK    44.3       1.749
+          UT122   15   NARAK    44.3       1.749
+          UY155   2    NARAK    44.3       1.749
+          UZ365   3    NARAK    44.3       1.749
         """
         output = self.__class__(
             self.data.query("route == @name.upper() or navaid == @name.upper()")

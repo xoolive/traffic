@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 from ipyleaflet import GeoData, Map, Marker, MarkerCluster, Polygon, Polyline
 from ipywidgets import HTML
@@ -14,7 +14,7 @@ from ..core import (
     Traffic,
 )
 from ..core.mixins import PointMixin
-from ..core.structure import Airport
+from ..core.structure import Airport, Route
 
 
 def traffic_map_leaflet(
@@ -136,8 +136,9 @@ def flight_leaflet(flight: "Flight", **kwargs: Any) -> Optional[Polyline]:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the PolyLine constructor.
 
@@ -166,8 +167,9 @@ def flightplan_leaflet(
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the PolyLine constructor.
     """
@@ -182,9 +184,28 @@ def flightplan_leaflet(
     else:
         # In case a FlightPlan could not resolve all parts
         coords = list(
-            list((lat, lon) for (lon, lat, *_) in s.coords) for s in shape
+            list((lat, lon) for (lon, lat, *_) in s.coords) for s in shape.geoms
         )
 
+    kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
+    return Polyline(locations=coords, **kwargs)
+
+
+def route_leaflet(route: "Route", **kwargs: Any) -> Optional[Polyline]:
+    """Returns a Leaflet layer to be directly added to a Map.
+
+    .. warning::
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
+
+    The elements passed as kwargs as passed as is to the PolyLine constructor.
+    """
+
+    if route.shape is None:
+        return None
+
+    coords = list((lat, lon) for (lon, lat, *_) in route.shape.coords)
     kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
     return Polyline(locations=coords, **kwargs)
 
@@ -193,8 +214,9 @@ def airspace_leaflet(airspace: "Airspace", **kwargs: Any) -> Polygon:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the Polygon constructor.
     """
@@ -202,15 +224,44 @@ def airspace_leaflet(airspace: "Airspace", **kwargs: Any) -> Polygon:
 
     kwargs = {**dict(weight=3), **kwargs}
     coords: List[Any] = []
+
+    def unfold(shape: Polygon) -> Iterator[Any]:
+        yield shape.exterior
+        yield from shape.interiors
+
     if shape.geom_type == "Polygon":
-        coords = list((lat, lon) for (lon, lat, *_) in shape.exterior.coords)
+        coords = list(
+            list((lat, lon) for (lon, lat, *_) in x.coords)
+            for x in unfold(shape)
+        )
     else:
         coords = list(
-            list((lat, lon) for (lon, lat, *_) in piece.exterior.coords)
-            for piece in shape
+            list((lat, lon) for (lon, lat, *_) in x.coords)
+            for piece in shape.geoms
+            for x in unfold(piece)
         )
 
     return Polygon(locations=coords, **kwargs)
+
+
+def airspace_map_leaflet(
+    airspace: "Airspace",
+    *,
+    zoom: int = 6,
+    **kwargs: Any,
+) -> Optional[Map]:
+
+    if "center" not in kwargs:
+        (lon, lat), *_ = airspace.shape.centroid.coords
+        kwargs["center"] = (lat, lon)
+
+    m = Map(zoom=zoom, **kwargs)
+
+    elt = m.add_layer(airspace)
+    elt.popup = HTML()
+    elt.popup.value = airspace.designator
+
+    return m
 
 
 def airport_leaflet(airport: "Airport", **kwargs: Any) -> GeoData:
@@ -226,8 +277,9 @@ def sv_leaflet(sv: "StateVectors", **kwargs: Any) -> MarkerCluster:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the Marker constructor.
     """
@@ -239,8 +291,9 @@ def point_leaflet(point: "PointMixin", **kwargs: Any) -> Marker:
     """Returns a Leaflet layer to be directly added to a Map.
 
     .. warning::
-        This is only available if the Leaflet `plugin <plugins.html>`_ is
-        activated. (true by default)
+
+        This is only available if the :ref:`Leaflet` plugin  is activated. (True
+        by default)
 
     The elements passed as kwargs as passed as is to the Marker constructor.
     """
@@ -268,6 +321,7 @@ MapElement = Union[
     FlightIterator,
     FlightPlan,
     PointMixin,
+    Route,
     StateVectors,
 ]
 
@@ -287,6 +341,12 @@ def map_add_layer(_map: Map, elt: MapElement, **kwargs: Any) -> Any:
         layer = elt.leaflet(**kwargs)  # type: ignore
         _old_add_layer(_map, layer)
         return layer
+    if isinstance(elt, Route):
+        layer = elt.leaflet(**kwargs)  # type: ignore
+        _old_add_layer(_map, layer)
+        for point in elt.navaids:
+            map_add_layer(_map, point, **kwargs)
+        return layer
     if isinstance(elt, FlightIterator):
         for segment in elt:
             map_add_layer(_map, segment, **kwargs)
@@ -300,9 +360,12 @@ def _onload() -> None:
     setattr(Flight, "leaflet", flight_leaflet)
     setattr(FlightPlan, "leaflet", flightplan_leaflet)
     setattr(PointMixin, "leaflet", point_leaflet)
+    setattr(Route, "leaflet", route_leaflet)
     setattr(StateVectors, "leaflet", sv_leaflet)
 
+    setattr(Airspace, "map_leaflet", airspace_map_leaflet)
     setattr(Flight, "map_leaflet", flight_map_leaflet)
+    # setattr(FlightPlan, "map_leaflet", flightplan_map_leaflet)
     setattr(Traffic, "map_leaflet", traffic_map_leaflet)
 
     setattr(Map, "add_layer", map_add_layer)

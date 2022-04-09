@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import functools
-import operator
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
+
+import rich.repr
 
 if TYPE_CHECKING:
     from . import Flight  # noqa: F401
     from . import Traffic  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
+    from .mixins import _HBox  # noqa: F401
 
 
+@rich.repr.auto()
 class FlightIterator:
     """
     A FlightIterator is a specific structure providing helpers after methods
@@ -49,34 +54,43 @@ class FlightIterator:
 
     def __init__(self, generator: Iterator["Flight"]) -> None:
         self.generator = generator
+        self.cache: list["Flight"] = list()
+        self.iterator: None | Iterator["Flight"] = None
 
     def __next__(self) -> "Flight":
-        return next(self.generator)
+        if self.iterator is None:
+            self.iterator = iter(self)
+        return next(self.iterator)
 
     def __iter__(self) -> Iterator["Flight"]:
-        yield from self.generator
+        yield from self.cache
+        for elt in self.generator:
+            self.cache.append(elt)
+            yield elt
 
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
+    @functools.lru_cache()
     def _repr_html_(self) -> str:
-        try:
-            concat = functools.reduce(operator.or_, self)._repr_html_()
-        except TypeError:  # reduce() of empty sequence with no initial value
-            concat = "Empty sequence"
-        return (
-            """<div class='alert alert-warning'>
-            <b>Warning!</b>
-            This iterable structure is neither a Flight nor a Traffic structure.
-            Each corresponding segment of the flight (if any) is displayed
-            below.
-            <br/>
-            Possible utilisations include iterating (for loop, next keyword),
-            indexing with the bracket notation (slices supported) and most
-            native built-ins made for iterable structures.
-            </div>"""
-            + concat
+        title = "<h3><b>FlightIterator</b></h3>"
+        concat: None | "Flight" | "_HBox" = None
+        for segment in self:
+            concat = segment if concat is None else concat | segment
+        return title + (
+            concat._repr_html_() if concat is not None else "Empty sequence"
         )
+
+    def __rich_repr__(self) -> rich.repr.Result:
+        for i, segment in enumerate(self):
+            if i == 0:
+                if segment.flight_id:
+                    yield segment.flight_id
+                else:
+                    yield "icao24", segment.icao24
+                    yield "callsign", segment.callsign
+                    yield "start", format(segment.start)
+            yield f"duration_{i}", format(segment.duration)
 
     def __getitem__(
         self, index: Union[int, slice]
@@ -133,7 +147,7 @@ class FlightIterator:
 
         >>> flight.next("runway_change")
         """
-        return next((segment for segment in self), None)
+        return next(self, None)
 
     def final(self) -> Optional["Flight"]:
         """Returns the final (last) element in the FlightIterator.
@@ -166,7 +180,7 @@ class FlightIterator:
 
         return len(self)
 
-    def all(self) -> Optional["Flight"]:
+    def all(self, flight_id: None | str = None) -> Optional["Flight"]:
         """Returns the concatenation of elements in the FlightIterator.
 
         >>> flight.aligned_on_ils("LFBO").all()
@@ -174,13 +188,22 @@ class FlightIterator:
         This is equivalent to:
 
         >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
+        >>> flight.all('aligned_on_ils("LFBO")')
 
         """
         from traffic.core import Flight  # noqa: F811
 
-        t = sum(flight.assign(index_=i) for i, flight in enumerate(self))
+        if flight_id is None:
+            t = sum(flight for i, flight in enumerate(self))
+        else:
+            t = sum(
+                flight.assign(flight_id=flight_id.format(self=flight, i=i))
+                for i, flight in enumerate(self)
+            )
+
         if t == 0:
             return None
+
         return Flight(t.data)  # type: ignore
 
     def max(self, key: str = "duration") -> Optional["Flight"]:
@@ -249,8 +272,14 @@ def flight_iterator(
     msg = (
         "The @flight_iterator decorator can only be set on methods "
         ' annotated with an Iterator["Flight"] return type.'
+        f' Got {fun.__annotations__["return"]}'
     )
-    if fun.__annotations__["return"] != Iterator["Flight"]:
+    if not (
+        fun.__annotations__["return"] == Iterator["Flight"]
+        or eval(fun.__annotations__["return"]) == Iterator["Flight"]
+    ):
+        print(eval(fun.__annotations__["return"]))
+        print(Iterator["Flight"])
         raise TypeError(msg)
 
     @functools.wraps(fun, updated=("__dict__", "__annotations__"))

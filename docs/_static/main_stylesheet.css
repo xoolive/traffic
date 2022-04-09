@@ -6,6 +6,9 @@ table {
   line-height: 1.6;
   table-layout: fixed;
 }
+table.dataframe {
+  border-width: 0;
+}
 thead {
   border-bottom: 1px solid #bdbdbd;
   vertical-align: bottom;
@@ -180,4 +183,42 @@ div.bottomnav {
 
 .gallery .image-title {
   font-size: 0.95em;
+}
+
+div.jupyter_container {
+  background-color: unset;
+  border: unset;
+  box-shadow: unset;
+  -webkit-box-shadow: unset;
+  -moz-box-shadow: unset;
+}
+
+.jupyter_container .output {
+  margin-top: 1em;
+  font-size: 90%;
+}
+.output li {
+  margin-top: -0.5ex;
+}
+.output pre {
+  font-size: 90%;
+}
+
+.widget-subarea {
+  margin-bottom: 2em;
+}
+a.reference code.literal span {
+  font-family: Lato, proxima-nova, Helvetica Neue, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #2980b9;
+}
+.rst-content code {
+  border: unset;
+  padding: 0;
+  background-color: unset;
+}
+
+.title-image {
+  margin: 30px;
 }

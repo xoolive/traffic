@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import inspect
 import logging
@@ -105,6 +107,9 @@ class LazyTraffic:
     >>> lazy_t = t.filter().resample('10s')
     >>> type(t_lazy)
     traffic.core.lazy.LazyTraffic
+
+    You need to call the ``.eval()`` method for that.
+
     """
 
     def __init__(
@@ -133,37 +138,38 @@ class LazyTraffic:
     def eval(
         self,
         max_workers: int = 1,
-        desc: Optional[str] = None,
-        cache_file: Union[str, Path, None] = None,
-    ) -> Optional["Traffic"]:
+        desc: None | str = None,
+        cache_file: str | Path | None = None,
+    ) -> None | "Traffic":
         """
 
         The result can only be accessed after a call to ``eval()``.
 
-        max_workers: int, default: 1
+        :param max_workers: (default: 1)
             Multiprocessing is usually worth it. However, a sequential
             processing is triggered by default. Keep the value close to the
             number of cores of your processor. If memory becomes a problem,
             stick to the default.
 
-        desc: str, default: None
+        :param desc: (default: None)
             If not None, a tqdm progressbar is displayed with this parameter.
 
-        cache_file: str, Path, default: None
+        :param cache_file: (default: None)
             If not None, store the results in cache_file and load the results
             from the file if it exists.
 
-        Example usage:
-            The following call
+        **Example usage:**
 
-            >>> t_lazy.eval(max_workers=4, desc="preprocessing")
+        The following call
 
-            is equivalent to the multiprocessed version of
+        >>> t_lazy.eval(max_workers=4, desc="preprocessing")
 
-            >>> Traffic.from_flights(
-            ...     flight.filter().resample("10s")
-            ...     for flight in tqdm(t, desc="preprocessing")
-            ... )
+        is equivalent to the multiprocessed version of
+
+        >>> Traffic.from_flights(
+        ...     flight.filter().resample("10s")
+        ...     for flight in tqdm(t, desc="preprocessing")
+        ... )
 
         When many operations are stacked, this call is more efficient, esp. on
         large structures, than as many full iterations on the Traffic structure.
@@ -265,32 +271,31 @@ def lazy_evaluation(
 
 
 def lazy_evaluation(
-    default: Optional[bool] = False, idx_name: Optional[str] = None
-) -> Callable[..., Callable[..., Union["Traffic", LazyTraffic]]]:
-    """A decorator to delegate methods to Flight in a lazy manner.
+    default: None | bool = False, idx_name: None | str = None
+) -> Callable[..., Callable[..., "Traffic" | LazyTraffic]]:
+    """A decorator to delegate methods to :class:`~traffic.core.Flight` in a
+    lazy manner.
 
-    Each decorated Traffic method returns a LazyTraffic structure with the
-    corresponding operation stacked.
+    Each decorated :class:`~traffic.core.Traffic` method returns a
+    :class:`~traffic.core.LazyTraffic` structure with the corresponding
+    operation stacked.
 
-    When the `default` option is set to True, the method returns a Traffic when
-    called on Traffic but is stacked before applications on Flight objects if
-    called on a LazyTraffic.
+    When the `default` option is set to True, the method returns a
+    :class:`~traffic.core.Traffic` when called on :class:`~traffic.core.Traffic`
+    but is stacked before applications on :class:`~traffic.core.Flight` objects
+    if called on a :class:`~traffic.core.LazyTraffic`.
 
-    Parameters
-    ----------
+    :param default: (default: False)
+        If set to True, the :class:`~traffic.core.Traffic` implementation is
+        used when called on a :class:`~traffic.core.Traffic` structure; and the
+        :class:`~traffic.core.Flight` implementation is stacked when called on a
+        :class:`~traffic.core.LazyTraffic` structure.
 
-    idx_name: str, None, default: None
+    :param idx_name: (default: None)
         If the method needs the index (from `enumerate`) produced during the
-        iteration, specify the name of the corresponding argument.
-        (see {Traffic, Flight}.assign_id for an example)
-    default: bool, default: False
-        If set to True, the Traffic implementation is used when called on a
-        Traffic structure; and the Flight implementation is stacked when called
-        on a LazyTraffic structure.
-
-    Returns
-    -------
-        A decorated Traffic method
+        iteration, specify the name of the corresponding argument.  (see
+        {:class:`~traffic.core.Traffic`,
+        :class:`~traffic.core.Flight`}.assign_id for an example)
 
     """
 
@@ -342,10 +347,12 @@ It should be safe to create a proper named function and pass it to filter_if.
 
         if default is True:
             if f.__doc__ is not None:
-                f.__doc__ += f"""\n        .. note::
-            This method will use the Flight `implementation
-            <traffic.core.flight.html#traffic.core.Flight.{f.__name__}>`_ when
-            stacked for lazy evaluation.  """
+                f.__doc__ += """
+        .. note::
+
+            This method will use the :class:Flight implementation
+            when stacked for lazy evaluation.
+                """
             return f
 
         # Take the method in Flight and create a LazyCollection
@@ -374,7 +381,10 @@ It should be safe to create a proper named function and pass it to filter_if.
         λf.__annotations__["return"] = LazyTraffic
 
         if λf.__doc__ is not None:
-            λf.__doc__ += """\n        .. warning::
+            λf.__doc__ += """
+
+        .. warning::
+
             This method will be stacked for lazy evaluation.  """
 
         return λf
@@ -398,6 +408,7 @@ for name, handle in inspect.getmembers(
     if (  # includes .query()
         annots["return"] == annots["self"]
         or annots["return"] == Optional[annots["self"]]  # noqa: F821
+        or annots["return"] == f"Optional[{annots['self']}]"
     ):
 
         def make_lambda(name: str) -> Callable[..., LazyTraffic]:

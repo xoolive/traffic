@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from operator import attrgetter
 from typing import (
@@ -27,8 +29,8 @@ if TYPE_CHECKING:
     from ..core import Flight, FlightPlan  # noqa: 401
     from ..core.mixins import PointMixin  # noqa: 401
     from ..core.structure import Airport, Navaid  # noqa: 401
-    from ..data import Navaids  # noqa: 401
     from ..data.basic.airports import Airports  # noqa: 401
+    from ..data.basic.navaid import Navaids  # noqa: 401
 
 
 class NavigationFeatures:
@@ -199,7 +201,7 @@ class NavigationFeatures:
                 LineString(list(self.xy_time)).intersection(
                     on_runway.buffer(5e-4)
                 )
-                for on_runway in _airport.runways.shape
+                for on_runway in _airport.runways.shape.geoms
             ]
 
         for intersection in candidate_shapes:
@@ -502,7 +504,7 @@ class NavigationFeatures:
 
         from ..data import airports
 
-        # Donne les fonctions possibles sur un flight object
+        # Access completion on Flight objects
         self = cast("Flight", self).phases()
 
         _airport = airports[airport] if isinstance(airport, str) else airport
@@ -517,7 +519,7 @@ class NavigationFeatures:
         alt = _airport.altitude + threshold_alt
         base = zone_length * np.tan(opening * np.pi / 180) + little_base
 
-        # Il faut créer les formes autour de chaque runway
+        # Create shapes around each runway
         list_p0 = destination(
             list(_airport.runways.data.latitude),
             list(_airport.runways.data.longitude),
@@ -662,14 +664,23 @@ class NavigationFeatures:
     @flight_iterator
     def go_around(
         self,
-        airport: Union[str, "Airport", None] = None,
-        dataset: Optional["Airports"] = None,
+        airport: None | str | "Airport" = None,
+        dataset: None | "Airports" = None,
     ) -> Iterator["Flight"]:
         """Detects go-arounds.
 
         The method yields pieces of trajectories with exactly two landing
         attempts (aligned on one runway) on the same airport separated by
         exactly one climbing phase.
+
+        :param airport: If None, the method tries to guess the landing airport
+            based on the ``dataset`` parameter. (see
+            :meth:`~traffic.core.Flight.landing_airport`)
+        :param dataset: database of candidate airports, only used if ``airport``
+            is None
+
+        **See also:** :ref:`How to select go-arounds from a set of
+        trajectories?`
         """
 
         # The following cast secures the typing
@@ -883,7 +894,7 @@ class NavigationFeatures:
         """
         from ..data import airports
 
-        # Donne les fonctions possibles sur un flight object
+        # Access completion on Flight objects
         self = cast("Flight", self)
 
         _airport = airports[airport] if isinstance(airport, str) else airport
@@ -900,7 +911,7 @@ class NavigationFeatures:
 
         segment = segment.split().max()
 
-        parking_positions = _airport.parking_position
+        parking_positions = _airport.parking_position.query("type_ == 'way'")
         for _, p in parking_positions.data.iterrows():
             if segment.intersects(p.geometry.buffer(buffer_size)):
                 parking_part = segment.clip(p.geometry.buffer(buffer_size))
@@ -976,7 +987,7 @@ class NavigationFeatures:
 
         from ..data import airports
 
-        # Donne les fonctions possibles sur un flight object
+        # Access completion on Flight objects
         self = cast("Flight", self)
 
         _airport = airports[airport] if isinstance(airport, str) else airport

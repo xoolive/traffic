@@ -64,7 +64,7 @@ class RawData(DataFrameMixin):
     ) -> Optional[Traffic]:
 
         decoder = ModeS_Decoder(reference)
-        redefine_freq = 2 ** redefine_mag - 1
+        redefine_freq = 2**redefine_mag - 1
 
         if progressbar is True:
             if progressbar_kw is None:

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
-from typing import Any, List, Optional, Set, Type, TypeVar, Union
+from typing import Any, Optional, Set, Type, TypeVar
 from xml.etree import ElementTree
 
 import pandas as pd
@@ -131,6 +133,18 @@ class RegulationInfo(B2BReply):
 
 
 class RegulationList(DataFrameMixin, B2BReply):
+    columns_options = dict(
+        regulationId=dict(style="blue bold"),
+        state=dict(),
+        type=dict(),
+        reason=dict(),
+        start=dict(),
+        stop=dict(),
+        tvId=dict(),
+        airspace=dict(),
+        aerodrome=dict(),
+    )
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if len(args) == 0 and "data" not in kwargs:
             super().__init__(data=None, **kwargs)
@@ -260,33 +274,29 @@ class RegulationList(DataFrameMixin, B2BReply):
 class Measures:
     def regulation_list(
         self,
-        start: timelike,
-        stop: Optional[timelike] = None,
-        traffic_volumes: Optional[List[str]] = None,
-        regulations: Union[None, str, List[str]] = None,
-        fields: Optional[List[str]] = None,
-    ) -> Optional[RegulationList]:
+        start: None | timelike = None,
+        stop: None | timelike = None,
+        traffic_volumes: None | list[str] = None,
+        regulations: None | str | list[str] = None,
+        fields: None | list[str] = None,
+    ) -> None | RegulationList:
         """Returns information about a (set of) given regulation(s).
 
-        By default:
+        :param start: (UTC), by default current time
+        :param stop: (UTC), by default one hour later
 
-        - the start parameter takes the current time.
-        - the stop parameter is one hour after the start parameter.
+        :param traffic_volumes: impacted by a given regulation
+        :param regulations: identifier(s) related to a regulation
 
-        The method must take at least one of:
-        - traffic_volumes: impacted by a given regulation;
-        - regulations: identifiers related to a regulation;
 
-        By default, a set of (arguably) relevant fields are requested. More
-        fields can be requested when passed to the field parameter.
+        :param fields: additional fields to request. By default, a set of
+            (arguably) relevant fields are requested.
 
         **Example usage:**
 
-        .. code:: python
+        .. jupyter-execute::
 
-            nm_b2b.regulation_list(
-                "2019-12-22 10:00", regulations="LEMDA22A"
-            )
+            nm_b2b.regulation_list()
 
         """
 

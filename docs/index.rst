@@ -1,10 +1,8 @@
-.. traffic documentation master file, created by
-   sphinx-quickstart on Mon Jun 18 22:56:11 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
-traffic – Air traffic data processing in Python
-===============================================
+.. container:: title-image
+
+   .. image:: _static/logo/logo_full.png
+      :alt: traffic -- air traffic data processing with Python
 
 Source code on `github <https://github.com/xoolive/traffic>`_
 
@@ -20,19 +18,16 @@ sources of ADS-B traffic like the `OpenSky Network
 <https://opensky-network.org/>`_ or Eurocontrol DDR files. It is designed to be
 easily extendable to other sources of data.
 
-
+Contents
+========
 
 .. toctree::
    :maxdepth: 1
 
    installation
    quickstart
-   core_structure
-   data
-   algorithms
-   export
-   advanced
+   user_guide
    gallery
-   scenarios
+   api_reference
    publications
 

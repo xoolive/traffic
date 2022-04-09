@@ -99,7 +99,9 @@ class FlightInfo(DataFrameMixin):
 
         cumul = list()
         if self.icao24 is not None:
-            cumul.append(aircraft[self.icao24].T)
+            res = aircraft[self.icao24]
+            if res is not None:
+                cumul.append(res.data.T)
 
         cumul.append(
             pd.DataFrame(

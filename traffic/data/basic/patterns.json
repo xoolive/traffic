@@ -208,12 +208,28 @@
       "flag": "\ud83c\udde8\ud83c\uddfa",
       "categories": [
         {
-          "pattern": "^CU-H",
+          "pattern": "^CU-H1\\d{3}",
           "category": "Helicopters"
         },
         {
-          "pattern": "^CU-U",
+          "pattern": "^CU-U1\\d{3}",
           "category": "Ultralights"
+        },
+        {
+          "pattern": "^CU-A1\\d{3}",
+          "category": "Agriculture"
+        },
+        {
+          "pattern": "^CU-C1\\d{3}",
+          "category": "Cargo airline"
+        },
+        {
+          "pattern": "^CU-N1\\d{3}",
+          "category": "Private"
+        },
+        {
+          "pattern": "^CU-T1\\d{3}",
+          "category": "Passenger airline"
         }
       ]
     },
@@ -266,7 +282,7 @@
       "flag": "\ud83c\udde9\ud83c\uddea",
       "categories": [
         {
-          "pattern": "^D-AU",
+          "pattern": "^D-A[U-Z]",
           "category": "Finkenwerder Airbus Test"
         },
         {
@@ -304,6 +320,10 @@
         {
           "pattern": "^D-K",
           "category": "Powered Gliders"
+        },
+        {
+          "pattern": "^D-L",
+          "category": "Airships"
         },
         {
           "pattern": "^D-M",
@@ -352,7 +372,7 @@
       "flag": "\ud83c\uddf0\ud83c\uddf2"
     },
     {
-      "pattern": "^EC-",
+      "pattern": "^E(C|M)-",
       "start": "0x340000",
       "end": "0x37ffff",
       "country": "Spain",
@@ -363,12 +383,16 @@
           "category": "Home built"
         },
         {
-          "pattern": "^EC-AA\\d",
+          "pattern": "^EC-[A-Z]{2}\\d",
           "category": "Ultralights"
         },
         {
           "pattern": "^EC-\\d{3}",
           "category": "Test and Delivery"
+        },
+        {
+          "pattern": "^EM-",
+          "category": "State owned"
         }
       ]
     },
@@ -425,7 +449,27 @@
       "start": "0x510000",
       "end": "0x5103ff",
       "country": "Belarus",
-      "flag": "\ud83c\udde7\ud83c\uddfe"
+      "flag": "\ud83c\udde7\ud83c\uddfe",
+      "categories": [
+        {
+          "pattern": "^EW-\\d{4}L",
+          "country": "Balloons"
+        },
+        {
+          "pattern": "^EW-2\\d{2}PA",
+          "country": "Boeing 737"
+        },
+        {
+          "pattern": "^EW-(1|2)\\d{2}PJ",
+          "country": "Bombardier CRJ"
+        },
+        {
+          "pattern": "^(EW-001DA|EW-001PA|EW-001PB|EW-85815)",
+          "country": "State owned"
+        }
+
+      ]
+
     },
     {
       "pattern": "^EX-",
@@ -489,6 +533,10 @@
         {
           "pattern": "^F-C",
           "category": "Gliders"
+        },
+        {
+          "pattern": "^F-D",
+          "category": "Radio controlled"
         },
         {
           "pattern": "^F-J",
@@ -622,7 +670,7 @@
           "category": "single engine Cessna, <5.7t"
         },
         {
-          "pattern": "^HB-D",
+          "pattern": "^HB-[DK]",
           "category": "single engine, <5.7t"
         },
         {
@@ -634,6 +682,14 @@
           "category": ">15t"
         },
         {
+          "pattern": "^HB-[NP]",
+          "category": "single engine Piper, <5.7t"
+        },
+        {
+          "pattern": "^HB-V",
+          "category": "Business jet, <15t"
+        },
+        {
           "pattern": "^HB-[XZ]",
           "category": "Helicopters"
         },
@@ -642,7 +698,7 @@
           "category": "Experimental"
         },
         {
-          "pattern": "^HB-\\d{3}",
+          "pattern": "^HB-\\d",
           "category": "Gliders"
         }
       ]
@@ -702,12 +758,48 @@
           "category": "Ultralights"
         },
         {
+          "pattern": "^HL0[0-5]\\d{2}",
+          "category": "Gliders"
+        },
+        {
+          "pattern": "^HL0[6-7]\\d{2}",
+          "category": "Airship"
+        },
+        {
+          "pattern": "^HL1[0-7]\\d{2}",
+          "category": "Piston engine"
+        },
+        {
+          "pattern": "^HL20\\d{2}",
+          "category": "Piston engine"
+        },
+        {
           "pattern": "^HL(9[1-6]|61)",
           "category": "Helicopters"
         },
         {
-          "pattern": "^HL0[0-5]",
-          "category": "Gliders"
+          "pattern": "^HL5[1-4]",
+          "category": "Turboprop"
+        },
+        {
+          "pattern": "^HL61",
+          "category": "Helicopter"
+        },
+        {
+          "pattern": "^HL71",
+          "category": "Single turbojet"
+        },
+        {
+          "pattern": "^(HL72|HL75|HL77|HL80|HL82|HL83)",
+          "category": "Twin-jet"
+        },
+        {
+          "pattern": "^HL73",
+          "category": "Tri-jet"
+        },
+        {
+          "pattern": "^(HL74|HL76|HL84|HL86)",
+          "category": "Quad-jet"
         }
       ]
     },
@@ -2275,11 +2367,17 @@
       ]
     },
     {
-      "pattern": "^9(O|Q|S)-",
+      "pattern": "^9(O|Q|S|T)-",
       "start": "0x8c000",
       "end": "0x8cfff",
       "country": "Democratic Republic of the Congo",
-      "flag": "\ud83c\udde8\ud83c\udde9"
+      "flag": "\ud83c\udde8\ud83c\udde9",
+      "categories": [
+        {
+          "pattern": "^9T-",
+          "category": "State owned"
+        }
+      ]
     },
     {
       "pattern": "^9U-",

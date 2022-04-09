@@ -1,18 +1,15 @@
+from __future__ import annotations
+
+import re
 import warnings
 from functools import lru_cache
+from numbers import Integral, Real
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
+
+from rich.box import SIMPLE_HEAVY
+from rich.console import Console, ConsoleOptions, RenderResult
+from rich.table import Table
 
 import pandas as pd
 import pyproj
@@ -27,6 +24,7 @@ if TYPE_CHECKING:
 
 
 T = TypeVar("T", bound="DataFrameMixin")
+G = TypeVar("G", bound="GeoDBMixin")
 
 
 class DataFrameMixin(object):
@@ -38,6 +36,11 @@ class DataFrameMixin(object):
 
     __slots__ = ()
 
+    table_options: dict[str, Any] = dict(show_lines=False, box=SIMPLE_HEAVY)
+    max_rows: int = 10
+    columns_options: None | dict[str, dict[str, Any]] = None
+    _obfuscate: None | list[str] = None
+
     def __init__(self, data: pd.DataFrame, *args: Any, **kwargs: Any) -> None:
         self.data: pd.DataFrame = data
 
@@ -46,41 +49,42 @@ class DataFrameMixin(object):
 
     @classmethod
     def from_file(
-        cls: Type[T], filename: Union[Path, str], **kwargs: Any
+        cls: Type[T], filename: Union[str, Path], **kwargs: Any
     ) -> Optional[T]:
         """Read data from various formats.
 
         This class method dispatches the loading of data in various format to
         the proper ``pandas.read_*`` method based on the extension of the
-        filename.
+        filename. Potential compression of the file is inferred by pandas itself
+        based on the extension.
 
-        - .pkl and .pkl.gz dispatch to ``pandas.read_pickle``;
-        - .parquet and .parquet.gz dispatch to ``pandas.read_parquet``;
-        - .feather and .feather.gz dispatch to ``pandas.read_feather``;
-        - .json and .json.gz dispatch to ``pandas.read_json``;
-        - .csv and .csv.gz dispatch to ``pandas.read_csv``;
-        - .h5 dispatch to ``pandas.read_hdf``.
+        - .pkl.* or .parquet.* dispatch to :func:`pandas.read_pickle`;
+        - .parquet.* dispatch to :func:`pandas.read_parquet`;
+        - .feather.* dispatch to :func:`pandas.read_feather`;
+        - .json.* dispatch to :func:`pandas.read_json`;
+        - .csv.* dispatch to :func:`pandas.read_csv`;
+        - .h5.* dispatch to :func:`pandas.read_hdf`.
 
-        Other extensions return ``None``.
-        Specific arguments may be passed to the underlying ``pandas.read_*``
-        method with the kwargs argument.
+        Other extensions return None.  Specific arguments may be passed to the
+        underlying ``pandas.read_*`` method with the kwargs argument.
 
         Example usage:
 
-        >>> t = Traffic.from_file("data/sample_opensky.pkl")
+        >>> from traffic.core import Traffic
+        >>> t = Traffic.from_file(filename)
         """
         path = Path(filename)
-        if path.suffixes in [[".pkl"], [".pkl", ".gz"]]:
+        if ".pkl" in path.suffixes or ".pickle" in path.suffixes:
             return cls(pd.read_pickle(path, **kwargs))
-        if path.suffixes in [[".parquet"], [".parquet", ".gz"]]:
+        if ".parquet" in path.suffixes:
             return cls(pd.read_parquet(path, **kwargs))
-        if path.suffixes in [[".feather"], [".feather", ".gz"]]:
+        if ".feather" in path.suffixes:
             return cls(pd.read_feather(path, **kwargs))
-        if path.suffixes in [[".json"], [".json", ".gz"]]:
+        if ".json" in path.suffixes:
             return cls(pd.read_json(path, **kwargs))
-        if path.suffixes in [[".csv"], [".csv", ".gz"]]:
+        if ".csv" in path.suffixes:
             return cls(pd.read_csv(path, **kwargs))
-        if path.suffixes == [".h5"]:
+        if ".h5" == path.suffixes[-1]:
             return cls(pd.read_hdf(path, **kwargs))
         return None
 
@@ -89,11 +93,52 @@ class DataFrameMixin(object):
     def _repr_html_(self) -> str:
         return self.data._repr_html_()  # type: ignore
 
-    def __repr__(self) -> str:
-        return repr(self.data)
+    # def __repr__(self) -> str:
+    #    return repr(self.data)
 
     def __len__(self) -> int:
         return self.data.shape[0]  # type: ignore
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+
+        my_table = Table(**self.table_options)
+
+        if self.columns_options is None:
+            self.columns_options = dict(
+                (column, dict()) for column in self.data.columns
+            )
+
+        for column, opts in self.columns_options.items():
+            my_table.add_column(column, **opts)
+
+        # This is only for documentation purposes, shouldn't be considered for
+        # real-life code
+        data = self.data[: self.max_rows]
+        if self._obfuscate:
+            for column in self._obfuscate:
+                data = data.assign(**{column: "xxxxxx"})
+
+        for _, elt in data.iterrows():
+            my_table.add_row(
+                *list(
+                    format(
+                        elt.get(column, ""),
+                        ".4g"
+                        if isinstance(elt.get(column, ""), Real)
+                        and not isinstance(elt.get(column, ""), Integral)
+                        else "",
+                    )
+                    for column in self.columns_options
+                )
+            )
+
+        yield my_table
+
+        delta = self.data.shape[0] - self.max_rows
+        if delta > 0:
+            yield f"... ({delta} more entries)"
 
     # --- Redirected to pandas.DataFrame ---
 
@@ -102,11 +147,11 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to pickle format.
 
-        Options can be passed to ``pandas.to_pickle``
+        Options can be passed to :meth:`pandas.DataFrame.to_pickle`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_pickle(filename, *args, **kwargs)
 
@@ -115,11 +160,11 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to CSV format.
 
-        Options can be passed to ``pandas.to_csv``
+        Options can be passed to :meth:`pandas.DataFrame.to_csv`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_csv(filename, *args, **kwargs)
 
@@ -128,11 +173,11 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to HDF format.
 
-        Options can be passed to ``pandas.to_hdf``
+        Options can be passed to :meth:`pandas.DataFrame.to_hdf`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_hdf(filename, *args, **kwargs)
 
@@ -141,11 +186,11 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to JSON format.
 
-        Options can be passed to ``pandas.to_json``
+        Options can be passed to :meth:`pandas.DataFrame.to_json`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_json(filename, *args, **kwargs)
 
@@ -154,11 +199,11 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to parquet format.
 
-        Options can be passed to ``pandas.to_parquet``
+        Options can be passed to :meth:`pandas.DataFrame.to_parquet`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_parquet(filename, *args, **kwargs)
 
@@ -167,11 +212,11 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to feather format.
 
-        Options can be passed to ``pandas.to_feather``
+        Options can be passed to :meth:`pandas.DataFrame.to_feather`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_feather(filename, *args, **kwargs)
 
@@ -180,18 +225,19 @@ class DataFrameMixin(object):
     ) -> None:  # coverage: ignore
         """Exports to Excel format.
 
-        Options can be passed to ``pandas.to_excel``
+        Options can be passed to :meth:`pandas.DataFrame.to_excel`
         as args and kwargs arguments.
 
-        Read more about export formats in the `Exporting and Storing data
-        <./export.html>`_ section
+        Read more: :ref:`How to export and store trajectory and airspace data?`
+
         """
         self.data.to_excel(filename, *args, **kwargs)
 
     def sort_values(self: T, by: str, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``sort_values()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.sort_values` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.sort_values(by, **kwargs))
 
@@ -199,8 +245,9 @@ class DataFrameMixin(object):
         self: T, query_str: str, *args: Any, **kwargs: Any
     ) -> Optional[T]:
         """
-        Applies the Pandas ``query()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.query` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         df = self.data.query(query_str, *args, **kwargs)
         if df.shape[0] == 0:
@@ -209,64 +256,82 @@ class DataFrameMixin(object):
 
     def drop(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``drop()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.drop` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.drop(*args, **kwargs))
 
     def rename(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``rename()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.rename` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.rename(*args, **kwargs))
 
     def pipe(self: T, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``pipe()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.pipe` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return func(self, *args, **kwargs)
 
     def fillna(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``fillna()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.fillna` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.fillna(*args, **kwargs))
 
-    def groupby(self, *args: Any, **kwargs: Any) -> Any:
+    def groupby(
+        self, *args: Any, **kwargs: Any
+    ) -> pd.core.groupby.generic.DataFrameGroupBy:
         """
-        Applies the Pandas ``groupby()`` method to the underlying pandas
-        DataFrame.
+        Applies the Pandas :meth:`~pandas.DataFrame.groupby` method to the
+        underlying pandas DataFrame.
         """
         return self.data.groupby(*args, **kwargs)
 
     def assign(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``assign()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.assign` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.assign(*args, **kwargs))
 
     def drop_duplicates(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``drop_duplicates()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.drop_duplicates` method to
+        the underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.drop_duplicates(*args, **kwargs))
 
     def merge(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``merge()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.merge` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.merge(*args, **kwargs))
 
+    def replace(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.replace` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.replace(*args, **kwargs))
+
     def reset_index(self: T, *args: Any, **kwargs: Any) -> T:
         """
-        Applies the Pandas ``reset_index()`` method to the underlying pandas
-        DataFrame and get the result back in the same structure.
+        Applies the Pandas :meth:`~pandas.DataFrame.reset_index` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
         """
         return self.__class__(self.data.reset_index(*args, **kwargs))
 
@@ -287,7 +352,7 @@ class ShapelyMixin(object):
     # --- Properties ---
 
     @property
-    def bounds(self) -> Tuple[float, float, float, float]:
+    def bounds(self) -> tuple[float, float, float, float]:
         """Returns the bounds of the (bounding box of the) shape.
         Bounds are given in the following order in the origin crs:
         (west, south, east, north)
@@ -295,16 +360,19 @@ class ShapelyMixin(object):
         return self.shape.bounds  # type: ignore
 
     @property
-    def extent(self) -> Tuple[float, float, float, float]:
+    def extent(self) -> tuple[float, float, float, float]:
         """Returns the extent of the (bounding box of the) shape.
-        Extent is given in the following order in the origin crs:
-        (west, east, south, north)
 
         .. note::
             When plotting with Matplotlib and Cartopy, the extent property is
             convenient in the following use case:
 
             >>> ax.set_extent(obj.extent)
+
+        :return:
+            Extent is given in the following order in the origin crs:
+            (west, east, south, north)
+
         """
         west, south, east, north = self.bounds
         return west, east, south, north
@@ -325,7 +393,7 @@ class ShapelyMixin(object):
     # --- Representations ---
 
     @lru_cache()
-    def _repr_svg_(self) -> Optional[str]:
+    def _repr_svg_(self) -> None | str:
         if self.shape.is_empty:
             return None
         project = self.project_shape()
@@ -337,7 +405,7 @@ class ShapelyMixin(object):
         no_wrap_div = '<div style="white-space: nowrap">{}</div>'
         return no_wrap_div.format(self._repr_svg_())
 
-    def geojson(self) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+    def geojson(self) -> dict[str, Any] | list[dict[str, Any]]:
         """Returns the GeoJSON representation of the shape as a Dict.
         The transformation is delegated to shapely ``mapping`` method.
         """
@@ -345,8 +413,8 @@ class ShapelyMixin(object):
 
     def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
-        shape to be composed in an interactive visualization.
-        Specific plot features, such as line widths, can be passed via **kwargs.
+        shape to be composed in an interactive visualization. Specific plot
+        features, such as line widths, can be passed with the kwargs argument.
         See `documentation
         <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
@@ -357,17 +425,13 @@ class ShapelyMixin(object):
         )
 
     def project_shape(
-        self, projection: Union[pyproj.Proj, "crs.Projection", None] = None
+        self, projection: None | pyproj.Proj | "crs.Projection" = None
     ) -> base.BaseGeometry:
         """Returns a projected representation of the shape.
 
-        By default, an equivalent projection is applied. Equivalent projections
-        locally respect areas, which is convenient for the area attribute.
-
-        Other valid projections are available:
-
-        - as ``pyproj.Proj`` objects;
-        - as ``cartopy.crs.Projection`` objects.
+        :param projection: By default (None), an equivalent projection is
+            applied. Equivalent projections locally respect areas, which is
+            convenient for the area attribute.
 
         """
 
@@ -406,14 +470,14 @@ class GeographyMixin(DataFrameMixin):
     """Adds Euclidean coordinates to a latitude/longitude DataFrame."""
 
     def compute_xy(
-        self: T, projection: Union[pyproj.Proj, "crs.Projection", None] = None
+        self: T, projection: None | pyproj.Proj | "crs.Projection" = None
     ) -> T:
         """Enrich the structure with new x and y columns computed through a
         projection of the latitude and longitude columns.
 
         The source projection is WGS84 (EPSG 4326).
         The default destination projection is a Lambert Conformal Conical
-        projection centered on the data inside the dataframe.
+        projection centred on the data inside the dataframe.
 
         Other valid projections are available:
 
@@ -447,8 +511,8 @@ class GeographyMixin(DataFrameMixin):
 
     def agg_xy(
         self,
-        resolution: Union[Dict[str, float], None],
-        projection: Union[pyproj.Proj, "crs.Projection", None] = None,
+        resolution: None | dict[str, float],
+        projection: None | pyproj.Proj | "crs.Projection" = None,
         **kwargs: Any,
     ) -> pd.DataFrame:
         """Aggregates values of a traffic over a grid of x/y, with x and y
@@ -510,8 +574,8 @@ class GeographyMixin(DataFrameMixin):
 
     def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
-        shape to be composed in an interactive visualization.
-        Specific plot features, such as line widths, can be passed via **kwargs.
+        shape to be composed in an interactive visualization. Specific plot
+        features, such as line widths, can be passed with the kwargs argument.
         See `documentation
         <https://altair-viz.github.io/user_guide/marks.html>`_.
         """
@@ -521,7 +585,7 @@ class GeographyMixin(DataFrameMixin):
             alt.Chart(
                 self.data.query(
                     "latitude == latitude and longitude == longitude"
-                )[["latitude", "longitude"]]
+                )
             )
             .encode(latitude="latitude", longitude="longitude")
             .mark_line(**kwargs)
@@ -529,31 +593,82 @@ class GeographyMixin(DataFrameMixin):
 
 
 class GeoDBMixin(DataFrameMixin):
+    _extent: None | tuple[float, float, float, float] = None
+
     def extent(
-        self: T,
-        extent: Union[str, ShapelyMixin, Tuple[float, float, float, float]],
+        self: G,
+        extent: str | ShapelyMixin | tuple[float, float, float, float],
         buffer: float = 0.5,
-    ) -> Optional[T]:
+    ) -> Optional[G]:
         """
         Selects the subset of data inside the given extent.
 
-        The parameter extent may be passed as:
+        :param extent:
+            The parameter extent may be passed as:
 
             - a string to query OSM Nominatim service;
-            - the result of an OSM Nominatim query;
-            - any kind of shape (including airspaces);
-            - extents (west, east, south, north)
+            - the result of an OSM Nominatim query
+              (:class:`~traffic.core.mixins.ShapelyMixin`);
+            - any kind of shape (:class:`~traffic.core.mixins.ShapelyMixin`,
+              including :class:`~traffic.core.Airspace`);
+            - extent in the order:  (west, east, south, north)
 
-        This works with databases like airways, airports or navaids.
+        :param buffer:
+            As the extent of a given shape may be a little too strict to catch
+            elements we may expect when we look into an area, the buffer
+            parameter (by default, 0.5 degree) helps enlarging the area of
+            interest.
 
-        >>> airways.extent('Switzerland')
+        This works with databases like
+        :class:`~traffic.data.basic.airways.Airways`,
+        :class:`~traffic.data.basic.airports.Airports` or
+        :class:`~traffic.data.basic.navaid.Navaids`.
 
-        >>> airports.extent(eurofirs['LFBB'])
+        >>> from traffic.data import airways
+        >>> airways.extent(eurofirs['LFBB'])
+          route    id   navaid   latitude    longitude
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          A25      6    GODAN    47.64       -1.96
+          A25      7    TMA28    47.61       -1.935
+          A25      8    NTS      47.16       -1.613
+          A25      9    TIRAV    46.6        -1.391
+          A25      10   LUSON    46.5        -1.351
+          A25      11   OLERO    45.97       -1.15
+          A25      12   MAREN    45.73       -1.062
+          A25      13   ROYAN    45.67       -1.037
+          A25      14   BMC      44.83       -0.7211
+          A25      15   SAU      44.68       -0.1529
+         ... (703 more lines)
 
+        >>> from traffic.data import airports
+        >>> airports.extent("Bornholm")
+         name                 country   icao      iata   latitude   longitude
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+         Bodilsker Airstrip   Denmark   DK-0027   nan    55.06      15.05
+         Bornholm Airport     Denmark   EKRN      RNN    55.06      14.76
+         Ro Airport           Denmark   EKRR      nan    55.21      14.88
+
+        >>> from traffic.data import navaids
         >>> navaids['ZUE']
-        ZUE (NDB): 30.9 20.06833333 0 ZUEITINA NDB 369.0kHz
+        Navaid(
+            'ZUE',
+            type='NDB',
+            latitude=30.9,
+            longitude=20.06833333,
+            altitude=0.0,
+            description='ZUEITINA NDB',
+            frequency=' 369.0kHz'
+        )
         >>> navaids.extent('Switzerland')['ZUE']
-        ZUE (VOR): 47.59216667 8.81766667 1730 ZURICH EAST VOR-DME 110.05MHz
+        Navaid(
+            'ZUE',
+            type='VOR',
+            latitude=47.59216667,
+            longitude=8.81766667,
+            altitude=1730.0,
+            description='ZURICH EAST VOR-DME',
+            frequency='110.05MHz'
+        )
 
         """
         from cartes.osm import Nominatim
@@ -577,6 +692,10 @@ class GeoDBMixin(DataFrameMixin):
             f"{south - buffer} <= latitude <= {north + buffer} and "
             f"{west - buffer} <= longitude <= {east + buffer}"
         )
+
+        if output is not None:
+            output._extent = _extent
+
         return output
 
     def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
@@ -606,16 +725,17 @@ class PointMixin(object):
     name: str
 
     @property
-    def latlon(self) -> Tuple[float, float]:
+    def latlon(self) -> tuple[float, float]:
+        """A tuple for latitude and longitude, in degrees, in this order."""
         return (self.latitude, self.longitude)
 
     def plot(
         self,
         ax: "Axes",
-        text_kw: Optional[Dict[str, Any]] = None,
-        shift: Optional[Dict[str, Any]] = None,
+        text_kw: None | dict[str, Any] = None,
+        shift: None | dict[str, Any] = None,
         **kwargs: Any,
-    ) -> List["Artist"]:  # coverage: ignore
+    ) -> list["Artist"]:  # coverage: ignore
 
         if shift is None:
             # flake B006
@@ -644,7 +764,7 @@ class PointMixin(object):
             if hasattr(self, "name"):
                 text_kw["s"] = getattr(self, "name")  # noqa: B009
 
-        cumul: List["Artist"] = []
+        cumul: list["Artist"] = []
         cumul.append(ax.scatter(self.longitude, self.latitude, **kwargs))
 
         west, east, south, north = ax.get_extent(PlateCarree())
@@ -652,6 +772,17 @@ class PointMixin(object):
             cumul.append(ax.text(self.longitude, self.latitude, **text_kw))
 
         return cumul
+
+
+class FormatMixin(object):
+    def __format__(self, pattern: str) -> str:
+        if pattern == "":
+            return repr(self)
+        for match in re.finditer(r"%(\w+)", pattern):
+            pattern = pattern.replace(
+                match.group(0), getattr(self, match.group(1), "")
+            )
+        return pattern
 
 
 class _HBox(object):

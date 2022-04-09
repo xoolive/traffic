@@ -429,32 +429,46 @@ class FlightPlan(ShapelyMixin):
                             lat2 + buf,
                         )
                     )
+                elif self.destination is not None and self.origin is not None:
+                    from traffic.data import airports
+
+                    origin = airports[self.origin]
+                    destination = airports[self.destination]
+                    assert origin is not None and destination is not None
+                    lat1, lon1 = origin.latlon
+                    lat2, lon2 = destination.latlon
+
+                    lat1, lat2 = min(lat1, lat2), max(lat1, lat2)
+                    lon1, lon2 = min(lon1, lon2), max(lon1, lon2)
+                    buf = 2
+                    n = navaids.extent(
+                        (
+                            lon1 - buf,
+                            lon2 + buf,
+                            lat1 - buf,
+                            lat2 + buf,
+                        )
+                    )
                 else:
                     n = None
 
                 if n is None:
                     n = navaids
 
-                p1, p2 = n[previous.name], n[next_.name]
+                p1, p2 = n.global_get(previous.name), n.global_get(next_.name)
                 if p1 is None or p2 is None:
                     warnings.warn(
                         f"Could not find {previous.name} or {next_.name}"
                     )
                     continue
-                coords = [(p1.lon, p1.lat), (p2.lon, p2.lat)]
-                cumul.append(
-                    Route(
-                        LineString(coordinates=coords),
-                        "DCT",
-                        [previous.name, next_.name],
-                    )
-                )
+                cumul.append(Route("DCT", [p1, p2]))
                 continue
 
             if isinstance(e, Direct):
                 from traffic.data import navaids
 
                 previous, next_ = elts[i - 1], elts[i + 1]
+
                 if previous is None or next_ is None:
                     warnings.warn(f"Missing information around {elts[i]}")
                     continue
@@ -477,26 +491,40 @@ class FlightPlan(ShapelyMixin):
                             lat2 + buf,
                         )
                     )
+                elif self.destination is not None and self.origin is not None:
+                    from traffic.data import airports
+
+                    origin = airports[self.origin]
+                    destination = airports[self.destination]
+                    assert origin is not None and destination is not None
+
+                    lat1, lon1 = origin.latlon
+                    lat2, lon2 = destination.latlon
+
+                    lat1, lat2 = min(lat1, lat2), max(lat1, lat2)
+                    lon1, lon2 = min(lon1, lon2), max(lon1, lon2)
+                    buf = 2
+                    n = navaids.extent(
+                        (
+                            lon1 - buf,
+                            lon2 + buf,
+                            lat1 - buf,
+                            lat2 + buf,
+                        )
+                    )
                 else:
                     n = None
 
                 if n is None:
                     n = navaids
 
-                p1, p2 = n[previous.name], n[next_.name]
+                p1, p2 = n.global_get(previous.name), n.global_get(next_.name)
                 if p1 is None or p2 is None:
                     warnings.warn(
                         f"Could not find {previous.name} or {next_.name}"
                     )
                     continue
-                coords = [(p1.lon, p1.lat), (p2.lon, p2.lat)]
-                cumul.append(
-                    Route(
-                        LineString(coordinates=coords),
-                        "DCT",
-                        [previous.name, next_.name],
-                    )
-                )
+                cumul.append(Route("DCT", [p1, p2]))
 
         return cumul
 
@@ -505,12 +533,18 @@ class FlightPlan(ShapelyMixin):
 
         for elt in self._parse():
             if elt is not None:
-                first, *args, last = list(zip(elt.shape.coords, elt.navaids))
-                for (lon, lat), name in (first, last):
-                    cumul[name] = _Point(lat, lon, name)
+                first, *args, last = elt.navaids
+                cumul[first.name] = _Point(
+                    first.latitude, first.longitude, first.name
+                )
+                cumul[last.name] = _Point(
+                    last.latitude, last.longitude, last.name
+                )
                 if all_points:
-                    for (lon, lat), name in args:
-                        cumul[name] = _Point(lat, lon, name)
+                    for elt in args:
+                        cumul[elt.name] = _Point(
+                            elt.latitude, elt.longitude, elt.name
+                        )
 
         return cumul
 

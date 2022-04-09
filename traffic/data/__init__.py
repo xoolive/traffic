@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
@@ -7,21 +8,23 @@ from requests import Session
 from .. import cache_dir, config, config_file
 
 if TYPE_CHECKING:
-    from ..core.airspace import Airspace
-    from .adsb.decode import Decoder as ModeS_Decoder
+    from .adsb.decode import ModeS_Decoder as ModeS_Decoder
     from .adsb.opensky import OpenSky
-    from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
     from .basic.aircraft import Aircraft
     from .basic.airports import Airports
     from .basic.airways import Airways
     from .basic.navaid import Navaids
     from .basic.runways import Runways
+    from .eurocontrol.aixm.airports import AIXMAirportParser
+    from .eurocontrol.aixm.airspaces import AIXMAirspaceParser
+    from .eurocontrol.aixm.navpoints import AIXMNavaidParser
     from .eurocontrol.b2b import NMB2B
     from .eurocontrol.ddr.airspaces import NMAirspaceParser
     from .eurocontrol.ddr.allft import AllFT
     from .eurocontrol.ddr.navpoints import NMNavaids
     from .eurocontrol.ddr.routes import NMRoutes
     from .eurocontrol.ddr.so6 import SO6
+    from .eurocontrol.eurofirs import Eurofirs
 
 # Parse configuration and input specific parameters in below classes
 
@@ -32,9 +35,12 @@ __all__ = [
     "carto_session",
     "navaids",
     "runways",
+    "aixm_airports",
     "aixm_airspaces",
+    "aixm_navaids",
     "nm_airspaces",
     "nm_airways",
+    "nm_freeroute",
     "nm_navaids",
     "eurofirs",
     "opensky",
@@ -51,12 +57,14 @@ airways: "Airways"
 carto_session: Session
 navaids: "Navaids"
 runways: "Runways"
+aixm_airports: "AIXMAirportParser"
 aixm_airspaces: "AIXMAirspaceParser"
+aixm_navaids: "AIXMNavaidParser"
 nm_airspaces: "NMAirspaceParser"
 nm_airways: "NMRoutes"
 nm_b2b: "NMB2B"
 nm_navaids: "NMNavaids"
-eurofirs: Dict[Any, "Airspace"]
+eurofirs: "Eurofirs"
 opensky: "OpenSky"
 session: Session
 
@@ -64,8 +72,14 @@ session: Session
 aixm_path_str = config.get("global", "aixm_path", fallback="")
 nm_path_str = config.get("global", "nm_path", fallback="")
 
-opensky_username = config.get("opensky", "username", fallback="")
-opensky_password = config.get("opensky", "password", fallback="")
+# Give priority to environment variables
+opensky_username = os.environ.get(
+    "OPENSKY_USERNAME", config.get("opensky", "username", fallback="")
+)
+opensky_password = os.environ.get(
+    "OPENSKY_PASSWORD", config.get("opensky", "password", fallback="")
+)
+
 
 # We keep "" for forcing to no proxy
 
@@ -85,7 +99,7 @@ pkcs12_password = config.get("nmb2b", "pkcs12_password", fallback="")
 nmb2b_mode = config.get("nmb2b", "mode", fallback="PREOPS")
 if nmb2b_mode not in ["OPS", "PREOPS"]:
     raise RuntimeError("mode must be one of OPS or PREOPS")
-nmb2b_version = config.get("nmb2b", "version", fallback="23.0.0")
+nmb2b_version = config.get("nmb2b", "version", fallback="25.0.0")
 
 
 _cached_imports: Dict[str, Any] = dict()
@@ -97,20 +111,32 @@ def __getattr__(name: str) -> Any:
     if name in _cached_imports.keys():
         return _cached_imports[name]
 
-    """This only works for Python >= 3.7, see PEP 562."""
     if name == "aircraft":
         from .basic.aircraft import Aircraft
 
         Aircraft.cache_dir = cache_dir
-        res = Aircraft()
-        _cached_imports[name] = res
-        return res
+
+        filename = config.get("aircraft", "database", fallback="")
+        if filename != "":
+            res = Aircraft.from_file(filename)
+            rename_cols = dict(
+                (value, key)  # yes, reversed...
+                for key, value in config["aircraft"].items()
+                if key != "database"
+            )
+            if len(rename_cols) > 0:
+                res = res.rename(columns=rename_cols)
+        else:
+            res = Aircraft()
+        _cached_imports[name] = res.fillna("")
+        return res.fillna("")
 
     if name == "airports_fr24":
         from .basic.airports import Airports
 
         Airports.cache_dir = cache_dir
-        res = Airports(src="fr24")
+        res = Airports()
+        res._src = "fr24"
         _cached_imports[name] = res
         return res
 
@@ -142,7 +168,7 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "eurofirs":
-        from .airspaces.eurofirs import eurofirs
+        from .eurocontrol.eurofirs import eurofirs
 
         return eurofirs
 
@@ -154,15 +180,37 @@ def __getattr__(name: str) -> Any:
         _cached_imports[name] = res
         return res
 
+    if name == "aixm_navaids":  # coverage: ignore
+        from .eurocontrol.aixm.navpoints import AIXMNavaidParser
+
+        AIXMNavaidParser.cache_dir = cache_dir
+        res = AIXMNavaidParser.from_file(Path(aixm_path_str))
+        _cached_imports[name] = res
+        return res
+
+    if name == "aixm_airports":  # coverage: ignore
+        from .eurocontrol.aixm.airports import AIXMAirportParser
+
+        AIXMAirportParser.cache_dir = cache_dir
+        res = AIXMAirportParser(
+            data=None,
+            aixm_path=Path(aixm_path_str)
+            if aixm_path_str is not None
+            else None,
+        )
+        _cached_imports[name] = res
+        return res
+
     if name == "aixm_airspaces":  # coverage: ignore
-        from .airspaces.eurocontrol_aixm import AIXMAirspaceParser
+        from .eurocontrol.aixm.airspaces import AIXMAirspaceParser
 
         AIXMAirspaceParser.cache_dir = cache_dir
-
-        if aixm_path_str != "":  # coverage: ignore
-            AIXMAirspaceParser.aixm_path = Path(aixm_path_str)
-
-        res = AIXMAirspaceParser(config_file)
+        res = AIXMAirspaceParser(
+            data=None,
+            aixm_path=Path(aixm_path_str)
+            if aixm_path_str is not None
+            else None,
+        )
         _cached_imports[name] = res
         return res
 
@@ -171,7 +219,16 @@ def __getattr__(name: str) -> Any:
 
         if nm_path_str != "":  # coverage: ignore
             NMAirspaceParser.nm_path = Path(nm_path_str)
-        res = NMAirspaceParser(config_file)
+        res = NMAirspaceParser(data=None, config_file=config_file)
+        _cached_imports[name] = res
+        return res
+
+    if name == "nm_freeroute":  # coverage: ignore
+        from .eurocontrol.ddr.freeroute import NMFreeRouteParser
+
+        if nm_path_str != "":  # coverage: ignore
+            NMFreeRouteParser.nm_path = Path(nm_path_str)
+        res = NMFreeRouteParser(data=None, config_file=config_file)
         _cached_imports[name] = res
         return res
 
@@ -195,10 +252,19 @@ def __getattr__(name: str) -> Any:
         from . import session
         from .adsb.opensky import OpenSky
 
+        # give priority to the OPENSKY_CACHE environment variable
+        opensky_cache = os.environ.get("OPENSKY_CACHE", None)
+        if opensky_cache is not None:
+            opensky_cache_path = Path(opensky_cache)
+        else:
+            opensky_cache_path = cache_dir / "opensky"
+        if not opensky_cache_path.exists():
+            opensky_cache_path = cache_dir / "opensky"
+
         opensky = OpenSky(
             opensky_username,
             opensky_password,
-            cache_dir / "opensky",
+            opensky_cache_path,
             session,
             paramiko_proxy,
         )
@@ -247,7 +313,7 @@ def __getattr__(name: str) -> Any:
         return AllFT
 
     if name == "ModeS_Decoder":
-        from .adsb.decode import Decoder as ModeS_Decoder
+        from .adsb.decode import ModeS_Decoder
 
         return ModeS_Decoder
 

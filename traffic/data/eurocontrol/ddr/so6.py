@@ -38,9 +38,8 @@ import pandas as pd
 import pyproj
 from shapely.geometry import LineString, base
 
-from ....core import Airspace
-from ....core import Flight as FlightMixin
-from ....core.flight import Position
+from ....core import Airspace, Flight
+from ....core.flight import Entry, Position
 from ....core.mixins import DataFrameMixin
 from ....core.time import time_or_delta, timelike, to_datetime
 
@@ -102,7 +101,7 @@ def hour(int_: int) -> timedelta:
     )
 
 
-class Flight(FlightMixin):
+class SO6Flight(Flight):
     """
 
     SO6 Flight inherit from `traffic.core.Flight </traffic.core.flight.html>`_
@@ -192,7 +191,7 @@ class Flight(FlightMixin):
         ] = dict()
 
     def __add__(  # type: ignore
-        self, other: Union[Literal[0], "Flight", "SO6"]
+        self, other: Union[Literal[0], "SO6Flight", "SO6"]
     ) -> "SO6":
         # TODO fix mypy error: Return type "SO6" of "__add__" incompatible with
         # return type "Traffic" in supertype "Flight"
@@ -211,10 +210,6 @@ class Flight(FlightMixin):
         yield s.time2
 
     @property
-    def aircraft(self) -> str:
-        return cast(str, self.data.iloc[0].aircraft)
-
-    @property
     def typecode(self) -> str:
         return cast(str, self.data.iloc[0].aircraft)
 
@@ -230,22 +225,56 @@ class Flight(FlightMixin):
     def registration(self) -> None:
         return None
 
-    def coords4d(
-        self, delta_t: bool = False
-    ) -> Iterator[Tuple[float, float, float, float]]:
+    @property
+    def flight(self) -> Flight:
+        return SO6Flight(
+            pd.DataFrame.from_records(self.coords4d()).assign(
+                callsign=self.callsign,
+                flight_id=str(self.flight_id),
+                typecode=self.typecode,
+            )
+        )
+
+    def coords4d(self, delta_t: bool = False) -> Iterator[Entry]:
         t = 0
         if self.data.shape[0] == 0:
             return
-        for _, s in self.data.iterrows():
+        for _, s in self.data.assign(
+            segment=lambda df: df.segment.str.replace("NO_POINT", "NOPOINT")
+        ).iterrows():
             if delta_t:
-                yield t, s.lon1, s.lat1, s.alt1
+                yield {
+                    "timedelta": t,
+                    "longitude": s.lon1,
+                    "latitude": s.lat1,
+                    "altitude": s.alt1,
+                    "name": s.segment.split("_")[0],
+                }
                 t += (s.time2 - s.time1).total_seconds()
             else:
-                yield s.time1, s.lon1, s.lat1, s.alt1
+                yield {
+                    "timestamp": s.time1,
+                    "longitude": s.lon1,
+                    "latitude": s.lat1,
+                    "altitude": s.alt1,
+                    "name": s.segment.split("_")[0],
+                }
         if delta_t:
-            yield t, s.lon2, s.lat2, s.alt2
+            yield {
+                "timedelta": t,
+                "longitude": s.lon2,
+                "latitude": s.lat2,
+                "altitude": s.alt2,
+                "name": s.segment.split("_")[1],
+            }
         else:
-            yield s.time2, s.lon2, s.lat2, s.alt2
+            yield {
+                "timestamp": s.time2,
+                "longitude": s.lon2,
+                "latitude": s.lat2,
+                "altitude": s.alt2,
+                "name": s.segment.split("_")[1],
+            }
 
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
@@ -271,7 +300,7 @@ class Flight(FlightMixin):
     def shape(self) -> LineString:
         return self.linestring
 
-    def airborne(self) -> "Flight":
+    def airborne(self) -> "SO6Flight":
         """Identity method, available for consistency"""
         return self
 
@@ -326,9 +355,11 @@ class Flight(FlightMixin):
 
     def between(
         self, start: timelike, stop: time_or_delta, strict: bool = True
-    ) -> "Flight":
+    ) -> "SO6Flight":
         """
-        WARNING: strict: bool = True is not taken into account yet.
+        .. danger::
+
+            strict: bool = True is not taken into account yet.
         """
         start = to_datetime(start)
         if isinstance(stop, timedelta):
@@ -365,11 +396,11 @@ class Flight(FlightMixin):
             callsign=self.callsign,
         )
 
-        return Flight(df)
+        return SO6Flight(df)
 
     def clip(
         self, shape: base.BaseGeometry, strict: bool = True
-    ) -> Optional["Flight"]:
+    ) -> Optional["SO6Flight"]:
         linestring = LineString(list(self.xy_time))
         intersection = linestring.intersection(shape)
         begin: Optional[datetime] = None
@@ -394,7 +425,7 @@ class Flight(FlightMixin):
 
         return self.between(begin, end, strict=strict)
 
-    def clip_altitude(self, min_: int, max_: int) -> Iterator["Flight"]:
+    def clip_altitude(self, min_: int, max_: int) -> Iterator["SO6Flight"]:
         """
         Splits a Flight in several segments comprised between altitudes
         `min_` and `max_`, with proper interpolations where needed.
@@ -402,7 +433,7 @@ class Flight(FlightMixin):
 
         def buffer_to_iter(
             proj: pyproj.Proj, buffer: List[pd.Series]
-        ) -> Iterator["Flight"]:
+        ) -> Iterator["SO6Flight"]:
             df = pd.DataFrame.from_records(buffer)
 
             df["lon1"], df["lat1"] = pyproj.transform(
@@ -546,7 +577,7 @@ class SO6(DataFrameMixin):
     identifier = Union[int, str]
 
     @overload
-    def __getitem__(self, index: identifier) -> Flight:
+    def __getitem__(self, index: identifier) -> SO6Flight:
         ...
 
     @overload  # noqa: F811
@@ -557,12 +588,12 @@ class SO6(DataFrameMixin):
 
     def __getitem__(  # noqa: F811
         self, index: Union[identifier, "SO6", Set["str"], Set[int]]
-    ) -> Union[Flight, "SO6", None]:
+    ) -> Union[SO6Flight, "SO6", None]:
 
         if isinstance(index, int):
-            return Flight(self.data.groupby("flight_id").get_group(index))
+            return SO6Flight(self.data.groupby("flight_id").get_group(index))
         if isinstance(index, str):
-            return Flight(self.data.groupby("callsign").get_group(index))
+            return SO6Flight(self.data.groupby("callsign").get_group(index))
 
         if isinstance(index, SO6):
             # not very natural, but why not...
@@ -579,9 +610,9 @@ class SO6(DataFrameMixin):
 
         return SO6(self.data[select])
 
-    def __iter__(self) -> Iterator[Flight]:
+    def __iter__(self) -> Iterator[SO6Flight]:
         for _, flight in self.data.groupby("flight_id"):
-            yield Flight(flight)
+            yield SO6Flight(flight)
 
     def __len__(self) -> int:
         return len(self.flight_ids)
@@ -589,19 +620,19 @@ class SO6(DataFrameMixin):
     def _ipython_key_completions_(self) -> Set[Union[int, str]]:
         return {*self.flight_ids, *self.callsigns}
 
-    def __add__(self, other: Union[Literal[0], Flight, "SO6"]) -> "SO6":
+    def __add__(self, other: Union[Literal[0], SO6Flight, "SO6"]) -> "SO6":
         # useful for compatibility with sum() function
         if other == 0:
             return self
         return self.__class__(pd.concat([self.data, other.data], sort=False))
 
-    def __radd__(self, other: Union[Flight, "SO6"]) -> "SO6":
+    def __radd__(self, other: Union[SO6Flight, "SO6"]) -> "SO6":
         return self + other
 
-    def get(self, callsign: str) -> Iterable[Tuple[int, Flight]]:
+    def get(self, callsign: str) -> Iterable[Tuple[int, SO6Flight]]:
         all_flights = self.data.groupby("callsign").get_group(callsign)
         for flight_id, flight in all_flights.groupby("flight_id"):
-            yield flight_id, Flight(flight)
+            yield flight_id, SO6Flight(flight)
 
     @property
     def start_time(self) -> pd.Timestamp:
@@ -629,13 +660,14 @@ class SO6(DataFrameMixin):
                 "origin": f.origin,
                 "destination": f.destination,
                 "duration": f.stop - f.start,
+                "start": f.start,
             }
             cumul.append(info)
 
         return (
             pd.DataFrame.from_records(cumul)
             .set_index("flight_id")
-            .sort_values("duration", ascending=False)
+            .sort_values("start", ascending=True)
         )
 
     def __repr__(self) -> str:
@@ -655,7 +687,7 @@ class SO6(DataFrameMixin):
             sep=" ",
             header=None,
             names=[
-                "d1",
+                "segment",
                 "origin",
                 "destination",
                 "aircraft",
@@ -690,7 +722,6 @@ class SO6(DataFrameMixin):
         )
 
         for col in (
-            "d1",
             "d2",
             "d3",
             "d4",
@@ -723,6 +754,20 @@ class SO6(DataFrameMixin):
                 return so6
 
     @classmethod
+    def from_so6_gz(
+        cls: Type[SO6TypeVar], filename: Union[str, Path]
+    ) -> SO6TypeVar:
+        import gzip
+        from io import StringIO
+
+        with gzip.open(filename) as fh:
+            s = StringIO()
+            s.write(fh.read().decode("utf-8"))
+            s.seek(0)
+            so6 = cls.from_so6(s)
+            return so6
+
+    @classmethod
     def from_file(
         cls: Type[SO6TypeVar], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[SO6TypeVar]:  # coverage: ignore
@@ -742,6 +787,8 @@ class SO6(DataFrameMixin):
         path = Path(filename)
         if path.suffixes == [".so6", ".7z"]:
             return cls.from_so6_7z(filename)
+        if path.suffixes == [".so6", ".gz"]:
+            return cls.from_so6_gz(filename)
         if path.suffixes == [".so6"]:
             return cls.from_so6(filename)
         return super().from_file(filename)
@@ -809,7 +856,7 @@ class SO6(DataFrameMixin):
         """
         return SO6(
             self.data.groupby("flight_id").filter(
-                lambda flight: Flight(flight).intersects(sector)
+                lambda flight: SO6Flight(flight).intersects(sector)
             )
         )
 

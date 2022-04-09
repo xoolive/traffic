@@ -1,5 +1,19 @@
-<fl:FlightRetrievalRequest xmlns:fl="eurocontrol/cfmu/b2b/FlightServices" xmlns:cm="eurocontrol/cfmu/b2b/CommonServices" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:fw="eurocontrol/cfmu/b2b/FlowServices" xmlns:as="eurocontrol/cfmu/b2b/AirspaceServices" xmlns:ns8="http://www.fixm.aero/base/4.0" xmlns:ns7="http://www.fixm.aero/flight/4.0" xmlns:ns13="http://www.fixm.aero/nm/1.0" xmlns:ns9="http://www.fixm.aero/base/4.1" xmlns:ns12="http://www.fixm.aero/eurextension/4.0" xmlns:ns11="http://www.w3.org/1999/xlink" xmlns:ns10="http://www.fixm.aero/flight/4.1" xmlns:ns14="http://www.fixm.aero/messaging/4.1">
-    <endUserId>tstxb2b7</endUserId>
+<fl:FlightRetrievalRequest xmlns:fl="eurocontrol/cfmu/b2b/FlightServices"
+    xmlns:cm="eurocontrol/cfmu/b2b/CommonServices"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ns6="http://www.fixm.aero/base/4.1"
+    xmlns:fw="eurocontrol/cfmu/b2b/FlowServices"
+    xmlns:as="eurocontrol/cfmu/b2b/AirspaceServices"
+    xmlns:ns8="http://www.fixm.aero/nm/1.2"
+    xmlns:ns7="http://www.fixm.aero/nm/1.0"
+    xmlns:ns13="http://www.fixm.aero/base/4.2"
+    xmlns:ns9="http://www.fixm.aero/nm/1.1"
+    xmlns:ns12="http://www.fixm.aero/messaging/4.1"
+    xmlns:ns11="http://www.w3.org/1999/xlink"
+    xmlns:ns10="http://www.fixm.aero/flight/4.1"
+    xmlns:ns17="http://www.eurocontrol.int/nm/fixm/app/ffice/1.0"
+    xmlns:ns15="http://www.eurocontrol.int/nm/fixm/ext/1.3"
+    xmlns:ns14="http://www.fixm.aero/flight/4.2">
     <sendTime>{send_time:%Y-%m-%d %H:%M:%S}</sendTime>
     <dataset>
         <type>OPERATIONAL</type>
@@ -20,13 +34,15 @@
     <requestedFlightFields>divertedAerodromeOfDestination</requestedFlightFields>
     <requestedFlightFields>readyEstimatedOffBlockTime</requestedFlightFields>
     <requestedFlightFields>cdmEstimatedOffBlockTime</requestedFlightFields>
+    <requestedFlightFields>calculatedOffBlockTime</requestedFlightFields>
+    <requestedFlightFields>actualOffBlockTime</requestedFlightFields>
     <requestedFlightFields>aircraftType</requestedFlightFields>
     <requestedFlightFields>estimatedTakeOffTime</requestedFlightFields>
     <requestedFlightFields>calculatedTakeOffTime</requestedFlightFields>
     <requestedFlightFields>actualTakeOffTime</requestedFlightFields>
     <requestedFlightFields>ctotShiftAlreadyAppliedByTower</requestedFlightFields>
     <requestedFlightFields>taxiTime</requestedFlightFields>
-    <requestedFlightFields>currentlyUsedTaxiTime</requestedFlightFields>
+    <requestedFlightFields>currentDepartureTaxiTimeAndProcedure</requestedFlightFields>
     <requestedFlightFields>revisionTimes</requestedFlightFields>
     <requestedFlightFields>estimatedTimeOfArrival</requestedFlightFields>
     <requestedFlightFields>calculatedTimeOfArrival</requestedFlightFields>
@@ -42,7 +58,7 @@
     <requestedFlightFields>lateFiler</requestedFlightFields>
     <requestedFlightFields>lateUpdater</requestedFlightFields>
     <requestedFlightFields>suspensionStatus</requestedFlightFields>
-    <requestedFlightFields>suspensionResponseBy</requestedFlightFields>
+    <requestedFlightFields>suspensionInfo</requestedFlightFields>
     <requestedFlightFields>exclusionFromRegulations</requestedFlightFields>
     <requestedFlightFields>famStatus</requestedFlightFields>
     <requestedFlightFields>readyStatus</requestedFlightFields>
@@ -54,7 +70,7 @@
     <requestedFlightFields>reroutingOpportunitiesExist</requestedFlightFields>
     <requestedFlightFields>cdm</requestedFlightFields>
     <requestedFlightFields>slotIssued</requestedFlightFields>
-    <requestedFlightFields>slotImprovementProposal</requestedFlightFields>
+    <requestedFlightFields>proposalInformation</requestedFlightFields>
     <requestedFlightFields>exemptedFromRegulations</requestedFlightFields>
     <requestedFlightFields>delay</requestedFlightFields>
     <requestedFlightFields>delayCharacteristics</requestedFlightFields>
@@ -74,7 +90,6 @@
     <requestedFlightFields>lastFPLMessageOriginator</requestedFlightFields>
     <requestedFlightFields>icaoRoute</requestedFlightFields>
     <requestedFlightFields>routeLength</requestedFlightFields>
-    <requestedFlightFields>reroutingReference</requestedFlightFields>
     <requestedFlightFields>defaultReroutingRequestedFlightLevel</requestedFlightFields>
     <requestedFlightFields>defaultReroutingRequestedSpeed</requestedFlightFields>
     <requestedFlightFields>departureTolerance</requestedFlightFields>
@@ -98,7 +113,6 @@
     <requestedFlightFields>ccamsSSRCode</requestedFlightFields>
     <requestedFlightFields>filedRegistrationMark</requestedFlightFields>
     <requestedFlightFields>isProposalFlight</requestedFlightFields>
-    <requestedFlightFields>proposalExists</requestedFlightFields>
     <requestedFlightFields>hasBeenForced</requestedFlightFields>
     <requestedFlightFields>caughtInHotspots</requestedFlightFields>
     <requestedFlightFields>hotspots</requestedFlightFields>
@@ -122,5 +136,12 @@
     <requestedFlightFields>routeChargeIndicator</requestedFlightFields>
     <requestedFlightFields>fuelConsumptionIndicator</requestedFlightFields>
     <requestedFlightFields>excludedRegulations</requestedFlightFields>
+    <requestedFlightFields>yoyoFlightForLocation</requestedFlightFields>
+    <requestedFlightFields>turnFlightForLocation</requestedFlightFields>
+    <requestedFlightFields>minimumRequestedRVR</requestedFlightFields>
+    <requestedFlightFields>wakeTurbulenceCategory</requestedFlightFields>
+    <requestedFlightFields>alternateAerodromes</requestedFlightFields>
+    <requestedFlightFields>flightCriticality</requestedFlightFields>
+    <requestedFlightFields>oceanicReroute</requestedFlightFields>
     <requestedDataFormat>NM_B2B</requestedDataFormat>
 </fl:FlightRetrievalRequest>

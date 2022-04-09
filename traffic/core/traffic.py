@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import sys
 import warnings
@@ -25,6 +27,8 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Literal
 
+from rich.console import Console, ConsoleOptions, RenderResult
+
 import pandas as pd
 import pyproj
 from shapely.geometry import Polygon, base
@@ -36,7 +40,7 @@ from ..core.cache import property_cache
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight, attrgetter_duration
 from .lazy import LazyTraffic, lazy_evaluation
-from .mixins import GeographyMixin, HBoxMixin, PointMixin
+from .mixins import DataFrameMixin, GeographyMixin, HBoxMixin, PointMixin
 from .sv import StateVectors
 
 if TYPE_CHECKING:
@@ -93,6 +97,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             :members: eval
 
     .. tip::
+
         Sample traffic structures are provided for testing purposes in module
         ``traffic.data.samples``
 
@@ -419,12 +424,22 @@ class Traffic(HBoxMixin, GeographyMixin):
         return self.length  # type: ignore
 
     def __repr__(self) -> str:
-        basic_stats = self.basic_stats
+        basic_stats = self.basic_stats.reset_index()
         shape = basic_stats.shape[0]
         if shape > 10:
             # stylers are not efficient on big dataframes...
             basic_stats = basic_stats.head(10)
         return repr(basic_stats)
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        class Stats(DataFrameMixin):
+            pass
+
+        mock = Stats(self.basic_stats.reset_index())
+        yield "[bold blue]Traffic"
+        yield from mock.__rich_console__(console, options)
 
     def _repr_html_(self) -> str:
         basic_stats = self.basic_stats
@@ -433,7 +448,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             # stylers are not efficient on big dataframes...
             basic_stats = basic_stats.head(10)
         styler = basic_stats.style.bar(align="mid", color="#5fba7d")
-        rep = f"<b>Traffic with {shape} identifiers</b>"
+        rep = f"<h4><b>Traffic</b></h4> with {shape} identifiers"
         return rep + styler._repr_html_()  # type: ignore
 
     def aircraft_data(self) -> "Traffic":
@@ -454,7 +469,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     # -- Methods for lazy evaluation, delegated to Flight --
     # 'type: ignore' annotations are fine here, since everything will be
-    # overriden by the decorator anyway
+    # overridden by the decorator anyway
 
     @lazy_evaluation()
     def filter_if(self, *args, **kwargs):  # type: ignore
@@ -618,7 +633,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     @lazy_evaluation()
     def bearing(  # type: ignore
         self,
-        other: Union[PointMixin],
+        other: PointMixin,
         column_name: str = "bearing",
     ):
         ...
@@ -800,6 +815,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     def geoencode(self, *args: Any, **kwargs: Any) -> NoReturn:
         """
         .. danger::
+
             This method is not implemented.
         """
         raise NotImplementedError
@@ -1199,6 +1215,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         trajectories.
 
         .. warning::
+
             Remember the time and space complexity of this method is in O(n^2).
 
         *args and **kwargs are passed as is to `scipy.spatial.pdist

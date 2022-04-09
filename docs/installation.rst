@@ -22,21 +22,17 @@ Latest release
 
 We recommend creating a fresh conda environment for a first installation:
 
-.. parsed-literal::
-
-    # Recommended options if not set up yet
-    conda config --set channel_priority strict
-    conda config --add channels conda-forge
+.. code:: bash
 
     # Installation
     conda create -n traffic -c conda-forge python=3.9 traffic
     conda activate traffic
 
-Adjust the Python version (>=3.7) and append packages you may need for future works (e.g. ``bpython``, ``jupyterlab``, etc.)
+Adjust the Python version you need (>=3.7) and append packages you need for working efficiently, such as Jupyter Lab, xarray, PyTorch or more.
 
 Then activate the environment each time you need to use the ``traffic`` library:
 
-.. parsed-literal::
+.. code:: bash
 
     conda activate traffic
 
@@ -51,38 +47,57 @@ Then activate the environment each time you need to use the ``traffic`` library:
 Updating traffic
 ----------------
 
-.. parsed-literal::
+- To update traffic in your conda environment:
 
-    # -n option is followed by the name of the environment
-    conda update -n traffic -c conda-forge traffic
+  .. code:: bash
+  
+      # -n option is followed by the name of the environment
+      conda update -n traffic -c conda-forge traffic
 
 
-Development version
--------------------
+- For the most recent development version, clone the Github repository:
 
-You may also install or update ``traffic`` in an existing environment with pip:
+  .. code:: bash
+  
+      git clone https://github.com/xoolive/traffic
+      cd traffic/
+      pip install .
+  
+  .. note::
+  
+      It should be easier to install the development version inside your conda
+      environment where you installed the latest release.
 
-.. parsed-literal::
 
-    pip install --upgrade traffic
+Contribute to traffic
+---------------------
 
-For the most recent development version, clone the Github repository:
+If you intend to contribute to traffic or file a pull request, the best way to
+ensure continuous integration does not break is to reproduce an environment with
+the same exact versions of all dependency libraries.
 
-.. parsed-literal::
+The following steps **are not mandatory**, but they will ensure a swift
+reviewing process:
 
-    git clone https://github.com/xoolive/traffic
-    cd traffic/
-    pip install .[dev]
+- install `poetry <https://python-poetry.org/>`_ on your workstation
+- install traffic with poetry:
 
-If you intend to file a pull request, please activate ``pre-commit`` hooks:
+  .. code:: bash
 
-.. parsed-literal::
+      git clone https://github.com/xoolive/traffic
+      cd traffic/
+      poetry install -E all
 
-    pre-commit install
+  Then, you may:
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Frequently Asked Questions
+  - prefix all your commands with ``poetry run``
+  - or run a shell with all environment variables properly set with ``poetry
+    shell``
 
-   troubleshooting
-   docker
+- install the `pre-commit <https://pre-commit.com/>`_ hooks so a minimum set of 
+  sanity checks can be performed and so you can fix issues before continuous
+  integration (GitHub Actions) fails.
+
+  .. code:: bash
+
+      poetry run pre-commit install

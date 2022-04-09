@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import textwrap
 import warnings
@@ -7,7 +9,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     NoReturn,
     Optional,
     Set,
@@ -27,130 +28,137 @@ from .reply import B2BReply
 from .xml import REQUESTS
 
 rename_cols = {
-    "aircraftId": "callsign",
-    "aircraftType": "typecode",
+    "actualOffBlockTime": "AOBT",
+    "actualTakeOffTime": "ATOT",
+    "actualTimeOfArrival": "ATOA",
     "aerodromeOfDeparture": "origin",
     "aerodromeOfDestination": "destination",
-    "estimatedOffBlockTime": "EOBT",
-    "cdmEstimatedOffBlockTime": "cdmEOBT",
-    "estimatedTakeOffTime": "ETOT",
-    "calculatedTakeOffTime": "CTOT",
-    "actualTakeOffTime": "ATOT",
-    "estimatedTimeOfArrival": "ETOA",
-    "calculatedTimeOfArrival": "CTOA",
-    "actualTimeOfArrival": "ATOA",
     "aircraftAddress": "icao24",
+    "aircraftId": "callsign",
+    "aircraftType": "typecode",
+    "calculatedOffBlockTime": "COBT",
+    "calculatedTakeOffTime": "CTOT",
+    "calculatedTimeOfArrival": "CTOA",
+    "estimatedOffBlockTime": "EOBT",
+    "estimatedTakeOffTime": "ETOT",
+    "estimatedTimeOfArrival": "ETOA",
 }
 
-
 default_flight_fields: Set[str] = {
-    "divertedAerodromeOfDestination",
-    "readyEstimatedOffBlockTime",
-    "cdmEstimatedOffBlockTime",
-    "aircraftType",
-    "estimatedTakeOffTime",
-    "calculatedTakeOffTime",
+    "actualOffBlockTime",
     "actualTakeOffTime",
-    "ctotShiftAlreadyAppliedByTower",
-    "taxiTime",
-    "currentlyUsedTaxiTime",
-    "revisionTimes",
-    "estimatedTimeOfArrival",
-    "calculatedTimeOfArrival",
     "actualTimeOfArrival",
-    # "requestedFlightLevel",
-    # "timeAtReferenceLocationEntry",
-    # "timeAtReferenceLocationExit",
+    "aircraftAddress",
+    # "aircraftOperator",
+    "aircraftType",
+    # "alternateAerodromes",
+    # "apiSubmissionRules",
+    # "applicableScenarios",
+    # "arrivalInformation",
+    # "atfcmMeasureLocations",
+    # "avoidedRegulations",
+    "calculatedOffBlockTime",
+    "calculatedTakeOffTime",
+    "calculatedTimeOfArrival",
+    # "caughtInHotspots",
+    # "ccamsSSRCode",
+    # "cdm",
+    # "cdmEstimatedOffBlockTime",
+    # "cfmuFlightType",
+    # "compareWithOtherTrafficType",
+    # "confirmedCTFM",
+    # "ctfmAirspaceProfile",
+    # "ctfmPointProfile",
+    # "ctfmRequestedFlightLevels",
+    # "ctfmRestrictionProfile",
+    "ctotLimitReason",
+    "ctotShiftAlreadyAppliedByTower",
+    "currentDepartureTaxiTimeAndProcedure",
+    # "defaultReroutingRequestedFlightLevel",
+    # "defaultReroutingRequestedSpeed",
+    "delay",
+    "delayCharacteristics",
+    "departureTolerance",
+    "divertedAerodromeOfDestination",
+    # "equipmentCapabilityAndStatus",
+    # "estimatedElapsedTime",
+    "estimatedTakeOffTime",
+    "estimatedTimeOfArrival",
+    "excludedRegulations",
+    "exclusionFromRegulations",
+    # "exemptedFromRegulations",
+    # "famStatus",
+    # "filedRegistrationMark",
+    # "filingRule",
+    # "flightCriticality",
+    # "flightDataVersionNr",
+    # "flightHistory",
     # "flightLevelAtReferenceLocationEntry",
     # "flightLevelAtReferenceLocationExit",
+    # "flightState",
+    # "ftfmAirspaceProfile",
+    # "ftfmPointProfile",
+    # "ftfmRequestedFlightLevels",
+    # "ftfmRestrictionProfile",
+    # "fuelConsumptionIndicator",
+    # "hasBeenForced",
+    # "hasOtherRegulations",
+    # "highestModelAirspaceProfile",
+    # "highestModelPointProfile",
+    # "highestModelRestrictionProfile",
+    # "hotspots",
+    "icaoRoute",
+    # "initialFPLMessageOriginator",
+    # "isProposalFlight",
+    # "lastATFMMessageOriginator",
+    # "lastATFMMessageReceivedOrSent",
+    # "lastATFMMessageType",
+    # "lastFPLMessageOriginator",
+    "lastKnownPosition",
+    # "lateFiler",
+    # "lateUpdater",
+    # "mcdmInfo",
+    # "minimumRequestedRVR",
+    "mostPenalisingRegulation",
+    "mostPenalisingRegulationCause",
+    # "newRouteMinShiftDelayImprovement",
+    "oceanicReroute",
+    # "operatingAircraftOperator",
+    # "profileValidity",
+    # "proposalInformation",
+    # "readyEstimatedOffBlockTime",
+    "readyStatus",
+    "regulationLocations",
+    # "requestedFlightLevel",
+    # "requestedInitialFlightLevel",
+    # "requestedInitialSpeed",
+    # "reroutable",
+    # "reroutingIndicator",
+    # "reroutingOpportunitiesExist",
+    # "revisionTimes",
+    # "routeChargeIndicator",
+    "routeLength",
+    # "rtfmAirspaceProfile",
+    # "rtfmPointProfile",
+    # "rtfmRequestedFlightLevels",
+    # "rtfmRestrictionProfile",
+    # "runwayVisualRange",
+    # "slotIssued",
+    # "slotSwapCounter",
+    # "slotZone",
+    # "suspensionInfo",
+    # "suspensionStatus",
+    # "targetTimeOverFix",
+    "taxiTime",
+    # "timeAtReferenceLocationEntry",
+    # "timeAtReferenceLocationExit",
     # "trendAtReferenceLocationEntry",
     # "trendAtReferenceLocationExit",
     # "trendAtReferenceLocationMiddle",
-    # "lateFiler",
-    # "lateUpdater",
-    # "suspensionStatus",
-    # "suspensionResponseBy",
-    # "exclusionFromRegulations",
-    # "famStatus",
-    # "readyStatus",
-    # "aircraftOperator",
-    # "operatingAircraftOperator",
-    # "reroutingIndicator",
-    # "newRouteMinShiftDelayImprovement",
-    # "reroutable",
-    # "reroutingOpportunitiesExist",
-    # "cdm",
-    # "slotIssued",
-    # "slotImprovementProposal",
-    # "exemptedFromRegulations",
-    "delay",
-    "delayCharacteristics",
-    "mostPenalisingRegulation",
-    # "hasOtherRegulations",
-    # "regulationLocations",
-    # "atfcmMeasureLocations",
-    # "lastATFMMessageType",
-    # "lastATFMMessageReceivedOrSent",
-    # "runwayVisualRange",
-    # "confirmedCTFM",
-    # "requestedInitialFlightLevel",
-    # "requestedInitialSpeed",
-    # "estimatedElapsedTime",
-    # "filingRule",
-    # "initialFPLMessageOriginator",
-    # "lastFPLMessageOriginator",
-    "icaoRoute",
-    "routeLength",
-    # "reroutingReference",
-    # "defaultReroutingRequestedFlightLevel",
-    # "defaultReroutingRequestedSpeed",
-    # "departureTolerance",
-    # "mostPenalisingRegulationCause",
-    # "lastATFMMessageOriginator",
-    # "ftfmPointProfile",
-    # "rtfmPointProfile",
-    # "ctfmPointProfile",
-    # "ftfmAirspaceProfile",
-    # "rtfmAirspaceProfile",
-    # "ctfmAirspaceProfile",
-    # "ftfmRequestedFlightLevels",
-    # "rtfmRequestedFlightLevels",
-    # "ctfmRequestedFlightLevels",
-    # "flightHistory",
-    # "equipmentCapabilityAndStatus",
-    # "ftfmRestrictionProfile",
-    # "rtfmRestrictionProfile",
-    # "ctfmRestrictionProfile",
-    # "cfmuFlightType",
-    # "ccamsSSRCode",
-    # "filedRegistrationMark",
-    # "isProposalFlight",
-    # "proposalExists",
-    # "hasBeenForced",
-    # "caughtInHotspots",
-    # "hotspots",
-    # "mcdmInfo",
+    # "turnFlightForLocation",
+    # "wakeTurbulenceCategory",
     # "worstLoadStateAtReferenceLocation",
-    # "compareWithOtherTrafficType",
-    # "ctotLimitReason",
-    # "profileValidity",
-    # "targetTimeOverFix",
-    # "flightState",
-    "lastKnownPosition",
-    # "highestModelPointProfile",
-    # "highestModelAirspaceProfile",
-    # "highestModelRestrictionProfile",
-    # "slotSwapCounter",
-    "aircraftAddress",
-    # "arrivalInformation",
-    # "slotZone",
-    # "flightDataVersionNr",
-    # "applicableScenarios",
-    # "apiSubmissionRules",
-    # "avoidedRegulations",
-    # "routeChargeIndicator",
-    # "fuelConsumptionIndicator",
-    # "excludedRegulations",
+    # "yoyoFlightForLocation",
 }
 
 
@@ -297,6 +305,7 @@ class FlightInfo(B2BReply):
 
     @property
     def flight_plan(self) -> FlightPlan:
+        """Returns the flight plan in ICAO format."""
         return FlightPlan(
             self.icaoRoute,
             self.aerodromeOfDeparture,
@@ -304,13 +313,13 @@ class FlightInfo(B2BReply):
         )
 
     @property
-    def callsign(self) -> Optional[str]:
+    def callsign(self) -> None | str:
         if hasattr(self, "aircraftId"):
             return self.aircraftId
         return None
 
     @property
-    def icao24(self) -> Optional[str]:
+    def icao24(self) -> None | str:
         if hasattr(self, "aircraftAddress"):
             return self.aircraftAddress.lower()
         return None
@@ -318,38 +327,30 @@ class FlightInfo(B2BReply):
     def _repr_html_(self) -> str:
         from ....data import aircraft, airports
 
-        title = f"<h4><b>Flight {self.flight_id}</b> "
-        title += f"({self.aerodromeOfDeparture} → "
-        title += f"{self.aerodromeOfDestination})</h4>"
+        aircraft_fmt = "<code>%icao24</code> · %flag %registration (%typecode)"
+        title = f"<b>Flight {self.flight_id}</b> "
+        title += "<ul>"
         if hasattr(self, "aircraftId"):
-            title += f"callsign: {self.aircraftId}<br/>"
-        title += f" from {airports[self.aerodromeOfDeparture]}<br/>"
-        title += f" to {airports[self.aerodromeOfDestination]}<br/><br/>"
+            title += f"<li><b>callsign:</b> {self.aircraftId}</li>"
+        departure = airports[self.aerodromeOfDeparture]
+        destination = airports[self.aerodromeOfDestination]
+        title += f"<li><b>from:</b> {departure:%name (%icao/%iata)}</li>"
+        title += f"<li><b>to:</b> {destination:%name (%icao/%iata)}</li>"
+        if hasattr(self, "aircraftAddress"):
+            ac = aircraft.get_unique(self.aircraftAddress.lower())
+            title += "<li><b>aircraft:</b> {aircraft}</li>".format(
+                aircraft=format(ac, aircraft_fmt)
+            )
 
         cumul = list()
-        if hasattr(self, "aircraftAddress"):
-            cumul.append(aircraft[self.aircraftAddress.lower()].T)
-
         cumul.append(
             pd.DataFrame.from_dict(
                 [
-                    {
-                        "EOBT": self.estimatedOffBlockTime
-                        if hasattr(self, "estimatedOffBlockTime")
-                        else None,
-                        "ETOT": self.estimatedTakeOffTime
-                        if hasattr(self, "estimatedTakeOffTime")
-                        else None,
-                        "ATOT": self.actualTakeOffTime
-                        if hasattr(self, "actualTakeOffTime")
-                        else None,
-                        "ETOA": self.estimatedTimeOfArrival
-                        if hasattr(self, "estimatedTimeOfArrival")
-                        else None,
-                        "ATOA": self.actualTimeOfArrival
-                        if hasattr(self, "actualTimeOfArrival")
-                        else None,
-                    }
+                    dict(
+                        (value, getattr(self, key, None))
+                        for key, value in rename_cols.items()
+                        if len(value) == 4
+                    )
                 ]
             ).T.rename(columns={0: self.flight_id})
         )
@@ -379,7 +380,13 @@ class FlightInfo(B2BReply):
         msg = "{.__name__!r} object has no attribute {!r}"
         raise AttributeError(msg.format(cls, name))
 
-    def parsePlan(self, name: str) -> Optional[Flight]:
+    def parsePlan(self, name: str) -> None | Flight:
+        """
+        If available, parse the FTFM (m1), RTFM (m2) or CTFM (m3) profiles.
+
+        :param name: one of ftfmPointProfile, rtfmPointProfile, ctfmPointProfile
+
+        """
         assert self.reply is not None
         msg = "No {} found in requested fields"
         if self.reply.find(name) is None:
@@ -414,6 +421,17 @@ FlightListTypeVar = TypeVar("FlightListTypeVar", bound="FlightList")
 
 
 class FlightList(DataFrameMixin, B2BReply):
+
+    columns_options = dict(
+        flightId=dict(style="blue bold"),
+        callsign=dict(),
+        icao24=dict(),
+        typecode=dict(),
+        origin=dict(),
+        destination=dict(),
+        EOBT=dict(),
+    )
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if len(args) == 0 and "data" not in kwargs:
             super().__init__(data=None, **kwargs)
@@ -436,7 +454,7 @@ class FlightList(DataFrameMixin, B2BReply):
         instance.build_df()
         return instance
 
-    def __getitem__(self, item: str) -> Optional[FlightInfo]:
+    def __getitem__(self, item: str) -> None | FlightInfo:
         assert self.reply is not None
         for elt in self.reply.findall("data/flights/flight"):
             key = elt.find("flightId/id")
@@ -487,17 +505,20 @@ class FlightList(DataFrameMixin, B2BReply):
                 ]
             )
 
-        self.data = self.data.rename(columns=rename_cols)
+        self.data = self.data.rename(columns=rename_cols).replace(
+            "SLOT_TIME_NOT_LIMITED", ""
+        )
 
         for feat in [
-            "EOBT",
-            "ETOT",
-            "CTOT",
-            "ATOT",
-            "ETOA",
-            "CTOA",
+            "AOBT",
             "ATOA",
-            "cdmEOBT",
+            "ATOT",
+            "COBT",
+            "CTOA",
+            "CTOT",
+            "EOBT",
+            "ETOA",
+            "ETOT",
         ]:
             if feat in self.data.columns:
                 self.data = self.data.assign(
@@ -533,6 +554,15 @@ class FlightList(DataFrameMixin, B2BReply):
 
 
 class FlightPlanList(FlightList):
+    columns_options = dict(
+        flightId=dict(style="blue bold"),
+        callsign=dict(),
+        origin=dict(),
+        destination=dict(),
+        EOBT=dict(),
+        status=dict(),
+    )
+
     def build_df(self) -> None:
         assert self.reply is not None
 
@@ -570,7 +600,7 @@ class FlightPlanList(FlightList):
         from ... import nm_b2b
 
         return nm_b2b.flight_get(
-            eobt=handle.EOBT,
+            EOBT=handle.EOBT,
             callsign=handle.callsign,
             origin=handle.origin,
             destination=handle.destination,
@@ -580,46 +610,30 @@ class FlightPlanList(FlightList):
 class FlightManagement:
     def flight_search(
         self,
-        start: Optional[timelike] = None,
-        stop: Optional[timelike] = None,
+        start: None | timelike = None,
+        stop: None | timelike = None,
         *args: Any,
-        callsign: Optional[str] = None,
-        origin: Optional[str] = None,
-        destination: Optional[str] = None,
+        callsign: None | str = None,
+        origin: None | str = None,
+        destination: None | str = None,
     ) -> FlightPlanList:
         """Returns a **minimum set of information** about flights.
 
-        By default:
-
-        - the start parameter takes the current time.
-        - the stop parameter is one hour after the start parameter.
+        :param start: (UTC), by default current time
+        :param stop: (UTC), by default one hour later
 
         The method must take at least one of:
 
-        - callsign (wildcard accepted)
-        - origin airport (ICAO 4 letter code)
-        - destination airport (ICAO 4 letter code)
-
-        The return type has a representation similar to a pandas
-        DataFrame and may be indexed by a flight_id in order to
-        request full information about that flight.
+        :param callsign: (wildcard accepted)
+        :param origin: flying from a given airport (ICAO 4 letter code).
+        :param destination: flying to a given airport (ICAO 4 letter code).
 
         **Example usage:**
 
-        .. code:: python
+        .. jupyter-execute::
 
-            # All KLM flights out of Amsterdam Schiphol
-            res = nm_b2b.flight_search(origin="EHAM", callsign="KLM*")
-
-            # All flights in a given day going to Kansai International Airport
-            res = nm_b2b.flight_search(
-                start="2019-12-22 00:00",
-                stop="2019-12-23 00:00",
-                destination="RJBB"
-            )
-
-            # Get full information about one particular flight
-            flight_info = res["AT02478340"]
+            # All KLM flights bound for Amsterdam Schiphol
+            nm_b2b.flight_search(destination="EHAM", callsign="KLM*")
 
         **See also:**
 
@@ -652,87 +666,75 @@ class FlightManagement:
         return FlightPlanList.fromET(rep.reply.find("data"))
 
     def flight_get(
-        self, eobt: timelike, callsign: str, origin: str, destination: str
+        self, EOBT: timelike, callsign: str, origin: str, destination: str
     ) -> FlightInfo:
         """Returns full information about a given flight.
 
         This method requires all parameters:
 
-        - eobt: Estimated off-block time (as string, numeral or timestamp)
-        - callsign (**NO** wildcard accepted)
-        - origin airport (ICAO 4 letter code)
-        - destination airport (ICAO 4 letter code)
+        :param EOBT: Estimated off-block time
+        :param callsign: **NO** wildcard accepted
+        :param origin: flying from a given airport (ICAO 4 letter code).
+        :param destination: flying to a given airport (ICAO 4 letter code).
 
-        It is recommended to use this method through an indexation
-        on the return of a `flight_search
-        <#traffic.data.eurocontrol.b2b.NMB2B.flight_search>`_.
+        This method is called when indexing the return value of a
+        :meth:`~traffic.data.eurocontrol.b2b.NMB2B.flight_search`.
 
         """
 
-        eobt = to_datetime(eobt)
+        EOBT = to_datetime(EOBT)
         data = REQUESTS["FlightRetrievalRequest"].format(
             send_time=datetime.now(timezone.utc),
             callsign=callsign,
             origin=origin,
             destination=destination,
-            eobt=eobt,
+            eobt=EOBT,
         )
         rep = self.post(data)  # type: ignore
         return FlightInfo.fromET(rep.reply.find("data/flight"))
 
     def flight_list(
         self,
-        start: Optional[timelike] = None,
-        stop: Optional[timelike] = None,
+        start: None | timelike = None,
+        stop: None | timelike = None,
         *args: Any,
-        airspace: Optional[str] = None,
-        airport: Optional[str] = None,
-        origin: Optional[str] = None,
-        destination: Optional[str] = None,
-        regulation: Optional[str] = None,
-        fields: Optional[List[str]] = None,
-    ) -> Optional[FlightList]:
+        airspace: None | str = None,
+        airport: None | str = None,
+        origin: None | str = None,
+        destination: None | str = None,
+        regulation: None | str = None,
+        fields: None | list[str] = None,
+    ) -> None | FlightList:
         """Returns requested information about flights matching a criterion.
 
-        By default:
-
-        - the start parameter takes the current time.
-        - the stop parameter is one hour after the start parameter.
+        :param start: (UTC), by default current time
+        :param stop: (UTC), by default one hour later
 
         Exactly one of the following parameters must be passed:
 
-        - airspace: returns all flights going through a given airspace.
-        - airport: returns all flights flying from or to a given airport
-          (ICAO 4 letter code).
-        - origin: returns all flights flying from a given airport
-          (ICAO 4 letter code).
-        - destination: returns all flights flying to a given airport
-          (ICAO 4 letter code).
-        - regulation: returns all flights impacted by a given regulation.
-
-        By default, a set of (arguably) relevant fields are requested. More
-        fields can be requested when passed to the field parameter.
+        :param airspace: the name of an airspace aircraft fly through
+        :param airport: flying from or to a given airport (ICAO 4 letter code).
+        :param origin: flying from a given airport (ICAO 4 letter code).
+        :param destination: flying to a given airport (ICAO 4 letter code).
+        :param regulation: identifier of a regulation (see
+            :meth:`~traffic.data.eurocontrol.b2b.NMB2B.regulation_list`)
+        :param fields: additional fields to request. By default, a set of
+            (arguably) relevant fields are requested.
 
         **Example usage:**
 
-        .. code:: python
+        .. jupyter-execute::
 
-            # Get all flights scheduled out of Paris CDG in a time frame.
-            res = nm_b2b.flight_list(
-                "2019-12-22 10:00",
-                "2019-12-22 10:30",
-                origin="LFPG",
-                fields=["aircraftOperator", "ctotLimitReason"],
-            )
-
-            # Get **requested** information about one particular flight
-            flightinfo = res["AT02474519"]
+            # Get all flights scheduled out of Paris CDG
+            nm_b2b.flight_list(origin="LFPG")
 
         **See also:**
 
-            - `flight_get
-              <#traffic.data.eurocontrol.b2b.NMB2B.flight_get>`_ which
-              returns full information about a given flight.
+            - :meth:`~traffic.data.eurocontrol.b2b.NMB2B.flight_get` returns
+              full information about a given flight. It is also accessible by
+              indexing a
+              :class:`~traffic.data.eurocontrol.b2b.flight.FlightList` object
+              with the ``flightId`` field.
 
         """
 

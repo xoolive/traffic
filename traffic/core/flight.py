@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import ast
 import logging
 import sys
 import warnings
@@ -24,10 +27,13 @@ from typing import (
     overload,
 )
 
+import rich.repr
+from rich.console import Console, ConsoleOptions, RenderResult
+
 if sys.version_info >= (3, 8):
-    from typing import Literal
+    from typing import Literal, TypedDict
 else:
-    from typing_extensions import Literal
+    from typing_extensions import Literal, TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -53,9 +59,19 @@ if TYPE_CHECKING:
     from matplotlib.axes._subplots import Axes  # noqa: F401
 
     from ..data.adsb.raw_data import RawData  # noqa: F401
+    from ..data.basic.aircraft import Tail  # noqa: F401
     from .airspace import Airspace  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
     from .traffic import Traffic  # noqa: F401
+
+
+class Entry(TypedDict, total=False):
+    timestamp: pd.Timestamp
+    timedelta: pd.Timedelta
+    longitude: float
+    latitude: float
+    altitude: float
+    name: str
 
 
 T = TypeVar("T", bound="Flight")
@@ -144,6 +160,22 @@ class Position(PointMixin, pd.core.series.Series):  # type: ignore
 
 class MetaFlight(type):
     def __getattr__(cls, name: str) -> Callable[..., Any]:
+
+        # if the string is callable, apply this on a flight
+        # parsing the AST is a much safer option than raw eval()
+        for node in ast.walk(ast.parse(name)):
+            if isinstance(node, ast.Call):
+                func_name = node.func.id  # type: ignore
+                args = [ast.literal_eval(arg) for arg in node.args]
+                kwargs = dict(
+                    (keyword.arg, ast.literal_eval(keyword.value))
+                    for keyword in node.keywords
+                )
+                return lambda flight: getattr(Flight, func_name)(
+                    flight, *args, **kwargs
+                )
+
+        # We should think about deprecating what comes below...
         if name.startswith("aligned_on_"):
             return lambda flight: cls.aligned_on_ils(flight, name[11:])
         if name.startswith("takeoff_runway_"):
@@ -156,9 +188,11 @@ class MetaFlight(type):
             return lambda flight: cls.landing_at(flight, name[11:])
         if name.startswith("takeoff_from_"):
             return lambda flight: cls.takeoff_from(flight, name[13:])
+
         raise AttributeError
 
 
+@rich.repr.auto()
 class Flight(
     HBoxMixin,
     GeographyMixin,
@@ -182,6 +216,7 @@ class Flight(
     - ``altitude``: in feet.
 
     .. note::
+
         The ``flight_id`` (identifier for a trajectory) may be used in place of
         a pair of (``icao24``, ``callsign``). More features may also be provided
         for further processing, e.g. ``groundspeed``, ``vertical_rate``,
@@ -195,50 +230,72 @@ class Flight(
     **Abridged contents:**
 
         - properties:
-          `callsign <#traffic.core.Flight.callsign>`_,
-          `flight_id <#traffic.core.Flight.flight_id>`_,
-          `icao24 <#traffic.core.Flight.icao24>`_,
-          `number <#traffic.core.Flight.number>`_,
-          `registration <#traffic.core.Flight.registration>`_,
-          `start <#traffic.core.Flight.start>`_,
-          `stop <#traffic.core.Flight.stop>`_,
-          `typecode <#traffic.core.Flight.typecode>`_
+          :meth:`callsign`,
+          :meth:`flight_id`,
+          :meth:`icao24`,
+          :meth:`number`,
+          :meth:`start`,
+          :meth:`stop`,
+
         - time related methods:
-          `after() <#traffic.core.Flight.after>`_,
-          `at() <#traffic.core.Flight.at>`_,
-          `at_ratio() <#traffic.core.Flight.at_ratio>`_,
-          `before() <#traffic.core.Flight.before>`_,
-          `between() <#traffic.core.Flight.between>`_,
-          `first() <#traffic.core.Flight.first>`_,
-          `last() <#traffic.core.Flight.last>`_,
-          `skip() <#traffic.core.Flight.skip>`_,
-          `shorten() <#traffic.core.Flight.shorten>`_
+          :meth:`after`,
+          :meth:`at`,
+          :meth:`at_ratio`,
+          :meth:`before`,
+          :meth:`between`,
+          :meth:`first`,
+          :meth:`last`,
+          :meth:`skip`,
+          :meth:`shorten`
+
         - geometry related methods:
-          `airborne() <#traffic.core.Flight.airborne>`_,
-          `clip() <#traffic.core.Flight.clip>`_,
-          `compute_wind() <#traffic.core.Flight.compute_wind>`_,
-          `compute_xy() <#traffic.core.Flight.compute_xy>`_,
-          `distance() <#traffic.core.Flight.distance>`_,
-          `inside_bbox() <#traffic.core.Flight.inside_bbox>`_,
-          `intersects() <#traffic.core.Flight.intersects>`_,
-          `project_shape() <#traffic.core.Flight.project_shape>`_,
-          `simplify() <#traffic.core.Flight.simplify>`_,
-          `unwrap() <#traffic.core.Flight.unwrap>`_
+          :meth:`airborne`,
+          :meth:`clip`,
+          :meth:`compute_wind`,
+          :meth:`compute_xy`,
+          :meth:`distance`,
+          :meth:`inside_bbox`,
+          :meth:`intersects`,
+          :meth:`project_shape`,
+          :meth:`simplify`,
+          :meth:`unwrap`
+
         - filtering and resampling methods:
-          `comet() <#traffic.core.Flight.comet>`_,
-          `filter() <#traffic.core.Flight.filter>`_,
-          `resample() <#traffic.core.Flight.resample>`_,
+          :meth:`comet`,
+          :meth:`filter`,
+          :meth:`resample`
+
+        - TMA events:
+          :meth:`takeoff_from_runway`,
+          :meth:`aligned_on_ils`,
+          :meth:`go_around`,
+          :meth:`runway_change`
+
+        - airborne events:
+          :meth:`aligned_on_navpoint`,
+          :meth:`compute_navpoints`,
+          :meth:`emergency`
+
+        - ground trajectory methods:
+          :meth:`aligned_on_runway`,
+          :meth:`on_parking_position`,
+          :meth:`pushback`,
+          :meth:`slow_taxi`,
+          :meth:`moving`
+
         - visualisation with altair:
-          `chart() <#traffic.core.Flight.chart>`_,
-          `geoencode() <#traffic.core.Flight.geoencode>`_
-        - visualisation with leaflet: `map_leaflet() <leaflet.html>`_
+          :meth:`chart`,
+          :meth:`geoencode`
+
+        - visualisation with leaflet: :meth:`map_leaflet`
         - visualisation with Matplotlib:
-          `plot() <#traffic.core.Flight.plot>`_,
-          `plot_time() <#traffic.core.Flight.plot_time>`_
+          :meth:`plot`,
+          :meth:`plot_time`
 
     .. tip::
-        Sample flights are provided for testing purposes in module
-        ``traffic.data.samples``
+
+        :ref:`Sample flights <How to access sample trajectories?>` are provided
+        for testing purposes in module ``traffic.data.samples``
 
     """
 
@@ -292,22 +349,75 @@ class Flight(
         else:
             return self.data.shape[0]  # type: ignore
 
+    @property
+    def count(self) -> int:
+        return len(self)
+
     def _info_html(self) -> str:
-        title = f"<b>Flight {self.title}</b>"
+        title = "<h4><b>Flight</b>"
+        if self.flight_id:
+            title += f" {self.flight_id}"
+        title += "</h4>"
+
+        aircraft_fmt = "<code>%icao24</code> · %flag %registration (%typecode)"
+
         title += "<ul>"
-        title += f"<li><b>aircraft:</b> {self.aircraft}</li>"
-        if self.origin is not None:
-            title += f"<li><b>from:</b> {self.origin} ({self.start})</li>"
+        title += f"<li><b>callsign:</b> {self.callsign} {self.trip}</li>"
+        if self.aircraft is not None:
+            title += "<li><b>aircraft:</b> {aircraft}</li>".format(
+                aircraft=format(self.aircraft, aircraft_fmt)
+            )
         else:
-            title += f"<li><b>from:</b> {self.start}</li>"
-        if self.destination is not None:
-            title += f"<li><b>to:</b> {self.destination} ({self.stop})</li>"
-        else:
-            title += f"<li><b>to:</b> {self.stop}</li>"
+            title += f"<li><b>aircraft:</b> <code>{self.icao24}</code></li>"
+        title += f"<li><b>start:</b> {self.start}</li>"
+        title += f"<li><b>stop:</b> {self.stop}</li>"
+        title += f"<li><b>duration:</b> {self.duration}</li>"
+
         if self.diverted is not None:
             title += f"<li><b>diverted to: {self.diverted}</b></li>"
+
+        sampling_rate = self.data.timestamp.diff().mean().total_seconds()
+        title += f"<li><b>sampling rate:</b> {sampling_rate:.0f} second(s)</li>"
+
         title += "</ul>"
         return title
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        aircraft_fmt = "%icao24 · %flag %registration (%typecode)"
+
+        yield f"[bold blue]Flight {self.flight_id if self.flight_id else ''}"
+
+        yield f"  - [b]callsign:[/b] {self.callsign} {self.trip}"
+        if self.aircraft is not None:
+            yield "  - [b]aircraft:[/b] {aircraft}".format(
+                aircraft=format(self.aircraft, aircraft_fmt)
+            )
+        else:
+            yield f"  - [b]aircraft:[/b] {self.icao24}"
+
+        yield f"  - [b]start:[/b] {self.start:%Y-%m-%d %H:%M:%S}Z "
+        yield f"  - [b]stop:[/b] {self.stop:%Y-%m-%d %H:%M:%S}Z"
+        yield f"  - [b]duration:[/b] {self.duration}"
+
+        sampling_rate = self.data.timestamp.diff().mean().total_seconds()
+        yield f"  - [b]sampling rate:[/b] {sampling_rate:.0f} second(s)"
+
+        features = set(self.data.columns) - {
+            "start",
+            "stop",
+            "icao24",
+            "callsign",
+            "flight_id",
+            "destination",
+            "origin",
+            "track_unwrapped",
+            "heading_unwrapped",
+        }
+        yield "  - [b]features:[/b]"
+        for feat in sorted(features):
+            yield f"    o {feat}, [i]{self.data[feat].dtype}"
 
     def _repr_html_(self) -> str:
         title = self._info_html()
@@ -329,18 +439,11 @@ class Flight(
             cast(Flight, self.resample("1s").simplify(25)),
         )._repr_svg_()
 
-    def __repr__(self) -> str:
-        output = f"Flight {self.title}"
-        output += f"\naircraft: {self.aircraft}"
-        if self.origin is not None:
-            output += f"\norigin: {self.origin} ({self.start})"
-        else:
-            output += f"\norigin: {self.start}"
-        if self.destination is not None:
-            output += f"\ndestination: {self.destination} ({self.stop})"
-        else:
-            output += f"\ndestination: {self.stop}"
-        return output
+    def __rich_repr__(self) -> rich.repr.Result:
+        if self.flight_id:
+            yield self.flight_id
+        yield "icao24", self.icao24
+        yield "callsign", self.callsign
 
     @property
     def __geo_interface__(self) -> Dict[str, Any]:
@@ -348,6 +451,24 @@ class Flight(
             # Returns an empty geometry
             return {"type": "GeometryCollection", "geometries": []}
         return self.shape.__geo_interface__  # type: ignore
+
+    def keys(self) -> list[str]:
+        # This is for allowing dict(Flight)
+        keys = ["callsign", "icao24", "aircraft", "start", "stop", "duration"]
+        if self.flight_id:
+            keys = ["flight_id"] + keys
+        if self.origin:
+            keys.append("origin")
+        if self.destination:
+            keys.append("destination")
+        if self.diverted:
+            keys.append("diverted")
+        return keys
+
+    def __getitem__(self, name: str) -> Any:
+        if name in self.keys():
+            return getattr(self, name)
+        raise NotImplementedError()
 
     def __getattr__(self, name: str) -> Any:
         """Helper to facilitate method chaining without lambda.
@@ -391,7 +512,7 @@ class Flight(
     def sum(
         self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
     ) -> int:
-        """Returns the number of segments returns by flight.method().
+        """Returns the number of segments returned by flight.method().
 
         Example usage:
 
@@ -407,14 +528,17 @@ class Flight(
         return sum(1 for _ in fun(self))
 
     def all(
-        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+        self,
+        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+        flight_id: None | str = None,
     ) -> Optional["Flight"]:
-        """Returns the concatenation of segments returns by flight.method().
+        """Returns the concatenation of segments returned by flight.method().
 
         Example usage:
 
         >>> flight.all("go_around")
         >>> flight.all("runway_change")
+        >>> flight.all('aligned_on_ils("LFBO")')
         >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
         """
         fun = (
@@ -422,7 +546,15 @@ class Flight(
             if isinstance(method, str)
             else method
         )
-        t = sum(flight.assign(index_=i) for i, flight in enumerate(fun(self)))
+        if flight_id is None:
+            t = sum(
+                flight.assign(index_=i) for i, flight in enumerate(fun(self))
+            )
+        else:
+            t = sum(
+                flight.assign(flight_id=flight_id.format(self=flight, i=i))
+                for i, flight in enumerate(fun(self))
+            )
         if t == 0:
             return None
         return Flight(t.data)  # type: ignore
@@ -480,18 +612,30 @@ class Flight(
             data = data.assign(altitude=0)
         yield from zip(data["longitude"], data["latitude"], data["altitude"])
 
-    def coords4d(
-        self, delta_t: bool = False
-    ) -> Iterator[Tuple[float, float, float, float]]:
+    def coords4d(self, delta_t: bool = False) -> Iterator[Entry]:
         data = self.data.query("longitude == longitude")
         if delta_t:
             time = (data.timestamp - data.timestamp.min()).dt.total_seconds()
         else:
             time = data["timestamp"]
 
-        yield from zip(
+        for t, longitude, latitude, altitude in zip(
             time, data["longitude"], data["latitude"], data["altitude"]
-        )
+        ):
+            if delta_t:
+                yield {
+                    "timedelta": t,
+                    "longitude": longitude,
+                    "latitude": latitude,
+                    "altitude": altitude,
+                }
+            else:
+                yield {
+                    "timestamp": t,
+                    "longitude": longitude,
+                    "latitude": latitude,
+                    "altitude": altitude,
+                }
 
     @property
     def xy_time(self) -> Iterator[Tuple[float, float, float]]:
@@ -734,6 +878,28 @@ class Flight(
         return title
 
     @property
+    def trip(self) -> str:
+        return (
+            (
+                "("
+                if self.origin is not None or self.destination is not None
+                else ""
+            )
+            + (f"{self.origin}" if self.origin else " ")
+            + (
+                " to "
+                if self.origin is not None or self.destination is not None
+                else ""
+            )
+            + (f"{self.destination}" if self.destination else " ")
+            + (
+                ")"
+                if self.origin is not None or self.destination is not None
+                else ""
+            )
+        )
+
+    @property
     def origin(self) -> Union[str, Set[str], None]:
         """Returns the unique origin value(s),
         None if not available in the DataFrame.
@@ -809,11 +975,10 @@ class Flight(
 
         if not isinstance(self.icao24, str):
             return None
-        res = aircraft[self.icao24]
-        res = res.query("registration == registration and registration != ''")
-        if res.shape[0] == 1:
-            return res.iloc[0].registration  # type: ignore
-        return None
+        res = aircraft.get_unique(self.icao24)
+        if res is None:
+            return None
+        return res.get("registration", None)
 
     @property
     def typecode(self) -> Optional[str]:
@@ -821,38 +986,19 @@ class Flight(
 
         if not isinstance(self.icao24, str):
             return None
-        res = aircraft[self.icao24]
-        res = res.query("typecode == typecode and typecode != ''")
-        if res.shape[0] == 1:
-            return res.iloc[0].typecode  # type: ignore
-        return None
+        res = aircraft.get_unique(self.icao24)
+        if res is None:
+            return None
+        return res.get("typecode", None)
 
     @property
-    def aircraft(self) -> Optional[str]:
+    def aircraft(self) -> None | Tail:
         from ..data import aircraft
 
-        if not isinstance(self.icao24, str):
-            return None
+        if isinstance(self.icao24, str):
+            return aircraft.get_unique(self.icao24)
 
-        res = str(self.icao24)
-        ac = aircraft.get_unique(res)
-
-        if ac is None:
-            return res
-
-        registration = ac["registration"]
-        typecode = ac["typecode"]
-        flag = ac["flag"]
-
-        if registration is not None:
-            res += f" · {flag} {registration}"
-        else:
-            res = f"{flag} {res}"
-
-        if typecode is not None:
-            res += f" ({typecode})"
-
-        return res
+        return None
 
     # -- Time handling, splitting, interpolation and resampling --
 
@@ -1282,7 +1428,6 @@ class Flight(
             data = (
                 self.handle_last_position()
                 .unwrap()  # avoid filled gaps in track and heading
-                .assign(start=self.start, stop=self.stop)
                 .data.set_index("timestamp")
                 .resample(rule)
                 .first()  # better performance than min() for duplicate index
@@ -1301,7 +1446,7 @@ class Flight(
             data = (
                 self.handle_last_position()
                 .unwrap()  # avoid filled gaps in track and heading
-                .assign(tz_naive=lambda d: d.timestamp.astype("datetime64[ns]"))
+                .assign(tz_naive=lambda d: d.timestamp.dt.tz_localize(None))
                 .data.set_index("tz_naive")
                 .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
                 .reset_index()
@@ -1341,6 +1486,7 @@ class Flight(
         nothing*: ``None``; or *interpolate*: ``lambda x: x.interpolate()``.
 
         .. note::
+
             This method if often more efficient when applied several times with
             different kernel values.Kernel values may be passed as integers, or
             list/tuples of integers for cascade of filters:
@@ -1392,7 +1538,7 @@ class Flight(
             and measures the difference between the raw and the filtered signal.
 
             The average of the squared differences is then produced (sq_eps) and
-            used as a threashold for filtering.
+            used as a threshold for filtering.
 
             Errors may raised if the kernel_size is too large
             """
@@ -1591,6 +1737,7 @@ class Flight(
         airspeed may be decoded in EHS messages.
 
         .. note::
+
             Check the `query_ehs() <#traffic.core.Flight.query_ehs>`_ method to
             find a way to enrich your flight with such features. Note that this
             data is not necessarily available depending on the location.
@@ -1960,7 +2107,7 @@ class Flight(
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
         return_mask: bool = False,
-    ) -> Union[npt.NDArray[np.float64], "Flight"]:
+    ) -> npt.NDArray[np.float64] | "Flight":
         """Simplifies a trajectory with Douglas-Peucker algorithm.
 
         The method uses latitude and longitude, projects the trajectory to a
@@ -1969,12 +2116,18 @@ class Flight(
         <#traffic.core.Flight.compute_xy>`_ for instance) then this projection
         is taken into account.
 
-        - By default, a 2D version is called, unless you pass a column name for
-          ``altitude``.
+        The tolerance parameter must be defined in meters.
+
+        - By default, a 2D version of the algorithm is called, unless you pass a
+          column name for ``altitude``.
         - You may scale the z-axis for more relevance (``z_factor``). The
           default value works well in most situations.
 
-        The method returns a Flight unless you specify ``return_mask=True``.
+        The method returns a :class:`~traffic.core.Flight` or a 1D mask if you
+        specify ``return_mask=True``.
+
+        **See also**: :ref:`How to simplify or resample a trajectory?`
+
         """
 
         if "x" in self.data.columns and "y" in self.data.columns:
@@ -2033,7 +2186,7 @@ class Flight(
             return None
 
         def _clip_generator() -> Iterable[Tuple[datetime, datetime]]:
-            for segment in intersection:
+            for segment in intersection.geoms:
                 times: List[datetime] = list(
                     datetime.fromtimestamp(t, timezone.utc)
                     for t in np.stack(segment.coords)[:, 2]
@@ -2074,6 +2227,7 @@ class Flight(
         shape.
 
         .. warning::
+
             Altitudes are not taken into account.
 
         """
@@ -2130,6 +2284,7 @@ class Flight(
         Returns None if no data is found.
 
         .. note::
+
             Read more about access to the OpenSky Network database `here
             <opensky_impala.html>`_
         """
@@ -2158,6 +2313,7 @@ class Flight(
         database.
 
         .. warning::
+
             Making a lot of small requests can be very inefficient and may look
             like a denial of service. If you get the raw messages using a
             different channel, you can provide the resulting dataframe as a
@@ -2168,6 +2324,7 @@ class Flight(
         ``mintime``, in conformance with the OpenSky API.
 
         .. note::
+
             Read more about access to the OpenSky Network database `here
             <opensky_impala.html>`_
         """
@@ -2294,6 +2451,7 @@ class Flight(
             flight.plot(ax, alpha=.5)
 
         .. note::
+
             See also `geoencode() <#traffic.core.Flight.geoencode>`_ for the
             altair equivalent.
 
@@ -2363,6 +2521,7 @@ class Flight(
             )
 
         .. note::
+
             See also `plot_time() <#traffic.core.Flight.plot_time>`_ for the
             Matplotlib equivalent.
 
@@ -2370,10 +2529,7 @@ class Flight(
         import altair as alt
 
         base = alt.Chart(self.data).encode(
-            alt.X(
-                "utcyearmonthdatehoursminutesseconds(timestamp)",
-                title='alt.X("utcyearmonthdatehoursminutesseconds(timestamp)")',
-            ),
+            alt.X("utcyearmonthdatehoursminutesseconds(timestamp)"),
         )
         if len(features) > 0:
             base = base.transform_fold(
@@ -2416,6 +2572,7 @@ class Flight(
             )
 
         .. note::
+
             See also `chart() <#traffic.core.Flight.chart>`_ for the altair
             equivalent.
 
@@ -2476,6 +2633,7 @@ class Flight(
 
         Example usage:
 
+        >>> from traffic.core import Flight
         >>> t = Flight.from_file("example_flight.csv")
         """
 

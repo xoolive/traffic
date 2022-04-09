@@ -6,7 +6,7 @@ from tqdm.autonotebook import tqdm
 
 import pandas as pd
 
-from ... import cache_dir
+from ... import cache_dir, config
 from ...core import Traffic
 
 _squawk7700_url = "https://zenodo.org/record/3937483/"
@@ -65,6 +65,9 @@ datasets = dict(
 
 __all__ = list(datasets.keys())
 
+if "datasets" in config:
+    __all__ = __all__ + list(config["datasets"].keys())
+
 
 def download_data(dataset: Dict[str, str]) -> io.BytesIO:
     from .. import session
@@ -95,6 +98,7 @@ def download_data(dataset: Dict[str, str]) -> io.BytesIO:
 
 
 def get_dataset(dataset: Dict[str, Any]) -> Any:
+
     dataset_dir = cache_dir / "datasets"
 
     if not dataset_dir.exists():
@@ -110,6 +114,12 @@ def get_dataset(dataset: Dict[str, Any]) -> Any:
 
 
 def __getattr__(name: str) -> Any:
+
+    on_disk = config.get("datasets", name, fallback=None)
+    if on_disk is not None:
+        return Traffic.from_file(on_disk)
+
     if name not in datasets:
         raise AttributeError(f"No such dataset: {name}")
+
     return get_dataset(datasets[name])

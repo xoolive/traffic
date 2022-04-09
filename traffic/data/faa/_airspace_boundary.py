@@ -1,18 +1,47 @@
+from __future__ import annotations
+
 import logging
 from typing import Dict
 
-from shapely.geometry import polygon, shape
+import geopandas as gpd
 
-from ...core.airspace import Airspace, ExtrudedPolygon
+from shapely.geometry import shape
+from shapely.ops import orient
+
+from ...core.airspace import Airspace, Airspaces, ExtrudedPolygon
 from . import ADDS_FAA_OpenData
 
 
-class Airspace_Boundary(ADDS_FAA_OpenData):
+class Airspace_Boundary(ADDS_FAA_OpenData, Airspaces):
 
     id_ = "67885972e4e940b2aa6d74024901c561_0"
     filename = "faa_airspace_boundary.json"
 
-    def get_data(self) -> Dict[str, Airspace]:
+    def __init__(self, data: gpd.GeoDataFrame | None = None) -> None:
+        super().__init__()
+        self.data = data
+        if data is None:
+            self.data = (
+                gpd.GeoDataFrame.from_features(self.json_contents())
+                .rename(
+                    columns=dict(
+                        NAME="name",
+                        LOWER_VAL="lower",
+                        UPPER_VAL="upper",
+                        TYPE_CODE="type",
+                        IDENT="designator",
+                    )
+                )
+                .assign(
+                    latitude=lambda df: df.geometry.centroid.y,
+                    longitude=lambda df: df.geometry.centroid.x,
+                    name=lambda df: df.name.str.strip(),
+                    lower=lambda df: df.lower.replace(-9998, 0),
+                    upper=lambda df: df.upper.replace(-9998, float("inf")),
+                )
+            )
+
+    def back(self) -> Dict[str, Airspace]:
 
         features = [elt for elt in self.json_contents()["features"]]
         airspaces: Dict[str, Airspace] = dict()
@@ -24,7 +53,7 @@ class Airspace_Boundary(ADDS_FAA_OpenData):
                 name=name,
                 elements=[
                     ExtrudedPolygon(
-                        polygon.orient(shape(feat["geometry"]), -1),
+                        orient(shape(feat["geometry"]), -1),
                         feat["properties"]["LOWER_VAL"]
                         if feat["properties"]["LOWER_VAL"] != -9998
                         else 0,
