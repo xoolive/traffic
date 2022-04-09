@@ -926,6 +926,7 @@ class ModeS_Decoder:
     """
 
     thread: Optional[StoppableThread]
+    cleaner_thread: Optional[StoppableThread]
 
     def __init__(
         self,
@@ -952,13 +953,13 @@ class ModeS_Decoder:
         self.thread = None
         self.cleaner_thread = None
 
-    def clean_aircraft(self, icao):
+    def clean_aircraft(self, icao: str) -> None:
         del self.acs[icao]
 
     def clean_decoder(
         self,
         threshold: str | timedelta | pd.Timedelta = "30 min",
-    ):
+    ) -> None:
         thr = pd.Timedelta(threshold)
         while self.thread.is_alive() or len(self.acs) != 0:
             time.sleep(20)
@@ -972,7 +973,7 @@ class ModeS_Decoder:
                 else:
                     try:
                         flight = ac.flight
-                    except:
+                    except Exception:
                         flight = None
                     if flight is not None:
                         if now - flight.stop >= thr:
