@@ -6,6 +6,7 @@ import signal
 import socket
 import sys
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 from pathlib import Path
@@ -949,6 +950,37 @@ class ModeS_Decoder:
         self.acs: AircraftDict = AircraftDict()
         self.acs.set_latlon(lat0, lon0)
         self.thread = None
+        self.cleaner_thread = None
+
+    def clean_aircraft(self, icao):
+        del self.acs[icao]
+
+    def clean_decoder(
+        self,
+        threshold: str | timedelta | pd.Timedelta = "30 min",
+    ):
+        thr = pd.Timedelta(threshold)
+        while self.thread.is_alive() or len(self.acs) != 0:
+            time.sleep(20)
+            now = pd.Timestamp("now", tzinfo=timezone.utc)
+            for icao in list(self.acs):
+                ac = self.acs[icao]
+                if len(ac.cumul) > 0:
+                    if now - ac.cumul[-1]["timestamp"] >= thr:
+                        with self.acs[icao].lock:
+                            self.clean_aircraft(icao)
+                else:
+                    try:
+                        flight = ac.flight
+                    except:
+                        flight = None
+                    if flight is not None:
+                        if now - flight.stop >= thr:
+                            with self.acs[icao].lock:
+                                self.clean_aircraft(icao)
+                    elif not self.thread.is_alive():
+                        with self.acs[icao].lock:
+                            self.clean_aircraft(icao)
 
     @classmethod
     def from_file(
@@ -1020,7 +1052,7 @@ class ModeS_Decoder:
     ) -> "ModeS_Decoder":
 
         decoder = cls(reference)
-        redefine_freq = 2**redefine_mag - 1
+        redefine_freq = 2 ** redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
         def next_in_binary(filename: Union[str, Path]) -> Iterator[bytes]:
@@ -1108,7 +1140,7 @@ class ModeS_Decoder:
     ) -> "ModeS_Decoder":  # coverage: ignore
 
         decoder = cls(reference)
-        redefine_freq = 2**redefine_mag - 1
+        redefine_freq = 2 ** redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
         def next_in_socket() -> Iterator[bytes]:
@@ -1142,6 +1174,8 @@ class ModeS_Decoder:
 
         decoder.thread = StoppableThread(target=decode)
         decoder.thread.start()
+        decoder.cleaner_thread = StoppableThread(target=decoder.clean_decoder)
+        decoder.cleaner_thread.start()
         return decoder
 
     def stop(self) -> None:
