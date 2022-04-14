@@ -1412,7 +1412,11 @@ class Flight(
 
         return self.__class__(data)
 
-    def resample(self, rule: Union[str, int] = "1s") -> "Flight":
+    def resample(
+        self,
+        rule: Union[str, int] = "1s",
+        how: str | dict[str, Iterable[str]] = "interpolate",
+    ) -> "Flight":
         """Resample the trajectory at a given frequency or number of points.
 
         If the rule is a string representing a pandas `time series frequency
@@ -1424,17 +1428,22 @@ class Flight(
         number of evenly distributed points per trajectory.
         """
 
+        if isinstance(how, str):
+            how = {how: set(self.data.columns) - {"timestamp"}}
+
         if isinstance(rule, str):
             data = (
                 self.handle_last_position()
-                .unwrap()  # avoid filled gaps in track and heading
+                .unwrap()
                 .data.set_index("timestamp")
                 .resample(rule)
-                .first()  # better performance than min() for duplicate index
-                .interpolate()
+                .first()
                 .reset_index()
-                .fillna(method="pad")
             )
+            for meth, columns in how.items():
+                data.loc[:, list(columns)] = getattr(
+                    data.loc[:, list(columns)], meth
+                )()
         elif isinstance(rule, int):
             # ./site-packages/pandas/core/indexes/base.py:2820: FutureWarning:
             # Converting timezone-aware DatetimeArray to timezone-naive ndarray
