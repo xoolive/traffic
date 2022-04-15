@@ -1439,9 +1439,6 @@ class Flight(
 
         """
 
-        if isinstance(how, str):
-            how = {how: set(self.data.columns) - {"timestamp"}}
-
         if isinstance(rule, str):
             data = (
                 self.handle_last_position()
@@ -1451,10 +1448,16 @@ class Flight(
                 .first()
                 .reset_index()
             )
+
+            if isinstance(how, str):
+                how = {how: set(data.columns) - {"timestamp"}}
+
             for meth, columns in how.items():
+                # final fillna() is necessary for non-interpolable dtypes
                 data.loc[:, list(columns)] = getattr(
                     data.loc[:, list(columns)], meth
-                )()
+                )().fillna(method="pad")
+
         elif isinstance(rule, int):
             # ./site-packages/pandas/core/indexes/base.py:2820: FutureWarning:
             # Converting timezone-aware DatetimeArray to timezone-naive ndarray
