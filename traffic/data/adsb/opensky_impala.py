@@ -12,7 +12,7 @@ from tempfile import gettempdir
 from typing import Any, Dict, Iterable, List, Tuple, cast
 
 import paramiko
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import pandas as pd
 from pandas.errors import ParserError

@@ -2,8 +2,6 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
-from cartopy import crs
-
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -18,6 +16,8 @@ else:
 
 
 if TYPE_CHECKING:
+    from cartopy import crs
+
     from ..core import Traffic
 
 
@@ -53,7 +53,7 @@ def compute_latlon_from_xy(
     from x and y columns.
 
     The default source projection is a Lambert Conformal Conical projection
-    centered on the data inside the dataframe.
+    centred on the data inside the dataframe.
     The destination projection is WGS84 (EPSG 4326).
 
     .. warning::
@@ -61,6 +61,8 @@ def compute_latlon_from_xy(
         Make sure to use as source projection the one used to compute ``'x'``
         and ``'y'`` columns in the first place.
     """
+
+    from cartopy import crs
 
     if not set(["x", "y"]).issubset(set(data.columns)):
         raise ValueError("DataFrame should contains 'x' and 'y' columns.")

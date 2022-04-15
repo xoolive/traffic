@@ -19,7 +19,7 @@ from typing import (
     overload,
 )
 
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import numpy as np
 

@@ -1,9 +1,10 @@
 import logging
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
+
 import pandas as pd
 
 query = """
@@ -48,11 +49,11 @@ def main(
     start: str,
     stop: str,
     output_dir: Path,
-    *args,
+    *args: Any,
     flight_db: Optional[Path] = None,
     cached: bool = False,
     verbose: int = 0,
-):
+) -> None:
     click.echo("Downloading covid19 dataset data...")
 
     logger = logging.getLogger()

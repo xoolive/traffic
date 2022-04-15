@@ -2,7 +2,7 @@ import io
 from hashlib import md5
 from typing import Any, Dict
 
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import pandas as pd
 

@@ -22,7 +22,7 @@ from typing import (
 )
 
 import pyModeS as pms
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import pandas as pd
 
