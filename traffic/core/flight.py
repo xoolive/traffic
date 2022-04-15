@@ -1414,18 +1414,29 @@ class Flight(
 
     def resample(
         self,
-        rule: Union[str, int] = "1s",
+        rule: str | int = "1s",
         how: str | dict[str, Iterable[str]] = "interpolate",
     ) -> "Flight":
-        """Resample the trajectory at a given frequency or number of points.
+        """Resample the trajectory at a given frequency or for a target number
+        of samples.
 
-        If the rule is a string representing a pandas `time series frequency
-        <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliases>`_
-        is passed, then the data is resampled along the timestamp axis, then
-        interpolated.
+        :param rule:
 
-        If the rule is an integer, the trajectory is resampled to the given
-        number of evenly distributed points per trajectory.
+            - If the rule is a string representing
+              :ref:`pandas:timeseries.offset_aliases` for time frequencies is
+              passed, then the data is resampled along the timestamp axis, then
+              interpolated (according to the ``how`` parameter).
+
+            - If the rule is an integer, the trajectory is resampled to the
+              given number of evenly distributed points per trajectory.
+
+        :param how: (default: ``"interpolate"``)
+
+            - When the parameter is a string, the method applies to all columns
+            - When the parameter is a dictionary with keys as methods (e.g.
+              ``"interpolate"``, ``"ffill"``) and names of columns as values.
+              Columns not included in any value are left as is.
+
         """
 
         if isinstance(how, str):
