@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 def combinations(
     t: "Traffic", lateral_separation: float, vertical_separation: float
 ) -> Iterator[Tuple[Flight, Flight]]:
-    for flight in tqdm(t, desc="Combinations", leave=False):
+    for flight in t:
 
         t_ = t.query(f'icao24 != "{flight.icao24}"')
         if t_ is None:

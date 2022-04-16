@@ -1,6 +1,7 @@
 addopts
 ADSB
 airac
+aixm
 allft
 AOBT
 appdirs
@@ -8,6 +9,7 @@ astimezone
 astype
 ATOA
 ATOT
+attrib
 autodoc
 baroaltitude
 beautifulsoup
@@ -38,6 +40,7 @@ edgecolor
 EHAA
 EHAM
 elal
+elems
 ellps
 elts
 EOBT
@@ -45,6 +48,7 @@ esbonio
 ESSA
 ETOA
 ETOT
+Euclide
 facecolor
 fastkml
 ffill
@@ -135,4 +139,5 @@ virtualenv
 virtualenvs
 visualdict
 xarray
+xlink
 xoolive

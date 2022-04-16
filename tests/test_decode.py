@@ -25,7 +25,7 @@ def test_decode() -> None:
         .filter_if(long_enough)
         .query_opensky()
         .resample("1s")
-        .query_ehs()
+        .query_ehs(progressbar=False)
         .filter(selected_mcp=23)
         .filter(altitude=53, selected_mcp=53, roll=53, heading=53)
         .resample("1s")

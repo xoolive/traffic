@@ -1031,6 +1031,9 @@ class ModeS_Decoder:
                         return
                     yield get
 
+        # We don't know the size of the binary so tqdm.rich does not work
+        from tqdm.autonotebook import tqdm
+
         for i, bin_msg in tqdm(enumerate(next_msg(next_in_binary(filename)))):
 
             if len(bin_msg) < 23:
