@@ -1,10 +1,3 @@
-.. jupyter-execute::
-    :hide-code:
-
-    from traffic.data import opensky
-    print(opensky.cache_dir)
-
-
 How to access ADS-B data from OpenSky history database?
 =======================================================
 

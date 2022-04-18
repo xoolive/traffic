@@ -987,6 +987,8 @@ class Impala(object):
             Python or pandas)
         :param stop: a string (default to UTC), epoch or datetime (native Python
             or pandas), *by default, one day after start*
+        :param table_name: one or several of Impala tables (listed in
+            `opensky._raw_tables`)
         :param date_delta: a timedelta representing how to split the requests,
             *by default: per hour*
 
