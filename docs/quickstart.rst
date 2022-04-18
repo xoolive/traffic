@@ -444,7 +444,7 @@ matching, and extract relevant information (the runway information):
 .. jupyter-execute::
 
     import pandas as pd
-    from tqdm.autonotebook import tqdm
+    from tqdm.rich import tqdm
 
     information = list()
 

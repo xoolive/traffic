@@ -35,6 +35,12 @@
       "traffic/core/aero.py",
       "docs/conf.py",
       "docs/_static/main_stylesheet.css"
-    ]
+    ],
+    "files.exclude": {
+      "dist/": true,
+      "build:": true,
+      "docs/_build": true,
+      "docs/node_modules": true
+    }
   }
 }

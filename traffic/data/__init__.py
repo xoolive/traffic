@@ -160,7 +160,7 @@ def __getattr__(name: str) -> Any:
         from cartes.osm.requests import session as carto_session
 
         if len(proxy_values) > 0:
-            carto_session.proxies.update(proxy_values)
+            carto_session.proxies.update(proxy_values)  # type: ignore
             carto_session.trust_env = False
 
         res = carto_session
@@ -284,7 +284,7 @@ def __getattr__(name: str) -> Any:
 
         session = Session()
         if len(proxy_values) > 0:
-            session.proxies.update(proxy_values)
+            session.proxies.update(proxy_values)  # type: ignore
             session.trust_env = False
         res = session
         _cached_imports[name] = res

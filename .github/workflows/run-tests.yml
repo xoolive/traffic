@@ -119,6 +119,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo apt update
           sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
           cd PROJ/build
           cmake ..; cmake --build .

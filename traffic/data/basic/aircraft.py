@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, TypeVar
 
 import rich.repr
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import pandas as pd
 

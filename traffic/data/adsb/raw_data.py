@@ -12,7 +12,7 @@ from typing import (
 )
 
 from pyModeS import adsb
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import numpy as np
 import pandas as pd

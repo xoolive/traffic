@@ -13,10 +13,8 @@ from typing import (
 )
 from zipfile import ZipFile
 
-import altair as alt
 import requests
-from cartopy.crs import PlateCarree
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import numpy as np
 import pandas as pd
@@ -28,6 +26,8 @@ from ...core.geodesy import bearing, destination
 from ...core.mixins import DataFrameMixin, HBoxMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
+    import altair as alt  # noqa: F401
+    from cartopy.crs import PlateCarree  # noqa: F401
     from cartopy.mpl.geoaxes import GeoAxesSubplot  # noqa: F401
 
     from ...core.structure import Airport  # noqa: F401
@@ -100,6 +100,8 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
         **kwargs: Any,
     ) -> None:  # coverage: ignore
 
+        from cartopy.crs import PlateCarree  # noqa: F811
+
         if runways is True:
             params = {
                 "edgecolor": "#0e1111",
@@ -144,7 +146,8 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
 
                 ax.text(lon, lat, thr.name, rotation=rotation, **text_kw)
 
-    def geoencode(self, **kwargs: Any) -> alt.Chart:  # coverage: ignore
+    def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
+        import altair as alt
 
         if kwargs.get("mode", None) == "geometry":
             params = {**{"strokeWidth": 4, "stroke": "black"}, **kwargs}

@@ -2,7 +2,7 @@ import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Iterator, Optional, Set, Tuple, Union
 
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import pandas as pd
 import pyproj
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 def combinations(
     t: "Traffic", lateral_separation: float, vertical_separation: float
 ) -> Iterator[Tuple[Flight, Flight]]:
-    for flight in tqdm(t, desc="Combinations", leave=False):
+    for flight in t:
 
         t_ = t.query(f'icao24 != "{flight.icao24}"')
         if t_ is None:

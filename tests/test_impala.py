@@ -218,7 +218,7 @@ def test_complex_queries() -> None:
     assert len(tD) == 9
 
 
-@pytest.mark.timeout(300)
+# @pytest.mark.timeout(300)
 def test_timebuffer() -> None:
 
     f = cast(

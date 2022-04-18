@@ -1,5 +1,14 @@
+import pytest
+
 from traffic.core import Airspace
-from traffic.data import eurofirs, nm_airspaces
+from traffic.data import eurofirs
+
+try:
+    from traffic.data import nm_airspaces
+except RuntimeError:
+    nm_data = False
+else:
+    nm_data = True
 
 
 def test_airspace() -> None:
@@ -29,6 +38,7 @@ def test_area() -> None:
         assert fir.area > 1e6
 
 
+@pytest.mark.skipif(not nm_data, reason="No NM data available")
 def test_nm() -> None:
     maastricht = nm_airspaces["EDYYUTAX"]
     assert maastricht is not None

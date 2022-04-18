@@ -8,7 +8,7 @@ from typing import Any, Iterable, List, Tuple, TypeVar
 import geopandas as gpd
 from geopandas.geodataframe import GeoDataFrame
 from lxml import etree
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import pandas as pd
 from shapely.geometry import Polygon
