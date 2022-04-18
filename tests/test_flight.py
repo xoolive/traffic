@@ -413,6 +413,92 @@ def test_douglas_peucker() -> None:
     assert all(res)
 
 
+def test_resample_how_argument() -> None:
+
+    df = pd.DataFrame.from_records(
+        [
+            (pd.Timestamp("2019-01-01 12:00:00Z"), 30000, 0),
+            (pd.Timestamp("2019-01-01 12:00:05Z"), 25000, 5),
+            (pd.Timestamp("2019-01-01 12:00:10Z"), 27000, 10),
+        ],
+        columns=["timestamp", "altitude", "fake"],
+    )
+
+    fake_interpolate = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    fake_ffill = [0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 10]
+    fake_nothing = [
+        0,
+        None,
+        None,
+        None,
+        None,
+        5,
+        None,
+        None,
+        None,
+        None,
+        10,
+    ]
+    altitude_interpolate = [
+        30000.0,
+        29000.0,
+        28000.0,
+        27000.0,
+        26000.0,
+        25000.0,
+        25400.0,
+        25800.0,
+        26200.0,
+        26600.0,
+        27000.0,
+    ]
+    altitude_ffill = [
+        30000.0,
+        30000.0,
+        30000.0,
+        30000.0,
+        30000.0,
+        25000.0,
+        25000.0,
+        25000.0,
+        25000.0,
+        25000.0,
+        27000.0,
+    ]
+
+    resampled_interpolate = Flight(df).resample("1s", how="interpolate")
+    pd.testing.assert_frame_equal(
+        resampled_interpolate.data[["altitude", "fake"]],
+        pd.DataFrame(
+            {"altitude": altitude_interpolate, "fake": fake_interpolate}
+        ),
+        check_dtype=False,
+    )
+
+    resampled_ffill = Flight(df).resample("1s", how="ffill")
+    pd.testing.assert_frame_equal(
+        resampled_ffill.data[["altitude", "fake"]],
+        pd.DataFrame({"altitude": altitude_ffill, "fake": fake_ffill}),
+        check_dtype=False,
+    )
+
+    resampled_mixed = Flight(df).resample(
+        "1s", how=dict(interpolate=["altitude"], ffill=["fake"])
+    )
+    pd.testing.assert_frame_equal(
+        resampled_mixed.data[["altitude", "fake"]],
+        pd.DataFrame({"altitude": altitude_interpolate, "fake": fake_ffill}),
+        check_dtype=False,
+    )
+
+    resampled_partial = Flight(df).resample("1s", how=dict(ffill=["altitude"]))
+    pd.testing.assert_frame_equal(
+        resampled_partial.data[["altitude", "fake"]],
+        pd.DataFrame({"altitude": altitude_ffill, "fake": fake_nothing}),
+        check_dtype=False,
+    )
+
+
 def test_resample_unwrapped() -> None:
     # https://github.com/xoolive/traffic/issues/41
 

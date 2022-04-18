@@ -23,7 +23,7 @@ from typing import (
 )
 
 import pyModeS as pms
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import pandas as pd
 
@@ -1063,6 +1063,9 @@ class ModeS_Decoder:
                     if len(get) == 0:
                         return
                     yield get
+
+        # We don't know the size of the binary so tqdm.rich does not work
+        from tqdm.autonotebook import tqdm
 
         for i, bin_msg in tqdm(enumerate(next_msg(next_in_binary(filename)))):
 

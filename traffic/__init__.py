@@ -4,17 +4,11 @@ import os
 import warnings
 from pathlib import Path
 
-# importing ipyleaflet here avoids annoying warnings
 import importlib_metadata
-import ipyleaflet  # noqa: F401
 import pkg_resources
 from appdirs import user_cache_dir, user_config_dir
-from tqdm import TqdmExperimentalWarning
 
 import pandas as pd
-
-# Silence this warning about autonotebook mode for tqdm
-warnings.simplefilter("ignore", TqdmExperimentalWarning)
 
 __version__ = importlib_metadata.version("traffic")  # type: ignore
 __all__ = ["config_dir", "config_file", "cache_dir"]
@@ -73,12 +67,12 @@ cache_expiration = pd.Timedelta(cache_expiration_cfg)
 cache_purge_cfg = config.get("cache", "purge", fallback="")
 if cache_purge_cfg != "":
     cache_purge = pd.Timedelta(cache_purge_cfg)
+    now = pd.Timestamp("now").timestamp()
 
     purgeable = list(
         path
         for path in cache_dir.glob("opensky/*")
-        if pd.Timestamp("now") - pd.Timestamp(path.lstat().st_mtime * 1e9)
-        > cache_purge
+        if now - path.lstat().st_mtime > cache_purge.total_seconds()
     )
 
     if len(purgeable) > 0:
@@ -87,7 +81,6 @@ if cache_purge_cfg != "":
         )
         for path in purgeable:
             path.unlink()
-
 
 if not cache_dir.exists():
     cache_dir.mkdir(parents=True)

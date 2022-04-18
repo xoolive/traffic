@@ -8,7 +8,7 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 
 from requests import Session
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 from .flight import FlightManagement
 from .flow import Measures

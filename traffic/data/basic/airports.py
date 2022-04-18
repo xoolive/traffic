@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 import requests
-from tqdm.autonotebook import tqdm
+from tqdm.rich import tqdm
 
 import pandas as pd
 

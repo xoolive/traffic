@@ -18,7 +18,11 @@ from typing import (
 )
 
 import rich.repr
-from cartes.utils.cache import cached_property
+
+if sys.version_info >= (3, 8):
+    from functools import cached_property
+else:
+    from cartes.utils.cache import cached_property
 
 if sys.version_info >= (3, 8):
     from typing import Literal

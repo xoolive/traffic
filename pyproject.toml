@@ -2,7 +2,7 @@
 name = "traffic"
 homepage = "https://github.com/xoolive/traffic/"
 documentation = "https://traffic-viz.github.io/"
-version = "2.6.6"
+version = "2.7.0"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"
@@ -24,6 +24,7 @@ classifiers = [
   "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
   "Typing :: Typed",
 ]
 include = [
@@ -64,10 +65,10 @@ requests-pkcs12 = "^1.10"
 pyOpenSSL = "^20.0"
 appdirs = "^1.4.4"
 paramiko = "^2.7.2"
-typing-extensions = ">=3.10.0,<5.0"
+typing-extensions = ">=3.10.0,<5.0.0"
 altair = "^4.1.0"
 ipywidgets = "^7.6.3"
-ipyleaflet = "^0.14.0"
+ipyleaflet = ">=0.14.0,<1.0.0"
 tqdm = "^4.61.1"
 pyModeS = "^2.9"
 openap = "^1.1"
@@ -76,11 +77,11 @@ beautifulsoup4 = "^4.9.3"
 lxml = "^4.6.3"
 metar = "^1.8.0"
 rich = "^11.2.0"
-xarray = { version = "^0.18.2", optional = true }
-libarchive = { version = "^0.4.7", optional = true }
+xarray = { version = ">=0.18.2,<1.0.0", optional = true }
+libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
 scikit-learn = { version = "^1.0", optional = true }
-fastkml = { version = "^0.11", optional = true }
-keplergl = { version = "^0.3.2", optional = true }
+fastkml = { version = ">=0.11,<1.0.0", optional = true }
+keplergl = { version = ">=0.3.2,<1.0.0", optional = true }
 
 [tool.poetry.extras]
 all = ["xarray", "libarchive", "scikit-learn", "fastkml", "keplergl"]
@@ -92,19 +93,19 @@ black = ">=21.6"
 flake8 = "^3.9.2"
 mypy = "^0.902"
 Sphinx = "^4.0.2"
-sphinx-rtd-theme = "^0.5.2"
-jupyter_sphinx = "^0.3.2"
+sphinx-rtd-theme = ">=0.5.2"
+jupyter_sphinx = ">=0.3.2"
 sphinx-autodoc-typehints = "^1.17.0"
 pytest = "^6.2.4"
 codecov = "^2.1.11"
 pytest-cov = "^2.12.1"
-types-pkg-resources = "^0.1.3"
+types-pkg-resources = ">=0.1.3"
 types-requests = "^2.25.0"
-types-paramiko = "^0.1.7"
+types-paramiko = ">=0.1.7"
 types-pyOpenSSL = "^20.0.7"
 requests = {extras = ["socks"], version = "^2.25.1"}
 pytest-timeout = "^2.1.0"
-altair-saver = "^0.5.0"
+altair-saver = ">=0.5.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
