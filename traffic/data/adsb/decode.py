@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import heapq
 import logging
 import os
 import signal
@@ -18,6 +19,7 @@ from typing import (
     Iterator,
     Optional,
     TextIO,
+    TypeVar,
     Union,
     cast,
 )
@@ -34,6 +36,8 @@ if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
     from typing_extensions import TypedDict
+
+Decoder = TypeVar("Decoder", bound="ModeS_Decoder")
 
 
 def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
@@ -846,8 +850,10 @@ class AircraftDict(Dict[str, Aircraft]):
 
     lat0: float
     lon0: float
+    decoder: ModeS_Decoder
 
     def __missing__(self, key: str) -> Aircraft:
+        self.decoder.on_new_aircraft(key)
         self[key] = value = Aircraft(key, self.lat0, self.lon0)
         return value
 
@@ -925,12 +931,17 @@ class ModeS_Decoder:
 
     """
 
-    thread: Optional[StoppableThread]
-    cleaner_thread: Optional[StoppableThread]
+    decode_thread: Optional[StoppableThread]
+    timer_thread: Optional[StoppableThread]
+    timer_functions: list[
+        tuple[pd.Timestamp, pd.Timedelta, Callable[[Decoder], None]]
+    ] = list()
 
     def __init__(
         self,
         reference: None | str | Airport | tuple[float, float] = None,
+        expire_threshold: str | pd.Timedelta = pd.Timedelta("10 minutes"),
+        expire_frequency: str | pd.Timedelta = pd.Timedelta("1 minute"),
     ) -> None:
         """ """
         if isinstance(reference, str):
@@ -949,39 +960,76 @@ class ModeS_Decoder:
             lat0, lon0 = reference
 
         self.acs: AircraftDict = AircraftDict()
+        self.acs.decoder = self
         self.acs.set_latlon(lat0, lon0)
-        self.thread = None
-        self.cleaner_thread = None
 
-    def clean_aircraft(self, icao: str) -> None:
-        del self.acs[icao]
+        self.decode_thread = None
+        self.timer_thread = None
 
-    def clean_decoder(
-        self,
-        threshold: str | timedelta | pd.Timedelta = "30 min",
-    ) -> None:
-        thr = pd.Timedelta(threshold)
-        while self.thread.is_alive() or len(self.acs) != 0:
-            time.sleep(20)
-            now = pd.Timestamp("now", tzinfo=timezone.utc)
+        self.expire_threshold = (
+            expire_threshold
+            if isinstance(expire_threshold, pd.Timedelta)
+            else pd.Timedelta(expire_threshold)
+        )
+        self.expire_frequency = (
+            expire_frequency
+            if isinstance(expire_frequency, pd.Timedelta)
+            else pd.Timedelta(expire_frequency)
+        )
+
+    @classmethod
+    def on_timer(
+        cls, frequency: pd.Timedelta | str
+    ) -> Callable[[Callable[[Decoder], None]], Callable[[Decoder], None]]:
+        now = pd.Timestamp("now", tz="utc")
+        if isinstance(frequency, str):
+            frequency = pd.Timedelta(frequency)
+
+        def decorate(
+            function: Callable[[Decoder], None]
+        ) -> Callable[[Decoder], None]:
+            logging.info(f"Schedule {function.__name__} with {frequency}")
+            heapq.heappush(
+                cls.timer_functions,
+                (now + frequency, frequency, function),
+            )
+            return function
+
+        return decorate
+
+    def expire_aircraft(self) -> None:
+        logging.info("Running expire_aircraft")
+
+        now = pd.Timestamp("now", tz="utc")
+
+        if self.decode_thread and not self.decode_thread.is_alive():
             for icao in list(self.acs):
-                ac = self.acs[icao]
-                if len(ac.cumul) > 0:
-                    if now - ac.cumul[-1]["timestamp"] >= thr:
-                        with self.acs[icao].lock:
-                            self.clean_aircraft(icao)
-                else:
-                    try:
-                        flight = ac.flight
-                    except Exception:
-                        flight = None
-                    if flight is not None:
-                        if now - flight.stop >= thr:
-                            with self.acs[icao].lock:
-                                self.clean_aircraft(icao)
-                    elif not self.thread.is_alive():
-                        with self.acs[icao].lock:
-                            self.clean_aircraft(icao)
+                self.on_expire_aircraft(icao)
+
+        # for icao, ac in self.acs.items()
+        # not compatible with changes in size of the dictionary
+        for icao in list(self.acs):
+            ac = self.acs[icao]
+            if len(ac.cumul) > 0:
+                if now - ac.cumul[-1]["timestamp"] >= self.expire_threshold:
+                    self.on_expire_aircraft(icao)
+            else:
+                try:  # TODO why?
+                    flight = ac.flight
+                except Exception:
+                    flight = None
+
+                if flight is not None:
+                    if now - flight.stop >= self.expire_threshold:
+                        self.on_expire_aircraft(icao)
+
+    def on_expire_aircraft(self, icao: str) -> None:
+        with self.acs[icao].lock:
+            del self.acs[icao]
+
+    def on_new_aircraft(self, icao: str) -> None:
+        print(self, icao)
+        logging.info(f"New aircraft {icao}")
 
     @classmethod
     def from_file(
@@ -1053,7 +1101,7 @@ class ModeS_Decoder:
     ) -> "ModeS_Decoder":
 
         decoder = cls(reference)
-        redefine_freq = 2 ** redefine_mag - 1
+        redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
         def next_in_binary(filename: Union[str, Path]) -> Iterator[bytes]:
@@ -1125,9 +1173,9 @@ class ModeS_Decoder:
         fh = open(today, "a", 1)
 
         rtlsdr = MyRtlReader(decoder, fh, uncertainty=uncertainty)
-        decoder.thread = StoppableThread(target=rtlsdr.run)
+        decoder.decode_thread = StoppableThread(target=rtlsdr.run)
         signal.signal(signal.SIGINT, rtlsdr.stop)
-        decoder.thread.start()
+        decoder.decode_thread.start()
         return decoder
 
     @classmethod
@@ -1144,12 +1192,15 @@ class ModeS_Decoder:
     ) -> "ModeS_Decoder":  # coverage: ignore
 
         decoder = cls(reference)
-        redefine_freq = 2 ** redefine_mag - 1
+        redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
         def next_in_socket() -> Iterator[bytes]:
             while True:
-                if decoder.thread is None or decoder.thread.to_be_stopped():
+                if (
+                    decoder.decode_thread is None
+                    or decoder.decode_thread.to_be_stopped()
+                ):
                     socket.close()
                     return
                 yield socket.recv(2048)
@@ -1176,16 +1227,38 @@ class ModeS_Decoder:
 
                 decoder.process(now, msg[18:], uncertainty=uncertainty)
 
-        decoder.thread = StoppableThread(target=decode)
-        decoder.thread.start()
-        decoder.cleaner_thread = StoppableThread(target=decoder.clean_decoder)
-        decoder.cleaner_thread.start()
+        def timer() -> None:
+            assert decoder.decode_thread is not None
+
+            # This one is automatically added
+            cls.on_timer(decoder.expire_frequency)(cls.expire_aircraft)
+
+            # if the decoder is not alive, finish expiring aircraft
+            while decoder.decode_thread.is_alive() or len(decoder.acs) != 0:
+                now = pd.Timestamp("now", tz="utc")
+                t, delta, operation = heapq.heappop(cls.timer_functions)
+
+                if now < t:
+                    wait = t - now
+                    time.sleep(wait.total_seconds())
+
+                now = pd.Timestamp("now", tz="utc")
+                operation(decoder)
+                logging.info(f"Schedule {operation.__name__} at {now + delta}")
+                heapq.heappush(
+                    cls.timer_functions, (now + delta, delta, operation)
+                )
+
+        decoder.decode_thread = StoppableThread(target=decode)
+        decoder.decode_thread.start()
+        decoder.timer_thread = StoppableThread(target=timer)
+        decoder.timer_thread.start()
         return decoder
 
     def stop(self) -> None:
-        if self.thread is not None and self.thread.is_alive():
-            self.thread.stop()
-            self.thread.join()
+        if self.decode_thread is not None and self.decode_thread.is_alive():
+            self.decode_thread.stop()
+            self.decode_thread.join()
 
     def __del__(self) -> None:
         self.stop()
@@ -1302,10 +1375,10 @@ class ModeS_Decoder:
         self, msgs: Iterable[tuple[datetime, str]], uncertainty: bool = False
     ) -> None:
 
-        for i, (time, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
+        for i, (t, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
             if i & 127 == 127:
-                self.redefine_reference(time)
-            self.process(time, msg, uncertainty=uncertainty)
+                self.redefine_reference(t)
+            self.process(t, msg, uncertainty=uncertainty)
 
     def process(
         self,
