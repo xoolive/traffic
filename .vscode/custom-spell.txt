@@ -26,6 +26,7 @@ cmap
 COBT
 codecov
 color
+commb
 CTFM
 CTOA
 CTOT
@@ -60,6 +61,7 @@ FTFM
 gainsboro
 geod
 gitter
+GNSS
 Haneda
 hausdorff
 Hoekstra
@@ -87,6 +89,7 @@ LIRF
 LLBG
 loess
 lomin
+longmsg
 LSZH
 lxml
 matplotlib
@@ -119,12 +122,15 @@ pydatetime
 pylint
 pypoetry
 pyproj
+pyrtlsdr
 pytest
 rawmsg
 RTFM
+rtlsdr
 Schiphol
 scikit-learn
 scipy
+shortmsg
 skipif
 snok
 sspd

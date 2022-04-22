@@ -3,7 +3,6 @@ from __future__ import annotations
 import heapq
 import logging
 import os
-import signal
 import socket
 import sys
 import threading
@@ -1174,7 +1173,6 @@ class ModeS_Decoder:
 
         rtlsdr = MyRtlReader(decoder, fh, uncertainty=uncertainty)
         decoder.decode_thread = StoppableThread(target=rtlsdr.run)
-        signal.signal(signal.SIGINT, rtlsdr.stop)
         decoder.decode_thread.start()
         return decoder
 
