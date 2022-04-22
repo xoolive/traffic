@@ -1,3 +1,6 @@
+# mypy: ignore-errors
+# This line can be removed when typing in pyModeS is complete and released.
+
 from __future__ import annotations
 
 import heapq
