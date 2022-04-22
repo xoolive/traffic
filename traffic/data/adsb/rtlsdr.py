@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from .decode import ModeS_Decoder
 
 
-class MyRtlReader(RtlReader):  # type: ignore
+class MyRtlReader(RtlReader):
     def __init__(
         self,
         decoder: "ModeS_Decoder",
@@ -15,15 +15,15 @@ class MyRtlReader(RtlReader):  # type: ignore
         uncertainty: bool = False,
         **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore
         self.count = 0
         self.fh = fh
         self.decoder = decoder
         self.uncertainty = uncertainty
 
     def encode_message(
-        self, msg: str, time: datetime
-    ) -> Optional[Tuple[datetime, str]]:
+        self, msg: str, time: float
+    ) -> Optional[Tuple[float, str]]:
 
         now = datetime.now(timezone.utc)
         secs_total = (
@@ -42,10 +42,11 @@ class MyRtlReader(RtlReader):  # type: ignore
             return time, f"1a31{t:012x}00{msg.lower()}"
         return None
 
-    def handle_messages(self, messages: Iterable[Tuple[str, datetime]]) -> None:
+    def handle_messages(self, messages: Iterable[Tuple[str, float]]) -> None:
 
         for msg, t in messages:
 
+            ts = datetime.fromtimestamp(t, timezone.utc)
             self.count += 1
 
             if self.fh is not None:
@@ -54,10 +55,6 @@ class MyRtlReader(RtlReader):  # type: ignore
                     self.fh.write("{},{}\n".format(*encoded))
 
             if self.count & 127 == 127:
-                self.decoder.redefine_reference(t)
+                self.decoder.redefine_reference(ts)
 
-            self.decoder.process(
-                datetime.fromtimestamp(t.timestamp(), timezone.utc),
-                msg,
-                uncertainty=self.uncertainty,
-            )
+            self.decoder.process(ts, msg, uncertainty=self.uncertainty)
