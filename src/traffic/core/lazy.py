@@ -89,6 +89,24 @@ class LazyLambda:
         assert not isinstance(result, np.bool_)
         return result
 
+    @property
+    def udf(self) -> Callable[[pd.DataFrame], pd.DataFrame]:
+        def flight_ops_wrapper(df: pd.DataFrame) -> pd.DataFrame:
+            result = cast(
+                Union[None, bool, np.bool_, Flight],
+                getattr(Flight, self.f_name)(
+                    Flight(df), *self.args, **self.kwargs
+                ),
+            )
+            if result is False or result is np.False_:
+                return df.query("icao24 != icao24")
+            if result is True or result is np.True_:
+                return df
+            # this needs to change to allow for columns to be added
+            return result.data[df.columns]  # type: ignore
+
+        return flight_ops_wrapper
+
 
 def apply(
     stacked_ops: List[LazyLambda], idx: int, flight: Optional[Flight]
@@ -151,6 +169,7 @@ class LazyTraffic:
         max_workers: int = 1,
         desc: None | str = None,
         cache_file: str | Path | None = None,
+        spark: Any = None,
     ) -> None | "Traffic":
         """
 
@@ -196,6 +215,18 @@ class LazyTraffic:
 
         if cache_file is not None and Path(cache_file).exists():
             return self.wrapped_t.__class__.from_file(cache_file)
+
+        if spark is not None:
+            sdf = spark.createDataFrame(self.wrapped_t.data)
+
+            for lazy_lambda in self.stacked_ops:
+                sdf = sdf.groupby("flight_id").applyInPandas(
+                    lazy_lambda.udf,
+                    schema=sdf.schema,
+                )
+
+            res = sdf.toPandas()
+            return res.pipe(Traffic)  # type: ignore
 
         if max_workers < 2 or FaultCatcher.flag is True:
             iterator = self.wrapped_t.iterate(**self.iterate_kw)
