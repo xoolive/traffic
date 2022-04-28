@@ -90,6 +90,22 @@ class LazyLambda:
         return result
 
     @property
+    def spark_impl(self) -> None | Callable[["sparkdf"], "sparkdf"]:
+        from .spark import get_alias
+
+        fun = get_alias(self.f_name)
+
+        if fun is None:
+            return None
+
+        logging.info(f"Found a specific Spark implementation for {self.f_name}")
+
+        def wrapper(sdf: "sdf") -> "sdf":
+            return fun(sdf, *self.args, **self.kwargs)
+
+        return wrapper
+
+    @property
     def udf(self) -> Callable[[pd.DataFrame], pd.DataFrame]:
         def flight_ops_wrapper(df: pd.DataFrame) -> pd.DataFrame:
             result = cast(
@@ -217,13 +233,21 @@ class LazyTraffic:
             return self.wrapped_t.__class__.from_file(cache_file)
 
         if spark is not None:
+            from .traffic import Traffic
+
             sdf = spark.createDataFrame(self.wrapped_t.data)
 
             for lazy_lambda in self.stacked_ops:
-                sdf = sdf.groupby("flight_id").applyInPandas(
-                    lazy_lambda.udf,
-                    schema=sdf.schema,
-                )
+                spark_impl = lazy_lambda.spark_impl
+                if spark_impl is not None:
+                    # expect a specific Spark implementation
+                    sdf = spark_impl(sdf)
+                else:
+                    # default behaviour: wrap the call in a UDF
+                    sdf = sdf.groupby("flight_id").applyInPandas(
+                        lazy_lambda.udf,
+                        schema=sdf.schema,
+                    )
 
             res = sdf.toPandas()
             return res.pipe(Traffic)  # type: ignore
