@@ -574,7 +574,7 @@ class NavigationFeatures:
                     )
                     if candidate is None or candidate.shape is None:
                         continue
-                    start_runway = candidate.aligned_on_runway("LSZH").max()
+                    start_runway = candidate.aligned_on_runway(airport).max()
 
                     if start_runway is not None:
                         candidate = candidate.after(start_runway.start)
