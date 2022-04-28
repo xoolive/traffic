@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
@@ -55,9 +56,17 @@ class AirportPoint(PointMixin):
 
 
 @rich.repr.auto()
-class Airport(
-    FormatMixin, HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin
-):
+@dataclass(frozen=True)
+class Airport(FormatMixin, HBoxMixin, PointMixin, ShapelyMixin):
+
+    altitude: float
+    country: str
+    iata: str
+    icao: str
+    latitude: float
+    longitude: float
+    name: str
+
     def __rich_repr__(self) -> rich.repr.Result:
         yield "icao", self.icao
         if self.iata:
@@ -99,7 +108,10 @@ class Airport(
         return title + no_wrap_div.format(self._repr_svg_())
 
     def __getattr__(self, name: str) -> "Overpass":
-        if name not in self._openstreetmap().data.aeroway.unique():
+        if (
+            name.startswith("__")
+            or name not in self._openstreetmap().data.aeroway.unique()
+        ):
             raise AttributeError(
                 f"'{self.__class__.__name__}' has no attribute '{name}'"
             )
