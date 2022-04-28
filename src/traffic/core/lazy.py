@@ -34,6 +34,8 @@ from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
     from .traffic import Traffic
+    from pyspark.sql import DataFrame as SDF
+    from typing_extensions import Literal
 
 _log = logging.getLogger(__name__)
 
@@ -90,38 +92,10 @@ class LazyLambda:
         return result
 
     @property
-    def spark_impl(self) -> None | Callable[["sparkdf"], "sparkdf"]:
-        from .spark import get_alias
+    def spark_implementation(self) -> Callable[["SDF"], "SDF"]:
+        from .spark import get_implementation
 
-        fun = get_alias(self.f_name)
-
-        if fun is None:
-            return None
-
-        logging.info(f"Found a specific Spark implementation for {self.f_name}")
-
-        def wrapper(sdf: "sdf") -> "sdf":
-            return fun(sdf, *self.args, **self.kwargs)
-
-        return wrapper
-
-    @property
-    def udf(self) -> Callable[[pd.DataFrame], pd.DataFrame]:
-        def flight_ops_wrapper(df: pd.DataFrame) -> pd.DataFrame:
-            result = cast(
-                Union[None, bool, np.bool_, Flight],
-                getattr(Flight, self.f_name)(
-                    Flight(df), *self.args, **self.kwargs
-                ),
-            )
-            if result is False or result is np.False_:
-                return df.query("icao24 != icao24")
-            if result is True or result is np.True_:
-                return df
-            # this needs to change to allow for columns to be added
-            return result.data[df.columns]  # type: ignore
-
-        return flight_ops_wrapper
+        return get_implementation(self.f_name, *self.args, **self.kwargs)
 
 
 def apply(
@@ -238,16 +212,7 @@ class LazyTraffic:
             sdf = spark.createDataFrame(self.wrapped_t.data)
 
             for lazy_lambda in self.stacked_ops:
-                spark_impl = lazy_lambda.spark_impl
-                if spark_impl is not None:
-                    # expect a specific Spark implementation
-                    sdf = spark_impl(sdf)
-                else:
-                    # default behaviour: wrap the call in a UDF
-                    sdf = sdf.groupby("flight_id").applyInPandas(
-                        lazy_lambda.udf,
-                        schema=sdf.schema,
-                    )
+                sdf = lazy_lambda.spark_implementation(sdf)
 
             res = sdf.toPandas()
             return res.pipe(Traffic)  # type: ignore
