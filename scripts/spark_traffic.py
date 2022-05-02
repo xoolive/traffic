@@ -14,17 +14,35 @@ conf.set("spark.sql.session.timeZone", "UTC")
 
 spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
+# spark = SparkSession.builder.master("local[4]").appName("mySparkTraffic").getOrCreate()
+
 # %%
-from traffic.core.spark import SparkTraffic
+from traffic.core import spark as st
 from pyspark.sql import functions as fn
 
-data_path = "<fill here>"
+# data_path = "<fill here>"
+data_path = "/cluster/home/mora/git/zhaw_crm/data/delete_me_OSN_ZRH_2021_July_raw/2021-07/"
 
 #  df = spark.createDataFrame(quickstart.data)
 #  spark_traffic = SparkTraffic(df)
 
-spark_traffic = SparkTraffic.from_csv(data_path, spark)
+spark_traffic = st.SparkTraffic.from_csv(
+    data_path,
+    spark,
+    mode="FAILFAST",
+    inferSchema=True,
+    header=True,
+    sep=",",
+    quote="'",
+)
 
+# spark_traffic.sdf.printSchema()
+
+# %%
+# pddf = spark_traffic.sdf.toPandas()
+# pddf
+
+# %%
 st = (
     spark_traffic.withColumn("bla", fn.lit(1)).query(  # .assign(ILS="")
         "altitude < 3000"
@@ -42,4 +60,8 @@ st = (
     # .eval(spark=spark)
 )
 
-st.sdf.show()
+# st.sdf.show()
+st.sdf.count()
+
+# %%
+spark.stop()

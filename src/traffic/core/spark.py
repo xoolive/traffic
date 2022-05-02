@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Protocol, Union, cast
+from typing import Any, Callable, Protocol, Union, cast, List, Optional
 
 from pyspark.sql import DataFrame as SDF
-from pyspark.sql import functions
+from pyspark.sql import functions as fn
+from pyspark.sql.types import TimestampType
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
 
 import numpy as np
 import pandas as pd
@@ -23,6 +26,85 @@ _implementations: dict[str, Implementation] = dict()
 
 # column name for groupby
 flight_id = "flight_id"
+
+
+class SparkTraffic:
+    def __init__(
+        self,
+        sdf: SDF,
+        cache_after_loading: bool = True,
+        assign_flt_id: bool = True,
+    ):
+        if assign_flt_id:
+            sdf = assign_id(sdf)
+
+        if cache_after_loading:
+            sdf.cache()
+
+        self.sdf = sdf
+
+    @classmethod
+    def from_parquet(
+        cls,
+        filename: str,
+        spark: SparkSession,
+        cache_after_loading: bool = True,
+        assign_flt_id: bool = True,
+    ):
+        sdf = spark.read.parquet(filename)
+        return cls(sdf, cache_after_loading, assign_flt_id)
+
+    @classmethod
+    def from_csv(
+        cls,
+        filename: str,
+        spark: SparkSession,
+        cache_after_loading: bool = True,
+        assign_flt_id: bool = True,
+        time_cols_to_convert: Optional[List[str]] = None,
+        **kwargs,
+    ):
+        sdf = spark.read.csv(filename, **kwargs)
+
+        # convert timestamps when loading from CSV
+        if time_cols_to_convert is None:
+            # if no columns are given, use default columns with time
+            time_cols_to_convert = ["timestamp", "last_position"]
+        schema = sdf.schema
+        for name, datatype in zip(schema.fieldNames(), schema.fields):
+            if name in time_cols_to_convert and datatype != TimestampType:
+                sdf = get_timestamp_from_string(sdf, name)
+
+        return cls(sdf, cache_after_loading, assign_flt_id)
+
+    def __getattr__(self, name):
+        def func(*args, **kwargs) -> "SparkTraffic":
+            callable = getattr(SDF, name, None)
+            if callable is None:
+                callable = get_implementation(name, *args, **kwargs)
+                return SparkTraffic(
+                    callable(self.sdf),
+                    cache_after_loading=False,
+                    assign_flt_id=False,
+                )
+            # return callable(self.sdf, *args, **kwargs)
+            return SparkTraffic(
+                callable(
+                    self.sdf,
+                    *args,
+                    **kwargs,
+                ),
+                cache_after_loading=False,
+                assign_flt_id=False,
+            )
+
+        return func
+
+    @property
+    def traffic(self):
+        from .traffic import Traffic
+
+        return self.sdf.toPandas().pipe(Traffic)
 
 
 def spark_register(func: Implementation) -> Implementation:
@@ -44,45 +126,6 @@ def wraps(name: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
         return result.data[df.columns]  # type: ignore
 
     return udf_wrapper
-
-
-class SparkTraffic:
-    def __init__(self, sdf: SDF):
-        global flight_id
-        if not flight_id in sdf.columns:
-            # TODO: only temporary fix until we have a proper implementation of
-            # assign_id in spark.
-            logging.warning(
-                "'flight_id' does not exist, use icao24 for grouping instead"
-            )
-            flight_id = "icao24"
-        self.sdf = sdf
-
-    @classmethod
-    def from_parquet(cls, filename, spark):
-        sdf = spark.read.parquet(filename)
-        return cls(sdf)
-
-    @classmethod
-    def from_csv(cls, filename, spark, **kwargs):
-        sdf = spark.read.csv(filename, **kwargs)
-        return cls(sdf)
-
-    def __getattr__(self, name):
-        def func(*args, **kwargs) -> "SparkTraffic":
-            callable = getattr(SDF, name, None)
-            if callable is None:
-                callable = get_implementation(name, *args, **kwargs)
-                return SparkTraffic(callable(self.sdf))
-            return SparkTraffic(callable(self.sdf, *args, **kwargs))
-
-        return func
-
-    @property
-    def traffic(self):
-        from .traffic import Traffic
-
-        return self.sdf.toPandas().pipe(Traffic)
 
 
 def get_implementation(
@@ -122,7 +165,7 @@ def feature_lt(
     if isinstance(feature, str):
         *name_split, agg = feature.split("_")
         feature = "_".join(name_split)
-        agg_fun = getattr(functions, agg, None)
+        agg_fun = getattr(fn, agg, None)
         if feature in sdf.columns and agg_fun is not None:
             op = "<" if strict else "<="
             flight_ids = (
@@ -136,3 +179,55 @@ def feature_lt(
     return sdf.groupby(flight_id).applyInPandas(
         wraps("feature_lt", feature, value, strict=True), schema=sdf.schema
     )
+
+
+# convenient Spark functions, maybe they should be moved
+def get_timestamp_from_string(sdf: SDF, col_name: str) -> SDF:
+    return sdf.withColumn(
+        col_name, fn.to_utc_timestamp(fn.col(col_name), tz="UTC")
+    )
+
+
+def assign_id(
+    sdf: SDF,
+    identifier: str = "icao24",
+    time: str = "timestamp",
+    threshold: float = 10 * 60,
+):
+
+    # keep the column names for later use
+    cols = sdf.columns
+
+    win = Window.partitionBy(identifier).orderBy(time)
+
+    # add a column with the previous time stamp per identifier group
+    sdf = sdf.withColumn("prev_timestamp", fn.lag(fn.col(time)).over(win))
+
+    # add column with breaks (i.e, when the next flight ID should start)
+    sdf = sdf.withColumn(
+        "break",
+        (
+            fn.unix_timestamp(time, "yyyy-MM-dd HH:mm:ss.SSS")
+            - fn.unix_timestamp("prev_timestamp", "yyyy-MM-dd HH:mm:ss.SSS")
+            > threshold
+        ).cast("integer"),
+    ).na.fill({"break": 1})
+
+    # assign a unique number to each row
+    sdf = sdf.withColumn("idx", fn.monotonically_increasing_id())
+
+    # create a column that is equal to 'idx' if 'break' == 1
+    sdf = sdf.withColumn(
+        "idx2",
+        fn.when(fn.col("break") == 1, fn.col("idx")).otherwise(fn.lit(None)),
+    )
+
+    # as above, partition by identifier and order by time. Since there can be
+    # multiple different IDs per partition, take the last non-NULL value.
+    sdf = sdf.withColumn(
+        "flight_id", fn.last(fn.col("idx2"), ignorenulls=True).over(win)
+    )
+
+    # drop temporary columns and return
+    cols.extend(["flight_id"])
+    return sdf.select(*cols)
