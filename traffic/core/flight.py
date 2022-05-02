@@ -2070,11 +2070,10 @@ class Flight(
         delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
         delta_1 = delta.iloc[1:]
         d = geo.distance(
-            delta_1.latitude.values,
-            delta_1.longitude.values,
-            (delta_1.latitude + delta_1.latitude_1).values,
-            (delta_1.longitude + delta_1.longitude_1).values,
-        )
+            coords.latitude.iloc[:-1],
+            coords.longitude.iloc[:-1],
+            coords.latitude.iloc[1:],
+            coords.longitude.iloc[1:],)
 
         res = cur_sorted.assign(
             cumdist=np.pad(  # type: ignore
