@@ -266,11 +266,6 @@ class NavigationFeatures:
             >>> f"ILS {aligned.max('ILS')} until {aligned.stop:%H:%M}"
             'ILS 06 until 20:17'
 
-        Be aware that all segments are not necessarily yielded in order.
-        Consider using ``max(..., key=attrgetter('start'))`` if you want the
-        last landing attempt, or ``sorted(..., key=attrgetter('start'))`` for
-        an ordered list
-
         .. code:: python
 
             >>> for aligned in belevingsvlucht.aligned_on_ils('EHLE'):
@@ -579,7 +574,7 @@ class NavigationFeatures:
                     )
                     if candidate is None or candidate.shape is None:
                         continue
-                    start_runway = candidate.aligned_on_runway("LSZH").max()
+                    start_runway = candidate.aligned_on_runway(airport).max()
 
                     if start_runway is not None:
                         candidate = candidate.after(start_runway.start)

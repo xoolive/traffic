@@ -120,7 +120,7 @@ class StoppableThread(threading.Thread):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.daemon = True  # is it redundant?
+        # self.daemon = True  # is it redundant?
         self._stop_event = threading.Event()
 
     def stop(self) -> None:
@@ -226,7 +226,10 @@ class Aircraft(object):
             self.cumul.clear()
 
         if self._flight is not None:
-            df = pd.concat([self._flight.data, df], sort=False)
+            if len(df) > 0:
+                df = pd.concat([self._flight.data, df], sort=False)
+            else:
+                df = self._flight.data
             if self.version is not None:
                 # remove columns added by nuc_p, nuc_r
                 if "HPL" in df.columns:
@@ -237,13 +240,21 @@ class Aircraft(object):
         if len(df) == 0:
             return None
 
-        self._flight = Flight(
-            df.assign(
-                callsign=df.callsign.replace("", None)
-                .fillna(method="ffill")
-                .fillna(method="bfill")
+        if 'callsign' in set(df.columns):
+
+            self._flight = Flight(
+                df.assign(
+                    callsign=df.callsign.replace("", None)
+                    .fillna(method="ffill")
+                    .fillna(method="bfill")
+                )
             )
-        )
+        else:
+            self._flight = Flight(
+                df.assign(
+                    callsign=None
+                )
+            )
 
         return self._flight
 
@@ -1016,11 +1027,7 @@ class ModeS_Decoder:
                 if now - ac.cumul[-1]["timestamp"] >= self.expire_threshold:
                     self.on_expire_aircraft(icao)
             else:
-                try:  # TODO why?
-                    flight = ac.flight
-                except Exception:
-                    flight = None
-
+                flight = ac.flight
                 if flight is not None:
                     if now - flight.stop >= self.expire_threshold:
                         self.on_expire_aircraft(icao)
@@ -1030,7 +1037,6 @@ class ModeS_Decoder:
             del self.acs[icao]
 
     def on_new_aircraft(self, icao: str) -> None:
-        print(self, icao)
         logging.info(f"New aircraft {icao}")
 
     @classmethod
@@ -1536,7 +1542,8 @@ class ModeS_Decoder:
                     position=ac.lat is not None,
                     data=ac,
                 )
-                for (key, ac) in self.acs.items()
+                # avoid dictionary change size during iteration
+                for (key, ac) in list(self.acs.items())
                 if ac.callsign is not None
             ),
             key=itemgetter("length"),
@@ -1554,8 +1561,11 @@ class ModeS_Decoder:
             return Traffic.from_flights(
                 self[elt["icao24"]] for elt in self.aircraft
             )
-        except ValueError:
+        except ValueError as e:
+            logging.warning(e)
             return None
 
     def __getitem__(self, icao: str) -> Optional[Flight]:
-        return self.acs[icao].flight
+        with self.acs[icao].lock:
+            ac = self.acs[icao]
+        return ac.flight
