@@ -1,6 +1,6 @@
 from __future__ import annotations
-import base64
 
+import base64
 import logging
 import pickle
 import threading
@@ -29,8 +29,8 @@ class Decode(ModeS_Decoder):
     ) -> None:
         super().__init__(
             reference,
-            expire_frequency=pd.Timedelta("1 minute"),
-            expire_threshold=pd.Timedelta("10 minutes"),
+            expire_frequency=pd.Timedelta("10 seconds"),
+            expire_threshold=pd.Timedelta("10 seconds"),
         )
         # uncertainty
         # dump file
