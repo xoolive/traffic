@@ -1027,12 +1027,7 @@ class ModeS_Decoder:
                 if now - ac.cumul[-1]["timestamp"] >= self.expire_threshold:
                     self.on_expire_aircraft(icao)
             else:
-                try:  # TODO why?
-                    flight = ac.flight
-                except Exception as e:
-                    flight = None
-                    logging.warning(e)
-
+                flight = ac.flight
                 if flight is not None:
                     if now - flight.stop >= self.expire_threshold:
                         self.on_expire_aircraft(icao)

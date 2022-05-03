@@ -143,7 +143,7 @@ def get_all() -> dict[str, str]:
     "--host",
     "serve_host",
     show_default=True,
-    default="0.0.0.0",
+    default="127.0.0.1",
     help="host address where to serve decoded information",
 )
 @click.option(
@@ -206,6 +206,7 @@ def main(
         )
     flask_thread = threading.Thread(
         target=app.run,
+        daemon=True,
         kwargs=dict(
             host=serve_host,
             port=serve_port,
