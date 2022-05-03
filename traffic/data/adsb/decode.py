@@ -240,8 +240,7 @@ class Aircraft(object):
         if len(df) == 0:
             return None
 
-        if 'callsign' in set(df.columns):
-
+        if "callsign" in set(df.columns):
             self._flight = Flight(
                 df.assign(
                     callsign=df.callsign.replace("", None)
@@ -250,11 +249,7 @@ class Aircraft(object):
                 )
             )
         else:
-            self._flight = Flight(
-                df.assign(
-                    callsign=None
-                )
-            )
+            self._flight = Flight(df.assign(callsign=None))
 
         return self._flight
 
