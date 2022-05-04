@@ -2070,10 +2070,10 @@ class Flight(
         delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
         delta_1 = delta.iloc[1:]
         d = geo.distance(
+            (delta_1.latitude - delta_1.latitude_1).values,
+            (delta_1.longitude - delta_1.longitude_1).values,
             delta_1.latitude.values,
             delta_1.longitude.values,
-            (delta_1.latitude + delta_1.latitude_1).values,
-            (delta_1.longitude + delta_1.longitude_1).values,
         )
 
         res = cur_sorted.assign(
@@ -2090,10 +2090,10 @@ class Flight(
 
         if compute_track:
             track = geo.bearing(
+                (delta_1.latitude - delta_1.latitude_1).values,
+                (delta_1.longitude - delta_1.longitude_1).values,
                 delta_1.latitude.values,
                 delta_1.longitude.values,
-                (delta_1.latitude + delta_1.latitude_1).values,
-                (delta_1.longitude + delta_1.longitude_1).values,
             )
             track = np.where(track > 0, track, 360 + track)
             res = res.assign(

@@ -553,6 +553,12 @@ def test_comet() -> None:
 def test_cumulative_distance() -> None:
     # https://github.com/xoolive/traffic/issues/61
 
+    first = belevingsvlucht.first("30T")
+    assert first is not None
+    f1 = first.cumulative_distance()
+    f2 = first.cumulative_distance(reverse=True)
+    assert f1.max("cumdist") == f1.max("cumdist")  # bugfix #197
+
     f1 = (
         belevingsvlucht.before("2018-05-30 20:17:58")  # type: ignore
         .last(minutes=15)
