@@ -357,6 +357,11 @@ class Aircraft(object):
         speed, track, _, speed_type, *_ = pms.adsb.surface_velocity(msg)
         if speed_type != "GS":
             logging.warn(f"Ground airspeed for aircraft {self.icao24}")
+
+        # This helps updating current representations
+        self.spd = speed
+        self.trk = track
+
         with self.lock:
             self.cumul.append(
                 dict(
