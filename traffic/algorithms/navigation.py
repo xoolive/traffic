@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import warnings
 from operator import attrgetter
 from pathlib import Path
@@ -17,6 +18,8 @@ from typing import (
     cast,
 )
 
+from typing_extensions import NotRequired, TypedDict
+
 import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, MultiLineString, Point, Polygon
@@ -33,6 +36,13 @@ if TYPE_CHECKING:
     from ..core.structure import Airport, Navaid  # noqa: 401
     from ..data.basic.airports import Airports  # noqa: 401
     from ..data.basic.navaid import Navaids  # noqa: 401
+
+
+class PointMergeParams(TypedDict):
+    point_merge: str | PointMixin
+    secondary_point: NotRequired[None | str | PointMixin]
+    distance_interval: NotRequired[tuple[float, float]]
+    delta_threshold: NotRequired[float]
 
 
 class NavigationFeatures:
@@ -811,6 +821,95 @@ class NavigationFeatures:
         return len(simplified.shape.buffer(1e-3).interiors)
 
     @flight_iterator
+    def point_merge(
+        self,
+        point_merge: str | PointMixin | list[PointMergeParams],
+        secondary_point: None | str | PointMixin = None,
+        distance_interval: None | tuple[float, float] = None,
+        delta_threshold: float = 5e-2,
+        airport: None | str | Airport = None,
+        runway: None | str = None,
+    ) -> Iterator["Flight"]:
+        """
+
+        (new in version 2.7.1)
+        """
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if isinstance(point_merge, list):
+            results = []
+            for params in point_merge:
+                id_ = params.get("secondary_point", params["point_merge"])
+                assert id_ is not None
+                name = id_ if isinstance(id_, str) else id_.name
+                for segment in self.point_merge(**params):
+                    results.append(segment.assign(point_merge=name))
+            yield from sorted(results, key=attrgetter("start"))
+            return
+
+        from traffic.data import navaids
+
+        navaids_extent = navaids.extent(self, buffer=1)
+        msg = f"No navaid available in the bounding box of Flight {self}"
+
+        if isinstance(point_merge, str):
+            if navaids_extent is None:
+                logging.warn(msg)
+                return None
+            point_merge = navaids_extent.global_get(point_merge)  # type: ignore
+            if point_merge is None:
+                logging.warn("Navaid for point_merge not found")
+                return None
+
+        if secondary_point is None:
+            secondary_point = point_merge
+
+        if isinstance(secondary_point, str):
+            if navaids_extent is None:
+                logging.warn(msg)
+                return None
+            secondary_point = navaids_extent.global_get(secondary_point)
+            if secondary_point is None:
+                logging.warn("Navaid for secondary_point not found")
+                return None
+
+        if airport is not None:
+            for landing in self.aligned_on_ils(airport):
+                if runway is None or landing.max("ILS") == runway:
+                    yield from self.point_merge(
+                        point_merge=point_merge,
+                        secondary_point=secondary_point,
+                        distance_interval=distance_interval,
+                        delta_threshold=delta_threshold,
+                    )
+            return
+
+        for segment in self.aligned_on_navpoint(point_merge):
+            before_point = self.before(segment.start)
+            if before_point is None:
+                continue
+            before_point = before_point.last("10 minutes")
+            if before_point is None:
+                continue
+            lower, upper = distance_interval if distance_interval else (0, 100)
+            constant_distance = (
+                before_point.distance(secondary_point)
+                .diff("distance")
+                .query(
+                    f"{lower} < distance < {upper} and "
+                    f"distance_diff.abs() < {delta_threshold}"
+                )
+            )
+            if constant_distance is None:
+                continue
+            candidate = constant_distance.split("5 seconds").max()
+            if candidate is not None and candidate.longer_than("90 seconds"):
+                result = self.between(candidate.start, segment.stop)
+                if result is not None:
+                    yield result
+
+    @flight_iterator
     def holding_pattern(
         self,
         duration: str = "6T",
@@ -821,19 +920,25 @@ class NavigationFeatures:
         vertical_rate: bool = False,
     ) -> Iterator["Flight"]:
         """Returns the holding patterns segments.
+
         Based on a classifier trained on EGLL and stored in a ONNX file.
+
+        (new in version 2.7.1)
         """
         try:
             import onnxruntime as rt
         except ImportError:
-            warnings.warn("'onnxruntime' optional dependency is necessary")
+            warnings.warn(
+                "Missing dependency: onnxruntime.\n"
+                "Retry after installing with pip or conda."
+            )
             raise
 
         # The following cast secures the typing
         self = cast("Flight", self)
 
         if model_path is None:
-            pkg = "traffic.algorithms.onnx"
+            pkg = "traffic.algorithms.onnx.holding_pattern"
             data = get_data(pkg, "scaler.onnx")
             scaler_sess = rt.InferenceSession(data)
             data = get_data(pkg, "classifier.onnx")
