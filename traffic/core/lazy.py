@@ -22,6 +22,7 @@ from typing import (
 from tqdm.rich import tqdm
 
 import numpy as np
+import pandas as pd
 
 from .flight import Flight
 from .mixins import GeographyMixin
@@ -235,9 +236,16 @@ class LazyTraffic:
                     cumul.append(future.result())
 
         # return Traffic.from_flights
-        result = self.wrapped_t.__class__.from_flights(
-            [flight for flight in cumul if flight is not None]
-        )
+        if len(cumul) == 0:
+            result = None
+        elif isinstance(cumul[0], Flight):
+            result = self.wrapped_t.__class__.from_flights(
+                [flight for flight in cumul if flight is not None]
+            )
+        elif isinstance(cumul[0], dict):
+            result = pd.DataFrame.from_records(cumul)
+        else:
+            result = pd.concat(cumul)
 
         if cache_file is not None and result is not None:
             result.to_pickle(cache_file)

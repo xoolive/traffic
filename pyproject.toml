@@ -86,10 +86,7 @@ fastkml = { version = ">=0.11,<1.0.0", optional = true }
 keplergl = { version = ">=0.3.2,<1.0.0", optional = true }
 textual = { version = ">=0.1.17", optional = true }
 Flask = { version = "^2.1.1", optional = true }
-onnxruntime = [
-  { version = "^1.10", python = "<3.10" },
-  { version = "^1.10", python = "^3.10", optional = true }
-]
+onnxruntime = { version = "^1.10", python = "<3.10" }  # missing with 3.10 at the time being
 
 [tool.poetry.extras]
 all = ["xarray", "libarchive", "scikit-learn", "fastkml", "keplergl"]
@@ -100,7 +97,7 @@ pre-commit = "^2.13.0"
 isort = "^5.9.1"
 black = ">=21.6"
 flake8 = "^3.9.2"
-mypy = "^0.902"
+mypy = ">=0.950"
 Sphinx = "^4.0.2"
 sphinx-rtd-theme = ">=0.5.2"
 jupyter_sphinx = ">=0.3.2"

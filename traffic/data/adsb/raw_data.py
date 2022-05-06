@@ -8,7 +8,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from pyModeS import adsb
@@ -82,8 +81,6 @@ class RawData(DataFrameMixin):
                 return x
 
             progressbar = identity
-
-        progressbar = cast(ProgressbarType[U], progressbar)
 
         data = self.data.rename(  # fill with other common renaming rules
             columns={

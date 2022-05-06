@@ -11,6 +11,7 @@ ATOA
 ATOT
 attrib
 autodoc
+baro
 baroaltitude
 beautifulsoup
 behavior
@@ -33,6 +34,7 @@ CTOT
 cumdist
 cumul
 dataframe
+dbscan
 docutils
 dropna
 dtype
@@ -67,6 +69,7 @@ hausdorff
 Hoekstra
 iata
 icao
+idcode
 iloc
 ipyleaflet
 ipynb
@@ -107,6 +110,7 @@ noplugin
 numpy
 nunique
 onground
+onnx
 openap
 opensky
 Otkidach
@@ -130,17 +134,23 @@ rtlsdr
 Schiphol
 scikit-learn
 scipy
+selalt
 shortmsg
 skipif
+sklearn
 snok
+splitmsg
 sspd
 stylesheet
 testpaths
 tobytes
 tqdm
 traj
+turb
 typehints
 vars
+vdata
+vepu
 virtualenv
 virtualenvs
 visualdict
