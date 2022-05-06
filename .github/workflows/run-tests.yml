@@ -142,6 +142,7 @@ jobs:
       - name: Run tests
         env:
           LD_LIBRARY_PATH: /usr/local/lib
+          TRAFFIC_CACHE_NO_EXPIRE: ""
           TRAFFIC_NOPLUGIN: ""
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}

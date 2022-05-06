@@ -236,14 +236,16 @@ class LazyTraffic:
                     cumul.append(future.result())
 
         # return Traffic.from_flights
-        if len(cumul) == 0:
+        if len(cumul) == 0 or all(elt is None for elt in cumul):
             result = None
-        elif isinstance(cumul[0], Flight):
+        elif any(isinstance(elt, Flight) for elt in cumul):
             result = self.wrapped_t.__class__.from_flights(
                 [flight for flight in cumul if flight is not None]
             )
-        elif isinstance(cumul[0], dict):
-            result = pd.DataFrame.from_records(cumul)
+        elif any(isinstance(elt, dict) for elt in cumul):
+            result = pd.DataFrame.from_records(
+                [elt for elt in cumul if elt is not None]
+            )
         else:
             result = pd.concat(cumul)
 

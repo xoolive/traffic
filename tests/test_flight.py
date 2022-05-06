@@ -611,6 +611,7 @@ def test_agg_time_colnames() -> None:
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
 
 
+@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
 def test_parking_position() -> None:
     pp = elal747.on_parking_position("LIRF").next()
     assert pp is not None
