@@ -5,8 +5,11 @@ aixm
 allft
 AOBT
 appdirs
+asfreq
 astimezone
 astype
+atfcm
+ATFM
 ATOA
 ATOT
 attrib
@@ -70,6 +73,7 @@ Hoekstra
 iata
 icao
 idcode
+idxmin
 iloc
 ipyleaflet
 ipynb
@@ -111,6 +115,7 @@ numpy
 nunique
 onground
 onnx
+onnxruntime
 openap
 opensky
 Otkidach
@@ -129,6 +134,9 @@ pyproj
 pyrtlsdr
 pytest
 rawmsg
+reroutable
+rerouting
+resp
 RTFM
 rtlsdr
 Schiphol
@@ -157,3 +165,4 @@ visualdict
 xarray
 xlink
 xoolive
+yoyo

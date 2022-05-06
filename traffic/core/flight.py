@@ -1220,7 +1220,7 @@ class Flight(
     def split(  # noqa: F811
         self, value: Union[int, str] = 10, unit: Optional[str] = None
     ) -> Iterator["Flight"]:
-        """Iterates on legs of a Flight based on the distrution of timestamps.
+        """Iterates on legs of a Flight based on the distribution of timestamps.
 
         By default, the method stops a flight and yields a new one after a gap
         of 10 minutes without data.
