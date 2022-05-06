@@ -128,12 +128,14 @@ jobs:
           poetry install -E all
 
       - name: Style checking
+        if: ${{ env.PYTHON_VERSION == '3.10' }}
         run: |
           poetry run flake8 traffic tests
           poetry run isort --check-only traffic tests
           poetry run black --check traffic tests
 
       - name: Type checking
+        if: ${{ env.PYTHON_VERSION == '3.10' }}
         run: |
           poetry run mypy traffic tests
 
