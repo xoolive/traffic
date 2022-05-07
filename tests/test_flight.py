@@ -28,6 +28,13 @@ try:
 except zipfile.BadZipFile:
     skip_runways = True
 
+try:
+    import onnxruntime  # noqa: F401
+except ImportError:
+    onnxruntime_available = False
+else:
+    onnxruntime_available = True
+
 
 def test_properties() -> None:
     flight = belevingsvlucht
@@ -752,3 +759,14 @@ def test_ground_trajectory() -> None:
         < pd.Timestamp("2019-11-05 16:37:00+00:00")
     )
     assert next(flight_iterate, None) is None
+
+
+@pytest.mark.skipif(not onnxruntime_available, reason="onnxruntime not in pypi")
+def test_holding_pattern() -> None:
+
+    holding_pattern = belevingsvlucht.holding_pattern().next()
+    assert holding_pattern is not None
+    assert (
+        holding_pattern.between("2018-05-30 15:45", "2018-05-30 15:50")
+        is not None
+    )

@@ -831,6 +831,36 @@ class NavigationFeatures:
         runway: None | str = None,
     ) -> Iterator["Flight"]:
         """
+        Iterates on all point merge segments in a trajectory before landing at
+        a given airport.
+
+        Only the ``point_merge`` argument is mandatory but other arguments may
+        reduce the number of false positives.
+
+        :param point_merge: The procedure point on which trajectories all align.
+
+        :param secondary_point: In some cases (e.g. Dublin 10R),
+            aircraft align to the ``point_merge`` after a segment of almost
+            constant distance to a secondary point.
+
+            Most often, the ``secondary_point`` is the ``point_merge`` and can
+            be left as ``None``.
+
+        :param distance_interval: A tuple of distances in nautical miles,
+            corresponding to lower and upper bound distances in the AIP between
+            the constant distance segments and the point merge.
+
+            This parameter is ignored if left as None.
+
+        :param delta_threshold: keep as default
+
+        :param airport: Remove false positives by specifying the landing
+            airport. The algorithm will ensure all trajectories are aligned with
+            one of the airport's ILS.
+
+        :param runway: Remove false positives by specifying the landing
+            runway. The algorithm will ensure all trajectories are aligned with
+            the runway's ILS. (ignored if ``airport`` is ``None``)
 
         (new in version 2.7.1)
         """
@@ -919,9 +949,24 @@ class NavigationFeatures:
         model_path: None | str | Path = None,
         vertical_rate: bool = False,
     ) -> Iterator["Flight"]:
-        """Returns the holding patterns segments.
+        """Iterates on all holding pattern segments in the trajectory.
 
-        Based on a classifier trained on EGLL and stored in a ONNX file.
+        This approach is based on a neuronal network model. Details will be
+        published in a coming academic publication.
+
+        Parameters should be left as default as they are strongly coupled with
+        the proposed model.
+
+        The model has been trained on manually labelled holding patterns for
+        trajectories landing at different European airports including London
+        Heathrow.
+
+        .. warning::
+
+            The ``onnxruntime`` package is an optional dependency required for
+            this function to properly work. At the time being, it is not
+            available for pip with Python 3.10 but still available on
+            conda-forge servers.
 
         (new in version 2.7.1)
         """
