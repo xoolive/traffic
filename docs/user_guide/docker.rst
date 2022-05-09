@@ -11,8 +11,12 @@ In the simplest case when you just want to run the traffic library in a Docker c
     FROM jupyter/minimal-notebook
 
     USER jovyan
-    RUN conda install -c conda-forge traffic
+    RUN mamba install -c conda-forge traffic
 
+    # manually set environmet variable for PROJ when running in base environment
+    ENV PROJ_LIB=/opt/conda/share/proj
+
+Note the last line, which sets a environment variable for PROJ. This is needed because the conda base environment never gets properly activated and this fixes the issue described `here <https://gis.stackexchange.com/questions/364421/how-to-make-proj-work-via-anaconda-in-google-colab>`__.
 To run this Docker, you first have to generate an image with ``docker build``:
 
 .. code:: bash
@@ -35,13 +39,13 @@ The ``Dockerfile`` could look like the following:
 
     FROM jupyter/minimal-notebook
 
-    # copy miniconda files to image
+    # copy conda environment file to image
     COPY traffic_env.yml traffic_env.yml
 
     # install nb_conda into the base python to allow the user to choose the environment in the jupyter notebook and install environment
     USER jovyan
-    RUN conda install -y nb_conda
-    RUN conda env create -f traffic_env.yml
+    RUN mamba install -y nb_conda
+    RUN mamba env create -f traffic_env.yml
 
 Note that the environment file ``traffic_env.yml`` has to be in the same directory as the ``Dockerfile``. The file ``traffic_env.yml`` could look like the following:
 
