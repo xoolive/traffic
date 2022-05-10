@@ -9,4 +9,4 @@
 FROM jupyter/minimal-notebook
 
 USER jovyan
-RUN conda install -c conda-forge traffic
+RUN mamba install -c conda-forge -y traffic

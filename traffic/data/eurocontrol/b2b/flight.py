@@ -171,7 +171,7 @@ class ParseFields:
             return {elt.tag: pd.Timestamp(elt.text, tz="UTC")}
         if elt.text is not None:
             return {elt.tag: elt.text}
-        method: Callable[..., Dict[str, Any]] = getattr(
+        method: Callable[..., Dict[str, Any]] = getattr(  # type: ignore
             type(self), elt.tag, None
         )
         if method is None:

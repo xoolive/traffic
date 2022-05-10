@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import logging
 import warnings
 from operator import attrgetter
+from pathlib import Path
+from pkgutil import get_data
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,6 +17,8 @@ from typing import (
     Union,
     cast,
 )
+
+from typing_extensions import NotRequired, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -31,6 +36,13 @@ if TYPE_CHECKING:
     from ..core.structure import Airport, Navaid  # noqa: 401
     from ..data.basic.airports import Airports  # noqa: 401
     from ..data.basic.navaid import Navaids  # noqa: 401
+
+
+class PointMergeParams(TypedDict):
+    point_merge: str | PointMixin
+    secondary_point: NotRequired[None | str | PointMixin]
+    distance_interval: NotRequired[tuple[float, float]]
+    delta_threshold: NotRequired[float]
 
 
 class NavigationFeatures:
@@ -809,61 +821,228 @@ class NavigationFeatures:
         return len(simplified.shape.buffer(1e-3).interiors)
 
     @flight_iterator
+    def point_merge(
+        self,
+        point_merge: str | PointMixin | list[PointMergeParams],
+        secondary_point: None | str | PointMixin = None,
+        distance_interval: None | tuple[float, float] = None,
+        delta_threshold: float = 5e-2,
+        airport: None | str | Airport = None,
+        runway: None | str = None,
+    ) -> Iterator["Flight"]:
+        """
+        Iterates on all point merge segments in a trajectory before landing at
+        a given airport.
+
+        Only the ``point_merge`` argument is mandatory but other arguments may
+        reduce the number of false positives.
+
+        :param point_merge: The procedure point on which trajectories all align.
+
+        :param secondary_point: In some cases (e.g. Dublin 10R),
+            aircraft align to the ``point_merge`` after a segment of almost
+            constant distance to a secondary point.
+
+            Most often, the ``secondary_point`` is the ``point_merge`` and can
+            be left as ``None``.
+
+        :param distance_interval: A tuple of distances in nautical miles,
+            corresponding to lower and upper bound distances in the AIP between
+            the constant distance segments and the point merge.
+
+            This parameter is ignored if left as None.
+
+        :param delta_threshold: keep as default
+
+        :param airport: Remove false positives by specifying the landing
+            airport. The algorithm will ensure all trajectories are aligned with
+            one of the airport's ILS.
+
+        :param runway: Remove false positives by specifying the landing
+            runway. The algorithm will ensure all trajectories are aligned with
+            the runway's ILS. (ignored if ``airport`` is ``None``)
+
+        (new in version 2.7.1)
+        """
+        # The following cast secures the typing
+        self = cast("Flight", self)
+
+        if isinstance(point_merge, list):
+            results = []
+            for params in point_merge:
+                id_ = params.get("secondary_point", params["point_merge"])
+                assert id_ is not None
+                name = id_ if isinstance(id_, str) else id_.name
+                for segment in self.point_merge(**params):
+                    results.append(segment.assign(point_merge=name))
+            yield from sorted(results, key=attrgetter("start"))
+            return
+
+        from traffic.data import navaids
+
+        navaids_extent = navaids.extent(self, buffer=1)
+        msg = f"No navaid available in the bounding box of Flight {self}"
+
+        if isinstance(point_merge, str):
+            if navaids_extent is None:
+                logging.warn(msg)
+                return None
+            point_merge = navaids_extent.global_get(point_merge)  # type: ignore
+            if point_merge is None:
+                logging.warn("Navaid for point_merge not found")
+                return None
+
+        if secondary_point is None:
+            secondary_point = point_merge
+
+        if isinstance(secondary_point, str):
+            if navaids_extent is None:
+                logging.warn(msg)
+                return None
+            secondary_point = navaids_extent.global_get(secondary_point)
+            if secondary_point is None:
+                logging.warn("Navaid for secondary_point not found")
+                return None
+
+        if airport is not None:
+            for landing in self.aligned_on_ils(airport):
+                if runway is None or landing.max("ILS") == runway:
+                    yield from self.point_merge(
+                        point_merge=point_merge,
+                        secondary_point=secondary_point,
+                        distance_interval=distance_interval,
+                        delta_threshold=delta_threshold,
+                    )
+            return
+
+        for segment in self.aligned_on_navpoint(point_merge):
+            before_point = self.before(segment.start)
+            if before_point is None:
+                continue
+            before_point = before_point.last("10 minutes")
+            if before_point is None:
+                continue
+            lower, upper = distance_interval if distance_interval else (0, 100)
+            constant_distance = (
+                before_point.distance(secondary_point)
+                .diff("distance")
+                .query(
+                    f"{lower} < distance < {upper} and "
+                    f"distance_diff.abs() < {delta_threshold}"
+                )
+            )
+            if constant_distance is None:
+                continue
+            candidate = constant_distance.split("5 seconds").max()
+            if candidate is not None and candidate.longer_than("90 seconds"):
+                result = self.between(candidate.start, segment.stop)
+                if result is not None:
+                    yield result
+
+    @flight_iterator
     def holding_pattern(
         self,
-        min_altitude: float = 7000,
-        turning_threshold: float = 0.5,
-        low_limit: pd.Timedelta = pd.Timedelta("30 seconds"),  # noqa: B008
-        high_limit: pd.Timedelta = pd.Timedelta("10 minutes"),  # noqa: B008
-        turning_limit: pd.Timedelta = pd.Timedelta("5 minutes"),  # noqa: B008
+        duration: str = "6T",
+        step: str = "2T",
+        threshold: str = "5T",
+        samples: int = 30,
+        model_path: None | str | Path = None,
+        vertical_rate: bool = False,
     ) -> Iterator["Flight"]:
-        """Iterates on parallel segments candidates for identifying
-        a holding pattern.
+        """Iterates on all holding pattern segments in the trajectory.
+
+        This approach is based on a neuronal network model. Details will be
+        published in a coming academic publication.
+
+        Parameters should be left as default as they are strongly coupled with
+        the proposed model.
+
+        The model has been trained on manually labelled holding patterns for
+        trajectories landing at different European airports including London
+        Heathrow.
 
         .. warning::
 
-            This API is not stable yet. The interface may change in a near
-            future.
+            The ``onnxruntime`` package is an optional dependency required for
+            this function to properly work. At the time being, it is not
+            available for pip with Python 3.10 but still available on
+            conda-forge servers.
 
+        (new in version 2.7.1)
         """
-        # avoid parts that are really way too low
-        alt_above = self.query(f"altitude > {min_altitude}")  # type: ignore
-        if alt_above is None:
-            return
-
-        straight_line = (
-            alt_above.unwrap()
-            .assign(
-                turning_rate=lambda x: x.track_unwrapped.diff()
-                / x.timestamp.diff().dt.total_seconds()
+        try:
+            import onnxruntime as rt
+        except ImportError:
+            warnings.warn(
+                "Missing dependency: onnxruntime.\n"
+                "Retry after installing with pip or conda."
             )
-            .filter(turning_rate=17)
-            .query(f"turning_rate.abs() < {turning_threshold}")
-        )
-        if straight_line is None:
-            return
+            raise
 
-        chunk_candidates = list(
-            (chunk.start, chunk.duration, chunk.mean("track_unwrapped"), chunk)
-            for chunk in straight_line.split("10s")
-            if low_limit <= chunk.duration < high_limit
-        )
+        # The following cast secures the typing
+        self = cast("Flight", self)
 
-        next_ = None
-        for (
-            (start1, duration1, track1, chunk1),
-            (start2, _, track2, chunk2),
-        ) in zip(chunk_candidates, chunk_candidates[1:]):
-            if (
-                start2 - start1 - duration1 < turning_limit
-                and abs(abs(track1 - track2) - 180) < 15
-            ):
-                yield chunk1
-                next_ = chunk2
-            else:
-                if next_ is not None:
-                    yield next_
-                next_ = None
+        if model_path is None:
+            pkg = "traffic.algorithms.onnx.holding_pattern"
+            data = get_data(pkg, "scaler.onnx")
+            scaler_sess = rt.InferenceSession(data)
+            data = get_data(pkg, "classifier.onnx")
+            classifier_sess = rt.InferenceSession(data)
+        else:
+            model_path = Path(model_path)
+            scaler_sess = rt.InferenceSession(
+                (model_path / "scaler.onnx").read_bytes()
+            )
+            classifier_sess = rt.InferenceSession(
+                (model_path / "classifier.onnx").read_bytes()
+            )
+
+        start, stop = None, None
+
+        for i, window in enumerate(self.sliding_windows(duration, step)):
+            if window.duration >= pd.Timedelta(threshold):
+
+                window = window.assign(flight_id=str(i))
+                resampled = window.resample(samples)
+
+                if resampled.data.eval("track != track").any():
+                    continue
+
+                features = (
+                    resampled.data.track_unwrapped
+                    - resampled.data.track_unwrapped[0]
+                ).values.reshape(1, -1)
+
+                if vertical_rate:
+                    if resampled.data.eval(
+                        "vertical_rate != vertical_rate"
+                    ).any():
+                        continue
+                    vertical_rates = (
+                        resampled.data.vertical_rate.values.reshape(1, -1)
+                    )
+                    features = np.concatenate(
+                        (features, vertical_rates), axis=1
+                    )  # type: ignore
+
+                name = scaler_sess.get_inputs()[0].name
+                value = features.astype(np.float32)
+                x = scaler_sess.run(None, {name: value})[0]
+
+                name = classifier_sess.get_inputs()[0].name
+                value = x.astype(np.float32)
+                pred = classifier_sess.run(None, {name: value})[0]
+
+                if bool(pred.round().item()):
+                    if start is None:
+                        start, stop = window.start, window.stop
+                    elif start < stop:
+                        stop = window.stop
+                    else:
+                        yield self.between(start, stop)
+                        start, stop = window.start, window.stop
+        if start is not None:
+            yield self.between(start, stop)  # type: ignore
 
     # -- Airport ground operations specific methods --
 

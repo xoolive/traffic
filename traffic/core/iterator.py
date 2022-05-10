@@ -204,7 +204,7 @@ class FlightIterator:
         if t == 0:
             return None
 
-        return Flight(t.data)  # type: ignore
+        return Flight(t.data)
 
     def max(self, key: str = "duration") -> Optional["Flight"]:
         """Returns the biggest element in the Iterator.
