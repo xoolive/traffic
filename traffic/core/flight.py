@@ -52,16 +52,15 @@ from . import geodesy as geo
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
+from ..data.basic.navaid import Navaids  # noqa: F401
 
 if TYPE_CHECKING:
     import altair as alt  # noqa: F401
     from cartopy.mpl.geoaxes import GeoAxesSubplot  # noqa: F401
     from matplotlib.artist import Artist  # noqa: F401
     from matplotlib.axes._subplots import Axes  # noqa: F401
-
     from ..data.adsb.raw_data import RawData  # noqa: F401
     from ..data.basic.aircraft import Tail  # noqa: F401
-    from ..data.basic.navaid import Navaids  # noqa: F401
     from .airspace import Airspace  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
     from .structure import Navaid  # noqa: F401
@@ -2068,6 +2067,11 @@ class Flight(
             vals = df[column_name] * 0.125 / 100
             return np.where(vals < 0.085, 0.085, vals)
 
+        def angle_from_bearings_deg(bearing_1, bearing_2):
+            # Returns the subtended given by 2 bearings.
+            angle = np.abs(bearing_1-bearing_2)
+            return np.where(angle>180, 360-angle, angle)
+
         if isinstance(dme, Navaids):
             flight = reduce(
                 lambda flight, dme_pair: flight.compute_DME_NSE(
@@ -2111,7 +2115,7 @@ class Flight(
             .bearing(dme1, "b1")
             .distance(dme2, "d2")
             .bearing(dme2, "b2")
-            .assign(angle=lambda df: np.abs(df.b2 - df.b1) % 180)
+            .assign(angle=lambda df: angle_from_bearings_deg(df.b1, df.b2))
             .assign(
                 angle=lambda df: np.where(
                     (df.angle >= 30) & (df.angle <= 150), df.angle, np.nan
@@ -2121,16 +2125,19 @@ class Flight(
                 sigma_dme_1_air=lambda df: sigma_air(df, "d1"),
                 sigma_dme_2_air=lambda df: sigma_air(df, "d2"),
                 NSE=lambda df: (
-                    df.sigma_dme_1_air**2
-                    + df.sigma_dme_2_air**2
-                    + sigma_dme_1_sis**2
-                    + sigma_dme_2_sis**2
+                    2
+                    * np.sqrt(
+                        df.sigma_dme_1_air**2
+                        + df.sigma_dme_2_air**2
+                        + sigma_dme_1_sis**2
+                        + sigma_dme_2_sis**2
+                    )
                 )
                 / np.sin(np.deg2rad(df.angle)),
             )
             .drop(columns=extra_cols)
             .rename(columns=dict(NSE=column_name))
-        )
+        )   
 
     def cumulative_distance(
         self,
