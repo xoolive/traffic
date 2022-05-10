@@ -6,6 +6,7 @@ import pytest
 from requests import HTTPError
 
 import pandas as pd
+from pandas.util.testing import assert_frame_equal
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import airports, eurofirs, navaids, runways
@@ -745,3 +746,16 @@ def test_ground_trajectory() -> None:
         < pd.Timestamp("2019-11-05 16:37:00+00:00")
     )
     assert next(flight_iterate, None) is None
+
+def test_DME_NSE_computation() -> None:
+    flight = zurich_airport["EDW229"]
+    dme_zone = navaids.query("type == 'DME'").extent(flight)
+    dmes = dme_zone.query('not description.str.endswith("ILS")')
+    dmes
+    expected = pd.DataFrame(
+        [[0.29309839759917666, "TRA_ZUE"], [0.279227376079405, "KLO_TRA"]],
+        columns=["NSE", "NSE_idx"],
+    )
+    result_df = flight.resample("60s").first("2min").compute_DME_NSE(dmes).data
+
+    assert_frame_equal(result_df[["NSE", "NSE_idx"]], expected, rtol=1e-3)
