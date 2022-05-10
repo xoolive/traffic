@@ -48,17 +48,18 @@ from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.phases import FuzzyLogic
 from ..core.types import ProgressbarType
+from ..data.basic.navaid import Navaids  # noqa: F401
 from . import geodesy as geo
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
-from ..data.basic.navaid import Navaids  # noqa: F401
 
 if TYPE_CHECKING:
     import altair as alt  # noqa: F401
     from cartopy.mpl.geoaxes import GeoAxesSubplot  # noqa: F401
     from matplotlib.artist import Artist  # noqa: F401
     from matplotlib.axes._subplots import Axes  # noqa: F401
+
     from ..data.adsb.raw_data import RawData  # noqa: F401
     from ..data.basic.aircraft import Tail  # noqa: F401
     from .airspace import Airspace  # noqa: F401
@@ -2044,8 +2045,8 @@ class Flight(
         """Adds the DME/DME Navigation System Error.
 
         Computes the max Navigation System Error using DME-DME navigation. The
-        obtained NSE value corresponds to the 2sigma (95%) requirement in
-        Nautical Miles.
+        obtained NSE value corresponds to the 2 :math:`\\sigma` (95%)
+        requirement in nautical miles.
         Source: EUROCONTROL Guidelines for RNAV 1 Infrastructure Assessment
 
         :param dme:
