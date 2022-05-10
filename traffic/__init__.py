@@ -65,7 +65,9 @@ cache_expiration_cfg = config.get("cache", "expiration", fallback="180 days")
 cache_expiration = pd.Timedelta(cache_expiration_cfg)
 
 cache_purge_cfg = config.get("cache", "purge", fallback="")
-if cache_purge_cfg != "":
+cache_no_expire = bool(os.environ.get("TRAFFIC_CACHE_NO_EXPIRE"))
+
+if cache_purge_cfg != "" and not cache_no_expire:
     cache_purge = pd.Timedelta(cache_purge_cfg)
     now = pd.Timestamp("now").timestamp()
 

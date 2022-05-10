@@ -42,7 +42,7 @@ class DataFrameMixin(object):
     _obfuscate: None | list[str] = None
 
     def __init__(self, data: pd.DataFrame, *args: Any, **kwargs: Any) -> None:
-        self.data: pd.DataFrame = data
+        self.data: pd.DataFrame = data  # type: ignore
 
     def __sizeof__(self) -> int:
         return int(self.data.memory_usage().sum())
@@ -106,7 +106,7 @@ class DataFrameMixin(object):
         my_table = Table(**self.table_options)
 
         if self.columns_options is None:
-            self.columns_options = dict(
+            self.columns_options = dict(  # type: ignore
                 (column, dict()) for column in self.data.columns
             )
 

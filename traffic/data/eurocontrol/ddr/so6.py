@@ -227,7 +227,7 @@ class SO6Flight(Flight):
 
     @property
     def flight(self) -> Flight:
-        return SO6Flight(
+        return Flight(
             pd.DataFrame.from_records(self.coords4d()).assign(
                 callsign=self.callsign,
                 flight_id=str(self.flight_id),

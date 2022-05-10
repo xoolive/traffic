@@ -33,6 +33,7 @@ include = [
   "py.typed",
   "*.json.*",
   ".xml",
+  ".onnx",
   "allft_fields.txt"
 ]
 
@@ -65,7 +66,7 @@ requests-pkcs12 = "^1.10"
 pyOpenSSL = "^20.0"
 appdirs = "^1.4.4"
 paramiko = "^2.7.2"
-typing-extensions = ">=3.10.0,<5.0.0"
+typing-extensions = ">=4.2.0,<5.0.0"
 altair = "^4.1.0"
 ipywidgets = "^7.6.3"
 ipyleaflet = ">=0.14.0,<1.0.0"
@@ -85,6 +86,8 @@ fastkml = { version = ">=0.11,<1.0.0", optional = true }
 keplergl = { version = ">=0.3.2,<1.0.0", optional = true }
 textual = { version = ">=0.1.17", optional = true }
 Flask = { version = "^2.1.1", optional = true }
+# missing with 3.10 at the time being
+onnxruntime = { version = "^1.10", optional = true }
 
 [tool.poetry.extras]
 all = ["xarray", "libarchive", "scikit-learn", "fastkml", "keplergl"]
@@ -95,7 +98,7 @@ pre-commit = "^2.13.0"
 isort = "^5.9.1"
 black = ">=21.6"
 flake8 = "^3.9.2"
-mypy = "^0.902"
+mypy = ">=0.950"
 Sphinx = "^4.0.2"
 sphinx-rtd-theme = ">=0.5.2"
 jupyter_sphinx = ">=0.3.2"

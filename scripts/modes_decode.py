@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import json
+import base64
 import logging
+import pickle
 import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import click
-from flask import Flask
+from flask import Flask, current_app
 from rich.box import SIMPLE_HEAVY
 from rich.table import Table
 from textual.app import App
@@ -16,7 +17,6 @@ from textual.widget import Widget
 import pandas as pd
 from traffic import config
 from traffic.data import ModeS_Decoder, aircraft
-from traffic.data.adsb.decode import Entry
 
 if TYPE_CHECKING:
     from traffic.core.structure import Airport
@@ -108,6 +108,22 @@ class SimpleApp(App):
         await self.view.dock(self.aircraft_widget)
 
 
+app = Flask(__name__)
+
+
+@app.route("/")
+def home() -> dict[str, int]:
+    d = dict(current_app.decoder.acs)
+    return dict((key, len(aircraft.cumul)) for (key, aircraft) in d.items())
+
+
+@app.route("/traffic")
+def get_all() -> dict[str, str]:
+    t = current_app.decoder.traffic
+    pickled_traffic = base64.b64encode(pickle.dumps(t)).decode('utf-8')
+    return {"traffic": pickled_traffic}
+
+
 @click.command()
 @click.argument("source")
 @click.option(
@@ -169,57 +185,25 @@ def main(
 
     if source == "dump1090":
         assert initial_reference is not None
-        decoder = Decode.from_dump1090(
+        app.decoder = Decode.from_dump1090(
             initial_reference, dump_file, uncertainty=decode_uncertainty
         )
     elif source == "rtlsdr":
         assert initial_reference is not None
-        decoder = Decode.from_rtlsdr(
+        app.decoder = Decode.from_rtlsdr(
             initial_reference, dump_file, uncertainty=decode_uncertainty
         )
     else:
         address = config.get("decoders", source)
         host_port, reference = address.split("/")
         host, port = host_port.split(":")
-        decoder = Decode.from_address(
+        app.decoder = Decode.from_address(
             host=host,
             port=int(port),
             reference=reference,
             file_pattern=dump_file,
             uncertainty=decode_uncertainty,
         )
-
-    app = Flask(__name__)
-
-    @app.route("/")
-    def home() -> dict[str, int]:
-        d = dict(decoder.acs)
-        return dict((key, len(aircraft.cumul)) for (key, aircraft) in d.items())
-
-    @app.route("/icao24/<icao24>")
-    def get_icao24(icao24: str) -> dict[str, list[Entry]]:
-        d = dict(decoder.acs)
-        aircraft_or_none = d.get(icao24, None)
-        if aircraft_or_none:
-            return {
-                icao24: list(
-                    entry
-                    | dict(
-                        timestamp=entry["timestamp"].timestamp()  # type: ignore
-                    )
-                    for entry in aircraft_or_none.cumul
-                )
-            }
-        else:
-            return {icao24: []}
-
-    @app.route("/cumul")
-    def get_all() -> dict[str, list[Any]]:
-        t = decoder.traffic
-        if t is None:
-            return {"cumul": []}
-        return {"cumul": json.loads(t.data.to_json(orient="records"))}
-
     flask_thread = threading.Thread(
         target=app.run,
         daemon=True,
@@ -235,7 +219,7 @@ def main(
 
     if tui:
         tui_app = SimpleApp()
-        tui_app.aircraft_widget.decoder = decoder
+        tui_app.aircraft_widget.decoder = app.decoder
         tui_app.flask_thread = flask_thread
         tui_app.run()
     else:
