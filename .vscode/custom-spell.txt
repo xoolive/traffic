@@ -1,3 +1,4 @@
+actype
 addopts
 ADSB
 airac
@@ -49,6 +50,7 @@ elal
 elems
 ellps
 elts
+enroute
 EOBT
 esbonio
 ESSA
@@ -103,6 +105,7 @@ matplotlib
 medfilt
 metar
 mkdir
+MTOW
 mypy
 Narita
 navdata
