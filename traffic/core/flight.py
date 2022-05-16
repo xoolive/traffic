@@ -5,7 +5,8 @@ import logging
 import sys
 import warnings
 from datetime import datetime, timedelta, timezone
-from functools import lru_cache
+from functools import lru_cache, reduce
+from itertools import combinations
 from operator import attrgetter
 from pathlib import Path
 from typing import (
@@ -47,6 +48,7 @@ from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.phases import FuzzyLogic
 from ..core.types import ProgressbarType
+from ..data.basic.navaid import Navaids  # noqa: F401
 from . import geodesy as geo
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
@@ -62,6 +64,7 @@ if TYPE_CHECKING:
     from ..data.basic.aircraft import Tail  # noqa: F401
     from .airspace import Airspace  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
+    from .structure import Navaid  # noqa: F401
     from .traffic import Traffic  # noqa: F401
 
 
@@ -2032,6 +2035,112 @@ class Flight(
             )
             / 1852,  # in nautical miles
             vertical=(table.altitude_x - table.altitude_y).abs(),
+        )
+
+    def compute_DME_NSE(
+        self,
+        dme: "Navaids" | Tuple["Navaid", "Navaid"],
+        column_name: str = "NSE",
+    ) -> "Flight":
+        """Adds the DME/DME Navigation System Error.
+
+        Computes the max Navigation System Error using DME-DME navigation. The
+        obtained NSE value corresponds to the 2 :math:`\\sigma` (95%)
+        requirement in nautical miles.
+
+        Source: EUROCONTROL Guidelines for RNAV 1 Infrastructure Assessment
+
+        :param dme:
+
+            - When the parameter is of type Navaids, only the pair of Navaid
+            giving the smallest NSE are used.
+            - When the parameter is of type tuple, the NSE is computed using
+            only the pair of specified Navaid.
+
+        :param column_name: (default: ``"NSE"``)
+
+            - name of the new column containing the computed NSE
+
+        """
+
+        sigma_dme_1_sis = sigma_dme_2_sis = 0.05
+
+        def sigma_air(df: pd.DataFrame, column_name: str) -> Any:
+            values = df[column_name] * 0.125 / 100
+            return np.where(values < 0.085, 0.085, values)
+
+        def angle_from_bearings_deg(
+            bearing_1: float, bearing_2: float
+        ) -> float:
+            # Returns the subtended given by 2 bearings.
+            angle = np.abs(bearing_1 - bearing_2)
+            return np.where(angle > 180, 360 - angle, angle)  # type: ignore
+
+        if isinstance(dme, Navaids):
+            flight = reduce(
+                lambda flight, dme_pair: flight.compute_DME_NSE(
+                    dme_pair, f"nse_{dme_pair[0].name}_{dme_pair[1].name}"
+                ),
+                combinations(dme, 2),
+                self,
+            )
+            nse_colnames = list(
+                column
+                for column in flight.data.columns
+                if column.startswith("nse_")
+            )
+            return (
+                flight.assign(
+                    NSE=lambda df: df[nse_colnames].min(axis=1),
+                    NSE_idx=lambda df: df[nse_colnames].idxmin(axis=1).str[4:],
+                )
+                .rename(
+                    columns=dict(
+                        NSE=column_name,
+                        NSE_idx=f"{column_name}_idx",
+                    )
+                )
+                .drop(columns=nse_colnames)
+            )
+
+        dme1, dme2 = dme
+        extra_cols = [
+            "b1",
+            "b2",
+            "d1",
+            "d2",
+            "sigma_dme_1_air",
+            "sigma_dme_2_air",
+            "angle",
+        ]
+
+        return (
+            self.distance(dme1, "d1")
+            .bearing(dme1, "b1")
+            .distance(dme2, "d2")
+            .bearing(dme2, "b2")
+            .assign(angle=lambda df: angle_from_bearings_deg(df.b1, df.b2))
+            .assign(
+                angle=lambda df: np.where(
+                    (df.angle >= 30) & (df.angle <= 150), df.angle, np.nan
+                )
+            )
+            .assign(
+                sigma_dme_1_air=lambda df: sigma_air(df, "d1"),
+                sigma_dme_2_air=lambda df: sigma_air(df, "d2"),
+                NSE=lambda df: (
+                    2
+                    * np.sqrt(
+                        df.sigma_dme_1_air**2
+                        + df.sigma_dme_2_air**2
+                        + sigma_dme_1_sis**2
+                        + sigma_dme_2_sis**2
+                    )
+                )
+                / np.sin(np.deg2rad(df.angle)),
+            )
+            .drop(columns=extra_cols)
+            .rename(columns=dict(NSE=column_name))
         )
 
     def cumulative_distance(
