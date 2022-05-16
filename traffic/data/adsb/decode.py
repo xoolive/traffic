@@ -429,9 +429,10 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(  # type: ignore
-                    **last_entry, callsign=self._callsign
-                )
+                self.cumul[-1] = {  # type: ignore
+                    **last_entry,
+                    **dict(callsign=self._callsign),
+                }
             else:
                 self.cumul.append(
                     dict(
