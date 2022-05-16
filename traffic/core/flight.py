@@ -2047,6 +2047,7 @@ class Flight(
         Computes the max Navigation System Error using DME-DME navigation. The
         obtained NSE value corresponds to the 2 :math:`\\sigma` (95%)
         requirement in nautical miles.
+
         Source: EUROCONTROL Guidelines for RNAV 1 Infrastructure Assessment
 
         :param dme:
@@ -2065,13 +2066,15 @@ class Flight(
         sigma_dme_1_sis = sigma_dme_2_sis = 0.05
 
         def sigma_air(df: pd.DataFrame, column_name: str) -> Any:
-            vals = df[column_name] * 0.125 / 100
-            return np.where(vals < 0.085, 0.085, vals)
+            values = df[column_name] * 0.125 / 100
+            return np.where(values < 0.085, 0.085, values)
 
-        def angle_from_bearings_deg(bearing_1, bearing_2):
+        def angle_from_bearings_deg(
+            bearing_1: float, bearing_2: float
+        ) -> float:
             # Returns the subtended given by 2 bearings.
-            angle = np.abs(bearing_1-bearing_2)
-            return np.where(angle>180, 360-angle, angle)
+            angle = np.abs(bearing_1 - bearing_2)
+            return np.where(angle > 180, 360 - angle, angle)  # type: ignore
 
         if isinstance(dme, Navaids):
             flight = reduce(
@@ -2138,7 +2141,7 @@ class Flight(
             )
             .drop(columns=extra_cols)
             .rename(columns=dict(NSE=column_name))
-        )   
+        )
 
     def cumulative_distance(
         self,

@@ -761,18 +761,29 @@ def test_ground_trajectory() -> None:
     )
     assert next(flight_iterate, None) is None
 
+
 def test_DME_NSE_computation() -> None:
+
     flight = zurich_airport["EDW229"]
-    dme_zone = navaids.query("type == 'DME'").extent(flight)
+    assert flight is not None
+
+    dme_zone = navaids.query("type == 'DME'").extent(flight)  # type: ignore
+    assert dme_zone is not None
+
     dmes = dme_zone.query('not description.str.endswith("ILS")')
-    dmes
+    assert dmes is not None
+
+    segment = flight.resample("60s").first("2min")
+    assert segment is not None
+    result_df = segment.compute_DME_NSE(dmes).data
+
     expected = pd.DataFrame(
-        [[0.29309839759917666, "TRA_ZUE"], [0.279227376079405, "KLO_TRA"]],
+        [[0.293, "TRA_ZUE"], [0.279, "KLO_TRA"]],
         columns=["NSE", "NSE_idx"],
     )
-    result_df = flight.resample("60s").first("2min").compute_DME_NSE(dmes).data
 
     assert_frame_equal(result_df[["NSE", "NSE_idx"]], expected, rtol=1e-3)
+
 
 @pytest.mark.skipif(not onnxruntime_available, reason="onnxruntime not in pypi")
 def test_holding_pattern() -> None:
