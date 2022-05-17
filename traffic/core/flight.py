@@ -2052,14 +2052,13 @@ class Flight(
 
         :param dme:
 
-            - When the parameter is of type Navaids, only the pair of Navaid
-            giving the smallest NSE are used.
-            - When the parameter is of type tuple, the NSE is computed using
-            only the pair of specified Navaid.
+            - when the parameter is of type Navaids, only the pair of Navaid
+              giving the smallest NSE are used;
+            - when the parameter is of type tuple, the NSE is computed using
+              only the pair of specified Navaid.
 
-        :param column_name: (default: ``"NSE"``)
-
-            - name of the new column containing the computed NSE
+        :param column_name: (default: ``"NSE"``), the name of the new column
+            containing the computed NSE
 
         """
 
