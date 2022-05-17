@@ -46,7 +46,7 @@ from shapely.ops import transform
 
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
-from ..algorithms.phases import FuzzyLogic
+from ..algorithms.openap import OpenAP
 from ..core.types import ProgressbarType
 from ..data.basic.navaid import Navaids  # noqa: F401
 from . import geodesy as geo
@@ -201,7 +201,7 @@ class Flight(
     GeographyMixin,
     ShapelyMixin,
     NavigationFeatures,
-    FuzzyLogic,
+    OpenAP,
     metaclass=MetaFlight,
 ):
     """Flight is the most basic class associated to a trajectory.
