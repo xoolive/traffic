@@ -91,8 +91,9 @@ waitress = {version = "^2.1.1", optional = true}
 # onnxruntime = { version = "^1.10", optional = true }
 
 [tool.poetry.extras]
-all = ["xarray", "libarchive", "scikit-learn", "fastkml", "keplergl"]
-ui = ["textual", "Flask", "waitress"]
+all = ["xarray", "libarchive", "scikit-learn", "textual"]
+web = ["Flask", "waitress"]
+plugins = ["fastkml", "keplergl"]
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.13.0"
