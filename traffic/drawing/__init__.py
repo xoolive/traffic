@@ -5,8 +5,6 @@ from pathlib import Path
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from .cartopy import *
-
 _traffic_style = """
 figure.figsize: 10, 7
 figure.edgecolor: white

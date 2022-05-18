@@ -1809,7 +1809,7 @@ class Flight(
 
         .. code:: python
 
-            from traffic.drawing import Mercator
+            from cartes.crs import Mercator
             fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator()))
             (
                 flight
@@ -2577,7 +2577,7 @@ class Flight(
 
         .. code:: python
 
-            from traffic.drawing import Mercator
+            from cartes.crs import Mercator
             fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
             flight.plot(ax, alpha=.5)
 

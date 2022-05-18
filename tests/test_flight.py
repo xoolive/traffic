@@ -3,7 +3,7 @@ from operator import itemgetter
 from typing import Any, Optional, cast
 
 import pytest
-from requests import HTTPError
+from requests import RequestException
 
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
@@ -619,7 +619,7 @@ def test_agg_time_colnames() -> None:
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
 
 
-@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
+@pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
 def test_parking_position() -> None:
     pp = elal747.on_parking_position("LIRF").next()
     assert pp is not None
@@ -665,7 +665,7 @@ def test_slow_taxi() -> None:
     assert flight.slow_taxi().next() is None
 
 
-@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
+@pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
 def test_pushback() -> None:
 
     flight = zurich_airport["AEE5ZH"]
@@ -684,7 +684,7 @@ def test_pushback() -> None:
     assert pushback.stop >= parking_position.stop
 
 
-@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
+@pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
 def test_on_taxiway() -> None:
     flight = zurich_airport["ACA879"]
     assert flight is not None

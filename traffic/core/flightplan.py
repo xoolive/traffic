@@ -577,7 +577,7 @@ class FlightPlan(ShapelyMixin):
 
         .. code:: python
 
-            from traffic.drawing import Mercator
+            from cartes.crs import Mercator
             fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
             flightplan.plot(ax, labels=True, alpha=.5)
 

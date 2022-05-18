@@ -140,6 +140,7 @@ rawmsg
 reroutable
 rerouting
 resp
+RNAV
 RTFM
 rtlsdr
 Schiphol
@@ -160,6 +161,7 @@ traj
 turb
 typehints
 vars
+vconcat
 vdata
 vepu
 virtualenv

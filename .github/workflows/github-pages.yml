@@ -125,8 +125,6 @@ jobs:
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
           PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
         run: |
-          # This line installs the theme for matplotlib
-          poetry run python -c "import traffic.drawing"
           # This downloads the cache for cartes atlas
           poetry run python -c "from cartes.atlas import default, world_atlas"
           # Update the configuration for NM DDR airspace files
