@@ -65,9 +65,11 @@ There are, for sure, few points requested with heading angles. Yet we can clearl
 
 .. code:: python
 
-    from traffic.core.projection import Mercator
 
     from traffic.data import airports, navaids
+
+    from cartes.crs import Mercator
+    from cartes.utils.features import countries, rivers
 
     from traffic.drawing import countries, location
     from traffic.drawing.markers import rotate_marker, aircraft

@@ -29,7 +29,7 @@ The full dataset of trajectories can be displayed on a basic Switzerland map.
     import matplotlib.pyplot as plt
 
     from cartes.crs import CH1903
-    from traffic.drawing import countries
+    from cartes.utils.features import countries
     
     with plt.style.context("traffic"):
         ax = plt.axes(projection=CH1903())
@@ -115,7 +115,8 @@ Many outliers appear in shaded grey in the first quartet.
 .. code:: python
 
     from itertools import islice, cycle
-    from traffic.drawing import countries
+
+    from cartes.utils.features import countries
     
     n_clusters = 1 + t_dbscan.data.cluster.max()
     
@@ -188,8 +189,8 @@ with the same parameters as the clustering.
     from random import sample
     
     from cartes.crs import CH1903
+    from cartes.utils.features import countries, lakes
     from traffic.data import airports, airways, navaids
-    from traffic.drawing import countries, lakes
     from traffic.drawing.markers import rotate_marker, atc_tower, aircraft
     
     with plt.style.context("traffic"):

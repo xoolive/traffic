@@ -109,7 +109,7 @@ Then you may send requests:
         :hide-output:
 
         from cartes.crs import EuroPP, PlateCarree
-        from traffic.drawing import countries
+        from cartes.utils.features import countries
 
         flight = opensky.history(
             "2018-06-11 15:00",
