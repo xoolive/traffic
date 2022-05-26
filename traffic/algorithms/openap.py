@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from itertools import count
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
+
+from ..core import aero
 
 if TYPE_CHECKING:
     from ..core import Flight  # noqa: F401
@@ -35,7 +38,9 @@ class OpenAP:
             .str.replace("LVL", "LEVEL")
         )
 
-    def fuelflow(self, mass: None | float = None) -> "Flight":
+    def fuelflow(
+        self, initial_mass: None | float = None, engine: None | str = None
+    ) -> "Flight":
 
         import openap
 
@@ -44,69 +49,105 @@ class OpenAP:
 
         actype = self.typecode
 
-        if actype != actype or (  # None or nan
-            actype is not None
-            and actype.lower() not in openap.prop.available_aircraft()
-        ):
+        if actype is None:
+            return self
+
+        if actype.lower() not in openap.prop.available_aircraft():
             return self
 
         ac = openap.prop.aircraft(actype)
 
-        if mass is None:
-            mass = 0.9 * ac["limits"]["MTOW"]
+        update_mass = True
+        if initial_mass is not None:
+            Mass = initial_mass * np.ones_like(self.data.altitude)
+        elif hasattr(self.data, "mass"):
+            Mass = self.data.mass.values
+            update_mass = False
+        else:
+            Mass = 0.9 * ac["limits"]["MTOW"] * np.ones_like(self.data.altitude)
 
-        fuelflow = openap.FuelFlow(actype, use_synonym=True)
+        fuelflow = openap.FuelFlow(actype, eng=engine, use_synonym=True)
 
         dt = self.data.timestamp.diff().dt.total_seconds().bfill().values
 
-        TAS = self.data.get("TAS", self.data.groundspeed)
+        TAS = self.data.get("TAS", None)
+        if TAS is None:
+            CAS = self.data.get("CAS", None)
+            if CAS is not None:
+                TAS = aero.vcas2tas(
+                    CAS * aero.kts, self.data.altitude * aero.ft
+                )
+
+        if TAS is None:
+            TAS = self.data.groundspeed
+
         VR = self.data.vertical_rate
         ALT = self.data.altitude
         PA = np.degrees(np.arctan2(VR * 0.00508, TAS * 0.51445))
 
-        Mass = []
         FF = []
         Fuel = []
-        mass0 = mass
-        for (tas, alt, pa, dt) in zip(TAS, ALT, PA, dt):
-            ff = fuelflow.enroute(mass=mass, tas=tas, alt=alt, path_angle=pa)
-            mass -= ff * dt
-            assert mass is not None
-            Mass.append(round(mass, 1))
+        for (i, tas, alt, pa, dt) in zip(count(1), TAS, ALT, PA, dt):
+            ff = fuelflow.enroute(
+                mass=Mass[i - 1], tas=tas, alt=alt, path_angle=pa
+            )
+            if update_mass:
+                Mass[i:] -= ff * dt if ff == ff else 0
             FF.append(round(float(ff), 4))
-            Fuel.append(mass0 - mass)
+            Fuel.append(Mass[0] - Mass[i - 1])
 
         return self.assign(mass=Mass, fuel=Fuel, fuelflow=FF, dt=dt)
 
-    def emission(self, mass: None | float = None) -> "Flight":
+    def emission(
+        self, mass: None | float = None, engine: None | str = None
+    ) -> "Flight":
 
         import openap
 
-        if "fuelflow" not in self.data.columns:  # type: ignore
-            self = self.fuelflow(mass)
-
         # The following cast secures the typing
         self = cast("Flight", self)
+
+        actype = self.typecode
+
+        if actype is None:
+            return self
+
+        if actype.lower() not in openap.prop.available_aircraft():
+            return self
+
+        if "fuelflow" not in self.data.columns:
+            self = self.fuelflow(mass)
 
         if "fuelflow" not in self.data.columns:
             # fuel flow cannot be computed
             return self
 
-        emission = openap.Emission(ac=self.typecode, use_synonym=True)
+        TAS = self.data.get("TAS", None)
+        if TAS is None:
+            CAS = self.data.get("CAS", None)
+            if CAS is not None:
+                TAS = aero.vcas2tas(
+                    CAS * aero.kts, self.data.altitude * aero.ft
+                )
+
+        if TAS is None:
+            TAS = self.data.groundspeed
+
+        emission = openap.Emission(ac=actype, eng=engine, use_synonym=True)
 
         NOx = emission.nox(
             self.data.fuelflow,
-            tas=self.data.get("TAS", self.data.groundspeed),
+            tas=TAS,
             alt=self.data.altitude,
         )
         CO = emission.co(
             self.data.fuelflow,
-            tas=self.data.get("TAS", self.data.groundspeed),
+            tas=TAS,
             alt=self.data.altitude,
         )
         HC = emission.hc(
             self.data.fuelflow,
-            tas=self.data.get("TAS", self.data.groundspeed),
+            tas=TAS,
             alt=self.data.altitude,
         )
         CO2 = emission.co2(self.data.fuelflow)
@@ -115,11 +156,11 @@ class OpenAP:
 
         return self.assign(
             **{
-                "nox": (NOx.cumsum() * self.data.dt * 1e-3).round(2),
-                "co": (CO.cumsum() * self.data.dt * 1e-3).round(2),
-                "hc": (HC.cumsum() * self.data.dt * 1e-3).round(2),
-                "co2": (CO2.cumsum() * self.data.dt * 1e-3).round(2),
-                "h2o": (H2O.cumsum() * self.data.dt * 1e-3).round(2),
-                "sox": (SOx.cumsum() * self.data.dt * 1e-3).round(2),
+                "NOX": (NOx.cumsum() * self.data.dt * 1e-3).round(2),
+                "CO": (CO.cumsum() * self.data.dt * 1e-3).round(2),
+                "HC": (HC.cumsum() * self.data.dt * 1e-3).round(2),
+                "CO2": (CO2.cumsum() * self.data.dt * 1e-3).round(2),
+                "H2O": (H2O.cumsum() * self.data.dt * 1e-3).round(2),
+                "SOx": (SOx.cumsum() * self.data.dt * 1e-3).round(2),
             }
         )

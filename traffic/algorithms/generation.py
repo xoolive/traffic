@@ -45,52 +45,6 @@ class GenerationProtocol(Protocol):
         ...
 
 
-def compute_latlon_from_xy(
-    data: pd.DataFrame,
-    projection: Union[pyproj.Proj, "crs.Projection", None] = None,
-) -> pd.DataFrame:
-    """Enrich a DataFrame with new longitude and latitude columns computed
-    from x and y columns.
-
-    The default source projection is a Lambert Conformal Conical projection
-    centred on the data inside the dataframe.
-    The destination projection is WGS84 (EPSG 4326).
-
-    .. warning::
-
-        Make sure to use as source projection the one used to compute ``'x'``
-        and ``'y'`` columns in the first place.
-    """
-
-    from cartopy import crs
-
-    if not set(["x", "y"]).issubset(set(data.columns)):
-        raise ValueError("DataFrame should contains 'x' and 'y' columns.")
-
-    if isinstance(projection, crs.Projection):
-        projection = pyproj.Proj(projection.proj4_init)
-
-    if projection is None:
-        projection = pyproj.Proj(
-            proj="lcc",
-            ellps="WGS84",
-            lat_1=data.y.min(),
-            lat_2=data.y.max(),
-            lat_0=data.y.mean(),
-            lon_0=data.x.mean(),
-        )
-
-    transformer = pyproj.Transformer.from_proj(
-        projection, pyproj.Proj("epsg:4326"), always_xy=True
-    )
-    lon, lat = transformer.transform(
-        data.x.values,
-        data.y.values,
-    )
-
-    return data.assign(latitude=lat, longitude=lon)
-
-
 class Coordinates(TypedDict):
     latitude: float
     longitude: float
@@ -243,7 +197,8 @@ class Generation:
         # if relevant, enriches DataFrame with latitude and longitude columns.
         if not set(["latitude", "longitude"]).issubset(set(self.features)):
             if set(["x", "y"]).issubset(self.features):
-                df = compute_latlon_from_xy(df, projection=projection)
+                return Traffic(df).compute_latlon_from_xy(projection)
+                # df = compute_latlon_from_xy(df, projection=projection)
             if set(["track", "groundspeed"]).issubset(set(self.features)):
                 assert (
                     coordinates is not None

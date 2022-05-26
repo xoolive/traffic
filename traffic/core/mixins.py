@@ -509,6 +509,36 @@ class GeographyMixin(DataFrameMixin):
 
         return self.__class__(self.data.assign(x=x, y=y))
 
+    def compute_latlon_from_xy(
+        self: T, projection: Union[pyproj.Proj, "crs.Projection"]
+    ) -> T:
+        """Enrich a DataFrame with new longitude and latitude columns computed
+        from x and y columns.
+
+        .. warning::
+
+            Make sure to use as source projection the one used to compute
+            ``'x'`` and ``'y'`` columns in the first place.
+        """
+
+        from cartopy import crs
+
+        if not set(["x", "y"]).issubset(set(self.data.columns)):
+            raise ValueError("DataFrame should contains 'x' and 'y' columns.")
+
+        if isinstance(projection, crs.Projection):
+            projection = pyproj.Proj(projection.proj4_init)
+
+        transformer = pyproj.Transformer.from_proj(
+            projection, pyproj.Proj("epsg:4326"), always_xy=True
+        )
+        lon, lat = transformer.transform(
+            self.data.x.values,
+            self.data.y.values,
+        )
+
+        return self.assign(latitude=lat, longitude=lon)
+
     def agg_xy(
         self,
         resolution: None | dict[str, float],
