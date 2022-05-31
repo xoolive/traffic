@@ -977,6 +977,10 @@ class Flight(
     def registration(self) -> Optional[str]:
         from ..data import aircraft
 
+        reg = self._get_unique("registration")
+        if isinstance(reg, str):
+            return reg
+
         if not isinstance(self.icao24, str):
             return None
         res = aircraft.get_unique(self.icao24)
@@ -987,6 +991,10 @@ class Flight(
     @property
     def typecode(self) -> Optional[str]:
         from ..data import aircraft
+
+        tc = self._get_unique("typecode")
+        if isinstance(tc, str):
+            return tc
 
         if not isinstance(self.icao24, str):
             return None
