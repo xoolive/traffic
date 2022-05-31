@@ -50,6 +50,8 @@ def guess_airport(
     warning_distance: Optional[float] = None,
 ) -> "Airport":
 
+    from ..core.structure import Airport
+
     if dataset is None:
         from ..data import airports
 
