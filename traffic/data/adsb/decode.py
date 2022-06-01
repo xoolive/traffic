@@ -430,7 +430,7 @@ class Aircraft(object):
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
                 self.cumul[-1] = dict(  # type: ignore
-                    **last_entry, callsign=self._callsign
+                    **last_entry, **dict(callsign=self._callsign)
                 )
             else:
                 self.cumul.append(
@@ -929,7 +929,7 @@ class ModeS_Decoder:
 
         The :meth:`from_address`, :meth:`from_dump1090`, and :meth:`from_rtlsdr`
         classmethods start a decoding thread on the creation of the object.  The
-        thread can be stopped with a ``decoder.thread.stop()`` call.
+        thread can be stopped with a ``decoder.stop()`` call.
 
     :param reference: A reference location must be provided to decode ground
         messages. A reference can be set as:
@@ -1241,7 +1241,7 @@ class ModeS_Decoder:
             cls.on_timer(decoder.expire_frequency)(cls.expire_aircraft)
 
             # if the decoder is not alive, finish expiring aircraft
-            while decoder.decode_thread.is_alive() or len(decoder.acs) != 0:
+            while decoder.decode_thread.is_alive():
                 now = pd.Timestamp("now", tz="utc")
                 t, delta, operation = heapq.heappop(cls.timer_functions)
 
@@ -1562,7 +1562,7 @@ class ModeS_Decoder:
                 self[elt["icao24"]] for elt in self.aircraft
             )
         except ValueError as e:
-            logging.warning(e)
+            logging.warning('traffic' + str(e))
             return None
 
     def __getitem__(self, icao: str) -> Optional[Flight]:
