@@ -3,9 +3,10 @@ from operator import itemgetter
 from typing import Any, Optional, cast
 
 import pytest
-from requests import HTTPError
+from requests import RequestException
 
 import pandas as pd
+from pandas.util.testing import assert_frame_equal
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import airports, eurofirs, navaids, runways
@@ -27,6 +28,13 @@ try:
     _ = runways.runways
 except zipfile.BadZipFile:
     skip_runways = True
+
+try:
+    import onnxruntime  # noqa: F401
+except ImportError:
+    onnxruntime_available = False
+else:
+    onnxruntime_available = True
 
 
 def test_properties() -> None:
@@ -553,6 +561,12 @@ def test_comet() -> None:
 def test_cumulative_distance() -> None:
     # https://github.com/xoolive/traffic/issues/61
 
+    first = belevingsvlucht.first("30T")
+    assert first is not None
+    f1 = first.cumulative_distance()
+    f2 = first.cumulative_distance(reverse=True)
+    assert f1.max("cumdist") == f1.max("cumdist")  # bugfix #197
+
     f1 = (
         belevingsvlucht.before("2018-05-30 20:17:58")  # type: ignore
         .last(minutes=15)
@@ -605,6 +619,7 @@ def test_agg_time_colnames() -> None:
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
 
 
+@pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
 def test_parking_position() -> None:
     pp = elal747.on_parking_position("LIRF").next()
     assert pp is not None
@@ -650,7 +665,7 @@ def test_slow_taxi() -> None:
     assert flight.slow_taxi().next() is None
 
 
-@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
+@pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
 def test_pushback() -> None:
 
     flight = zurich_airport["AEE5ZH"]
@@ -669,7 +684,7 @@ def test_pushback() -> None:
     assert pushback.stop >= parking_position.stop
 
 
-@pytest.mark.xfail(raises=HTTPError, reason="Quotas on OpenStreetMap")
+@pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
 def test_on_taxiway() -> None:
     flight = zurich_airport["ACA879"]
     assert flight is not None
@@ -745,3 +760,37 @@ def test_ground_trajectory() -> None:
         < pd.Timestamp("2019-11-05 16:37:00+00:00")
     )
     assert next(flight_iterate, None) is None
+
+
+def test_DME_NSE_computation() -> None:
+
+    flight = zurich_airport["EDW229"]
+    assert flight is not None
+
+    dme_zone = navaids.query("type == 'DME'").extent(flight)  # type: ignore
+    assert dme_zone is not None
+
+    dmes = dme_zone.query('not description.str.endswith("ILS")')
+    assert dmes is not None
+
+    segment = flight.resample("60s").first("2min")
+    assert segment is not None
+    result_df = segment.compute_DME_NSE(dmes).data
+
+    expected = pd.DataFrame(
+        [[0.293, "TRA_ZUE"], [0.279, "KLO_TRA"]],
+        columns=["NSE", "NSE_idx"],
+    )
+
+    assert_frame_equal(result_df[["NSE", "NSE_idx"]], expected, rtol=1e-3)
+
+
+@pytest.mark.skipif(not onnxruntime_available, reason="onnxruntime not in pypi")
+def test_holding_pattern() -> None:
+
+    holding_pattern = belevingsvlucht.holding_pattern().next()
+    assert holding_pattern is not None
+    assert (
+        holding_pattern.between("2018-05-30 15:45", "2018-05-30 15:50")
+        is not None
+    )

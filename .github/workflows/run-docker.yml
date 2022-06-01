@@ -1,0 +1,17 @@
+name: docker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: docker build -t jupyter/traffic .
+
+      - name: Import the library
+        run: docker run jupyter/traffic python -c "import traffic; print(traffic.__version__)"

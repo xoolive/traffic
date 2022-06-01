@@ -1,4 +1,6 @@
+import logging
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import (
@@ -230,10 +232,16 @@ class OpenSky(Impala):
         c = self.session.get(
             f"https://opensky-network.org/api/states/{what}", auth=self.auth
         )
-        c.raise_for_status()
-        r = pd.DataFrame.from_records(
-            c.json()["states"], columns=self._json_columns
-        )
+        try:
+            c.raise_for_status()
+            r = pd.DataFrame.from_records(
+                c.json()["states"], columns=self._json_columns
+            )
+        except Exception:
+            logging.warning("Error in received data, retrying in 10 seconds")
+            time.sleep(10)
+            return self.api_states(own, bounds)
+
         r = r.drop(["origin_country", "spi", "sensors"], axis=1)
         r = r.dropna()
 

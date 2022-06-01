@@ -51,8 +51,8 @@ at noon.
 
 .. code:: python
 
-    from cartopy.crs import EuroPP
-    from traffic.drawing import countries
+    from cartes.crs import EuroPP
+    from cartes.utils.features import countries
     
     with plt.style.context('traffic'):
         fig = plt.figure()

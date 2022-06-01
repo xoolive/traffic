@@ -1,6 +1,15 @@
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import TYPE_CHECKING, Iterator, Optional, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterator,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 from tqdm.rich import tqdm
 
@@ -205,7 +214,11 @@ def closest_point_of_approach(
     ):
         with ProcessPoolExecutor(max_workers=max_workers) as executor:
             tasks = {
-                executor.submit(Flight.distance, first, second): (
+                executor.submit(
+                    cast(Callable[[Flight, Flight], Flight], Flight.distance),
+                    first,
+                    second,  # typing: ignore
+                ): (
                     first.icao24,
                     second.icao24,
                 )

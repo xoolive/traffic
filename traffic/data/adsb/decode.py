@@ -240,8 +240,7 @@ class Aircraft(object):
         if len(df) == 0:
             return None
 
-        if 'callsign' in set(df.columns):
-
+        if "callsign" in set(df.columns):
             self._flight = Flight(
                 df.assign(
                     callsign=df.callsign.replace("", None)
@@ -250,11 +249,7 @@ class Aircraft(object):
                 )
             )
         else:
-            self._flight = Flight(
-                df.assign(
-                    callsign=None
-                )
-            )
+            self._flight = Flight(df.assign(callsign=None))
 
         return self._flight
 
@@ -362,6 +357,11 @@ class Aircraft(object):
         speed, track, _, speed_type, *_ = pms.adsb.surface_velocity(msg)
         if speed_type != "GS":
             logging.warn(f"Ground airspeed for aircraft {self.icao24}")
+
+        # This helps updating current representations
+        self.spd = speed
+        self.trk = track
+
         with self.lock:
             self.cumul.append(
                 dict(
@@ -429,9 +429,10 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = dict(  # type: ignore
-                    **last_entry, **dict(callsign=self._callsign)
-                )
+                self.cumul[-1] = {  # type: ignore
+                    **last_entry,
+                    **dict(callsign=self._callsign),
+                }
             else:
                 self.cumul.append(
                     dict(

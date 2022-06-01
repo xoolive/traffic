@@ -1,11 +1,10 @@
 # flake8: noqa
 
 from pathlib import Path
+from typing import Any
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-
-from .cartopy import *
 
 _traffic_style = """
 figure.figsize: 10, 7
@@ -50,3 +49,21 @@ if not mpl_style_location.parent.is_dir():
 mpl_style_location.write_text(_traffic_style)
 
 plt.style.reload_library()
+
+
+def __getattr__(name: str) -> Any:
+    msg = f"module {__name__} has no attribute {name}"
+
+    if name.startswith("_"):
+        raise AttributeError(msg)
+
+    import cartes.crs
+    import cartes.utils.features
+
+    if name in dir(cartes.crs):
+        return getattr(cartes.crs, name)
+
+    if name in dir(cartes.utils.features):
+        return getattr(cartes.utils.features, name)
+
+    raise AttributeError(msg)

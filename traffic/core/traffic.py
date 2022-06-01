@@ -835,7 +835,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         Example usage:
 
-        >>> from traffic.drawing import EuroPP
+        >>> from cartes.crs import EuroPP
         >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=EuroPP()))
         >>> t.plot(ax, alpha=.5)
 
@@ -961,7 +961,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         Example usage:
 
-        >>> from traffic.drawing import Mercator
+        >>> from cartes.crs import Mercator
         >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator()))
         >>> (
         ...     traffic

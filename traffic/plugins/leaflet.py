@@ -57,7 +57,7 @@ def traffic_map_leaflet(
 
         for color, value in highlight.items():
             if isinstance(value, str):
-                value = getattr(Flight, value, None)
+                value = getattr(Flight, value, None)  # type: ignore
                 if value is None:
                     continue
             assert not isinstance(value, str)
@@ -117,7 +117,7 @@ def flight_map_leaflet(
 
     for color, value in highlight.items():
         if isinstance(value, str):
-            value = getattr(Flight, value, None)
+            value = getattr(Flight, value, None)  # type: ignore
             if value is None:
                 continue
         assert not isinstance(value, str)

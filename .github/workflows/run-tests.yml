@@ -125,21 +125,24 @@ jobs:
           cmake ..; cmake --build .
           sudo cmake --build . --target install
           cd ../..
-          poetry install -E all
+          poetry install -E all -E web
 
       - name: Style checking
+        if: ${{ matrix.python-version == '3.10' }}
         run: |
           poetry run flake8 traffic tests
           poetry run isort --check-only traffic tests
           poetry run black --check traffic tests
 
       - name: Type checking
+        if: ${{ matrix.python-version == '3.10' }}
         run: |
           poetry run mypy traffic tests
 
       - name: Run tests
         env:
           LD_LIBRARY_PATH: /usr/local/lib
+          TRAFFIC_CACHE_NO_EXPIRE: ""
           TRAFFIC_NOPLUGIN: ""
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
@@ -152,7 +155,7 @@ jobs:
           poetry run pytest --cov --cov-report term-missing
 
       - name: Upload coverage to Codecov
-        if: ${{ github.event_name != 'pull_request_target' && env.PYTHON_VERSION == '3.10' }}
+        if: ${{ github.event_name != 'pull_request_target' && matrix.python-version == '3.10' }}
         uses: codecov/codecov-action@v2
         with:
           env_vars: PYTHON_VERSION
