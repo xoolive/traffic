@@ -39,15 +39,45 @@ class OpenAP:
         )
 
     def fuelflow(
-        self, initial_mass: None | float = None, engine: None | str = None
+        self,
+        initial_mass: None | str | float = None,
+        typecode: None | str = None,
+        engine: None | str = None,
     ) -> "Flight":
+        """Estimates the fuel flow with OpenAP.
+
+        The OpenAP model is based on the aircraft type (actually, the most
+        probable engine type) and on three features commonly available in ADS-B
+        data:
+
+        - altitude (in ft),
+        - vertical rate (in ft/min), and
+        - speed (in kts), in order of priority, ``TAS`` (true air speed),
+          ``CAS`` (computed air speed, used to compute TAS) and ``groundspeed``,
+          if no air speed is available.
+
+        :param initial_mass: by default (None), 90% of the maximum take-off
+          weight. If an existing feature name is passed, use it to initialise
+          the mass. You can also pass a value in kg.
+
+        :param typecode: by default (None), use the typecode column if
+          available, the provided aircraft database to infer the typecode based
+          on the ``icao24``. Ignored if the engine parameter is not None.
+
+        :param engine: by default (None), use the default engine associated with
+          the aircraft type.
+
+        :return: the same instance enriched with three extra features: the mass,
+          the fuel flow (in kg/s) and the total burnt fuel (in kg).
+
+        """
 
         import openap
 
         # The following cast secures the typing
         self = cast("Flight", self)
 
-        actype = self.typecode
+        actype = typecode if typecode is not None else self.typecode
 
         if actype is None:
             return self
@@ -59,12 +89,12 @@ class OpenAP:
 
         update_mass = True
         if initial_mass is not None:
-            Mass = initial_mass * np.ones_like(self.data.altitude)
-        elif hasattr(self.data, "mass"):
-            Mass = self.data.mass.values
+            mass = initial_mass * np.ones_like(self.data.altitude)
+        elif isinstance(initial_mass, str) and hasattr(self.data, initial_mass):
+            mass = self.data[initial_mass].values
             update_mass = False
         else:
-            Mass = 0.9 * ac["limits"]["MTOW"] * np.ones_like(self.data.altitude)
+            mass = 0.9 * ac["limits"]["MTOW"] * np.ones_like(self.data.altitude)
 
         fuelflow = openap.FuelFlow(actype, eng=engine, use_synonym=True)
 
@@ -89,14 +119,14 @@ class OpenAP:
         Fuel = []
         for (i, tas, alt, pa, dt) in zip(count(1), TAS, ALT, PA, dt):
             ff = fuelflow.enroute(
-                mass=Mass[i - 1], tas=tas, alt=alt, path_angle=pa
+                mass=mass[i - 1], tas=tas, alt=alt, path_angle=pa
             )
             if update_mass:
-                Mass[i:] -= ff * dt if ff == ff else 0
+                mass[i:] -= ff * dt if ff == ff else 0
             FF.append(round(float(ff), 4))
-            Fuel.append(Mass[0] - Mass[i - 1])
+            Fuel.append(mass[0] - mass[i - 1])
 
-        return self.assign(mass=Mass, fuel=Fuel, fuelflow=FF, dt=dt)
+        return self.assign(mass=mass, fuel=Fuel, fuelflow=FF, dt=dt)
 
     def emission(
         self, mass: None | float = None, engine: None | str = None
