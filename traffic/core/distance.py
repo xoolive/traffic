@@ -50,6 +50,8 @@ def guess_airport(
     warning_distance: Optional[float] = None,
 ) -> "Airport":
 
+    from ..core.structure import Airport
+
     if dataset is None:
         from ..data import airports
 
@@ -65,9 +67,15 @@ def guess_airport(
     airport_data = closest_point(
         dataset.data, latitude=latitude, longitude=longitude
     )
-
-    airport = dataset[airport_data.icao]
-    assert airport is not None
+    airport = Airport(
+        airport_data.get("altitude"),
+        airport_data.get("country"),
+        airport_data.get("iata"),
+        airport_data.get("icao"),
+        airport_data.get("latitude"),
+        airport_data.get("longitude"),
+        airport_data.get("name"),
+    )
     airport.distance = airport_data.distance  # type: ignore
 
     if warning_distance is not None and airport.distance > warning_distance:

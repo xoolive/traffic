@@ -527,6 +527,27 @@ def test_resample_unwrapped() -> None:
     assert len(resampled_10) == 10
 
 
+def test_resample_projection() -> None:
+
+    flight = Flight(
+        pd.DataFrame.from_dict(
+            dict(
+                timestamp=[
+                    pd.Timestamp("2018-01-01 04:09:29Z"),
+                    pd.Timestamp("2018-01-01 10:09:46Z"),
+                ],
+                latitude=[40.64, 49.0],
+                longitude=[-73.81, 2.81],
+            )
+        )
+    )
+
+    r1 = flight.resample("1s").cumulative_distance()
+    r2 = flight.resample("1s", projection="lcc").cumulative_distance()
+
+    assert r1.cumdist_sum > r2.cumdist_sum
+
+
 def test_agg_time() -> None:
     flight = belevingsvlucht
 
