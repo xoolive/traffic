@@ -270,13 +270,15 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.rename(*args, **kwargs))
 
-    def pipe(self: T, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    def pipe(
+        self: T, func: Callable[..., pd.DataFrame], *args: Any, **kwargs: Any
+    ) -> T:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.pipe` method to the
         underlying pandas DataFrame and get the result back in the same
         structure.
         """
-        return func(self, *args, **kwargs)
+        return self.__class__(self.data.pipe(func, *args, **kwargs))
 
     def fillna(self: T, *args: Any, **kwargs: Any) -> T:
         """
