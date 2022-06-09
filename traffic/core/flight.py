@@ -1789,6 +1789,34 @@ class Flight(
 
         return reset.assign(**result_dict)
 
+    def compute_TAS(self) -> "Flight":
+        """Computes the wind triangle for each timestamp.
+
+        This method requires ``groundspeed``, ``track``, ``wind_u`` and
+        ``wind_v`` (in knots) to compute true airspeed (``TAS``), and
+        ``heading`` features. The groundspeed and the track angle are usually
+        available in ADS-B messages; wind information may be included from a
+        GRIB file using the :meth:`~traffic.core.Flight.include_grib` method.
+
+        """
+
+        if any(w not in self.data.columns for w in ["wind_u", "wind_v"]):
+            raise RuntimeError(
+                "No wind data in trajectory. Consider Flight.include_grib()"
+            )
+
+        return self.assign(
+            tas_x=lambda df: df.groundspeed * np.sin(np.radians(df.track))
+            - df.wind_u,
+            tas_y=lambda df: df.groundspeed * np.cos(np.radians(df.track))
+            - df.wind_v,
+            TAS=lambda df: np.abs(df.tas_x + 1j * df.tas_y),
+            heading_rad=lambda df: np.angle(  # type: ignore
+                df.tas_x + 1j * df.tas_y
+            ),
+            heading=lambda df: (90 - np.degrees(df.heading_rad)) % 360,
+        ).drop(columns=["tas_x", "tas_y", "heading_rad"])
+
     def compute_wind(self) -> "Flight":
         """Computes the wind triangle for each timestamp.
 
