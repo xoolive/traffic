@@ -56,6 +56,7 @@ from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 
 if TYPE_CHECKING:
     import altair as alt  # noqa: F401
+    from cartopy import crs  # noqa: F401
     from cartopy.mpl.geoaxes import GeoAxesSubplot  # noqa: F401
     from matplotlib.artist import Artist  # noqa: F401
     from matplotlib.axes._subplots import Axes  # noqa: F401
@@ -976,6 +977,10 @@ class Flight(
     def registration(self) -> Optional[str]:
         from ..data import aircraft
 
+        reg = self._get_unique("registration")
+        if isinstance(reg, str):
+            return reg
+
         if not isinstance(self.icao24, str):
             return None
         res = aircraft.get_unique(self.icao24)
@@ -986,6 +991,10 @@ class Flight(
     @property
     def typecode(self) -> Optional[str]:
         from ..data import aircraft
+
+        tc = self._get_unique("typecode")
+        if isinstance(tc, str):
+            return tc
 
         if not isinstance(self.icao24, str):
             return None
@@ -1419,6 +1428,7 @@ class Flight(
         self,
         rule: str | int = "1s",
         how: str | dict[str, Iterable[str]] = "interpolate",
+        projection: None | str | pyproj.Proj | "crs.Projection" = None,
     ) -> "Flight":
         """Resample the trajectory at a given frequency or for a target number
         of samples.
@@ -1440,7 +1450,27 @@ class Flight(
               ``"interpolate"``, ``"ffill"``) and names of columns as values.
               Columns not included in any value are left as is.
 
+        :param projection: (default: ``None``)
+
+            - By default, lat/lon are resampled with a linear interpolation;
+            - If a projection is passed, the linear interpolation is applied on
+              the x and y dimensions, then lat/lon are reprojected back;
+            - If the projection is a string parameter, e.g. ``"lcc"``, a
+              projection is created on the fly, centred on the trajectory. This
+              approach is helpful to fill gaps along a great circle.
+
         """
+        if projection is not None:
+            if isinstance(projection, str):
+                projection = pyproj.Proj(
+                    proj=projection,
+                    ellps="WGS84",
+                    lat_1=self.data.latitude.min(),
+                    lat_2=self.data.latitude.max(),
+                    lat_0=self.data.latitude.mean(),
+                    lon_0=self.data.longitude.mean(),
+                )
+            self = self.compute_xy(projection=projection)
 
         if isinstance(rule, str):
             data = (
@@ -1486,7 +1516,12 @@ class Flight(
         if "heading_unwrapped" in data.columns:
             data = data.assign(heading=lambda df: df.heading_unwrapped % 360)
 
-        return self.__class__(data)
+        res = self.__class__(data)
+
+        if projection is not None:
+            res = res.compute_latlon_from_xy(projection=projection)
+
+        return res
 
     def filter(
         self,
@@ -1753,6 +1788,34 @@ class Flight(
             )
 
         return reset.assign(**result_dict)
+
+    def compute_TAS(self) -> "Flight":
+        """Computes the wind triangle for each timestamp.
+
+        This method requires ``groundspeed``, ``track``, ``wind_u`` and
+        ``wind_v`` (in knots) to compute true airspeed (``TAS``), and
+        ``heading`` features. The groundspeed and the track angle are usually
+        available in ADS-B messages; wind information may be included from a
+        GRIB file using the :meth:`~traffic.core.Flight.include_grib` method.
+
+        """
+
+        if any(w not in self.data.columns for w in ["wind_u", "wind_v"]):
+            raise RuntimeError(
+                "No wind data in trajectory. Consider Flight.include_grib()"
+            )
+
+        return self.assign(
+            tas_x=lambda df: df.groundspeed * np.sin(np.radians(df.track))
+            - df.wind_u,
+            tas_y=lambda df: df.groundspeed * np.cos(np.radians(df.track))
+            - df.wind_v,
+            TAS=lambda df: np.abs(df.tas_x + 1j * df.tas_y),
+            heading_rad=lambda df: np.angle(  # type: ignore
+                df.tas_x + 1j * df.tas_y
+            ),
+            heading=lambda df: (90 - np.degrees(df.heading_rad)) % 360,
+        ).drop(columns=["tas_x", "tas_y", "heading_rad"])
 
     def compute_wind(self) -> "Flight":
         """Computes the wind triangle for each timestamp.

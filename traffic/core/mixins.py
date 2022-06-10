@@ -7,10 +7,12 @@ from numbers import Integral, Real
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
+from openap import aero
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console, ConsoleOptions, RenderResult
 from rich.table import Table
 
+import numpy as np
 import pandas as pd
 import pyproj
 from shapely.geometry import Point, base, mapping
@@ -18,6 +20,7 @@ from shapely.ops import transform
 
 if TYPE_CHECKING:
     import altair as alt
+    import xarray
     from cartopy import crs
     from matplotlib.artist import Artist
     from matplotlib.axes._subplots import Axes
@@ -469,6 +472,16 @@ class ShapelyMixin(object):
 class GeographyMixin(DataFrameMixin):
     """Adds Euclidean coordinates to a latitude/longitude DataFrame."""
 
+    def projection(self: T, proj: str = "lcc") -> pyproj.Proj:
+        return pyproj.Proj(
+            proj=proj,
+            ellps="WGS84",
+            lat_1=self.data.latitude.min(),
+            lat_2=self.data.latitude.max(),
+            lat_0=self.data.latitude.mean(),
+            lon_0=self.data.longitude.mean(),
+        )
+
     def compute_xy(
         self: T, projection: None | pyproj.Proj | "crs.Projection" = None
     ) -> T:
@@ -490,14 +503,7 @@ class GeographyMixin(DataFrameMixin):
             projection = pyproj.Proj(projection.proj4_init)
 
         if projection is None:
-            projection = pyproj.Proj(
-                proj="lcc",
-                ellps="WGS84",
-                lat_1=self.data.latitude.min(),
-                lat_2=self.data.latitude.max(),
-                lat_0=self.data.latitude.mean(),
-                lon_0=self.data.longitude.mean(),
-            )
+            projection = self.projection(proj="lcc")  # type: ignore
 
         transformer = pyproj.Transformer.from_proj(
             pyproj.Proj("epsg:4326"), projection, always_xy=True
@@ -508,6 +514,36 @@ class GeographyMixin(DataFrameMixin):
         )
 
         return self.__class__(self.data.assign(x=x, y=y))
+
+    def compute_latlon_from_xy(
+        self: T, projection: Union[pyproj.Proj, "crs.Projection"]
+    ) -> T:
+        """Enrich a DataFrame with new longitude and latitude columns computed
+        from x and y columns.
+
+        .. warning::
+
+            Make sure to use as source projection the one used to compute
+            ``'x'`` and ``'y'`` columns in the first place.
+        """
+
+        from cartopy import crs
+
+        if not set(["x", "y"]).issubset(set(self.data.columns)):
+            raise ValueError("DataFrame should contains 'x' and 'y' columns.")
+
+        if isinstance(projection, crs.Projection):
+            projection = pyproj.Proj(projection.proj4_init)
+
+        transformer = pyproj.Transformer.from_proj(
+            projection, pyproj.Proj("epsg:4326"), always_xy=True
+        )
+        lon, lat = transformer.transform(
+            self.data.x.values,
+            self.data.y.values,
+        )
+
+        return self.assign(latitude=lat, longitude=lon)
 
     def agg_xy(
         self,
@@ -589,6 +625,104 @@ class GeographyMixin(DataFrameMixin):
             )
             .encode(latitude="latitude", longitude="longitude")
             .mark_line(**kwargs)
+        )
+
+    def interpolate_grib(
+        self: T, wind: "xarray.Dataset", features: list[str] = ["u", "v"]
+    ) -> T:
+
+        from sklearn.linear_model import Ridge
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import PolynomialFeatures
+
+        projection: pyproj.Proj = self.projection("lcc")  # type: ignore
+        transformer = pyproj.Transformer.from_proj(
+            pyproj.Proj("epsg:4326"), projection, always_xy=True
+        )
+
+        west, east = self.data.longitude.min(), self.data.longitude.max()
+        longitude_index = wind.longitude.values
+        margin = np.diff(longitude_index).max()  # type: ignore
+        longitude_index = longitude_index[
+            np.where(
+                (longitude_index >= west - margin)
+                & (longitude_index <= east + margin)
+            )
+        ]
+
+        south, north = self.data.latitude.min(), self.data.latitude.max()
+        latitude_index = wind.latitude.values
+        margin = np.diff(latitude_index).max()  # type: ignore
+        latitude_index = latitude_index[
+            np.where(
+                (latitude_index >= south - margin)
+                & (latitude_index <= north + margin)
+            )
+        ]
+
+        timestamp = self.data.timestamp.dt.tz_convert("utc")
+        start, stop = timestamp.min(), timestamp.max()
+        time_index = wind.time.values
+        margin = np.diff(time_index).max()  # type: ignore
+        time_index = time_index[
+            np.where(
+                (time_index >= start.tz_localize(None) - margin)
+                & (time_index <= stop.tz_localize(None) + margin)
+            )
+        ]
+
+        idx_max = 1 + np.sum(
+            aero.h_isa(wind.isobaricInhPa.values * 100)
+            < self.data.altitude.max() * aero.ft
+        )
+        isobaric_index = wind.isobaricInhPa.values[:idx_max]
+
+        wind_df = (
+            wind.sel(
+                longitude=longitude_index,
+                latitude=latitude_index,
+                time=time_index,
+                isobaricInhPa=isobaric_index,
+            )
+            .to_dataframe()
+            .reset_index()
+            .assign(h=lambda df: aero.h_isa(df.isobaricInhPa * 100))
+        )
+
+        wind_x, wind_y = transformer.transform(
+            wind_df.longitude.values,
+            wind_df.latitude.values,
+        )
+        wind_xy = wind_df.assign(x=wind_x, y=wind_y)
+
+        model = make_pipeline(PolynomialFeatures(2), Ridge())
+        model.fit(wind_xy[["x", "y", "h"]], wind_xy[list(features)])
+
+        poly_features = [
+            s.replace("^", "**").replace(" ", "*")
+            for s in model["polynomialfeatures"].get_feature_names()
+        ]
+        ridges = model["ridge"].coef_
+
+        x, y = transformer.transform(
+            self.data.longitude.values,
+            self.data.latitude.values,
+        )
+        h = self.data.altitude.values * aero.ft
+
+        return self.assign(
+            **dict(
+                (
+                    name,
+                    sum(
+                        [
+                            eval(f, {}, {"x0": x, "x1": y, "x2": h}) * c
+                            for (f, c) in zip(poly_features, ridge_coefficients)
+                        ]
+                    ),
+                )
+                for name, ridge_coefficients in zip(features, ridges)
+            )
         )
 
 
