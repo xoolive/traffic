@@ -874,7 +874,7 @@ class AircraftDict(Dict[str, Aircraft]):
     def set_latlon(self, lat0: float, lon0: float) -> None:
         self.lat0 = lat0
         self.lon0 = lon0
-        for ac in self.values():
+        for ac in list(self.values()):
             ac.lat0 = lat0
             ac.lon0 = lon0
 
@@ -1189,7 +1189,7 @@ class ModeS_Decoder:
     @classmethod
     def from_socket(
         cls,
-        socket: socket.socket,
+        s: socket.socket,
         reference: Union[str, Airport, tuple[float, float]],
         *,
         uncertainty: bool,
@@ -1203,15 +1203,28 @@ class ModeS_Decoder:
         redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
-        def next_in_socket() -> Iterator[bytes]:
+        def next_in_tcp_socket() -> Iterator[bytes]:
             while True:
                 if (
                     decoder.decode_thread is None
                     or decoder.decode_thread.to_be_stopped()
                 ):
-                    socket.close()
+                    s.close()
                     return
-                yield socket.recv(2048)
+                yield s.recv(2048)
+
+        def next_in_udp_socket() -> Iterator[bytes]:
+            while True:
+                if (
+                    decoder.decode_thread is None
+                    or decoder.decode_thread.to_be_stopped()
+                ):
+                    s.close()
+                    return
+                data, _addr = s.recvfrom(1024)
+                yield data
+
+        next_in_socket = next_in_udp_socket if s.type == socket.SOCK_DGRAM else next_in_tcp_socket
 
         def decode() -> None:
             for i, bin_msg in enumerate(next_msg(next_in_socket())):
@@ -1322,8 +1335,9 @@ class ModeS_Decoder:
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_tcp.csv",
         time_fmt: str = "radarcape",
         uncertainty: bool = False,
+        tcp: bool = True,
     ) -> "ModeS_Decoder":  # coverage: ignore
-        """Decode raw messages transmitted over a TCP network.
+        """Decode raw messages transmitted over a TCP or UDP network.
 
         The file should contain for each line at least a timestamp and an
         hexadecimal message, as a CSV-like format.
@@ -1357,8 +1371,12 @@ class ModeS_Decoder:
         now = datetime.now(timezone.utc)
         filename = now.strftime(file_pattern)
         today = os.path.expanduser(filename)
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, port))
+        if tcp:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, port))
+        else:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.bind((host, port))
         fh = open(today, "a", 1)
         return cls.from_socket(
             s, reference, uncertainty=uncertainty, time_fmt=time_fmt, fh=fh
@@ -1367,7 +1385,7 @@ class ModeS_Decoder:
     def redefine_reference(self, time: datetime) -> None:
         pos = list(
             (ac.lat, ac.lon)
-            for ac in self.acs.values()
+            for ac in list(self.acs.values())
             if ac.alt is not None
             and ac.alt < 5000
             and ac.tpos is not None
