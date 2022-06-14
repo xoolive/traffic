@@ -41,8 +41,26 @@ else:
 
 Decoder = TypeVar("Decoder", bound="ModeS_Decoder")
 
+MSG_SIZES = {0x31: 11, 0x32: 16, 0x33: 23, 0x34: 23}
 
-def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
+
+def next_beast_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
+    """Iterate in Beast binary feed.
+
+    <esc> "1" : 6 byte MLAT timestamp, 1 byte signal level,
+        2 byte Mode-AC
+    <esc> "2" : 6 byte MLAT timestamp, 1 byte signal level,
+        7 byte Mode-S short frame
+    <esc> "3" : 6 byte MLAT timestamp, 1 byte signal level,
+        14 byte Mode-S long frame
+    <esc> "4" : 6 byte MLAT timestamp, status data, DIP switch
+        configuration settings (not on Mode-S Beast classic)
+    <esc><esc>: true 0x1a
+    <esc> is 0x1a, and "1", "2" and "3" are 0x31, 0x32 and 0x33
+
+    timestamp:
+    wiki.modesbeast.com/Radarcape:Firmware_Versions#The_GPS_timestamp
+    """
     data = b""
     for chunk in chunk_it:
         data += chunk
@@ -53,21 +71,28 @@ def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
             data = data[it:]
             if len(data) < 23:
                 break
-            if data[1] == 0x33:
-                yield data[:23]
-                data = data[23:]
-                continue
-            elif data[1] == 0x32:
-                data = data[16:]
-                continue
-            elif data[1] == 0x31:
-                data = data[11:]
-                continue
-            elif data[1] == 0x34:
-                data = data[23:]
-                continue
+
+            if data[1] in [0x31, 0x32, 0x33, 0x34]:
+                # The tricky part here is to collapse all 0x1a 0x1a into single
+                # 0x1a when they are part of a message (i.e. not followed by
+                # "1", "2", "3" or "4")
+                msg_size = MSG_SIZES[data[1]]
+                ref_idx = 1
+                idx = data[ref_idx:msg_size].find(0x1A)
+                while idx != -1 and len(data) > msg_size:
+                    start = ref_idx + idx
+                    ref_idx = start + 1
+                    if data[ref_idx] == 0x1A:
+                        data = data[:start] + data[ref_idx:]
+                    idx = data[ref_idx:msg_size].find(0x1A)
+                if idx != -1 or len(data) < msg_size:
+                    # calling for next buffer
+                    break
+                yield data[:msg_size]
+                data = data[msg_size:]
             else:
                 data = data[1:]
+                print("FFF")
 
 
 def decode_time_default(
@@ -1124,7 +1149,9 @@ class ModeS_Decoder:
         # We don't know the size of the binary so tqdm.rich does not work
         from tqdm.autonotebook import tqdm
 
-        for i, bin_msg in tqdm(enumerate(next_msg(next_in_binary(filename)))):
+        for i, bin_msg in tqdm(
+            enumerate(next_beast_msg(next_in_binary(filename)))
+        ):
 
             if len(bin_msg) < 23:
                 continue
@@ -1224,10 +1251,15 @@ class ModeS_Decoder:
                 data, _addr = s.recvfrom(1024)
                 yield data
 
-        next_in_socket = next_in_udp_socket if s.type == socket.SOCK_DGRAM else next_in_tcp_socket
+        next_in_socket = {
+            socket.SOCK_STREAM: next_in_tcp_socket,
+            socket.SOCK_DGRAM: next_in_udp_socket,
+        }
 
         def decode() -> None:
-            for i, bin_msg in enumerate(next_msg(next_in_socket())):
+            for i, bin_msg in enumerate(
+                next_beast_msg(next_in_socket[s.type]())
+            ):
 
                 msg = "".join(["{:02x}".format(t) for t in bin_msg])
 
@@ -1581,7 +1613,7 @@ class ModeS_Decoder:
                 self[elt["icao24"]] for elt in self.aircraft
             )
         except ValueError as e:
-            logging.warning('traffic' + str(e))
+            logging.warning("traffic" + str(e))
             return None
 
     def __getitem__(self, icao: str) -> Optional[Flight]:
