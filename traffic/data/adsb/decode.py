@@ -92,7 +92,7 @@ def next_beast_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
                 data = data[msg_size:]
             else:
                 data = data[1:]
-                print("FFF")
+                logging.warning("Probable corrupted message")
 
 
 def decode_time_default(
