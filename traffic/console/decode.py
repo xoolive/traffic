@@ -85,19 +85,19 @@ class AircraftListWidget(Widget):
             key=lambda aircraft: len(aircraft.cumul),
             reverse=True,
         )
-        for a in acs:
-            cumul = list(a.cumul)
+        for ac_elt in acs:
+            cumul = list(ac_elt.cumul)
             if len(cumul) > 1:
-                tail = aircraft.get_unique(a.icao24)
+                tail = aircraft.get_unique(ac_elt.icao24)
                 table.add_row(
-                    a.icao24,
+                    ac_elt.icao24,
                     format(tail, "%typecode %registration") if tail else "",
-                    a.callsign,
-                    str(a.lat),
-                    str(a.lon),
-                    str(a.alt),
-                    str(a.spd),
-                    str(a.trk),
+                    ac_elt.callsign,
+                    str(ac_elt.lat),
+                    str(ac_elt.lon),
+                    str(ac_elt.alt),
+                    str(ac_elt.spd),
+                    str(ac_elt.trk),
                     str(len(cumul)),
                     format(cumul[-1]["timestamp"], "%H:%M:%S"),
                 )
@@ -216,6 +216,10 @@ def main(
     elif verbose > 1:
         logger.setLevel(logging.DEBUG)
 
+    fh = logging.FileHandler("decode.log")
+    fh.setLevel(logging.WARN)
+    logger.addHandler(fh)
+
     dump_file = Path(filename).with_suffix(".csv").as_posix()
 
     if Path(source).expanduser().exists():
@@ -243,17 +247,31 @@ def main(
         decoder = Decoder.from_rtlsdr(
             initial_reference, dump_file, uncertainty=decode_uncertainty
         )
-    else:
-        address = config.get("decoders", source)
-        host_port, reference = address.split("/")
-        host, port = host_port.split(":")
+    elif config.has_section(f"decoders.{source}"):
+        host = config.get(f"decoders.{source}", "host")
+        port = config.getint(f"decoders.{source}", "port")
+        reference = config.get(f"decoders.{source}", "reference")
+        socket_option = (
+            config.get(f"decoders.{source}", "socket")
+            if config.has_option(f"decoders.{source}", "socket")
+            else "TCP"
+        )
+        time_fmt = (
+            config.get(f"decoders.{source}", "time_fmt")
+            if config.has_option(f"decoders.{source}", "time_fmt")
+            else "default"
+        )
         decoder = Decoder.from_address(
             host=host,
-            port=int(port),
+            port=port,
             reference=reference,
             file_pattern=dump_file,
             uncertainty=decode_uncertainty,
+            tcp=socket_option.upper() == "TCP",
+            time_fmt=time_fmt,
         )
+    else:
+        raise RuntimeError(f"No decoders.{source} section found")
 
     flask_thread = threading.Thread(
         target=serve,
