@@ -183,6 +183,13 @@ def get_icao24(icao24: str) -> dict[str, list[Entry]]:
     help="port to serve decoded information",
 )
 @click.option(
+    "-l",
+    "--log",
+    "log_file",
+    default=None,
+    help="logging information",
+)
+@click.option(
     "--tui",
     is_flag=True,
     show_default=True,
@@ -199,6 +206,7 @@ def main(
     update_reference: int | None = None,
     serve_host: str | None = "127.0.0.1",
     serve_port: int | None = 5050,
+    log_file: str | None = None,
     tui: bool = True,
     verbose: int = 0,
 ) -> None:
@@ -216,9 +224,20 @@ def main(
     elif verbose > 1:
         logger.setLevel(logging.DEBUG)
 
-    fh = logging.FileHandler("decode.log")
-    fh.setLevel(logging.WARN)
-    logger.addHandler(fh)
+    logger.handlers.clear()
+
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.WARNING)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    if log_file is not None:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
     dump_file = Path(filename).with_suffix(".csv").as_posix()
 
@@ -261,11 +280,16 @@ def main(
             if config.has_option(f"decoders.{source}", "time_fmt")
             else "default"
         )
+        file_pattern = (
+            config.get(f"decoders.{source}", "file")
+            if config.has_option(f"decoders.{source}", "file")
+            else dump_file
+        )
         decoder = Decoder.from_address(
             host=host,
             port=port,
             reference=reference,
-            file_pattern=dump_file,
+            file_pattern=file_pattern,
             uncertainty=decode_uncertainty,
             tcp=socket_option.upper() == "TCP",
             time_fmt=time_fmt,

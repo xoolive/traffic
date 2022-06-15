@@ -92,7 +92,7 @@ def next_beast_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
                 data = data[msg_size:]
             else:
                 data = data[1:]
-                logging.warning("Probable corrupted message")
+                logging.warning("Probably corrupted message")
 
 
 def decode_time_default(
@@ -1232,13 +1232,16 @@ class ModeS_Decoder:
 
         def next_in_tcp_socket() -> Iterator[bytes]:
             while True:
+                data = s.recv(2048)
                 if (
                     decoder.decode_thread is None
                     or decoder.decode_thread.to_be_stopped()
+                    or len(data) == 0
                 ):
+                    logging.warning("Connection dropped or decoder stopped")
                     s.close()
                     return
-                yield s.recv(2048)
+                yield data
 
         def next_in_udp_socket() -> Iterator[bytes]:
             while True:
@@ -1247,6 +1250,7 @@ class ModeS_Decoder:
                     or decoder.decode_thread.to_be_stopped()
                 ):
                     s.close()
+                    logging.warning("getting out of UDP socket")
                     return
                 data, _addr = s.recvfrom(1024)
                 yield data
