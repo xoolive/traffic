@@ -1236,10 +1236,11 @@ class ModeS_Decoder:
                 if (
                     decoder.decode_thread is None
                     or decoder.decode_thread.to_be_stopped()
-                    or len(data) == 0
+                    or len(data) == 0  # connection dropped
                 ):
                     logging.warning("Connection dropped or decoder stopped")
                     s.close()
+                    decoder.stop()
                     return
                 yield data
 
