@@ -30,6 +30,8 @@ try:
 except ImportError:
     from ssl import PROTOCOL_SSLv23 as ssl_protocol
 
+logger = logging.getLogger(__name__)
+
 
 def check_cert_not_after(certificate: Certificate) -> None:
     if certificate.not_valid_after < datetime.utcnow():
@@ -50,7 +52,7 @@ def create_pyopenssl_sslcontext(
     check_cert_not_after(certificate)
     ssl_context = PyOpenSSLContext(ssl_protocol)
     ssl_context._ctx.use_certificate(crypto.X509.from_cryptography(certificate))
-    logging.info(
+    logger.info(
         f"Certificate found with subject {certificate.subject}, "
         f"expire on {certificate.not_valid_after}"
     )

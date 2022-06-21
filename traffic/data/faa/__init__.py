@@ -12,6 +12,8 @@ from ... import cache_dir, cache_expiration
 
 __all__ = list(p.stem[1:] for p in Path(__file__).parent.glob("_[a-z]*py"))
 
+logger = logging.getLogger(__name__)
+
 
 class ADDS_FAA_OpenData:
 
@@ -28,7 +30,7 @@ class ADDS_FAA_OpenData:
     def download_data(self) -> None:
         from .. import session
 
-        logging.warning(
+        logger.warning(
             f"Downloading data from {self.website}. Please check terms of use."
         )
         c = session.get(self.json_url)

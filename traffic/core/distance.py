@@ -11,6 +11,8 @@ if TYPE_CHECKING:
     from .mixins import PointMixin  # noqa: F401
     from .structure import Airport
 
+logger = logging.getLogger(__name__)
+
 
 def closest_point(
     data: pd.DataFrame,
@@ -79,7 +81,7 @@ def guess_airport(
     airport.distance = airport_data.distance  # type: ignore
 
     if warning_distance is not None and airport.distance > warning_distance:
-        logging.warning(
+        logger.warning(
             f"Closest airport is more than {warning_distance*1e-3}km away "
             f" (distance={airport.distance})"
         )

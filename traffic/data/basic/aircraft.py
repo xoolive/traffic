@@ -18,6 +18,8 @@ import pandas as pd
 
 from ...core.mixins import DataFrameMixin, FormatMixin
 
+logger = logging.getLogger(__name__)
+
 json_path = Path(__file__).parent / "patterns.json"
 
 registration_patterns = list(
@@ -227,7 +229,7 @@ class Aircraft(DataFrameMixin):
         """
         from .. import session
 
-        logging.warning("Downloading OpenSky aircraft database")
+        logger.warning("Downloading OpenSky aircraft database")
         file_url = (
             "https://opensky-network.org/datasets/metadata/aircraftDatabase.csv"
         )
@@ -255,7 +257,7 @@ class Aircraft(DataFrameMixin):
     def opensky_db(self) -> pd.DataFrame:
         if not (self.cache_dir / "opensky_db.pkl").exists():
             self.download_opensky()
-        logging.info("Loading OpenSky aircraft database")
+        logger.info("Loading OpenSky aircraft database")
         return pd.read_pickle(self.cache_dir / "opensky_db.pkl")
 
     def __getitem__(self: T, name: str | list[str]) -> None | T:

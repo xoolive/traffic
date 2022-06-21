@@ -12,6 +12,8 @@ from ..core import Flight, Traffic
 from ..core.time import timelike, to_datetime
 from ..data import SO6
 
+logger = logging.getLogger(__name__)
+
 
 class _CZML_Params:
     default_time_multiplier = 100
@@ -132,7 +134,7 @@ def to_czml(
     with filename.open("w") as fh:
         json.dump(export, fh, indent=2)
 
-    logging.info(f"Scenario file {filename} written")
+    logger.info(f"Scenario file {filename} written")
 
 
 def _onload() -> None:

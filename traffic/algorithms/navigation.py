@@ -37,6 +37,8 @@ if TYPE_CHECKING:
     from ..data.basic.airports import Airports  # noqa: 401
     from ..data.basic.navaid import Navaids  # noqa: 401
 
+logger = logging.getLogger(__name__)
+
 
 class PointMergeParams(TypedDict):
     point_merge: str | PointMixin
@@ -885,11 +887,11 @@ class NavigationFeatures:
 
         if isinstance(point_merge, str):
             if navaids_extent is None:
-                logging.warn(msg)
+                logger.warn(msg)
                 return None
             point_merge = navaids_extent.global_get(point_merge)  # type: ignore
             if point_merge is None:
-                logging.warn("Navaid for point_merge not found")
+                logger.warn("Navaid for point_merge not found")
                 return None
 
         if secondary_point is None:
@@ -897,11 +899,11 @@ class NavigationFeatures:
 
         if isinstance(secondary_point, str):
             if navaids_extent is None:
-                logging.warn(msg)
+                logger.warn(msg)
                 return None
             secondary_point = navaids_extent.global_get(secondary_point)
             if secondary_point is None:
-                logging.warn("Navaid for secondary_point not found")
+                logger.warn("Navaid for secondary_point not found")
                 return None
 
         if airport is not None:

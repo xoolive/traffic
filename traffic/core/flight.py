@@ -68,6 +68,8 @@ if TYPE_CHECKING:
     from .structure import Navaid  # noqa: F401
     from .traffic import Traffic  # noqa: F401
 
+logger = logging.getLogger(__name__)
+
 
 class Entry(TypedDict, total=False):
     timestamp: pd.Timestamp
@@ -818,7 +820,7 @@ class Flight(
         if len(tmp) == 1:
             return tmp[0]  # type: ignore
         if warn:
-            logging.warning(
+            logger.warning(
                 f"Several {field}s for one flight, consider splitting"
             )
         return set(tmp)
@@ -1174,7 +1176,7 @@ class Flight(
         df = self.data.set_index("timestamp")
         if index not in df.index:
             id_ = getattr(self, "flight_id", self.callsign)
-            logging.warning(f"No index {index} for flight {id_}")
+            logger.warning(f"No index {index} for flight {id_}")
             return None
         return Position(df.loc[index])
 
@@ -2537,7 +2539,7 @@ class Flight(
             id_ = self.flight_id
             if id_ is None:
                 id_ = self.callsign
-            logging.warning(f"No data on Impala for flight {id_}.")
+            logger.warning(f"No data on Impala for flight {id_}.")
             return self
 
         def fail_silent() -> "Flight":

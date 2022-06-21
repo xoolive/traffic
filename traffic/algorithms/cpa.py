@@ -24,6 +24,8 @@ if TYPE_CHECKING:
 
     from ..core import Traffic
 
+logger = logging.getLogger(__name__)
+
 
 def combinations(
     t: "Traffic", lateral_separation: float, vertical_separation: float
@@ -159,7 +161,7 @@ def closest_point_of_approach(
     from cartopy import crs
 
     if projection is None:
-        logging.warn("Defaulting to projection EuroPP()")
+        logger.warn("Defaulting to projection EuroPP()")
         projection = crs.EuroPP()
 
     if isinstance(projection, crs.Projection):
