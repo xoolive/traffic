@@ -1316,7 +1316,7 @@ class ModeS_Decoder:
     def stop(self) -> None:
         if self.decode_thread is not None and self.decode_thread.is_alive():
             self.decode_thread.stop()
-            self.decode_thread.join()
+            self.timer_thread.join()
 
     def __del__(self) -> None:
         self.stop()
