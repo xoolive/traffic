@@ -14,7 +14,7 @@ from ...basic.navaid import Navaids
 # https://github.com/python/mypy/issues/2511
 T = TypeVar("T", bound="AIXMNavaidParser")
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class AIXMNavaidParser(Navaids):

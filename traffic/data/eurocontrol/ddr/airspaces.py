@@ -14,7 +14,7 @@ from ....core.airspace import Airspaces
 
 A = TypeVar("A", bound="NMAirspaceParser")
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class NMAirspaceParser(Airspaces):

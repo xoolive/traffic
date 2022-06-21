@@ -12,7 +12,7 @@ from ... import cache_dir, cache_expiration
 
 __all__ = list(p.stem[1:] for p in Path(__file__).parent.glob("_[a-z]*py"))
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class ADDS_FAA_OpenData:

@@ -46,7 +46,7 @@ from ....core.time import time_or_delta, timelike, to_datetime
 if TYPE_CHECKING:
     from cartopy.crs import Projection
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def _prepare_libarchive() -> None:  # coverage: ignore

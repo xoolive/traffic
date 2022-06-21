@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
     from .traffic import Traffic  # noqa: F401
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class FaultCatcher:

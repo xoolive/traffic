@@ -30,7 +30,7 @@ try:
 except ImportError:
     from ssl import PROTOCOL_SSLv23 as ssl_protocol
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def check_cert_not_after(certificate: Certificate) -> None:

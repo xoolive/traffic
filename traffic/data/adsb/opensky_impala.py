@@ -23,7 +23,7 @@ from ...core.time import round_time, split_times, timelike, to_datetime
 from ...core.types import ProgressbarType
 from .raw_data import RawData
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class ImpalaError(Exception):

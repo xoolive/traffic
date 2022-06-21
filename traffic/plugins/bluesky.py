@@ -8,7 +8,7 @@ from traffic.core.aero import vtas2cas
 from traffic.core.time import timelike
 from traffic.data import aircraft
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def fmt_timedelta(x: pd.Timestamp) -> str:

@@ -63,7 +63,7 @@ TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
 # The thing is that Iterable[str] causes issue sometimes...
 IterStr = Union[List[str], Set[str]]
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class Traffic(HBoxMixin, GeographyMixin):

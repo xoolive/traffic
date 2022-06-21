@@ -104,7 +104,7 @@ nmb2b_version = config.get("nmb2b", "version", fallback="25.0.0")
 
 _cached_imports: Dict[str, Any] = dict()
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def __getattr__(name: str) -> Any:

@@ -41,7 +41,7 @@ else:
 
 Decoder = TypeVar("Decoder", bound="ModeS_Decoder")
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:

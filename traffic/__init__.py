@@ -18,7 +18,7 @@ __all__ = ["config_dir", "config_file", "cache_dir"]
 logger_traffic = logging.getLogger("traffic")
 logger_traffic.setLevel(logging.WARNING)
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 # -- Configuration management --
 

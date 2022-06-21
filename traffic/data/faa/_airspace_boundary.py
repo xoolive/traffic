@@ -11,7 +11,7 @@ from shapely.ops import orient
 from ...core.airspace import Airspace, Airspaces, ExtrudedPolygon
 from . import ADDS_FAA_OpenData
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class Airspace_Boundary(ADDS_FAA_OpenData, Airspaces):

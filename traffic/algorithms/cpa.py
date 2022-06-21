@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from ..core import Traffic
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def combinations(

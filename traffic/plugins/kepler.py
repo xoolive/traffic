@@ -10,7 +10,7 @@ from shapely.wkt import dumps
 
 from ..core import Airspace, Flight, Traffic
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def flight_kepler(flight: "Flight") -> Dict[str, Any]:

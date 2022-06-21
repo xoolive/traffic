@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .mixins import PointMixin  # noqa: F401
     from .structure import Airport
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def closest_point(

@@ -12,7 +12,7 @@ from ..core import Flight, Traffic
 from ..core.time import timelike, to_datetime
 from ..data import SO6
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class _CZML_Params:

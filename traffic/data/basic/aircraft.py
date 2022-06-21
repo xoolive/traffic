@@ -18,7 +18,7 @@ import pandas as pd
 
 from ...core.mixins import DataFrameMixin, FormatMixin
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 json_path = Path(__file__).parent / "patterns.json"
 

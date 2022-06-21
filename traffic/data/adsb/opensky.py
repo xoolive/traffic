@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class Coverage(object):

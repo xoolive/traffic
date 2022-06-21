@@ -68,7 +68,7 @@ if TYPE_CHECKING:
     from .structure import Navaid  # noqa: F401
     from .traffic import Traffic  # noqa: F401
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class Entry(TypedDict, total=False):

@@ -11,7 +11,7 @@ from shapely.geometry.base import BaseGeometry
 from ...core.mixins import GeoDBMixin
 from ...core.structure import Navaid, Route
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"
