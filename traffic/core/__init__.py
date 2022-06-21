@@ -31,11 +31,13 @@ __all__ = [
     "faulty_flight",
 ]
 
-logger_traffic = logging.getLogger("traffic")
-logger_traffic.setLevel(logging.WARNING)
-
-
 def loglevel(mode: str) -> None:
+    """
+    Changes the log level of the libraries root logger.
+
+    :param mode:
+        New log level.
+    """
     logger_traffic = logging.getLogger("traffic")
     logger_traffic.setLevel(getattr(logging, mode))
 
