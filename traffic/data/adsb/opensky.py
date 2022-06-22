@@ -236,9 +236,13 @@ class OpenSky(Impala):
         )
         try:
             c.raise_for_status()
-            r = pd.DataFrame.from_records(
-                c.json()["states"], columns=self._json_columns
-            )
+            json = c.json()
+            columns = self._json_columns
+            # For some reason, OpenSky may return 18 fields instead of 17
+            if len(json["states"]) > 0:
+                if len(json["states"][0]) > len(self._json_columns):
+                    columns.append("_")
+            r = pd.DataFrame.from_records(json["states"], columns=columns)
         except Exception:
             _log.warning("Error in received data, retrying in 10 seconds")
             time.sleep(10)
