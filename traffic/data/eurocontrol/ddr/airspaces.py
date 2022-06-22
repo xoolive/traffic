@@ -14,7 +14,7 @@ from ....core.airspace import Airspaces
 
 A = TypeVar("A", bound="NMAirspaceParser")
 
-logger: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class NMAirspaceParser(Airspaces):
@@ -81,7 +81,7 @@ class NMAirspaceParser(Airspaces):
         )
 
     def read_are(self, filename: Path) -> None:
-        logger.info(f"Reading ARE file {filename}")
+        _log.info(f"Reading ARE file {filename}")
         nb_points = 0
         area_coords: List[Tuple[float, float]] = list()
         name = None
@@ -108,7 +108,7 @@ class NMAirspaceParser(Airspaces):
                 self.polygons[name] = orient(shape(geometry), -1)
 
     def read_sls(self, filename: Path) -> None:
-        logger.info(f"Reading SLS file {filename}")
+        _log.info(f"Reading SLS file {filename}")
         with filename.open("r") as fh:
             for line in fh.readlines():
                 name, _, polygon, lower, upper = line.split()
@@ -122,7 +122,7 @@ class NMAirspaceParser(Airspaces):
                 )
 
     def read_spc(self, filename: Path) -> Iterator[dict[str, Any]]:
-        logger.info(f"Reading SPC file {filename}")
+        _log.info(f"Reading SPC file {filename}")
         with open(filename, "r") as fh:
             for line in fh.readlines():
                 letter, component, *after = line.split(";")

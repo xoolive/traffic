@@ -31,6 +31,7 @@ __all__ = [
     "faulty_flight",
 ]
 
+
 def loglevel(mode: str) -> None:
     """
     Changes the log level of the libraries root logger.
@@ -38,8 +39,8 @@ def loglevel(mode: str) -> None:
     :param mode:
         New log level.
     """
-    logger_traffic = logging.getLogger("traffic")
-    logger_traffic.setLevel(getattr(logging, mode))
+    _log = logging.getLogger("traffic")
+    _log.setLevel(getattr(logging, mode))
 
 
 def faulty_flight(exc: Optional[TracebackType] = None) -> Dict[str, Any]:

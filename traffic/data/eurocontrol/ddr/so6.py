@@ -46,7 +46,7 @@ from ....core.time import time_or_delta, timelike, to_datetime
 if TYPE_CHECKING:
     from cartopy.crs import Projection
 
-logger: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 def _prepare_libarchive() -> None:  # coverage: ignore
@@ -68,12 +68,12 @@ def _prepare_libarchive() -> None:  # coverage: ignore
     try:
         result = subprocess.check_output(command)
     except Exception as e:
-        logger.error("Could not lookup 'libarchive' package info", e)
+        _log.error("Could not lookup 'libarchive' package info", e)
 
     info = json.loads(result)
     installed_versions = info[0]["installed"]
     if len(installed_versions) == 0:
-        logger.warning("libarchive is not currently installed via Brew")
+        _log.warning("libarchive is not currently installed via Brew")
         return
 
     version = installed_versions[0]["version"]

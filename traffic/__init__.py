@@ -15,9 +15,8 @@ from . import drawing  # noqa: F401
 __version__ = importlib_metadata.version("traffic")  # type: ignore
 __all__ = ["config_dir", "config_file", "cache_dir"]
 
-# Set up the libraries root logger
-logger_traffic: logging.Logger = logging.getLogger(__name__)
-logger_traffic.setLevel(logging.WARNING)
+# Set up the library root logger
+_log = logging.getLogger(__name__)
 
 # -- Configuration management --
 
@@ -84,7 +83,7 @@ if cache_purge_cfg != "" and not cache_no_expire:
     )
 
     if len(purgeable) > 0:
-        logger_traffic.warn(
+        _log.warn(
             f"Removing {len(purgeable)} cache files older than {cache_purge}"
         )
         for path in purgeable:
@@ -101,13 +100,13 @@ _enabled_list = ",".join(_enabled_plugins_raw.split("\n")).split(",")
 _selected = set(s.replace("-", "").strip().lower() for s in _enabled_list)
 _selected -= {""}
 
-logger_traffic.info(f"Selected plugins: {_selected}")
+_log.info(f"Selected plugins: {_selected}")
 
 if "TRAFFIC_NOPLUGIN" not in os.environ.keys():  # coverage: ignore
     for entry_point in pkg_resources.iter_entry_points("traffic.plugins"):
         if entry_point.name.replace("-", "").lower() in _selected:
             handle = entry_point.load()
-            logger_traffic.info(f"Loading plugin: {handle.__name__}")
+            _log.info(f"Loading plugin: {handle.__name__}")
             load = getattr(handle, "_onload", None)
             if load is not None:
                 load()

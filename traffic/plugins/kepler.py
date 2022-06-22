@@ -10,7 +10,7 @@ from shapely.wkt import dumps
 
 from ..core import Airspace, Flight, Traffic
 
-logger: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 def flight_kepler(flight: "Flight") -> Dict[str, Any]:
@@ -41,7 +41,7 @@ def airspace_kepler(airspace: "Airspace") -> Dict[str, Any]:
 
 def traffic_kepler(traffic: "Traffic") -> pd.DataFrame:
     if traffic.flight_ids is None:
-        logger.warning("assign_id() has been appended for you")
+        _log.warning("assign_id() has been appended for you")
         traffic = cast("Traffic", traffic.assign_id().eval())
     return pd.DataFrame.from_records(
         [

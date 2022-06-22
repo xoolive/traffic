@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
 
-logger: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class Coverage(object):
@@ -240,7 +240,7 @@ class OpenSky(Impala):
                 c.json()["states"], columns=self._json_columns
             )
         except Exception:
-            logger.warning("Error in received data, retrying in 10 seconds")
+            _log.warning("Error in received data, retrying in 10 seconds")
             time.sleep(10)
             return self.api_states(own, bounds)
 

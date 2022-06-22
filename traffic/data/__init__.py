@@ -104,7 +104,7 @@ nmb2b_version = config.get("nmb2b", "version", fallback="25.0.0")
 
 _cached_imports: Dict[str, Any] = dict()
 
-logger: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 def __getattr__(name: str) -> Any:
@@ -297,7 +297,7 @@ def __getattr__(name: str) -> Any:
         from .eurocontrol.b2b import NMB2B
 
         if pkcs12_filename != "" and pkcs12_password != "":
-            logger.debug(f"pcks12_filename: {pkcs12_filename}")
+            _log.debug(f"pcks12_filename: {pkcs12_filename}")
             nm_b2b = NMB2B(
                 getattr(NMB2B, nmb2b_mode),
                 nmb2b_version,

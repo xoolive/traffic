@@ -8,7 +8,7 @@ from traffic.core.aero import vtas2cas
 from traffic.core.time import timelike
 from traffic.data import aircraft
 
-logger: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 def fmt_timedelta(x: pd.Timestamp) -> str:
@@ -113,7 +113,7 @@ def to_bluesky(
                     f"{v.track} {v.cas} {v.vertical_rate}\n"
                 )
 
-        logger.info(f"Scenario file {filename} written")
+        _log.info(f"Scenario file {filename} written")
 
 
 def _onload() -> None:

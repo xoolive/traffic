@@ -23,7 +23,7 @@ from ...core.time import round_time, split_times, timelike, to_datetime
 from ...core.types import ProgressbarType
 from .raw_data import RawData
 
-logger: logging.Logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class ImpalaError(Exception):
@@ -113,7 +113,7 @@ class Impala(object):
     @staticmethod
     def _read_cache(cachename: Path) -> None | pd.DataFrame:
 
-        logger.info("Reading request in cache {}".format(cachename))
+        _log.info("Reading request in cache {}".format(cachename))
         with cachename.open("r") as fh:
             s = StringIO()
             count = 0
@@ -237,7 +237,7 @@ class Impala(object):
             # for instance:
             #    "ssh -W data.opensky-network.org:2230 proxy_machine"
             # or "connect.exe -H proxy_ip:proxy_port %h %p"
-            logger.info(f"Using ProxyCommand: {self.proxy_command}")
+            _log.info(f"Using ProxyCommand: {self.proxy_command}")
             extra_args["sock"] = paramiko.ProxyCommand(self.proxy_command)
 
         client.connect(
@@ -270,10 +270,10 @@ class Impala(object):
             cachename.unlink()
 
         if not cachename.exists():
-            logger.info("Sending request: {}".format(request))
+            _log.info("Sending request: {}".format(request))
 
             if not self.connected:
-                logger.info("Connecting the database")
+                _log.info("Connecting the database")
                 self._connect()
 
             # bug fix for when we write a request with """ starting with \n
@@ -282,7 +282,7 @@ class Impala(object):
             # avoid messing lines in the cache file
             time.sleep(0.1)
             total = ""
-            logger.info("Will be writing into {}".format(cachename))
+            _log.info("Will be writing into {}".format(cachename))
             while len(total) == 0 or total[-10:] != ":21000] > ":
                 b = self.stdout.channel.recv(256)
                 total += b.decode()
@@ -292,13 +292,13 @@ class Impala(object):
             # (and my) best efforts to handle exceptions.
             # If data is streamed directly into the cache file, it is hard to
             # detect that it is corrupted and should be removed/overwritten.
-            logger.info("Opening {}".format(cachename))
+            _log.info("Opening {}".format(cachename))
             with cachename.open("w") as fh:
                 if columns is not None:
                     fh.write(re.sub(", ", "\t", columns))
                     fh.write("\n")
                 fh.write(total)
-            logger.info("Closing {}".format(cachename))
+            _log.info("Closing {}".format(cachename))
 
         return self._read_cache(cachename)
 
@@ -416,7 +416,7 @@ class Impala(object):
         sequence = list(split_times(start, stop, date_delta))
 
         for bt, at, bh, ah in progressbar(sequence):
-            logger.info(
+            _log.info(
                 f"Sending request between time {bt} and {at} "
                 f"and hour {bh} and {ah}"
             )
@@ -591,7 +591,7 @@ class Impala(object):
 
         for bt, at, before_day, after_day in progressbar(sequence):
 
-            logger.info(
+            _log.info(
                 f"Sending request between time {bt} and {at} "
                 f"and day {before_day} and {after_day}"
             )
@@ -911,7 +911,7 @@ class Impala(object):
 
         for bt, at, bh, ah in progressbar(sequence):
 
-            logger.info(
+            _log.info(
                 f"Sending request between time {bt} and {at} "
                 f"and hour {bh} and {ah}"
             )
@@ -1290,7 +1290,7 @@ class Impala(object):
 
         for bt, at, bh, ah in progressbar(sequence):
 
-            logger.info(
+            _log.info(
                 f"Sending request between time {bt} and {at} "
                 f"and hour {bh} and {ah}"
             )
