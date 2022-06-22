@@ -43,8 +43,26 @@ Decoder = TypeVar("Decoder", bound="ModeS_Decoder")
 
 _log = logging.getLogger(__name__)
 
+MSG_SIZES = {0x31: 11, 0x32: 16, 0x33: 23, 0x34: 23}
 
-def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
+
+def next_beast_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
+    """Iterate in Beast binary feed.
+
+    <esc> "1" : 6 byte MLAT timestamp, 1 byte signal level,
+        2 byte Mode-AC
+    <esc> "2" : 6 byte MLAT timestamp, 1 byte signal level,
+        7 byte Mode-S short frame
+    <esc> "3" : 6 byte MLAT timestamp, 1 byte signal level,
+        14 byte Mode-S long frame
+    <esc> "4" : 6 byte MLAT timestamp, status data, DIP switch
+        configuration settings (not on Mode-S Beast classic)
+    <esc><esc>: true 0x1a
+    <esc> is 0x1a, and "1", "2" and "3" are 0x31, 0x32 and 0x33
+
+    timestamp:
+    wiki.modesbeast.com/Radarcape:Firmware_Versions#The_GPS_timestamp
+    """
     data = b""
     for chunk in chunk_it:
         data += chunk
@@ -55,21 +73,28 @@ def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
             data = data[it:]
             if len(data) < 23:
                 break
-            if data[1] == 0x33:
-                yield data[:23]
-                data = data[23:]
-                continue
-            elif data[1] == 0x32:
-                data = data[16:]
-                continue
-            elif data[1] == 0x31:
-                data = data[11:]
-                continue
-            elif data[1] == 0x34:
-                data = data[23:]
-                continue
+
+            if data[1] in [0x31, 0x32, 0x33, 0x34]:
+                # The tricky part here is to collapse all 0x1a 0x1a into single
+                # 0x1a when they are part of a message (i.e. not followed by
+                # "1", "2", "3" or "4")
+                msg_size = MSG_SIZES[data[1]]
+                ref_idx = 1
+                idx = data[ref_idx:msg_size].find(0x1A)
+                while idx != -1 and len(data) > msg_size:
+                    start = ref_idx + idx
+                    ref_idx = start + 1
+                    if data[ref_idx] == 0x1A:
+                        data = data[:start] + data[ref_idx:]
+                    idx = data[ref_idx:msg_size].find(0x1A)
+                if idx != -1 or len(data) < msg_size:
+                    # calling for next buffer
+                    break
+                yield data[:msg_size]
+                data = data[msg_size:]
             else:
                 data = data[1:]
+                logging.warning("Probably corrupted message")
 
 
 def decode_time_default(
@@ -876,7 +901,7 @@ class AircraftDict(Dict[str, Aircraft]):
     def set_latlon(self, lat0: float, lon0: float) -> None:
         self.lat0 = lat0
         self.lon0 = lon0
-        for ac in self.values():
+        for ac in list(self.values()):
             ac.lat0 = lat0
             ac.lon0 = lon0
 
@@ -932,7 +957,7 @@ class ModeS_Decoder:
 
         The :meth:`from_address`, :meth:`from_dump1090`, and :meth:`from_rtlsdr`
         classmethods start a decoding thread on the creation of the object.  The
-        thread can be stopped with a ``decoder.thread.stop()`` call.
+        thread can be stopped with a ``decoder.stop()`` call.
 
     :param reference: A reference location must be provided to decode ground
         messages. A reference can be set as:
@@ -1126,7 +1151,9 @@ class ModeS_Decoder:
         # We don't know the size of the binary so tqdm.rich does not work
         from tqdm.autonotebook import tqdm
 
-        for i, bin_msg in tqdm(enumerate(next_msg(next_in_binary(filename)))):
+        for i, bin_msg in tqdm(
+            enumerate(next_beast_msg(next_in_binary(filename)))
+        ):
 
             if len(bin_msg) < 23:
                 continue
@@ -1191,7 +1218,7 @@ class ModeS_Decoder:
     @classmethod
     def from_socket(
         cls,
-        socket: socket.socket,
+        s: socket.socket,
         reference: Union[str, Airport, tuple[float, float]],
         *,
         uncertainty: bool,
@@ -1205,18 +1232,41 @@ class ModeS_Decoder:
         redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
 
-        def next_in_socket() -> Iterator[bytes]:
+        def next_in_tcp_socket() -> Iterator[bytes]:
+            while True:
+                data = s.recv(2048)
+                if (
+                    decoder.decode_thread is None
+                    or decoder.decode_thread.to_be_stopped()
+                    or len(data) == 0  # connection dropped
+                ):
+                    logging.warning("Connection dropped or decoder stopped")
+                    s.close()
+                    decoder.stop()
+                    return
+                yield data
+
+        def next_in_udp_socket() -> Iterator[bytes]:
             while True:
                 if (
                     decoder.decode_thread is None
                     or decoder.decode_thread.to_be_stopped()
                 ):
-                    socket.close()
+                    s.close()
+                    logging.warning("getting out of UDP socket")
                     return
-                yield socket.recv(2048)
+                data, _addr = s.recvfrom(1024)
+                yield data
+
+        next_in_socket = {
+            socket.SOCK_STREAM: next_in_tcp_socket,
+            socket.SOCK_DGRAM: next_in_udp_socket,
+        }
 
         def decode() -> None:
-            for i, bin_msg in enumerate(next_msg(next_in_socket())):
+            for i, bin_msg in enumerate(
+                next_beast_msg(next_in_socket[s.type]())
+            ):
 
                 msg = "".join(["{:02x}".format(t) for t in bin_msg])
 
@@ -1244,7 +1294,7 @@ class ModeS_Decoder:
             cls.on_timer(decoder.expire_frequency)(cls.expire_aircraft)
 
             # if the decoder is not alive, finish expiring aircraft
-            while decoder.decode_thread.is_alive() or len(decoder.acs) != 0:
+            while decoder.decode_thread.is_alive():
                 now = pd.Timestamp("now", tz="utc")
                 t, delta, operation = heapq.heappop(cls.timer_functions)
 
@@ -1268,7 +1318,7 @@ class ModeS_Decoder:
     def stop(self) -> None:
         if self.decode_thread is not None and self.decode_thread.is_alive():
             self.decode_thread.stop()
-            self.decode_thread.join()
+            self.timer_thread.join()
 
     def __del__(self) -> None:
         self.stop()
@@ -1324,8 +1374,9 @@ class ModeS_Decoder:
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_tcp.csv",
         time_fmt: str = "radarcape",
         uncertainty: bool = False,
+        tcp: bool = True,
     ) -> "ModeS_Decoder":  # coverage: ignore
-        """Decode raw messages transmitted over a TCP network.
+        """Decode raw messages transmitted over a TCP or UDP network.
 
         The file should contain for each line at least a timestamp and an
         hexadecimal message, as a CSV-like format.
@@ -1359,8 +1410,12 @@ class ModeS_Decoder:
         now = datetime.now(timezone.utc)
         filename = now.strftime(file_pattern)
         today = os.path.expanduser(filename)
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((host, port))
+        if tcp:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((host, port))
+        else:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.bind((host, port))
         fh = open(today, "a", 1)
         return cls.from_socket(
             s, reference, uncertainty=uncertainty, time_fmt=time_fmt, fh=fh
@@ -1369,7 +1424,7 @@ class ModeS_Decoder:
     def redefine_reference(self, time: datetime) -> None:
         pos = list(
             (ac.lat, ac.lon)
-            for ac in self.acs.values()
+            for ac in list(self.acs.values())
             if ac.alt is not None
             and ac.alt < 5000
             and ac.tpos is not None
