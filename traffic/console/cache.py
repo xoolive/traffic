@@ -4,6 +4,8 @@ from typing import List
 
 from . import dispatch_open
 
+logger = logging.getLogger(__name__)
+
 
 def main(args_list: List[str]) -> None:
 
@@ -35,5 +37,5 @@ def main(args_list: List[str]) -> None:
         print(cache_dir)
 
     if args.open:
-        logging.info("Open cache directory {}".format(cache_dir))
+        logger.info("Open cache directory {}".format(cache_dir))
         dispatch_open(cache_dir)

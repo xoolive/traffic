@@ -41,6 +41,8 @@ else:
 
 Decoder = TypeVar("Decoder", bound="ModeS_Decoder")
 
+_log = logging.getLogger(__name__)
+
 
 def next_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
     data = b""
@@ -356,7 +358,7 @@ class Aircraft(object):
         )
         speed, track, _, speed_type, *_ = pms.adsb.surface_velocity(msg)
         if speed_type != "GS":
-            logging.warn(f"Ground airspeed for aircraft {self.icao24}")
+            _log.warn(f"Ground airspeed for aircraft {self.icao24}")
 
         # This helps updating current representations
         self.spd = speed
@@ -964,7 +966,7 @@ class ModeS_Decoder:
             reference = airports[reference]
 
         if reference is None:
-            logging.warning(
+            _log.warning(
                 "No valid reference position provided. Fallback to (0, 0)"
             )
             lat0, lon0 = 0.0, 0.0
@@ -1002,7 +1004,7 @@ class ModeS_Decoder:
         def decorate(
             function: Callable[[Decoder], None]
         ) -> Callable[[Decoder], None]:
-            logging.info(f"Schedule {function.__name__} with {frequency}")
+            _log.info(f"Schedule {function.__name__} with {frequency}")
             heapq.heappush(
                 cls.timer_functions,
                 (now + frequency, frequency, function),
@@ -1012,7 +1014,7 @@ class ModeS_Decoder:
         return decorate
 
     def expire_aircraft(self) -> None:
-        logging.info("Running expire_aircraft")
+        _log.info("Running expire_aircraft")
 
         now = pd.Timestamp("now", tz="utc")
 
@@ -1038,7 +1040,7 @@ class ModeS_Decoder:
             del self.acs[icao]
 
     def on_new_aircraft(self, icao: str) -> None:
-        logging.info(f"New aircraft {icao}")
+        _log.info(f"New aircraft {icao}")
 
     @classmethod
     def from_file(
@@ -1252,7 +1254,7 @@ class ModeS_Decoder:
 
                 now = pd.Timestamp("now", tz="utc")
                 operation(decoder)
-                logging.info(f"Schedule {operation.__name__} at {now + delta}")
+                _log.info(f"Schedule {operation.__name__} at {now + delta}")
                 heapq.heappush(
                     cls.timer_functions, (now + delta, delta, operation)
                 )
@@ -1563,7 +1565,7 @@ class ModeS_Decoder:
                 self[elt["icao24"]] for elt in self.aircraft
             )
         except ValueError as e:
-            logging.warning(e)
+            _log.warning(e)
             return None
 
     def __getitem__(self, icao: str) -> Optional[Flight]:

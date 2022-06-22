@@ -14,6 +14,8 @@ from ...basic.navaid import Navaids
 # https://github.com/python/mypy/issues/2511
 T = TypeVar("T", bound="AIXMNavaidParser")
 
+_log = logging.getLogger(__name__)
+
 
 class AIXMNavaidParser(Navaids):
     name: str = "aixm_navaids"
@@ -49,7 +51,7 @@ class AIXMNavaidParser(Navaids):
             if self._extensions is not None:
                 self._extensions.to_pickle(extension_file)
         else:
-            logging.info("Loading aixm points database")
+            _log.info("Loading aixm points database")
 
             self._extensions = pd.read_pickle(extension_file)
 
@@ -72,7 +74,7 @@ class AIXMNavaidParser(Navaids):
             if self._extensions is not None:
                 self._extensions.to_pickle(extension_file)
         else:
-            logging.info("Loading aixm points database")
+            _log.info("Loading aixm points database")
             self._data = pd.read_pickle(cache_file)
 
         return self._data

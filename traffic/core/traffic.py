@@ -63,6 +63,8 @@ TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
 # The thing is that Iterable[str] causes issue sometimes...
 IterStr = Union[List[str], Set[str]]
 
+_log = logging.getLogger(__name__)
+
 
 class Traffic(HBoxMixin, GeographyMixin):
     """
@@ -168,7 +170,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             return tentative.rename(columns=rename_columns)
 
         path = Path(filename)
-        logging.warning(f"{path.suffixes} extension is not supported")
+        _log.warning(f"{path.suffixes} extension is not supported")
         return None
 
     # --- Special methods ---
@@ -305,7 +307,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             )
 
         if not isinstance(index, str):  # List[str], Set[str], Iterable[str]
-            logging.debug("Selecting flights from a list of identifiers")
+            _log.debug("Selecting flights from a list of identifiers")
             subset = repr(list(index))
             query_str = f"callsign in {subset} or icao24 in {subset}"
             if "flight_id" in self.data.columns:
@@ -743,7 +745,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     @property_cache
     def aircraft(self) -> Set[str]:
         """Return all the different icao24 aircraft ids in the DataFrame"""
-        logging.warning("Use .icao24", DeprecationWarning)
+        _log.warning("Use .icao24", DeprecationWarning)
         return set(self.data.icao24)
 
     @property_cache

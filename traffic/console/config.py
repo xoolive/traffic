@@ -4,6 +4,8 @@ from typing import List
 
 from . import dispatch_open
 
+logger = logging.getLogger(__name__)
+
 
 def main(args_list: List[str]) -> None:
 
@@ -43,9 +45,9 @@ def main(args_list: List[str]) -> None:
         print(config_dir)
 
     if args.edit:
-        logging.info("Open configuration file {}".format(config_file))
+        logger.info("Open configuration file {}".format(config_file))
         dispatch_open(config_file)
 
     if args.open:
-        logging.info("Open configuration directory {}".format(config_file))
+        logger.info("Open configuration directory {}".format(config_file))
         dispatch_open(config_dir)

@@ -2,7 +2,7 @@
 """
 It is crucial that the imports do not change order,
 hence the following line:
-isort:skip_file 
+isort:skip_file
 """
 
 import logging
@@ -33,8 +33,14 @@ __all__ = [
 
 
 def loglevel(mode: str) -> None:
-    logger = logging.getLogger()
-    logger.setLevel(getattr(logging, mode))
+    """
+    Changes the log level of the libraries root logger.
+
+    :param mode:
+        New log level.
+    """
+    _log = logging.getLogger("traffic")
+    _log.setLevel(getattr(logging, mode))
 
 
 def faulty_flight(exc: Optional[TracebackType] = None) -> Dict[str, Any]:
