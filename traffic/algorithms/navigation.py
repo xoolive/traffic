@@ -227,8 +227,8 @@ class NavigationFeatures:
                 if segment is not None:
                     yield segment
             if isinstance(intersection, MultiLineString):
-                (*_, start), *_, (*_, stop) = intersection[0].coords
-                for chunk in intersection:
+                (*_, start), *_, (*_, stop) = intersection.geoms[0].coords
+                for chunk in intersection.geoms:
                     (*_, start_bak), *_, (*_, stop) = chunk.coords
                     if stop - start > 40:  # crossing runways and back
                         start = start_bak
@@ -817,7 +817,7 @@ class NavigationFeatures:
         # The following cast secures the typing
         self = cast("Flight", self)
 
-        simplified = self.simplify(25)
+        simplified: Flight = self.simplify(25)  # type: ignore
         if simplified.shape is None:
             return -1
         return len(simplified.shape.buffer(1e-3).interiors)
@@ -864,7 +864,7 @@ class NavigationFeatures:
             runway. The algorithm will ensure all trajectories are aligned with
             the runway's ILS. (ignored if ``airport`` is ``None``)
 
-        (new in version 2.7.1)
+        (new in version 2.8)
         """
         # The following cast secures the typing
         self = cast("Flight", self)
@@ -970,7 +970,7 @@ class NavigationFeatures:
             available for pip with Python 3.10 but still available on
             conda-forge servers.
 
-        (new in version 2.7.1)
+        (new in version 2.8)
         """
         try:
             import onnxruntime as rt
@@ -1025,7 +1025,7 @@ class NavigationFeatures:
                     )
                     features = np.concatenate(
                         (features, vertical_rates), axis=1
-                    )  # type: ignore
+                    )
 
                 name = scaler_sess.get_inputs()[0].name
                 value = features.astype(np.float32)

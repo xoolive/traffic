@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Literal,
     NoReturn,
     Optional,
     Set,
@@ -26,11 +27,6 @@ from typing import (
     cast,
     overload,
 )
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 import numpy as np
 import numpy.typing as npt
@@ -417,7 +413,7 @@ class SO6Flight(Flight):
             )
 
         else:
-            for x in LineString(list(self.xy_time)).intersection(shape):
+            for x in LineString(list(self.xy_time)).intersection(shape).geoms:
                 begin_, *_, end = list(
                     datetime.fromtimestamp(t, timezone.utc)
                     for t in np.stack(x.coords)[:, 2]
@@ -437,13 +433,15 @@ class SO6Flight(Flight):
             proj: pyproj.Proj, buffer: List[pd.Series]
         ) -> Iterator["SO6Flight"]:
             df = pd.DataFrame.from_records(buffer)
-
-            df["lon1"], df["lat1"] = pyproj.transform(
-                proj, pyproj.Proj(init="EPSG:4326"), df.x1.values, df.y1.values
+            transformer = pyproj.Transformer.from_proj(
+                proj, pyproj.Proj("epsg:4326"), always_xy=True
+            )
+            df["lon1"], df["lat1"] = transformer.transform(
+                df.x1.values, df.y1.values
             )
 
-            df["lon2"], df["lat2"] = pyproj.transform(
-                proj, pyproj.Proj(init="EPSG:4326"), df.x2.values, df.y2.values
+            df["lon2"], df["lat2"] = transformer.transform(
+                df.x2.values, df.y2.values
             )
 
             yield self.__class__(df.drop(["x1", "x2", "y1", "y2"], axis=1))
@@ -458,17 +456,16 @@ class SO6Flight(Flight):
             lat_1=data.lat1.min(),
             lat_2=data.lat1.max(),
         )
+        transformer = pyproj.Transformer.from_proj(
+            pyproj.Proj("epsg:4326"), proj, always_xy=True
+        )
 
-        data["x1"], data["y1"] = pyproj.transform(
-            pyproj.Proj(init="EPSG:4326"),
-            proj,
+        data["x1"], data["y1"] = transformer.transform(
             data.lon1.values,
             data.lat1.values,
         )
 
-        data["x2"], data["y2"] = pyproj.transform(
-            pyproj.Proj(init="EPSG:4326"),
-            proj,
+        data["x2"], data["y2"] = transformer.transform(
             data.lon2.values,
             data.lat2.values,
         )

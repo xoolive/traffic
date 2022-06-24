@@ -15,6 +15,6 @@ def test_geodesy() -> None:
 
     # Vector version
     d = distance(x[1:, 0], x[1:, 1], x[:-1, 0], x[:-1, 1])
-    assert (d.max() - d.min()) / d.max() < 1e-6
+    assert (d.max() - d.min()) / d.max() < 1e-6  # type: ignore
     b = bearing(x[:-1, 0], x[:-1, 1], x[1:, 0], x[1:, 1])
-    assert (b.max() - b.min()) / b.max() < 1e-6
+    assert (b.max() - b.min()) / b.max() < 1e-6  # type: ignore

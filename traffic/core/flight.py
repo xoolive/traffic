@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import logging
-import sys
 import warnings
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache, reduce
@@ -17,11 +16,13 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Literal,
     NoReturn,
     Optional,
     Set,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -30,11 +31,6 @@ from typing import (
 
 import rich.repr
 from rich.console import Console, ConsoleOptions, RenderResult
-
-if sys.version_info >= (3, 8):
-    from typing import Literal, TypedDict
-else:
-    from typing_extensions import Literal, TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -119,7 +115,7 @@ def _split(
         delta = np.timedelta64(value, unit)
     # There seems to be a change with numpy >= 1.18
     # max() now may return NaN, therefore the following fix
-    max_ = np.nanmax(diff)  # type: ignore
+    max_ = np.nanmax(diff)
     if max_ > delta:
         # np.nanargmax seems bugged with timestamps
         argmax = np.where(diff == max_)[0][0]
@@ -1781,9 +1777,7 @@ class Flight(
             series = reset.data[feature].astype(float)
             idx = ~series.isnull()
             result_dict[f"{feature}_unwrapped"] = pd.Series(
-                np.degrees(
-                    np.unwrap(np.radians(series.loc[idx]))  # type: ignore
-                ),
+                np.degrees(np.unwrap(np.radians(series.loc[idx]))),
                 index=series.loc[idx].index,
             )
 
@@ -1811,9 +1805,7 @@ class Flight(
             tas_y=lambda df: df.groundspeed * np.cos(np.radians(df.track))
             - df.wind_v,
             TAS=lambda df: np.abs(df.tas_x + 1j * df.tas_y),
-            heading_rad=lambda df: np.angle(  # type: ignore
-                df.tas_x + 1j * df.tas_y
-            ),
+            heading_rad=lambda df: np.angle(df.tas_x + 1j * df.tas_y),
             heading=lambda df: (90 - np.degrees(df.heading_rad)) % 360,
         ).drop(columns=["tas_x", "tas_y", "heading_rad"])
 
@@ -2072,7 +2064,7 @@ class Flight(
                         * (-1 if projected_shape.contains(p) else 1)
                         for p in MultiPoint(
                             list(zip(self_xy.data.x, self_xy.data.y))
-                        )
+                        ).geoms
                     )
                 }
             )
@@ -2248,16 +2240,12 @@ class Flight(
         )
 
         res = cur_sorted.assign(
-            cumdist=np.pad(  # type: ignore
-                d.cumsum() / 1852, (1, 0), "constant"
-            )
+            cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant")
         )
 
         if compute_gs:
             gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
-            res = res.assign(
-                compute_gs=np.abs(np.pad(gs, (1, 0), "edge"))  # type: ignore
-            )
+            res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "edge")))
 
         if compute_track:
             track = geo.bearing(
@@ -2268,9 +2256,7 @@ class Flight(
             )
             track = np.where(track > 0, track, 360 + track)
             res = res.assign(
-                compute_track=np.abs(
-                    np.pad(track, (1, 0), "edge")  # type: ignore
-                )
+                compute_track=np.abs(np.pad(track, (1, 0), "edge"))
             )
 
         return res.sort_values("timestamp", ascending=True)

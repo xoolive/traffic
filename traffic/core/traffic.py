@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 import warnings
 from datetime import timedelta
 from pathlib import Path
@@ -13,6 +12,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Literal,
     NoReturn,
     Optional,
     Set,
@@ -21,11 +21,6 @@ from typing import (
     Union,
     overload,
 )
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 from rich.console import Console, ConsoleOptions, RenderResult
 

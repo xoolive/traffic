@@ -13,6 +13,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Union,
     cast,
@@ -28,7 +29,6 @@ from .flight import Flight
 from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
-    from typing_extensions import Literal
 
     from .traffic import Traffic  # noqa: F401
 

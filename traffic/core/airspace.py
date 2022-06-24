@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import json
-import sys
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -10,6 +9,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     NamedTuple,
     Optional,
     Tuple,
@@ -17,19 +17,8 @@ from typing import (
     Union,
 )
 
-import rich.repr
-
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from cartes.utils.cache import cached_property
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
 import geopandas as gpd
+import rich.repr
 
 import numpy as np
 import pyproj
@@ -446,7 +435,7 @@ def _flight_intersects(
             assert layer.lower is not None
             assert layer.upper is not None
             if isinstance(ix, base.BaseMultipartGeometry):
-                for part in ix:
+                for part in ix.geoms:
                     if any(
                         100 * layer.lower < x[2] < 100 * layer.upper
                         for x in part.coords

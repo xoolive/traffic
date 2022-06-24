@@ -1,4 +1,3 @@
-import sys
 import types
 from functools import lru_cache
 from pathlib import Path
@@ -44,10 +43,7 @@ def get_flight(filename: str, directory: Path) -> Union[Flight, Traffic]:
 def get_sample(
     module: types.ModuleType, name: str
 ) -> Union[None, "Flight", "Traffic"]:
-    if sys.version_info >= (3, 7):
-        return getattr(module, name)  # type: ignore
-    path = Path(module.__file__).parent
-    return get_flight(name, path)
+    return getattr(module, name)  # type: ignore
 
 
 def assign_id(t: Union[Traffic, Flight], name: str) -> Union[Traffic, Flight]:

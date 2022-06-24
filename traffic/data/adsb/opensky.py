@@ -1,5 +1,4 @@
 import logging
-import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -11,14 +10,10 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    TypedDict,
     Union,
     cast,
 )
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
 
 from requests import Session
 

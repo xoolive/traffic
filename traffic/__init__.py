@@ -105,8 +105,9 @@ _log.info(f"Selected plugins: {_selected}")
 if "TRAFFIC_NOPLUGIN" not in os.environ.keys():  # coverage: ignore
     for entry_point in pkg_resources.iter_entry_points("traffic.plugins"):
         if entry_point.name.replace("-", "").lower() in _selected:
+            _log.info(f"Loading plugin: {entry_point.name}")
             handle = entry_point.load()
-            _log.info(f"Loading plugin: {handle.__name__}")
+            _log.info(f"Loaded plugin: {handle.__name__}")
             load = getattr(handle, "_onload", None)
             if load is not None:
                 load()

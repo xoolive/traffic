@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import logging
 import re
-import warnings
 from functools import lru_cache
 from numbers import Integral, Real
 from pathlib import Path
@@ -28,6 +28,9 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound="DataFrameMixin")
 G = TypeVar("G", bound="GeoDBMixin")
+
+
+_log = logging.getLogger(__name__)
 
 
 class DataFrameMixin(object):
@@ -465,7 +468,7 @@ class ShapelyMixin(object):
         )
 
         if not projected_shape.is_valid:
-            warnings.warn("The chosen projection is invalid for current shape")
+            _log.warning("The chosen projection is invalid for current shape")
         return projected_shape
 
 
@@ -642,7 +645,7 @@ class GeographyMixin(DataFrameMixin):
 
         west, east = self.data.longitude.min(), self.data.longitude.max()
         longitude_index = wind.longitude.values
-        margin = np.diff(longitude_index).max()  # type: ignore
+        margin = np.diff(longitude_index).max()
         longitude_index = longitude_index[
             np.where(
                 (longitude_index >= west - margin)
@@ -652,7 +655,7 @@ class GeographyMixin(DataFrameMixin):
 
         south, north = self.data.latitude.min(), self.data.latitude.max()
         latitude_index = wind.latitude.values
-        margin = np.diff(latitude_index).max()  # type: ignore
+        margin = np.diff(latitude_index).max()
         latitude_index = latitude_index[
             np.where(
                 (latitude_index >= south - margin)
@@ -663,7 +666,7 @@ class GeographyMixin(DataFrameMixin):
         timestamp = self.data.timestamp.dt.tz_convert("utc")
         start, stop = timestamp.min(), timestamp.max()
         time_index = wind.time.values
-        margin = np.diff(time_index).max()  # type: ignore
+        margin = np.diff(time_index).max()
         time_index = time_index[
             np.where(
                 (time_index >= start.tz_localize(None) - margin)

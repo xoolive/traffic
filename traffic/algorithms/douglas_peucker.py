@@ -18,13 +18,13 @@ def _douglas_peucker_rec(
 
     v = np.array([[y[len(x) - 1] - y[0]], [x[0] - x[len(x) - 1]]])
     d = np.abs(
-        np.dot(  # type: ignore
-            np.dstack([x[1:-1] - x[0], y[1:-1] - y[0]])[0],  # type: ignore
+        np.dot(
+            np.dstack([x[1:-1] - x[0], y[1:-1] - y[0]])[0],
             v / np.sqrt(np.sum(v * v)),
         )
     )
 
-    if np.max(d) < tolerance:  # type: ignore
+    if np.max(d) < tolerance:
         mask[np.s_[1 : l - 1]] = 0
         return
 
@@ -46,13 +46,11 @@ def _douglas_peucker_rec_3d(
 
     start = np.array([x[0], y[0], z[0]])
     end = np.array([x[-1], y[-1], z[-1]])
-    point = np.dstack([x[1:], y[1:], z[1:]])[0] - start  # type: ignore
-    d = np.cross(
-        point, (start - end) / np.linalg.norm(start - end)  # type: ignore
-    )
+    point = np.dstack([x[1:], y[1:], z[1:]])[0] - start
+    d = np.cross(point, (start - end) / np.linalg.norm(start - end))
     d = np.sqrt(np.sum(d * d, axis=1))
 
-    if np.max(d) < tolerance:  # type: ignore
+    if np.max(d) < tolerance:
         mask[np.s_[1 : l - 1]] = 0
         return
 

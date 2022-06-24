@@ -7,7 +7,6 @@ import heapq
 import logging
 import os
 import socket
-import sys
 import threading
 import time
 from datetime import datetime, timedelta, timezone
@@ -21,6 +20,7 @@ from typing import (
     Iterator,
     Optional,
     TextIO,
+    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -33,11 +33,6 @@ import pandas as pd
 
 from ...core import Flight, Traffic
 from ...data.basic.airports import Airport
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
 
 Decoder = TypeVar("Decoder", bound="ModeS_Decoder")
 
