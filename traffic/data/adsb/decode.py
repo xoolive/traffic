@@ -108,9 +108,11 @@ def decode_time_radarcape(
 
     nanos = timestamp & 0x00003FFFFFFF
     secs = timestamp >> 30
-    now = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    now += timedelta(seconds=secs, microseconds=nanos / 1000)
-    return now
+    ts = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    ts += timedelta(seconds=secs, microseconds=nanos / 1000)
+    if ts - timedelta(minutes=5) > now:
+        ts -= timedelta(days=1)
+    return ts
 
 
 def decode_time_dump1090(
