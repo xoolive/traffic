@@ -5,7 +5,7 @@ import re
 from functools import lru_cache
 from numbers import Integral, Real
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Optional, Type, TypeVar, Union
 
 from ipyleaflet import Marker as LeafletMarker
 from ipywidgets import HTML
@@ -277,20 +277,6 @@ class DataFrameMixin(object):
         structure.
         """
         return self.__class__(self.data.rename(*args, **kwargs))
-
-    def pipe(
-        self: T, func: Callable[..., None | T | bool], *args: Any, **kwargs: Any
-    ) -> None | T | bool:
-        """
-        Applies `func` to the object.
-
-        .. warning::
-
-            The logic is similar to that of :meth:`~pandas.DataFrame.pipe`
-            method, but the function applies on T, not on the DataFrame.
-
-        """
-        return func(self, *args, **kwargs)
 
     def fillna(self: T, *args: Any, **kwargs: Any) -> T:
         """

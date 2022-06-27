@@ -476,6 +476,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
+    def pipe(self, *args, **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
     def has(self, *args, **kwargs):  # type: ignore
         ...
 

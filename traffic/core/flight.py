@@ -498,6 +498,23 @@ class Flight(
             raise AttributeError(msg)
         return getattr(self.data[feature], agg)()
 
+    def pipe(
+        self,
+        func: Callable[..., None | "Flight" | bool],
+        *args: Any,
+        **kwargs: Any,
+    ) -> None | "Flight" | bool:
+        """
+        Applies `func` to the object.
+
+        .. warning::
+
+            The logic is similar to that of :meth:`~pandas.DataFrame.pipe`
+            method, but the function applies on T, not on the DataFrame.
+
+        """
+        return func(self, *args, **kwargs)
+
     def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:
         _log.warning("Use Flight.pipe(...) instead", DeprecationWarning)
         return self if test(self) else None
