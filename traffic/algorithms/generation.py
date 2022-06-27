@@ -15,8 +15,6 @@ import numpy.typing as npt
 import pandas as pd
 import pyproj
 
-from ..core.geodesy import destination
-
 if TYPE_CHECKING:
     from cartopy import crs
 
@@ -81,6 +79,8 @@ def compute_latlon_from_trackgs(
         Whether the coordinates correspond to the first or the last
         coordinates of the trajectories.
     """
+
+    from ..core.geodesy import destination
 
     df = data.copy(deep=True)
     if not forward:
