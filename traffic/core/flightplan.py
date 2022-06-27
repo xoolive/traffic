@@ -2,7 +2,9 @@ import re
 import textwrap
 import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+
+from ipyleaflet import Polyline as LeafletPolyline
 
 from shapely.geometry import LineString
 from shapely.ops import linemerge
@@ -337,6 +339,32 @@ class FlightPlan(ShapelyMixin):
                 return super()._repr_svg_()
             except Exception:
                 return None
+
+    def leaflet(self, **kwargs: Any) -> Optional[LeafletPolyline]:
+        """Returns a Leaflet layer to be directly added to a Map.
+
+        The elements passed as kwargs as passed as is to the PolyLine
+        constructor.
+        """
+
+        shape = self.shape
+        if shape is None:
+            return None
+
+        coords: Union[
+            List[List[Tuple[float, float]]], List[Tuple[float, float]]
+        ]
+        if isinstance(shape, LineString):
+            coords = list((lat, lon) for (lon, lat, *_) in shape.coords)
+        else:
+            # In case a FlightPlan could not resolve all parts
+            coords = list(
+                list((lat, lon) for (lon, lat, *_) in s.coords)
+                for s in shape.geoms
+            )
+
+        kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
+        return LeafletPolyline(locations=coords, **kwargs)
 
     def skyvector(self) -> Dict[str, Any]:
         from ..data import session

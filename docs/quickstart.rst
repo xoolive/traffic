@@ -305,9 +305,7 @@ Making maps
 -----------
 
 Maps are also available with Matplotlib, Altair, and thanks to `ipyleaflet
-<https://ipyleaflet.readthedocs.io/>`_ widgets, if the corresponding
-:ref:`plugin <How to use and write plugins for the traffic library?>` is
-activated (true by default)
+<https://ipyleaflet.readthedocs.io/>`_ widgets.
 
 - with Matplotlib, you need to specify a projection for your axis system. They
   are provided by `cartes <https://cartes-viz.github.io/projections.html>`_ on
@@ -360,7 +358,7 @@ activated (true by default)
 
   .. jupyter-execute::
 
-    subset.map_leaflet(zoom=9)
+    subset.map_leaflet(zoom=8)
 
 
 Low-altitude trajectory patterns in Paris metropolitan area

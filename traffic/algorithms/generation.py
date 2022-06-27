@@ -1,6 +1,14 @@
-import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    TypedDict,
+    Union,
+)
 
 import numpy as np
 import numpy.typing as npt
@@ -8,12 +16,6 @@ import pandas as pd
 import pyproj
 
 from ..core.geodesy import destination
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol, TypedDict
-else:
-    from typing_extensions import Protocol, TypedDict
-
 
 if TYPE_CHECKING:
     from cartopy import crs
@@ -160,7 +162,7 @@ class Generation:
         X = np.stack(list(f.data[self.features].values.ravel() for f in t))
         if self.scaler is not None:
             X = self.scaler.fit_transform(X)
-        return X
+        return X  # type: ignore
 
     def build_traffic(
         self,

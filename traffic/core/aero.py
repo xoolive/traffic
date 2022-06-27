@@ -79,7 +79,7 @@ def vtemp(h: Numeric) -> Numeric:  # h [m]
 
     """
     T = np.maximum(288.15 - 0.0065 * h, Tstrat)
-    return T  # type: ignore
+    return T
 
 
 # Atmos wrappings:
@@ -120,7 +120,7 @@ def vvsound(h: Numeric) -> Numeric:  # Speed of sound for given altitude h [m]
     """
     T = vtemp(h)
     a = np.sqrt(gamma * R * T)
-    return a  # type: ignore
+    return a
 
 
 # -- Speed conversions --
@@ -187,7 +187,7 @@ def vcas2tas(cas: Numeric, h: Numeric) -> Numeric:
 
     # cope with negative speed
     tas = np.where(cas < 0, -1 * tas, tas)
-    return tas  # type: ignore
+    return tas
 
 
 def vtas2cas(tas: Numeric, h: Numeric) -> Numeric:
@@ -198,14 +198,12 @@ def vtas2cas(tas: Numeric, h: Numeric) -> Numeric:
     :return: Computed Air Speed, (in m/s)
     """
     p, rho, T = vatmos(h)
-    qdyn = p * (
-        (1.0 + rho * tas * tas / (7.0 * p)) ** 3.5 - 1.0  # type: ignore
-    )
+    qdyn = p * ((1.0 + rho * tas * tas / (7.0 * p)) ** 3.5 - 1.0)
     cas = np.sqrt(7.0 * p0 / rho0 * ((qdyn / p0 + 1.0) ** (2.0 / 7.0) - 1.0))
 
     # cope with negative speed
     cas = np.where(tas < 0, -1 * cas, cas)
-    return cas  # type: ignore
+    return cas
 
 
 def vmach2cas(M: Numeric, h: Numeric) -> Numeric:
@@ -242,7 +240,7 @@ def vcasormach(spd: Numeric, h: Numeric) -> Tuple[Numeric, Numeric, Numeric]:
 
 def vcasormach2tas(spd: Numeric, h: Numeric) -> Numeric:
     tas = np.where(np.abs(spd) < 1, vmach2tas(spd, h), vcas2tas(spd, h))
-    return tas  # type: ignore
+    return tas
 
 
 # -- Scalar aero functions --

@@ -2,7 +2,7 @@
 """
 It is crucial that the imports do not change order,
 hence the following line:
-isort:skip_file 
+isort:skip_file
 """
 
 import logging
@@ -18,6 +18,7 @@ from .lazy import LazyTraffic
 from .airspace import Airspace
 from .sv import StateVectors
 from .flightplan import FlightPlan
+from .leaflet import monkey_patch
 
 __all__ = [
     "Flight",
@@ -33,8 +34,14 @@ __all__ = [
 
 
 def loglevel(mode: str) -> None:
-    logger = logging.getLogger()
-    logger.setLevel(getattr(logging, mode))
+    """
+    Changes the log level of the libraries root logger.
+
+    :param mode:
+        New log level.
+    """
+    _log = logging.getLogger("traffic")
+    _log.setLevel(getattr(logging, mode))
 
 
 def faulty_flight(exc: Optional[TracebackType] = None) -> Dict[str, Any]:
@@ -53,3 +60,6 @@ def faulty_flight(exc: Optional[TracebackType] = None) -> Dict[str, Any]:
         tb = tb.tb_next
 
     return dict()
+
+
+monkey_patch()  # leaflet

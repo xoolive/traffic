@@ -38,8 +38,6 @@ class Decoder(ModeS_Decoder):
             expire_frequency=pd.Timedelta("10 seconds"),
             expire_threshold=pd.Timedelta("10 seconds"),
         )
-        # uncertainty
-        # dump file
 
         Decoder.instance = self
 
@@ -50,9 +48,9 @@ class Decoder(ModeS_Decoder):
     def on_new_aircraft(self, icao24: str) -> None:
         logging.info(f"new aircraft {icao24}")
 
-    @ModeS_Decoder.on_timer("5s")
-    def do_something(self) -> None:
-        logging.info("do_something")
+    # @ModeS_Decoder.on_timer("5s")
+    # def do_something(self) -> None:
+    #     logging.info("do_something")
 
 
 class AircraftListWidget(Widget):

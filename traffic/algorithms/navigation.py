@@ -37,6 +37,8 @@ if TYPE_CHECKING:
     from ..data.basic.airports import Airports  # noqa: 401
     from ..data.basic.navaid import Navaids  # noqa: 401
 
+_log = logging.getLogger(__name__)
+
 
 class PointMergeParams(TypedDict):
     point_merge: str | PointMixin
@@ -225,8 +227,8 @@ class NavigationFeatures:
                 if segment is not None:
                     yield segment
             if isinstance(intersection, MultiLineString):
-                (*_, start), *_, (*_, stop) = intersection[0].coords
-                for chunk in intersection:
+                (*_, start), *_, (*_, stop) = intersection.geoms[0].coords
+                for chunk in intersection.geoms:
                     (*_, start_bak), *_, (*_, stop) = chunk.coords
                     if stop - start > 40:  # crossing runways and back
                         start = start_bak
@@ -815,7 +817,7 @@ class NavigationFeatures:
         # The following cast secures the typing
         self = cast("Flight", self)
 
-        simplified = self.simplify(25)
+        simplified: Flight = self.simplify(25)  # type: ignore
         if simplified.shape is None:
             return -1
         return len(simplified.shape.buffer(1e-3).interiors)
@@ -862,7 +864,7 @@ class NavigationFeatures:
             runway. The algorithm will ensure all trajectories are aligned with
             the runway's ILS. (ignored if ``airport`` is ``None``)
 
-        (new in version 2.7.1)
+        (new in version 2.8)
         """
         # The following cast secures the typing
         self = cast("Flight", self)
@@ -885,11 +887,11 @@ class NavigationFeatures:
 
         if isinstance(point_merge, str):
             if navaids_extent is None:
-                logging.warn(msg)
+                _log.warn(msg)
                 return None
             point_merge = navaids_extent.global_get(point_merge)  # type: ignore
             if point_merge is None:
-                logging.warn("Navaid for point_merge not found")
+                _log.warn("Navaid for point_merge not found")
                 return None
 
         if secondary_point is None:
@@ -897,11 +899,11 @@ class NavigationFeatures:
 
         if isinstance(secondary_point, str):
             if navaids_extent is None:
-                logging.warn(msg)
+                _log.warn(msg)
                 return None
             secondary_point = navaids_extent.global_get(secondary_point)
             if secondary_point is None:
-                logging.warn("Navaid for secondary_point not found")
+                _log.warn("Navaid for secondary_point not found")
                 return None
 
         if airport is not None:
@@ -968,7 +970,7 @@ class NavigationFeatures:
             available for pip with Python 3.10 but still available on
             conda-forge servers.
 
-        (new in version 2.7.1)
+        (new in version 2.8)
         """
         try:
             import onnxruntime as rt
@@ -1023,7 +1025,7 @@ class NavigationFeatures:
                     )
                     features = np.concatenate(
                         (features, vertical_rates), axis=1
-                    )  # type: ignore
+                    )
 
                 name = scaler_sess.get_inputs()[0].name
                 value = features.astype(np.float32)

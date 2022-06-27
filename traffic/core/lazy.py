@@ -13,6 +13,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Union,
     cast,
@@ -28,9 +29,10 @@ from .flight import Flight
 from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
-    from typing_extensions import Literal
 
     from .traffic import Traffic  # noqa: F401
+
+_log = logging.getLogger(__name__)
 
 
 class FaultCatcher:
@@ -256,7 +258,7 @@ class LazyTraffic:
 
     def __getattr__(self, name: str) -> Any:
         if hasattr(self.wrapped_t, name):
-            logging.warning(
+            _log.warning(
                 ".eval() has been automatically appended for you.\n"
                 "Check the documentation for more options."
             )
@@ -335,9 +337,9 @@ It should be safe to create a proper named function and pass it to filter_if.
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             if any(is_lambda(arg) for arg in args):
-                logging.warning(msg.format(method=f.__name__))
+                _log.warning(msg.format(method=f.__name__))
             if any(is_lambda(arg) for arg in kwargs.values()):
-                logging.warning(msg.format(method=f.__name__))
+                _log.warning(msg.format(method=f.__name__))
 
             return LazyTraffic(
                 lazy.wrapped_t,
@@ -374,9 +376,9 @@ It should be safe to create a proper named function and pass it to filter_if.
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             if any(is_lambda(arg) for arg in args):
-                logging.warning(msg.format(method=f.__name__))
+                _log.warning(msg.format(method=f.__name__))
             if any(is_lambda(arg) for arg in kwargs.values()):
-                logging.warning(msg.format(method=f.__name__))
+                _log.warning(msg.format(method=f.__name__))
 
             return LazyTraffic(wrapped_t, [op_idx])
 

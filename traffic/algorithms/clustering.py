@@ -1,10 +1,4 @@
-import sys
-from typing import TYPE_CHECKING, Any, List, Optional, Union
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
+from typing import TYPE_CHECKING, Any, List, Optional, Protocol, Union
 
 import numpy as np
 import numpy.typing as npt

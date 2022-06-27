@@ -22,7 +22,8 @@ def test_decode() -> None:
         switzerland.query(  # type: ignore
             'callsign.str.startswith("TAP127")', engine="python"
         )
-        .filter_if(long_enough)
+        .iterate_lazy()
+        .pipe(long_enough)
         .query_opensky()
         .resample("1s")
         .query_ehs(progressbar=False)

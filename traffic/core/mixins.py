@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import logging
 import re
-import warnings
 from functools import lru_cache
 from numbers import Integral, Real
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
+from ipyleaflet import Marker as LeafletMarker
+from ipywidgets import HTML
 from openap import aero
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console, ConsoleOptions, RenderResult
@@ -28,6 +30,9 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound="DataFrameMixin")
 G = TypeVar("G", bound="GeoDBMixin")
+
+
+_log = logging.getLogger(__name__)
 
 
 class DataFrameMixin(object):
@@ -273,11 +278,17 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.rename(*args, **kwargs))
 
-    def pipe(self: T, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    def pipe(
+        self: T, func: Callable[..., None | T | bool], *args: Any, **kwargs: Any
+    ) -> None | T | bool:
         """
-        Applies the Pandas :meth:`~pandas.DataFrame.pipe` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
+        Applies `func` to the object.
+
+        .. warning::
+
+            The logic is similar to that of :meth:`~pandas.DataFrame.pipe`
+            method, but the function applies on T, not on the DataFrame.
+
         """
         return func(self, *args, **kwargs)
 
@@ -465,7 +476,7 @@ class ShapelyMixin(object):
         )
 
         if not projected_shape.is_valid:
-            warnings.warn("The chosen projection is invalid for current shape")
+            _log.warning("The chosen projection is invalid for current shape")
         return projected_shape
 
 
@@ -642,7 +653,7 @@ class GeographyMixin(DataFrameMixin):
 
         west, east = self.data.longitude.min(), self.data.longitude.max()
         longitude_index = wind.longitude.values
-        margin = np.diff(longitude_index).max()  # type: ignore
+        margin = np.diff(longitude_index).max()
         longitude_index = longitude_index[
             np.where(
                 (longitude_index >= west - margin)
@@ -652,7 +663,7 @@ class GeographyMixin(DataFrameMixin):
 
         south, north = self.data.latitude.min(), self.data.latitude.max()
         latitude_index = wind.latitude.values
-        margin = np.diff(latitude_index).max()  # type: ignore
+        margin = np.diff(latitude_index).max()
         latitude_index = latitude_index[
             np.where(
                 (latitude_index >= south - margin)
@@ -663,7 +674,7 @@ class GeographyMixin(DataFrameMixin):
         timestamp = self.data.timestamp.dt.tz_convert("utc")
         start, stop = timestamp.min(), timestamp.max()
         time_index = wind.time.values
-        margin = np.diff(time_index).max()  # type: ignore
+        margin = np.diff(time_index).max()
         time_index = time_index[
             np.where(
                 (time_index >= start.tz_localize(None) - margin)
@@ -862,6 +873,27 @@ class PointMixin(object):
     def latlon(self) -> tuple[float, float]:
         """A tuple for latitude and longitude, in degrees, in this order."""
         return (self.latitude, self.longitude)
+
+    def leaflet(self, **kwargs: Any) -> LeafletMarker:
+        """Returns a Leaflet layer to be directly added to a Map.
+
+        The elements passed as kwargs as passed as is to the Marker constructor.
+        """
+
+        default = dict()
+        if hasattr(self, "name"):
+            default["title"] = str(self.name)
+
+        kwargs = {**default, **kwargs}
+        marker = LeafletMarker(
+            location=(self.latitude, self.longitude), **kwargs
+        )
+
+        label = HTML()
+        label.value = repr(self)
+        marker.popup = label
+
+        return marker
 
     def plot(
         self,

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import logging
-import sys
 import warnings
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache, reduce
@@ -17,11 +16,13 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Literal,
     NoReturn,
     Optional,
     Set,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -29,12 +30,10 @@ from typing import (
 )
 
 import rich.repr
+from ipyleaflet import Map as LeafletMap
+from ipyleaflet import Polyline as LeafletPolyline
+from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
-
-if sys.version_info >= (3, 8):
-    from typing import Literal, TypedDict
-else:
-    from typing_extensions import Literal, TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -47,6 +46,7 @@ from shapely.ops import transform
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
+from ..core.structure import Airport
 from ..core.types import ProgressbarType
 from ..data.basic.navaid import Navaids  # noqa: F401
 from . import geodesy as geo
@@ -67,6 +67,8 @@ if TYPE_CHECKING:
     from .lazy import LazyTraffic  # noqa: F401
     from .structure import Navaid  # noqa: F401
     from .traffic import Traffic  # noqa: F401
+
+_log = logging.getLogger(__name__)
 
 
 class Entry(TypedDict, total=False):
@@ -117,7 +119,7 @@ def _split(
         delta = np.timedelta64(value, unit)
     # There seems to be a change with numpy >= 1.18
     # max() now may return NaN, therefore the following fix
-    max_ = np.nanmax(diff)  # type: ignore
+    max_ = np.nanmax(diff)
     if max_ > delta:
         # np.nanargmax seems bugged with timestamps
         argmax = np.where(diff == max_)[0][0]
@@ -497,7 +499,7 @@ class Flight(
         return getattr(self.data[feature], agg)()
 
     def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:
-        # TODO deprecate if pipe() does a good job?
+        _log.warning("Use Flight.pipe(...) instead", DeprecationWarning)
         return self if test(self) else None
 
     def has(
@@ -818,9 +820,7 @@ class Flight(
         if len(tmp) == 1:
             return tmp[0]  # type: ignore
         if warn:
-            logging.warning(
-                f"Several {field}s for one flight, consider splitting"
-            )
+            _log.warning(f"Several {field}s for one flight, consider splitting")
         return set(tmp)
 
     @property
@@ -1174,7 +1174,7 @@ class Flight(
         df = self.data.set_index("timestamp")
         if index not in df.index:
             id_ = getattr(self, "flight_id", self.callsign)
-            logging.warning(f"No index {index} for flight {id_}")
+            _log.warning(f"No index {index} for flight {id_}")
             return None
         return Position(df.loc[index])
 
@@ -1781,9 +1781,7 @@ class Flight(
             series = reset.data[feature].astype(float)
             idx = ~series.isnull()
             result_dict[f"{feature}_unwrapped"] = pd.Series(
-                np.degrees(
-                    np.unwrap(np.radians(series.loc[idx]))  # type: ignore
-                ),
+                np.degrees(np.unwrap(np.radians(series.loc[idx]))),
                 index=series.loc[idx].index,
             )
 
@@ -1811,9 +1809,7 @@ class Flight(
             tas_y=lambda df: df.groundspeed * np.cos(np.radians(df.track))
             - df.wind_v,
             TAS=lambda df: np.abs(df.tas_x + 1j * df.tas_y),
-            heading_rad=lambda df: np.angle(  # type: ignore
-                df.tas_x + 1j * df.tas_y
-            ),
+            heading_rad=lambda df: np.angle(df.tas_x + 1j * df.tas_y),
             heading=lambda df: (90 - np.degrees(df.heading_rad)) % 360,
         ).drop(columns=["tas_x", "tas_y", "heading_rad"])
 
@@ -2072,7 +2068,7 @@ class Flight(
                         * (-1 if projected_shape.contains(p) else 1)
                         for p in MultiPoint(
                             list(zip(self_xy.data.x, self_xy.data.y))
-                        )
+                        ).geoms
                     )
                 }
             )
@@ -2248,16 +2244,12 @@ class Flight(
         )
 
         res = cur_sorted.assign(
-            cumdist=np.pad(  # type: ignore
-                d.cumsum() / 1852, (1, 0), "constant"
-            )
+            cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant")
         )
 
         if compute_gs:
             gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
-            res = res.assign(
-                compute_gs=np.abs(np.pad(gs, (1, 0), "edge"))  # type: ignore
-            )
+            res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "edge")))
 
         if compute_track:
             track = geo.bearing(
@@ -2268,9 +2260,7 @@ class Flight(
             )
             track = np.where(track > 0, track, 360 + track)
             res = res.assign(
-                compute_track=np.abs(
-                    np.pad(track, (1, 0), "edge")  # type: ignore
-                )
+                compute_track=np.abs(np.pad(track, (1, 0), "edge"))
             )
 
         return res.sort_values("timestamp", ascending=True)
@@ -2537,7 +2527,7 @@ class Flight(
             id_ = self.flight_id
             if id_ is None:
                 id_ = self.callsign
-            logging.warning(f"No data on Impala for flight {id_}.")
+            _log.warning(f"No data on Impala for flight {id_}.")
             return self
 
         def fail_silent() -> "Flight":
@@ -2625,6 +2615,89 @@ class Flight(
         return flight.sort_values("timestamp")
 
     # -- Visualisation --
+
+    def leaflet(self, **kwargs: Any) -> Optional[LeafletPolyline]:
+        """Returns a Leaflet layer to be directly added to a Map.
+
+        The elements passed as kwargs as passed as is to the PolyLine
+        constructor.
+
+        Example usage:
+
+        >>> from ipyleaflet import Map
+        >>> # Center the map near the landing airport
+        >>> m = Map(center=flight.at().latlon, zoom=7)
+        >>> m.add_layer(flight)  # this works as well with default options
+        >>> m.add_layer(flight.leaflet(color='red'))
+        >>> m
+        """
+        shape = self.shape
+        if shape is None:
+            return None
+
+        kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
+        return LeafletPolyline(
+            locations=list((lat, lon) for (lon, lat, _) in shape.coords),
+            **kwargs,
+        )
+
+    def map_leaflet(
+        self,
+        *,
+        zoom: int = 7,
+        highlight: Optional[
+            Dict[
+                str,
+                Union[str, Flight, Callable[[Flight], Optional[Flight]]],
+            ]
+        ] = None,
+        airport: Union[None, str, Airport] = None,
+        **kwargs: Any,
+    ) -> Optional[LeafletMap]:
+        from ..data import airports
+
+        last_position = self.query("latitude == latitude").at()  # type: ignore
+        if last_position is None:
+            return None
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+
+        if "center" not in kwargs:
+            if _airport is not None:
+                kwargs["center"] = _airport.latlon
+            else:
+                kwargs["center"] = (
+                    self.data.latitude.mean(),
+                    self.data.longitude.mean(),
+                )
+
+        m = LeafletMap(zoom=zoom, **kwargs)
+
+        if _airport is not None:
+            m.add_layer(_airport)
+
+        elt = m.add_layer(self)
+        elt.popup = HTML()
+        elt.popup.value = self._info_html()
+
+        if highlight is None:
+            highlight = dict()
+
+        for color, value in highlight.items():
+            if isinstance(value, str):
+                value = getattr(Flight, value, None)  # type: ignore
+                if value is None:
+                    continue
+            assert not isinstance(value, str)
+            f: Optional[Flight]
+            if isinstance(value, Flight):
+                f = value
+            else:
+                f = value(self)
+            if f is not None:
+                m.add_layer(f, color=color)
+
+        return m
 
     def plot(
         self, ax: "GeoAxesSubplot", **kwargs: Any

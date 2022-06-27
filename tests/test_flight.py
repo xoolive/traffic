@@ -6,7 +6,7 @@ import pytest
 from requests import RequestException
 
 import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import airports, eurofirs, navaids, runways

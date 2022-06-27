@@ -1,5 +1,4 @@
 import logging
-import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -11,14 +10,10 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    TypedDict,
     Union,
     cast,
 )
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
 
 from requests import Session
 
@@ -36,6 +31,8 @@ from .opensky_impala import Impala
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
+
+_log = logging.getLogger(__name__)
 
 
 class Coverage(object):
@@ -234,11 +231,15 @@ class OpenSky(Impala):
         )
         try:
             c.raise_for_status()
-            r = pd.DataFrame.from_records(
-                c.json()["states"], columns=self._json_columns
-            )
+            json = c.json()
+            columns = self._json_columns
+            # For some reason, OpenSky may return 18 fields instead of 17
+            if len(json["states"]) > 0:
+                if len(json["states"][0]) > len(self._json_columns):
+                    columns.append("_")
+            r = pd.DataFrame.from_records(json["states"], columns=columns)
         except Exception:
-            logging.warning("Error in received data, retrying in 10 seconds")
+            _log.warning("Error in received data, retrying in 10 seconds")
             time.sleep(10)
             return self.api_states(own, bounds)
 

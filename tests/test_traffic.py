@@ -90,7 +90,7 @@ def test_chaining() -> None:
         switzerland.between("2018-08-01", "2018-08-02")  # type: ignore
         .inside_bbox(eurofirs["LSAS"])
         .assign_id()
-        .filter_if(high_altitude)
+        .pipe(high_altitude)
         .resample("10s")
         .filter()
         .filter(altitude=53)

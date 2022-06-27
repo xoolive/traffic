@@ -11,6 +11,8 @@ import pandas as pd
 from ...core.mixins import GeoDBMixin
 from ...core.structure import Navaid, NavaidTuple
 
+_log = logging.getLogger(__name__)
+
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "xoolive/traffic/master/data/navdata"
 
@@ -203,7 +205,7 @@ class Navaids(GeoDBMixin):
         if not (self.cache_dir / "traffic_navaid.pkl").exists():
             self.download_data()
         else:
-            logging.info("Loading navaid database")
+            _log.info("Loading navaid database")
             self._data = pd.read_pickle(self.cache_dir / "traffic_navaid.pkl")
 
         if self._data is not None:

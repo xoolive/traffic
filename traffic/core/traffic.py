@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 import warnings
 from datetime import timedelta
 from pathlib import Path
@@ -13,6 +12,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Literal,
     NoReturn,
     Optional,
     Set,
@@ -22,11 +22,8 @@ from typing import (
     overload,
 )
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
-
+from ipyleaflet import Map as LeafletMap
+from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
 
 import pandas as pd
@@ -37,6 +34,7 @@ from ..algorithms.clustering import Clustering, centroid
 from ..algorithms.cpa import closest_point_of_approach
 from ..algorithms.generation import Generation
 from ..core.cache import property_cache
+from ..core.structure import Airport
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight, attrgetter_duration
 from .lazy import LazyTraffic, lazy_evaluation
@@ -62,6 +60,8 @@ TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
 
 # The thing is that Iterable[str] causes issue sometimes...
 IterStr = Union[List[str], Set[str]]
+
+_log = logging.getLogger(__name__)
 
 
 class Traffic(HBoxMixin, GeographyMixin):
@@ -168,7 +168,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             return tentative.rename(columns=rename_columns)
 
         path = Path(filename)
-        logging.warning(f"{path.suffixes} extension is not supported")
+        _log.warning(f"{path.suffixes} extension is not supported")
         return None
 
     # --- Special methods ---
@@ -305,7 +305,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             )
 
         if not isinstance(index, str):  # List[str], Set[str], Iterable[str]
-            logging.debug("Selecting flights from a list of identifiers")
+            _log.debug("Selecting flights from a list of identifiers")
             subset = repr(list(index))
             query_str = f"callsign in {subset} or icao24 in {subset}"
             if "flight_id" in self.data.columns:
@@ -743,7 +743,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     @property_cache
     def aircraft(self) -> Set[str]:
         """Return all the different icao24 aircraft ids in the DataFrame"""
-        logging.warning("Use .icao24", DeprecationWarning)
+        _log.warning("Use .icao24", DeprecationWarning)
         return set(self.data.icao24)
 
     @property_cache
@@ -819,6 +819,60 @@ class Traffic(HBoxMixin, GeographyMixin):
             This method is not implemented.
         """
         raise NotImplementedError
+
+    def map_leaflet(
+        self,
+        *,
+        zoom: int = 7,
+        highlight: Optional[
+            Dict[str, Union[str, Flight, Callable[[Flight], Optional[Flight]]]]
+        ] = None,
+        airport: Union[None, str, Airport] = None,
+        **kwargs: Any,
+    ) -> Optional[LeafletMap]:
+
+        from ..data import airports
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+
+        if "center" not in kwargs:
+            if _airport is not None:
+                kwargs["center"] = _airport.latlon
+            else:
+                kwargs["center"] = (
+                    self.data.latitude.mean(),
+                    self.data.longitude.mean(),
+                )
+
+        m = LeafletMap(zoom=zoom, **kwargs)
+
+        if _airport is not None:
+            m.add_layer(_airport)
+
+        for flight in self:
+            if flight.query("latitude == latitude"):
+                elt = m.add_layer(flight)
+                elt.popup = HTML()
+                elt.popup.value = flight._info_html()
+
+            if highlight is None:
+                highlight = dict()
+
+            for color, value in highlight.items():
+                if isinstance(value, str):
+                    value = getattr(Flight, value, None)  # type: ignore
+                    if value is None:
+                        continue
+                assert not isinstance(value, str)
+                f: Optional[Flight]
+                if isinstance(value, Flight):
+                    f = value
+                else:
+                    f = value(flight)
+                if f is not None:
+                    m.add_layer(f, color=color)
+
+        return m
 
     def plot(
         self,
