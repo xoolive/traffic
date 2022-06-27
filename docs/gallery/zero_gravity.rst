@@ -82,7 +82,7 @@ in altitude and indicated airspeed.
     :hide-code:
     :hide-output:
 
-    chart.save("_static/zero_gravity-thumb.png")
+    # chart.save("_static/zero_gravity-thumb.png")
 
 
 .. jupyter-execute:: 
