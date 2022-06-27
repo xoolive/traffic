@@ -278,11 +278,17 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.rename(*args, **kwargs))
 
-    def pipe(self: T, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    def pipe(
+        self: T, func: Callable[..., None | T | bool], *args: Any, **kwargs: Any
+    ) -> None | T | bool:
         """
-        Applies the Pandas :meth:`~pandas.DataFrame.pipe` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
+        Applies `func` to the object.
+
+        .. warning::
+
+            The logic is similar to that of :meth:`~pandas.DataFrame.pipe`
+            method, but the function applies on T, not on the DataFrame.
+
         """
         return func(self, *args, **kwargs)
 

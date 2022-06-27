@@ -499,7 +499,7 @@ class Flight(
         return getattr(self.data[feature], agg)()
 
     def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:
-        # TODO deprecate if pipe() does a good job?
+        _log.warning("Use Flight.pipe(...) instead", DeprecationWarning)
         return self if test(self) else None
 
     def has(
