@@ -30,6 +30,9 @@ from typing import (
 )
 
 import rich.repr
+from ipyleaflet import Map as LeafletMap
+from ipyleaflet import Polyline as LeafletPolyline
+from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
 
 import numpy as np
@@ -43,6 +46,7 @@ from shapely.ops import transform
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
+from ..core.structure import Airport
 from ..core.types import ProgressbarType
 from ..data.basic.navaid import Navaids  # noqa: F401
 from . import geodesy as geo
@@ -2611,6 +2615,89 @@ class Flight(
         return flight.sort_values("timestamp")
 
     # -- Visualisation --
+
+    def leaflet(self, **kwargs: Any) -> Optional[LeafletPolyline]:
+        """Returns a Leaflet layer to be directly added to a Map.
+
+        The elements passed as kwargs as passed as is to the PolyLine
+        constructor.
+
+        Example usage:
+
+        >>> from ipyleaflet import Map
+        >>> # Center the map near the landing airport
+        >>> m = Map(center=flight.at().latlon, zoom=7)
+        >>> m.add_layer(flight)  # this works as well with default options
+        >>> m.add_layer(flight.leaflet(color='red'))
+        >>> m
+        """
+        shape = self.shape
+        if shape is None:
+            return None
+
+        kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
+        return LeafletPolyline(
+            locations=list((lat, lon) for (lon, lat, _) in shape.coords),
+            **kwargs,
+        )
+
+    def map_leaflet(
+        self,
+        *,
+        zoom: int = 7,
+        highlight: Optional[
+            Dict[
+                str,
+                Union[str, Flight, Callable[[Flight], Optional[Flight]]],
+            ]
+        ] = None,
+        airport: Union[None, str, Airport] = None,
+        **kwargs: Any,
+    ) -> Optional[LeafletMap]:
+        from ..data import airports
+
+        last_position = self.query("latitude == latitude").at()  # type: ignore
+        if last_position is None:
+            return None
+
+        _airport = airports[airport] if isinstance(airport, str) else airport
+
+        if "center" not in kwargs:
+            if _airport is not None:
+                kwargs["center"] = _airport.latlon
+            else:
+                kwargs["center"] = (
+                    self.data.latitude.mean(),
+                    self.data.longitude.mean(),
+                )
+
+        m = LeafletMap(zoom=zoom, **kwargs)
+
+        if _airport is not None:
+            m.add_layer(_airport)
+
+        elt = m.add_layer(self)
+        elt.popup = HTML()
+        elt.popup.value = self._info_html()
+
+        if highlight is None:
+            highlight = dict()
+
+        for color, value in highlight.items():
+            if isinstance(value, str):
+                value = getattr(Flight, value, None)  # type: ignore
+                if value is None:
+                    continue
+            assert not isinstance(value, str)
+            f: Optional[Flight]
+            if isinstance(value, Flight):
+                f = value
+            else:
+                f = value(self)
+            if f is not None:
+                m.add_layer(f, color=color)
+
+        return m
 
     def plot(
         self, ax: "GeoAxesSubplot", **kwargs: Any

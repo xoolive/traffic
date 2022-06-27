@@ -7,6 +7,8 @@ from numbers import Integral, Real
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
+from ipyleaflet import Marker as LeafletMarker
+from ipywidgets import HTML
 from openap import aero
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console, ConsoleOptions, RenderResult
@@ -865,6 +867,27 @@ class PointMixin(object):
     def latlon(self) -> tuple[float, float]:
         """A tuple for latitude and longitude, in degrees, in this order."""
         return (self.latitude, self.longitude)
+
+    def leaflet(self, **kwargs: Any) -> LeafletMarker:
+        """Returns a Leaflet layer to be directly added to a Map.
+
+        The elements passed as kwargs as passed as is to the Marker constructor.
+        """
+
+        default = dict()
+        if hasattr(self, "name"):
+            default["title"] = str(self.name)
+
+        kwargs = {**default, **kwargs}
+        marker = LeafletMarker(
+            location=(self.latitude, self.longitude), **kwargs
+        )
+
+        label = HTML()
+        label.value = repr(self)
+        marker.popup = label
+
+        return marker
 
     def plot(
         self,

@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any, Iterator, Set
 
+from ipyleaflet import MarkerCluster as LeafletMarkerCluster
+
 import pandas as pd
 
 from .flight import Position
@@ -34,6 +36,14 @@ class StateVectors(GeographyMixin):
         ).iterrows():
             # TODO work on a clean __repr__ for the Position
             yield Position(p)
+
+    def leaflet(sv: "StateVectors", **kwargs: Any) -> LeafletMarkerCluster:
+        """Returns a Leaflet layer to be directly added to a Map.
+
+        The elements passed as kwargs as passed as is to the Marker constructor.
+        """
+        point_list = list(p.leaflet(title=p.callsign, **kwargs) for p in sv)
+        return LeafletMarkerCluster(markers=point_list)
 
     def plot(
         self, ax: "GeoAxesSubplot", s: int = 10, **kwargs: Any

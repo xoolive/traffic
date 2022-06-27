@@ -19,6 +19,8 @@ from typing import (
 
 import geopandas as gpd
 import rich.repr
+from ipyleaflet import Map as LeafletMap
+from ipyleaflet import Polygon as LeafletPolygon
 
 import numpy as np
 import pyproj
@@ -158,6 +160,56 @@ class Airspace(ShapelyMixin):
     @property
     def shape(self) -> "BaseGeometry":
         return self.flatten()
+
+    def leaflet(self, **kwargs: Any) -> LeafletPolygon:
+        """Returns a Leaflet layer to be directly added to a Map.
+
+        The elements passed as kwargs as passed as is to the Polygon
+        constructor.
+        """
+
+        shape = self.flatten()
+
+        kwargs = {**dict(weight=3), **kwargs}
+        coords: List[Any] = []
+
+        def unfold(shape: Polygon) -> Iterator[Any]:
+            yield shape.exterior
+            yield from shape.interiors
+
+        if shape.geom_type == "Polygon":
+            coords = list(
+                list((lat, lon) for (lon, lat, *_) in x.coords)
+                for x in unfold(shape)
+            )
+        else:
+            coords = list(
+                list((lat, lon) for (lon, lat, *_) in x.coords)
+                for piece in shape.geoms
+                for x in unfold(piece)
+            )
+
+        return LeafletPolygon(locations=coords, **kwargs)
+
+    def map_leaflet(
+        self,
+        *,
+        zoom: int = 6,
+        **kwargs: Any,
+    ) -> Optional[LeafletMap]:
+        from ipywidgets import HTML
+
+        if "center" not in kwargs:
+            (lon, lat), *_ = self.shape.centroid.coords
+            kwargs["center"] = (lat, lon)
+
+        m = LeafletMap(zoom=zoom, **kwargs)
+
+        elt = m.add_layer(self)
+        elt.popup = HTML()
+        elt.popup.value = self.designator
+
+        return m
 
     def __getitem__(self, *args: int) -> ExtrudedPolygon:
         return self.elements.__getitem__(*args)

@@ -11,6 +11,8 @@ from typing import (
 )
 
 import rich.repr
+from ipyleaflet import GeoData as LeafletGeoData
+from ipyleaflet import Polyline as LeafletPolyline
 
 from shapely.geometry import GeometryCollection, LineString
 from shapely.geometry.base import BaseGeometry
@@ -116,6 +118,15 @@ class Airport(
         return Overpass.request(
             area={"icao": self.icao, "as_": "airport"},
             nwr=[dict(aeroway=True, area="airport")],
+        )
+
+    def leaflet(self, **kwargs: Any) -> LeafletGeoData:
+
+        return LeafletGeoData(
+            geo_dataframe=self._openstreetmap()
+            .query('aeroway == "runway"')
+            .data,
+            style={**{"color": "#79706e", "weight": 6}, **kwargs},
         )
 
     @property
@@ -331,6 +342,20 @@ class Route(HBoxMixin, ShapelyMixin):
     @property
     def shape(self) -> LineString:
         return LineString(list((x.longitude, x.latitude) for x in self.navaids))
+
+    def leaflet(self, **kwargs: Any) -> Optional[LeafletPolyline]:
+        """Returns a Leaflet layer to be directly added to a Map.
+
+        The elements passed as kwargs as passed as is to the PolyLine
+        constructor.
+        """
+
+        if self.shape is None:
+            return None
+
+        coords = list((lat, lon) for (lon, lat, *_) in self.shape.coords)
+        kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
+        return LeafletPolyline(locations=coords, **kwargs)
 
     def _info_html(self) -> str:
         title = f"<h4><b>Route {self.name}</b></h4>"

@@ -7,7 +7,7 @@ implemented through a `registration <https://setuptools.readthedocs.io/en/latest
 mechanism and selectively activated in the configuration file.
 
 Some plugins are provided by the traffic library with visualisation
-facilities for Leaflet, Kepler.gl and CesiumJS.
+facilities for Kepler.gl and CesiumJS.
 
 Plugin activation
 -----------------
@@ -27,7 +27,7 @@ activate:
 ::
 
     [plugins]
-    enabled_plugins = Leaflet, Kepler, CesiumJS
+    enabled_plugins = Kepler, CesiumJS
 
 
 Available plugins
@@ -36,7 +36,6 @@ Available plugins
 .. toctree::
    :maxdepth: 1
 
-   leaflet
    kepler
    cesium
    bluesky
@@ -82,8 +81,7 @@ configuration file and add `MyPlugin` to the list of enabled plugins.
 
 You may then ``python setup.py install`` your plugin. Put the
 monkey-patching in an ``_onload()`` function that will be called iff the
-plugin is enabled. (Check an example on the `github repository
-<https://github.com/xoolive/traffic/blob/master/traffic/plugins/leaflet.py>`__)
+plugin is enabled.
 
 
 .. code:: python
