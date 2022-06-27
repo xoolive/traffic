@@ -151,7 +151,7 @@ These flights are usually characterised by a rapid descent to around
     :hide-code:
     :hide-output:
 
-    chart.save("_static/squawk7700-thumb.png")
+    # chart.save("_static/squawk7700-thumb.png")
 
 Dumping fuel to reduce landing weight
 =====================================
