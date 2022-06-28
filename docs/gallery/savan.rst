@@ -44,6 +44,8 @@ how we come to the full map below:
 
 .. jupyter-execute::
 
+   import altair as alt
+
    alt.layer(
        savan['SAVAN01'].simplify(1e3).geoencode(),
        savan['SAVAN02'].simplify(1e3).geoencode()
