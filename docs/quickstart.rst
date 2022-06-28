@@ -285,7 +285,7 @@ visualisation renderers including `Matplotlib <https://matplotlib.org/>`_ and
             *(
                 flight.chart().encode(
                     alt.X(
-                        "utchoursminutesseconds(timestamp)",
+                        "utcdayhoursminutesseconds(timestamp)",
                         axis=alt.Axis(format="%H:%M"),
                         title=None,
                     ),
@@ -488,7 +488,7 @@ matching, and extract relevant information (the runway information):
     chart = (
         alt.Chart(stats)
         .encode(
-            alt.X("utchoursminutes(stop)", axis=alt.Axis(format="%H:%M"), title=None),
+            alt.X("utcdayhoursminutesseconds(stop)", axis=alt.Axis(format="%H:%M"), title=None),
             alt.Y("ILS", title=None),
             alt.Color("ILS", legend=None),
             alt.Row("airport", title=None),
