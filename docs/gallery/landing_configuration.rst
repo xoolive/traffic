@@ -40,15 +40,3 @@ available in the traffic library.
 
     display(chart)
     display(stats)
-
-.. jupyter-execute:: 
-    :hide-code:
-    :hide-output:
-
-    chart.transform_filter(
-        "(utcdate(datum.stop) < 4) & (utchours(datum.stop) < 9) "
-    ).configure_legend(disable=True).properties(width=200).save(
-        "_static/landing_configuration-thumb.png"
-    )
-
-
