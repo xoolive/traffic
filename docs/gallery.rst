@@ -21,6 +21,12 @@ reasons: commercial aviation (passenger and freight) is only one of its kind.
      <span class="image-title">Calibration flights</span>
    </a>
 
+   <a class="imagegroup" href="gallery/savan.html">
+     <span class="image" alt="SAVAN flights"
+      style="background-image: url(./_static/savan-thumb.png);"></span>
+     <span class="image-title">Calibration flights with SAVAN trajectories</span>
+   </a>
+
    <a class="imagegroup" href="gallery/tour_de_france.html">
      <span class="image" alt="Tour de France 2020"
       style="background-image: url(./_static/tour_de_france-thumb.png);"></span>
@@ -42,6 +48,7 @@ reasons: commercial aviation (passenger and freight) is only one of its kind.
    :hidden:
 
    gallery/calibration
+   gallery/savan
    gallery/tour_de_france
    gallery/zero_gravity
 
