@@ -148,7 +148,7 @@ Here comes a better map now:
    map_chart
    
 
-A way to dig into how VOR installations are well covered on 180 degrees by SAVAN
+A way to dig into how VOR installations are well covered on 360 degrees by SAVAN
 trajectories is to compute for each VOR and for each trajectory, which legs
 cover which bearing angle.
 
