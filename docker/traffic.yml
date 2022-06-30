@@ -1,0 +1,7 @@
+name: traffic
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - traffic
