@@ -41,13 +41,6 @@ to ``aeroway`` tags, e.g. ``apron``, ``taxiway``, ``parking_position``,
 If you spot any error in data, consider contributing to OpenStreetMap.
 
 .. jupyter-execute::
-    :hide-code:
-    :hide-output:
-
-    from cartes.osm import Overpass
-    Overpass.head = lambda self: Overpass(self.json, self.data.head())
-
-.. jupyter-execute::
 
     airports["EHAM"].parking_position.head()
 

@@ -1276,8 +1276,8 @@ class Traffic(HBoxMixin, GeographyMixin):
 
             Remember the time and space complexity of this method is in O(n^2).
 
-        *args and **kwargs are passed as is to `scipy.spatial.pdist
-        <https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html#scipy.spatial.distance.pdist>`_
+        `*args` and `**kwargs` are passed as is to
+        :meth:`scipy.spatial.distance.pdist`
 
         """
 
