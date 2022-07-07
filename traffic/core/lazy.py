@@ -252,7 +252,10 @@ class LazyTraffic:
             result = pd.concat(cumul)
 
         if cache_file is not None and result is not None:
-            result.to_pickle(cache_file)
+            if Path(cache_file).suffix == ".parquet":
+                result.to_parquet(cache_file)
+            else:
+                result.to_pickle(cache_file)
 
         return result
 
