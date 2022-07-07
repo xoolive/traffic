@@ -344,7 +344,7 @@ class NavigationFeatures:
     @flight_iterator
     def aligned_on_navpoint(
         self,
-        points: Union["PointMixin", Iterable["PointMixin"], "FlightPlan"],
+        points: Union[str, "PointMixin", Iterable["PointMixin"], "FlightPlan"],
         angle_precision: int = 1,
         time_precision: str = "2T",
         min_time: str = "30s",
@@ -366,7 +366,16 @@ class NavigationFeatures:
         # The following cast secures the typing
         self = cast("Flight", self)
 
-        if isinstance(points, PointMixin):
+        if isinstance(points, str):
+            from ..data import navaids
+
+            navaid = navaids[points]
+            if navaid is None:
+                _log.warning(f"Navaid {points} unknown")
+                points_ = []
+            else:
+                points_ = [navaid]
+        elif isinstance(points, PointMixin):
             points_ = [points]
         elif isinstance(points, FlightPlan):
             points_ = points.all_points
