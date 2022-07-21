@@ -1464,6 +1464,8 @@ class ModeS_Decoder:
             icao = pms.icao(msg)
             if isinstance(icao, bytes):
                 icao = icao.decode()
+            if icao.lower() not in self.acs:
+                return
             ac = self.acs[icao.lower()]
             ac.altcode = time, msg  # type: ignore
 
@@ -1471,8 +1473,18 @@ class ModeS_Decoder:
             icao = pms.icao(msg)
             if isinstance(icao, bytes):
                 icao = icao.decode()
+            if icao.lower() not in self.acs:
+                return
             ac = self.acs[icao.lower()]
             ac.idcode = time, msg  # type: ignore
+
+        if df == 11:
+            if pms.crc(msg, encode=False) != 0:
+                return
+            icao = pms.icao(msg)
+            if isinstance(icao, bytes):
+                icao = icao.decode()
+            ac = self.acs[icao.lower()]
 
         if df == 17 or df == 18:  # ADS-B
 
