@@ -1460,6 +1460,24 @@ class ModeS_Decoder:
 
         df = pms.df(msg)
 
+        if df == 4 or df == 20:
+            icao = pms.icao(msg)
+            if isinstance(icao, bytes):
+                icao = icao.decode()
+            if icao.lower() not in self.acs:
+                return
+            ac = self.acs[icao.lower()]
+            ac.altcode = time, msg  # type: ignore
+
+        if df == 5 or df == 21:
+            icao = pms.icao(msg)
+            if isinstance(icao, bytes):
+                icao = icao.decode()
+            if icao.lower() not in self.acs:
+                return
+            ac = self.acs[icao.lower()]
+            ac.idcode = time, msg  # type: ignore
+
         if df == 11:
             if pms.crc(msg, encode=False) != 0:
                 return
@@ -1531,32 +1549,12 @@ class ModeS_Decoder:
                 elif ac.version == 2:
                     ac.nic_a, ac.nic_bc = pms.adsb.nic_a_c(msg)
 
-        if df == 4 or df == 20:
-            icao = pms.icao(msg)
-            if isinstance(icao, bytes):
-                icao = icao.decode()
-            if icao not in self.acs:
-                return
-            ac = self.acs[icao.lower()]
-            ac.altcode = time, msg  # type: ignore
-
-        if df == 5 or df == 21:
-            icao = pms.icao(msg)
-            if isinstance(icao, bytes):
-                icao = icao.decode()
-            if icao not in self.acs:
-                return
-            ac = self.acs[icao.lower()]
-            ac.idcode = time, msg  # type: ignore
-
-        if df == 20 or df == 21:
+        elif df == 20 or df == 21:
 
             bds = pms.bds.infer(msg)
             icao = pms.icao(msg)
             if isinstance(icao, bytes):
                 icao = icao.decode()
-            if icao not in self.acs:
-                return
             ac = self.acs[icao.lower()]
 
             if bds == "BDS20":
