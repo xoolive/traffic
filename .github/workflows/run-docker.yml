@@ -10,8 +10,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Docker image
-        run: docker build -f docker/jupyter.Dockerfile -t traffic/jupyter docker
+        run: docker build --file docker/jupyter.Dockerfile --tag ghcr.io/traffic/jupyter:latest
 
       - name: Import the library
-        run: docker run traffic/jupyter python -c "import traffic; print(traffic.__version__)"
+        run: docker run ghcr.io/traffic/jupyter:latest -c "import traffic; print(traffic.__version__)"
+        
+      - name: Push image
+        run: docker push ghcr.io/traffic/jupyter:latest
