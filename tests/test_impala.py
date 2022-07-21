@@ -257,6 +257,4 @@ def test_rawdata() -> None:
 
     f = t["484506"]
     assert f is not None
-
-    assert len(f) == 2751
     assert f.max("altitude") == 11050
