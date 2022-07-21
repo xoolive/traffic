@@ -1070,6 +1070,7 @@ class ModeS_Decoder:
         filename: str | Path,
         reference: str | Airport | tuple[float, float],
         uncertainty: bool = False,
+        crc_check: bool = False,
         template: str = "time, longmsg",
         sep: str = ",",
     ) -> "ModeS_Decoder":
@@ -1084,6 +1085,10 @@ class ModeS_Decoder:
 
         :param uncertainty: if True, decode also `uncertainty information
             <https://mode-s.org/decode/content/ads-b/7-uncertainty.html>`_
+
+        :param crc_check: if True, perform CRC check on messages and discard
+            invalid messages. DF 4, 5, 20 and 21 messages don't have CRC so the
+            parameter should be set to False if you only have those messages.
 
         :param template: the header explaining how data is organised
 
@@ -1117,6 +1122,7 @@ class ModeS_Decoder:
                     for line in all_lines
                 ),
                 uncertainty=uncertainty,
+                crc_check=crc_check,
             )
             return decoder
 
@@ -1127,6 +1133,7 @@ class ModeS_Decoder:
         reference: Union[str, Airport, tuple[float, float]],
         *,
         uncertainty: bool = False,
+        crc_check: bool = True,
         time_fmt: str = "dump1090",
         time_0: Optional[datetime] = None,
         redefine_mag: int = 10,
@@ -1165,7 +1172,12 @@ class ModeS_Decoder:
             if i & redefine_freq == redefine_freq:
                 decoder.redefine_reference(now)
 
-            decoder.process(now, msg[18:], uncertainty=uncertainty)
+            decoder.process(
+                now,
+                msg[18:],
+                uncertainty=uncertainty,
+                crc_check=crc_check,
+            )
 
         return decoder
 
@@ -1219,6 +1231,7 @@ class ModeS_Decoder:
         reference: Union[str, Airport, tuple[float, float]],
         *,
         uncertainty: bool,
+        crc_check: bool = True,
         time_fmt: str = "default",
         time_0: Optional[datetime] = None,
         redefine_mag: int = 7,
@@ -1282,7 +1295,12 @@ class ModeS_Decoder:
                 ):
                     decoder.redefine_reference(now)
 
-                decoder.process(now, msg[18:], uncertainty=uncertainty)
+                decoder.process(
+                    now,
+                    msg[18:],
+                    uncertainty=uncertainty,
+                    crc_check=crc_check,
+                )
 
         def timer() -> None:
             assert decoder.decode_thread is not None
@@ -1434,13 +1452,16 @@ class ModeS_Decoder:
             self.acs.set_latlon(sum_lat / n, sum_lon / n)
 
     def process_msgs(
-        self, msgs: Iterable[tuple[datetime, str]], uncertainty: bool = False
+        self,
+        msgs: Iterable[tuple[datetime, str]],
+        uncertainty: bool = False,
+        crc_check: bool = True,
     ) -> None:
 
         for i, (t, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
             if i & 127 == 127:
                 self.redefine_reference(t)
-            self.process(t, msg, uncertainty=uncertainty)
+            self.process(t, msg, uncertainty=uncertainty, crc_check=crc_check)
 
     def process(
         self,
@@ -1448,6 +1469,7 @@ class ModeS_Decoder:
         msg: str,
         *args: Any,
         uncertainty: bool = False,
+        crc_check: bool = True,
         spd: Optional[float] = None,
         trk: Optional[float] = None,
         alt: Optional[float] = None,
@@ -1464,7 +1486,7 @@ class ModeS_Decoder:
             icao = pms.icao(msg)
             if isinstance(icao, bytes):
                 icao = icao.decode()
-            if icao.lower() not in self.acs:
+            if crc_check and icao.lower() not in self.acs:
                 return
             ac = self.acs[icao.lower()]
             ac.altcode = time, msg  # type: ignore
@@ -1473,13 +1495,16 @@ class ModeS_Decoder:
             icao = pms.icao(msg)
             if isinstance(icao, bytes):
                 icao = icao.decode()
-            if icao.lower() not in self.acs:
+            if crc_check and icao.lower() not in self.acs:
                 return
             ac = self.acs[icao.lower()]
             ac.idcode = time, msg  # type: ignore
 
         if df == 11:
-            if pms.crc(msg, encode=False) != 0:
+            # CRC check is valid for DF 11, 17 and 18
+            # We use DF 11 messages to create aircraft when they come with no
+            # ADS-B data
+            if crc_check and pms.crc(msg, encode=False) != 0:
                 return
             icao = pms.icao(msg)
             if isinstance(icao, bytes):
@@ -1488,7 +1513,7 @@ class ModeS_Decoder:
 
         if df == 17 or df == 18:  # ADS-B
 
-            if pms.crc(msg, encode=False) != 0:
+            if crc_check and pms.crc(msg, encode=False) != 0:
                 return
 
             tc = pms.adsb.typecode(msg)

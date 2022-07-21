@@ -12,6 +12,7 @@ from tempfile import gettempdir
 from typing import Any, Dict, Iterable, List, Tuple, cast
 
 import paramiko
+from cartes.osm import Nominatim
 from tqdm.rich import tqdm
 
 import pandas as pd
@@ -640,7 +641,10 @@ class Impala(object):
         callsign: None | str | Iterable[str] = None,
         icao24: None | str | Iterable[str] = None,
         serials: None | int | Iterable[int] = None,
-        bounds: None | BaseGeometry | Tuple[float, float, float, float] = None,
+        bounds: None
+        | str
+        | BaseGeometry
+        | Tuple[float, float, float, float] = None,
         departure_airport: None | str = None,
         arrival_airport: None | str = None,
         airport: None | str = None,
@@ -787,6 +791,10 @@ class Impala(object):
             other_params += "and callsign in ({}) ".format(callsign)
 
         if bounds is not None:
+            if isinstance(bounds, str):
+                bounds = Nominatim.search(bounds)
+                if bounds is None:
+                    raise RuntimeError(f"'{bounds}' not found on Nominatim")
             try:
                 # thinking of shapely bounds attribute (in this order)
                 # I just don't want to add the shapely dependency here
