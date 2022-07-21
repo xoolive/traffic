@@ -23,10 +23,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
-        run: docker build --file docker/jupyter.Dockerfile --tag ghcr.io/traffic/jupyter:latest docker
+        run: docker build --file docker/jupyter.Dockerfile --tag ghcr.io/xoolive/traffic/jupyter:latest docker
 
       - name: Import the library
-        run: docker run ghcr.io/traffic/jupyter:latest python -c "import traffic; print(traffic.__version__)"
+        run: docker run ghcr.io/xoolive/traffic/jupyter:latest python -c "import traffic; print(traffic.__version__)"
         
       - name: Push image
-        run: docker push ghcr.io/traffic/jupyter:latest
+        run: docker push ghcr.io/xoolive/traffic/jupyter:latest
