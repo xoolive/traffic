@@ -23,6 +23,11 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | W. Zhang, M. Hu and J. Du
+  | **An end-to-end framework for flight trajectory data analysis based on deep autoencoder network**
+  | *Aerospace Science & Technology* 17, 107726, 2022
+  | https://doi.org/10.1016/j.ast.2022.107726
+
 - | A. Chevrot, A. Vernotte and B. Legeard
   | **CAE : Contextual Auto-Encoder for multivariate time-series anomaly detection in air transportation**
   | *Computers & Security* 102652, 2022
