@@ -26,7 +26,7 @@ jobs:
         run: docker build --file docker/jupyter.Dockerfile --tag ghcr.io/traffic/jupyter:latest docker
 
       - name: Import the library
-        run: docker run ghcr.io/traffic/jupyter:latest -c "import traffic; print(traffic.__version__)"
+        run: docker run ghcr.io/traffic/jupyter:latest python -c "import traffic; print(traffic.__version__)"
         
       - name: Push image
         run: docker push ghcr.io/traffic/jupyter:latest
