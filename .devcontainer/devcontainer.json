@@ -1,0 +1,22 @@
+{
+	"name": "Traffic dev env",
+	"image": "ghcr.io/xoolive/traffic/dev:latest",
+	// "build": {
+	// 	"dockerfile": "Dockerfile",
+	// 	"context": ".."
+	// },
+
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"ms-python.python",
+				"ms-toolsai.jupyter"
+			]
+		}
+	},
+	// do a pip install of the traffic library to avoid confusing importlib-metadata:
+	// "importlib_metadata.PackageNotFoundError: No package metadata was found for traffic"
+	"postCreateCommand": "pip install -e ."
+}

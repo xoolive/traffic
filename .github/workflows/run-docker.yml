@@ -2,11 +2,6 @@ name: docker
 
 on:
   workflow_dispatch:
-  push:
-  # the simple "push" should change to 
-  # push:
-  #   branches:
-  #     - master
 
 jobs:
   build:

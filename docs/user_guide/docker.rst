@@ -1,11 +1,45 @@
 
-How to run traffic in a Docker container?
+How to use traffic in a Docker container?
 =========================================
 
-Run a Jupyter environment with traffic (latest)
------------------------------------------------
+If you don't want to be bothered with python's dependencies and just want to work, using a docker container might be an easy solution. It is quite simple to run the traffic library with everything it needs in a Docker container and you have a few options. We provide a self contained container image on GitHub that you can use. It has everything in it that you need. Or, alternatively, you can build your own image. We describe both below.
 
-It is quite simple to run the traffic library in a Docker container. The
+Use the GitHub container image
+------------------------------
+
+Using the container image from GitHub is simple. Just make sure you have docker installed, then pull the image with
+
+.. code:: bash
+
+    docker pull ghcr.io/xoolive/traffic/jupyter:latest
+
+Once the image is downloaded, you can run it with
+
+. code:: bash
+
+    docker run -it -p 8888:8888 ghcr.io/xoolive/traffic/jupyter
+
+This will start the container and you can connect to it with the browser and work in a jupyter notebook. Just copy-paste the URL that starts with *http://127.0.0.1:8888...* into your favorite browser and have fun. 
+
+Use the GitHub container image with Visual Studio Code
+------------------------------------------------------
+
+If you use VS Code, life is even more convenient. You just need to make sure that you have the *Docker* and *Remote - Containers* extensions installed.
+
+For example, you have some code that you'd like to run in the container. You can pull the image from GitHub as above. Once that is done, open the *Docker* extension and right-click on the image and select *Run Interactive*.
+
+.. image:: images/user_docker_vscode.png
+
+This will show give you the URL that you can use on the console similar to the example above. The much cooler thing is, if you have the container running (as you now do if you followed the instructions) you can change VS Code to be running as if it was *in* the container. For that, you can right-click on the container and select *Attach Visual Studio Code*.
+
+.. image:: images/vscode_attach_to_container.png
+
+A new instance will be started and you can use all the features of VS Code (including jupyter notebooks) the same way you used to.
+
+Create your own Dockerfile
+--------------------------
+
+In case you feel a bit more adventurous, you can also create your own Dockerfile and use it for your container. The
 following two examples show how you can use the traffic library in a docker with
 `jupyter notebook <https://jupyter-docker-stacks.readthedocs.io/en/latest/>`__.
 If you are completely unfamiliar with Docker and how to modify a Docker image,
@@ -68,5 +102,11 @@ The ``Dockerfile`` could look like the following:
 Note that the environment file ``traffic.yml`` has to be in the same directory
 as the ``Dockerfile``: a sample version is provided in the ``docker`` folder.
 
-Develop traffic with Visual Code and Poetry
--------------------------------------------
+How to develop traffic in a Docker container?
+=============================================
+
+It can be a bit of a pain to get all the dependencies installed to work on the traffic library. There is now an easy way around this if you work with Visual Studio Code. Just pull/clone the latest version and open the directory with VS Code. You will get a little pop-up message informing you that a Dev Container exists.
+
+.. image:: images/start_in_container.png
+
+Just click *Reopen in Container* and VS Code will create and configure the container for you. You can now work in the container with a pre-defined development environment that contains all the dependencies you need.
