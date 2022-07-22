@@ -36,8 +36,8 @@ jobs:
       - name: Build poetry Docker image
         run: docker build --file docker/poetry.Dockerfile --tag ghcr.io/xoolive/traffic/dev:latest .
 
-      - name: Import the library for testing
-        run: docker run ghcr.io/xoolive/traffic/dev:latest python -c "import traffic; print(traffic.__version__)"
+      # - name: Import the library for testing
+      #   run: docker run ghcr.io/xoolive/traffic/dev:latest python -c "import traffic; print(traffic.__version__)"
         
       - name: Push image
         run: docker push ghcr.io/xoolive/traffic/dev:latest
