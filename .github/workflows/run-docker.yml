@@ -22,11 +22,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Docker image
+      # jupyter Docker image for users
+      - name: Build jupyter Docker image
         run: docker build --file docker/jupyter.Dockerfile --tag ghcr.io/xoolive/traffic/jupyter:latest docker
 
-      - name: Import the library
+      - name: Import the library for testing
         run: docker run ghcr.io/xoolive/traffic/jupyter:latest python -c "import traffic; print(traffic.__version__)"
         
       - name: Push image
         run: docker push ghcr.io/xoolive/traffic/jupyter:latest
+
+      # dev Docker image
+      - name: Build poetry Docker image
+        run: docker build --file docker/poetry.Dockerfile --tag ghcr.io/xoolive/traffic/dev:latest .
+
+      - name: Import the library for testing
+        run: docker run ghcr.io/xoolive/traffic/dev:latest python -c "import traffic; print(traffic.__version__)"
+        
+      - name: Push image
+        run: docker push ghcr.io/xoolive/traffic/dev:latest
