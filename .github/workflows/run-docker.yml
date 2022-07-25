@@ -34,8 +34,9 @@ jobs:
         run: docker run ${{ env.TRAFFIC_JUPYTER_URL }}:latest python -c "import traffic; print(traffic.__version__)"
         
       - name: Push jupyter docker image
-        run: docker push ${{ env.TRAFFIC_JUPYTER_URL }}:${{ inputs.tag }}
-        run: docker push ${{ env.TRAFFIC_JUPYTER_URL }}:latest
+        run: |
+          docker push ${{ env.TRAFFIC_JUPYTER_URL }}:${{ inputs.tag }}
+          docker push ${{ env.TRAFFIC_JUPYTER_URL }}:latest
 
       # dev Docker image
       - name: Build dev docker image
@@ -45,5 +46,6 @@ jobs:
         run: docker run ${{ env.TRAFFIC_DEV_URL }}:latest /bin/bash -c "pip install traffic; python -c \"import traffic; print(traffic.__version__)\""
         
       - name: Push dev image
-        run: docker push ${{ env.TRAFFIC_DEV_URL }}:${{ inputs.tag }}
-        run: docker push ${{ env.TRAFFIC_DEV_URL }}:latest
+        run: |
+          docker push ${{ env.TRAFFIC_DEV_URL }}:${{ inputs.tag }}
+          docker push ${{ env.TRAFFIC_DEV_URL }}:latest
