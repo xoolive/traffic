@@ -10,7 +10,7 @@ on:
 
 env:
   TRAFFIC_JUPYTER_URL: ghcr.io/xoolive/traffic/jupyter
-  TRAFFIC_DEV_URL: ghcr.io/xoolive/traffic/def
+  TRAFFIC_DEV_URL: ghcr.io/xoolive/traffic/dev
 
 jobs:
   build:
