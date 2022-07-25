@@ -1,18 +1,16 @@
 {
-	"name": "traffic development environment",
-	"image": "ghcr.io/xoolive/traffic/dev:latest",
+  "name": "traffic development environment",
+  "image": "ghcr.io/xoolive/traffic/poetry:latest",
 
-	"customizations": {
-		// Configure properties specific to VS Code.
-		"vscode": {
-			// Add the IDs of extensions you want installed when the container is created.
-			"extensions": [
-				"ms-python.python",
-				"streetsidesoftware.code-spell-checker"
-			]
-		}
-	},
-	// do a pip install of the traffic library to avoid confusing importlib-metadata:
-	// "importlib_metadata.PackageNotFoundError: No package metadata was found for traffic"
-	"postCreateCommand": "pip install -e ."
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "ms-python.python",
+        "streetsidesoftware.code-spell-checker"
+      ]
+    }
+  },
+  "postCreateCommand": "poetry install"
 }

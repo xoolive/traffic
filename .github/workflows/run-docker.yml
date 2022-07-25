@@ -10,7 +10,7 @@ on:
 
 env:
   TRAFFIC_JUPYTER_URL: ghcr.io/xoolive/traffic/jupyter
-  TRAFFIC_DEV_URL: ghcr.io/xoolive/traffic/dev
+  TRAFFIC_POETRY_URL: ghcr.io/xoolive/traffic/poetry
 
 jobs:
   build:
@@ -32,20 +32,20 @@ jobs:
 
       - name: Test jupyter image
         run: docker run ${{ env.TRAFFIC_JUPYTER_URL }}:latest python -c "import traffic; print(traffic.__version__)"
-        
+
       - name: Push jupyter docker image
         run: |
           docker push ${{ env.TRAFFIC_JUPYTER_URL }}:${{ inputs.tag }}
           docker push ${{ env.TRAFFIC_JUPYTER_URL }}:latest
 
-      # dev Docker image
-      - name: Build dev docker image
-        run: docker build --file docker/poetry.Dockerfile --tag ${{ env.TRAFFIC_DEV_URL }}:${{ inputs.tag }} --tag ${{ env.TRAFFIC_DEV_URL }}:latest .
+      # poetry Docker image
+      - name: Build poetry docker image
+        run: docker build --file docker/poetry.Dockerfile --tag ${{ env.TRAFFIC_POETRY_URL }}:${{ inputs.tag }} --tag ${{ env.TRAFFIC_POETRY_URL }}:latest .
 
-      - name: Test dev docker image
-        run: docker run ${{ env.TRAFFIC_DEV_URL }}:latest /bin/bash -c "pip install traffic; python -c \"import traffic; print(traffic.__version__)\""
-        
-      - name: Push dev image
+      - name: Test poetry docker image
+        run: docker run ${{ env.TRAFFIC_POETRY_URL }}:latest /bin/bash -c "pip install traffic; python -c \"import traffic; print(traffic.__version__)\""
+
+      - name: Push poetry image
         run: |
-          docker push ${{ env.TRAFFIC_DEV_URL }}:${{ inputs.tag }}
-          docker push ${{ env.TRAFFIC_DEV_URL }}:latest
+          docker push ${{ env.TRAFFIC_POETRY_URL }}:${{ inputs.tag }}
+          docker push ${{ env.TRAFFIC_POETRY_URL }}:latest

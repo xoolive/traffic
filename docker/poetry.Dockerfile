@@ -19,14 +19,7 @@ RUN useradd -ms /bin/bash user
 USER user
 WORKDIR /home/user/
 
-# Install poetry
-ENV PYTHONDONTWRITEBYTECODE 1 \
-    PYTHONUNBUFFERED 1
-
 RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
 ENV PATH="${PATH}:/home/user/.poetry/bin"
 
-COPY pyproject.toml poetry.lock ./
-
-RUN poetry config virtualenvs.create false \
-    && poetry install
+RUN poetry config virtualenvs.create false
