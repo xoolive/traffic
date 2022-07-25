@@ -1,10 +1,6 @@
 {
-	"name": "Traffic dev env",
+	"name": "traffic development environment",
 	"image": "ghcr.io/xoolive/traffic/dev:latest",
-	// "build": {
-	// 	"dockerfile": "Dockerfile",
-	// 	"context": ".."
-	// },
 
 	"customizations": {
 		// Configure properties specific to VS Code.
@@ -12,7 +8,7 @@
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"ms-python.python",
-				"ms-toolsai.jupyter"
+				"streetsidesoftware.code-spell-checker"
 			]
 		}
 	},
