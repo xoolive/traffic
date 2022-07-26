@@ -101,3 +101,23 @@ reviewing process:
   .. code:: bash
 
       poetry run pre-commit install
+
+If you work with Visual Studio Code, you can use the Development container that
+already contains all the dependencies. Just pull/clone the latest version and
+open the directory or the ``traffic.code-workspace`` file with VS Code. You
+will get a little pop-up message informing you that a Dev Container exists.
+
+.. image:: _static/start_in_container.png
+
+Just click *Reopen in Container* and VS Code will create and configure the
+container for you. You can now work in the container with a pre-defined
+development environment that contains all the dependencies you need.
+
+The provided image runs with `poetry <https://python-poetry.org/>`__ which will
+set a proper environment with frozen version of dependencies, a desirable
+behavior when you run tests in continuous integration.
+
+If your sit behind a proxy, the ``poetry install`` command which will run
+automatically when you first open the Docker container may fail: you may have
+to manually set your proxy environment variables in the container shell before
+running ``poetry install`` again in order to get the container ready.

@@ -1,8 +1,6 @@
 {
   "recommendations": [
     "ms-python.python",
-    "ms-azuretools.vscode-docker",
-    "ms-vscode-remote.remote-containers",
     "streetsidesoftware.code-spell-checker"
   ]
 }

@@ -27,7 +27,7 @@ Once the image is downloaded, you can run it with
 
 This will start the container and you can connect to it with the browser and
 work in a Jupyter notebook. Just copy-paste the URL that starts with
-*http://127.0.0.1:8888...* into your favourite browser and have fun. 
+*http://127.0.0.1:8888...* into your favorite browser and have fun.
 
 Use the GitHub container image with Visual Studio Code
 ------------------------------------------------------
@@ -35,8 +35,8 @@ Use the GitHub container image with Visual Studio Code
 If you use VS Code, life is even more convenient. You just need to make sure
 that you have the *Docker* and *Remote - Containers* extensions installed.
 
-For example, you have some code that you'd like to run in the container. You can
-pull the image from GitHub as above. Once that is done, open the *Docker*
+For example, you have some code that you'd like to run in the container. You
+can pull the image from GitHub as above. Once that is done, open the *Docker*
 extension and right-click on the image and select *Run Interactive*.
 
 .. image:: images/user_docker_vscode.png
@@ -55,12 +55,12 @@ A new instance will be started and you can use all the features of VS Code
 Create your own Dockerfile
 --------------------------
 
-In case you feel a bit more adventurous, you can also create your own Dockerfile
-and use it for your container. The following two examples show how you can use
-the traffic library in a Docker with `Jupyter notebook
+In case you feel a bit more adventurous, you can also create your own
+Dockerfile and use it for your container. The following two examples show how
+you can use the traffic library in a Docker with `Jupyter notebook
 <https://jupyter-docker-stacks.readthedocs.io/en/latest/>`__.  If you are
-completely unfamiliar with Docker and how to modify a Docker image, you can find
-a good tutorial in the `official documentation
+completely unfamiliar with Docker and how to modify a Docker image, you can
+find a good tutorial in the `official documentation
 <https://docs.docker.com/get-started/>`__. Of course, you can base your Docker
 container on a different Dockerfile as the one used in the examples.
 
@@ -89,7 +89,7 @@ To run this Docker, you first have to generate an image with ``docker build``:
 
     docker build -f jupyter.Dockerfile -t traffic/jupyter:latest .
 
-The Docker container can now be started: 
+The Docker container can now be started:
 
 .. code:: bash
 
@@ -118,27 +118,3 @@ The ``Dockerfile`` could look like the following:
 
 Note that the environment file ``traffic.yml`` has to be in the same directory
 as the ``Dockerfile``: a sample version is provided in the ``docker`` folder.
-
-How to develop within the traffic library in a Docker container?
-================================================================
-
-It can be a bit of a pain to get all the dependencies installed to work on the
-traffic library. There is now an easy way around this if you work with Visual
-Studio Code. Just pull/clone the latest version and open the directory or the
-``traffic.code-workspace`` file with VS Code. You will get a little pop-up
-message informing you that a Dev Container exists.
-
-.. image:: images/start_in_container.png
-
-Just click *Reopen in Container* and VS Code will create and configure the
-container for you. You can now work in the container with a pre-defined
-development environment that contains all the dependencies you need.
-
-The provided image runs with `poetry <https://python-poetry.org/>`__ which will
-set a proper environment with frozen version of dependencies, a desirable
-behaviour when you run tests in continuous integration.
-
-If your sit behind a proxy, the ``poetry install`` command which will run
-automatically when you first open the Docker container may fail: you may have to
-manually set your proxy environment variables in the container shell before
-running ``poetry install`` again in order to get the container ready.

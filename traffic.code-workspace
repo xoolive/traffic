@@ -1,23 +1,25 @@
 {
-  "folders": [{ "path": "." }],
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
   "settings": {
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": true,
     "python.linting.mypyEnabled": true,
     "python.linting.enabled": true,
-
     "editor.formatOnSave": true,
     "python.formatting.provider": "black",
-
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.testing.pytestArgs": ["tests"],
-
+    "python.testing.pytestArgs": [
+      "tests"
+    ],
     "esbonio.sphinx.confDir": "${workspaceFolder}/docs",
     "esbonio.sphinx.srcDir": "${workspaceFolder}/docs",
     "esbonio.sphinx.buildDir": "${workspaceFolder}/docs/_build/html",
     "esbonio.server.enabled": false,
-
     "cSpell.customDictionaries": {
       "project-words": {
         "name": "project-words",
