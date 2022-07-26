@@ -85,11 +85,11 @@ The following questions are the most common about installation issues:
   
   .. parsed-literal::
       A Jupyter Widget
-      # or
+      # or
       Error displaying widget
-      # or
+      # or
       HBox(children=(IntProgress(value=0, max=1), HTML(value='')))
-      # or
+      # or
       Map(basemap={'url': 'https://{s}.tile.openstreetmap.org/…
   
   You will need to activate the widgets extensions:
