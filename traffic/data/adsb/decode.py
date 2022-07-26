@@ -20,6 +20,7 @@ from typing import (
     Iterator,
     Optional,
     TextIO,
+    Type,
     TypedDict,
     TypeVar,
     Union,
@@ -1066,7 +1067,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_file(
-        cls,
+        cls: Type[Decoder],
         filename: str | Path,
         reference: str | Airport | tuple[float, float],
         uncertainty: bool = False,
@@ -1128,7 +1129,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_binary(
-        cls,
+        cls: Type[Decoder],
         filename: Union[str, Path],
         reference: Union[str, Airport, tuple[float, float]],
         *,
@@ -1183,7 +1184,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_rtlsdr(
-        cls,
+        cls: Type[Decoder],
         reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_rtlsdr.csv",
         uncertainty: bool = False,
@@ -1226,7 +1227,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_socket(
-        cls,
+        cls: Type[Decoder],
         s: socket.socket,
         reference: Union[str, Airport, tuple[float, float]],
         *,
@@ -1340,7 +1341,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_dump1090(
-        cls,
+        cls: Type[Decoder],
         reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
         uncertainty: bool = False,
@@ -1382,7 +1383,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_address(
-        cls,
+        cls: Type[Decoder],
         host: str,
         port: int,
         reference: Union[str, Airport, tuple[float, float]],
