@@ -11,7 +11,7 @@ be automatically generated in future versions)
 
 .. code::
 
-    pip install traffic_qtgui  # first install the plugin
+    pip install traffic_qtgui  # first install the plugin
     traffic gui
 
 The GUI consists of two panes:
@@ -36,14 +36,26 @@ the configuration file, in the ``[projections]`` section:
     extra = Lambert93; Amersfoort; GaussKruger
 
 .. note::
-    Available projections are default cartopy projections, completed by additional common European projections in the cartes `dependency module <https://github.com/xoolive/cartes/tree/master/cartes/crs>`_ (here `Lambert 93 <https://fr.wikipedia.org/wiki/Projection_conique_conforme_de_Lambert#Lambert_93>`_ is the official projection in France, `Amersfoort <https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten>`_ in the Netherlands and `Gauss-Krüger <https://de.wikipedia.org/wiki/Gau%C3%9F-Kr%C3%BCger-Koordinatensystem>`_ in Germany)
+    Available projections are default cartopy projections, completed by
+    additional common European projections in the cartes `dependency module
+    <https://github.com/xoolive/cartes/tree/master/cartes/crs>`_ (here `Lambert
+    93
+    <https://fr.wikipedia.org/wiki/Projection_conique_conforme_de_Lambert#Lambert_93>`_
+    is the official projection in France, `Amersfoort
+    <https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten>`_ in the
+    Netherlands and `Gauss-Krüger
+    <https://de.wikipedia.org/wiki/Gau%C3%9F-Kr%C3%BCger-Koordinatensystem>`_ in
+    Germany)
 
 .. tip::
     You can implement more projections as `plugins <plugins.html>`_.
 
-You can either pan and zoom the map. Zoom is operated by the mouse or trackpad scroll. Note that on MacOS, the trackpad scroll requires clicking.
+You can either pan and zoom the map. Zoom is operated by the mouse or trackpad
+scroll. Note that on MacOS, the trackpad scroll requires clicking.
 
-In order to explore data, click on *Open file* and select a .pkl file (like ``sample_opensky.pkl`` in the ``data/`` directory) By default, a scatter of all last recorded points is displayed.
+In order to explore data, click on *Open file* and select a .pkl file (like
+``sample_opensky.pkl`` in the ``data/`` directory) By default, a scatter of all
+last recorded points is displayed.
 
 .. image:: images/gui_map.png
    :scale: 25 %
