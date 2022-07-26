@@ -888,7 +888,7 @@ class AircraftDict(Dict[str, Aircraft]):
 
     lat0: float
     lon0: float
-    decoder: ModeS_Decoder
+    decoder: Decoder
 
     def __missing__(self, key: str) -> Aircraft:
         self.decoder.on_new_aircraft(key)
@@ -1073,7 +1073,7 @@ class ModeS_Decoder:
         crc_check: bool = False,
         template: str = "time, longmsg",
         sep: str = ",",
-    ) -> "ModeS_Decoder":
+    ) -> Decoder:
         """Decode raw messages dumped in a text file.
 
         The file should contain for each line at least a timestamp and an
@@ -1138,7 +1138,7 @@ class ModeS_Decoder:
         time_0: Optional[datetime] = None,
         redefine_mag: int = 10,
         fh: Optional[TextIO] = None,
-    ) -> "ModeS_Decoder":
+    ) -> Decoder:
 
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
@@ -1187,7 +1187,7 @@ class ModeS_Decoder:
         reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_rtlsdr.csv",
         uncertainty: bool = False,
-    ) -> "ModeS_Decoder":  # coverage: ignore
+    ) -> Decoder:  # coverage: ignore
         """Decode raw messages dumped from a RTL-SDR receiver.
 
         :param reference: the reference location, as specified above
@@ -1236,7 +1236,7 @@ class ModeS_Decoder:
         time_0: Optional[datetime] = None,
         redefine_mag: int = 7,
         fh: Optional[TextIO] = None,
-    ) -> "ModeS_Decoder":  # coverage: ignore
+    ) -> Decoder:  # coverage: ignore
 
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
@@ -1344,7 +1344,7 @@ class ModeS_Decoder:
         reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
         uncertainty: bool = False,
-    ) -> "ModeS_Decoder":  # coverage: ignore
+    ) -> Decoder:  # coverage: ignore
         """Decode raw messages dumped from `dump1090
         <https://github.com/MalcolmRobb/dump1090/>`_
 
@@ -1390,7 +1390,7 @@ class ModeS_Decoder:
         time_fmt: str = "radarcape",
         uncertainty: bool = False,
         tcp: bool = True,
-    ) -> "ModeS_Decoder":  # coverage: ignore
+    ) -> Decoder:  # coverage: ignore
         """Decode raw messages transmitted over a TCP or UDP network.
 
         The file should contain for each line at least a timestamp and an
