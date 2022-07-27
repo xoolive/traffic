@@ -29,7 +29,7 @@ class METAR:  # coverage: ignore
     def get(
         self, start: Optional[timelike] = None, stop: Optional[timelike] = None
     ) -> pd.DataFrame:
-        """Retieve METAR infos.
+        """Retrieve METAR infos.
 
         Parameters
         ----------
@@ -38,13 +38,12 @@ class METAR:  # coverage: ignore
             data are retrieved for the day. If no time is specified, the
             current METAR information are retrieved.
         stop : Optional[timelike]
-            Time until which METAR info are retrieved. If no hour is specified,
-            data are retrieved for the day. If no time is specified, the
-            current METAR information are retrieved.
+            Time until which METAR info are retrieved.
+            If no stop time is specified, data are retrieved for 24 hours.
 
         Returns
         -------
-        pd.Dataframe
+        pd.DataFrame
             DataFrame containing METAR information.
         """
         start = to_datetime(start) if start is not None else datetime.now()
@@ -55,9 +54,8 @@ class METAR:  # coverage: ignore
         )
 
         str_ap = ""
-        for ap in ["LSZH", "LSGG"]:
+        for ap in self.airports:
             str_ap += f"station={ap}&"
-        str_ap
         url = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
         url += str_ap
         url += (
@@ -75,7 +73,6 @@ class METAR:  # coverage: ignore
         c = requests.get(url)
         c.raise_for_status()
         list_ = c.content.decode("utf-8").strip().split("\n")
-        list_
         df_metar = pd.DataFrame.from_records(
             [
                 vars(
@@ -95,9 +92,8 @@ class METAR:  # coverage: ignore
         )
         df_metar["time"] = df_metar["time"].dt.tz_localize("utc")
         df_metar["airport"] = (
-            df_metar["code"].str.split(" ").apply(lambda x: x[0])
+            df_metar["code"].str.split(",").apply(lambda x: x[2].split(" ")[0])
         )
-        # df_metar["airport"] = df_metar["airport"].apply(lambda x: x[0])
         return df_metar.drop(
             columns=[c for c in df_metar.columns if c.startswith("_")]
         )
