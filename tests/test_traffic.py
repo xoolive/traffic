@@ -134,3 +134,53 @@ def test_aggregate() -> None:
         s_0.agg_xy(resolution, icao24="nunique").to_xarray().icao24.values.shape
     )
     assert output_shape == expected_shape
+
+
+def test_sub() -> None:
+    s_0 = switzerland[0]
+    assert s_0 is not None and s_0.icao24 is not None
+    diff = switzerland - s_0.icao24
+    assert diff is not None
+    assert s_0.icao24 not in diff.icao24
+
+    diff = switzerland - ["EXS33W", "4009f9"]
+    assert diff is not None
+    assert {"EXS33W", "4009f9"} not in diff.icao24
+
+    f_BAW585E = switzerland["BAW585E"]
+    f_BAW881V = switzerland["BAW881V"]
+    f_BAW84ZV = switzerland["BAW84ZV"]
+    assert (
+        f_BAW585E is not None
+        and f_BAW881V is not None
+        and f_BAW84ZV is not None
+    )
+    diff = switzerland - f_BAW585E
+    assert diff is not None
+    assert "BAW585E" not in diff.callsigns
+    assert diff["4009f9"] is not None and diff["4009f9"].callsign == {
+        "BAW881V",
+        "BAW84ZV",
+    }
+    assert (f_BAW881V.data.shape[0] + f_BAW84ZV.data.shape[0]) == diff[
+        "4009f9"
+    ].data.shape[0]
+
+    sw_id = switzerland.assign_id().eval()
+    assert sw_id is not None
+    flight = sw_id["500142"]
+    assert (
+        flight is not None
+        and isinstance(flight.flight_id, set)
+        and flight.callsign == "T7STK"
+    )
+    flight_deleted = sw_id["T7STK_1158"]
+    assert flight_deleted is not None
+    diff = sw_id - flight_deleted
+    assert diff is not None
+    assert diff["T7STK"] is not None
+    assert diff["T7STK"].start >= flight_deleted.stop
+
+    assert (sw_id - sw_id) is None
+    diff = sw_id - diff
+    assert diff is not None and diff.icao24 == {"500142"}
