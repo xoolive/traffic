@@ -55,23 +55,7 @@ extensions = [
 
 # To avoid installing all dependencies when building doc
 # https://stackoverflow.com/a/15912502/8729698
-autodoc_mock_imports = [
-    "altair",
-    "cartopy",
-    "cartopy.crs",
-    "cartes",
-    "ipyleaflet",
-    "matplotlib",
-    "openap",
-    "pandas",
-    "pyModeS",
-    "pyproj",
-    "scipy",
-    "scipy.signal",
-    "shapely",
-    "shapely.geometry",
-    "tqdm",
-]
+# autodoc_mock_imports = []
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -90,7 +74,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -154,6 +138,7 @@ man_pages = [(master_doc, "traffic", "traffic Documentation", [author], 1)]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/dev", None),
     "shapely": ("https://shapely.readthedocs.io/en/latest", None),
     "cartopy": ("https://scitools.org.uk/cartopy/docs/latest", None),

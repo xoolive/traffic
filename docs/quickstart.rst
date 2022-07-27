@@ -15,7 +15,7 @@ basic functionalities of the traffic library. In particular, we will cover:
 .. tip::
 
     This page is also available as a notebook which can be
-    :jupyter-download:notebook:`downloaded <quickstart>` and executed locally;
+    :jupyter-download-notebook:`downloaded <quickstart>` and executed locally;
     or loaded and executed in `Google Colab
     <https://colab.research.google.com/>`__.
 
@@ -354,7 +354,7 @@ Maps are also available with Matplotlib, Altair, and thanks to `ipyleaflet
     chart
 
 - for quick interactive representations **with few elements**, the
-  :ref:`Leaflet` widget is a good option:
+  Leaflet widget is a good option:
 
   .. jupyter-execute::
 

@@ -1,6 +1,6 @@
 {
   "recommendations": [
-    "streetsidesoftware.code-spell-checker",
-    "ms-python.python"
+    "ms-python.python",
+    "streetsidesoftware.code-spell-checker"
   ]
 }

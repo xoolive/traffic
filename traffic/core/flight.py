@@ -48,7 +48,6 @@ from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
 from ..core.structure import Airport
 from ..core.types import ProgressbarType
-from ..data.basic.navaid import Navaids  # noqa: F401
 from . import geodesy as geo
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
@@ -63,6 +62,7 @@ if TYPE_CHECKING:
 
     from ..data.adsb.raw_data import RawData  # noqa: F401
     from ..data.basic.aircraft import Tail  # noqa: F401
+    from ..data.basic.navaid import Navaids  # noqa: F401
     from .airspace import Airspace  # noqa: F401
     from .lazy import LazyTraffic  # noqa: F401
     from .structure import Navaid  # noqa: F401
@@ -2138,6 +2138,8 @@ class Flight(
 
         """
 
+        from ..data.basic.navaid import Navaids
+
         sigma_dme_1_sis = sigma_dme_2_sis = 0.05
 
         def sigma_air(df: pd.DataFrame, column_name: str) -> Any:
@@ -2313,9 +2315,9 @@ class Flight(
 
         The method uses latitude and longitude, projects the trajectory to a
         conformal projection and applies the algorithm. If x and y features are
-        already present in the DataFrame (after a call to `compute_xy()
-        <#traffic.core.Flight.compute_xy>`_ for instance) then this projection
-        is taken into account.
+        already present in the DataFrame (after a call to
+        :ref:`~traffic.core.Flight.compute_xy()` for instance) then this
+        projection is taken into account.
 
         The tolerance parameter must be defined in meters.
 

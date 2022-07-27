@@ -2,6 +2,15 @@ name: docker
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag'
+        required: true 
+        type: string
+
+env:
+  TRAFFIC_JUPYTER_URL: ghcr.io/xoolive/traffic/jupyter
+  TRAFFIC_POETRY_URL: ghcr.io/xoolive/traffic/poetry
 
 jobs:
   build:
@@ -10,8 +19,33 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build Docker image
-        run: docker build -t jupyter/traffic .
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Import the library
-        run: docker run jupyter/traffic python -c "import traffic; print(traffic.__version__)"
+      # jupyter Docker image for users
+      - name: Build jupyter docker image
+        run: docker build --file docker/jupyter.Dockerfile --tag ${{ env.TRAFFIC_JUPYTER_URL }}:${{ inputs.tag }} --tag ${{ env.TRAFFIC_JUPYTER_URL }}:latest docker
+
+      - name: Test jupyter image
+        run: docker run ${{ env.TRAFFIC_JUPYTER_URL }}:latest python -c "import traffic; print(traffic.__version__)"
+
+      - name: Push jupyter docker image
+        run: |
+          docker push ${{ env.TRAFFIC_JUPYTER_URL }}:${{ inputs.tag }}
+          docker push ${{ env.TRAFFIC_JUPYTER_URL }}:latest
+
+      # poetry Docker image
+      - name: Build poetry docker image
+        run: docker build --file docker/poetry.Dockerfile --tag ${{ env.TRAFFIC_POETRY_URL }}:${{ inputs.tag }} --tag ${{ env.TRAFFIC_POETRY_URL }}:latest .
+
+      - name: Test poetry docker image
+        run: docker run ${{ env.TRAFFIC_POETRY_URL }}:latest /bin/bash -c "pip install traffic; python -c \"import traffic; print(traffic.__version__)\""
+
+      - name: Push poetry image
+        run: |
+          docker push ${{ env.TRAFFIC_POETRY_URL }}:${{ inputs.tag }}
+          docker push ${{ env.TRAFFIC_POETRY_URL }}:latest

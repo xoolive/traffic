@@ -57,6 +57,8 @@ class RawData(DataFrameMixin):
         reference: Union[None, str, Airport, Tuple[float, float]] = None,
         *,
         uncertainty: bool = False,
+        # assume that data you get from a file or DB is already CRC-checked
+        crc_check: bool = False,
         progressbar: Union[bool, ProgressbarType[U]] = True,
         progressbar_kw: Optional[Dict[str, Any]] = None,
         redefine_mag: int = 10,
@@ -102,10 +104,11 @@ class RawData(DataFrameMixin):
                     spd=line.spd,
                     trk=line.trk,
                     alt=line.alt,
+                    crc_check=crc_check,
                     uncertainty=uncertainty,
                 )
                 if use_extra
-                else dict(uncertainty=uncertainty)
+                else dict(uncertainty=uncertainty, crc_check=crc_check)
             )
 
             decoder.process(line.timestamp, line.rawmsg, **extra)

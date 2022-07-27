@@ -10,12 +10,13 @@ for calls to REST APIs. `paramiko <http://www.paramiko.org/>`_ implements the
 SSH protocol in Pure Python, giving access to SSH connection independently of
 the operating system.
 
-Static visualisation tools are accessible with Matplotlib through the
-`cartes <https://github.com/xoolive/cartes>`_ library, which leverages
-access to more projections and to data from OpenStreetMap. More dynamic
-visualisations in Jupyter Lab are accessible thanks to the `altair <https://altair-viz.github.io/>`_ and `ipyleaflet
-<http://ipyleaflet.readthedocs.io/>`_ libraries; other exports to various formats
-(including CesiumJS or Google Earth) are also available.
+Static visualisation tools are accessible with Matplotlib through the `cartes
+<https://github.com/xoolive/cartes>`_ library, which leverages access to more
+projections and to data from OpenStreetMap. More dynamic visualisations in
+Jupyter Lab are accessible thanks to the `altair
+<https://altair-viz.github.io/>`_ and `ipyleaflet
+<http://ipyleaflet.readthedocs.io/>`_ libraries; other exports to various
+formats (including CesiumJS or Google Earth) are also available.
 
 Latest release
 --------------
@@ -28,7 +29,8 @@ We recommend creating a fresh conda environment for a first installation:
     conda create -n traffic -c conda-forge python=3.9 traffic
     conda activate traffic
 
-Adjust the Python version you need (>=3.7) and append packages you need for working efficiently, such as Jupyter Lab, xarray, PyTorch or more.
+Adjust the Python version you need (>=3.7) and append packages you need for
+working efficiently, such as Jupyter Lab, xarray, PyTorch or more.
 
 Then activate the environment each time you need to use the ``traffic`` library:
 
@@ -101,3 +103,26 @@ reviewing process:
   .. code:: bash
 
       poetry run pre-commit install
+
+If you work with Visual Studio Code, you can use the Development container that
+already contains all the dependencies. Just pull/clone the latest version and
+open the directory or the ``traffic.code-workspace`` file with VS Code. You
+will get a little pop-up message informing you that a Dev Container exists.
+
+.. image:: _static/start_in_container.png
+
+Just click *Reopen in Container* and VS Code will create and configure the
+container for you. You can now work in the container with a pre-defined
+development environment that contains all the dependencies you need.
+
+The provided image runs with `poetry <https://python-poetry.org/>`__ which will
+set a proper environment with frozen version of dependencies, a desirable
+behavior when you run tests in continuous integration.
+
+If your sit behind a proxy, the ``poetry install`` command which will run
+automatically when you first open the Docker container may fail: you may have
+to manually set your proxy environment variables in the container shell before
+running ``poetry install`` again in order to get the container ready.
+
+Read more about :ref:`Docker containers <How to use traffic in a Docker
+container?>`_ for traffic.

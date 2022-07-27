@@ -20,6 +20,7 @@ from typing import (
     Iterator,
     Optional,
     TextIO,
+    Type,
     TypedDict,
     TypeVar,
     Union,
@@ -89,7 +90,7 @@ def next_beast_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
                 data = data[msg_size:]
             else:
                 data = data[1:]
-                logging.warning("Probably corrupted message")
+                _log.warning("Probably corrupted message")
 
 
 def decode_time_default(
@@ -888,7 +889,7 @@ class AircraftDict(Dict[str, Aircraft]):
 
     lat0: float
     lon0: float
-    decoder: ModeS_Decoder
+    decoder: Decoder
 
     def __missing__(self, key: str) -> Aircraft:
         self.decoder.on_new_aircraft(key)
@@ -1066,13 +1067,14 @@ class ModeS_Decoder:
 
     @classmethod
     def from_file(
-        cls,
+        cls: Type[Decoder],
         filename: str | Path,
         reference: str | Airport | tuple[float, float],
         uncertainty: bool = False,
+        crc_check: bool = False,
         template: str = "time, longmsg",
         sep: str = ",",
-    ) -> "ModeS_Decoder":
+    ) -> Decoder:
         """Decode raw messages dumped in a text file.
 
         The file should contain for each line at least a timestamp and an
@@ -1084,6 +1086,10 @@ class ModeS_Decoder:
 
         :param uncertainty: if True, decode also `uncertainty information
             <https://mode-s.org/decode/content/ads-b/7-uncertainty.html>`_
+
+        :param crc_check: if True, perform CRC check on messages and discard
+            invalid messages. DF 4, 5, 20 and 21 messages don't have CRC so the
+            parameter should be set to False if you only have those messages.
 
         :param template: the header explaining how data is organised
 
@@ -1117,21 +1123,23 @@ class ModeS_Decoder:
                     for line in all_lines
                 ),
                 uncertainty=uncertainty,
+                crc_check=crc_check,
             )
             return decoder
 
     @classmethod
     def from_binary(
-        cls,
+        cls: Type[Decoder],
         filename: Union[str, Path],
         reference: Union[str, Airport, tuple[float, float]],
         *,
         uncertainty: bool = False,
+        crc_check: bool = True,
         time_fmt: str = "dump1090",
         time_0: Optional[datetime] = None,
         redefine_mag: int = 10,
         fh: Optional[TextIO] = None,
-    ) -> "ModeS_Decoder":
+    ) -> Decoder:
 
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
@@ -1165,17 +1173,22 @@ class ModeS_Decoder:
             if i & redefine_freq == redefine_freq:
                 decoder.redefine_reference(now)
 
-            decoder.process(now, msg[18:], uncertainty=uncertainty)
+            decoder.process(
+                now,
+                msg[18:],
+                uncertainty=uncertainty,
+                crc_check=crc_check,
+            )
 
         return decoder
 
     @classmethod
     def from_rtlsdr(
-        cls,
+        cls: Type[Decoder],
         reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_rtlsdr.csv",
         uncertainty: bool = False,
-    ) -> "ModeS_Decoder":  # coverage: ignore
+    ) -> Decoder:  # coverage: ignore
         """Decode raw messages dumped from a RTL-SDR receiver.
 
         :param reference: the reference location, as specified above
@@ -1214,16 +1227,17 @@ class ModeS_Decoder:
 
     @classmethod
     def from_socket(
-        cls,
+        cls: Type[Decoder],
         s: socket.socket,
         reference: Union[str, Airport, tuple[float, float]],
         *,
         uncertainty: bool,
+        crc_check: bool = True,
         time_fmt: str = "default",
         time_0: Optional[datetime] = None,
         redefine_mag: int = 7,
         fh: Optional[TextIO] = None,
-    ) -> "ModeS_Decoder":  # coverage: ignore
+    ) -> Decoder:  # coverage: ignore
 
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
@@ -1237,7 +1251,7 @@ class ModeS_Decoder:
                     or decoder.decode_thread.to_be_stopped()
                     or len(data) == 0  # connection dropped
                 ):
-                    logging.warning("Connection dropped or decoder stopped")
+                    _log.warning("Connection dropped or decoder stopped")
                     s.close()
                     decoder.stop()
                     return
@@ -1250,7 +1264,7 @@ class ModeS_Decoder:
                     or decoder.decode_thread.to_be_stopped()
                 ):
                     s.close()
-                    logging.warning("getting out of UDP socket")
+                    _log.warning("getting out of UDP socket")
                     return
                 data, _addr = s.recvfrom(1024)
                 yield data
@@ -1282,7 +1296,12 @@ class ModeS_Decoder:
                 ):
                     decoder.redefine_reference(now)
 
-                decoder.process(now, msg[18:], uncertainty=uncertainty)
+                decoder.process(
+                    now,
+                    msg[18:],
+                    uncertainty=uncertainty,
+                    crc_check=crc_check,
+                )
 
         def timer() -> None:
             assert decoder.decode_thread is not None
@@ -1322,11 +1341,11 @@ class ModeS_Decoder:
 
     @classmethod
     def from_dump1090(
-        cls,
+        cls: Type[Decoder],
         reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
         uncertainty: bool = False,
-    ) -> "ModeS_Decoder":  # coverage: ignore
+    ) -> Decoder:  # coverage: ignore
         """Decode raw messages dumped from `dump1090
         <https://github.com/MalcolmRobb/dump1090/>`_
 
@@ -1364,7 +1383,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_address(
-        cls,
+        cls: Type[Decoder],
         host: str,
         port: int,
         reference: Union[str, Airport, tuple[float, float]],
@@ -1372,7 +1391,7 @@ class ModeS_Decoder:
         time_fmt: str = "radarcape",
         uncertainty: bool = False,
         tcp: bool = True,
-    ) -> "ModeS_Decoder":  # coverage: ignore
+    ) -> Decoder:  # coverage: ignore
         """Decode raw messages transmitted over a TCP or UDP network.
 
         The file should contain for each line at least a timestamp and an
@@ -1434,13 +1453,16 @@ class ModeS_Decoder:
             self.acs.set_latlon(sum_lat / n, sum_lon / n)
 
     def process_msgs(
-        self, msgs: Iterable[tuple[datetime, str]], uncertainty: bool = False
+        self,
+        msgs: Iterable[tuple[datetime, str]],
+        uncertainty: bool = False,
+        crc_check: bool = True,
     ) -> None:
 
         for i, (t, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
             if i & 127 == 127:
                 self.redefine_reference(t)
-            self.process(t, msg, uncertainty=uncertainty)
+            self.process(t, msg, uncertainty=uncertainty, crc_check=crc_check)
 
     def process(
         self,
@@ -1448,6 +1470,7 @@ class ModeS_Decoder:
         msg: str,
         *args: Any,
         uncertainty: bool = False,
+        crc_check: bool = True,
         spd: Optional[float] = None,
         trk: Optional[float] = None,
         alt: Optional[float] = None,
@@ -1464,6 +1487,8 @@ class ModeS_Decoder:
             icao = pms.icao(msg)
             if isinstance(icao, bytes):
                 icao = icao.decode()
+            if crc_check and icao.lower() not in self.acs:
+                return
             ac = self.acs[icao.lower()]
             ac.altcode = time, msg  # type: ignore
 
@@ -1471,12 +1496,25 @@ class ModeS_Decoder:
             icao = pms.icao(msg)
             if isinstance(icao, bytes):
                 icao = icao.decode()
+            if crc_check and icao.lower() not in self.acs:
+                return
             ac = self.acs[icao.lower()]
             ac.idcode = time, msg  # type: ignore
 
+        if df == 11:
+            # CRC check is valid for DF 11, 17 and 18
+            # We use DF 11 messages to create aircraft when they come with no
+            # ADS-B data
+            if crc_check and pms.crc(msg, encode=False) != 0:
+                return
+            icao = pms.icao(msg)
+            if isinstance(icao, bytes):
+                icao = icao.decode()
+            ac = self.acs[icao.lower()]
+
         if df == 17 or df == 18:  # ADS-B
 
-            if pms.crc(msg, encode=False) != 0:
+            if crc_check and pms.crc(msg, encode=False) != 0:
                 return
 
             tc = pms.adsb.typecode(msg)
