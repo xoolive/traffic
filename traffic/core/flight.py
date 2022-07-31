@@ -580,7 +580,7 @@ class Flight(
             )
         if t == 0:
             return None
-        return Flight(t.data)  # type: ignore
+        return Flight(t.data)
 
     def next(
         self,

@@ -12,7 +12,7 @@ __all__ = sorted(f.stem[:-5] for f in _current_dir.glob("*.json.gz"))
 
 def __getattr__(name: str) -> Union[None, "Flight", "Traffic"]:
     if name == "traffic":
-        return sum(  # type: ignore
+        return Traffic.from_flights(
             cast(Flight, get_flight(name, _current_dir)).assign_id(name)
             for name in __all__
         )
