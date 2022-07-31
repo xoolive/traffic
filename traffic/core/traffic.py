@@ -200,21 +200,63 @@ class Traffic(HBoxMixin, GeographyMixin):
             return None
         return self.__class__(df)
 
-    def __sub__(self, other: "Traffic") -> Optional["Traffic"]:
-        # set difference based on flight_id
-        if not isinstance(other, Traffic):
-            raise RuntimeError(
-                "Operator `-` is only applicable between Traffic structures."
-            )
-        list_id = other.flight_ids
-        if list_id is None or self.flight_ids is None:
-            raise RuntimeError(
-                "No flight_id is provided in the given Traffic structures."
-            )
-        df = self.data.query("flight_id not in @list_id")
-        if df.shape[0] == 0:
-            return None
-        return self.__class__(df)
+    def __sub__(
+        self, other: str | List[str] | Set[str] | Flight | "Traffic"
+    ) -> Optional["Traffic"]:
+
+        if isinstance(other, str):
+            other = [other]
+
+        if isinstance(other, list) or isinstance(other, set):
+            if "flight_id" in self.data.columns:
+                df = self.data.query(
+                    "flight_id not in @other and"
+                    "icao24 not in @other and callsign not in @other"
+                )
+            else:
+                df = self.data.query(
+                    "icao24 not in @other and callsign not in @other"
+                )
+            if df.shape[0] == 0:
+                return None
+            return self.__class__(df)
+
+        elif isinstance(other, Flight):
+            if (flight_id := other.flight_id) is None:
+                # If no flight_id is set, look icao24 and timestamps
+                df = self.data.query(
+                    "not (icao24 == @other.icao24 and "
+                    "timestamp <= @other.stop and timestamp >= @other.start)"
+                )
+                if df.shape[0] == 0:
+                    return None
+                return self.__class__(df)
+            else:
+                df = self.data.query(f"flight_id not in {repr(flight_id)}")
+                if df.shape[0] == 0:
+                    return None
+                return self.__class__(df)
+
+        elif isinstance(other, Traffic):
+            list_id = other.flight_ids
+            if list_id is not None and self.flight_ids is not None:
+                # Quite direct if we have flight_ids in both Traffic objects
+                df = self.data.query("flight_id not in @list_id")
+                if df.shape[0] == 0:
+                    return None
+                return self.__class__(df)
+            else:
+                # Remove flights one by one if no flight_id exists
+                # very not optimal, but what else...
+                res: Optional[Traffic] = self
+                for flight in other:
+                    if res is None:
+                        return None
+                    else:
+                        res = res - flight
+                return res
+
+        return self
 
     def __xor__(self, other: "Traffic") -> Optional["Traffic"]:
         left = self - other
