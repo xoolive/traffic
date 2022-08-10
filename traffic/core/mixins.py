@@ -5,7 +5,7 @@ import re
 from functools import lru_cache
 from numbers import Integral, Real
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar, Union
 
 from ipyleaflet import Marker as LeafletMarker
 from ipywidgets import HTML
@@ -241,7 +241,7 @@ class DataFrameMixin(object):
         """
         self.data.to_excel(filename, *args, **kwargs)
 
-    def sort_values(self: T, by: str, **kwargs: Any) -> T:
+    def sort_values(self: T, by: Union[str, Sequence[str]], **kwargs: Any) -> T:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.sort_values` method to the
         underlying pandas DataFrame and get the result back in the same
