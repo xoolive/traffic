@@ -50,7 +50,7 @@ def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
         "position": {
             "epoch": start,
             "cartographicDegrees": list(
-                itertools.chain(*flight.coords4d(delta_t=True))
+                itertools.chain(*[list(d.values()) for d in flight.coords4d(delta_t=True)])
             ),
         },
         "path": {
@@ -73,7 +73,7 @@ def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
         "position": {
             "epoch": start,
             "cartographicDegrees": list(
-                itertools.chain(*flight.coords4d(delta_t=True))
+                itertools.chain(*[list(d.values()) for d in flight.coords4d(delta_t=True)])
             ),
         },
         "point": {
