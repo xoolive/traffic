@@ -125,4 +125,4 @@ to manually set your proxy environment variables in the container shell before
 running ``poetry install`` again in order to get the container ready.
 
 Read more about :ref:`Docker containers <How to use traffic in a Docker
-container?>`_ for traffic.
+container?>` for traffic.

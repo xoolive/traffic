@@ -21,7 +21,7 @@ installed and running, then pull the image with
 
 Once the image is downloaded, you can run it with
 
-. code:: bash
+.. code:: bash
 
     docker run -it -p 8888:8888 ghcr.io/xoolive/traffic/jupyter
 

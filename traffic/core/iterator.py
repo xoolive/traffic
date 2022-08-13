@@ -191,17 +191,17 @@ class FlightIterator:
         >>> flight.all('aligned_on_ils("LFBO")')
 
         """
-        from traffic.core import Flight  # noqa: F811
+        from traffic.core import Flight, Traffic  # noqa: F811
 
         if flight_id is None:
-            t = sum(flight for i, flight in enumerate(self))
+            t = Traffic.from_flights(flight for i, flight in enumerate(self))
         else:
-            t = sum(
+            t = Traffic.from_flights(
                 flight.assign(flight_id=flight_id.format(self=flight, i=i))
                 for i, flight in enumerate(self)
             )
 
-        if t == 0:
+        if t is None:
             return None
 
         return Flight(t.data)

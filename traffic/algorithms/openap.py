@@ -186,7 +186,7 @@ class OpenAP:
 
         return self.assign(
             **{
-                "NOX": (NOx.cumsum() * self.data.dt * 1e-3).round(2),
+                "NOx": (NOx.cumsum() * self.data.dt * 1e-3).round(2),
                 "CO": (CO.cumsum() * self.data.dt * 1e-3).round(2),
                 "HC": (HC.cumsum() * self.data.dt * 1e-3).round(2),
                 "CO2": (CO2.cumsum() * self.data.dt * 1e-3).round(2),
