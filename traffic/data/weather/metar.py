@@ -62,11 +62,11 @@ class METAR:  # coverage: ignore
             f"data=metar&year1={start.year}&"
             f"month1={start.month}&"
             f"day1={start.day}&"
-            f"hour1={start.hour-1 if start.hour>0 else start.hour}&"
+            f"hour1={start.hour}&"
             f"year2={stop.year}&"
             f"month2={stop.month}&"
             f"day2={stop.day}&"
-            f"hour2={stop.hour}&"
+            f"hour2={stop.hour+1}&"
             f"tz=Etc%2FUTC&format=onlycomma&latlon=no&elev=no&"
             f"missing=M&trace=T&direct=no&report_type=3&report_type=4"
         )
@@ -92,7 +92,7 @@ class METAR:  # coverage: ignore
         )
         df_metar["time"] = df_metar["time"].dt.tz_localize("utc")
         df_metar["airport"] = (
-            df_metar["code"].str.split(",").apply(lambda x: x[2].split(" ")[0])
+            df_metar["code"].str.split(" ").apply(lambda x: x[0])
         )
         return df_metar.drop(
             columns=[c for c in df_metar.columns if c.startswith("_")]
