@@ -114,6 +114,13 @@ class Airport(
     @lru_cache()
     def _openstreetmap(self) -> "Overpass":  # coverage: ignore
         from cartes.osm import Overpass
+        from cartes.osm.requests import session
+
+        from ..data import proxy_values
+
+        if len(proxy_values) > 0:
+            session.proxies.update(proxy_values)
+            session.trust_env = False
 
         return Overpass.request(
             area={"icao": self.icao, "as_": "airport"},

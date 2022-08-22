@@ -32,7 +32,6 @@ __all__ = [
     "aircraft",
     "airports",
     "airways",
-    "carto_session",
     "navaids",
     "runways",
     "aixm_airports",
@@ -54,7 +53,6 @@ __all__ = [
 aircraft: "Aircraft"
 airports: "Airports"
 airways: "Airways"
-carto_session: Session
 navaids: "Navaids"
 runways: "Runways"
 aixm_airports: "AIXMAirportParser"
@@ -155,17 +153,6 @@ def __getattr__(name: str) -> Any:
 
         Airways.cache_dir = cache_dir
         res = Airways()
-        _cached_imports[name] = res
-        return res
-
-    if name == "carto_session":
-        from cartes.osm.requests import session as carto_session
-
-        if len(proxy_values) > 0:
-            carto_session.proxies.update(proxy_values)
-            carto_session.trust_env = False
-
-        res = carto_session
         _cached_imports[name] = res
         return res
 
