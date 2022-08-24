@@ -38,6 +38,7 @@ position for all aircraft. This part actually does not require
 authentication.
 
 .. jupyter-execute::
+  :raises:
 
     import matplotlib.pyplot as plt
     import pandas as pd
@@ -73,12 +74,14 @@ Flight tables are accessible by airport (use the ICAO code) given temporal
 bounds:
 
 .. jupyter-execute::
+  :raises:
 
   # Have you seen Santa Claus coming to Toulouse? 
   opensky.api_arrival("LFBO", "2021-12-24 20:00", "2021-12-25 06:00")
 
 
 .. jupyter-execute::
+  :raises:
 
   # Or maybe leaving?
   opensky.api_departure("LFBO", "2021-12-24 20:00", "2021-12-25 06:00")
@@ -86,5 +89,6 @@ bounds:
 A basic route database is also accessible through the REST API:
 
 .. jupyter-execute::
+  :raises:
 
   opensky.api_routes("AFR292")
