@@ -158,5 +158,6 @@ warn_unused_configs = true
 warn_unused_ignores = true
 
 [tool.pytest.ini_options]
-addopts = "--log-level=DEBUG --color=yes"
-testpaths = ["tests"]
+addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff"
+testpaths = ["traffic/data/basic/n_number.py", "tests"]
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS"]
