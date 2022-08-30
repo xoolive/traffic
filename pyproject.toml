@@ -87,6 +87,7 @@ Flask = { version = "^2.1.1", optional = true }
 waitress = {version = "^2.1.1", optional = true}
 # missing with 3.10 at the time being
 # onnxruntime = { version = "^1.10", optional = true }
+plotly = "^5.10.0"
 
 [tool.poetry.extras]
 all = ["xarray", "libarchive", "scikit-learn", "textual"]
