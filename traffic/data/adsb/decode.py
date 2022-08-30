@@ -461,7 +461,9 @@ class Aircraft(object):
             else:
                 self.cumul.append(
                     dict(
-                        timestamp=t, icao24=self.icao24, callsign=self._callsign
+                        timestamp=t,
+                        icao24=self.icao24,
+                        callsign=self._callsign,
                     )
                 )
 
@@ -840,13 +842,14 @@ class Aircraft(object):
     def nac_p(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
-            epu, vepu = pms.adsb.nac_p(msg)
+            epu, vepu, nacp = pms.adsb.nac_p(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             current = dict(
                 # Estimated Position Uncertainty
                 EPU=epu,
                 # Vertical Estimated Position Uncertainty
                 VEPU=vepu,
+                NACp=nacp,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
                 self.cumul[-1] = {**last_entry, **current}  # type: ignore
