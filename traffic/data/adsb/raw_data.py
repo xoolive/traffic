@@ -3,6 +3,7 @@ from typing import (
     Callable,
     Dict,
     Iterable,
+    Iterator,
     Optional,
     Tuple,
     Type,
@@ -20,7 +21,7 @@ from ...core import Traffic
 from ...core.mixins import DataFrameMixin
 from ...core.structure import Airport
 from ...core.types import ProgressbarType
-from ...data import ModeS_Decoder
+from ...data import Entry, ModeS_Decoder
 
 T = TypeVar("T", bound="RawData")
 U = Tuple[int, Tuple[Any, Any]]
@@ -62,7 +63,13 @@ class RawData(DataFrameMixin):
         progressbar: Union[bool, ProgressbarType[U]] = True,
         progressbar_kw: Optional[Dict[str, Any]] = None,
         redefine_mag: int = 10,
-    ) -> Optional[Traffic]:
+        traffic: bool = True,
+    ) -> Optional[Union[Traffic, pd.DataFrame]]:
+        def df_generator(
+            decoder: ModeS_Decoder,
+        ) -> Iterator[Entry]:  # type: ignore
+            for _, v in decoder.acs.items():
+                yield from v.cumul
 
         decoder = ModeS_Decoder(reference)
         redefine_freq = 2**redefine_mag - 1
@@ -115,8 +122,10 @@ class RawData(DataFrameMixin):
 
             if i & redefine_freq == redefine_freq:
                 decoder.redefine_reference(line.timestamp)
+            if traffic:
+                return decoder.traffic
 
-        return decoder.traffic
+        return pd.DataFrame.from_records(df_generator(decoder))
 
     def assign_type(self) -> "RawData":
         def get_typecode(msg: Union[bytes, str]) -> Optional[int]:
