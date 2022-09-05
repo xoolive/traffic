@@ -699,7 +699,7 @@ def test_pushback() -> None:
     assert pushback.stop >= parking_position.stop
 
 
-@pytest.mark.skipif(sys.version < "3.8", reason="GHA: to investigate")
+@pytest.mark.skipif(sys.version < "3.9", reason="GHA: to investigate")
 @pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
 def test_on_taxiway() -> None:
     flight = zurich_airport["ACA879"]
