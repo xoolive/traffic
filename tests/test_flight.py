@@ -1,3 +1,4 @@
+import sys
 import zipfile
 from operator import itemgetter
 from typing import Any, Optional, cast
@@ -28,13 +29,6 @@ try:
     _ = runways.runways
 except zipfile.BadZipFile:
     skip_runways = True
-
-try:
-    import onnxruntime  # noqa: F401
-except ImportError:
-    onnxruntime_available = False
-else:
-    onnxruntime_available = True
 
 
 def test_properties() -> None:
@@ -705,6 +699,7 @@ def test_pushback() -> None:
     assert pushback.stop >= parking_position.stop
 
 
+@pytest.mark.skipif(sys.version < "3.8", reason="GHA: to investigate")
 @pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
 def test_on_taxiway() -> None:
     flight = zurich_airport["ACA879"]
@@ -806,7 +801,6 @@ def test_DME_NSE_computation() -> None:
     assert_frame_equal(result_df[["NSE", "NSE_idx"]], expected, rtol=1e-3)
 
 
-@pytest.mark.skipif(not onnxruntime_available, reason="onnxruntime not in pypi")
 def test_holding_pattern() -> None:
 
     holding_pattern = belevingsvlucht.holding_pattern().next()

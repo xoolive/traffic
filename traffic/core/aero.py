@@ -120,7 +120,7 @@ def vvsound(h: Numeric) -> Numeric:  # Speed of sound for given altitude h [m]
     """
     T = vtemp(h)
     a = np.sqrt(gamma * R * T)
-    return a
+    return a  # type: ignore
 
 
 # -- Speed conversions --
@@ -203,7 +203,7 @@ def vtas2cas(tas: Numeric, h: Numeric) -> Numeric:
 
     # cope with negative speed
     cas = np.where(tas < 0, -1 * cas, cas)
-    return cas
+    return cas  # type: ignore
 
 
 def vmach2cas(M: Numeric, h: Numeric) -> Numeric:
