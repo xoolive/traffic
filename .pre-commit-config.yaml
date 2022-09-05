@@ -1,24 +1,43 @@
 repos:
--   repo: local
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
     hooks:
-    - id: black
-      name: black
-      language: system
-      entry: black
-      types: [python]
-    - id: flake8
-      name: flake8
-      language: system
-      entry: flake8
-      types: [python]
-    - id: mypy
-      name: mypy
-      language: system
-      entry: mypy
-      types: [python]
-    - id: isort
-      name: isort
-      language: system
-      entry: isort
-      types: [python]
-  
+      - id: check-builtin-literals
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-merge-conflict
+      - id: check-json
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+  - repo: https://github.com/floatingpurr/sync_with_poetry
+    rev: 0.3.0
+    hooks:
+      - id: sync_with_poetry
+        args: [] # optional args
+  - repo: https://github.com/psf/black
+    rev: 22.8.0
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+  - repo: https://github.com/pycqa/flake8
+    rev: 5.0.4
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-simplify
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.971
+    hooks:
+      - id: mypy
+        exclude: ^docs/conf.py
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.0-alpha.0
+    hooks:
+      - id: prettier
