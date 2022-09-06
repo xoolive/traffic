@@ -1062,6 +1062,7 @@ class NavigationFeatures:
         self,
         airport: Union[str, "Airport"],
         buffer_size: float = 1e-4,  # degrees
+        parking_positions: None | "Overpass" = None,
     ) -> Iterator["Flight"]:
         """
         Generates possible parking positions at a given airport.
@@ -1096,7 +1097,11 @@ class NavigationFeatures:
 
         segment = segment.split().max()
 
-        parking_positions = _airport.parking_position.query("type_ == 'way'")
+        parking_positions = (
+            _airport.parking_position.query("type_ == 'way'")
+            if parking_positions is None
+            else parking_positions.query("type_ == 'way'")
+        )
         for _, p in parking_positions.data.iterrows():
             if segment.intersects(p.geometry.buffer(buffer_size)):
                 parking_part = segment.clip(p.geometry.buffer(buffer_size))
@@ -1154,6 +1159,7 @@ class NavigationFeatures:
             compute_track_unwrapped=21, compute_track=21, compute_gs=21
         ),
         track_threshold: float = 90,
+        parking_positions: None | "Overpass" = None,
     ) -> Optional["Flight"]:
         """
         Returns the pushback part of the trajectory on ground.
@@ -1187,7 +1193,9 @@ class NavigationFeatures:
         if within_airport is None:
             return None
 
-        parking_position = within_airport.on_parking_position(_airport).next()
+        parking_position = within_airport.on_parking_position(
+            _airport, parking_positions=parking_positions
+        ).next()
         if parking_position is None:
             return None
 

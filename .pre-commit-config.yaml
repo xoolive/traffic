@@ -2,7 +2,7 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.2.0
     hooks:
-      - id: check-builtin-literals
+      #- id: check-builtin-literals
       - id: check-case-conflict
       - id: check-docstring-first
       - id: check-merge-conflict
