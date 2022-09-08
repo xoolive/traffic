@@ -19,8 +19,9 @@ RUN useradd -ms /bin/bash user
 USER user
 WORKDIR /home/user/
 
-# Install poetry
-RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
-ENV PATH="${PATH}:/home/user/.poetry/bin"
+# let's set the installation path for poetry
+ENV POETRY_HOME=/home/user/.poetry
 
-RUN poetry config virtualenvs.create false
+# Install poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="${PATH}:${POETRY_HOME}/bin"

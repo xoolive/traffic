@@ -1,7 +1,6 @@
 {
   "name": "traffic development environment",
   "image": "ghcr.io/xoolive/traffic/poetry:latest",
-
   "customizations": {
     "vscode": {
       "extensions": [
@@ -11,5 +10,5 @@
       ]
     }
   },
-  "postCreateCommand": "poetry install"
+  "postCreateCommand": "poetry install && poetry shell"
 }
