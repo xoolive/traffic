@@ -1,16 +1,14 @@
 {
   "name": "traffic development environment",
   "image": "ghcr.io/xoolive/traffic/poetry:latest",
-
   "customizations": {
-    // Configure properties specific to VS Code.
     "vscode": {
-      // Add the IDs of extensions you want installed when the container is created.
       "extensions": [
         "ms-python.python",
-        "streetsidesoftware.code-spell-checker"
+        "ritwickdey.LiveServer",
+        "valentjn.vscode-ltex"
       ]
     }
   },
-  "postCreateCommand": "poetry install"
+  "postCreateCommand": "poetry install && poetry shell"
 }

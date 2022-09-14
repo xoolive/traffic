@@ -49,5 +49,12 @@
       "docs/_build": true,
       "docs/node_modules": true
     }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "valentjn.vscode-ltex",
+      "ritwickdey.LiveServer"
+    ]
   }
 }

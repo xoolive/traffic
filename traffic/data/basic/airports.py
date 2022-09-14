@@ -178,10 +178,15 @@ class Airports(GeoDBMixin):
             altitude=-11.0,
         )
         """
-        x = self.data.query("iata == @name.upper() or icao == @name.upper()")
-        if x.shape[0] == 0:
-            return None
-        p = x.iloc[0]
+        if isinstance(name, int):
+            p = self.data.iloc[name]
+        else:
+            x = self.data.query(
+                "iata == @name.upper() or icao == @name.upper()"
+            )
+            if x.shape[0] == 0:
+                return None
+            p = x.iloc[0]
         return Airport(
             p.altitude,
             p.country,

@@ -107,6 +107,9 @@ class DataFrameMixin(object):
     def __len__(self) -> int:
         return self.data.shape[0]  # type: ignore
 
+    def __getitem__(self, index: Any) -> Any:
+        return self.data.iloc[index]
+
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
@@ -469,6 +472,8 @@ class ShapelyMixin(object):
 class GeographyMixin(DataFrameMixin):
     """Adds Euclidean coordinates to a latitude/longitude DataFrame."""
 
+    __slots__ = ()
+
     def projection(self: T, proj: str = "lcc") -> pyproj.Proj:
         return pyproj.Proj(
             proj=proj,
@@ -725,6 +730,7 @@ class GeographyMixin(DataFrameMixin):
 
 class GeoDBMixin(DataFrameMixin):
     _extent: None | tuple[float, float, float, float] = None
+    __slots__ = ()
 
     def extent(
         self: G,

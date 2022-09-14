@@ -368,7 +368,8 @@ class Flight(
         aircraft_fmt = "<code>%icao24</code> · %flag %registration (%typecode)"
 
         title += "<ul>"
-        title += f"<li><b>callsign:</b> {self.callsign} {self.trip}</li>"
+        if self.callsign is not None:
+            title += f"<li><b>callsign:</b> {self.callsign} {self.trip}</li>"
         if self.aircraft is not None:
             title += "<li><b>aircraft:</b> {aircraft}</li>".format(
                 aircraft=format(self.aircraft, aircraft_fmt)
@@ -395,7 +396,8 @@ class Flight(
 
         yield f"[bold blue]Flight {self.flight_id if self.flight_id else ''}"
 
-        yield f"  - [b]callsign:[/b] {self.callsign} {self.trip}"
+        if self.callsign is not None:
+            yield f"  - [b]callsign:[/b] {self.callsign} {self.trip}"
         if self.aircraft is not None:
             yield "  - [b]aircraft:[/b] {aircraft}".format(
                 aircraft=format(self.aircraft, aircraft_fmt)
@@ -449,7 +451,8 @@ class Flight(
         if self.flight_id:
             yield self.flight_id
         yield "icao24", self.icao24
-        yield "callsign", self.callsign
+        if self.callsign:
+            yield "callsign", self.callsign
 
     @property
     def __geo_interface__(self) -> Dict[str, Any]:
@@ -460,7 +463,9 @@ class Flight(
 
     def keys(self) -> list[str]:
         # This is for allowing dict(Flight)
-        keys = ["callsign", "icao24", "aircraft", "start", "stop", "duration"]
+        keys = ["icao24", "aircraft", "start", "stop", "duration"]
+        if self.callsign:
+            keys = ["callsign"] + keys
         if self.flight_id:
             keys = ["flight_id"] + keys
         if self.origin:
@@ -1751,6 +1756,9 @@ class Flight(
         This method is more generally used by the corresponding Traffic and
         LazyTraffic methods but works fine on Flight as well.
         """
+        if "callsign" not in self.data.columns and "callsign" in name:
+            msg = "Specify a name argument without the `callsign` property"
+            raise RuntimeError(msg)
         return self.assign(flight_id=name.format(self=self, idx=idx))
 
     def onground(self) -> Optional["Flight"]:
@@ -2096,8 +2104,9 @@ class Flight(
         if f1 is None or f2 is None:
             return None
 
-        cols = ["timestamp", "latitude", "longitude", "altitude"]
-        cols += ["icao24", "callsign"]
+        cols = ["timestamp", "latitude", "longitude", "altitude", "icao24"]
+        if "callsign" in f1.data.columns:
+            cols.append("callsign")
         if "flight_id" in f1.data.columns:
             cols.append("flight_id")
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
@@ -2497,11 +2506,12 @@ class Flight(
         query_params = {
             "start": self.start,
             "stop": self.stop,
-            "callsign": self.callsign,
             "icao24": self.icao24,
             "return_flight": True,
             **kwargs,
         }
+        if self.callsign is not None:
+            query_params["callsign"] = self.callsign
         return cast(Optional["Flight"], opensky.history(**query_params))
 
     def query_ehs(
@@ -2537,6 +2547,9 @@ class Flight(
 
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")
+
+        if self.callsign is None:
+            raise RuntimeError("No callsign for this flight")
 
         if not isinstance(self.callsign, str):
             raise RuntimeError("Several callsigns for this flight")
@@ -2850,10 +2863,10 @@ class Flight(
 
             ax = plt.axes()
             # most simple version
-            flight.plot(ax, 'altitude')
+            flight.plot_time(ax, 'altitude')
             # or with several comparable features and twin axes
-            flight.plot(
-                ax, ['altitude', 'groundspeed, 'IAS', 'TAS'],
+            flight.plot_time(
+                ax, ['altitude', 'groundspeed', 'IAS', 'TAS'],
                 secondary_y=['altitude']
             )
 
