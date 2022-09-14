@@ -208,6 +208,7 @@ class Entry(TypedDict, total=False):
     VFM: Optional[int]
     EPU: Optional[int]
     VEPU: Optional[int]
+
     version: Optional[int]
     pHCR: Optional[int]
     pVPL: Optional[int]
@@ -275,6 +276,7 @@ class Aircraft(object):
             )
         else:
             self._flight = Flight(df)
+
 
         return self._flight
 
@@ -1641,7 +1643,6 @@ class ModeS_Decoder:
                 )
                 # avoid dictionary change size during iteration
                 for (key, ac) in list(self.acs.items())
-                # if ac.callsign is not None
             ),
             key=itemgetter("length"),
             reverse=True,

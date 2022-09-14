@@ -90,7 +90,7 @@ waitress = {version = "^2.1.1", optional = true}
 pyspark = { version = "^3.3.0", optional = true}
 
 [tool.poetry.extras]
-all = ["xarray", "libarchive", "scikit-learn", "textual"]
+all = ["xarray", "libarchive", "scikit-learn", "textual", "plotly"]
 web = ["Flask", "waitress"]
 plugins = ["fastkml", "keplergl"]
 spark = ["pyspark"]

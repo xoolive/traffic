@@ -46,6 +46,10 @@ class RawData(DataFrameMixin):
         return self.__class__.from_list([self, other])
 
     @classmethod
+    def from_df(cls: Type[T], df):
+        return df.sort_values("mintime")
+
+    @classmethod
     def from_list(cls: Type[T], elts: Iterable[Optional[T]]) -> T:
         res = cls(
             pd.concat(list(x.data for x in elts if x is not None), sort=False)
