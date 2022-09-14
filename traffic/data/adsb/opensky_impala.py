@@ -422,6 +422,9 @@ class Impala(object):
         :param cached: (default: True) switch to False to force a new request to
             the database regardless of the cached files; delete previous cache
             files;
+        :param compress: (default: False) compress cache files. Reduces disk
+            space occupied at the expense of slightly increased time
+            to load.
 
         """
 
@@ -531,6 +534,9 @@ class Impala(object):
         :param cached: (default: True) switch to False to force a new request to
             the database regardless of the cached files. This option also
             deletes previous cache files;
+        :param compress: (default: False) compress cache files. Reduces disk
+            space occupied at the expense of slightly increased time
+            to load.
         :param limit: maximum number of records requested, LIMIT keyword in SQL.
 
         """
@@ -762,6 +768,9 @@ class Impala(object):
         :param cached: (default: True) switch to False to force a new request to
             the database regardless of the cached files. This option also
             deletes previous cache files;
+        :param compress: (default: False) compress cache files. Reduces disk
+            space occupied at the expense of slightly increased time
+            to load.
         :param limit: maximum number of records requested, LIMIT keyword in SQL.
 
         """
@@ -1082,6 +1091,9 @@ class Impala(object):
         :param cached: (default: True) switch to False to force a new request to
             the database regardless of the cached files. This option also
             deletes previous cache files;
+        :param compress: (default: False) compress cache files. Reduces disk
+            space occupied at the expense of slightly increased time
+            to load.
         :param limit: maximum number of records requested, LIMIT keyword in SQL.
 
         """
