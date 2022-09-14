@@ -281,7 +281,11 @@ class Impala(object):
             total += b.decode()
 
     def _impala(
-        self, request: str, columns: str, cached: bool = True
+        self,
+        request: str,
+        columns: str,
+        cached: bool = True,
+        compress: bool = False,
     ) -> None | pd.DataFrame:  # coverage: ignore
 
         digest = hashlib.md5(request.encode("utf8")).hexdigest()
@@ -314,7 +318,11 @@ class Impala(object):
             # If data is streamed directly into the cache file, it is hard to
             # detect that it is corrupted and should be removed/overwritten.
             _log.info("Opening {}".format(cachename))
-            with cachename.open("w") as fh:
+            if compress:
+                cache_file = gzip.open(cachename, "wt")
+            else:
+                cache_file = cachename.open("w")
+            with cache_file as fh:
                 if columns is not None:
                     fh.write(re.sub(", ", "\t", columns))
                     fh.write("\n")
@@ -394,6 +402,7 @@ class Impala(object):
         columns: list[str],
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         cached: bool = True,
+        compress: bool = False,
         progressbar: bool | ProgressbarType[Any] = True,
     ) -> pd.DataFrame:
         """Splits and sends a custom request.
@@ -450,7 +459,10 @@ class Impala(object):
             )
 
             df = self._impala(
-                request, columns="\t".join(columns), cached=cached
+                request,
+                columns="\t".join(columns),
+                cached=cached,
+                compress=compress,
             )
 
             if df is None:
@@ -474,6 +486,7 @@ class Impala(object):
         callsign: None | str | list[str] = None,
         icao24: None | str | list[str] = None,
         cached: bool = True,
+        compress: bool = False,
         limit: None | int = None,
         progressbar: bool | ProgressbarType[Any] = True,
     ) -> pd.DataFrame:
@@ -624,7 +637,9 @@ class Impala(object):
                 other_params=other_params,
             )
 
-            df = self._impala(request, columns=columns, cached=cached)
+            df = self._impala(
+                request, columns=columns, cached=cached, compress=compress
+            )
 
             if df is None:
                 continue
@@ -670,6 +685,7 @@ class Impala(object):
         airport: None | str = None,
         count: bool = False,
         cached: bool = True,
+        compress: bool = False,
         limit: None | int = None,
         other_tables: str = "",
         other_params: str = "",
@@ -955,7 +971,9 @@ class Impala(object):
                 where_clause=where_clause,
             )
 
-            df = self._impala(request, columns=parse_columns, cached=cached)
+            df = self._impala(
+                request, columns=parse_columns, cached=cached, compress=compress
+            )
 
             if df is None:
                 continue
@@ -997,6 +1015,7 @@ class Impala(object):
         arrival_airport: None | str = None,
         airport: None | str = None,
         cached: bool = True,
+        compress: bool = False,
         limit: None | int = None,
         other_tables: str = "",
         other_columns: None | str | list[str] = None,
@@ -1342,7 +1361,9 @@ class Impala(object):
                 where_clause=where_clause,
             )
 
-            df = self._impala(request, columns=parse_columns, cached=cached)
+            df = self._impala(
+                request, columns=parse_columns, cached=cached, compress=compress
+            )
 
             if df is None:
                 continue
