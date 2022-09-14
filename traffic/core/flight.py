@@ -2850,10 +2850,10 @@ class Flight(
 
             ax = plt.axes()
             # most simple version
-            flight.plot(ax, 'altitude')
+            flight.plot_time(ax, 'altitude')
             # or with several comparable features and twin axes
-            flight.plot(
-                ax, ['altitude', 'groundspeed, 'IAS', 'TAS'],
+            flight.plot_time(
+                ax, ['altitude', 'groundspeed', 'IAS', 'TAS'],
                 secondary_y=['altitude']
             )
 
