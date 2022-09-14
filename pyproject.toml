@@ -92,7 +92,7 @@ pyspark = { version = "^3.3.0", optional = true}
 all = ["xarray", "libarchive", "scikit-learn", "textual"]
 web = ["Flask", "waitress"]
 plugins = ["fastkml", "keplergl"]
-pyspark = ["pyspark"]
+spark = ["pyspark"]
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.13.0"
