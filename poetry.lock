@@ -1485,6 +1485,50 @@ docs = ["furo", "olefile", "sphinx (>=2.4)", "sphinx-copybutton", "sphinx-issues
 tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "packaging", "pyroma", "pytest", "pytest-cov", "pytest-timeout"]
 
 [[package]]
+name = "pint"
+version = "0.19.2"
+description = "Physical quantities module"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.extras]
+numpy = ["numpy (>=1.19.5)"]
+test = ["pytest", "pytest-mpl", "pytest-cov", "pytest-subtests"]
+uncertainties = ["uncertainties (>=3.1.6)"]
+
+[[package]]
+name = "pint-pandas"
+version = "0.2"
+description = "Physical quantities module"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+pandas = ">=1.2"
+pint = ">=0.17"
+
+[package.extras]
+test = ["pytest", "pytest-mpl", "pytest-cov", "pytest-subtests", "codecov", "coveralls", "nbval"]
+
+[[package]]
+name = "pitot"
+version = "0.2.0"
+description = "Toolbox for aeronautic units and conversions"
+category = "main"
+optional = false
+python-versions = ">=3.8,<4.0"
+
+[package.dependencies]
+numpy = ">=1.23.0,<2.0.0"
+pandas = ">=1.4.3,<2.0.0"
+Pint = ">=0.19.2,<0.20.0"
+Pint-Pandas = ">=0.2,<0.3"
+pyproj = ">=3.3.1,<4.0.0"
+typing-extensions = ">=4.3.0,<5.0.0"
+
+[[package]]
 name = "platformdirs"
 version = "2.5.2"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
@@ -2671,7 +2715,7 @@ web = ["Flask", "waitress"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.11"
-content-hash = "b6d5fa77a13c27c80ef7877db9cba686bb52563647f10da90bacf3d932950e6e"
+content-hash = "a1b0e7e8dbf95744991e74903dbffef56ca164ac42d669b738242fa147216af5"
 
 [metadata.files]
 aiohttp = [
@@ -3311,6 +3355,11 @@ pillow = [
     {file = "Pillow-9.2.0-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:0030fdbd926fb85844b8b92e2f9449ba89607231d3dd597a21ae72dc7fe26927"},
     {file = "Pillow-9.2.0.tar.gz", hash = "sha256:75e636fd3e0fb872693f23ccb8a5ff2cd578801251f3a4f6854c6a5d437d3c04"},
 ]
+pint = [
+    {file = "Pint-0.19.2.tar.gz", hash = "sha256:e1d4989ff510b378dad64f91711e7bdabe5ca78d75b06a18569ac454678c4baf"},
+]
+pint-pandas = []
+pitot = []
 platformdirs = [
     {file = "platformdirs-2.5.2-py3-none-any.whl", hash = "sha256:027d8e83a2d7de06bbac4e5ef7e023c02b863d7ea5d079477e722bb41ab25788"},
     {file = "platformdirs-2.5.2.tar.gz", hash = "sha256:58c8abb07dcb441e6ee4b11d8df0ac856038f944ab98b7be6b27b2a3c7feef19"},
