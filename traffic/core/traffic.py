@@ -15,6 +15,7 @@ from typing import (
     Literal,
     NoReturn,
     Optional,
+    Sequence,
     Set,
     Type,
     TypeVar,
@@ -213,10 +214,12 @@ class Traffic(HBoxMixin, GeographyMixin):
                     "flight_id not in @other and"
                     "icao24 not in @other and callsign not in @other"
                 )
-            else:
+            elif "callsign" in self.data.columns:
                 df = self.data.query(
                     "icao24 not in @other and callsign not in @other"
                 )
+            else:
+                df = self.data.query("icao24 not in @other")
             if df.shape[0] == 0:
                 return None
             return self.__class__(df)
@@ -352,8 +355,10 @@ class Traffic(HBoxMixin, GeographyMixin):
             query_str = f"callsign in {subset} or icao24 in {subset}"
             if "flight_id" in self.data.columns:
                 return self.query(f"flight_id in {subset} or " + query_str)
-            else:
+            elif "callsign" in self.data.columns:
                 return self.query(query_str)
+            else:
+                return self.query(f"icao24 in {subset}")
 
         query_str = f"callsign == '{index}' or icao24 == '{index}'"
         if "flight_id" in self.data.columns:
@@ -373,6 +378,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     def iterate(
         self,
+        on: Sequence[str] = ["icao24", "callsign"],
         by: Union[str, pd.DataFrame, None] = None,
         nb_flights: Optional[int] = None,
     ) -> Iterator[Flight]:
@@ -395,7 +401,15 @@ class Traffic(HBoxMixin, GeographyMixin):
           defines a subset of Flights to select.
         - as a a string, `by` defines the minimum time range without
           data for a flight.
+
+        If the callsign shouldn't be used for iteration, you may specify it
+        using the `on` keyword argument.
+
         """
+
+        on_list = list(on)  # this is to avoid modifying the default keyword arg
+        if "callsign" not in self.data.columns and "callsign" in on_list:
+            on_list = ["icao24"]
 
         if isinstance(by, pd.DataFrame):
             for i, (_, line) in enumerate(by.iterrows()):
@@ -411,9 +425,7 @@ class Traffic(HBoxMixin, GeographyMixin):
                     yield Flight(df)
         else:
             for i, (_, df) in enumerate(
-                self.data.sort_values("timestamp").groupby(
-                    ["icao24", "callsign"]
-                )
+                self.data.sort_values("timestamp").groupby(on_list)
             ):
                 if nb_flights is None or i < nb_flights:
                     yield from Flight(df).split(
@@ -572,7 +584,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         without recorded data.
 
         The flight_id is created according to a pattern passed in parameter,
-        by default based on the callsign and an incremented index.
+        by default based on the callsign (if any) and an incremented index.
         """
         ...
 
@@ -781,6 +793,8 @@ class Traffic(HBoxMixin, GeographyMixin):
     @property_cache
     def callsigns(self) -> Set[str]:
         """Return all the different callsigns in the DataFrame"""
+        if "callsign" not in self.data.columns:
+            return set()
         sub = self.data.query("callsign == callsign")
         if sub.shape[0] == 0:
             return set()
@@ -827,7 +841,10 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @property_cache
     def basic_stats(self) -> pd.DataFrame:
-        key = ["icao24", "callsign"] if self.flight_ids is None else "flight_id"
+        default_key = ["icao24", "callsign"]
+        if "callsign" not in self.data.columns:
+            default_key = list(elt for elt in default_key if elt != "callsign")
+        key = default_key if self.flight_ids is None else "flight_id"
         return (
             self.data.groupby(key)[["timestamp"]]
             .count()
@@ -1140,6 +1157,9 @@ class Traffic(HBoxMixin, GeographyMixin):
         """
 
         if "last_position" not in self.data.columns:
+            return self
+
+        if "callsign" not in self.data.columns:
             return self
 
         return self.__class__(
