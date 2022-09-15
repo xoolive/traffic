@@ -35,6 +35,7 @@ def test_history() -> None:
             departure_airport="LFBO",
             arrival_airport="LFBO",
             callsign="AIB%",
+            compress=True,
         ),
     )
     assert t_aib is not None
@@ -50,6 +51,7 @@ def test_history() -> None:
             "2019-11-11 10:10",
             bounds=lfbo_tma,
             serials=1433801924,
+            compress=False,
         ),
     )
     assert t_tma is not None

@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import gzip
 import hashlib
 import logging
 import re
 import string
 import time
+from contextlib import contextmanager
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Any, Dict, Iterable, List, Tuple, cast
+from typing import Any, Dict, Generator, Iterable, List, TextIO, Tuple, cast
 
 import paramiko
 from cartes.osm import Nominatim
@@ -111,11 +113,27 @@ class Impala(object):
         for file in self.cache_dir.glob("*"):
             file.unlink()
 
+    @contextmanager
+    @staticmethod
+    def _get_cache_file(cachename: Path) -> Generator[TextIO, None, None]:
+        """Get a file object for the cache
+
+        This abstracts away the compression status of the cache file.
+        """
+        with cachename.open("rb") as bytes_header:
+            if bytes_header.read(3) == b"\x1f\x8b\x08":
+                _log.info("Opening as Gzip {}".format(cachename))
+                with gzip.open(cachename, "rt") as fh:
+                    yield fh
+            else:
+                _log.info("Opening as plain text {}".format(cachename))
+                with cachename.open("r") as fh:
+                    yield fh
+
     @staticmethod
     def _read_cache(cachename: Path) -> None | pd.DataFrame:
-
         _log.info("Reading request in cache {}".format(cachename))
-        with cachename.open("r") as fh:
+        with Impala._get_cache_file(cachename) as fh:
             s = StringIO()
             count = 0
             for line in fh.readlines():
@@ -147,7 +165,7 @@ class Impala(object):
                 except ParserError as error:
                     for x in re.finditer(r"line (\d)+,", error.args[0]):
                         line_nb = int(x.group(1))
-                        with cachename.open("r") as fh:
+                        with Impala._get_cache_file(cachename) as fh:
                             content = fh.readlines()[line_nb - 1]
 
                     new_path = Path(gettempdir()) / cachename.name
@@ -161,7 +179,7 @@ class Impala(object):
                     return df.drop_duplicates()
 
         error_msg: None | str = None
-        with cachename.open("r") as fh:
+        with Impala._get_cache_file(cachename) as fh:
             output = fh.readlines()
             if any(elt.startswith("ERROR:") for elt in output):
                 error_msg = "".join(output[:-1])
@@ -261,7 +279,11 @@ class Impala(object):
             total += b.decode()
 
     def _impala(
-        self, request: str, columns: str, cached: bool = True
+        self,
+        request: str,
+        columns: str,
+        cached: bool = True,
+        compress: bool = False,
     ) -> None | pd.DataFrame:  # coverage: ignore
 
         digest = hashlib.md5(request.encode("utf8")).hexdigest()
@@ -294,7 +316,11 @@ class Impala(object):
             # If data is streamed directly into the cache file, it is hard to
             # detect that it is corrupted and should be removed/overwritten.
             _log.info("Opening {}".format(cachename))
-            with cachename.open("w") as fh:
+            if compress:
+                cache_file = gzip.open(cachename, "wt")
+            else:
+                cache_file = cachename.open("w")
+            with cache_file as fh:
                 if columns is not None:
                     fh.write(re.sub(", ", "\t", columns))
                     fh.write("\n")
@@ -374,6 +400,7 @@ class Impala(object):
         columns: list[str],
         date_delta: timedelta = timedelta(hours=1),  # noqa: B008
         cached: bool = True,
+        compress: bool = False,
         progressbar: bool | ProgressbarType[Any] = True,
     ) -> pd.DataFrame:
         """Splits and sends a custom request.
@@ -393,6 +420,9 @@ class Impala(object):
         :param cached: (default: True) switch to False to force a new request to
             the database regardless of the cached files; delete previous cache
             files;
+        :param compress: (default: False) compress cache files. Reduces disk
+            space occupied at the expense of slightly increased time
+            to load.
 
         """
 
@@ -430,7 +460,10 @@ class Impala(object):
             )
 
             df = self._impala(
-                request, columns="\t".join(columns), cached=cached
+                request,
+                columns="\t".join(columns),
+                cached=cached,
+                compress=compress,
             )
 
             if df is None:
@@ -454,6 +487,7 @@ class Impala(object):
         callsign: None | str | list[str] = None,
         icao24: None | str | list[str] = None,
         cached: bool = True,
+        compress: bool = False,
         limit: None | int = None,
         progressbar: bool | ProgressbarType[Any] = True,
     ) -> pd.DataFrame:
@@ -498,6 +532,9 @@ class Impala(object):
         :param cached: (default: True) switch to False to force a new request to
             the database regardless of the cached files. This option also
             deletes previous cache files;
+        :param compress: (default: False) compress cache files. Reduces disk
+            space occupied at the expense of slightly increased time
+            to load.
         :param limit: maximum number of records requested, LIMIT keyword in SQL.
 
         """
@@ -604,7 +641,9 @@ class Impala(object):
                 other_params=other_params,
             )
 
-            df = self._impala(request, columns=columns, cached=cached)
+            df = self._impala(
+                request, columns=columns, cached=cached, compress=compress
+            )
 
             if df is None:
                 continue
@@ -650,6 +689,7 @@ class Impala(object):
         airport: None | str = None,
         count: bool = False,
         cached: bool = True,
+        compress: bool = False,
         limit: None | int = None,
         other_tables: str = "",
         other_params: str = "",
@@ -726,6 +766,9 @@ class Impala(object):
         :param cached: (default: True) switch to False to force a new request to
             the database regardless of the cached files. This option also
             deletes previous cache files;
+        :param compress: (default: False) compress cache files. Reduces disk
+            space occupied at the expense of slightly increased time
+            to load.
         :param limit: maximum number of records requested, LIMIT keyword in SQL.
 
         """
@@ -935,7 +978,9 @@ class Impala(object):
                 where_clause=where_clause,
             )
 
-            df = self._impala(request, columns=parse_columns, cached=cached)
+            df = self._impala(
+                request, columns=parse_columns, cached=cached, compress=compress
+            )
 
             if df is None:
                 continue
@@ -977,6 +1022,7 @@ class Impala(object):
         arrival_airport: None | str = None,
         airport: None | str = None,
         cached: bool = True,
+        compress: bool = False,
         limit: None | int = None,
         other_tables: str = "",
         other_columns: None | str | list[str] = None,
@@ -1043,6 +1089,9 @@ class Impala(object):
         :param cached: (default: True) switch to False to force a new request to
             the database regardless of the cached files. This option also
             deletes previous cache files;
+        :param compress: (default: False) compress cache files. Reduces disk
+            space occupied at the expense of slightly increased time
+            to load.
         :param limit: maximum number of records requested, LIMIT keyword in SQL.
 
         """
@@ -1322,7 +1371,9 @@ class Impala(object):
                 where_clause=where_clause,
             )
 
-            df = self._impala(request, columns=parse_columns, cached=cached)
+            df = self._impala(
+                request, columns=parse_columns, cached=cached, compress=compress
+            )
 
             if df is None:
                 continue
