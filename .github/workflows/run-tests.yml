@@ -146,10 +146,13 @@ jobs:
           TRAFFIC_NOPLUGIN: ""
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
+          PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
         run: |
           # Update the configuration for NM DDR airspace files
           export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
           sed -i "/nm_path =/ s,= $,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
+          sed -i "/pkcs12_filename =/ s,= .*$,= $PWD/data/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
+          sed -i "/pkcs12_password =/ s,= $,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
           # Don't purge OpenSky cache files here :)
           sed -i "/purge = / d" $TRAFFIC_CONFIG
           poetry run pytest --cov --cov-report xml
