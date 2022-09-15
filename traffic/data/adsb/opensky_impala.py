@@ -1,17 +1,17 @@
 from __future__ import annotations
-import gzip
 
+import gzip
 import hashlib
 import logging
 import re
 import string
 import time
+from contextlib import contextmanager
 from datetime import timedelta
 from io import StringIO
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Any, Dict, Iterable, List, TextIO, Tuple, cast
-from gzip import BadGzipFile
+from typing import Any, Dict, Generator, Iterable, List, TextIO, Tuple, cast
 
 import paramiko
 from cartes.osm import Nominatim
@@ -113,24 +113,34 @@ class Impala(object):
         for file in self.cache_dir.glob("*"):
             file.unlink()
 
+    @contextmanager
     @staticmethod
-    def _get_cache_file(cachename: Path) -> TextIO:
+    def _get_cache_file(cachename: Path) -> Generator[TextIO, None, None]:
         """Get a file object for the cache
 
         This abstracts away the compression status of the cache file.
         """
-        try:
-            cache_file = gzip.open(cachename, "rt")
-            # This will throw BadGzipFile if not a Gzip File
-            cache_file.read(1)
-            # If we are here the file is Gzip. Reset the read position
-            cache_file.seek(0)
-            _log.info("Opening as Gzip {}".format(cachename))
-        except BadGzipFile:
-            cache_file = cachename.open("r")
-            _log.info("Opening as plain text {}".format(cachename))
+        with cachename.open("rb") as bytes_header:
+            if bytes_header.read(3) == b"\x1f\x8b\x08":
+                _log.info("Opening as Gzip {}".format(cachename))
+                with gzip.open(cachename, "rt") as fh:
+                    yield fh
+            else:
+                _log.info("Opening as plain text {}".format(cachename))
+                with cachename.open("r") as fh:
+                    yield fh
+        # try:
+        #    cache_file = gzip.open(cachename, "rt")
+        #    # This will throw BadGzipFile if not a Gzip File
+        #    cache_file.read(1)
+        #    # If we are here the file is Gzip. Reset the read position
+        #    cache_file.seek(0)
+        #    _log.info("Opening as Gzip {}".format(cachename))
+        # except BadGzipFile:
+        #    cache_file = cachename.open("r")
+        #    _log.info("Opening as plain text {}".format(cachename))
 
-        return cache_file
+        # return cache_file
 
     @staticmethod
     def _read_cache(cachename: Path) -> None | pd.DataFrame:
