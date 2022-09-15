@@ -363,6 +363,8 @@ class Traffic(HBoxMixin, GeographyMixin):
         query_str = f"callsign == '{index}' or icao24 == '{index}'"
         if "flight_id" in self.data.columns:
             df = self.data.query(f"flight_id == '{index}' or " + query_str)
+        elif "callsign" not in self.data.columns:
+            df = self.data.query(f"icao24 == '{index}'")
         else:
             df = self.data.query(query_str)
 

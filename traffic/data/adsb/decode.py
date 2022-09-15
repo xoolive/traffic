@@ -208,6 +208,7 @@ class Entry(TypedDict, total=False):
     VFM: Optional[int]
     EPU: Optional[int]
     VEPU: Optional[int]
+    NACp: Optional[int]
     version: Optional[int]
     pHCR: Optional[int]
     pVPL: Optional[int]
@@ -274,7 +275,7 @@ class Aircraft(object):
                 )
             )
         else:
-            self._flight = Flight(df.assign(callsign=None))
+            self._flight = Flight(df)
 
         return self._flight
 
@@ -461,7 +462,9 @@ class Aircraft(object):
             else:
                 self.cumul.append(
                     dict(
-                        timestamp=t, icao24=self.icao24, callsign=self._callsign
+                        timestamp=t,
+                        icao24=self.icao24,
+                        callsign=self._callsign,
                     )
                 )
 
@@ -840,13 +843,15 @@ class Aircraft(object):
     def nac_p(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
-            epu, vepu = pms.adsb.nac_p(msg)
+            epu, vepu, nacp = pms.adsb.nac_p(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             current = dict(
                 # Estimated Position Uncertainty
                 EPU=epu,
                 # Vertical Estimated Position Uncertainty
                 VEPU=vepu,
+                # Navigation Accuracy Category Position
+                NACp=nacp,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
                 self.cumul[-1] = {**last_entry, **current}  # type: ignore
@@ -1637,7 +1642,6 @@ class ModeS_Decoder:
                 )
                 # avoid dictionary change size during iteration
                 for (key, ac) in list(self.acs.items())
-                if ac.callsign is not None
             ),
             key=itemgetter("length"),
             reverse=True,
