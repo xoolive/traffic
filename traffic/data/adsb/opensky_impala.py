@@ -129,18 +129,6 @@ class Impala(object):
                 _log.info("Opening as plain text {}".format(cachename))
                 with cachename.open("r") as fh:
                     yield fh
-        # try:
-        #    cache_file = gzip.open(cachename, "rt")
-        #    # This will throw BadGzipFile if not a Gzip File
-        #    cache_file.read(1)
-        #    # If we are here the file is Gzip. Reset the read position
-        #    cache_file.seek(0)
-        #    _log.info("Opening as Gzip {}".format(cachename))
-        # except BadGzipFile:
-        #    cache_file = cachename.open("r")
-        #    _log.info("Opening as plain text {}".format(cachename))
-
-        # return cache_file
 
     @staticmethod
     def _read_cache(cachename: Path) -> None | pd.DataFrame:
