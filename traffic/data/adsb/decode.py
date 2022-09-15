@@ -208,7 +208,7 @@ class Entry(TypedDict, total=False):
     VFM: Optional[int]
     EPU: Optional[int]
     VEPU: Optional[int]
-
+    NACp: Optional[int]
     version: Optional[int]
     pHCR: Optional[int]
     pVPL: Optional[int]
@@ -276,7 +276,6 @@ class Aircraft(object):
             )
         else:
             self._flight = Flight(df)
-
 
         return self._flight
 
