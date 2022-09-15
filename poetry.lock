@@ -643,6 +643,18 @@ async = ["asgiref (>=3.2)"]
 dotenv = ["python-dotenv"]
 
 [[package]]
+name = "flask-cors"
+version = "3.0.10"
+description = "A Flask extension adding a decorator for CORS support"
+category = "main"
+optional = true
+python-versions = "*"
+
+[package.dependencies]
+Flask = ">=0.9"
+Six = "*"
+
+[[package]]
 name = "flatbuffers"
 version = "2.0.7"
 description = "The FlatBuffers serialization format for Python"
@@ -2710,12 +2722,12 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 all = ["xarray", "libarchive", "scikit-learn", "textual"]
 plugins = ["fastkml", "keplergl"]
 spark = ["pyspark"]
-web = ["Flask", "waitress"]
+web = ["Flask", "Flask-Cors", "waitress"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.11"
-content-hash = "239babd0aaade5d4fa4e49fd198ae44de26fa12abcb30f9b5296cb43aaaf8b5e"
+content-hash = "31df5842d37427dc224bd621e5fd5fca3fd2d0fba67190bff1fce452af581517"
 
 [metadata.files]
 aiohttp = [
@@ -2968,6 +2980,7 @@ flake8 = [
     {file = "flake8-3.9.2.tar.gz", hash = "sha256:07528381786f2a6237b061f6e96610a4167b226cb926e2aa2b6b1d78057c576b"},
 ]
 flask = []
+flask-cors = []
 flatbuffers = []
 fonttools = []
 frozenlist = []
