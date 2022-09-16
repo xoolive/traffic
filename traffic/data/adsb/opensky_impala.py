@@ -33,6 +33,23 @@ class ImpalaError(Exception):
     pass
 
 
+@contextmanager
+def open_cache_file(cachename: Path) -> Generator[TextIO, None, None]:
+    """Get a file object for the cache
+
+    This abstracts away the compression status of the cache file.
+    """
+    with cachename.open("rb") as bytes_header:
+        if bytes_header.read(3) == b"\x1f\x8b\x08":
+            _log.info("Opening as Gzip {}".format(cachename))
+            with gzip.open(cachename, "rt") as fh:
+                yield fh
+        else:
+            _log.info("Opening as plain text {}".format(cachename))
+            with cachename.open("r") as fh:
+                yield fh
+
+
 class Impala(object):
 
     _impala_columns = [
@@ -113,27 +130,10 @@ class Impala(object):
         for file in self.cache_dir.glob("*"):
             file.unlink()
 
-    @contextmanager
-    @staticmethod
-    def _get_cache_file(cachename: Path) -> Generator[TextIO, None, None]:
-        """Get a file object for the cache
-
-        This abstracts away the compression status of the cache file.
-        """
-        with cachename.open("rb") as bytes_header:
-            if bytes_header.read(3) == b"\x1f\x8b\x08":
-                _log.info("Opening as Gzip {}".format(cachename))
-                with gzip.open(cachename, "rt") as fh:
-                    yield fh
-            else:
-                _log.info("Opening as plain text {}".format(cachename))
-                with cachename.open("r") as fh:
-                    yield fh
-
     @staticmethod
     def _read_cache(cachename: Path) -> None | pd.DataFrame:
         _log.info("Reading request in cache {}".format(cachename))
-        with Impala._get_cache_file(cachename) as fh:
+        with open_cache_file(cachename) as fh:
             s = StringIO()
             count = 0
             for line in fh.readlines():
@@ -165,7 +165,7 @@ class Impala(object):
                 except ParserError as error:
                     for x in re.finditer(r"line (\d)+,", error.args[0]):
                         line_nb = int(x.group(1))
-                        with Impala._get_cache_file(cachename) as fh:
+                        with open_cache_file(cachename) as fh:
                             content = fh.readlines()[line_nb - 1]
 
                     new_path = Path(gettempdir()) / cachename.name
@@ -179,7 +179,7 @@ class Impala(object):
                     return df.drop_duplicates()
 
         error_msg: None | str = None
-        with Impala._get_cache_file(cachename) as fh:
+        with open_cache_file(cachename) as fh:
             output = fh.readlines()
             if any(elt.startswith("ERROR:") for elt in output):
                 error_msg = "".join(output[:-1])
