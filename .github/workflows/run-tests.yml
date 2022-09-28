@@ -48,7 +48,7 @@ jobs:
         shell: bash
 
       - name: Restore LFS cache (private repository)
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: lfs-cache
         with:
           path: ./data/traffic_data/.git/lfs
@@ -64,14 +64,14 @@ jobs:
 
       # Poetry cache depends on OS, Python version and Poetry version.
       - name: Cache Poetry cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
           key: poetry-cache-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
 
       # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
       - name: Cache Packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.local
           key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
@@ -87,7 +87,7 @@ jobs:
         run: poetry run python -c "import sys; print(sys.version)"
 
       - name: Cache folder for traffic
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: cache-folder
         with:
           path: |
@@ -102,7 +102,7 @@ jobs:
           cp data/navdata/earth_*.dat ~/.cache/traffic/
 
       - name: Cache folder for libproj >=8.0
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: projlib-folder
         with:
           path: PROJ
