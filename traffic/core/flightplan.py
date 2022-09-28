@@ -146,8 +146,10 @@ class Airway(_ElementaryBlock):
 
     @classmethod
     def valid(cls, elt: str) -> bool:
-        return bool(re.match(cls.pattern, elt)) and any(
-            i.isdigit() for i in elt
+        return bool(re.match(cls.pattern, elt)) and (
+            any(i.isdigit() for i in elt)
+            # North Atlantic tracks
+            or elt.startswith("NAT")
         )
 
 
