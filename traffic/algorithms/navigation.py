@@ -1207,16 +1207,15 @@ class NavigationFeatures:
         if in_movement is None:
             return None
 
-        direction_change = cast(
-            Optional["Flight"],
-            # trim the first few seconds to avoid annoying first spike
-            in_movement.first("5T")  # type:ignore
+        # trim the first few seconds to avoid annoying first spike
+        direction_change = (
+            in_movement.first("5T")
             .last("4T30s")
             .cumulative_distance()
             .unwrap(["compute_track"])
             .filter(**filter_dict)  # type: ignore
             .diff("compute_track_unwrapped")
-            .query(f"compute_track_unwrapped_diff.abs() > {track_threshold}"),
+            .query(f"compute_track_unwrapped_diff.abs() > {track_threshold}")
         )
 
         if direction_change is None:

@@ -153,6 +153,108 @@ class DataFrameMixin(object):
 
     # --- Redirected to pandas.DataFrame ---
 
+    def assign(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.assign` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.assign(*args, **kwargs))
+
+    def convert_dtypes(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.convert_dtypes` method to
+        the underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.convert_dtypes(*args, **kwargs))
+
+    def drop(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.drop` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.drop(*args, **kwargs))
+
+    def drop_duplicates(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.drop_duplicates` method to
+        the underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.drop_duplicates(*args, **kwargs))
+
+    def fillna(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.fillna` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.fillna(*args, **kwargs))
+
+    def groupby(
+        self, *args: Any, **kwargs: Any
+    ) -> pd.core.groupby.generic.DataFrameGroupBy:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.groupby` method to the
+        underlying pandas DataFrame.
+        """
+        return self.data.groupby(*args, **kwargs)
+
+    def merge(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.merge` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.merge(*args, **kwargs))
+
+    def query(
+        self: T, query_str: str, *args: Any, **kwargs: Any
+    ) -> Optional[T]:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.query` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        df = self.data.query(query_str, *args, **kwargs)
+        if df.shape[0] == 0:
+            return None
+        return self.__class__(df)
+
+    def rename(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.rename` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.rename(*args, **kwargs))
+
+    def replace(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.replace` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.replace(*args, **kwargs))
+
+    def reset_index(self: T, *args: Any, **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.reset_index` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.reset_index(*args, **kwargs))
+
+    def sort_values(self: T, by: Union[str, Sequence[str]], **kwargs: Any) -> T:
+        """
+        Applies the Pandas :meth:`~pandas.DataFrame.sort_values` method to the
+        underlying pandas DataFrame and get the result back in the same
+        structure.
+        """
+        return self.__class__(self.data.sort_values(by, **kwargs))
+
     def to_pickle(
         self, filename: Union[str, Path], *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
@@ -243,100 +345,6 @@ class DataFrameMixin(object):
 
         """
         self.data.to_excel(filename, *args, **kwargs)
-
-    def sort_values(self: T, by: Union[str, Sequence[str]], **kwargs: Any) -> T:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.sort_values` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        return self.__class__(self.data.sort_values(by, **kwargs))
-
-    def query(
-        self: T, query_str: str, *args: Any, **kwargs: Any
-    ) -> Optional[T]:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.query` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        df = self.data.query(query_str, *args, **kwargs)
-        if df.shape[0] == 0:
-            return None
-        return self.__class__(df)
-
-    def drop(self: T, *args: Any, **kwargs: Any) -> T:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.drop` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        return self.__class__(self.data.drop(*args, **kwargs))
-
-    def rename(self: T, *args: Any, **kwargs: Any) -> T:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.rename` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        return self.__class__(self.data.rename(*args, **kwargs))
-
-    def fillna(self: T, *args: Any, **kwargs: Any) -> T:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.fillna` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        return self.__class__(self.data.fillna(*args, **kwargs))
-
-    def groupby(
-        self, *args: Any, **kwargs: Any
-    ) -> pd.core.groupby.generic.DataFrameGroupBy:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.groupby` method to the
-        underlying pandas DataFrame.
-        """
-        return self.data.groupby(*args, **kwargs)
-
-    def assign(self: T, *args: Any, **kwargs: Any) -> T:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.assign` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        return self.__class__(self.data.assign(*args, **kwargs))
-
-    def drop_duplicates(self: T, *args: Any, **kwargs: Any) -> T:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.drop_duplicates` method to
-        the underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        return self.__class__(self.data.drop_duplicates(*args, **kwargs))
-
-    def merge(self: T, *args: Any, **kwargs: Any) -> T:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.merge` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        return self.__class__(self.data.merge(*args, **kwargs))
-
-    def replace(self: T, *args: Any, **kwargs: Any) -> T:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.replace` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        return self.__class__(self.data.replace(*args, **kwargs))
-
-    def reset_index(self: T, *args: Any, **kwargs: Any) -> T:
-        """
-        Applies the Pandas :meth:`~pandas.DataFrame.reset_index` method to the
-        underlying pandas DataFrame and get the result back in the same
-        structure.
-        """
-        return self.__class__(self.data.reset_index(*args, **kwargs))
 
 
 class ShapelyMixin(object):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import logging
+import re
 import warnings
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache, reduce
@@ -555,6 +556,103 @@ class Flight(
         )
         return sum(1 for _ in fun(self))
 
+    def label(
+        self,
+        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+        **kwargs: Any,
+    ) -> "Flight":
+        """Returns the same flight with extra information from iterators.
+
+        Every keyword argument will be used to create a new column in the Flight
+        dataframe, filled by default with None values:
+
+        - if the passed value is True, the default one is False
+        - if the passed value is a string:
+            - "{i}" will be replaced by the index of the segment;
+            - "{segment}" will be replaced by the current piece of trajectory;
+            - "{self}" will be replaced by the current flight instance
+
+        If a function is passed it will be evaluated with:
+
+        - the current piece of trajectory (segment) if the function or the
+          lambda has one argument;
+        - the index and the segment if the function or the lambda has two
+          arguments;
+        - the index, the segment and the flight if the function or the lamdba
+          has three arguments;
+
+        Before returning, the dataframe applies
+        :meth:`~pandas.DataFrame.convert_dtypes` and so `None` values maybe
+        replaced by `NaT` or `NaN` values.
+
+        Example usage:
+
+        - Add a column `holding` which is True when the trajectory follows a
+          holding pattern
+
+            .. code:: python
+
+                flight.label(holding_pattern, holding=True)
+
+        - Add a column `index` to enumerate holding patterns:
+
+            .. code:: python
+
+                flight.label(holding_pattern, index="{i}")
+
+        - More complicated enriching:
+
+            .. code:: python
+
+                flight.label(
+                    "aligned_on_ils('LSZH')",
+                    aligned=True,
+                    label="{self.flight_id}_{i}",
+                    index=lambda i, segment: i,
+                    start=lambda segment: segment.start,
+                    altitude_max=lambda segment: segment.altitude_max
+                )
+
+        """
+
+        fun = (
+            getattr(self.__class__, method)
+            if isinstance(method, str)
+            else method
+        )
+
+        result = self.assign(
+            **dict(
+                (key, False if value is True else None)
+                for key, value in kwargs.items()
+            )
+        )
+
+        for i, segment in enumerate(fun(self)):
+            mask = result.data.timestamp >= segment.start
+            mask &= result.data.timestamp <= segment.stop
+            for key, value in kwargs.items():
+                if isinstance(value, str):
+                    if re.match("^lambda", value):
+                        code = ast.parse(value)
+                        if any(
+                            isinstance(piece, ast.Lambda)
+                            for piece in ast.walk(code)
+                        ):
+                            value = eval(value)
+                if callable(value):
+                    if value.__code__.co_argcount == 1:
+                        value = value(segment)
+                    elif value.__code__.co_argcount == 2:
+                        value = value(i, segment)
+                    elif value.__code__.co_argcount == 3:
+                        value = value(i, segment, self)
+                if isinstance(value, str):
+                    value = value.format(i=i, segment=segment, self=self)
+                result.data.loc[mask, key] = value
+
+        return result.convert_dtypes(convert_string=False)
+
     def all(
         self,
         method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
@@ -1058,9 +1156,7 @@ class Flight(
             return None
         return self.__class__(df)
 
-    def first(
-        self, value: deltalike = None, **kwargs: Any
-    ) -> Optional["Flight"]:
+    def first(self, value: deltalike = None, **kwargs: Any) -> "Flight":
         """Returns the first n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -1077,7 +1173,8 @@ class Flight(
         # full call is necessary to keep @bound as a local variable
         df = self.data.query("timestamp < @bound")
         if df.shape[0] == 0:
-            return None
+            # this shouldn't happen
+            return None  # type: ignore
         return self.__class__(df)
 
     def shorten(
@@ -1102,9 +1199,7 @@ class Flight(
             return None
         return self.__class__(df)
 
-    def last(
-        self, value: deltalike = None, **kwargs: Any
-    ) -> Optional["Flight"]:
+    def last(self, value: deltalike = None, **kwargs: Any) -> "Flight":
         """Returns the last n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -1121,7 +1216,8 @@ class Flight(
         # full call is necessary to keep @bound as a local variable
         df = self.data.query("timestamp > @bound")
         if df.shape[0] == 0:
-            return None
+            # this shouldn't happen
+            return None  # type: ignore
         return self.__class__(df)
 
     def before(self, time: timelike, strict: bool = True) -> Optional["Flight"]:

@@ -832,3 +832,29 @@ def test_holding_pattern() -> None:
         holding_pattern.between("2018-05-30 15:45", "2018-05-30 15:50")
         is not None
     )
+
+
+def test_label() -> None:
+    from traffic.data.datasets import landing_zurich_2019
+
+    labelled = belevingsvlucht.first("1h").label(
+        "holding_pattern", holding=True
+    )
+    holding = labelled.query("holding")
+    assert holding is not None
+    assert holding.between("2018-05-30 15:45", "2018-05-30 15:50") is not None
+
+    f = landing_zurich_2019["SWR287A_10099"]
+    labelled = f.label(
+        "aligned_on_ils('LSZH')",
+        ILS="{segment.ILS_max}",
+        touch=lambda segment: segment.stop,
+        index=lambda i, segment: i,
+        alt_min=lambda i, segment, flight: segment.altitude_min,
+        duration="lambda segment: segment.stop - segment.start",
+    )
+
+    assert labelled.index_max == 2
+    ils = set(ils for ils in labelled.ILS_unique if ils is not None)
+    assert ils == {"14", "28"}
+    assert labelled.duration_min > pd.Timedelta("2 min 30 s")
