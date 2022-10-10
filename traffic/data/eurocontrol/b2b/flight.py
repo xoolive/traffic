@@ -276,7 +276,7 @@ class FlightInfo(B2BReply):
             filepath = filename
 
         if filename is None or filepath.is_dir():
-            name = "{eobt:%Y-%m-%d}_{id_}_{callsign}_{from_}_{to}.xml"
+            name = "{eobt:%Y%m%d}_{id_}_{callsign}_{from_}_{to}.xml"
         elif isinstance(filename, str):
             name = filename
 
