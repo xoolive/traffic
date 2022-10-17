@@ -46,8 +46,8 @@ class Airports(GeoDBMixin):
     expiration_days: Optional[int]
 
     src_dict = dict(
-        fr24=("airports_fr24.pkl", "download_fr24"),
-        open=("airports_ourairports.pkl", "download_airports"),
+        fr24=("airports_fr24.parquet", "download_fr24"),
+        open=("airports_ourairports.parquet", "download_airports"),
     )
 
     columns_options = dict(
@@ -116,7 +116,7 @@ class Airports(GeoDBMixin):
             ]
         ]
 
-        self._data.to_pickle(self.cache_dir / "airports_ourairports.pkl")
+        self._data.to_parquet(self.cache_dir / "airports_ourairports.parquet")
 
     def download_fr24(self) -> None:  # coverage: ignore
         from .. import session
@@ -137,7 +137,7 @@ class Airports(GeoDBMixin):
                 }
             )
         )
-        self._data.to_pickle(self.cache_dir / "airports_fr24.pkl")
+        self._data.to_parquet(self.cache_dir / "airports_fr24.parquet")
 
     @property
     def data(self) -> pd.DataFrame:
@@ -157,7 +157,7 @@ class Airports(GeoDBMixin):
             except requests.ConnectionError:
                 pass
 
-        self._data = pd.read_pickle(self.cache_dir / cache_file)
+        self._data = pd.read_parquet(self.cache_dir / cache_file)
 
         return self._data
 

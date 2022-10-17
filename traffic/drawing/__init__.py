@@ -37,7 +37,6 @@ grid.linewidth: 0.5
 grid.linestyle: -
 grid.color: 0e1111
 
-savefig.transparent: True
 savefig.bbox: tight
 savefig.format: png
 """
