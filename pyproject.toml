@@ -101,7 +101,7 @@ spark = ["pyspark"]
 pre-commit = "^2.13.0"
 isort = "^5.9.1"
 black = ">=21.6"
-flake8 = "^3.9.2"
+flake8 = "^5.0.4"
 mypy = ">=0.981"
 Sphinx = "^5.1"
 sphinx-rtd-theme = ">=0.5.2"
