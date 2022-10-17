@@ -2,8 +2,8 @@ name: tests
 
 on:
   push:
-    - branches:
-        - master
+    branches:
+      - master
   pull_request_target:
   schedule:
     - cron: "42 7 * * 0" # Every Sunday morning when I am fast asleep :)
