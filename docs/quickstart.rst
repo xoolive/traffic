@@ -1,6 +1,12 @@
 Getting started
 ===============
 
+.. jupyter-execute::
+    :hide-code:
+    :hide-output:
+
+    %matplotlib inline
+
 The motivation for this page/notebook is to take the reader through all
 basic functionalities of the traffic library. In particular, we will cover:
 
@@ -78,7 +84,7 @@ Flight objects
 
     Information about each :class:`~traffic.core.Flight` is available through
     attributes or properties:
-    
+
     .. jupyter-execute::
 
         dict(belevingsvlucht)
@@ -89,7 +95,7 @@ Flight objects
     :attr:`~traffic.core.Flight.stop` properties refer to the timestamps of the
     first and last recorded samples. Note that all timestamps are by default set
     to universal time (UTC) as it is common practice in aviation.
-    
+
     .. jupyter-execute::
 
         (belevingsvlucht.start, belevingsvlucht.stop)
@@ -103,7 +109,7 @@ Flight objects
 
         Note the difference between the "strict" comparison (:math:`>`) vs. "or
         equal" comparison (:math:`\geq`)
-        
+
     .. jupyter-execute::
 
         belevingsvlucht.after("2018-05-30 19:00", strict=False)
@@ -113,7 +119,7 @@ Flight objects
         Each :class:`~traffic.core.Flight` is wrapped around a
         :class:`pandas.DataFrame`: when no method is available for your
         particular need, you can always access the underlying dataframe.
-        
+
     .. jupyter-execute::
 
         belevingsvlucht.between("2018-05-30 19:00", "2018-05-30 20:00").data
@@ -147,14 +153,14 @@ Traffic objects
       -  a combination of ``timestamp`` and ``icao24`` (aircraft identifier);
 
     Indexation will be made on:
-    
+
     - ``icao24``, ``callsign`` (or ``flight_id`` if available):
 
         .. jupyter-execute::
 
             quickstart["TAR722"]  # return type: Flight, based on callsign
             quickstart["39b002"]  # return type: Flight, based on icao24
-    
+
     - an integer or a slice, to take flights in order in the collection:
 
         .. jupyter-execute::
@@ -179,8 +185,8 @@ Traffic objects
 
     There are several ways to assign a flight identifier. The most simple one
     that you will use in 99% of situations involves the
-    :meth:`~traffic.core.Flight.flight_id` method. 
-    
+    :meth:`~traffic.core.Flight.flight_id` method.
+
     .. jupyter-execute::
 
         quickstart.assign_id().eval()
@@ -241,7 +247,7 @@ visualisation renderers including `Matplotlib <https://matplotlib.org/>`_ and
   Even a simple visualisation without an physical features plotted on the
   y-channel can be meaningful. The following proposition helps visualising when
   aircraft are airborne:
-  
+
   .. jupyter-execute::
 
       import altair as alt
@@ -261,7 +267,7 @@ visualisation renderers including `Matplotlib <https://matplotlib.org/>`_ and
 
   The y-channel is however most often used to plot physical quantities such as
   altitude, ground speed, or more.
-  
+
   .. jupyter-execute::
 
     alt.layer(
@@ -373,7 +379,7 @@ It is often a good practice to just plot the data as is before we get an idea of
 how to proceed.
 
 
-.. jupyter-execute:: 
+.. jupyter-execute::
 
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
@@ -404,7 +410,7 @@ color based on the vertical rate average value.
 This approach is not perfect (there are quite some green trajectories) but gives
 a good first idea of how traffic organises itself. Let's try to focus on the
 traffic to and from one airport, e.g. ``LFPO``, in order to refine the
-methodology. 
+methodology.
 
 A first approach to select those trajectories would be to pick the first/last
 point of the :class:`~traffic.core.Flight` and check whether it falls within the
@@ -412,7 +418,7 @@ geographical scope of the airport. In the following snippet, we do things a bit
 differently: we check whether the first/last 5 minutes of the trajectory
 intersects the shape of the airport.
 
-.. jupyter-execute:: 
+.. jupyter-execute::
 
     from traffic.data import airports
 
@@ -483,7 +489,7 @@ matching, and extract relevant information (the runway information):
     stats
 
 
-.. jupyter-execute:: 
+.. jupyter-execute::
 
     chart = (
         alt.Chart(stats)
@@ -622,7 +628,7 @@ There are several ways to collect trajectories:
 - the :meth:`~traffic.core.Traffic.from_flights` class method builds a
   :class:`~traffic.core.Traffic` object from an iterable structure of
   :class:`~traffic.core.Flight` objects. It is more robust than the sum()
-  Python function as it will ignore ``None`` objects which may be found in the 
+  Python function as it will ignore ``None`` objects which may be found in the
   iterable.
 
   .. jupyter-execute::
@@ -646,7 +652,7 @@ There are several ways to collect trajectories:
     trajectory preprocessing operations. Operations are stacked before being
     evaluated in a single iteration, using multiprocessing if needed, only after
     the specification is fully described.
-    
+
     *Lazy evaluation* is a common wording in functional programming languages.
     It refers to a mechanism where the actual evaluation is deferred.
 
@@ -662,7 +668,7 @@ remember that:
   stacked method to every :class:`~traffic.core.Flight` it can iterate on.
 - If one of the methods returns ``False`` or ``None``, the
   :class:`~traffic.core.Flight` is discarded;
-- If one of the methods returns ``True``, the :class:`~traffic.core.Flight` is 
+- If one of the methods returns ``True``, the :class:`~traffic.core.Flight` is
   passed as is not the next method.
 
 The landing trajectory selection rewrites as:
@@ -685,7 +691,7 @@ The landing trajectory selection rewrites as:
     The :meth:`~traffic.core.Flight.aligned_on_ils` call (without considerations
     on the vertical rate and intersections) is actually enough for our needs
     here, but more methods were stacked for explanatory purposes.
-    
+
 
 For reference, look at the subtle differences between the following processing:
 
@@ -698,8 +704,8 @@ For reference, look at the subtle differences between the following processing:
             .has("aligned_on_ils('LFPO')")
             .last('10 min')
             .eval(max_workers=4)
-        )        
-  
+        )
+
         with plt.style.context('traffic'):
             fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
             t1.plot(ax, color="#f58518")
@@ -708,7 +714,7 @@ For reference, look at the subtle differences between the following processing:
                 runways=dict(linewidth=1, color='black', zorder=3)
             )
             ax.spines['geo'].set_visible(False)
-  
+
 - take the last minute of the segment of trajectory which is aligned on runway 06:
 
     .. jupyter-execute::
