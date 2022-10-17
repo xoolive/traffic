@@ -912,11 +912,11 @@ class Traffic(HBoxMixin, GeographyMixin):
         m = LeafletMap(zoom=zoom, **kwargs)
 
         if _airport is not None:
-            m.add_layer(_airport)
+            m.add(_airport)
 
         for flight in self:
             if flight.query("latitude == latitude"):
-                elt = m.add_layer(flight)
+                elt = m.add(flight)
                 elt.popup = HTML()
                 elt.popup.value = flight._info_html()
 
@@ -935,7 +935,7 @@ class Traffic(HBoxMixin, GeographyMixin):
                 else:
                     f = value(flight)
                 if f is not None:
-                    m.add_layer(f, color=color)
+                    m.add(f, color=color)
 
         return m
 

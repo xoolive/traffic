@@ -2755,8 +2755,8 @@ class Flight(
         >>> from ipyleaflet import Map
         >>> # Center the map near the landing airport
         >>> m = Map(center=flight.at().latlon, zoom=7)
-        >>> m.add_layer(flight)  # this works as well with default options
-        >>> m.add_layer(flight.leaflet(color='red'))
+        >>> m.add(flight)  # this works as well with default options
+        >>> m.add(flight.leaflet(color='red'))
         >>> m
         """
         shape = self.shape
@@ -2802,9 +2802,9 @@ class Flight(
         m = LeafletMap(zoom=zoom, **kwargs)
 
         if _airport is not None:
-            m.add_layer(_airport)
+            m.add(_airport)
 
-        elt = m.add_layer(self)
+        elt = m.add(self)
         elt.popup = HTML()
         elt.popup.value = self._info_html()
 
@@ -2823,7 +2823,7 @@ class Flight(
             else:
                 f = value(self)
             if f is not None:
-                m.add_layer(f, color=color)
+                m.add(f, color=color)
 
         return m
 

@@ -6,7 +6,7 @@ from . import Airspace, Flight, FlightIterator, FlightPlan, StateVectors
 from .mixins import PointMixin
 from .structure import Airport, Route
 
-_old_add_layer = Map.add_layer
+_old_add = Map.add
 
 MapElement = Union[
     Airport,
@@ -20,7 +20,7 @@ MapElement = Union[
 ]
 
 
-def map_add_layer(_map: Map, elt: MapElement, **kwargs: Any) -> Any:
+def map_add(_map: Map, elt: MapElement, **kwargs: Any) -> Any:
     if any(
         isinstance(elt, c)
         for c in (
@@ -33,20 +33,21 @@ def map_add_layer(_map: Map, elt: MapElement, **kwargs: Any) -> Any:
         )
     ):
         layer = elt.leaflet(**kwargs)  # type: ignore
-        _old_add_layer(_map, layer)
+        _old_add(_map, layer)
         return layer
     if isinstance(elt, Route):
         layer = elt.leaflet(**kwargs)
-        _old_add_layer(_map, layer)
+        _old_add(_map, layer)
         for point in elt.navaids:
-            map_add_layer(_map, point, **kwargs)
+            map_add(_map, point, **kwargs)
         return layer
     if isinstance(elt, FlightIterator):
         for segment in elt:
-            map_add_layer(_map, segment, **kwargs)
+            map_add(_map, segment, **kwargs)
         return
-    return _old_add_layer(_map, elt)
+    return _old_add(_map, elt)
 
 
 def monkey_patch() -> None:
-    setattr(Map, "add_layer", map_add_layer)
+    setattr(Map, "add", map_add)
+    setattr(Map, "add_layer", map_add)

@@ -9,7 +9,7 @@ One of such trajectories is present in the :ref:`sample flights <How to access
 sample trajectories?>` of the library: we can observe the characteristic profile
 in altitude and indicated airspeed.
 
-.. jupyter-execute:: 
+.. jupyter-execute::
     :code-below:
 
     import altair as alt
@@ -78,26 +78,26 @@ in altitude and indicated airspeed.
     )
     chart
 
-.. jupyter-execute:: 
+.. jupyter-execute::
     :hide-code:
     :hide-output:
 
     # chart.save("_static/zero_gravity-thumb.png")
 
 
-.. jupyter-execute:: 
+.. jupyter-execute::
     :code-below:
 
     from ipyleaflet import Map
 
     m = Map(zoom=8, center=(49, -2))
-    m.add_layer(zero_gravity, color="#79706e", weight=2)
+    m.add(zero_gravity, color="#79706e", weight=2)
 
     for segment in focus.query('phase=="CLIMB"').split("30s"):
-        m.add_layer(segment, color="#f58518", weight=4)
+        m.add(segment, color="#f58518", weight=4)
     for segment in focus.query('phase=="DESCENT"').split("30s"):
-        m.add_layer(segment, color="#54a24b", weight=4)
+        m.add(segment, color="#54a24b", weight=4)
     for segment in focus.query('phase=="LEVEL"').split("30s"):
-        m.add_layer(segment, color="#4c78a8", weight=4)
+        m.add(segment, color="#4c78a8", weight=4)
 
     m

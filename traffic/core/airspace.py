@@ -205,7 +205,7 @@ class Airspace(ShapelyMixin):
 
         m = LeafletMap(zoom=zoom, **kwargs)
 
-        elt = m.add_layer(self)
+        elt = m.add(self)
         elt.popup = HTML()
         elt.popup.value = self.designator
 
@@ -287,7 +287,8 @@ class Airspace(ShapelyMixin):
             kwargs["transform"] = PlateCarree()
         if "s" not in kwargs:
             kwargs["s"] = self.name
-        ax.text(*np.array(self.centroid), **kwargs)
+        ((x, y),) = np.array(self.centroid.coords)
+        ax.text(x, y, **kwargs)
 
     def plot(
         self, ax: "GeoAxesSubplot", **kwargs: Any
