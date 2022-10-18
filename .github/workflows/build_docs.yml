@@ -115,7 +115,11 @@ jobs:
           sudo cmake --build . --target install
           cd ../..
           poetry install -E all
-          poetry run pip install onnxruntime  # dependency missing for 3.10, to be included in pyproject.toml later
+          # With this version of Ubuntu, shapely is compiled with a too recent libgeos
+          # https://traffic-viz.github.io/troubleshooting/installation.html
+          SHAPELY_VERSION=$(poetry run python -c "import shapely; print(shapely.__version__)")
+          poetry run pip uninstall -y shapely
+          poetry run pip install --no-binary shapely shapely==${SHAPELY_VERSION}
           npm install vega-lite vega-cli canvas  # necessary dependency for altair-save
 
       - name: Build pages
