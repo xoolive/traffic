@@ -848,7 +848,7 @@ test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=6.0)", "pytest-cov", "p
 
 [[package]]
 name = "ipyleaflet"
-version = "0.17.1"
+version = "0.17.2"
 description = "A Jupyter widget for dynamic Leaflet maps"
 category = "main"
 optional = false
@@ -3571,8 +3571,8 @@ ipykernel = [
     {file = "ipykernel-6.16.0.tar.gz", hash = "sha256:7fe42c0d58435e971dc15fd42189f20d66bf35f3056bda4f6554271bc1fa3d0d"},
 ]
 ipyleaflet = [
-    {file = "ipyleaflet-0.17.1-py3-none-any.whl", hash = "sha256:453ad6defa0354fa54de4386aa0628a1ee517a68b1c0fd9c0b699dad23a98485"},
-    {file = "ipyleaflet-0.17.1.tar.gz", hash = "sha256:ee8d19c02cc465f8b10808fcc54f55db685ba0fdd8a0b0f409c3d8370d53782f"},
+    {file = "ipyleaflet-0.17.2-py3-none-any.whl", hash = "sha256:7deaed9ec5dbfd53ac020cf5d9046ed34ca9aa7e580ca7b131e30fb78500aa7f"},
+    {file = "ipyleaflet-0.17.2.tar.gz", hash = "sha256:811ceb4a15589aa034a80724cfe5bdc93689563b889f4b9bed3d5e3bcb7626bb"},
 ]
 ipython = [
     {file = "ipython-8.5.0-py3-none-any.whl", hash = "sha256:6f090e29ab8ef8643e521763a4f1f39dc3914db643122b1e9d3328ff2e43ada2"},
