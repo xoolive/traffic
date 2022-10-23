@@ -80,7 +80,7 @@ metar = "^1.8.0"
 rich = ">=11.2.0"
 click = ">=8.1.2"
 cryptography = "<37.0.0"  # https://github.com/nextstrain/cli/issues/171
-xarray = { version = ">=0.18.2,<1.0.0", optional = true }
+xarray = { version = ">=0.18.2,<2023.0.0", optional = true }
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
 scikit-learn = { version = "^1.0", optional = true }
 fastkml = { version = ">=0.11,<1.0.0", optional = true }
