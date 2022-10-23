@@ -1271,6 +1271,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "nanoid"
+version = "2.0.0"
+description = "A tiny, secure, URL-friendly, unique string ID generator for Python"
+category = "main"
+optional = true
+python-versions = "*"
+
+[[package]]
 name = "nbclassic"
 version = "0.4.5"
 description = "A web-based notebook environment for interactive computing"
@@ -2451,15 +2459,20 @@ test = ["pre-commit", "pytest (>=6.0)", "pytest-timeout"]
 
 [[package]]
 name = "textual"
-version = "0.1.18"
-description = "Text User Interface using Rich"
+version = "0.2.1"
+description = "Modern Text User Interface framework"
 category = "main"
 optional = true
 python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-rich = ">=12.3.0,<13.0.0"
-typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.9\""}
+importlib-metadata = ">=4.11.3,<5.0.0"
+nanoid = ">=2.0.0,<3.0.0"
+rich = ">=12.6.0,<13.0.0"
+typing-extensions = {version = ">=4.0.0,<5.0.0", markers = "python_version < \"3.10\""}
+
+[package.extras]
+dev = ["aiohttp (>=3.8.1,<4.0.0)", "click (==8.1.2)", "msgpack (>=1.0.3,<2.0.0)"]
 
 [[package]]
 name = "threadpoolctl"
@@ -3982,6 +3995,10 @@ mypy-extensions = [
     {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
     {file = "mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
 ]
+nanoid = [
+    {file = "nanoid-2.0.0-py3-none-any.whl", hash = "sha256:90aefa650e328cffb0893bbd4c236cfd44c48bc1f2d0b525ecc53c3187b653bb"},
+    {file = "nanoid-2.0.0.tar.gz", hash = "sha256:5a80cad5e9c6e9ae3a41fa2fb34ae189f7cb420b2a5d8f82bd9d23466e4efa68"},
+]
 nbclassic = [
     {file = "nbclassic-0.4.5-py3-none-any.whl", hash = "sha256:07fba5a9e52a6ed7e795b45d300629b2a07a69e5a47398833b7977a7ecc8a3c1"},
     {file = "nbclassic-0.4.5.tar.gz", hash = "sha256:05704c6cdd8301bf52e40ed9fae39e80d6bc5d2d447dc67831c145b4dd928779"},
@@ -4794,8 +4811,8 @@ terminado = [
     {file = "terminado-0.16.0.tar.gz", hash = "sha256:fac14374eb5498bdc157ed32e510b1f60d5c3c7981a9f5ba018bb9a64cec0c25"},
 ]
 textual = [
-    {file = "textual-0.1.18-py3-none-any.whl", hash = "sha256:59110935418c597c1c50876edfd6799ad5b59d51a91ca6744fc45e36eb89638e"},
-    {file = "textual-0.1.18.tar.gz", hash = "sha256:b2883f8ed291de58b9aa73de6d24bbaae0174687487458a4eb2a7c188a2acf23"},
+    {file = "textual-0.2.1-py3-none-any.whl", hash = "sha256:a063a6886b4f1dd0783cd7b7dd294e692672affa9aa7c153ced606fec82439a8"},
+    {file = "textual-0.2.1.tar.gz", hash = "sha256:98c8f8fa61dfeb999029311ed362cd48acc6be2ebea0e21db7eef0fa4e3df788"},
 ]
 threadpoolctl = [
     {file = "threadpoolctl-3.1.0-py3-none-any.whl", hash = "sha256:8b99adda265feb6773280df41eece7b2e6561b772d21ffd52e372f999024907b"},
