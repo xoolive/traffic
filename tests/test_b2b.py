@@ -17,7 +17,7 @@ today = pd.Timestamp("now")
 def test_success() -> None:
     res = nm_b2b.flight_list(today, origin="LFBO")
     assert res is not None
-    assert all(res.data.origin == "LFBO")
+    assert res.data.shape[0] == 0 or all(res.data.origin == "LFBO")
 
 
 @pytest.mark.skipif(no_import, reason="No key available")
