@@ -1604,10 +1604,13 @@ class Flight(
                 how = {how: set(data.columns) - {"timestamp"}}
 
             for meth, columns in how.items():
+                idx = data.columns.get_indexer(columns)
+                value = getattr(data.iloc[:, idx], meth)()
                 # final fillna() is necessary for non-interpolable dtypes
-                data.loc[:, list(columns)] = getattr(
-                    data.loc[:, list(columns)], meth
-                )().fillna(method="pad")
+                value = value.fillna(method="pad")
+                # FutureWarning: a value is trying to be set on a copy of a
+                # slice from a DataFrame
+                data.isetitem(idx, value)
 
         elif isinstance(rule, int):
             # ./site-packages/pandas/core/indexes/base.py:2820: FutureWarning:
