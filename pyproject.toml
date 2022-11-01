@@ -148,7 +148,6 @@ known_first_party = ["numpy", "pandas", "pyproj", "shapely"]
 [tool.mypy]
 python_version = 3.8
 platform = "posix"
-exclude = ["traffic/console/*.py"]
 
 color_output = true
 pretty = true

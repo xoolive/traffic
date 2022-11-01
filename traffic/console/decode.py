@@ -1,3 +1,6 @@
+# mypy: ignore-errors
+# TODO The line above avoids a typing error only visible in Github Actions
+
 from __future__ import annotations
 
 import base64
