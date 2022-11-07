@@ -2,17 +2,14 @@ import configparser
 import logging
 import os
 import warnings
+from importlib.metadata import entry_points, version
 from pathlib import Path
 
-import importlib_metadata
-import pkg_resources
 from appdirs import user_cache_dir, user_config_dir
 
 import pandas as pd
 
-from . import drawing  # noqa: F401
-
-__version__ = importlib_metadata.version("traffic")  # type: ignore
+__version__ = version("traffic")
 __all__ = ["config_dir", "config_file", "cache_dir"]
 
 # Set up the library root logger
@@ -103,10 +100,11 @@ _selected -= {""}
 _log.info(f"Selected plugins: {_selected}")
 
 if "TRAFFIC_NOPLUGIN" not in os.environ.keys():  # coverage: ignore
-    for entry_point in pkg_resources.iter_entry_points("traffic.plugins"):
-        if entry_point.name.replace("-", "").lower() in _selected:
-            _log.info(f"Loading plugin: {entry_point.name}")
-            handle = entry_point.load()
+    for entry_point in entry_points(group="traffic.plugins"):  # type: ignore
+        name = entry_point.name.replace("-", "").lower()  # type: ignore
+        if name in _selected:
+            _log.info(f"Loading plugin: {name}")
+            handle = entry_point.load()  # type: ignore
             _log.info(f"Loaded plugin: {handle.__name__}")
             load = getattr(handle, "_onload", None)
             if load is not None:

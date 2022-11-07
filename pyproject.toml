@@ -90,7 +90,6 @@ Flask = { version = "^2.1.1", optional = true }
 Flask-Cors = { version = "^3.0.10", optional = true }
 waitress = { version = "^2.1.1", optional = true }
 pyspark = { version = "^3.3.0", optional = true }
-setuptools = "^65.5.0"
 
 [tool.poetry.extras]
 all = ["xarray", "libarchive", "scikit-learn", "textual"]
