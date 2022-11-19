@@ -110,6 +110,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev npm fonts-ubuntu
+          # Weird issue with libarchive-dev
+          sudo ln -s -f /usr/lib/x86_64-linux-gnu/libarchive.a /usr/lib/x86_64-linux-gnu/liblibarchive.a
+          # Rebuild PROJ
           cd PROJ/build
           cmake ..; cmake --build .
           sudo cmake --build . --target install
