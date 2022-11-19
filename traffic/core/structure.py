@@ -12,6 +12,7 @@ from typing import (
 
 import rich.repr
 from ipyleaflet import GeoData as LeafletGeoData
+from ipyleaflet import Map
 from ipyleaflet import Polyline as LeafletPolyline
 
 from shapely.geometry import GeometryCollection, LineString
@@ -135,6 +136,12 @@ class Airport(
             .data,
             style={**{"color": "#79706e", "weight": 6}, **kwargs},
         )
+
+    def map_leaflet(self, **kwargs: Any) -> Map:
+
+        m = Map(center=self.latlon, zoom=13)
+        m.add(self.leaflet(**kwargs))
+        return m
 
     @property
     def __geo_interface__(self) -> Optional[Dict[str, Any]]:
