@@ -595,7 +595,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def intersects(self, shape: Union["Airspace", base.BaseGeometry]) -> bool:
+    def intersects(  # type: ignore
+        self,
+        shape: Union["Airspace", base.BaseGeometry],
+    ) -> bool:
         ...
 
     @lazy_evaluation()
@@ -707,11 +710,11 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def landing_at(self, airport: str) -> bool:
+    def landing_at(self, airport: str) -> bool:  # type: ignore
         ...
 
     @lazy_evaluation()
-    def takeoff_from(self, airport: str) -> bool:
+    def takeoff_from(self, airport: str) -> bool:  # type: ignore
         ...
 
     @lazy_evaluation()

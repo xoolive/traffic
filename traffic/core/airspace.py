@@ -455,7 +455,7 @@ def inside_bbox(
         bounds = bounds.bounds
 
     elif hasattr(bounds, "shape"):
-        bounds = bounds.shape.bounds  # type: ignore
+        bounds = bounds.shape.bounds
 
     west, south, east, north = bounds
 

@@ -147,7 +147,7 @@ class Clustering:
         self.clustering.fit(self.X)
 
         labels: Numeric = (
-            self.clustering.labels_  # type: ignore
+            self.clustering.labels_
             if hasattr(self.clustering, "labels_")
             else self.clustering.predict(self.X)
         )

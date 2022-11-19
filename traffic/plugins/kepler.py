@@ -90,7 +90,7 @@ def map_add_data(
 
     # convenient for airports, navaids, etc.
     if hasattr(data, "data"):
-        data = data.data  # type: ignore
+        data = data.data
 
     return _old_add_data(_map, data, *args, **kwargs)
 
