@@ -8,7 +8,7 @@ from requests import Session
 from .. import cache_dir, config, config_file
 
 if TYPE_CHECKING:
-    from .adsb.decode import ModeS_Decoder as ModeS_Decoder
+    from .adsb.decode import ModeS_Decoder
     from .adsb.opensky import OpenSky
     from .basic.aircraft import Aircraft
     from .basic.airports import Airports
@@ -270,11 +270,12 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "session":
+        from cartes.osm.requests import session
 
-        session = Session()
         if len(proxy_values) > 0:
             session.proxies.update(proxy_values)
             session.trust_env = False
+
         res = session
         _cached_imports[name] = res
         return res
