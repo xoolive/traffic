@@ -24,6 +24,7 @@ classifiers = [
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Typing :: Typed",
 ]
 include = [
@@ -50,7 +51,7 @@ CesiumJS = "traffic.plugins.cesiumjs"
 Kepler = "traffic.plugins.kepler"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11"
+python = ">=3.8,<4.0"
 numpy = "^1.21"
 scipy = "^1.7"
 matplotlib = "^3.4"

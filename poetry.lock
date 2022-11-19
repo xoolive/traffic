@@ -300,11 +300,11 @@ jinja2 = "*"
 
 [[package]]
 name = "cartes"
-version = "0.7.2"
+version = "0.7.3"
 description = "A generic toolbox for building maps in Python"
 category = "main"
 optional = false
-python-versions = ">=3.8,<3.11"
+python-versions = ">=3.8,<4.0"
 
 [package.dependencies]
 aiohttp = ">=3.8,<4.0"
@@ -584,7 +584,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "exceptiongroup"
-version = "1.0.2"
+version = "1.0.4"
 description = "Backport of PEP 654 (exception groups)"
 category = "dev"
 optional = false
@@ -780,7 +780,7 @@ pyreadline3 = {version = "*", markers = "sys_platform == \"win32\" and python_ve
 
 [[package]]
 name = "identify"
-version = "2.5.8"
+version = "2.5.9"
 description = "File identification library for Python"
 category = "dev"
 optional = false
@@ -1008,7 +1008,7 @@ format_nongpl = ["idna", "jsonpointer (>1.13)", "webcolors", "rfc3986-validator 
 
 [[package]]
 name = "jupyter-client"
-version = "7.4.5"
+version = "7.4.7"
 description = "Jupyter protocol implementation and client libraries"
 category = "main"
 optional = false
@@ -2677,7 +2677,7 @@ types-cryptography = "*"
 
 [[package]]
 name = "types-requests"
-version = "2.28.11.4"
+version = "2.28.11.5"
 description = "Typing stubs for requests"
 category = "dev"
 optional = false
@@ -2688,7 +2688,7 @@ types-urllib3 = "<1.27"
 
 [[package]]
 name = "types-urllib3"
-version = "1.26.25.3"
+version = "1.26.25.4"
 description = "Typing stubs for urllib3"
 category = "dev"
 optional = false
@@ -2696,7 +2696,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-waitress"
-version = "2.1.4.2"
+version = "2.1.4.3"
 description = "Typing stubs for waitress"
 category = "dev"
 optional = false
@@ -2889,8 +2889,8 @@ web = ["Flask", "Flask-Cors", "waitress", "textual"]
 
 [metadata]
 lock-version = "1.1"
-python-versions = ">=3.8,<3.11"
-content-hash = "e3d1c49d863917eb2e04c3d0af84e761b421249bd300b2ba77cd4f78fefbf2a6"
+python-versions = ">=3.8,<4.0"
+content-hash = "5fda4c26a4a13c351c0fdca28cca0486b15f8f0ac3d8d9d90e6bc65f6dac2827"
 
 [metadata.files]
 aiohttp = []
@@ -2977,10 +2977,7 @@ bleach = [
     {file = "bleach-5.0.1.tar.gz", hash = "sha256:0d03255c47eb9bd2f26aa9bb7f2107732e7e8fe195ca2f64709fcf3b0a4a085c"},
 ]
 branca = []
-cartes = [
-    {file = "cartes-0.7.2-py3-none-any.whl", hash = "sha256:30540e5ea4b98e4ea4af99a0bd9692a4496eda8213cd32b5722aeb0cd83b46be"},
-    {file = "cartes-0.7.2.tar.gz", hash = "sha256:1429b858a5c5d99a1699454bb2395096749e5be69bf96440863847d34c88b472"},
-]
+cartes = []
 cartopy = []
 certifi = []
 cffi = []
