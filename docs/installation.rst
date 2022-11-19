@@ -26,10 +26,10 @@ We recommend creating a fresh conda environment for a first installation:
 .. code:: bash
 
     # Installation
-    conda create -n traffic -c conda-forge python=3.9 traffic
+    conda create -n traffic -c conda-forge python=3.10 traffic
     conda activate traffic
 
-Adjust the Python version you need (>=3.7) and append packages you need for
+Adjust the Python version you need (>=3.8) and append packages you need for
 working efficiently, such as Jupyter Lab, xarray, PyTorch or more.
 
 Then activate the environment each time you need to use the ``traffic`` library:
