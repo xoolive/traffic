@@ -80,7 +80,7 @@ lxml = "^4.6"
 metar = "^1.8"
 rich = ">=11.2"
 click = ">=8.1"
-cryptography = "<37.0.0"  # https://github.com/nextstrain/cli/issues/171
+cryptography = "<38.0.0"  # https://github.com/nextstrain/cli/issues/171
 xarray = { version = ">=0.18.2,<2023.0.0", optional = true }
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
 scikit-learn = { version = "^1.0", optional = true }
