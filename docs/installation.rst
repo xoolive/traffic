@@ -124,5 +124,7 @@ automatically when you first open the Docker container may fail: you may have
 to manually set your proxy environment variables in the container shell before
 running ``poetry install`` again in order to get the container ready.
 
-Read more about :ref:`Docker containers <How to use traffic in a Docker
+.. hint::
+
+    Read more about :ref:`Docker containers <How to use traffic in a Docker
 container?>` for traffic.

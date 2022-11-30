@@ -73,23 +73,23 @@ badge](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi
 [![Google Scholar
 badge](https://img.shields.io/endpoint?url=https%3A%2F%2Ftraffic-citations-y6ukblh4ymtb.runkit.sh%2F)](https://scholar.google.com/scholar?cites=18420568209924139259)
 
-Like other researchers before, if you find this project useful for your research
-and use it in an academic work, you may cite it as:
+- Like other researchers before, if you find this project useful for your research
+  and use it in an academic work, you may cite it as:
 
-```bibtex
-@article{olive2019traffic,
-    author={Xavier {Olive}},
-    journal={Journal of Open Source Software},
-    title={traffic, a toolbox for processing and analysing air traffic data},
-    year={2019},
-    volume={4},
-    pages={1518},
-    doi={10.21105/joss.01518},
-    issn={2475-9066},
-}
-```
+  ```bibtex
+  @article{olive2019traffic,
+      author={Xavier {Olive}},
+      journal={Journal of Open Source Software},
+      title={traffic, a toolbox for processing and analysing air traffic data},
+      year={2019},
+      volume={4},
+      pages={1518},
+      doi={10.21105/joss.01518},
+      issn={2475-9066},
+  }
+  ```
 
-- Additionally, you may consider adding a star to the repository.  
+- Additionally, you may consider adding a star to the repository.
   This token of appreciation is often interpreted as a positive feedback and
   improves the visibility of the library.
 
@@ -108,7 +108,8 @@ Join the Gitter chat for assistance: https://gitter.im/xoolive/traffic
 [![Codacy Badge](https://img.shields.io/codacy/grade/eea673ed15304f1b93490726295d6de0)](https://www.codacy.com/manual/xoolive/traffic)
 [![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy.readthedocs.io/)
 
-Unit and non-regression tests are written in the `tests/` directory. You may run
+Unit and non-regression tests are written in the `tests/` directory.
+You may run
 `pytest` from the root directory.
 
 Tests are checked on [Github
@@ -116,38 +117,19 @@ Actions](https://github.com/xoolive/traffic/actions/workflows/run-tests.yml)
 platform upon each commit. Latest status and coverage are displayed with
 standard badges hereabove.
 
-In addition, code is checked against static typing with
-[mypy](https://mypy.readthedocs.io/) ([pre-commit](https://pre-commit.com/)
-hooks are available in the repository).
+In addition to unit tests, code is checked against:
+
+- formatting with [black](https://black.readthedocs.io/), [isort](https://pycqa.github.io/isort/) and [flake8](https://flake8.pycqa.org/);
+- static typing with [mypy](https://mypy.readthedocs.io/)
+
+[pre-commit](https://pre-commit.com/) hooks are available in the repository.
 
 ## Feedback and contribution
 
 Any input, feedback, bug report or contribution is welcome.
 
-Should you encounter any issue, you may want to file it in the
-[issue](https://github.com/xoolive/traffic/issues/new) section of this
-repository. Please first activate the `DEBUG` messages recorded using Python
-logging mechanism with the following snippet:
+- Should you encounter any [issue](https://github.com/xoolive/traffic/issues/new), you may want to file it in the [issue](https://github.com/xoolive/traffic/issues/new) section of this repository.
 
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-```
+- If you intend to [contribute to traffic](https://traffic-viz.github.io/installation.html#contribute-to-traffic) or file a pull request, the best way to ensure continuous integration does not break is to reproduce an environment with the same exact versions of all dependency libraries. Please follow the [appropriate section](https://traffic-viz.github.io/installation.html#contribute-to-traffic) in the documentation.
 
-Bug fixes and improvements in the library are also always helpful.
-
-If you share a fix together with the issue, I can include it in the code for
-you. But since you did the job, pull requests (PR) let you keep the authorship
-on your additions. For details on creating a PR see GitHub documentation
-[Creating a pull
-request](https://help.github.com/en/articles/creating-a-pull-request).
-
-You can add more details about your example in the PR such as motivation for the
-example or why you thought it would be a good addition. You will get feedback in
-the PR discussion if anything needs to be changed. To make changes continue to
-push commits made in your local example branch to origin and they will be
-automatically shown in the PR.
-
-You may find the process troublesome but please keep in mind it is actually
-easier that way to keep track of corrections and to remember why things are the
-way they are.
+  Let us know what you want to do just in case we're already working on an implementation of something similar. This way we can avoid any needless duplication of effort. Also, please don't forget to add tests for any new functions.
