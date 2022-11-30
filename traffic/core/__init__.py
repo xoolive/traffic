@@ -41,6 +41,9 @@ def loglevel(mode: str) -> None:
         New log level.
     """
     _log = logging.getLogger("traffic")
+    if not any(isinstance(h, logging.StreamHandler) for h in _log.handlers):
+        _log.addHandler(logging.StreamHandler())
+        _log.info("Setting a default StreamHandler")
     _log.setLevel(getattr(logging, mode))
 
 
