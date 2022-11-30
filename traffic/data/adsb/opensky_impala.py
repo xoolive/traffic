@@ -974,7 +974,12 @@ class Impala(object):
                 before_hour=bh.timestamp(),
                 after_hour=ah.timestamp(),
                 other_tables=other_tables,
-                other_params=other_params,
+                other_params=other_params.format(
+                    before_time=bt.timestamp(),
+                    after_time=at.timestamp(),
+                    before_hour=bh.timestamp(),
+                    after_hour=ah.timestamp(),
+                ),
                 where_clause=where_clause,
             )
 
@@ -987,10 +992,6 @@ class Impala(object):
 
             df = self._format_dataframe(df)
             df = self._format_history(df, nautical_units=nautical_units)
-
-            if "last_position" in df.columns:
-                if df.query("last_position == last_position").shape[0] == 0:
-                    continue
 
             cumul.append(df)
 
