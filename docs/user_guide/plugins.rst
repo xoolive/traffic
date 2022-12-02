@@ -1,13 +1,13 @@
 How to use and write plugins for the traffic library?
 =====================================================
 
-Plugins are pieces of software which are designed to extend the 
+Plugins are pieces of software which are designed to extend the
 basic functionalities of the traffic library. Plugins can be
 implemented through a `registration <https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`__
 mechanism and selectively activated in the configuration file.
 
 Some plugins are provided by the traffic library with visualisation
-facilities for Kepler.gl and CesiumJS.
+facilities for BlueSky or CesiumJS.
 
 Plugin activation
 -----------------
@@ -27,7 +27,9 @@ activate:
 ::
 
     [plugins]
-    enabled_plugins = Kepler, CesiumJS
+    enabled_plugins =
+        - BlueSky
+        - CesiumJS
 
 
 Available plugins
@@ -36,10 +38,9 @@ Available plugins
 .. toctree::
    :maxdepth: 1
 
-   kepler
    cesium
    bluesky
-   
+
 
 
 The examples are provided using the data produced in the
@@ -48,7 +49,7 @@ The examples are provided using the data produced in the
 .. code:: python
 
     from traffic.data.samples import quickstart, lfbo_tma
-    
+
     def landing_trajectory(flight: "Flight") -> bool:
         return (
             flight.min("altitude") < 10_000 and
