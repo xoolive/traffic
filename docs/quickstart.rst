@@ -683,7 +683,7 @@ The landing trajectory selection rewrites as:
         .has('aligned_on_ils("LFPO")')           # Flight -> bool
         .last("10 min")                          # Flight -> None | Flight
         # Now evaluation is triggered on 4 cores
-        .eval(desc="landing at LFPO", max_workers=4)
+        .eval(max_workers=4)  # the desc= argument creates a progress bar
     )
 
 .. note::
