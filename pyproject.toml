@@ -72,7 +72,7 @@ ipyleaflet = ">=0.17"
 tqdm = "^4.61"
 pyModeS = { version = "^2.9", extras = ["fast"] }
 openap = "^1.1"
-pyarrow = ">=4.0"
+fastparquet = ">=0.7"
 onnxruntime = "^1.12"
 beautifulsoup4 = "^4.9"
 lxml = "^4.6"
