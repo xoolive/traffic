@@ -14,7 +14,8 @@ from traffic.data.samples import zurich_airport
         (".pkl", Traffic.to_pickle),
         (".parquet", Traffic.to_parquet),
         (".json", Traffic.to_json),
-        (".feather", Traffic.to_feather),
+        # pr295 replaces pyarrow with fastparquet
+        # (".feather", Traffic.to_feather),
     ],
 )
 def test_save_and_load(
