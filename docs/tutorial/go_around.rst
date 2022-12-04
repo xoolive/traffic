@@ -81,7 +81,7 @@ is not empty:
     flight.go_around("LSZH").has()
 
 There is also a :meth:`~traffic.core.Flight.has` method available on
-:class:`~traffic.core.Flight` objects: it accepts functions returning a 
+:class:`~traffic.core.Flight` objects: it accepts functions returning a
 :class:`~traffic.core.FlightIterator` or strings representing a call to a
 :class:`~traffic.core.Flight` method:
 
@@ -91,7 +91,7 @@ There is also a :meth:`~traffic.core.Flight.has` method available on
 
 This helps stacking operations on a :class:`~traffic.core.lazy.LazyTraffic`. The
 following visualisation is an attempt to show whether go-arounds tend to occur
-on particular days or times of a day (we could look for a correlation with 
+on particular days or times of a day (we could look for a correlation with
 weather conditions) or whether they are just sporadic events due to external
 factors. To be honest, nothing clear comes out of this one.
 
@@ -99,7 +99,8 @@ factors. To be honest, nothing clear comes out of this one.
 
     import altair as alt
 
-    goarounds = subset.has('go_around("LSZH")').eval(desc="go around", max_workers=4)
+    # the desc= argument in eval() creates a progress bar
+    goarounds = subset.has('go_around("LSZH")').eval(max_workers=4)
     summary = goarounds.summary(['callsign', 'registration', 'stop'])
 
     alt.Chart(summary).mark_square(size=100).encode(
@@ -144,7 +145,7 @@ attempts are not necessarily on the same runway, as exemplified below:
 
                 idx += 1
 
-Here, we somehow broke the principle of separation between visualisation and 
+Here, we somehow broke the principle of separation between visualisation and
 trajectory processing.  It is actually possible to create a collection of
 trajectories with more than one go around (more than 2 landing attempts):
 
