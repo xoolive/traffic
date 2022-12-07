@@ -121,7 +121,9 @@ class RawData(DataFrameMixin):
     def assign_type(self) -> "RawData":
         def get_typecode(msg: Union[bytes, str]) -> Optional[int]:
             tc = adsb.typecode(msg)  # type: ignore
-            if 9 <= tc <= 18:
+            if tc is None:
+                return None
+            elif 9 <= tc <= 18:
                 return 3
             elif tc == 19:
                 return 4
