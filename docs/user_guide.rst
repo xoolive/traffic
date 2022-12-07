@@ -1,11 +1,11 @@
 User guide
 ==========
 
-The user guide covers all of traffic by topic area.
+The user guide covers all of ``traffic`` by topic area.
 
 Each of the entries introduces a topic (such as data sources, flight trajectory
 labelling, trajectory generation, statistical analysis, etc.) and discusses how
-traffic approaches the problem with as many examples as possible.
+``traffic`` approaches the problem with as many examples as possible.
 
 .. tip::
 

@@ -1,7 +1,7 @@
 Example gallery
 ===============
 
-Visualise aircraft trajectory data, common and more unusual patterns,
+Visualize aircraft trajectory data, common and more unusual patterns,
 interactions between aircraft and air traffic control, wind, turbulence, Earth's
 magnetic field, and more to come.
 
@@ -14,7 +14,7 @@ reasons: commercial aviation (passenger and freight) is only one of its kind.
 .. raw:: html
 
    <span class="gallery">
-   
+
    <a class="imagegroup" href="gallery/calibration.html">
      <span class="image" alt="Calibration flights"
       style="background-image: url(./_static/calibration-thumb.png);"></span>
@@ -32,13 +32,13 @@ reasons: commercial aviation (passenger and freight) is only one of its kind.
       style="background-image: url(./_static/tour_de_france-thumb.png);"></span>
      <span class="image-title">Tour de France 2020</span>
    </a>
- 
+
    <a class="imagegroup" href="gallery/zero_gravity.html">
      <span class="image" alt="Zero gravity flights"
       style="background-image: url(./_static/zero_gravity-thumb.png);"></span>
      <span class="image-title">Zero gravity flights</span>
    </a>
-  
+
    </span>
 
    <div style='clear:both;'></div>
@@ -55,17 +55,17 @@ reasons: commercial aviation (passenger and freight) is only one of its kind.
 Air traffic control
 -------------------
 
-Visualise activities of air traffic controllers operating our skies and airports
+Visualize activities of air traffic controllers operating our skies and airports
 
 .. raw:: html
 
    <span class="gallery">
-  
+
    <a class="imagegroup" href="gallery/is_this_a_plane.html">
      <span class="image" alt="Is this a plane?"
       style="background-image: url(./_images/aircraft_map.png);"></span>
      <span class="image-title">Is this a plane?</span>
-   </a> 
+   </a>
 
    <a class="imagegroup" href="gallery/landing_configuration.html">
      <span class="image" alt="Landing configuration"
@@ -102,7 +102,7 @@ Visualise activities of air traffic controllers operating our skies and airports
 Air traffic density
 -------------------
 
-Measure and visualise how many aircraft fly in the sky
+Measure and visualize how many aircraft fly in the sky
 
 .. raw:: html
 

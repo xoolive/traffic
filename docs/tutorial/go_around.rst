@@ -7,7 +7,7 @@ initiate an overshoot and *go around* for another attempt to land at the same
 airport---possibly on a different runway. The change in thrust and go around in
 trajectory may occur before or after the runway threshold.
 
-The traffic library provides a function to detect go arounds in trajectories:
+The traffic library provides a function to detect go-arounds in trajectories:
 
 .. automethod:: traffic.core.Flight.go_around
     :noindex:
@@ -89,8 +89,8 @@ There is also a :meth:`~traffic.core.Flight.has` method available on
 
     flight.has('go_around("LSZH")')
 
-This helps stacking operations on a :class:`~traffic.core.lazy.LazyTraffic`. The
-following visualisation is an attempt to show whether go-arounds tend to occur
+This helps to stack operations on a :class:`~traffic.core.lazy.LazyTraffic`. The
+following visualization is an attempt to show whether go-arounds tend to occur
 on particular days or times of a day (we could look for a correlation with
 weather conditions) or whether they are just sporadic events due to external
 factors. To be honest, nothing clear comes out of this one.
@@ -109,8 +109,8 @@ factors. To be honest, nothing clear comes out of this one.
         alt.Color("count()", title="Number of go-arounds"),
     ).properties(height=100).configure_legend(orient="bottom")
 
-A small number of aircraft performing several go arounds before landing. All
-attempts are not necessarily on the same runway, as exemplified below:
+A few aircraft perform several go-arounds before landing. All attempts are not
+necessarily on the same runway, as exemplified below:
 
 .. jupyter-execute::
 
@@ -145,7 +145,7 @@ attempts are not necessarily on the same runway, as exemplified below:
 
                 idx += 1
 
-Here, we somehow broke the principle of separation between visualisation and
+Here, we somehow broke the principle of separation between visualization and
 trajectory processing.  It is actually possible to create a collection of
 trajectories with more than one go around (more than 2 landing attempts):
 
@@ -162,14 +162,14 @@ trajectories with more than one go around (more than 2 landing attempts):
 
 
 In the following example, we try to look at possible contributing factors
-leading to many go arounds for one of the identified situations, which includes
+leading to many go-arounds for one of the identified situations, which includes
 a runway configuration change:
 
 - bars behind aircraft represent the duration of the final approach (aligned
   with ILS);
-- the color of the trail represents the number of landing attempts;
+- the colour of the trail represents the number of landing attempts;
 - the runway configuration change suggests possible tail or cross wind
-  conditions which are well-known contributing factors for go arounds.
+  conditions which are well-known contributing factors for go-arounds.
 
 .. jupyter-execute::
     :code-below:

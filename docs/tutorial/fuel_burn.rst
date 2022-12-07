@@ -51,7 +51,7 @@ In this dataset:
     signal. It has been made available in this dataset (as a g-force)
 
 - the *fuel flow* (the ground truth) is provided in kg/h, we convert it in kg/s
-  for compatibility reason with the output of the OpenAP interface. 
+  for compatibility reason with the output of the OpenAP interface.
 
 .. jupyter-execute::
 
@@ -157,7 +157,7 @@ Impact of the wind
 ~~~~~~~~~~~~~~~~~~
 
 On previous examples, OpenAP tends to overestimate the quantity of fuel burnt,
-by 13% in this example. However, ignoring the strong head wind makes an
+by 13% in this example. However, ignoring the strong headwind makes an
 important difference: for this particular flight, the model **underestimates**
 the total burnt fuel by 26%.
 

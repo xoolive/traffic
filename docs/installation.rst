@@ -10,9 +10,9 @@ for calls to REST APIs. `paramiko <http://www.paramiko.org/>`_ implements the
 SSH protocol in Pure Python, giving access to SSH connection independently of
 the operating system.
 
-Static visualisation tools are accessible with Matplotlib through the `cartes
+Static visualization tools are accessible with Matplotlib through the `cartes
 <https://github.com/xoolive/cartes>`_ library, which leverages access to more
-projections and to data from OpenStreetMap. More dynamic visualisations in
+projections and to data from OpenStreetMap. More dynamic visualizations in
 Jupyter Lab are accessible thanks to the `altair
 <https://altair-viz.github.io/>`_ and `ipyleaflet
 <http://ipyleaflet.readthedocs.io/>`_ libraries; other exports to various
@@ -117,7 +117,7 @@ development environment that contains all the dependencies you need.
 
 The provided image runs with `poetry <https://python-poetry.org/>`__ which will
 set a proper environment with frozen version of dependencies, a desirable
-behavior when you run tests in continuous integration.
+behaviour when you run tests in continuous integration.
 
 If your sit behind a proxy, the ``poetry install`` command which will run
 automatically when you first open the Docker container may fail: you may have

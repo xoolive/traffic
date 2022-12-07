@@ -194,11 +194,11 @@ Traffic objects
     We will explain :ref:`further <Declarative trajectory processing>` what the
     :meth:`~traffic.core.lazy.LazyTraffic.eval()` method is about.
 
-Data visualisation
+Data visualization
 ------------------
 
 The traffic library offers facilities to leverage the power of common
-visualisation renderers including `Matplotlib <https://matplotlib.org/>`_ and
+visualization renderers including `Matplotlib <https://matplotlib.org/>`_ and
 `Altair <https://altair-viz.github.io/>`__.
 
 - with Matplotlib, the ``traffic`` style context (optional) offers a convenient
@@ -244,8 +244,8 @@ visualisation renderers including `Matplotlib <https://matplotlib.org/>`_ and
 
     subset[0].chart()
 
-  Even a simple visualisation without an physical features plotted on the
-  y-channel can be meaningful. The following proposition helps visualising when
+  Even a simple visualization without a physical features plotted on the
+  y-channel can be meaningful. The following proposition helps visualizing when
   aircraft are airborne:
 
   .. jupyter-execute::
@@ -387,12 +387,12 @@ how to proceed.
 
 
 We see here several flows converging mostly in the two major airports in Paris
-(i.e. Orly ``LFPO`` and Charles-de-Gaulle ``LFPG``). However more airports are
+(i.e., Orly ``LFPO`` and Charles-de-Gaulle ``LFPG``). However, more airports are
 also visible, e.g. Beauvais airport to the North.
 
-We can try to put a different color to landing trajectories and take-off
+We can try to put a different colour to landing trajectories and take-off
 trajectories to make this plot more meaningful. A first trick could be to pick a
-color based on the vertical rate average value.
+colour based on the vertical rate average value.
 
 .. jupyter-execute::
 
@@ -408,7 +408,7 @@ color based on the vertical rate average value.
                 flight.plot(ax, color="#54a24b", alpha=0.5)  # green
 
 This approach is not perfect (there are quite some green trajectories) but gives
-a good first idea of how traffic organises itself. Let's try to focus on the
+a good first idea of how traffic organizes itself. Let's try to focus on the
 traffic to and from one airport, e.g. ``LFPO``, in order to refine the
 methodology.
 
@@ -515,7 +515,7 @@ matching, and extract relevant information (the runway information):
 
 It appears here that there has been a coordinated runway configuration
 change around 13:20Z in all Paris airports. This suggests we should plot how
-traffic organises in both configurations.
+traffic organizes in both configurations.
 
 .. jupyter-execute::
 
@@ -531,7 +531,7 @@ traffic organises in both configurations.
                 flight.plot(ax[index], color="#f58518", alpha=0.5)
 
 
-So it is now time to do a preliminary visualisation with a basic background,
+So it is now time to do a preliminary visualization with a basic background,
 including administrative boundaries of Greater Paris Area and the Seine river as
 an additional landmark:
 
@@ -610,18 +610,18 @@ Declarative trajectory processing
 Basic operations on :class:`~traffic.core.Flight` objects define a specific
 language which enables to express programmatically any kind of preprocessing.
 The downside with programmatic preprocessing is that it may become unnecessarily
-complex because of safe guards, nested loops and conditions necessary to express
+complex because of safeguards, nested loops and conditions necessary to express
 even basic treatments.
 
 The main issue with the code above is that **code for preprocessing and code for
-visualisation** are strongly connected: it is impossible to produce a
-visualisation without running "heavy" processing, as subsets of trajectories are
+visualization** are strongly connected: it is impossible to produce a
+visualization without running “heavy” processing, as subsets of trajectories are
 never stored as :class:`~traffic.core.Traffic` collections for future reuse.
 
 There are several ways to collect trajectories:
 
 - with trajectory arithmetic: the ``+`` operator  (and therefore the
-  sum() Python builtin function) between :class:`~traffic.core.Flight` and
+  sum() Python built-in function) between :class:`~traffic.core.Flight` and
   :class:`~traffic.core.Traffic` objects always returns a new
   :class:`~traffic.core.Traffic` object;
 

@@ -27,7 +27,7 @@ Trajectory simplification with Douglas-Peucker algorithm
 Trajectory simplification is particularly relevant for the ground track of
 trajectories. The two most famous methods are the `Ramer-Douglas-Peucker
 <https://bost.ocks.org/mike/simplify/>`__ algorithm and the `Visvalingam-Whyatt
-<https://www.jasondavies.com/simplify/>`__ algorithm. 
+<https://www.jasondavies.com/simplify/>`__ algorithm.
 
 .. automethod:: traffic.core.flight.Flight.simplify
 
@@ -39,7 +39,7 @@ trajectories. The two most famous methods are the `Ramer-Douglas-Peucker
 
     A basic 2D simplification may result in an undesired oversimplification on
     another channel, esp. the altitude. An extra parameter ``altitude`` is
-    available to help controlling the simplification for that other feature. The
+    available to help to control the simplification for that other feature. The
     ``z_factor`` is designed to give more or less weight to that feature with
     respect to the 2D ground track.
 

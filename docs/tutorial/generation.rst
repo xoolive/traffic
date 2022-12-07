@@ -3,7 +3,7 @@ How to implement trajectory generation?
 
 (contribution by Adrien Lafage `@alafage <https://github.com/alafage/>`_)
 
-This library provide a ``Generation`` class for creating synthetic traffic data.
+This library provides a ``Generation`` class for creating synthetic traffic data.
 It implements ``fit()`` and ``sample()`` methods that call the corresponding
 methods in the generative model passed as argument.
 
@@ -28,7 +28,7 @@ To instantiate such an object you can pass those arguments:
 
 In the case the generative model within your ``Generation`` object is not fitted
 to any ``Traffic`` object, you can use the ``fit()`` method.  Depending on the
-generative model used, its ``fit()`` method can be rather time consuming, esp.
+generative model used, its ``fit()`` method can be rather time-consuming, esp.
 with neural network-based generative models.
 
 We load here traffic data of landing trajectories at Zurich airport coming
@@ -56,7 +56,7 @@ from the north.
             ax, color="#f58518"
         )
 
-Before any fitting we enrich the Traffic DataFrame with the features we might
+Before any fitting, we enrich the Traffic DataFrame with the features we might
 want to use to generate trajectories. For example, instead of working with
 ``longitude`` and ``latitude`` values, we can compute their projection (``x``
 and ``y`` respectively).
@@ -106,7 +106,7 @@ Mixture with two components.
 
 .. warning::
 
-    Make sure the generative model you want to use implements thb ``fit()`` and ``sample()`` methods.
+    Make sure the generative model you want to use implements the ``fit()`` and ``sample()`` methods.
 
 Then we can sample the fitted model to produce new Traffic data.
 

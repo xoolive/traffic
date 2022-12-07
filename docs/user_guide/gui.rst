@@ -71,7 +71,7 @@ last recorded points is displayed.
    :align: center
 
 In the *Plots* tab, you may select one callsign with different signals (e.g.
-*altitude* on the left-hand side and *ground speed* on the righ-hand side)
+*altitude* on the left-hand side and *ground speed* on the right-hand side)
 **or (exclusive)** several callsigns with one signal (e.g. *altitude*).
 
 .. image:: images/gui_plots.png
@@ -124,7 +124,7 @@ servers and added to the map.
 
 .. image:: images/gui_openstreetmap.png
    :scale: 25 %
-   :alt: Live recording with Openstreetmap contours
+   :alt: Live recording with OpenStreetMap contours
    :align: center
 
 This also work with airports: enter the ICAO or IATA code in the *Area* field
@@ -134,12 +134,12 @@ You can then select a callsign and follow its trajectory:
 
 .. image:: images/gui_takeoff.png
    :scale: 25 %
-   :alt: Live recording of a take-off
+   :alt: Live recording of a takeoff
    :align: center
 
 The second tab lets you plot other details of the trajectory for different
 signals: *altitude* shows the climbing profile. *Indicated Airspeed* (IAS) is
-plotted here so as to reflect the 250 knots limit under 10,000 ft.
+plotted here to reflect the 250 knots limit under 10,000 ft.
 
 .. image:: images/gui_climb.png
    :scale: 25 %
@@ -164,12 +164,12 @@ application.
    :align: center
 
 When it decodes data, the GUI also writes a CSV text file in your home
-directory. The first column in the file is a GPS timestamp (nano-second
+directory. The first column in the file is a GPS timestamp (nanosecond
 precision) and the second column the raw message.
 
 .. code::
 
-   $ head ADSB_EHS_RAW_20190225_dump1090.csv 
+   $ head ADSB_EHS_RAW_20190225_dump1090.csv
 
    1551072485.607867,1a331339643b50b639903907fbc154da992c5cff2dbf13
    1551072485.609867,1a3313396459d5173a903907fbc254000016c354424d11
@@ -183,5 +183,3 @@ of the data:
 .. code::
 
    traffic decode ADSB_EHS_RAW_20190225_dump1090.csv LFBO
-
-

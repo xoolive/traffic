@@ -4,8 +4,8 @@ How to use traffic in a Docker container?
 
 If you don't want to be bothered with Python's dependencies and just want to
 work, using a Docker container might be an easy solution. It is quite simple to
-run the traffic library with everything it needs in a Docker container and you
-have a few options. We provide a self contained container image on GitHub that
+run the traffic library with everything it needs in a Docker container, and you
+have a few options. We provide a self-contained container image on GitHub that
 you can use. It has everything in it that you need. Or, alternatively, you can
 build your own image. We describe both below.
 
@@ -13,7 +13,7 @@ Use the GitHub container image
 ------------------------------
 
 Using the container image from GitHub is simple. Just make sure you have Docker
-installed and running, then pull the image with
+installed and running, then pull the image with:
 
 .. code:: bash
 
@@ -25,9 +25,9 @@ Once the image is downloaded, you can run it with
 
     docker run -it -p 8888:8888 ghcr.io/xoolive/traffic/jupyter
 
-This will start the container and you can connect to it with the browser and
+This will start the container, and you can connect to it with the browser and
 work in a Jupyter notebook. Just copy-paste the URL that starts with
-*http://127.0.0.1:8888...* into your favorite browser and have fun.
+*http://127.0.0.1:8888...* into your favourite browser and have fun.
 
 Use the GitHub container image with Visual Studio Code
 ------------------------------------------------------
@@ -49,8 +49,8 @@ container and select *Attach Visual Studio Code*.
 
 .. image:: images/vscode_attach_to_container.png
 
-A new instance will be started and you can use all the features of VS Code
-(including jupyter notebooks) the same way you used to.
+A new instance will be started, and you can use all the features of VS Code
+(including Jupyter notebooks) the same way you used to.
 
 Create your own Dockerfile
 --------------------------
@@ -79,7 +79,7 @@ like the following:
     # manually set environment variable for PROJ when running in base environment
     ENV PROJ_LIB=/opt/conda/share/proj
 
-Note the last line, which sets a environment variable for PROJ. This is needed
+Note the last line, which sets an environment variable for PROJ. This is needed
 because the conda base environment never gets properly activated and this fixes
 the issue described `here
 <https://gis.stackexchange.com/questions/364421/how-to-make-proj-work-via-anaconda-in-google-colab>`__.

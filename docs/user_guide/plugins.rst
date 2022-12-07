@@ -6,7 +6,7 @@ basic functionalities of the traffic library. Plugins can be
 implemented through a `registration <https://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`__
 mechanism and selectively activated in the configuration file.
 
-Some plugins are provided by the traffic library with visualisation
+Some plugins are provided by the traffic library with visualization
 facilities for BlueSky or CesiumJS.
 
 Plugin activation
@@ -73,16 +73,15 @@ The examples are provided using the data produced in the
 Plugin registration
 -------------------
 
-You may write your own plugins to monkey-patch the library and
-registrate them using entry points in your setup.py configuration.
+You may write your own plugins to monkey-patch the library and register them
+using entry points in your setup.py configuration.
 
-Write your code in a ``my_traffic_plugin/plugin.py`` and use the
-following sample setup.py to registrate your plugin. Then edit the
-configuration file and add `MyPlugin` to the list of enabled plugins.
+Write your code in a ``my_traffic_plugin/plugin.py`` and use the following
+sample setup.py to register your plugin. Then edit the configuration file and
+add `MyPlugin` to the list of enabled plugins.
 
-You may then ``python setup.py install`` your plugin. Put the
-monkey-patching in an ``_onload()`` function that will be called iff the
-plugin is enabled.
+You may then ``python setup.py install`` your plugin. Put the monkey-patching in
+an ``_onload()`` function that will be called if the plugin is enabled.
 
 
 .. code:: python

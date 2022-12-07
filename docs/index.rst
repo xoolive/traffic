@@ -6,7 +6,7 @@
 
 Source code on `github <https://github.com/xoolive/traffic>`_
 
-The traffic library helps working with common sources of air traffic data.
+The traffic library helps to work with common sources of air traffic data.
 
 Its main purpose is to provide data analysis methods commonly applied to
 trajectories and airspaces. When a specific function is not provided,
@@ -30,4 +30,3 @@ Contents
    gallery
    api_reference
    publications
-
