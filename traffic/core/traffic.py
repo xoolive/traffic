@@ -361,10 +361,10 @@ class Traffic(HBoxMixin, GeographyMixin):
                 return self.query(f"icao24 in {subset}")
 
         query_str = f"callsign == '{index}' or icao24 == '{index}'"
+        if "callsign" not in self.data.columns:
+            query_str = f"icao24 == '{index}'"
         if "flight_id" in self.data.columns:
             df = self.data.query(f"flight_id == '{index}' or " + query_str)
-        elif "callsign" not in self.data.columns:
-            df = self.data.query(f"icao24 == '{index}'")
         else:
             df = self.data.query(query_str)
 
@@ -408,10 +408,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         using the `on` keyword argument.
 
         """
-
-        on_list = list(on)  # this is to avoid modifying the default keyword arg
+        # this is to avoid modifying the default keyword arg
+        on_list: str | List[str] = on if isinstance(on, str) else list(on)
         if "callsign" not in self.data.columns and "callsign" in on_list:
-            on_list = ["icao24"]
+            on_list = "icao24"
 
         if isinstance(by, pd.DataFrame):
             for i, (_, line) in enumerate(by.iterrows()):

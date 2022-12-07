@@ -1856,8 +1856,11 @@ class Flight(
         LazyTraffic methods but works fine on Flight as well.
         """
         if "callsign" not in self.data.columns and "callsign" in name:
-            msg = "Specify a name argument without the `callsign` property"
-            raise RuntimeError(msg)
+            if name == "{self.callsign}_{idx:>03}":  # default arg
+                name = "{self.icao24}_{idx:>03}"
+            else:
+                msg = "Specify a name argument without the `callsign` property"
+                raise RuntimeError(msg)
         return self.assign(flight_id=name.format(self=self, idx=idx))
 
     def onground(self) -> Optional["Flight"]:
