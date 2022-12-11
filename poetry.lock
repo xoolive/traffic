@@ -2291,7 +2291,7 @@ mpmath = ">=0.19"
 
 [[package]]
 name = "textual"
-version = "0.5.0"
+version = "0.6.0"
 description = "Modern Text User Interface framework"
 category = "main"
 optional = true
@@ -4695,8 +4695,8 @@ sympy = [
     {file = "sympy-1.11.1.tar.gz", hash = "sha256:e32380dce63cb7c0108ed525570092fd45168bdae2faa17e528221ef72e88658"},
 ]
 textual = [
-    {file = "textual-0.5.0-py3-none-any.whl", hash = "sha256:d1925f9f019858beaabda8a87cb87fb57cbbf321e948fc3b28d7085e83c8f5ab"},
-    {file = "textual-0.5.0.tar.gz", hash = "sha256:516bf4db05830e70f9806828610a1a00de08068d984d329dbecc8dbef5d71ab7"},
+    {file = "textual-0.6.0-py3-none-any.whl", hash = "sha256:08236279ed0b53d264f7ac61fd346cace7a49fcc1682ea4d195c3045ac0715bc"},
+    {file = "textual-0.6.0.tar.gz", hash = "sha256:32e901085aaf217290025c4d934c414ef7e203da7d334b80333240e9b867e771"},
 ]
 threadpoolctl = [
     {file = "threadpoolctl-3.1.0-py3-none-any.whl", hash = "sha256:8b99adda265feb6773280df41eece7b2e6561b772d21ffd52e372f999024907b"},
