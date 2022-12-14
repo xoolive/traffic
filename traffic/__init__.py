@@ -106,10 +106,7 @@ if "TRAFFIC_NOPLUGIN" not in os.environ.keys():  # coverage: ignore
         # https://docs.python.org/3/library/importlib.metadata.html#entry-points
         ep = entry_points(group="traffic.plugins")  # type: ignore
     except TypeError:
-        ep = {
-            m.name: m  # type: ignore
-            for m in entry_points().get("traffic.plugins", [])
-        }
+        ep = list(entry_points().get("traffic.plugins", []))
     for entry_point in ep:
         name = entry_point.name.replace("-", "").lower()  # type: ignore
         if name in _selected:
