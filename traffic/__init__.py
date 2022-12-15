@@ -2,8 +2,9 @@ import configparser
 import logging
 import os
 import warnings
-from importlib.metadata import entry_points, version
+from importlib.metadata import EntryPoint, entry_points, version
 from pathlib import Path
+from typing import Iterable
 
 from appdirs import user_cache_dir, user_config_dir
 
@@ -102,16 +103,17 @@ _selected -= {""}
 _log.info(f"Selected plugins: {_selected}")
 
 if "TRAFFIC_NOPLUGIN" not in os.environ.keys():  # coverage: ignore
+    ep: Iterable[EntryPoint]
     try:
         # https://docs.python.org/3/library/importlib.metadata.html#entry-points
         ep = entry_points(group="traffic.plugins")  # type: ignore
     except TypeError:
-        ep = list(entry_points().get("traffic.plugins", []))
+        ep = entry_points().get("traffic.plugins", [])
     for entry_point in ep:
-        name = entry_point.name.replace("-", "").lower()  # type: ignore
+        name = entry_point.name.replace("-", "").lower()
         if name in _selected:
             _log.info(f"Loading plugin: {name}")
-            handle = entry_point.load()  # type: ignore
+            handle = entry_point.load()
             _log.info(f"Loaded plugin: {handle.__name__}")
             load = getattr(handle, "_onload", None)
             if load is not None:
