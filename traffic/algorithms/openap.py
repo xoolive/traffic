@@ -57,8 +57,9 @@ class OpenAP:
           if no air speed is available.
 
         :param initial_mass: by default (None), 90% of the maximum take-off
-          weight. If an existing feature name is passed, use it to initialise
-          the mass. You can also pass a value in kg.
+          weight. You can also pass a value to initialise the mass.
+          When ``initial_mass > 1``, the mass is in kg. When ``initial_mass <= 1``,
+          it represents the fraction of the maximum take-off weight.
 
         :param typecode: by default (None), use the typecode column if
           available, the provided aircraft database to infer the typecode based
@@ -88,8 +89,17 @@ class OpenAP:
         ac = openap.prop.aircraft(actype)
 
         update_mass = True
+
         if initial_mass is not None:
-            mass = initial_mass * np.ones_like(self.data.altitude)
+            if initial_mass <= 1:
+                # treat as percentage of max weight
+                mass = (
+                    initial_mass
+                    * ac["limits"]["MTOW"]
+                    * np.ones_like(self.data.altitude)
+                )
+            else:
+                mass = initial_mass * np.ones_like(self.data.altitude)
         elif isinstance(initial_mass, str) and hasattr(self.data, initial_mass):
             mass = self.data[initial_mass].values
             update_mass = False
