@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: "3.9"
-  POETRY_VERSION: "1.1.13"
+  PYTHON_VERSION: "3.10"
+  POETRY_VERSION: "1.3.1"
 
 jobs:
   documentation:

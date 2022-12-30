@@ -2,6 +2,7 @@
 name: "Documentation request 📖"
 about: "Suggest clarifications in the documentation"
 labels: "documentation"
+assignees: xoolive
 ---
 
 Explain your suggestion here...

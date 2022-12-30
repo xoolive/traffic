@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_VERSION: "1.1.13"
+  POETRY_VERSION: "1.3.1"
 
 jobs:
   deploy:
@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-latest, macos-latest, windows-latest]
-        # onnxruntime and pyarrow needed for 3.11
+        # onnxruntime needed for 3.11
         python-version: ["3.8", "3.9", "3.10"]
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}

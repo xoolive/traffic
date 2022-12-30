@@ -2,6 +2,7 @@
 name: "Feature request 🔨"
 about: "Suggest a new idea or feature"
 labels: "enhancement"
+assignees: xoolive
 ---
 
 Explain your idea here...

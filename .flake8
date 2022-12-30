@@ -6,6 +6,7 @@ exclude =
     .ipynb_checkpoints,
     build,
     dist
+extend-ignore = E203, E302
 ignore =
     # W503 line break before binary operator
     # C901 too complex

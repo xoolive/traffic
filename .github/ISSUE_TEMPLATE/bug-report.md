@@ -2,6 +2,7 @@
 name: "Bug report 🐛"
 about: "Create a bug report to help improve traffic"
 labels: "bug"
+assignees: xoolive
 ---
 
 Explain your bug here...

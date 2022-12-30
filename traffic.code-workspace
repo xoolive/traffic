@@ -22,26 +22,6 @@
     "esbonio.sphinx.buildDir": "${workspaceFolder}/docs/_build/html",
     "esbonio.server.enabled": false,
 
-    // Spellchecker
-    "cSpell.customDictionaries": {
-      "project-words": {
-        "name": "project-words",
-        "path": "${workspaceRoot}/.vscode/custom-spell.txt",
-        "description": "Words used in this project",
-        "addWords": true
-      },
-      "custom": true, // Enable the `custom` dictionary
-      "internal-terms": false // Disable the `internal-terms` dictionary
-    },
-    "cSpell.ignorePaths": [
-      ".git/",
-      ".vscode",
-      ".vscode-insiders",
-      "traffic/core/aero.py",
-      "docs/conf.py",
-      "docs/_static/main_stylesheet.css"
-    ],
-
     // File list
     "files.exclude": {
       "dist/": true,
