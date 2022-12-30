@@ -8,7 +8,7 @@ import logging
 import pickle
 import threading
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import click
 from flask import Flask
@@ -16,7 +16,7 @@ from flask_cors import CORS
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console
 from rich.table import Table
-from textual.app import App
+from textual.app import App, ComposeResult
 from textual.widget import Widget
 from waitress import serve
 
@@ -110,11 +110,12 @@ class SimpleApp(App):
     aircraft_widget: AircraftListWidget = AircraftListWidget()
     flask_thread: threading.Thread | None = None
 
-    async def on_load(self, event: Any) -> None:
-        await self.bind("q", "quit")
+    BINDINGS = [
+        ("escape,q", "quit", "Quit"),
+    ]
 
-    async def on_mount(self) -> None:
-        await self.view.dock(self.aircraft_widget)
+    def compose(self) -> ComposeResult:
+        yield self.aircraft_widget
 
 
 app = Flask(__name__)
