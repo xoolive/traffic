@@ -24,6 +24,7 @@ from shapely.geometry.base import BaseGeometry
 from ...core import Flight, Traffic
 from ...core.time import round_time, split_times, timelike, to_datetime
 from ...core.types import ProgressbarType
+from .flarm_data import FlarmData
 from .raw_data import RawData
 
 _log = logging.getLogger(__name__)
@@ -73,6 +74,31 @@ class Impala(object):
         "hour",
     ]
 
+    _flarm_columns = [
+        "sensortype",
+        "sensorlatitude",
+        "sensorlongitude",
+        "sensoraltitude",
+        "timeatserver",
+        "timeatsensor",
+        "timestamp",
+        "timeatplane",
+        "rawmessage",
+        "crc",
+        "rawsoftmessage",
+        "sensorname",
+        "ntperror",
+        "userfreqcorrection",
+        "autofreqcorrection",
+        "frequency",
+        "channel",
+        "snrdetector",
+        "snrdemodulator",
+        "typeogn",
+        "crccorrect",
+        "hour",
+    ]
+
     _raw_tables = [
         "acas_data4",
         "allcall_replies_data4",
@@ -88,6 +114,12 @@ class Impala(object):
         "{where_clause} hour>={before_hour} and hour<{after_hour} "
         "and time>={before_time} and time<{after_time} "
         "{other_params}"
+    )
+
+    flarm_request = (
+        "select * from flarm_raw "
+        "where hour>={before_hour} and hour<{after_hour} "
+        # "and timeatsensor>={before_time} and timeatsensor<{after_time} "
     )
 
     _parseErrorMsg = """
@@ -1007,6 +1039,52 @@ class Impala(object):
             return Flight(df)
 
         return Traffic(df)
+
+    def flarm(
+        self,
+        start: timelike,
+        stop: None | timelike = None,
+        *args: Any,  # more reasonable to be explicit about arguments
+        sensor_name: None | str | list[str] = None,
+        cached: bool = True,
+        compress: bool = False,
+        limit: None | int = None,
+        other_params: str = "",
+        progressbar: bool | ProgressbarType[Any] = True,
+    ) -> None | FlarmData:
+
+        other_params += "and rawmessage = rawmessage and crccorrect "
+        other_params += "and not typeogn "
+
+        if isinstance(sensor_name, str):
+            if sensor_name.find("%") > 0 or sensor_name.find("_") > 0:
+                other_params += "and sensorname ilike '{}' ".format(sensor_name)
+            else:
+                other_params += "and sensorname='{:<8s}' ".format(sensor_name)
+
+        elif isinstance(sensor_name, Iterable):
+            sensor_name = ", ".join(sensor_name)
+            other_params += "and sensorname in ({}) ".format(sensor_name)
+
+        if limit is not None:
+            other_params += f"limit {limit}"
+
+        pattern = self.flarm_request + other_params
+
+        data = self.request(
+            request_pattern=pattern,
+            start=start,
+            stop=stop,
+            columns=self._flarm_columns,
+            cached=cached,
+            compress=compress,
+            progressbar=progressbar,
+        )
+
+        if data is None:
+            return None
+
+        return FlarmData(data)
 
     def rawdata(
         self,
