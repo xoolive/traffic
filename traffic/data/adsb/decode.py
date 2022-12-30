@@ -1,6 +1,3 @@
-# mypy: ignore-errors
-# This line can be removed when typing in pyModeS is complete and released.
-
 from __future__ import annotations
 
 import heapq
@@ -162,24 +159,24 @@ class Entry(TypedDict, total=False):
     callsign: Optional[str]
     latitude: Optional[float]
     longitude: Optional[float]
-    altitude: Optional[int]
-    geoaltitude: Optional[int]
-    groundspeed: Optional[int]
+    altitude: Optional[float]
+    geoaltitude: Optional[float]
+    groundspeed: Optional[float]
     track: Optional[float]
     vertical_rate: Optional[int]
     onground: Optional[bool]
-    squawk: Optional[int]
+    squawk: str
     # BDS 4,0
     selected_fms: Optional[int]
     selected_mcp: Optional[int]
-    barometric_setting: Optional[int]
+    barometric_setting: Optional[float]
     # BDS 4,4
-    humidity: Optional[int]
+    humidity: Optional[float]
     pressure: Optional[int]
-    temperature: Optional[int]
+    temperature: Optional[float]
     turbulence: Optional[int]
     windspeed: Optional[int]
-    winddirection: Optional[int]
+    winddirection: Optional[float]
     # BDS 4,5
     wind_shear: Optional[int]
     microburst: Optional[int]
@@ -188,15 +185,17 @@ class Entry(TypedDict, total=False):
     radio_height: Optional[int]
     # BDS 5,0
     roll: Optional[float]
-    TAS: Optional[int]
+    TAS: Optional[float]
     track_rate: Optional[float]
     # BDS 6,0
-    IAS: Optional[int]
+    IAS: Optional[float]
     heading: Optional[float]
     Mach: Optional[float]
     vertical_rate_barometric: Optional[int]
     vertical_rate_inertial: Optional[int]
     # Uncertainty
+    NUCp: int
+    NACp: int
     HPL: Optional[int]
     RCu: Optional[int]
     RCv: Optional[int]
@@ -208,7 +207,6 @@ class Entry(TypedDict, total=False):
     VFM: Optional[int]
     EPU: Optional[int]
     VEPU: Optional[int]
-    NACp: Optional[int]
     version: Optional[int]
     pHCR: Optional[int]
     pVPL: Optional[int]
@@ -231,9 +229,9 @@ class Aircraft(object):
 
         self.lat: Optional[float] = None
         self.lon: Optional[float] = None
-        self.alt: Optional[int] = None
+        self.alt: Optional[float] = None
         self.trk: Optional[float] = None
-        self.spd: Optional[int] = None
+        self.spd: Optional[float] = None
 
         self.lat0: float = lat0
         self.lon0: float = lon0
@@ -257,7 +255,7 @@ class Aircraft(object):
             else:
                 df = self._flight.data
             if self.version is not None:
-                # remove columns added by nuc_p, nuc_r
+                # remove columns added by nuc_p, nuc_v
                 if "HPL" in df.columns:
                     df = df.drop(columns=["HPL", "RCu", "RCv"])
                 if "HVE" in df.columns:
@@ -341,14 +339,17 @@ class Aircraft(object):
         oe = pms.adsb.oe_flag(msg)
         setattr(self, "m" + str(oe), msg)
         setattr(self, "t" + str(oe), t)
+        m0, m1 = self.m0, self.m1
 
         if (
-            self.t0 is not None
+            m0 is not None
+            and m1 is not None
+            and self.t0 is not None
             and self.t1 is not None
             and abs((self.t0 - self.t1).total_seconds()) < 10
         ):
             latlon = pms.adsb.position(
-                self.m0, self.m1, self.t0, self.t1, self.lat0, self.lon0
+                m0, m1, self.t0, self.t1, self.lat0, self.lon0
             )
         else:
             latlon = None
@@ -446,7 +447,7 @@ class Aircraft(object):
     @bds20.setter
     def bds20(self, args: tuple[datetime, str]) -> None:
         t, msg = args
-        callsign = pms.commb.cs20(msg).strip("_")
+        callsign = pms.bds.bds20.cs20(msg).strip("_")
         if callsign == "":
             return
         self._callsign = callsign
@@ -484,11 +485,11 @@ class Aircraft(object):
                     **last_entry,
                     **dict(
                         # FMS selected altitude (ft)
-                        selected_fms=pms.commb.selalt40fms(msg),
+                        selected_fms=pms.bds.bds40.selalt40fms(msg),
                         # MCP/FCU selected altitude (ft)
-                        selected_mcp=pms.commb.selalt40mcp(msg),
+                        selected_mcp=pms.bds.bds40.selalt40mcp(msg),
                         # Barometric pressure (mb)
-                        barometric_setting=pms.commb.p40baro(msg),
+                        barometric_setting=pms.bds.bds40.p40baro(msg),
                     ),
                 }
 
@@ -498,11 +499,11 @@ class Aircraft(object):
                         timestamp=t,
                         icao24=self.icao24,
                         # FMS selected altitude (ft)
-                        selected_fms=pms.commb.selalt40fms(msg),
+                        selected_fms=pms.bds.bds40.selalt40fms(msg),
                         # MCP/FCU selected altitude (ft)
-                        selected_mcp=pms.commb.selalt40mcp(msg),
+                        selected_mcp=pms.bds.bds40.selalt40mcp(msg),
                         # Barometric pressure (mb)
-                        barometric_setting=pms.commb.p40baro(msg),
+                        barometric_setting=pms.bds.bds40.p40baro(msg),
                     )
                 )
 
@@ -513,8 +514,8 @@ class Aircraft(object):
     @bds44.setter
     def bds44(self, args: tuple[datetime, str]) -> None:
         t, msg = args
-        wind = pms.commb.wind44(msg)
-        wind = wind if wind is not None else (None, None)
+        windspeed, winddirection = pms.bds.bds44.wind44(msg)
+        temperature, alt_temp = pms.bds.bds44.temp44(msg)
         with self.lock:
             # in case altitude was already included from altcode (DF 4 or 20)
             # or squawk from idcode (DF 5 or 21)
@@ -524,15 +525,15 @@ class Aircraft(object):
                     **last_entry,
                     **dict(
                         # Humidity (%)
-                        humidity=pms.commb.hum44(msg),
+                        humidity=pms.bds.bds44.hum44(msg),
                         # Average static pressure (hPa)
-                        pressure=pms.commb.p44(msg),
+                        pressure=pms.bds.bds44.p44(msg),
                         # Static air temperature (C)
-                        temperature=pms.commb.temp44(msg),
-                        turbulence=pms.commb.turb44(msg),
+                        temperature=temperature,
+                        turbulence=pms.bds.bds44.turb44(msg),
                         # Wind speed (kt) and direction (true) (deg)
-                        windspeed=wind[0],
-                        winddirection=wind[1],
+                        windspeed=windspeed,
+                        winddirection=winddirection,
                     ),
                 }
 
@@ -542,15 +543,15 @@ class Aircraft(object):
                         timestamp=t,
                         icao24=self.icao24,
                         # Humidity (%)
-                        humidity=pms.commb.hum44(msg),
+                        humidity=pms.bds.bds44.hum44(msg),
                         # Average static pressure (hPa)
-                        pressure=pms.commb.p44(msg),
+                        pressure=pms.bds.bds44.p44(msg),
                         # Static air temperature (C)
-                        temperature=pms.commb.temp44(msg),
-                        turbulence=pms.commb.turb44(msg),
+                        temperature=temperature,
+                        turbulence=pms.bds.bds44.turb44(msg),
                         # Wind speed (kt) and direction (true) (deg)
-                        windspeed=wind[0],
-                        winddirection=wind[1],
+                        windspeed=windspeed,
+                        winddirection=winddirection,
                     )
                 )
 
@@ -570,21 +571,21 @@ class Aircraft(object):
                     **last_entry,
                     **dict(
                         # Turbulence level (0-3)
-                        turbulence=pms.commb.turb45(msg),
+                        turbulence=pms.bds.bds45.turb45(msg),
                         # Wind shear level (0-3)
-                        wind_shear=pms.commb.ws45(msg),
+                        wind_shear=pms.bds.bds45.ws45(msg),
                         # Microburst level (0-3)
-                        microburst=pms.commb.mb45(msg),
+                        microburst=pms.bds.bds45.mb45(msg),
                         # Icing level (0-3)
-                        icing=pms.commb.ic45(msg),
+                        icing=pms.bds.bds45.ic45(msg),
                         # Wake vortex level (0-3)
-                        wake_vortex=pms.commb.wv45(msg),
+                        wake_vortex=pms.bds.bds45.wv45(msg),
                         # Static air temperature (C)
-                        temperature=pms.commb.temp45(msg),
+                        temperature=pms.bds.bds45.temp45(msg),
                         # Average static pressure (hPa)
-                        pressure=pms.commb.p45(msg),
+                        pressure=pms.bds.bds45.p45(msg),
                         # Radio height (ft)
-                        radio_height=pms.commb.rh45(msg),
+                        radio_height=pms.bds.bds45.rh45(msg),
                     ),
                 }
 
@@ -594,21 +595,21 @@ class Aircraft(object):
                         timestamp=t,
                         icao24=self.icao24,
                         # Turbulence level (0-3)
-                        turbulence=pms.commb.turb45(msg),
+                        turbulence=pms.bds.bds45.turb45(msg),
                         # Wind shear level (0-3)
-                        wind_shear=pms.commb.ws45(msg),
+                        wind_shear=pms.bds.bds45.ws45(msg),
                         # Microburst level (0-3)
-                        microburst=pms.commb.mb45(msg),
+                        microburst=pms.bds.bds45.mb45(msg),
                         # Icing level (0-3)
-                        icing=pms.commb.ic45(msg),
+                        icing=pms.bds.bds45.ic45(msg),
                         # Wake vortex level (0-3)
-                        wake_vortex=pms.commb.wv45(msg),
+                        wake_vortex=pms.bds.bds45.wv45(msg),
                         # Static air temperature (C)
-                        temperature=pms.commb.temp45(msg),
+                        temperature=pms.bds.bds45.temp45(msg),
                         # Average static pressure (hPa)
-                        pressure=pms.commb.p45(msg),
+                        pressure=pms.bds.bds45.p45(msg),
                         # Radio height (ft)
-                        radio_height=pms.commb.rh45(msg),
+                        radio_height=pms.bds.bds45.rh45(msg),
                     )
                 )
 
@@ -628,15 +629,15 @@ class Aircraft(object):
                     **last_entry,
                     **dict(
                         # Ground speed (kt)
-                        groundspeed=pms.commb.gs50(msg),
+                        groundspeed=pms.bds.bds50.gs50(msg),
                         # Roll angle (deg)
-                        roll=pms.commb.roll50(msg),
+                        roll=pms.bds.bds50.roll50(msg),
                         # True airspeed (kt)
-                        TAS=pms.commb.tas50(msg),
+                        TAS=pms.bds.bds50.tas50(msg),
                         # True track angle (deg)
-                        track=pms.commb.trk50(msg),
+                        track=pms.bds.bds50.trk50(msg),
                         # Track angle rate (deg/sec)
-                        track_rate=pms.commb.rtrk50(msg),
+                        track_rate=pms.bds.bds50.rtrk50(msg),
                     ),
                 }
 
@@ -647,15 +648,15 @@ class Aircraft(object):
                         timestamp=t,
                         icao24=self.icao24,
                         # Ground speed (kt)
-                        groundspeed=pms.commb.gs50(msg),
+                        groundspeed=pms.bds.bds50.gs50(msg),
                         # Roll angle (deg)
-                        roll=pms.commb.roll50(msg),
+                        roll=pms.bds.bds50.roll50(msg),
                         # True airspeed (kt)
-                        TAS=pms.commb.tas50(msg),
+                        TAS=pms.bds.bds50.tas50(msg),
                         # True track angle (deg)
-                        track=pms.commb.trk50(msg),
+                        track=pms.bds.bds50.trk50(msg),
                         # Track angle rate (deg/sec)
-                        track_rate=pms.commb.rtrk50(msg),
+                        track_rate=pms.bds.bds50.rtrk50(msg),
                     )
                 )
 
@@ -675,15 +676,15 @@ class Aircraft(object):
                     **last_entry,
                     **dict(
                         # Indicated airspeed (kt)
-                        IAS=pms.commb.ias60(msg),
+                        IAS=pms.bds.bds60.ias60(msg),
                         # Magnetic heading (deg)
-                        heading=pms.commb.hdg60(msg),
+                        heading=pms.bds.bds60.hdg60(msg),
                         # Mach number (-)
-                        Mach=pms.commb.mach60(msg),
+                        Mach=pms.bds.bds60.mach60(msg),
                         # Barometric altitude rate (ft/min)
-                        vertical_rate_barometric=pms.commb.vr60baro(msg),
+                        vertical_rate_barometric=pms.bds.bds60.vr60baro(msg),
                         # Inertial vertical speed (ft/min)
-                        vertical_rate_inertial=pms.commb.vr60ins(msg),
+                        vertical_rate_inertial=pms.bds.bds60.vr60ins(msg),
                     ),
                 }
 
@@ -693,15 +694,15 @@ class Aircraft(object):
                         timestamp=t,
                         icao24=self.icao24,
                         # Indicated airspeed (kt)
-                        IAS=pms.commb.ias60(msg),
+                        IAS=pms.bds.bds60.ias60(msg),
                         # Magnetic heading (deg)
-                        heading=pms.commb.hdg60(msg),
+                        heading=pms.bds.bds60.hdg60(msg),
                         # Mach number (-)
-                        Mach=pms.commb.mach60(msg),
+                        Mach=pms.bds.bds60.mach60(msg),
                         # Barometric altitude rate (ft/min)
-                        vertical_rate_barometric=pms.commb.vr60baro(msg),
+                        vertical_rate_barometric=pms.bds.bds60.vr60baro(msg),
                         # Inertial vertical speed (ft/min)
-                        vertical_rate_inertial=pms.commb.vr60ins(msg),
+                        vertical_rate_inertial=pms.bds.bds60.vr60ins(msg),
                     )
                 )
 
@@ -713,8 +714,9 @@ class Aircraft(object):
     def nuc_p(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
-            hpl, rcu, rcv = pms.adsb.nuc_p(msg)
+            nuc_p, hpl, rcu, rcv = pms.adsb.nuc_p(msg)
             current = dict(
+                NUCp=nuc_p,
                 # Horizontal Protection Limit
                 HPL=hpl,
                 # 95% Containment Radius on horizontal position error
@@ -742,9 +744,10 @@ class Aircraft(object):
         if self.nic_s is None:
             return
         with self.lock:
-            hcr, vpl = pms.adsb.nic_v1(msg, self.nic_s)
+            nic, hcr, vpl = pms.adsb.nic_v1(msg, self.nic_s)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             current = dict(
+                NIC=nic,
                 # Horizontal Containment Radius
                 HCR=hcr,
                 # Vertical Protection Limit
@@ -769,11 +772,12 @@ class Aircraft(object):
         if self.nic_a is None or self.nic_bc is None:
             return
         with self.lock:
-            hcr = pms.adsb.nic_v2(msg, self.nic_a, self.nic_bc)
+            nic, hcr = pms.adsb.nic_v2(msg, self.nic_a, self.nic_bc)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             current = dict(
+                NIC=nic,
                 # Horizontal Containment Radius
-                HCR=hcr
+                HCR=hcr,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
                 self.cumul[-1] = {**last_entry, **current}  # type: ignore
@@ -786,16 +790,17 @@ class Aircraft(object):
                 )
 
     @property
-    def nuc_r(self) -> None:
+    def nuc_v(self) -> None:
         pass
 
-    @nuc_r.setter
-    def nuc_r(self, args: tuple[datetime, str]) -> None:
+    @nuc_v.setter
+    def nuc_v(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
-            hve, vve = pms.adsb.nuc_v(msg)
+            nuc_v, hve, vve = pms.adsb.nuc_v(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             current = dict(
+                NUCv=nuc_v,
                 # Horizontal Velocity Error
                 HVE=hve,
                 # Vertical Velocity Error
@@ -818,9 +823,10 @@ class Aircraft(object):
     def nac_v(self, args: tuple[datetime, str]) -> None:
         t, msg = args
         with self.lock:
-            hfm, vfm = pms.adsb.nac_v(msg)
+            nac_v, hfm, vfm = pms.adsb.nac_v(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             current = dict(
+                NACv=nac_v,
                 # Horizontal Figure of Merit for rate (GNSS)
                 HFM=hfm,
                 # Vertical Figure of Merit for rate (GNSS)
@@ -894,7 +900,7 @@ class AircraftDict(Dict[str, Aircraft]):
 
     lat0: float
     lon0: float
-    decoder: Decoder
+    decoder: "ModeS_Decoder"
 
     def __missing__(self, key: str) -> Aircraft:
         self.decoder.on_new_aircraft(key)
@@ -1339,7 +1345,8 @@ class ModeS_Decoder:
     def stop(self) -> None:
         if self.decode_thread is not None and self.decode_thread.is_alive():
             self.decode_thread.stop()
-            self.timer_thread.join()
+            if self.timer_thread is not None:
+                self.timer_thread.join()
 
     def __del__(self) -> None:
         self.stop()
@@ -1490,18 +1497,22 @@ class ModeS_Decoder:
 
         if df == 4 or df == 20:
             icao = pms.icao(msg)
-            if isinstance(icao, bytes):
-                icao = icao.decode()
-            if crc_check and icao.lower() not in self.acs:
+            # if isinstance(icao, bytes):
+            #     icao = icao.decode()
+            if icao is None:
+                return
+            if crc_check or icao.lower() not in self.acs:
                 return
             ac = self.acs[icao.lower()]
             ac.altcode = time, msg  # type: ignore
 
         if df == 5 or df == 21:
             icao = pms.icao(msg)
-            if isinstance(icao, bytes):
-                icao = icao.decode()
-            if crc_check and icao.lower() not in self.acs:
+            if icao is None:
+                return
+            # if isinstance(icao, bytes):
+            #     icao = icao.decode()
+            if crc_check or icao.lower() not in self.acs:
                 return
             ac = self.acs[icao.lower()]
             ac.idcode = time, msg  # type: ignore
@@ -1510,11 +1521,13 @@ class ModeS_Decoder:
             # CRC check is valid for DF 11, 17 and 18
             # We use DF 11 messages to create aircraft when they come with no
             # ADS-B data
+            icao = pms.icao(msg)
+            if icao is None:
+                return
             if crc_check and pms.crc(msg, encode=False) != 0:
                 return
-            icao = pms.icao(msg)
-            if isinstance(icao, bytes):
-                icao = icao.decode()
+            # if isinstance(icao, bytes):
+            #    icao = icao.decode()
             ac = self.acs[icao.lower()]
 
         if df == 17 or df == 18:  # ADS-B
@@ -1524,10 +1537,12 @@ class ModeS_Decoder:
 
             tc = pms.adsb.typecode(msg)
             icao = pms.icao(msg)
+            if icao is None or tc is None:
+                return
 
             # before it's fixed in pyModeS release...
-            if isinstance(icao, bytes):
-                icao = icao.decode()
+            # if isinstance(icao, bytes):
+            #     icao = icao.decode()
 
             ac = self.acs[icao.lower()]
 
@@ -1562,7 +1577,7 @@ class ModeS_Decoder:
                     ac.nic_v2 = time, msg  # type: ignore
 
             if tc == 19:
-                ac.nuc_r = time, msg  # type: ignore
+                ac.nuc_v = time, msg  # type: ignore
                 if ac.version in [1, 2]:
                     ac.nac_v = time, msg  # type: ignore
 
@@ -1584,8 +1599,11 @@ class ModeS_Decoder:
 
             bds = pms.bds.infer(msg)
             icao = pms.icao(msg)
-            if isinstance(icao, bytes):
-                icao = icao.decode()
+            # if isinstance(icao, bytes):
+            #     icao = icao.decode()
+            if icao is None:
+                return
+
             ac = self.acs[icao.lower()]
 
             if bds == "BDS20":
