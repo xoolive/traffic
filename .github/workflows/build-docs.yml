@@ -118,6 +118,7 @@ jobs:
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
           PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRAFFIC_NOPLUGIN: ""
         run: |
           # This downloads the cache for cartes atlas
