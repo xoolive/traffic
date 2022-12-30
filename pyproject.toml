@@ -149,5 +149,5 @@ warn_unused_ignores = true
 
 [tool.pytest.ini_options]
 addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff"
-testpaths = ["traffic/data/basic/n_number.py", "tests"]
+testpaths = ["traffic/data/basic/", "tests"]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS"]

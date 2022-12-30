@@ -34,11 +34,11 @@ class Airports(GeoDBMixin):
     Airports information can be accessed with attributes:
 
     >>> airports["EHAM"].latlon
-    (52.308609, 4.763889)
+    (52.308601, 4.76389)
     >>> airports["EHAM"].iata
-    AMS
+    'AMS'
     >>> airports["EHAM"].name
-    Amsterdam Airport Schiphol
+    'Amsterdam Airport Schiphol'
 
     """
 
@@ -167,16 +167,9 @@ class Airports(GeoDBMixin):
 
         :param name: the IATA or ICAO code of the airport
 
+        >>> from traffic.data import airports
         >>> airports["EHAM"]
-        Airport(
-            icao='EHAM',
-            iata='AMS',
-            name='Amsterdam Airport Schiphol',
-            country='Netherlands',
-            latitude=52.308601,
-            longitude=4.76389,
-            altitude=-11.0,
-        )
+        Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', country='Netherlands', latitude=52.308601, longitude=4.76389, altitude=-11.0)
         """
         if isinstance(name, int):
             p = self.data.iloc[name]
@@ -202,7 +195,11 @@ class Airports(GeoDBMixin):
         :param name: refers to the IATA or ICAO code, or part of the country
         name, city name of full name of the airport.
 
+
+        >>> from traffic.data import airports
         >>> airports.query('type == "large_airport"').search('Tokyo')
+        <traffic.data.basic.airports.Airports object at ...>
+
           name                                 country   icao   iata   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           Narita International Airport           Japan   RJAA   NRT    35.76      140.4

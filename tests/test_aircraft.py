@@ -10,14 +10,14 @@ aircraft.download_junzis()  # make tests based on Junzi's (light) database
 def test_getter() -> None:
     a = aircraft["PH-BHA"]
     assert a is not None
-    a_dict = aircraft.get_unique("PH-BHA")
+    a_dict = aircraft.get("PH-BHA")
     assert a_dict is not None
     assert a_dict["icao24"] == "4851ad"
     assert a_dict["typecode"] == "B789"
 
     a = aircraft["39b415"]
     assert a is not None
-    a_dict = aircraft.get_unique("39b415")
+    a_dict = aircraft.get("39b415")
     assert a_dict is not None
     assert a_dict["registration"] == "F-HNAV"
     assert a_dict["typecode"] == "BE20"
@@ -55,6 +55,6 @@ def test_country() -> None:
         "icao24": ["000001"],
         "registration": [reg],
     }
-    a = Aircraft(pd.DataFrame(act)).get_unique(reg)
+    a = Aircraft(pd.DataFrame(act)).get(reg)
     assert a is not None
     assert a["country"] == "Democratic Republic of the Congo"

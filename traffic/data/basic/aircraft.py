@@ -127,23 +127,37 @@ class Aircraft(DataFrameMixin):
     >>> from traffic.data import aircraft
 
     The database can be manually downloaded or upgraded (the operation can take
-    up to five minutes with a slow Internet connection):
+    up to five minutes with a slow Internet connection), with
+    :meth:`~traffic.data.basic.aircraft.Aircraft.download_opensky`
 
-    >>> aircraft.download_opensky()
-    WARNING:root:Downloading OpenSky aircraft database
-    download: 100%|███████████████████████████| 83433/83433 [01:25<00:00, 972.47it/s]
+    Basic requests can be made by the bracket notation, they return **a subset
+    of the database, even if the result is unique**
 
-    Basic requests can be made by the bracket notation:
+    .. code:: python
 
-    >>> aircraft["F-GFKY"]
-      icao24   registration   typecode   model             operator     owner
-     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
+        aircraft["F-GFKY"]
 
-    >>> aircraft["391558"]
-      icao24   registration   typecode   model             operator   owner
-     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
+    .. parsed-literal::
+
+          icao24   registration   typecode   model             operator     owner
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
+
+    .. code:: python
+
+        aircraft["391558"]
+
+    .. parsed-literal::
+
+          icao24   registration   typecode   model             operator   owner
+         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
+
+    Only :meth:`~traffic.data.basic.aircraft.Aircraft.get` returns a
+    :class:`~traffic.data.basic.aircraft.Tail` object.
+
+    >>> aircraft.get("F-GFKY")
+    Tail(icao24='391558', registration='F-GFKY', typecode='A320', flag='🇫🇷')
 
     .. tip::
 
@@ -222,10 +236,6 @@ class Aircraft(DataFrameMixin):
 
         Reference: https://opensky-network.org/aircraft-database
 
-        >>> aircraft.download_opensky()
-        WARNING:root:Downloading OpenSky aircraft database
-        download: 100%|███████████████████████████| 83433/83433 [01:25<00:00, 972.47it/s]
-
         """
         from .. import session
 
@@ -274,6 +284,10 @@ class Aircraft(DataFrameMixin):
         return self.__class__(df)
 
     def get_unique(self, name: str) -> None | Tail:
+        _log.warn("Use .get() function instead", DeprecationWarning)
+        return self.get(name)
+
+    def get(self, name: str) -> None | Tail:
         """Returns information about an aircraft based on its icao24 or
         registration information as a dictionary. Only the first aircraft
         matching the pattern passed in parameter is returned.
@@ -283,7 +297,8 @@ class Aircraft(DataFrameMixin):
 
         :param name: the icao24 identifier or the tail number of the aircraft
 
-        >>> aircraft.get_unique('F-ZBQB')
+        >>> from traffic.data import aircraft
+        >>> aircraft.get('F-ZBQB')
         Tail(icao24='3b780f', registration='F-ZBQB', typecode='EC45', flag='🇫🇷')
         """
         df = self[name]
@@ -296,7 +311,10 @@ class Aircraft(DataFrameMixin):
 
         :param name: the owner or operator of the aircraft
 
+        >>> from traffic.data import aircraft
         >>> aircraft.operator("British Antarctic")
+        <traffic.data.basic.aircraft.Aircraft object at ...>
+
           icao24   registration   typecode   model   operator
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           4241f4   VP-FBB         DHC6               British Antarctic Survey
@@ -312,19 +330,8 @@ class Aircraft(DataFrameMixin):
 
         :param name: the owner or operator of the aircraft
 
-        >>> aircraft.stats("Air France")
-                                    model  icao24
-        typecode
-        A318              Airbus A318-111      16
-        A319              Airbus A319-113      37
-        A320              Airbus A320-214      48
-        A321              Airbus A321-212      20
-        A332              Airbus A330-203      15
-        A343              Airbus A340-313      12
-        A359              Airbus A350-941      12
-        A388              Airbus A380-861      10
-        ...
-
+        >>> from traffic.data import aircraft
+        >>> stats = aircraft.stats("Air France")
         """
         subset = self.operator(name)
         if subset is None:
@@ -340,7 +347,10 @@ class Aircraft(DataFrameMixin):
 
         :param name: the model or the typecode of the aircraft
 
+        >>> from traffic.data import aircraft
         >>> aircraft.model("A320")
+        <traffic.data.basic.aircraft.Aircraft object at ...>
+
           icao24   registration   typecode   model         operator   owner
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           38005a   F-WWBA         A320       Airbus A320   Airbus     Airbus
@@ -380,7 +390,10 @@ class Aircraft(DataFrameMixin):
         :param kwargs: all keyword arguments correspond to the name of
             other methods which are chained if query_str is non empty
 
+        >>> from traffic.data import aircraft
         >>> aircraft.query(registration="^F-ZB", model="EC45")
+        <traffic.data.basic.aircraft.Aircraft object at ...>
+
           icao24   registration   typecode   model                     operator
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           3b780f   F-ZBQB         EC45       Airbus Helicopters H145   French Securite Civile

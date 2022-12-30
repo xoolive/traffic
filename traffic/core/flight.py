@@ -1103,7 +1103,7 @@ class Flight(
 
         if not isinstance(self.icao24, str):
             return None
-        res = aircraft.get_unique(self.icao24)
+        res = aircraft.get(self.icao24)
         if res is None:
             return None
         return res.get("registration", None)
@@ -1118,7 +1118,7 @@ class Flight(
 
         if not isinstance(self.icao24, str):
             return None
-        res = aircraft.get_unique(self.icao24)
+        res = aircraft.get(self.icao24)
         if res is None:
             return None
         return res.get("typecode", None)
@@ -1128,7 +1128,7 @@ class Flight(
         from ..data import aircraft
 
         if isinstance(self.icao24, str):
-            return aircraft.get_unique(self.icao24)
+            return aircraft.get(self.icao24)
 
         return None
 
