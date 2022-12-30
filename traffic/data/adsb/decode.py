@@ -1497,11 +1497,7 @@ class ModeS_Decoder:
 
         if df == 4 or df == 20:
             icao = pms.icao(msg)
-            # if isinstance(icao, bytes):
-            #     icao = icao.decode()
             if icao is None:
-                return
-            if crc_check or icao.lower() not in self.acs:
                 return
             ac = self.acs[icao.lower()]
             ac.altcode = time, msg  # type: ignore
@@ -1509,10 +1505,6 @@ class ModeS_Decoder:
         if df == 5 or df == 21:
             icao = pms.icao(msg)
             if icao is None:
-                return
-            # if isinstance(icao, bytes):
-            #     icao = icao.decode()
-            if crc_check or icao.lower() not in self.acs:
                 return
             ac = self.acs[icao.lower()]
             ac.idcode = time, msg  # type: ignore
@@ -1526,8 +1518,6 @@ class ModeS_Decoder:
                 return
             if crc_check and pms.crc(msg, encode=False) != 0:
                 return
-            # if isinstance(icao, bytes):
-            #    icao = icao.decode()
             ac = self.acs[icao.lower()]
 
         if df == 17 or df == 18:  # ADS-B
@@ -1539,10 +1529,6 @@ class ModeS_Decoder:
             icao = pms.icao(msg)
             if icao is None or tc is None:
                 return
-
-            # before it's fixed in pyModeS release...
-            # if isinstance(icao, bytes):
-            #     icao = icao.decode()
 
             ac = self.acs[icao.lower()]
 

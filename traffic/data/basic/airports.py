@@ -34,7 +34,7 @@ class Airports(GeoDBMixin):
     Airports information can be accessed with attributes:
 
     >>> airports["EHAM"].latlon
-    (52.308601, 4.76389)
+    (52.308, 4.763)
     >>> airports["EHAM"].iata
     'AMS'
     >>> airports["EHAM"].name
@@ -169,7 +169,7 @@ class Airports(GeoDBMixin):
 
         >>> from traffic.data import airports
         >>> airports["EHAM"]
-        Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', country='Netherlands', latitude=52.308601, longitude=4.76389, altitude=-11.0)
+        Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', country='Netherlands', latitude=52.308, longitude=4.763, altitude=-11.0)
         """
         if isinstance(name, int):
             p = self.data.iloc[name]
@@ -197,8 +197,7 @@ class Airports(GeoDBMixin):
 
 
         >>> from traffic.data import airports
-        >>> airports.query('type == "large_airport"').search('Tokyo')
-        <traffic.data.basic.airports.Airports object at ...>
+        >>> airports.query('type == "large_airport"').search('Tokyo')  # doctest: +SKIP
 
           name                                 country   icao   iata   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -3219,18 +3219,11 @@ category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "pymodes-2.14-cp310-cp310-macosx_11_0_x86_64.whl", hash = "sha256:1b1ca9a3a9092106536996a7ccac23d6b4ccda3c5ca42daf4976b0fae1efdd41"},
-    {file = "pymodes-2.14-cp310-cp310-manylinux_2_35_x86_64.whl", hash = "sha256:58ebe8fd6f96a61004238d35af5b098375c8b79bf837c610a9e48027f52a8113"},
     {file = "pymodes-2.14-cp310-cp310-win_amd64.whl", hash = "sha256:2d29378fc9a428aae93d71b58813acbcc35a2af5038aa7b46d3f7c2b45350fb6"},
-    {file = "pymodes-2.14-cp311-cp311-macosx_11_0_x86_64.whl", hash = "sha256:f85c69faa065fa1158f75c81b476577e55e0a8910e0d2b6503e6e4ade02952bc"},
-    {file = "pymodes-2.14-cp311-cp311-manylinux_2_35_x86_64.whl", hash = "sha256:f3a0f26ae5af0133011d77079adc010fa4a6c48d9b9b35c46dca26b20b4ba2a1"},
     {file = "pymodes-2.14-cp311-cp311-win_amd64.whl", hash = "sha256:63dba93e9148b7b67bcf9c42e0023edf4832fe111c7f8b747401378905207d07"},
-    {file = "pymodes-2.14-cp38-cp38-macosx_11_0_x86_64.whl", hash = "sha256:bf7cd9531a6754e2101a3ada4c3353c12b89ac7cdaf6a9bd79f0c0956298bcfb"},
-    {file = "pymodes-2.14-cp38-cp38-manylinux_2_35_x86_64.whl", hash = "sha256:2ae6d011d710e1be8b5a307cfca1eabbd75447b257f2afe770fc9dc857c8d834"},
     {file = "pymodes-2.14-cp38-cp38-win_amd64.whl", hash = "sha256:0861214acb0dfafabd40b42a891e234c539297bafd00433206383cb768f2e4a1"},
-    {file = "pymodes-2.14-cp39-cp39-macosx_11_0_x86_64.whl", hash = "sha256:af996c93a7397fb66506568b348e7e1e4bd9b40d2e1d2e88ed7e546994eb365c"},
-    {file = "pymodes-2.14-cp39-cp39-manylinux_2_35_x86_64.whl", hash = "sha256:818f9eb7a242e3fecdab1737f7cb8f02066aa5ce3dbce3c2f682ad43bf9bb108"},
     {file = "pymodes-2.14-cp39-cp39-win_amd64.whl", hash = "sha256:42f3a05faadaeb4d9ccfffc8e06e2ed57f38b7502a20817f5daf569ec5d0fce0"},
+    {file = "pymodes-2.14.tar.gz", hash = "sha256:392b19a17c592bd06f79c3d87d55f0c5cba1adf84ee0c3a493468f3e98fef0d9"},
 ]
 
 [package.dependencies]

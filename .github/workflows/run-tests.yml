@@ -136,6 +136,7 @@ jobs:
           sed -i "/nm_path =/ s,= $,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
           sed -i "/pkcs12_filename =/ s,= .*$,= $PWD/data/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
           sed -i "/pkcs12_password =/ s,= $,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
+
           # Don't purge OpenSky cache files here :)
           sed -i "/purge = / d" $TRAFFIC_CONFIG
 

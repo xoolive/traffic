@@ -30,7 +30,7 @@ def test_decode() -> None:
         .filter(selected_mcp=23)
         .filter(altitude=53, selected_mcp=53, roll=53, heading=53)
         .resample("1s")
-        .eval(desc="")
+        .eval()
     )
 
     # BDS 4,0

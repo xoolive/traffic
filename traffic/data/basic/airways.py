@@ -163,9 +163,7 @@ class Airways(GeoDBMixin):
         Selects the subset of airways matching name in the route name or in the
         passed navigational beacon.
 
-        >>> from traffic.data import airways
-        >>> airways.extent('Switzerland').search("Z50")
-        <traffic.data.basic.airways.Airways object at ...>
+        >>> airways.extent('Switzerland').search("Z50")  # doctest: +SKIP
 
           route   id   navaid   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -175,8 +173,7 @@ class Airways(GeoDBMixin):
           Z50     10   PELAD    46.6       9.726
           Z50     11   RESIA    46.48      10.04
 
-        >>> airways.search("NARAK")
-        <traffic.data.basic.airways.Airways object at ...>
+        >>> airways.search("NARAK")  # doctest: +SKIP
 
           route   id   navaid   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

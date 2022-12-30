@@ -238,10 +238,12 @@ class Navaids(GeoDBMixin):
         """Search for a navaid from all alternative data sources.
 
         >>> from traffic.data import navaids
+
         >>> navaids.get("ZUE")
-        Navaid('ZUE', type='NDB', latitude=30.9, longitude=20.06833333, altitude=0.0, description='ZUEITINA NDB', frequency=' 369.0kHz')
+        Navaid('ZUE', type='NDB', latitude=30.9, longitude=20.068, altitude=0.0, description='ZUEITINA NDB', frequency='369.0kHz')
+
         >>> navaids.extent("Switzerland").get("ZUE")
-        Navaid('ZUE', type='VOR', latitude=47.59216667, longitude=8.81766667, altitude=1730.0, description='ZURICH EAST VOR-DME', frequency='110.05MHz')
+        Navaid('ZUE', type='VOR', latitude=47.592, longitude=8.817, altitude=1730.0, description='ZURICH EAST VOR-DME', frequency='110.05MHz')
         """
         for _key, value in reversed(
             sorted(
@@ -277,9 +279,7 @@ class Navaids(GeoDBMixin):
             The same name may match several navigational beacons in the world.
             Use the extent() method to limit the search to an area of interest.
 
-        >>> from traffic.data import navaids
-        >>> navaids.search("ZUE")
-        <traffic.data.basic.navaid.Navaids object at ...>
+        >>> navaids.search("ZUE")  # doctest: +SKIP
 
           name   type   latitude   longitude   altitude   frequency   description
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -287,8 +287,7 @@ class Navaids(GeoDBMixin):
           ZUE    VOR    47.59      8.818       1730       110         ZURICH EAST VOR-DME
           ZUE    DME    47.59      8.818       1730       110         ZURICH EAST VOR-DME
 
-        >>> navaids.extent("Switzerland").search("ZUE")
-        <traffic.data.basic.navaid.Navaids object at ...>
+        >>> navaids.extent("Switzerland").search("ZUE")  # doctest: +SKIP
 
           name   type   latitude   longitude   altitude   frequency   description
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
