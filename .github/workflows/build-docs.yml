@@ -121,6 +121,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRAFFIC_NOPLUGIN: ""
         run: |
+          # until altair 4.3 is released
+          poetry run pip install git+https://github.com/altair-viz/altair.git
+
           # This downloads the cache for cartes atlas
           poetry run python -c "from cartes.atlas import default, world_atlas"
 
