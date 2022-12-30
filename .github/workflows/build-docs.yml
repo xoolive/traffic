@@ -57,18 +57,13 @@ jobs:
           unzip ENV_PostOPS_AIRAC_2111_04NOV2021_With_Airspace_Closure.zip -d airac_2111
         shell: bash
 
-      # Poetry cache depends on OS, Python version and Poetry version.
-      - name: Cache Poetry cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pypoetry
-          key: poetry-cache-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
-
       # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
       - name: Cache Packages
         uses: actions/cache@v3
         with:
-          path: ~/.local
+          path: |
+            ~/.local
+            .venv
           key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install and configure Poetry
@@ -88,42 +83,34 @@ jobs:
           path: |
             ~/.cache/traffic/
             ~/.cache/cartes/
-          key: ${{ runner.os }}-${{ matrix.python-version }}-cache_traffic
-
-      - name: Cache folder for libproj >=8.0
-        uses: actions/cache@v3
-        id: projlib-folder
-        with:
-          path: PROJ
-          key: ${{ runner.os }}-cache_libproj
+          key: traffic-${{ runner.os }}
 
       - name: Populate first cache files
-        if: steps.projlib-folder.outputs.cache-hit != 'true'
+        if: steps.cache-folder.outputs.cache-hit != 'true'
         run: |
-          # upgrade to proj>=8.0 for Cartopy 0.20
-          git clone https://github.com/OSGeo/PROJ
-          cd PROJ
-          git checkout 8.2.1
-          mkdir build
+          mkdir -p ~/.cache/traffic/
+          cp data/navdata/earth_*.dat ~/.cache/traffic/
 
-      - name: Install dependencies
+      - name: Ubuntu system dependencies
         run: |
           sudo apt update
           sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev npm fonts-ubuntu
           # Weird issue with libarchive-dev
           sudo ln -s -f /usr/lib/x86_64-linux-gnu/libarchive.a /usr/lib/x86_64-linux-gnu/liblibarchive.a
-          # Rebuild PROJ
-          cd PROJ/build
-          cmake ..; cmake --build .
-          sudo cmake --build . --target install
-          cd ../..
-          poetry install -E all
+
+      - name: npm dependencies
+        run: |
+          npm install vega-lite vega-cli canvas  # necessary dependency for altair-save
+
+      - name: Install dependencies
+        run: |
+          poetry install -E full
+
           # With this version of Ubuntu, shapely is compiled with a too recent libgeos
           # https://traffic-viz.github.io/troubleshooting/installation.html
-          SHAPELY_VERSION=$(poetry run python -c "import shapely; print(shapely.__version__)")
-          poetry run pip uninstall -y shapely
-          poetry run pip install --no-binary shapely shapely==${SHAPELY_VERSION}
-          npm install vega-lite vega-cli canvas  # necessary dependency for altair-save
+          # SHAPELY_VERSION=$(poetry run python -c "import shapely; print(shapely.__version__)")
+          # poetry run pip uninstall -y shapely
+          # poetry run pip install --no-binary shapely shapely==${SHAPELY_VERSION}
 
       - name: Build pages
         env:
@@ -135,11 +122,13 @@ jobs:
         run: |
           # This downloads the cache for cartes atlas
           poetry run python -c "from cartes.atlas import default, world_atlas"
-          # Update the configuration for NM DDR airspace files
+
           export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
+
           sed -i "/nm_path =/ s,=$,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
           sed -i "/pkcs12_filename =/ s,=.*$,= $PWD/data/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
           sed -i "/pkcs12_password =/ s,=$,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
+
           # Run the documentation
           cd docs && OPENSKY_CACHE=../data/opensky_cache poetry run make html
 

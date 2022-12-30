@@ -985,7 +985,7 @@ class NavigationFeatures:
             import onnxruntime as rt
         except ImportError:
             warnings.warn(
-                "Missing dependency: onnxruntime.\n"
+                "Missing optional dependency: onnxruntime.\n"
                 "Retry after installing with pip or conda."
             )
             raise

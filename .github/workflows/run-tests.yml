@@ -20,7 +20,7 @@ jobs:
       matrix:
         # os: [ubuntu-latest, macos-latest, windows-latest]
         # onnxruntime needed for 3.11
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
@@ -65,18 +65,13 @@ jobs:
           unzip ENV_PostOPS_AIRAC_2111_04NOV2021_With_Airspace_Closure.zip -d airac_2111
         shell: bash
 
-      # Poetry cache depends on OS, Python version and Poetry version.
-      - name: Cache Poetry cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pypoetry
-          key: poetry-cache-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
-
       # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
       - name: Cache Packages
         uses: actions/cache@v3
         with:
-          path: ~/.local
+          path: |
+            ~/.local
+            .venv
           key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install and configure Poetry
@@ -96,7 +91,7 @@ jobs:
           path: |
             ~/.cache/traffic/
             ~/.cache/cartes/
-          key: ${{ runner.os }}-${{ matrix.python-version }}-cache_traffic
+          key: traffic-${{ runner.os }}
 
       - name: Populate first cache files
         if: steps.cache-folder.outputs.cache-hit != 'true'
@@ -104,34 +99,16 @@ jobs:
           mkdir -p ~/.cache/traffic/
           cp data/navdata/earth_*.dat ~/.cache/traffic/
 
-      - name: Cache folder for libproj >=8.0
-        uses: actions/cache@v3
-        id: projlib-folder
-        with:
-          path: PROJ
-          key: ${{ runner.os }}-cache_libproj
-
-      - name: Populate first cache files
-        if: steps.projlib-folder.outputs.cache-hit != 'true'
-        run: |
-          # upgrade to proj>=8.0 for Cartopy 0.20
-          git clone https://github.com/OSGeo/PROJ
-          cd PROJ
-          git checkout 8.2.1
-          mkdir build
-
-      - name: Install dependencies
+      - name: Ubuntu system dependencies
         run: |
           sudo apt update
           sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
           # Weird issue with libarchive-dev
           sudo ln -s -f /usr/lib/x86_64-linux-gnu/libarchive.a /usr/lib/x86_64-linux-gnu/liblibarchive.a
-          # Rebuild PROJ
-          cd PROJ/build
-          cmake ..; cmake --build .
-          sudo cmake --build . --target install
-          cd ../..
-          poetry install -E all -E web
+
+      - name: Install dependencies
+        run: |
+          poetry install -E full -E web
 
       - name: Style checking
         if: ${{ matrix.python-version == '3.10' }}
@@ -154,17 +131,18 @@ jobs:
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
           PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
         run: |
-          # Update the configuration for NM DDR airspace files
           export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
+
           sed -i "/nm_path =/ s,= $,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
           sed -i "/pkcs12_filename =/ s,= .*$,= $PWD/data/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
           sed -i "/pkcs12_password =/ s,= $,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
           # Don't purge OpenSky cache files here :)
           sed -i "/purge = / d" $TRAFFIC_CONFIG
+
           poetry run pytest --cov --cov-report xml
 
       - name: Upload coverage to Codecov
-        if: ${{ github.event_name != 'pull_request_target' && matrix.python-version == '3.10' }}
+        if: ${{ github.event_name != 'pull_request_target' }}
         uses: codecov/codecov-action@v3
         with:
           env_vars: PYTHON_VERSION

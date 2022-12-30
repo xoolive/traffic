@@ -51,48 +51,37 @@ CesiumJS = "traffic.plugins.cesiumjs"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
-numpy = "^1.21"
-scipy = "^1.7"
-matplotlib = "^3.4"
-pandas = "^1.2"
-pitot = "^0.2"
-pyproj = "^3.1"
-Cartopy = "^0.21"
-cartes = "^0.7"
-Shapely = "^1.8"
-requests = "^2.25"
-requests-pkcs12 = "^1.10"
-pyOpenSSL = "^22.0"
-appdirs = "^1.4"
-paramiko = "^2.7"
-typing-extensions = "^4.2"  # check minimal version
-altair = "^4.1"
+# pitot = "^0.2"
+cartes = ">=0.7.4"
+# cartes = { path = "../cartes", develop = true }
+requests = ">=2.27"
+requests-pkcs12 = ">=1.10"
+pyOpenSSL = ">=22.0"
+paramiko = ">=2.7"
 ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
-tqdm = "^4.61"
-pyModeS = { version = "^2.9", extras = ["fast"] }
-openap = "^1.1"
-fastparquet = ">=0.7"
-onnxruntime = "^1.12"
-beautifulsoup4 = "^4.9"
-lxml = "^4.6"
-metar = "^1.8"
-rich = ">=11.2"
+pyModeS = { version = "^2.11", extras = ["fast"] }
+# pyModeS = { path = "../pyModeS", extras = ["rtlsdr"], develop = true }
+openap = ">=1.1"
+metar = ">=1.8"
 click = ">=8.1"
-cryptography = "<37.0.0"  # https://github.com/nextstrain/cli/issues/171
-xarray = { version = ">=0.18.2,<2023.0.0", optional = true }
+typing-extensions = ">=4.2"
+fastparquet = ">=0.7"
+# onnxruntime is usually late to release, although available on conda-forge
+onnxruntime = { version = ">=1.12", python = "<3.11" }
+# cryptography = "<37.0.0"  # https://github.com/nextstrain/cli/issues/171
+xarray = { version = ">=0.18.2", optional = true }
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
-scikit-learn = { version = "^1.0", optional = true }
+scikit-learn = { version = ">=1.0", optional = true }
 textual = { version = ">=0.1.17", optional = true }
-Flask = { version = "^2.1.1", optional = true }
-Flask-Cors = { version = "^3.0.10", optional = true }
-waitress = { version = "^2.1.1", optional = true }
-pyspark = { version = "^3.3.0", optional = true }
+Flask = { version = ">=2.1.1", optional = true }
+Flask-Cors = { version = ">=3.0.10", optional = true }
+waitress = { version = ">=2.1.1", optional = true }
+pyspark = { version = ">=3.3.0", optional = true }
 
 [tool.poetry.extras]
-all = ["xarray", "libarchive", "scikit-learn", "textual"]
+full = ["xarray", "libarchive", "scikit-learn", "textual", "pyspark"]
 web = ["Flask", "Flask-Cors", "waitress", "textual"]
-spark = ["pyspark"]
 
 [tool.poetry.dev-dependencies]
 pre-commit = ">=2.13.0"
@@ -115,7 +104,7 @@ types-paramiko = ">=0.1.7"
 types-pyOpenSSL = ">=22.0"
 types-flask = ">=1.1.6"
 types-waitress = ">=2.0.8"
-requests = { extras = ["socks"], version = ">=2.25.1" }
+requests = { extras = ["socks"], version = ">=2.27" }
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -123,7 +112,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 80
-target_version = ['py37', 'py38', 'py39']
+target_version = ['py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
 exclude = '''
 /(
