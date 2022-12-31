@@ -2,7 +2,7 @@
 name = "traffic"
 homepage = "https://github.com/xoolive/traffic/"
 documentation = "https://traffic-viz.github.io/"
-version = "2.8.1"
+version = "0.0.0"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"
@@ -36,6 +36,11 @@ include = [
   ".onnx",
   "allft_fields.txt"
 ]
+
+[tool.poetry-dynamic-versioning]
+enable = true
+bump = true
+metadata = false
 
 [project.urls]
 Releases = "https://github.com/xoolive/traffic/releases"
@@ -108,9 +113,10 @@ types-flask = ">=1.1.6"
 types-waitress = ">=2.0.8"
 requests = { extras = ["socks"], version = ">=2.27" }
 
+
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.black]
 line-length = 80
