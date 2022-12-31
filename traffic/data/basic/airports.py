@@ -33,8 +33,8 @@ class Airports(GeoDBMixin):
 
     Airports information can be accessed with attributes:
 
-    >>> airports["EHAM"].latlon
-    (52.308, 4.763)
+    >>> airports["EHAM"].latlon  # doctest: +NUMBER
+    (52.3086, 4.7639)
     >>> airports["EHAM"].iata
     'AMS'
     >>> airports["EHAM"].name
@@ -198,7 +198,6 @@ class Airports(GeoDBMixin):
 
         >>> from traffic.data import airports
         >>> airports.query('type == "large_airport"').search('Tokyo')  # doctest: +SKIP
-
           name                                 country   icao   iata   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           Narita International Airport           Japan   RJAA   NRT    35.76      140.4

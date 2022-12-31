@@ -280,7 +280,6 @@ class Navaids(GeoDBMixin):
             Use the extent() method to limit the search to an area of interest.
 
         >>> navaids.search("ZUE")  # doctest: +SKIP
-
           name   type   latitude   longitude   altitude   frequency   description
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ZUE    NDB    30.9       20.07       0          369         ZUEITINA NDB
@@ -288,7 +287,6 @@ class Navaids(GeoDBMixin):
           ZUE    DME    47.59      8.818       1730       110         ZURICH EAST VOR-DME
 
         >>> navaids.extent("Switzerland").search("ZUE")  # doctest: +SKIP
-
           name   type   latitude   longitude   altitude   frequency   description
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ZUE    VOR    47.59      8.818       1730       110         ZURICH EAST VOR-DME

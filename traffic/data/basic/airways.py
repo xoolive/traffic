@@ -164,7 +164,6 @@ class Airways(GeoDBMixin):
         passed navigational beacon.
 
         >>> airways.extent('Switzerland').search("Z50")  # doctest: +SKIP
-
           route   id   navaid   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           Z50     7    GERSA    47.04      8.532
@@ -174,7 +173,6 @@ class Airways(GeoDBMixin):
           Z50     11   RESIA    46.48      10.04
 
         >>> airways.search("NARAK")  # doctest: +SKIP
-
           route   id   navaid   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           N869    88   NARAK    44.3       1.749

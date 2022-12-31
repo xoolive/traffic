@@ -111,14 +111,12 @@ jobs:
           poetry install -E full -E web
 
       - name: Style checking
-        if: ${{ matrix.python-version == '3.10' }}
         run: |
           poetry run flake8 traffic tests
           poetry run isort --check-only traffic tests
           poetry run black --check traffic tests
 
       - name: Type checking
-        if: ${{ matrix.python-version == '3.10' }}
         run: |
           poetry run mypy traffic tests
 

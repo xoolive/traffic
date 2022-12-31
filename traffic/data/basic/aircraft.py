@@ -134,13 +134,11 @@ class Aircraft(DataFrameMixin):
     of the database, even if the result is unique**
 
     >>> aircraft["F-GFKY"]  # doctest: +SKIP
-
       icao24   registration   typecode   model             operator     owner
      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
 
     >>> aircraft["391558"]  # doctest: +SKIP
-
       icao24   registration   typecode   model             operator   owner
      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
@@ -304,7 +302,6 @@ class Aircraft(DataFrameMixin):
         :param name: the owner or operator of the aircraft
 
         >>> aircraft.operator("British Antarctic")  # doctest: +SKIP
-
           icao24   registration   typecode   model   operator
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           4241f4   VP-FBB         DHC6               British Antarctic Survey
@@ -345,7 +342,6 @@ class Aircraft(DataFrameMixin):
         :param name: the model or the typecode of the aircraft
 
         >>> aircraft.model("A320")  # doctest: +SKIP
-
           icao24   registration   typecode   model         operator   owner
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           38005a   F-WWBA         A320       Airbus A320   Airbus     Airbus
@@ -386,7 +382,6 @@ class Aircraft(DataFrameMixin):
             other methods which are chained if query_str is non empty
 
         >>> aircraft.query(registration="^F-ZB", model="EC45")  # doctest: +SKIP
-
           icao24   registration   typecode   model                     operator
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           3b780f   F-ZBQB         EC45       Airbus Helicopters H145   French Securite Civile
