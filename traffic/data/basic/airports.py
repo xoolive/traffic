@@ -193,7 +193,7 @@ class Airports(GeoDBMixin):
     def search(self, name: str) -> "Airports":
         """
         :param name: refers to the IATA or ICAO code, or part of the country
-        name, city name of full name of the airport.
+            name, city name of full name of the airport.
 
 
         >>> from traffic.data import airports

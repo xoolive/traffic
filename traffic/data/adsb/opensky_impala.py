@@ -870,11 +870,11 @@ class Impala(object):
                 bounds = Nominatim.search(bounds)
                 if bounds is None:
                     raise RuntimeError(f"'{bounds}' not found on Nominatim")
-            try:
+            if hasattr(bounds, "bounds"):
                 # thinking of shapely bounds attribute (in this order)
                 # I just don't want to add the shapely dependency here
-                west, south, east, north = bounds.bounds  # type: ignore
-            except AttributeError:
+                west, south, east, north = bounds.bounds
+            else:
                 west, south, east, north = bounds
 
             other_params += "and lon>={} and lon<={} ".format(west, east)
