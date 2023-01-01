@@ -23,6 +23,46 @@ work, you may cite it as:
 The following list contains publications from research using the traffic
 library:
 
+- | T. Krauth, A. Lafage, J. Morio, X. Olive and M. Waltert
+  | **Deep generative modelling of aircraft trajectories in terminal maneuvering areas**
+  | *Machine Learning with Applications* 16, 2022
+  | https://doi.org/10.1016/j.mlwa.2022.100446
+
+- | K. Tait, .S Roome and J. Hoole
+  | **Investigating the Occurrence of Aircraft Exhaust Plume Intersections Using Open-Source Air Traffic Data**
+  | *Proceedings of the 10th OpenSky Symposium*, 2022
+  | https://doi.org/10.3390/engproc2022028016
+
+- | J. Sun, X. Olive and M. Strohmeier
+  | **Environmental Footprint of Private and Business Jets**
+  | *Proceedings of the 10th OpenSky Symposium*, 2022
+  | https://doi.org/10.3390/engproc2022028013
+
+- | B. Figuet, M. Waltert, M. Felux and X. Olive
+  | **GNSS Jamming and Its Effect on Air Traffic in Eastern Europe**
+  | *Proceedings of the 10th OpenSky Symposium*, 2022
+  | https://doi.org/10.3390/engproc2022028012
+
+- | D. Rotherham, N. Bojdo, A. Filippone and B Parkes
+  | **Terminal Manoeuvre Area Effects on Aircraft Engine Dust Ingestion**
+  | *Proceedings of the 10th OpenSky Symposium*, 2022
+  | https://doi.org/10.3390/engproc2022028011
+
+- | K. Renz
+  | **Using OpenSky Data for Teaching Software Engineering to Undergraduates**
+  | *Proceedings of the 10th OpenSky Symposium*, 2022
+  | https://doi.org/10.3390/engproc2022028003
+
+- | R. Monstein, B. Figuet, T. Krauth, M. Waltert and M. Dettling
+  | **Large Landing Trajectory Dataset for Go-Around Analysis**
+  | *Proceedings of the 10th OpenSky Symposium*, 2022
+  | https://doi.org/10.3390/engproc2022028002
+
+- | D. Hünemohr, J. Litzba and F. Rahimi
+  | **Usage Monitoring of Helicopter Gearboxes with ADS-B Flight Data**
+  | *Aerospace* 9(11), 647, 2022
+  | https://doi.org/10.3390/aerospace9110647
+
 - | W. Zhang, M. Hu and J. Du
   | **An end-to-end framework for flight trajectory data analysis based on deep autoencoder network**
   | *Aerospace Science & Technology* 17, 107726, 2022
@@ -86,7 +126,7 @@ library:
 - | J. Sun
   | **The 1090 Megahertz Riddle: A Guide to Decoding Mode S and ADS-B Signals**
   | ISBN: 978-94-6366-402-8, 2021
-  | https://doi.org/10.34641/mg.11 
+  | https://doi.org/10.34641/mg.11
 
 - | X. Olive, J. Sun, A. Lafage and L. Basora
   | **Detecting Events in Aircraft Trajectories: Rule-based and Data-driven Approaches**

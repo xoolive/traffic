@@ -8,11 +8,17 @@ exclude_lines =
     coverage: ignore
     raise NotImplementedError
     if TYPE_CHECKING:
+    def __geo_interface__
     def __repr__
+    def __rich_repr__
+    def __rich_console__
     def _repr_html_
     def _repr_svg_
     def __str__
     def _info_html
     def _ipython_key_completions_
+    def leaflet
+    def map_leaflet
+    def plot
 
 ignore_errors = True

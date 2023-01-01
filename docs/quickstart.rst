@@ -12,7 +12,7 @@ basic functionalities of the traffic library. In particular, we will cover:
 
 1. a :ref:`basic introduction <basic introduction>` about
    :class:`~traffic.core.Flight` and :class:`~traffic.core.Traffic` structures;
-2. how to produce :ref:`visualisations <data visualisation>` of trajectory data;
+2. how to produce :ref:`visualisations <data visualization>` of trajectory data;
 3. a :ref:`use case <Low-altitude trajectory patterns in Paris metropolitan
    area>` to display trajectories around Paris area;
 4. an introduction to :ref:`declarative trajectory processing <declarative

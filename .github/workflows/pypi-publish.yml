@@ -29,6 +29,9 @@ jobs:
       - name: Display Python version
         run: poetry run python -c "import sys; print(sys.version)"
 
+      - name: Dynamic versioning
+        run: poetry self add "poetry-dynamic-versioning[plugin]" || true
+
       - name: Build packages
         run: poetry build
 

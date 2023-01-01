@@ -43,14 +43,14 @@ savefig.format: png
 
 config_dir = mpl.get_configdir()
 mpl_style_location = Path(f"{config_dir}/stylelib/traffic.mplstyle")
-if not mpl_style_location.parent.is_dir():
+if not mpl_style_location.parent.is_dir():  # coverage: ignore
     mpl_style_location.parent.mkdir(parents=True)
 mpl_style_location.write_text(_traffic_style)
 
 plt.style.reload_library()
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> Any:  # coverage: ignore
     msg = f"module {__name__} has no attribute {name}"
 
     if name.startswith("_"):

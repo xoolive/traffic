@@ -27,7 +27,6 @@ jobs:
       - name: Full Python version
         run: |
           echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")"
-          echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")" >> $GITHUB_ENV
 
       - name: Download extra data from private repository
         uses: actions/checkout@v3
@@ -102,11 +101,14 @@ jobs:
         run: |
           npm install vega-lite vega-cli canvas  # necessary dependency for altair-save
 
+      - name: Dynamic versioning
+        run: poetry self add "poetry-dynamic-versioning[plugin]" || true
+
       - name: Install dependencies
         run: |
           poetry install -E full
 
-          # With this version of Ubuntu, shapely is compiled with a too recent libgeos
+          # This should not be necessary... but sometimes it is
           # https://traffic-viz.github.io/troubleshooting/installation.html
           # SHAPELY_VERSION=$(poetry run python -c "import shapely; print(shapely.__version__)")
           # poetry run pip uninstall -y shapely

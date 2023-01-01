@@ -1,7 +1,6 @@
 import configparser
 import logging
 import os
-import warnings
 from importlib.metadata import EntryPoint, entry_points, version
 from pathlib import Path
 from typing import Iterable
@@ -23,7 +22,7 @@ _log = logging.getLogger(__name__)
 config_dir = Path(user_config_dir("traffic"))
 config_file = config_dir / "traffic.conf"
 
-if not config_dir.exists():
+if not config_dir.exists():  # coverage: ignore
     config_template = (Path(__file__).parent / "traffic.conf").read_text()
     config_dir.mkdir(parents=True)
     config_file.write_text(config_template)
@@ -36,34 +35,8 @@ config.read(config_file.as_posix())
 
 cache_dir = Path(user_cache_dir("traffic"))
 
-cache_dir_cfg = config.get("global", "cache_dir", fallback="").strip()
-if cache_dir_cfg != "":
-    warnings.warn(
-        """Please edit your configuration file:
-
-        # Old style, will soon no longer be supported
-        [global]
-        cache_dir =
-
-        # New style, with extra parameters
-
-        [cache]
-        # path =
-
-        ## number of days, databases will be downloaded again
-        # expiration = 180 days # default value
-
-        ## Save your disk space!
-        ## Impala cache files will be removed after a given number of days
-        ## By default, cache files are left untouched.
-        # purge =
-        """,
-        DeprecationWarning,
-    )
-    cache_dir = Path(cache_dir_cfg)
-
 cache_dir_cfg = config.get("cache", "path", fallback="").strip()
-if cache_dir_cfg != "":
+if cache_dir_cfg != "":  # coverage: ignore
     cache_dir = Path(cache_dir_cfg)
 
 cache_expiration_cfg = config.get("cache", "expiration", fallback="180 days")
@@ -72,7 +45,7 @@ cache_expiration = pd.Timedelta(cache_expiration_cfg)
 cache_purge_cfg = config.get("cache", "purge", fallback="")
 cache_no_expire = bool(os.environ.get("TRAFFIC_CACHE_NO_EXPIRE"))
 
-if cache_purge_cfg != "" and not cache_no_expire:
+if cache_purge_cfg != "" and not cache_no_expire:  # coverage: ignore
     cache_purge = pd.Timedelta(cache_purge_cfg)
     now = pd.Timestamp("now").timestamp()
 

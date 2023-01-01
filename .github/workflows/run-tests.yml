@@ -106,6 +106,9 @@ jobs:
           # Weird issue with libarchive-dev
           sudo ln -s -f /usr/lib/x86_64-linux-gnu/libarchive.a /usr/lib/x86_64-linux-gnu/liblibarchive.a
 
+      - name: Dynamic versioning
+        run: poetry self add "poetry-dynamic-versioning[plugin]" || true
+
       - name: Install dependencies
         run: |
           poetry install -E full -E web

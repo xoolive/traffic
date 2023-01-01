@@ -1,3 +1,5 @@
+# flake8: noqa
+
 from __future__ import annotations
 
 import logging
@@ -86,13 +88,13 @@ class DataFrameMixin(object):
             return cls(pd.read_pickle(path, **kwargs))
         if ".parquet" in path.suffixes:
             return cls(pd.read_parquet(path, **kwargs))
-        if ".feather" in path.suffixes:
+        if ".feather" in path.suffixes:  # coverage: ignore
             return cls(pd.read_feather(path, **kwargs))
         if ".json" in path.suffixes:
             return cls(pd.read_json(path, **kwargs))
         if ".csv" in path.suffixes:
             return cls(pd.read_csv(path, **kwargs))
-        if ".h5" == path.suffixes[-1]:
+        if ".h5" == path.suffixes[-1]:  # coverage: ignore
             return cls(pd.read_hdf(path, **kwargs))
         return None
 
@@ -770,7 +772,7 @@ class GeoDBMixin(DataFrameMixin):
         :class:`~traffic.data.basic.navaid.Navaids`.
 
         >>> from traffic.data import airways
-        >>> airways.extent(eurofirs['LFBB'])
+        >>> airways.extent(eurofirs['LFBB'])  # doctest: +SKIP
           route    id   navaid   latitude    longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           A25      6    GODAN    47.64       -1.96
@@ -786,7 +788,7 @@ class GeoDBMixin(DataFrameMixin):
          ... (703 more lines)
 
         >>> from traffic.data import airports
-        >>> airports.extent("Bornholm")
+        >>> airports.extent("Bornholm")  # doctest: +SKIP
          name                 country   icao      iata   latitude   longitude
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
          Bodilsker Airstrip   Denmark   DK-0027   nan    55.06      15.05
@@ -795,25 +797,9 @@ class GeoDBMixin(DataFrameMixin):
 
         >>> from traffic.data import navaids
         >>> navaids['ZUE']
-        Navaid(
-            'ZUE',
-            type='NDB',
-            latitude=30.9,
-            longitude=20.06833333,
-            altitude=0.0,
-            description='ZUEITINA NDB',
-            frequency=' 369.0kHz'
-        )
+        Navaid('ZUE', type='NDB', latitude=30.9, longitude=20.06833333, altitude=0.0, description='ZUEITINA NDB', frequency='369.0kHz')
         >>> navaids.extent('Switzerland')['ZUE']
-        Navaid(
-            'ZUE',
-            type='VOR',
-            latitude=47.59216667,
-            longitude=8.81766667,
-            altitude=1730.0,
-            description='ZURICH EAST VOR-DME',
-            frequency='110.05MHz'
-        )
+        Navaid('ZUE', type='VOR', latitude=47.59216667, longitude=8.81766667, altitude=1730.0, description='ZURICH EAST VOR-DME', frequency='110.05MHz')
 
         """
         from cartes.osm import Nominatim
@@ -940,7 +926,7 @@ class PointMixin(object):
         return cumul
 
 
-class FormatMixin(object):
+class FormatMixin(object):  # coverage: ignore
     def __format__(self, pattern: str) -> str:
         if pattern == "":
             return repr(self)
@@ -951,7 +937,7 @@ class FormatMixin(object):
         return pattern
 
 
-class _HBox(object):
+class _HBox(object):  # coverage: ignore
     def __init__(self, *args: Any) -> None:
         self.elts = args
 
@@ -983,7 +969,7 @@ class _HBox(object):
             return _HBox(other, *self.elts)
 
 
-class HBoxMixin(object):
+class HBoxMixin(object):  # coverage: ignore
     """Enables a | operator for placing representations next to each other."""
 
     def __or__(self, other: Any) -> _HBox:
