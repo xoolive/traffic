@@ -412,7 +412,7 @@
       "categories": [
         {
           "pattern": "^EJ-",
-          "country": "Business and VIP"
+          "category": "Business and VIP"
         }
       ]
     },
@@ -453,23 +453,17 @@
       "categories": [
         {
           "pattern": "^EW-\\d{4}L",
-          "country": "Balloons"
+          "category": "Balloons"
         },
         {
           "pattern": "^EW-2\\d{2}PA",
-          "country": "Boeing 737"
+          "category": "Boeing 737"
         },
         {
           "pattern": "^EW-(1|2)\\d{2}PJ",
-          "country": "Bombardier CRJ"
-        },
-        {
-          "pattern": "^(EW-001DA|EW-001PA|EW-001PB|EW-85815)",
-          "country": "State owned"
+          "category": "Bombardier CRJ"
         }
-
       ]
-
     },
     {
       "pattern": "^EX-",
@@ -503,7 +497,7 @@
       "pattern": "^E4-",
       "country": "Palestine",
       "flag": "\ud83c\uddf5\ud83c\uddf8",
-      "comment": "Temporary assignment to SU-Y (Egypt)"
+      "comment": "Temporary assignment to SU-Y (Egypt range)"
     },
     {
       "pattern": "^E5-",
@@ -733,7 +727,7 @@
       "categories": [
         {
           "pattern": "^HJ-",
-          "country": "Microlights"
+          "category": "Microlights"
         },
         {
           "pattern": "^FAC\\d{4}",
@@ -741,7 +735,7 @@
         },
         {
           "pattern": "^PNC-",
-          "country": "Police"
+          "category": "Police"
         }
       ]
     },
@@ -858,7 +852,7 @@
       "categories": [
         {
           "pattern": "^VF-",
-          "category": "Fire Brigade"
+          "category": "Fire Brigade (Vigili del Fuoco)"
         },
         {
           "pattern": "^MM\\d{5}",
@@ -866,7 +860,7 @@
         },
         {
           "pattern": "^I[0-9Z]\\d{3}",
-          "category": "Italy (Ultralights)"
+          "category": "Ultralights"
         }
       ]
     },
@@ -1114,7 +1108,7 @@
         },
         {
           "pattern": "^OK-[0-9A]\\d{3}",
-          "country": "Gliders and Balloons"
+          "category": "Gliders and Balloons"
         }
       ]
     },
@@ -1462,7 +1456,7 @@
           "pattern": "^SU-Y",
           "country": "Palestine",
           "flag": "\ud83c\uddf5\ud83c\uddf8",
-          "comment": "Temporary assignment"
+          "comment": "Temporary assignment (Egypt range)"
         }
       ]
     },
@@ -2486,5 +2480,11 @@
       "flag": "\ud83c\udff3"
     }
   ],
-  "properties": "Assignment table from Appendix to Chapter 9 of Annex 10 Vol III, Second Edition, July 2007 (with amendments through 88-A, 14/11/2013), see also https://github.com/wiedehopf/tar1090/blob/master/html/flags.js Registration patterns and refinements from the Wikipedia page, see https://en.wikipedia.org/wiki/List_of_aircraft_registration_prefixes Official document: Aircraft Nationality Marks, National Emblems and Common Marks (ICAO); Emoji input from https://flagpedia.net/emoji"
+  "properties": [
+    "Assignment table from Appendix to Chapter 9 of Annex 10 Vol III, Second Edition, July 2007 (with amendments through 88-A, 14/11/2013)",
+    "See also https://github.com/wiedehopf/tar1090/blob/master/html/flags.js",
+    "Registration patterns and refinements from the Wikipedia page, see https://en.wikipedia.org/wiki/List_of_aircraft_registration_prefixes",
+    "Official document: Aircraft Nationality Marks, National Emblems and Common Marks (ICAO)",
+    "Emoji input from https://flagpedia.net/emoji"
+  ]
 }
