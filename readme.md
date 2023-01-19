@@ -2,8 +2,7 @@
 
 [![Documentation Status](https://github.com/xoolive/traffic/workflows/docs/badge.svg)](https://traffic-viz.github.io/) [![tests](https://github.com/xoolive/traffic/actions/workflows/run-tests.yml/badge.svg?branch=master&event=push)](https://github.com/xoolive/traffic/actions/workflows/run-tests.yml) [![Code Coverage](https://img.shields.io/codecov/c/github/xoolive/traffic.svg)](https://codecov.io/gh/xoolive/traffic) [![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy.readthedocs.io/) [![Code style: black](https://img.shields.io/badge/code%20style-black-black.svg)](https://github.com/psf/black) ![License](https://img.shields.io/pypi/l/traffic.svg)  
 [![Join the chat at https://gitter.im/xoolive/traffic](https://badges.gitter.im/xoolive/traffic.svg)](https://gitter.im/xoolive/traffic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) ![PyPI version](https://img.shields.io/pypi/v/traffic) [![PyPI downloads](https://img.shields.io/pypi/dm/traffic)](https://pypi.org/project/traffic) ![Conda version](https://img.shields.io/conda/vn/conda-forge/traffic) [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/traffic.svg)](https://anaconda.org/conda-forge/traffic)  
-[![JOSS paper](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518) [![Google Scholar
-badge](https://img.shields.io/endpoint?url=https%3A%2F%2Ftraffic-citations-y6ukblh4ymtb.runkit.sh)](https://scholar.google.com/scholar?cites=18420568209924139259&scisbd=1)
+[![JOSS paper](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518)
 
 The traffic library helps to work with common sources of air traffic data.
 
@@ -39,10 +38,9 @@ For troubleshooting, refer to the appropriate [documentation section](https://tr
 ## Credits
 
 [![JOSS
-badge](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518) [![Google Scholar
-badge](https://img.shields.io/endpoint?url=https%3A%2F%2Ftraffic-citations-y6ukblh4ymtb.runkit.sh)](https://scholar.google.com/scholar?cites=18420568209924139259&scisbd=1)
+badge](http://joss.theoj.org/papers/10.21105/joss.01518/status.svg)](https://doi.org/10.21105/joss.01518)
 
-- Like other researchers before, if you find this project useful for your research and use it in an academic work, you may cite it as:
+- Like [other researchers before](https://scholar.google.com/scholar?cites=18420568209924139259&scisbd=1), if you find this project useful for your research and use it in an academic work, you may cite it as:
 
   ```bibtex
   @article{olive2019traffic,
