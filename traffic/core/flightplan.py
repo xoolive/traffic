@@ -162,7 +162,7 @@ class Point(_ElementaryBlock):
         if not isinstance(self.elt[0], str):
             return None
 
-        return navaids.global_get(self.elt[0])
+        return navaids.get(self.elt[0])
 
 
 # EXPERIMENTAL
@@ -485,7 +485,7 @@ class FlightPlan(ShapelyMixin):
                 if n is None:
                     n = navaids
 
-                p1, p2 = n.global_get(previous.name), n.global_get(next_.name)
+                p1, p2 = n.get(previous.name), n.get(next_.name)
                 if p1 is None or p2 is None:
                     warnings.warn(
                         f"Could not find {previous.name} or {next_.name}"
@@ -548,7 +548,7 @@ class FlightPlan(ShapelyMixin):
                 if n is None:
                     n = navaids
 
-                p1, p2 = n.global_get(previous.name), n.global_get(next_.name)
+                p1, p2 = n.get(previous.name), n.get(next_.name)
                 if p1 is None or p2 is None:
                     warnings.warn(
                         f"Could not find {previous.name} or {next_.name}"

@@ -337,7 +337,7 @@ class FlightInfo(B2BReply):
         title += f"<li><b>from:</b> {departure:%name (%icao/%iata)}</li>"
         title += f"<li><b>to:</b> {destination:%name (%icao/%iata)}</li>"
         if hasattr(self, "aircraftAddress"):
-            ac = aircraft.get_unique(self.aircraftAddress.lower())
+            ac = aircraft.get(self.aircraftAddress.lower())
             title += "<li><b>aircraft:</b> {aircraft}</li>".format(
                 aircraft=format(ac, aircraft_fmt)
             )
