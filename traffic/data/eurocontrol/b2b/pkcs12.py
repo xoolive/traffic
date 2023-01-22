@@ -63,7 +63,7 @@ def create_pyopenssl_sslcontext(
                 crypto.X509.from_cryptography(ca_cert)
             )
     ssl_context._ctx.use_privatekey(
-        crypto.PKey.from_cryptography_key(private_key)
+        crypto.PKey.from_cryptography_key(private_key)  # type: ignore
     )
     return ssl_context
 
