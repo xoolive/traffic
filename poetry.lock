@@ -3759,20 +3759,21 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "requests-pkcs12"
-version = "1.14"
+version = "1.15"
 description = "Add PKCS#12 support to the requests library in a clean way, without monkey patching or temporary files"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "requests_pkcs12-1.14-py3-none-any.whl", hash = "sha256:713e195870197360950090304422e60990d9f3e14798551cbf0886d02cdfe39b"},
-    {file = "requests_pkcs12-1.14.tar.gz", hash = "sha256:3b3926cf91769d00c7d68ccfc120f03e5ddf5ef48bd9c4b1985dfb40853f8ac5"},
+    {file = "requests_pkcs12-1.15-py3-none-any.whl", hash = "sha256:e61cd8441194fe4d06626ec4a8b1feab23246ce8420308ae3b993bf3a2c0c207"},
+    {file = "requests_pkcs12-1.15.tar.gz", hash = "sha256:af8231be17463e8de15dda087d26701b323eab67c5b1ebe82350ef6baf6d4bb6"},
 ]
 
 [package.dependencies]
 cryptography = ">=3.4.7"
 pyOpenSSL = ">=20.0.1"
 requests = ">=2.26.0"
+urllib3 = ">=1.26.13,<2.0"
 
 [package.extras]
 dev = ["twine (>=3.4.2)", "wheel (>=0.37.0)"]
