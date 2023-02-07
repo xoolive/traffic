@@ -331,7 +331,6 @@ def test_landing_ils() -> None:
 
 
 def test_compute_navpoints() -> None:
-
     from traffic.data.samples import switzerland
 
     df = cast(Flight, switzerland["BAW585E"]).compute_navpoints()
@@ -426,7 +425,6 @@ def test_douglas_peucker() -> None:
 
 
 def test_resample_how_argument() -> None:
-
     df = pd.DataFrame.from_records(
         [
             (pd.Timestamp("2019-01-01 12:00:00Z"), 30000, 0),
@@ -532,7 +530,6 @@ def test_resample_unwrapped() -> None:
 
 
 def test_resample_projection() -> None:
-
     flight = Flight(
         pd.DataFrame.from_dict(
             dict(
@@ -666,7 +663,6 @@ def test_parking_position() -> None:
 
 
 def test_from_inertial() -> None:
-
     flight = zurich_airport["ENT57BW"]
     assert flight is not None
     assert flight.is_from_inertial()
@@ -677,7 +673,6 @@ def test_from_inertial() -> None:
 
 
 def test_slow_taxi() -> None:
-
     flight = zurich_airport["SWR137H"]
     assert flight is not None
     slow_durations = sum(
@@ -696,7 +691,6 @@ def test_slow_taxi() -> None:
 
 @pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
 def test_pushback() -> None:
-
     # These tests with calls to OpenStreetMap are a bit tricky and subject to
     # uncontrolled edits on OpenStreetMap.
     lszh_pp = Overpass(lszh_json).query('aeroway == "parking_position"')
@@ -804,7 +798,6 @@ def test_ground_trajectory() -> None:
 
 
 def test_DME_NSE_computation() -> None:
-
     flight = zurich_airport["EDW229"]
     assert flight is not None
 
@@ -828,7 +821,6 @@ def test_DME_NSE_computation() -> None:
 
 @pytest.mark.skipif(version > (3, 11), reason="onnxruntime not ready for 3.11")
 def test_holding_pattern() -> None:
-
     holding_pattern = belevingsvlucht.holding_pattern().next()
     assert holding_pattern is not None
     assert (

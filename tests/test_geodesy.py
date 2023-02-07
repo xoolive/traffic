@@ -3,7 +3,6 @@ from traffic.core.geodesy import bearing, destination, distance, greatcircle
 
 
 def test_geodesy() -> None:
-
     assert (
         distance(0, 0, 0, 1 / 60) - 1852
     ) / 1852 < 1e-2  # original definition of the nautical mile

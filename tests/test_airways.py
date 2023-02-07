@@ -4,7 +4,6 @@ from traffic.data import airways, eurofirs
 
 
 def test_basic() -> None:
-
     foo = airways["FOO"]
     assert foo is None
 
@@ -14,7 +13,6 @@ def test_basic() -> None:
 
 
 def test_through_extent() -> None:
-
     narak_airways = set(
         route
         for route in airways.search("NARAK").data.route

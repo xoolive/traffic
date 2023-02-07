@@ -10,7 +10,6 @@ from traffic.data.samples import belevingsvlucht, lfbo_tma
 
 @pytest.mark.timeout(300)
 def test_flightlist() -> None:
-
     l_aib = opensky.flightlist(
         "2019-11-01",
         departure_airport="LFBO",
@@ -26,7 +25,6 @@ def test_flightlist() -> None:
 
 @pytest.mark.timeout(300)
 def test_history() -> None:
-
     t_aib: Optional[Traffic] = cast(
         Optional[Traffic],
         opensky.history(
@@ -222,7 +220,6 @@ def test_complex_queries() -> None:
 
 # @pytest.mark.timeout(300)
 def test_timebuffer() -> None:
-
     f = cast(
         Flight,
         opensky.history(
@@ -245,7 +242,6 @@ def test_timebuffer() -> None:
 
 @pytest.mark.timeout(300)
 def test_rawdata() -> None:
-
     r = opensky.rawdata(
         belevingsvlucht.start,
         belevingsvlucht.start + timedelta(minutes=10),

@@ -15,7 +15,6 @@ def long_enough(flight: Flight) -> bool:
 
 
 def test_decode() -> None:
-
     switzerland = cast(Traffic, get_sample(collections, "switzerland"))
 
     tap_switzerland = (
