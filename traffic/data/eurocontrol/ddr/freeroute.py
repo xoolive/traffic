@@ -67,7 +67,6 @@ class NMFreeRouteParser(NMAirspaceParser):
         self.read_frp(frp_file)
 
     def read_frp(self, filename: Path) -> None:
-
         area = unary_union(self.fra.geometry)
         west, south, east, north = area.bounds
 

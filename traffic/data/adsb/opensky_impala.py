@@ -52,7 +52,6 @@ def open_cache_file(cachename: Path) -> Generator[TextIO, None, None]:
 
 
 class Impala(object):
-
     _impala_columns = [
         "time",
         "icao24",
@@ -140,7 +139,6 @@ class Impala(object):
     def __init__(
         self, username: str, password: str, cache_dir: Path, proxy_command: str
     ) -> None:
-
         self.username = username
         self.password = password
         self.proxy_command = proxy_command
@@ -317,7 +315,6 @@ class Impala(object):
         cached: bool = True,
         compress: bool = False,
     ) -> None | pd.DataFrame:  # coverage: ignore
-
         digest = hashlib.md5(request.encode("utf8")).hexdigest()
         cachename = self.cache_dir / digest
 
@@ -660,7 +657,6 @@ class Impala(object):
             other_params += f"limit {limit}"
 
         for bt, at, before_day, after_day in progressbar(sequence):
-
             _log.info(
                 f"Sending request between time {bt} and {at} "
                 f"and day {before_day} and {after_day}"
@@ -729,7 +725,6 @@ class Impala(object):
         time_buffer: None | str | pd.Timedelta = None,
         progressbar: bool | ProgressbarType[Any] = True,
     ) -> None | Traffic | Flight:
-
         """Get Traffic from the OpenSky Impala shell.
 
         You may pass requests based on time ranges, callsigns, aircraft, areas,
@@ -993,7 +988,6 @@ class Impala(object):
             other_params += f"limit {limit}"
 
         for bt, at, bh, ah in progressbar(sequence):
-
             _log.info(
                 f"Sending request between time {bt} and {at} "
                 f"and hour {bh} and {ah}"
@@ -1052,7 +1046,6 @@ class Impala(object):
         other_params: str = "",
         progressbar: bool | ProgressbarType[Any] = True,
     ) -> None | FlarmData:
-
         other_params += "and rawmessage = rawmessage and crccorrect "
         other_params += "and not typeogn "
 
@@ -1272,7 +1265,6 @@ class Impala(object):
             or bounds is not None
             or callsign is not None
         ):
-
             where_clause = (
                 f"on {table_name}.icao24 = est.e_icao24 and "
                 f"est.firstseen <= {table_name}.mintime and "
@@ -1425,7 +1417,6 @@ class Impala(object):
             other_params += f"limit {limit}"
 
         for bt, at, bh, ah in progressbar(sequence):
-
             _log.info(
                 f"Sending request between time {bt} and {at} "
                 f"and hour {bh} and {ah}"

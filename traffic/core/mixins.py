@@ -115,7 +115,6 @@ class DataFrameMixin(object):
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
-
         my_table = Table(**self.table_options)
 
         if self.columns_options is None:
@@ -642,7 +641,6 @@ class GeographyMixin(DataFrameMixin):
     def interpolate_grib(
         self: T, wind: "xarray.Dataset", features: list[str] = ["u", "v"]
     ) -> T:
-
         from sklearn.linear_model import Ridge
         from sklearn.pipeline import make_pipeline
         from sklearn.preprocessing import PolynomialFeatures
@@ -848,7 +846,6 @@ class GeoDBMixin(DataFrameMixin):
 
 
 class PointMixin(object):
-
     latitude: float
     longitude: float
     altitude: float
@@ -888,7 +885,6 @@ class PointMixin(object):
         shift: None | dict[str, Any] = None,
         **kwargs: Any,
     ) -> list["Artist"]:  # coverage: ignore
-
         if shift is None:
             # flake B006
             shift = dict(units="dots", x=15)

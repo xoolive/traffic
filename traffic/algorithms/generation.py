@@ -153,7 +153,6 @@ class Generation:
         features: List[str],
         scaler: Optional[ScalerProtocol] = None,
     ) -> None:
-
         self.generation = generation
         self.features = features
         self.scaler = scaler

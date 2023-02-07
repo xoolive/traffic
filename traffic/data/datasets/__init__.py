@@ -98,7 +98,6 @@ def download_data(dataset: Dict[str, str]) -> io.BytesIO:
 
 
 def get_dataset(dataset: Dict[str, Any]) -> Any:
-
     dataset_dir = cache_dir / "datasets"
 
     if not dataset_dir.exists():
@@ -114,7 +113,6 @@ def get_dataset(dataset: Dict[str, Any]) -> Any:
 
 
 def __getattr__(name: str) -> Any:
-
     on_disk = config.get("datasets", name, fallback=None)
     if on_disk is not None:
         return Traffic.from_file(on_disk)

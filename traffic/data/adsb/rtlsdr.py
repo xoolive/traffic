@@ -24,7 +24,6 @@ class MyRtlReader(RtlReader):
     def encode_message(
         self, msg: str, time: float
     ) -> Optional[Tuple[float, str]]:
-
         now = datetime.now(timezone.utc)
         secs_total = (
             now - now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -43,9 +42,7 @@ class MyRtlReader(RtlReader):
         return None
 
     def handle_messages(self, messages: Iterable[Tuple[str, float]]) -> None:
-
         for msg, t in messages:
-
             ts = datetime.fromtimestamp(t, timezone.utc)
             self.count += 1
 

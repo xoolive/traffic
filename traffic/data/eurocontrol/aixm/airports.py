@@ -58,9 +58,7 @@ class AIXMAirportParser(DataFrameMixin):
     def parse_tree(
         self, tree: etree.ElementTree, ns: dict[str, str]
     ) -> Iterator[dict[str, Any]]:
-
         for elt in tree.findall("adrmsg:hasMember/aixm:AirportHeliport", ns):
-
             identifier = elt.find("gml:identifier", ns)
             assert identifier is not None
             assert identifier.text is not None

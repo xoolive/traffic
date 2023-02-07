@@ -43,7 +43,6 @@ def get_coordinates(lr: Any, ns: dict[str, str]) -> Polygon:
 
 
 class AIXMAirspaceParser(Airspaces):
-
     cache_dir: Path
 
     def __init__(
@@ -183,7 +182,6 @@ class AIXMAirspaceParser(Airspaces):
     def parse_tree(
         self, tree: etree.ElementTree, ns: dict[str, str]
     ) -> Iterable[dict[str, Any]]:
-
         for airspace in tqdm(
             tree.findall("adrmsg:hasMember/aixm:Airspace", ns),
             desc="Parsing definition file",
@@ -192,7 +190,6 @@ class AIXMAirspaceParser(Airspaces):
             for ts in airspace.findall(
                 "aixm:timeSlice/aixm:AirspaceTimeSlice", ns
             ):
-
                 designator_ = ts.find("aixm:designator", ns)
                 type_ = ts.find("aixm:type", ns)
                 name_ = ts.find("aixm:name", ns)

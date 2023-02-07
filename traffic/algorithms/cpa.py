@@ -31,7 +31,6 @@ def combinations(
     t: "Traffic", lateral_separation: float, vertical_separation: float
 ) -> Iterator[Tuple[Flight, Flight]]:
     for flight in t:
-
         t_ = t.query(f'icao24 != "{flight.icao24}"')
         if t_ is None:
             continue

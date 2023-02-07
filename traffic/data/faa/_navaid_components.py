@@ -5,7 +5,6 @@ from . import ADDS_FAA_OpenData
 
 
 class Navaid_Components(ADDS_FAA_OpenData):
-
     id_ = "c9254c171b6741d3a5e494860761443a_0"
     filename = "faa_navaid_components.json"
 

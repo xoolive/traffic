@@ -99,7 +99,6 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
         text_kw: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:  # coverage: ignore
-
         from cartopy.crs import PlateCarree  # noqa: F811
 
         if runways is True:
@@ -112,7 +111,6 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
             ax.add_geometries([self.shape], **params)
 
         if labels is True:
-
             if text_kw is None:
                 text_kw = dict()
 
@@ -128,7 +126,6 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
             }
 
             for thr in self.list:
-
                 # Placement of labels
                 lat, lon, _ = destination(
                     thr.latitude, thr.longitude, thr.bearing + 180, shift
@@ -175,7 +172,6 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
 
 
 class Runways(object):
-
     cache_dir: Optional[Path] = None
 
     def __init__(self) -> None:

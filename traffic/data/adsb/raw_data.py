@@ -63,7 +63,6 @@ class RawData(DataFrameMixin):
         progressbar_kw: Optional[Dict[str, Any]] = None,
         redefine_mag: int = 10,
     ) -> Optional[Traffic]:
-
         decoder = ModeS_Decoder(reference)
         redefine_freq = 2**redefine_mag - 1
 
@@ -98,7 +97,6 @@ class RawData(DataFrameMixin):
         use_extra = all(x in data.columns for x in ["alt", "spd", "trk"])
 
         for i, (_, line) in progressbar(enumerate(data.iterrows())):
-
             extra = (
                 dict(
                     spd=line.spd,
@@ -135,7 +133,6 @@ class RawData(DataFrameMixin):
         return self.assign(msg_type=lambda df: df.rawmsg.apply(get_typecode))
 
     def assign_beast(self, time_fmt: str = "dump1090") -> "RawData":
-
         # Only one time encoder implemented for now
         encoder = encode_time.get(time_fmt, encode_time_dump1090)
 
@@ -144,5 +141,4 @@ class RawData(DataFrameMixin):
         )
 
     def to_beast(self, time_fmt: str = "dump1090") -> pd.Series:
-
         return self.assign_beast(time_fmt).data["beast"]

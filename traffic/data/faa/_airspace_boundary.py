@@ -15,7 +15,6 @@ _log = logging.getLogger(__name__)
 
 
 class Airspace_Boundary(ADDS_FAA_OpenData, Airspaces):
-
     id_ = "67885972e4e940b2aa6d74024901c561_0"
     filename = "faa_airspace_boundary.json"
 
@@ -44,7 +43,6 @@ class Airspace_Boundary(ADDS_FAA_OpenData, Airspaces):
             )
 
     def back(self) -> Dict[str, Airspace]:
-
         features = [elt for elt in self.json_contents()["features"]]
         airspaces: Dict[str, Airspace] = dict()
 

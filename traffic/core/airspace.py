@@ -144,7 +144,6 @@ class Airspace(ShapelyMixin):
         designator: Optional[str] = None,
         properties: Optional[Dict[str, Any]] = None,
     ) -> None:
-
         self.elements: List[ExtrudedPolygon] = elements
         self.designator: Optional[str] = designator
         self.name: str = name

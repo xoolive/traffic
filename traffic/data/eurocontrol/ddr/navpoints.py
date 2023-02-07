@@ -33,7 +33,6 @@ class NMNavaids(Navaids):
     def from_file(
         cls: Type[T], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[T]:
-
         if filename == "":
             return cls(None)
 

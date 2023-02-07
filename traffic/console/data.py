@@ -6,7 +6,6 @@ from rich.console import Console
 
 
 def main(args_list: List[str]) -> None:
-
     parser = argparse.ArgumentParser(
         prog="traffic data",
         description="Explore basic navigational data embedded with traffic",

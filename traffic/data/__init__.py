@@ -106,7 +106,6 @@ _log = logging.getLogger(__name__)
 
 
 def __getattr__(name: str) -> Any:
-
     res: Any
     if name in _cached_imports.keys():
         return _cached_imports[name]

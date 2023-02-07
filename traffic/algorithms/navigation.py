@@ -48,7 +48,6 @@ class PointMergeParams(TypedDict):
 
 
 class NavigationFeatures:
-
     # shape: Optional[LineString]
     # query: Callable[["NavigationFeatures", str], Optional["Flight"]]
 
@@ -404,7 +403,6 @@ class NavigationFeatures:
     def compute_navpoints(
         self, navaids: Optional["Navaids"] = None, buffer: float = 0.1
     ) -> Optional[pd.DataFrame]:
-
         """This functions recomputes the most probable alignments on
         navigational points on the trajectory.
 
@@ -588,7 +586,6 @@ class NavigationFeatures:
         for segment in low_traj.split("2T"):
             candidates_set = []
             for name, polygon in runway_polygons.items():
-
                 if segment.intersects(polygon):
                     candidate = (
                         segment.cumulative_distance()
@@ -1012,7 +1009,6 @@ class NavigationFeatures:
 
         for i, window in enumerate(self.sliding_windows(duration, step)):
             if window.duration >= pd.Timedelta(threshold):
-
                 window = window.assign(flight_id=str(i))
                 resampled = window.resample(samples)
 
@@ -1436,7 +1432,6 @@ class NavigationFeatures:
         previous_candidate = None
         first = simplified_df.iloc[0]
         for _, second in simplified_df.iloc[1:].iterrows():
-
             p1 = Point(first.longitude, first.latitude)
             p2 = Point(second.longitude, second.latitude)
 

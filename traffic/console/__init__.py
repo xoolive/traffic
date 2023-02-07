@@ -48,7 +48,6 @@ def import_submodules(package: Any, recursive: bool = True) -> Dict[str, Any]:
 
 
 def main() -> Any:
-
     cmd = import_submodules(__name__, recursive=False)
 
     parser = argparse.ArgumentParser(

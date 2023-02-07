@@ -53,7 +53,6 @@ def pia_candidate(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def country(reg: Dict[str, str]) -> Dict[str, str]:
-
     # First, search the country based on the registered address intervals
     icao24 = int(reg["icao24"], 16)
     candidate = next(
@@ -115,6 +114,8 @@ class Tail(Dict[str, str], FormatMixin):
         yield "registration", self["registration"]
         yield "typecode", self["typecode"]
         yield "flag", self["flag"]
+        if "category" in self.keys():
+            yield "category", self["category"]
 
 
 T = TypeVar("T", bound="Aircraft")

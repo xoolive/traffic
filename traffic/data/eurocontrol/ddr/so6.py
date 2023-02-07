@@ -471,11 +471,10 @@ class SO6Flight(Flight):
         )
 
         buffer = []
-        for (_, line) in data.iterrows():
+        for _, line in data.iterrows():
             if (line.alt1 < max_ or line.alt2 < max_) and (
                 line.alt1 > min_ or line.alt2 > min_
             ):
-
                 if line.alt1 != line.alt2:
                     f_x = (line.x1 - line.x2) / (line.alt1 - line.alt2)
                     f_y = (line.y1 - line.y2) / (line.alt1 - line.alt2)
@@ -588,7 +587,6 @@ class SO6(DataFrameMixin):
     def __getitem__(  # noqa: F811
         self, index: Union[identifier, "SO6", Set["str"], Set[int]]
     ) -> Union[SO6Flight, "SO6", None]:
-
         if isinstance(index, int):
             return SO6Flight(self.data.groupby("flight_id").get_group(index))
         if isinstance(index, str):

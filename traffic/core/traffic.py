@@ -123,7 +123,6 @@ class Traffic(HBoxMixin, GeographyMixin):
     def from_file(
         cls: Type[TrafficTypeVar], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[TrafficTypeVar]:
-
         tentative = super().from_file(filename, **kwargs)
 
         if tentative is not None:
@@ -204,7 +203,6 @@ class Traffic(HBoxMixin, GeographyMixin):
     def __sub__(
         self, other: str | List[str] | Set[str] | Flight | "Traffic"
     ) -> Optional["Traffic"]:
-
         if isinstance(other, str):
             other = [other]
 
@@ -271,7 +269,6 @@ class Traffic(HBoxMixin, GeographyMixin):
         return right + left
 
     def _getSeries(self, index: pd.Series) -> Optional[Flight]:
-
         p_callsign = hasattr(index, "callsign")
         p_icao24 = hasattr(index, "icao24")
 
@@ -325,7 +322,6 @@ class Traffic(HBoxMixin, GeographyMixin):
     def __getitem__(  # noqa: F811
         self, index: Union[pd.Series, pd.DataFrame, int, slice, IterStr]
     ) -> Union[None, Flight, "Traffic"]:
-
         if isinstance(index, pd.Series):
             return self._getSeries(index)
 
@@ -735,7 +731,6 @@ class Traffic(HBoxMixin, GeographyMixin):
     def between(
         self, start: timelike, stop: time_or_delta, strict: bool = True
     ) -> Optional["Traffic"]:
-
         # Corner cases when start or stop are None or NaT
         if start is None or start != start:
             return self.before(stop, strict=strict)
@@ -898,7 +893,6 @@ class Traffic(HBoxMixin, GeographyMixin):
         airport: Union[None, str, Airport] = None,
         **kwargs: Any,
     ) -> Optional[LeafletMap]:
-
         from ..data import airports
 
         _airport = airports[airport] if isinstance(airport, str) else airport
@@ -919,7 +913,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         for flight in self:
             if flight.query("latitude == latitude"):
-                elt = m.add(flight)
+                elt = m.add(flight.leaflet())
                 elt.popup = HTML()
                 elt.popup.value = flight._info_html()
 
@@ -1046,7 +1040,6 @@ class Traffic(HBoxMixin, GeographyMixin):
     def windfield(
         self, resolution: Union[Dict[str, float], None] = None
     ) -> pd.DataFrame:
-
         if any(w not in self.data.columns for w in ["wind_u", "wind_v"]):
             raise RuntimeError(
                 "No wind data in trajectory. Consider Traffic.compute_wind()"

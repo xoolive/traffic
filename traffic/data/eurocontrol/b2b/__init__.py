@@ -103,7 +103,6 @@ class NMB2B(FlightManagement, Measures):
         return B2BReply.fromET(tree)
 
     def get(self, path: str, output_dir: Union[None, Path, str] = None) -> None:
-
         if output_dir is None:
             output_dir = Path("~").expanduser()
 

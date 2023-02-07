@@ -4,7 +4,6 @@ from typing import List
 
 
 def main(args_list: List[str]) -> None:
-
     from ..core import Traffic
 
     parser = argparse.ArgumentParser(

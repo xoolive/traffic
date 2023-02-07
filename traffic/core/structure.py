@@ -30,7 +30,6 @@ if TYPE_CHECKING:
 
 
 class AirportNamedTuple(NamedTuple):
-
     altitude: float
     country: str
     iata: str
@@ -129,7 +128,6 @@ class Airport(
         )
 
     def leaflet(self, **kwargs: Any) -> LeafletGeoData:
-
         return LeafletGeoData(
             geo_dataframe=self._openstreetmap()
             .query('aeroway == "runway"')
@@ -138,7 +136,6 @@ class Airport(
         )
 
     def map_leaflet(self, **kwargs: Any) -> Map:
-
         m = Map(center=self.latlon, zoom=13)
         m.add(self.leaflet(**kwargs))
         return m
@@ -193,7 +190,6 @@ class Airport(
         runways: Union[bool, Dict[str, Any]] = True,
         labels: Union[bool, Dict[str, Any]] = True,
     ) -> "alt.Chart":  # coverage: ignore
-
         import altair as alt
 
         base = alt.Chart(self).mark_geoshape()
@@ -287,7 +283,6 @@ class Airport(
 
 
 class NavaidTuple(NamedTuple):
-
     name: str
     type: str
     latitude: float

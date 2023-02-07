@@ -74,7 +74,6 @@ class Clustering:
         projection: Union[None, "crs.Projection", pyproj.Proj] = None,
         transform: Optional[TransformerProtocol] = None,
     ) -> None:
-
         self.traffic = traffic
         self.clustering = clustering
         self.nb_samples = nb_samples
@@ -84,7 +83,6 @@ class Clustering:
         self.X: Optional[Numeric] = None
 
     def fit(self, max_workers: int = 1) -> None:
-
         if self.X is None:
             self.X = prepare_features(
                 self.traffic,
@@ -102,7 +100,6 @@ class Clustering:
     def predict(
         self, max_workers: int = 1, return_traffic: bool = True
     ) -> Union[pd.DataFrame, "Traffic"]:
-
         if self.X is None:
             self.X = prepare_features(
                 self.traffic,
@@ -131,7 +128,6 @@ class Clustering:
     def fit_predict(
         self, max_workers: int = 1, return_traffic: bool = True
     ) -> Union[pd.DataFrame, "Traffic"]:
-
         if self.X is None:
             self.X = prepare_features(
                 self.traffic,

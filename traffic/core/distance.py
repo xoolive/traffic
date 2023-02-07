@@ -21,7 +21,6 @@ def closest_point(
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
 ) -> pd.Series:
-
     if point is not None:
         latitude = point.latitude
         longitude = point.longitude
@@ -51,7 +50,6 @@ def guess_airport(
     dataset: Optional["Airports"] = None,
     warning_distance: Optional[float] = None,
 ) -> "Airport":
-
     from ..core.structure import Airport
 
     if dataset is None:

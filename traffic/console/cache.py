@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 def main(args_list: List[str]) -> None:
-
     from .. import cache_dir
 
     parser = argparse.ArgumentParser(

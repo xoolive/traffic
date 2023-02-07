@@ -29,7 +29,6 @@ from .flight import Flight
 from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
-
     from .traffic import Traffic  # noqa: F401
 
 _log = logging.getLogger(__name__)
@@ -317,7 +316,6 @@ def lazy_evaluation(
     def wrapper(
         f: Callable[..., "Traffic"]
     ) -> Callable[..., Union["Traffic", LazyTraffic]]:
-
         # Check parameters passed (esp. filter_if) are not lambda because those
         # are not serializable therefore **silently** fail when multiprocessed.
         msg = """

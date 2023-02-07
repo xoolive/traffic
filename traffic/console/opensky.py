@@ -7,7 +7,6 @@ from typing import Any, List
 def opensky_data(
     start: str, stop: str, output_file: Path, **kwargs: Any
 ) -> None:
-
     from cartes.osm import Nominatim
 
     from ..data import nm_airspaces, opensky
@@ -50,7 +49,6 @@ def opensky_data(
 
 
 def main(args_list: List[str]) -> None:
-
     parser = argparse.ArgumentParser(
         prog="traffic opensky",
         description="Get data from OpenSky Impala records",

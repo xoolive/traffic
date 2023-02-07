@@ -13,7 +13,6 @@ class FAA_Designated_Points(Navaids):
 
 
 class Designated_Points(ADDS_FAA_OpenData):
-
     id_ = "861043a88ff4486c97c3789e7dcdccc6_0"
     filename = "faa_designated_points.json"
 

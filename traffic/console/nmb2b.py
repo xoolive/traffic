@@ -8,7 +8,6 @@ Get data from Network Manager B2B Service.
 
 
 def main(args_list: List[str]) -> None:
-
     parser = argparse.ArgumentParser(
         prog="traffic nmb2b", description=description
     )

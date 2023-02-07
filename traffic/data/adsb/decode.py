@@ -642,7 +642,6 @@ class Aircraft(object):
                 }
 
             else:
-
                 self.cumul.append(
                     dict(
                         timestamp=t,
@@ -897,7 +896,6 @@ class Aircraft(object):
 
 
 class AircraftDict(Dict[str, Aircraft]):
-
     lat0: float
     lon0: float
     decoder: "ModeS_Decoder"
@@ -917,7 +915,6 @@ class AircraftDict(Dict[str, Aircraft]):
 
 class DumpFormat:
     def __init__(self, template: str, sep: str = ",") -> None:
-
         self.template = template
         self.sep = sep
         self.cols = list(x.strip() for x in template.split(sep))
@@ -1151,7 +1148,6 @@ class ModeS_Decoder:
         redefine_mag: int = 10,
         fh: Optional[TextIO] = None,
     ) -> Decoder:
-
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
@@ -1170,7 +1166,6 @@ class ModeS_Decoder:
         for i, bin_msg in tqdm(
             enumerate(next_beast_msg(next_in_binary(filename)))
         ):
-
             if len(bin_msg) < 23:
                 continue
 
@@ -1249,7 +1244,6 @@ class ModeS_Decoder:
         redefine_mag: int = 7,
         fh: Optional[TextIO] = None,
     ) -> Decoder:  # coverage: ignore
-
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
@@ -1289,7 +1283,6 @@ class ModeS_Decoder:
             for i, bin_msg in enumerate(
                 next_beast_msg(next_in_socket[s.type]())
             ):
-
                 msg = "".join(["{:02x}".format(t) for t in bin_msg])
 
                 # Timestamp decoding
@@ -1470,7 +1463,6 @@ class ModeS_Decoder:
         uncertainty: bool = False,
         crc_check: bool = True,
     ) -> None:
-
         for i, (t, msg) in tqdm(enumerate(msgs), total=sum(1 for _ in msgs)):
             if i & 127 == 127:
                 self.redefine_reference(t)
@@ -1487,7 +1479,6 @@ class ModeS_Decoder:
         trk: Optional[float] = None,
         alt: Optional[float] = None,
     ) -> None:
-
         ac: Aircraft
 
         if len(msg) != 28:
@@ -1521,7 +1512,6 @@ class ModeS_Decoder:
             ac = self.acs[icao.lower()]
 
         if df == 17 or df == 18:  # ADS-B
-
             if crc_check and pms.crc(msg, encode=False) != 0:
                 return
 
@@ -1582,7 +1572,6 @@ class ModeS_Decoder:
                     ac.nic_a, ac.nic_bc = pms.adsb.nic_a_c(msg)
 
         elif df == 20 or df == 21:
-
             bds = pms.bds.infer(msg)
             icao = pms.icao(msg)
             # if isinstance(icao, bytes):

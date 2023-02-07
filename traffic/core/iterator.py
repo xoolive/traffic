@@ -268,7 +268,6 @@ class FlightIterator:
 def flight_iterator(
     fun: Callable[..., Iterator["Flight"]]
 ) -> Callable[..., FlightIterator]:
-
     msg = (
         "The @flight_iterator decorator can only be set on methods "
         ' annotated with an Iterator["Flight"] return type.'

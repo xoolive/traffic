@@ -18,7 +18,6 @@ _log = logging.getLogger(__name__)
 
 
 class NMAirspaceParser(Airspaces):
-
     # https://www.nm.eurocontrol.int/HELP/Airspaces.html
 
     nm_path: Optional[Path] = None
@@ -28,7 +27,6 @@ class NMAirspaceParser(Airspaces):
         data: pd.DataFrame | None,
         config_file: Path | None = None,
     ) -> None:
-
         super().__init__(data, config_file)
 
         if self.data is not None:
@@ -145,7 +143,6 @@ class NMAirspaceParser(Airspaces):
 
     def consolidate(self: "A") -> "A":
         def consolidate_rec(df: pd.DataFrame) -> pd.DataFrame:
-
             if df.geometry.notnull().all():
                 return df
             return consolidate_rec(

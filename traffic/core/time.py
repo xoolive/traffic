@@ -48,7 +48,6 @@ def round_time(
     how: str = "before",
     by: timedelta = timedelta(hours=1),  # noqa: B008
 ) -> datetime:
-
     dt = to_datetime(time)
 
     round_to = by.total_seconds()
@@ -72,7 +71,6 @@ def split_times(
     after: datetime,
     by: timedelta = timedelta(hours=1),  # noqa: B008
 ) -> Iterator[timetuple]:
-
     before_hour = round_time(before, by=by)
     seq = np.arange(before_hour, after + by, by, dtype=datetime)
 

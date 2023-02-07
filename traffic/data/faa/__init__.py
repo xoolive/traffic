@@ -16,7 +16,6 @@ _log = logging.getLogger(__name__)
 
 
 class ADDS_FAA_OpenData:
-
     id_: str
     filename: str
     website = "https://adds-faa.opendata.arcgis.com/datasets/{}"
@@ -41,7 +40,6 @@ class ADDS_FAA_OpenData:
 
     def json_contents(self) -> Dict[str, Any]:
         if self.cache_file.exists():
-
             last_modification = (self.cache_file).lstat().st_mtime
             delta = pd.Timestamp("now") - pd.Timestamp(last_modification * 1e9)
 
@@ -60,7 +58,6 @@ class ADDS_FAA_OpenData:
 
 
 def __getattr__(name: str) -> Any:
-
     if name in __all__:
         mod = importlib.import_module("._" + name, package="traffic.data.faa")
         return getattr(mod, name.title())()

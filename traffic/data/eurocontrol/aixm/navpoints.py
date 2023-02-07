@@ -25,7 +25,6 @@ class AIXMNavaidParser(Navaids):
 
     @property
     def available(self) -> bool:
-
         if self.filename is None:
             return False
 
@@ -83,7 +82,6 @@ class AIXMNavaidParser(Navaids):
     def from_file(
         cls: Type[T], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[T]:
-
         instance = cls(None)
         instance.filename = Path(filename)
         return instance
@@ -102,7 +100,6 @@ class AIXMNavaidParser(Navaids):
         extensions: List[Dict[str, Any]] = []
 
         for filename in ["DesignatedPoint.BASELINE", "Navaid.BASELINE"]:
-
             if not (dirname / filename).exists():
                 zippath = zipfile.ZipFile(
                     dirname.joinpath(f"{filename}.zip").as_posix()
@@ -124,7 +121,6 @@ class AIXMNavaidParser(Navaids):
         for point in points.findall(
             "adrmsg:hasMember/aixm:DesignatedPoint", ns
         ):
-
             identifier = point.find("gml:identifier", ns)
             assert identifier is not None
             assert identifier.text is not None
@@ -193,7 +189,6 @@ class AIXMNavaidParser(Navaids):
         points = etree.parse((dirname / "Navaid.BASELINE").as_posix())
 
         for point in points.findall("adrmsg:hasMember/aixm:Navaid", ns):
-
             identifier = point.find("gml:identifier", ns)
             assert identifier is not None
             assert identifier.text is not None

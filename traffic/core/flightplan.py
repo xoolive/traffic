@@ -29,7 +29,6 @@ class _Point(PointMixin):
 
 
 class _ElementaryBlock:
-
     pattern: str
 
     def __init__(self, *args: Union[None, str, "_ElementaryBlock"]) -> None:
@@ -58,7 +57,6 @@ class _ElementaryBlock:
         previous_elt: Optional["_ElementaryBlock"] = None,
         is_last_elt: bool = False,
     ) -> Optional["_ElementaryBlock"]:
-
         if Direct.valid(elt):
             return Direct(elt)
 
@@ -269,7 +267,6 @@ class CoordinatePoint(_ElementaryBlock):
 
 
 class SpeedLevelChangePoint(_ElementaryBlock):
-
     pattern = "(.*)/(.*)"
 
     def get(self) -> Optional[Navaid]:  # type: ignore
@@ -285,7 +282,6 @@ class SpeedLevelChangePoint(_ElementaryBlock):
 
 
 class FlightPlan(ShapelyMixin):
-
     origin: Optional[str]
     destination: Optional[str]
 

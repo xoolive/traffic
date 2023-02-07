@@ -81,7 +81,6 @@ class Navaids(GeoDBMixin):
             iter_lines = c.iter_lines()
 
         for line_bytes in iter_lines:
-
             line = line_bytes.decode(encoding="ascii", errors="ignore").strip()
 
             # Skip empty lines or comments
@@ -118,7 +117,6 @@ class Navaids(GeoDBMixin):
             iter_lines = c.iter_lines()
 
         for line_bytes in iter_lines:
-
             line = line_bytes.decode(encoding="ascii", errors="ignore").strip()
 
             # Skip empty lines or comments

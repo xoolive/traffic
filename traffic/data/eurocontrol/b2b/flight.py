@@ -268,7 +268,6 @@ class FlightInfo(B2BReply):
         return cls.fromET(et.getroot())
 
     def to_xml(self, filename: Union[None, str, Path] = None) -> None:
-
         if isinstance(filename, str):
             filepath = Path(filename)
 
@@ -421,7 +420,6 @@ FlightListTypeVar = TypeVar("FlightListTypeVar", bound="FlightList")
 
 
 class FlightList(DataFrameMixin, B2BReply):
-
     columns_options = dict(
         flightId=dict(style="blue bold"),
         callsign=dict(),
@@ -495,7 +493,6 @@ class FlightList(DataFrameMixin, B2BReply):
         self.format_data()
 
     def format_data(self) -> None:
-
         if "nonICAOAerodromeOfDeparture" in self.data.columns:
             self.data = self.data.drop(
                 columns=[

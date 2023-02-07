@@ -145,7 +145,6 @@ class Position(PointMixin, pd.core.series.Series):  # type: ignore
         shift: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
-
         from ..drawing.markers import aircraft as aircraft_marker
         from ..drawing.markers import rotate_marker
 
@@ -167,7 +166,6 @@ class Position(PointMixin, pd.core.series.Series):  # type: ignore
 
 class MetaFlight(type):
     def __getattr__(cls, name: str) -> Callable[..., Any]:
-
         # if the string is callable, apply this on a flight
         # parsing the AST is a much safer option than raw eval()
         for node in ast.walk(ast.parse(name)):
@@ -1322,7 +1320,6 @@ class Flight(
         duration: deltalike,
         step: deltalike,
     ) -> Iterator["Flight"]:
-
         duration_ = to_timedelta(duration)
         step_ = to_timedelta(step)
 
@@ -1651,7 +1648,6 @@ class Flight(
         ] = lambda x: x.bfill().ffill(),
         **kwargs: int,
     ) -> "Flight":
-
         """Filters the trajectory given features with a median filter.
 
         The method first applies a median filter on each feature of the
@@ -1755,7 +1751,6 @@ class Flight(
             kernels_size[idx] = ks_dict.get(feature, 17)
 
         for feat, ks_list in zip(features, kernels_size):
-
             if isinstance(ks_list, int):
                 ks_list = [ks_list]
             else:
@@ -2032,7 +2027,6 @@ class Flight(
             return []
 
         if resolution is not None:
-
             if isinstance(resolution, (int, str)):
                 data = copy_self.resample(resolution).data
 
@@ -2107,7 +2101,6 @@ class Flight(
         other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
         column_name: str = "distance",
     ) -> Union[None, float, "Flight", pd.DataFrame]:
-
         """Computes the distance from a Flight to another entity.
 
         The behaviour is different according to the type of the second
@@ -2339,7 +2332,6 @@ class Flight(
         reverse: bool = False,
         **kwargs: Any,
     ) -> "Flight":
-
         """Enrich the structure with new ``cumdist`` column computed from
         latitude and longitude columns.
 
@@ -2813,7 +2805,7 @@ class Flight(
         if _airport is not None:
             m.add(_airport)
 
-        elt = m.add(self)
+        elt = m.add(self.leaflet())
         elt.popup = HTML()
         elt.popup.value = self._info_html()
 
@@ -3018,7 +3010,6 @@ class Flight(
     def from_file(
         cls: Type[T], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[T]:
-
         """Read data from various formats.
 
         This class method dispatches the loading of data in various format to

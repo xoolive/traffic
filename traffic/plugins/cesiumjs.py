@@ -32,7 +32,6 @@ def format_ts(ts: pd.Timestamp) -> str:
 
 
 def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
-
     start = format_ts(flight.start)
     stop = format_ts(flight.stop)
     availability = f"{start}/{stop}"

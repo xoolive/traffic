@@ -129,7 +129,7 @@ class OpenAP:
 
         FF = []
         Fuel = []
-        for (i, tas, alt, pa, dt) in zip(count(1), TAS, ALT, PA, dt):
+        for i, tas, alt, pa, dt in zip(count(1), TAS, ALT, PA, dt):
             ff = fuelflow.enroute(
                 mass=mass[i - 1], tas=tas, alt=alt, path_angle=pa
             )
@@ -143,7 +143,6 @@ class OpenAP:
     def emission(
         self, mass: None | float = None, engine: None | str = None
     ) -> "Flight":
-
         import openap
 
         # The following cast secures the typing
