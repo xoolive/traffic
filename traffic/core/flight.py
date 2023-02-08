@@ -504,7 +504,7 @@ class Flight(
 
     def pipe(
         self,
-        func: Callable[..., None | "Flight" | bool],
+        func: str | Callable[..., None | "Flight" | bool],
         *args: Any,
         **kwargs: Any,
     ) -> None | "Flight" | bool:
@@ -517,6 +517,11 @@ class Flight(
             method, but the function applies on T, not on the DataFrame.
 
         """
+
+        if isinstance(func, str):
+            func = eval(func)
+            assert callable(func)
+
         return func(self, *args, **kwargs)
 
     def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:

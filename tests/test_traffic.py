@@ -16,7 +16,7 @@ def test_properties() -> None:
     assert handle is not None
     assert (
         repr(handle.aircraft) == "Tail(icao24='3c6645', registration='D-AIRE',"
-        " typecode='A321', flag='🇩🇪')"
+        " typecode='A321', flag='🇩🇪', category='>20t')"
     )
 
     handle = switzerland["4baa61"]
@@ -109,6 +109,26 @@ def test_chaining() -> None:
     handle = sw_filtered[flight_id]
     assert handle is not None
     assert handle.callsign == flight_id.split("_")[0]
+
+
+def test_chaining_with_lambda() -> None:
+    sw_filtered = (
+        switzerland.between("2018-08-01", "2018-08-02")  # type: ignore
+        .inside_bbox(eurofirs["LSAS"])
+        .assign_id()
+        .pipe(lambda flight: flight.altitude_min > 35000)
+        .resample("10s")
+        .filter()
+        .filter(altitude=53)
+        .unwrap()
+        .airborne()
+        .eval(max_workers=4)
+    )
+
+    assert len(sw_filtered) == 784
+    assert sw_filtered.data.shape[0] > 80000
+    assert min(len(f) for f in sw_filtered) == 60
+    assert sw_filtered.data.altitude.max() == 47000.0
 
 
 def test_none() -> None:

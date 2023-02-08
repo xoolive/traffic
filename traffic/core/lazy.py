@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import ast
 import functools
 import inspect
 import logging
 import traceback
 import types
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from io import StringIO
 from pathlib import Path
+from tokenize import OP, generate_tokens, untokenize
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,6 +23,7 @@ from typing import (
     overload,
 )
 
+import astor
 from tqdm.rich import tqdm
 
 import numpy as np
@@ -47,6 +51,10 @@ class FaultCatcher:
     ) -> None:
         FaultCatcher.flag = False
         traceback.format_tb(tb)
+
+
+class LambdaParseException(RuntimeError):
+    pass
 
 
 class LazyLambda:
@@ -320,27 +328,68 @@ def lazy_evaluation(
         # are not serializable therefore **silently** fail when multiprocessed.
         msg = """
 {method}(lambda f: ...) will *silently* fail when evaluated on several cores.
-It should be safe to create a proper named function and pass it to filter_if.
+You may write {method}("lambda f: ..."); traffic tries to do it for you but the
+feature is experimental.
         """
 
-        def is_lambda(f: Callable[..., Any]) -> bool:
+        def is_lambda(f: Any) -> bool:
             return isinstance(f, types.LambdaType) and f.__name__ == "<lambda>"
 
         # Check the decorated method is implemented by A
         if not hasattr(Flight, f.__name__):
             raise TypeError(f"Class Flight does not provide {f.__name__}")
 
+        def stringify_lambda(lambda_func: Callable[..., Any]) -> str:
+            src_list, *_ = inspect.getsourcelines(lambda_func)
+            # Give up if the lambda is more than one line
+            if len(src_list) > 1:
+                raise LambdaParseException(msg)
+            src1 = src_list[0].strip()
+            # sometimes the lines starts with a dot and is not parsable
+            tokens = [t[:2] for t in generate_tokens(StringIO(src1).readline)]
+            if tokens[0][0] == OP:
+                tokens.pop(0)
+            lambda_line_src: str = untokenize(tokens)
+            ast_ = ast.parse(lambda_line_src)
+            ast_lambda = next(
+                (
+                    node
+                    for node in ast.walk(ast_)
+                    if isinstance(node, ast.Lambda)
+                ),
+                None,
+            )
+            if ast_lambda is None:
+                raise LambdaParseException(msg)
+
+            return cast(str, astor.to_source(ast_lambda))
+
         def lazy_λf(
             lazy: LazyTraffic,
-            *args: Callable[..., Union["Traffic", LazyTraffic]],
-            **kwargs: Callable[..., Union["Traffic", LazyTraffic]],
+            *args: str | Callable[..., Union["Traffic", LazyTraffic]],
+            **kwargs: str | Callable[..., Union["Traffic", LazyTraffic]],
         ) -> LazyTraffic:
-            op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
-
             if any(is_lambda(arg) for arg in args):
                 _log.warning(msg.format(method=f.__name__))
+                args = tuple(
+                    stringify_lambda(arg)
+                    if not isinstance(arg, str) and is_lambda(arg)
+                    else arg
+                    for arg in args
+                )
             if any(is_lambda(arg) for arg in kwargs.values()):
                 _log.warning(msg.format(method=f.__name__))
+                kwargs = dict(
+                    (
+                        key,
+                        stringify_lambda(arg)
+                        if not isinstance(arg, str) and is_lambda(arg)
+                        else arg,
+                    )
+                    for key, arg in kwargs.items()
+                )
+
+            op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             return LazyTraffic(
                 lazy.wrapped_t,
