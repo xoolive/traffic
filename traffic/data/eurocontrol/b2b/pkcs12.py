@@ -19,6 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509 import Certificate
 from OpenSSL import crypto
@@ -48,6 +49,7 @@ def create_pyopenssl_sslcontext(
         data, password
     )
     assert private_key is not None
+    assert isinstance(private_key, rsa.RSAPrivateKey)
     assert certificate is not None
     check_cert_not_after(certificate)
     ssl_context = PyOpenSSLContext(ssl_protocol)
@@ -62,9 +64,8 @@ def create_pyopenssl_sslcontext(
             ssl_context._ctx.add_extra_chain_cert(
                 crypto.X509.from_cryptography(ca_cert)
             )
-    ssl_context._ctx.use_privatekey(
-        crypto.PKey.from_cryptography_key(private_key)  # type: ignore
-    )
+    pkey = crypto.PKey.from_cryptography_key(private_key)
+    ssl_context._ctx.use_privatekey(pkey)
     return ssl_context
 
 

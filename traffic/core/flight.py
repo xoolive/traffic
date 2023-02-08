@@ -37,7 +37,6 @@ from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 import pyproj
 from pandas.core.internals import DatetimeTZBlock
@@ -440,11 +439,7 @@ class Flight(
         if len(self.shape.coords) < 1000:
             return super()._repr_svg_()
 
-        return super(
-            Flight,
-            # cast should be useless but return type of simplify() is Union
-            cast(Flight, self.resample("1s").simplify(25)),
-        )._repr_svg_()
+        return super(Flight, self.resample("1s").simplify(25))._repr_svg_()
 
     def __rich_repr__(self) -> rich.repr.Result:
         if self.flight_id:
@@ -2417,8 +2412,7 @@ class Flight(
         tolerance: float,
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
-        return_mask: bool = False,
-    ) -> npt.NDArray[np.float64] | "Flight":
+    ) -> "Flight":
         """Simplifies a trajectory with Douglas-Peucker algorithm.
 
         The method uses latitude and longitude, projects the trajectory to a
@@ -2454,10 +2448,7 @@ class Flight(
             **kwargs,
         )
 
-        if return_mask:
-            return mask
-        else:
-            return self.__class__(self.data.loc[mask])
+        return self.__class__(self.data.loc[mask])
 
     def intersects(  # type: ignore
         self,

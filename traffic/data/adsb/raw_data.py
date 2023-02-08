@@ -117,8 +117,8 @@ class RawData(DataFrameMixin):
         return decoder.traffic
 
     def assign_type(self) -> "RawData":
-        def get_typecode(msg: Union[bytes, str]) -> Optional[int]:
-            tc = adsb.typecode(msg)  # type: ignore
+        def get_typecode(msg: str) -> Optional[int]:
+            tc = adsb.typecode(msg)
             if tc is None:
                 return None
             elif 9 <= tc <= 18:

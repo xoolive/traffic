@@ -269,13 +269,13 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "session":
-        from cartes.osm.requests import session
+        from cartes.osm.requests import session as cartes_session
 
         if len(proxy_values) > 0:
-            session.proxies.update(proxy_values)
-            session.trust_env = False
+            cartes_session.proxies.update(proxy_values)
+            cartes_session.trust_env = False
 
-        res = session
+        res = cartes_session
         _cached_imports[name] = res
         return res
 

@@ -14,14 +14,14 @@ T = TypeVar("T", bound="FlarmData")
 
 
 def receiver_position(
-    msg: "DecodedMessage",
+    msg: DecodedMessage,
     threshold: Annotated[float, "m"] = 100_000,
 ) -> bool:
     delta_d: Annotated[float, "m"] = distance(  # in meters
-        msg.latitude,  # type: ignore
-        msg.longitude,  # type: ignore
-        msg.sensorLatitude,  # type: ignore
-        msg.sensorLongitude,  # type: ignore
+        msg["latitude"],
+        msg["longitude"],
+        msg["sensorLatitude"],
+        msg["sensorLongitude"],
     )
     return delta_d < threshold
 

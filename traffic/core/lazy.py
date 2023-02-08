@@ -86,7 +86,8 @@ class LazyLambda:
             return None
         if result is True or result is np.True_:
             return elt
-        return result  # type: ignore
+        assert not isinstance(result, np.bool_)
+        return result
 
 
 def apply(

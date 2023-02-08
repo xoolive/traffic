@@ -823,7 +823,7 @@ class NavigationFeatures:
         # The following cast secures the typing
         self = cast("Flight", self)
 
-        simplified: Flight = self.simplify(25)  # type: ignore
+        simplified = self.simplify(25)
         if simplified.shape is None:
             return -1
         return len(simplified.shape.buffer(1e-3).interiors)
