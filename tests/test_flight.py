@@ -188,7 +188,7 @@ def test_geometry() -> None:
     cumdist = last_pos.cumdist
     assert abs(xy_length - cumdist) / xy_length < 1e-3
 
-    simplified = cast(Flight, flight.simplify(1e3))
+    simplified = flight.simplify(1e3)
     assert len(simplified) < len(flight)
     xy_length_s = simplified.project_shape().length / 1852
     assert xy_length_s < xy_length
