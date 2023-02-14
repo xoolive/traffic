@@ -267,6 +267,8 @@ class NavigationFeatures:
     def aligned_on_ils(
         self,
         airport: Union[None, str, "Airport"],
+        max_b_diff: float = 0.1,
+        min_duration_sec: float = 60,
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
@@ -324,12 +326,14 @@ class NavigationFeatures:
                     b_diff=lambda df: df.distance
                     * np.radians(df.bearing - threshold.bearing).abs()
                 )
-                .query(f"b_diff < .1 and cos((bearing - track) * {rad}) > 0")
+                .query(
+                    f"b_diff < {max_b_diff} and cos((bearing - track) * {rad}) > 0"
+                )
             )
             if tentative is not None:
                 for chunk in tentative.split("20s"):
                     if (
-                        chunk.longer_than("1 minute")
+                        chunk.longer_than(f"{min_duration_sec} seconds")
                         and chunk.altitude_min < 5000
                     ):
                         chunks.append(
@@ -629,6 +633,7 @@ class NavigationFeatures:
         self,
         airport: Union[str, "Airport", None] = None,
         dataset: Optional["Airports"] = None,
+        **kwargs: Any,
     ) -> Iterator["Flight"]:
         """Detects runway changes.
 
@@ -651,7 +656,7 @@ class NavigationFeatures:
         if airport is None:
             return None
 
-        aligned = iter(self.aligned_on_ils(airport))
+        aligned = iter(self.aligned_on_ils(airport, **kwargs))
         first = next(aligned, None)
         if first is None:
             return
@@ -681,6 +686,7 @@ class NavigationFeatures:
         self,
         airport: None | str | "Airport" = None,
         dataset: None | "Airports" = None,
+        **kwargs: Any,
     ) -> Iterator["Flight"]:
         """Detects go-arounds.
 
@@ -710,7 +716,11 @@ class NavigationFeatures:
         if airport is None:
             return None
 
-        first_attempt = next(self.aligned_on_ils(airport), None)
+        # you need to be aligned at least twice on a rway to have a GA:
+        if len(self.aligned_on_ils(airport, **kwargs)) < 2:
+            return
+
+        first_attempt = next(self.aligned_on_ils(airport, **kwargs), None)
 
         while first_attempt is not None:
             after_first_attempt = self.after(first_attempt.start)
@@ -724,7 +734,9 @@ class NavigationFeatures:
             if after_climb is None:
                 return
 
-            next_attempt = next(after_climb.aligned_on_ils(airport), None)
+            next_attempt = next(
+                after_climb.aligned_on_ils(airport, **kwargs), None
+            )
 
             if next_attempt is not None:
                 goaround = self.between(first_attempt.start, next_attempt.stop)
@@ -748,7 +760,7 @@ class NavigationFeatures:
 
     @flight_iterator
     def landing_attempts(
-        self, dataset: Optional["Airports"] = None
+        self, dataset: Optional["Airports"] = None, **kwargs: Any
     ) -> Iterator["Flight"]:
         """Iterates on all landing attempts for current flight.
 
@@ -780,7 +792,9 @@ class NavigationFeatures:
                 else:
                     cd = point.landing_airport(dataset=dataset)
                 if cd.runways is not None:
-                    yield from chunk.assign(airport=cd.icao).aligned_on_ils(cd)
+                    yield from chunk.assign(airport=cd.icao).aligned_on_ils(
+                        cd, **kwargs
+                    )
 
     def diversion(self) -> Optional["Flight"]:
         """Returns the segment of trajectory after a possible decision
@@ -837,6 +851,7 @@ class NavigationFeatures:
         delta_threshold: float = 5e-2,
         airport: None | str | Airport = None,
         runway: None | str = None,
+        **kwargs,
     ) -> Iterator["Flight"]:
         """
         Iterates on all point merge segments in a trajectory before landing at
@@ -913,7 +928,7 @@ class NavigationFeatures:
                 return None
 
         if airport is not None:
-            for landing in self.aligned_on_ils(airport):
+            for landing in self.aligned_on_ils(airport, **kwargs):
                 if runway is None or landing.max("ILS") == runway:
                     yield from self.point_merge(
                         point_merge=point_merge,
