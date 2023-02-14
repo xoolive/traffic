@@ -355,7 +355,10 @@ class SO6Flight(Flight):
         )
 
     def between(
-        self, start: timelike, stop: time_or_delta, strict: bool = True
+        self,
+        start: timelike,
+        stop: time_or_delta,
+        strict: bool = True,
     ) -> "SO6Flight":
         """
         .. danger::
@@ -368,8 +371,8 @@ class SO6Flight(Flight):
         else:
             stop = to_datetime(stop)
 
-        t: npt.NDArray[np.datetime64] = np.stack(list(self.timestamp))
-        index = np.where((np.datetime64(start) < t) & (t < np.datetime64(stop)))
+        t = np.stack(list(self.timestamp))
+        index = np.where((start < t) & (t < stop))
 
         new_data = np.stack(list(self.coords))[index]
         time1: List[datetime] = [start, *t[index]]
