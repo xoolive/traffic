@@ -321,8 +321,11 @@ class SO6Flight(Flight):
                     PlateCarree(), *np.stack(list(self.coords)).T
                 ).T,
             )
-        return PlateCarree().transform_points(  # type: ignore
-            proj, *self.interpolator[proj](times)
+        return cast(
+            npt.NDArray[np.float64],
+            PlateCarree().transform_points(
+                proj, *self.interpolator[proj](times)
+            ),
         )
 
     def at(self, time: Optional[timelike] = None) -> Position:
@@ -366,7 +369,7 @@ class SO6Flight(Flight):
             stop = to_datetime(stop)
 
         t: npt.NDArray[np.datetime64] = np.stack(list(self.timestamp))
-        index = np.where((start < t) & (t < stop))  # type: ignore
+        index = np.where((np.datetime64(start) < t) & (t < np.datetime64(stop)))
 
         new_data = np.stack(list(self.coords))[index]
         time1: List[datetime] = [start, *t[index]]

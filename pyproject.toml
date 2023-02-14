@@ -60,16 +60,16 @@ pyOpenSSL = ">=22.0"
 paramiko = ">=2.7"
 ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
-pyModeS = "^2.14"
+pyModeS = "^2.16"
 # pyModeS = { path = "../pyModeS", extras = ["rtlsdr"], develop = true }
 openap = ">=1.1"
 metar = ">=1.8"
 click = ">=8.1"
 typing-extensions = ">=4.2"
 fastparquet = ">=0.7"
+astor = "^0.8.1"  # probably to be removed with impunity
 # onnxruntime is usually late to release, although available on conda-forge
 onnxruntime = { version = ">=1.12", python = "<3.11" }
-# cryptography = "<37.0.0"  # https://github.com/nextstrain/cli/issues/171
 xarray = { version = ">=0.18.2", optional = true }
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
 scikit-learn = { version = ">=1.0", optional = true }
@@ -79,7 +79,6 @@ Flask-Cors = { version = ">=3.0.10", optional = true }
 waitress = { version = ">=2.1.1", optional = true }
 pyspark = { version = ">=3.3.0", optional = true }
 pyrtlsdr = { version = "^0.2.93", optional = true }
-astor = "^0.8.1"
 
 [tool.poetry.extras]
 full = ["xarray", "libarchive", "scikit-learn", "textual", "pyspark"]

@@ -15,7 +15,7 @@ class MyRtlReader(RtlReader):
         uncertainty: bool = False,
         **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)  # type: ignore
+        super().__init__(**kwargs)
         self.count = 0
         self.fh = fh
         self.decoder = decoder
