@@ -268,10 +268,16 @@ class NavigationFeatures:
         self,
         airport: Union[None, str, "Airport"],
         max_b_diff: float = 0.1,
-        min_duration_sec: float = 60,
+        min_duration: deltalike = "1T",
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
+
+        :param airport: Airport at which the ILS is located
+        :param max_b_diff: maximum tolerance on bearing difference between ILS and
+        flight  trajectory.
+        :param min_duration: minimum duration a flight has to spend on the ILS to be
+        considered as aligned.
 
         Example usage:
 
@@ -333,7 +339,7 @@ class NavigationFeatures:
             if tentative is not None:
                 for chunk in tentative.split("20s"):
                     if (
-                        chunk.longer_than(f"{min_duration_sec} seconds")
+                        chunk.longer_than(min_duration)
                         and chunk.altitude_min < 5000
                     ):
                         chunks.append(
@@ -716,11 +722,12 @@ class NavigationFeatures:
         if airport is None:
             return None
 
+        attempts = self.aligned_on_ils(airport, **kwargs)
         # you need to be aligned at least twice on a rway to have a GA:
-        if len(self.aligned_on_ils(airport, **kwargs)) < 2:
+        if len(attempts) < 2:
             return
 
-        first_attempt = next(self.aligned_on_ils(airport, **kwargs), None)
+        first_attempt = next(attempts, None)
 
         while first_attempt is not None:
             after_first_attempt = self.after(first_attempt.start)
