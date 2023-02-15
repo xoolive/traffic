@@ -267,13 +267,13 @@ class NavigationFeatures:
     def aligned_on_ils(
         self,
         airport: Union[None, str, "Airport"],
-        max_b_diff: float = 0.1,
+        angle_tolerance: float = 0.1,
         min_duration: deltalike = "1T",
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
 
-        :param airport: Airport at which the ILS is located
+        :param airport: Airport where the ILS is located
         :param max_b_diff: maximum tolerance on bearing difference between ILS and
         flight  trajectory.
         :param min_duration: minimum duration a flight has to spend on the ILS to be
@@ -333,7 +333,7 @@ class NavigationFeatures:
                     * np.radians(df.bearing - threshold.bearing).abs()
                 )
                 .query(
-                    f"b_diff < {max_b_diff} and cos((bearing - track) * {rad}) > 0"
+                    f"b_diff < {angle_tolerance} and cos((bearing - track) * {rad}) > 0"
                 )
             )
             if tentative is not None:
