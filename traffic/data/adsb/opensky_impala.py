@@ -806,6 +806,8 @@ class Impala(object):
         else:
             stop = start + timedelta(days=1)
 
+        regexp_in_callsign = False
+
         # default obvious parameter
         where_clause = "where"
 
@@ -847,9 +849,11 @@ class Impala(object):
                 - set(string.digits)
                 - set("%_")
             ):  # if regex like characters
-                other_params += "and RTRIM(callsign) REGEXP('{}') ".format(
-                    callsign
-                )
+                regexp_in_callsign = True
+                if callsign.find("REGEXP("):  # useful for NOT REGEXP()
+                    other_params += f"and RTRIM(callsign) {callsign} "
+                else:
+                    other_params += f"and RTRIM(callsign) REGEXP('{callsign}') "
 
             elif callsign.find("%") > 0 or callsign.find("_") > 0:
                 other_params += "and callsign ilike '{}' ".format(callsign)
@@ -1000,7 +1004,9 @@ class Impala(object):
                 before_hour=bh.timestamp(),
                 after_hour=ah.timestamp(),
                 other_tables=other_tables,
-                other_params=other_params.format(
+                other_params=other_params
+                if regexp_in_callsign  # TODO temporary ugly fix
+                else other_params.format(
                     before_time=bt.timestamp(),
                     after_time=at.timestamp(),
                     before_hour=bh.timestamp(),
