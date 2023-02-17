@@ -8,7 +8,7 @@ import pyproj
 if TYPE_CHECKING:
     from cartopy import crs
 
-    from ..core import Flight, Traffic  # noqa: F401
+    from ..core import Flight, Traffic
 
 Numeric = npt.NDArray[np.float64]
 

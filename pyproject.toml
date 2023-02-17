@@ -85,12 +85,11 @@ full = ["xarray", "libarchive", "scikit-learn", "textual", "pyspark"]
 web = ["Flask", "Flask-Cors", "waitress", "textual"]
 sdr =  ["pyrtlsdr"]
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pre-commit = ">=2.13.0"
-isort = ">=5.9.1"
 black = ">=21.6"
-flake8 = ">=5.0"
 mypy = ">=0.981"
+ruff = "^0.0.247"
 Sphinx = ">=5.1"
 sphinx-rtd-theme = ">=0.5.2"
 jupyter_sphinx = ">=0.3.2"
@@ -128,10 +127,21 @@ exclude = '''
 )/
 '''
 
-[tool.isort]
-line_length = 80
-profile = "black"
-known_first_party = ["numpy", "pandas", "pyproj", "shapely"]
+[tool.ruff]
+select = [
+  "E", "W",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+  "NPY",  # numpy
+  # "PD",  # pandas
+  "DTZ", # flake8-datetimez
+  "RUF"
+]
+line-length = 80
+target-version = "py38"
+
+[tool.ruff.isort]
+known-first-party = ["numpy", "pandas", "pyproj", "shapely"]
 
 [tool.mypy]
 python_version = 3.8

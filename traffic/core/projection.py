@@ -1,6 +1,6 @@
 import cartes.crs
 import cartopy
-from cartes.crs import *  # noqa: F401 F403
+from cartes.crs import *  # noqa: F403
 
 __all__ = [
     p

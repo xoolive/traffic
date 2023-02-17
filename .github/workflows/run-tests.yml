@@ -118,8 +118,7 @@ jobs:
 
       - name: Style checking
         run: |
-          poetry run flake8 traffic tests
-          poetry run isort --check-only traffic tests
+          poetry run ruff traffic tests
           poetry run black --check traffic tests
 
       - name: Type checking

@@ -33,7 +33,7 @@ from .flight import Flight
 from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
-    from .traffic import Traffic  # noqa: F401
+    from .traffic import Traffic
 
 _log = logging.getLogger(__name__)
 
@@ -394,7 +394,7 @@ feature is experimental.
 
             return LazyTraffic(
                 lazy.wrapped_t,
-                lazy.stacked_ops + [op_idx],
+                [*lazy.stacked_ops, op_idx],
                 lazy.iterate_kw,
                 lazy.tqdm_kw,
             )
@@ -483,7 +483,7 @@ for name, handle in inspect.getmembers(
                 op_idx = LazyLambda(name, None, *args, **kwargs)
                 return LazyTraffic(
                     lazy.wrapped_t,
-                    lazy.stacked_ops + [op_idx],
+                    [*lazy.stacked_ops, op_idx],
                     lazy.iterate_kw,
                     lazy.tqdm_kw,
                 )

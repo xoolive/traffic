@@ -334,8 +334,8 @@ class Airspace(ShapelyMixin):
         for i, j in zip(range(c.shape[0] - 1), range(c.shape[0], 1, -1)):
             yield Polygon(
                 np.r_[
-                    lower_layer[i : i + 2, :],  # noqa: E203
-                    upper_layer[j - 2 : j, :],  # noqa: E203
+                    lower_layer[i : i + 2, :],
+                    upper_layer[j - 2 : j, :],
                 ]
             )
 

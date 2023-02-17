@@ -25,31 +25,15 @@ repos:
     rev: 23.1.0
     hooks:
       - id: black
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.10.1
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.0.247"
     hooks:
-      - id: isort
-  - repo: https://github.com/pycqa/flake8
-    rev: 5.0.4
-    hooks:
-      - id: flake8
-        # additional_dependencies:
-        #  - flake8-bugbear
-        #  - flake8-simplify
+      - id: ruff
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.0.0
     hooks:
       - id: mypy
         exclude: ^docs/conf.py
-        # args:
-        #   - --check-untyped-defs
-        #   - --warn-no-return
-        #   - --no-ignore-missing-imports
-        #   - --check-untyped-defs
-        #   - --warn-no-return
-        #   - --warn-redundant-casts
-        #   - --warn-unused-configs
-        #   - --warn-unused-ignores
         additional_dependencies:
           - types-pkg-resources
           - types-requests
@@ -58,6 +42,7 @@ repos:
           - types-flask
           - types-waitress
           - pyModeS
+          - pytest
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.0.0-alpha.0
     hooks:

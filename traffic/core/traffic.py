@@ -47,13 +47,13 @@ if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
 
-    from ..algorithms.clustering import (  # noqa: F401
+    from ..algorithms.clustering import (
         ClusteringProtocol,
         TransformerProtocol,
     )
-    from ..algorithms.cpa import CPA  # noqa: F401
+    from ..algorithms.cpa import CPA
     from ..algorithms.generation import GenerationProtocol, ScalerProtocol
-    from .airspace import Airspace  # noqa: F401
+    from .airspace import Airspace
 
 
 # https://github.com/python/mypy/issues/2511
@@ -308,18 +308,18 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @overload
-    def __getitem__(self, index: str) -> Optional[Flight]:  # noqa: F811
+    def __getitem__(self, index: str) -> Optional[Flight]:
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> Optional["Traffic"]:  # noqa: F811
+    def __getitem__(self, index: slice) -> Optional["Traffic"]:
         ...
 
     @overload
-    def __getitem__(self, index: IterStr) -> Optional["Traffic"]:  # noqa: F811
+    def __getitem__(self, index: IterStr) -> Optional["Traffic"]:
         ...
 
-    def __getitem__(  # noqa: F811
+    def __getitem__(
         self, index: Union[pd.Series, pd.DataFrame, int, slice, IterStr]
     ) -> Union[None, Flight, "Traffic"]:
         if isinstance(index, pd.Series):

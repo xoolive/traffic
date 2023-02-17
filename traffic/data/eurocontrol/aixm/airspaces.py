@@ -203,7 +203,7 @@ class AIXMAirspaceParser(Airspaces):
                     lower_elt = block.find("aixm:lowerLimit", ns)
 
                     upper = (
-                        (  # noqa: W605
+                        (
                             float(upper_elt.text)
                             if re.match(r"\d+", upper_elt.text)
                             else float("inf")
@@ -213,7 +213,7 @@ class AIXMAirspaceParser(Airspaces):
                     )
 
                     lower = (
-                        (  # noqa: W605
+                        (
                             float(lower_elt.text)
                             if re.match(r"\d+", lower_elt.text)
                             else 0  # float("-inf")

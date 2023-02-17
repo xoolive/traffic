@@ -168,17 +168,17 @@ class Impala(object):
             count = 0
             for line in fh.readlines():
                 # -- no pretty-print style cache (option -B)
-                if re.search("\t", line):  # noqa: W605
+                if re.search("\t", line):
                     count += 1
-                    s.write(re.sub(" *\t *", ",", line))  # noqa: W605
+                    s.write(re.sub(" *\t *", ",", line))
                     s.write("\n")
                 # -- pretty-print style cache
-                if re.match(r"\|.*\|", line):  # noqa: W605
+                if re.match(r"\|.*\|", line):
                     count += 1
                     if "," in line:  # this may happen on 'describe table'
                         return_df = False
                         break
-                    s.write(re.sub(r" *\| *", ",", line)[1:-2])  # noqa: W605
+                    s.write(re.sub(r" *\| *", ",", line)[1:-2])
                     s.write("\n")
             else:
                 return_df = True
@@ -427,7 +427,7 @@ class Impala(object):
         stop: timelike,
         *args: Any,  # more reasonable to be explicit about arguments
         columns: list[str],
-        date_delta: timedelta = timedelta(hours=1),  # noqa: B008
+        date_delta: timedelta = timedelta(hours=1),
         cached: bool = True,
         compress: bool = False,
         progressbar: bool | ProgressbarType[Any] = True,
@@ -703,7 +703,7 @@ class Impala(object):
         start: timelike,
         stop: None | timelike = None,
         *args: Any,  # more reasonable to be explicit about arguments
-        date_delta: timedelta = timedelta(hours=1),  # noqa: B008
+        date_delta: timedelta = timedelta(hours=1),
         return_flight: bool = False,
         callsign: None | str | Iterable[str] = None,
         icao24: None | str | Iterable[str] = None,
@@ -979,8 +979,14 @@ class Impala(object):
                 ", " + ", ".join(f"est.{field}" for field in est_columns)
             )
             parse_columns = ", ".join(
-                self._impala_columns
-                + ["firstseen", "origin", "lastseen", "destination", "day"]
+                [
+                    *self._impala_columns,
+                    "firstseen",
+                    "origin",
+                    "lastseen",
+                    "destination",
+                    "day",
+                ]
             )
 
         if count is True:
@@ -1091,7 +1097,7 @@ class Impala(object):
         stop: None | timelike = None,
         *args: Any,  # more reasonable to be explicit about arguments
         table_name: None | str | list[str] = None,
-        date_delta: timedelta = timedelta(hours=1),  # noqa: B008
+        date_delta: timedelta = timedelta(hours=1),
         icao24: None | str | Iterable[str] = None,
         serials: None | int | Iterable[int] = None,
         bounds: None | BaseGeometry | Tuple[float, float, float, float] = None,
@@ -1400,8 +1406,14 @@ class Impala(object):
                 + ", ".join(f"est.{field}" for field in est_columns)
             )
             parse_columns = ", ".join(
-                fst_columns
-                + ["firstseen", "origin", "lastseen", "destination", "day"]
+                [
+                    *fst_columns,
+                    "firstseen",
+                    "origin",
+                    "lastseen",
+                    "destination",
+                    "day",
+                ]
             )
         if bounds is not None:
             columns = (
@@ -1413,7 +1425,7 @@ class Impala(object):
                 )
             )
             parse_columns = ", ".join(
-                fst_columns + ["firstseen", "lastseen", "icao24_2"]
+                [*fst_columns, "firstseen", "lastseen", "icao24_2"]
             )
 
         sequence = list(split_times(start, stop, date_delta))
@@ -1465,7 +1477,7 @@ class Impala(object):
 
     def extended(self, *args: Any, **kwargs: Any) -> None | RawData:
         return self.rawdata(
-            table_name="rollcall_replies_data4", *args, **kwargs
+            *args, **kwargs, table_name="rollcall_replies_data4"
         )
 
 

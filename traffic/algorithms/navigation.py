@@ -29,13 +29,13 @@ from ..core.iterator import flight_iterator
 from ..core.time import deltalike, to_timedelta
 
 if TYPE_CHECKING:
-    from cartes.osm import Overpass  # noqa: 401
+    from cartes.osm import Overpass
 
-    from ..core import Flight, FlightPlan  # noqa: 401
-    from ..core.mixins import PointMixin  # noqa: 401
-    from ..core.structure import Airport, Navaid  # noqa: 401
-    from ..data.basic.airports import Airports  # noqa: 401
-    from ..data.basic.navaid import Navaids  # noqa: 401
+    from ..core import Flight, FlightPlan
+    from ..core.mixins import PointMixin
+    from ..core.structure import Airport, Navaid
+    from ..data.basic.airports import Airports
+    from ..data.basic.navaid import Navaids
 
 _log = logging.getLogger(__name__)
 
@@ -1108,7 +1108,7 @@ class NavigationFeatures:
         self,
         speed_threshold: float = 2,
         time_threshold: str = "30s",
-        filter_dict: Dict[str, int] = dict(compute_gs=3),  # noqa: B006
+        filter_dict: Dict[str, int] = dict(compute_gs=3),
         resample_rule: str = "5s",
     ) -> Optional["Flight"]:
         """
