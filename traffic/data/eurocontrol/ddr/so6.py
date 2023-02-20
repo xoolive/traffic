@@ -321,8 +321,11 @@ class SO6Flight(Flight):
                     PlateCarree(), *np.stack(list(self.coords)).T
                 ).T,
             )
-        return PlateCarree().transform_points(  # type: ignore
-            proj, *self.interpolator[proj](times)
+        return cast(
+            npt.NDArray[np.float64],
+            PlateCarree().transform_points(
+                proj, *self.interpolator[proj](times)
+            ),
         )
 
     def at(self, time: Optional[timelike] = None) -> Position:
@@ -352,7 +355,10 @@ class SO6Flight(Flight):
         )
 
     def between(
-        self, start: timelike, stop: time_or_delta, strict: bool = True
+        self,
+        start: timelike,
+        stop: time_or_delta,
+        strict: bool = True,
     ) -> "SO6Flight":
         """
         .. danger::
@@ -365,8 +371,8 @@ class SO6Flight(Flight):
         else:
             stop = to_datetime(stop)
 
-        t: npt.NDArray[np.datetime64] = np.stack(list(self.timestamp))
-        index = np.where((start < t) & (t < stop))  # type: ignore
+        t = np.stack(list(self.timestamp))
+        index = np.where((start < t) & (t < stop))
 
         new_data = np.stack(list(self.coords))[index]
         time1: List[datetime] = [start, *t[index]]
@@ -578,13 +584,13 @@ class SO6(DataFrameMixin):
     def __getitem__(self, index: identifier) -> SO6Flight:
         ...
 
-    @overload  # noqa: F811
+    @overload
     def __getitem__(
         self, index: Union["SO6", Set["str"], Set[int]]
     ) -> Optional["SO6"]:
         ...
 
-    def __getitem__(  # noqa: F811
+    def __getitem__(
         self, index: Union[identifier, "SO6", Set["str"], Set[int]]
     ) -> Union[SO6Flight, "SO6", None]:
         if isinstance(index, int):

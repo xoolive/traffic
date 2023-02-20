@@ -197,7 +197,7 @@ class OpenSky(Impala):
         Anonymous users can only get the most recent state vectors, i.e. the
         time parameter will be ignored.  Anonymous users can only retrieve data
         with a time resolution of 10 seconds. That means, the API will return
-        state vectors for time now − (now mod 10)
+        state vectors for time now - (now mod 10)
 
         Limitations for OpenSky users
 
@@ -205,12 +205,12 @@ class OpenSky(Impala):
         to access the API. The rate limitations for OpenSky users are:
 
         - OpenSky users can retrieve data of up to 1 hour in the past. If the
-        time parameter has a value t < now−3600 the API will return
-        400 Bad Request.
+        time parameter has a value t < now-3600 the API will return
+        400 Bad Request.
 
         - OpenSky users can retrieve data with a time resolution of 5 seconds.
         That means, if the time parameter was set to t , the API will return
-        state vectors for time t−(t mod 5).
+        state vectors for time t-(t mod 5).
 
         """
 
@@ -264,14 +264,14 @@ class OpenSky(Impala):
         altitude, true track and an on-ground flag.
 
         In contrast to state vectors, trajectories do not contain all
-        information we have about the flight, but rather show the aircraft’s
+        information we have about the flight, but rather show the aircraft`s
         general movement pattern. For this reason, waypoints are selected among
         available state vectors given the following set of rules:
 
-        - The first point is set immediately after the the aircraft’s expected
+        - The first point is set immediately after the the aircraft`s expected
         departure, or after the network received the first position when the
         aircraft entered its reception range.
-        - The last point is set right before the aircraft’s expected arrival, or
+        - The last point is set right before the aircraft`s expected arrival, or
         the aircraft left the networks reception range.
         - There is a waypoint at least every 15 minutes when the aircraft is
         in-flight.

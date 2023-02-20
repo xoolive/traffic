@@ -2,14 +2,19 @@
   "folders": [{ "path": "." }],
   "settings": {
     // Linting + type checking
-    "python.linting.pylintEnabled": false,
-    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Enabled": false,
     "python.linting.mypyEnabled": true,
     "python.linting.enabled": true,
 
     // Formatting
     "editor.formatOnSave": true,
     "python.formatting.provider": "black",
+
+    "[python]": {
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+      }
+    },
 
     // Testing
     "python.testing.unittestEnabled": false,
@@ -33,6 +38,7 @@
   "extensions": {
     "recommendations": [
       "ms-python.python",
+      "charliermarsh.ruff",
       "valentjn.vscode-ltex",
       "ritwickdey.LiveServer"
     ]

@@ -7,8 +7,8 @@ import pandas as pd
 from . import geodesy as geo
 
 if TYPE_CHECKING:
-    from ..data.basic.airports import Airports  # noqa: F401
-    from .mixins import PointMixin  # noqa: F401
+    from ..data.basic.airports import Airports
+    from .mixins import PointMixin
     from .structure import Airport
 
 _log = logging.getLogger(__name__)

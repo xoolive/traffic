@@ -8,7 +8,7 @@ import numpy as np
 from ..core import aero
 
 if TYPE_CHECKING:
-    from ..core import Flight  # noqa: F401
+    from ..core import Flight
 
 
 class OpenAP:

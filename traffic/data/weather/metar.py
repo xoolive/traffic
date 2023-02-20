@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Union
 
 import requests
@@ -46,7 +46,11 @@ class METAR:  # coverage: ignore
         pd.DataFrame
             DataFrame containing METAR information.
         """
-        start = to_datetime(start) if start is not None else datetime.now()
+        start = (
+            to_datetime(start)
+            if start is not None
+            else datetime.now(tz=timezone.utc)
+        )
         stop = (
             to_datetime(stop)
             if stop is not None
@@ -80,10 +84,14 @@ class METAR:  # coverage: ignore
                         m.split(",")[-1],
                         month=datetime.strptime(
                             m.split(",")[1], "%Y-%m-%d %H:%M"
-                        ).month,
+                        )
+                        .astimezone(timezone.utc)
+                        .month,
                         year=datetime.strptime(
                             m.split(",")[1], "%Y-%m-%d %H:%M"
-                        ).year,
+                        )
+                        .astimezone(timezone.utc)
+                        .year,
                         strict=False,
                     )
                 )

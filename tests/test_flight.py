@@ -54,7 +54,7 @@ def test_properties() -> None:
     assert flight.callsign == "TRA051"
     assert flight.title == "TRA051"
     flight2 = flight.assign(number="FAKE", flight_id="belevingsvlucht")
-    assert flight2.title == "TRA051 – FAKE (belevingsvlucht)"
+    assert flight2.title == "TRA051 – FAKE (belevingsvlucht)"  # noqa: RUF001
     assert flight.icao24 == "484506"
     assert flight.registration == "PH-HZO"
     assert flight.typecode == "B738"
@@ -315,9 +315,7 @@ def test_aligned_runway() -> None:
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_landing_ils() -> None:
-    aligned: Optional["Flight"] = belevingsvlucht.aligned_on_ils(
-        "EHAM"
-    ).next()  # noqa: B305
+    aligned: Optional["Flight"] = belevingsvlucht.aligned_on_ils("EHAM").next()
     assert aligned is not None
     assert aligned.max("ILS") == "06"
 
@@ -325,7 +323,7 @@ def test_landing_ils() -> None:
     assert aligned is not None
     assert aligned.ILS_max == "23"
 
-    aligned = airbus_tree.aligned_on_ils("EDHI").next()  # noqa: B305
+    aligned = airbus_tree.aligned_on_ils("EDHI").next()
     assert aligned is not None
     assert aligned.max("ILS") == "23"
 
@@ -395,7 +393,7 @@ def test_getattr() -> None:
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_goaround() -> None:
-    assert belevingsvlucht.go_around().next() is None  # noqa: B305
+    assert belevingsvlucht.go_around().next() is None
     assert belevingsvlucht.go_around("EHLE").sum() == 5
 
     # from traffic.data.datasets import landing_zurich_2019
@@ -569,7 +567,7 @@ def test_comet() -> None:
 
     subset = flight.query("altitude < 300")
     assert subset is not None
-    takeoff = subset.split("10T").next()  # noqa: B305
+    takeoff = subset.split("10T").next()
     assert takeoff is not None
     comet = takeoff.comet(minutes=1)
 

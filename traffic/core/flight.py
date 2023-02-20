@@ -54,19 +54,19 @@ from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 
 if TYPE_CHECKING:
-    import altair as alt  # noqa: F401
-    from cartopy import crs  # noqa: F401
-    from cartopy.mpl.geoaxes import GeoAxesSubplot  # noqa: F401
-    from matplotlib.artist import Artist  # noqa: F401
-    from matplotlib.axes._subplots import Axes  # noqa: F401
+    import altair as alt
+    from cartopy import crs
+    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from matplotlib.artist import Artist
+    from matplotlib.axes._subplots import Axes
 
-    from ..data.adsb.raw_data import RawData  # noqa: F401
-    from ..data.basic.aircraft import Tail  # noqa: F401
-    from ..data.basic.navaid import Navaids  # noqa: F401
-    from .airspace import Airspace  # noqa: F401
-    from .lazy import LazyTraffic  # noqa: F401
-    from .structure import Navaid  # noqa: F401
-    from .traffic import Traffic  # noqa: F401
+    from ..data.adsb.raw_data import RawData
+    from ..data.basic.aircraft import Tail
+    from ..data.basic.navaid import Navaids
+    from .airspace import Airspace
+    from .lazy import LazyTraffic
+    from .structure import Navaid
+    from .traffic import Traffic
 
 _log = logging.getLogger(__name__)
 
@@ -124,7 +124,7 @@ def _split(
         # np.nanargmax seems bugged with timestamps
         argmax = np.where(diff == max_)[0][0]
         yield from _split(data.iloc[:argmax], value, unit)
-        yield from _split(data.iloc[argmax:], value, unit)  # noqa
+        yield from _split(data.iloc[argmax:], value, unit)
     else:
         yield data
 
@@ -315,7 +315,7 @@ class Flight(
         objects returns a Traffic object
         """
         # keep import here to avoid recursion
-        from .traffic import Traffic  # noqa: F811
+        from .traffic import Traffic
 
         if other == 0:
             # useful for compatibility with sum() function
@@ -459,9 +459,9 @@ class Flight(
         # This is for allowing dict(Flight)
         keys = ["icao24", "aircraft", "start", "stop", "duration"]
         if self.callsign:
-            keys = ["callsign"] + keys
+            keys = ["callsign", *keys]
         if self.flight_id:
-            keys = ["flight_id"] + keys
+            keys = ["flight_id", *keys]
         if self.origin:
             keys.append("origin")
         if self.destination:
@@ -534,7 +534,7 @@ class Flight(
         >>> flight.has("runway_change")
         >>> flight.has(lambda f: f.aligned_on_ils("LFBO"))
         """
-        return self.next(method) is not None  # noqa: B305
+        return self.next(method) is not None
 
     def sum(
         self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
@@ -719,7 +719,7 @@ class Flight(
             else method
         )
         segment = None
-        for segment in fun(self):  # noqa: B007
+        for segment in fun(self):
             continue
         return segment  # type: ignore
 
@@ -992,7 +992,7 @@ class Flight(
         flight_id = self.flight_id
 
         if number is not None:
-            title += f" – {number}"
+            title += f" – {number}"  # noqa: RUF001
 
         if flight_id is not None:
             title += f" ({flight_id})"
@@ -1338,13 +1338,11 @@ class Flight(
         ...
 
     @overload
-    def split(  # noqa: F811
-        self, value: str, unit: None = None
-    ) -> FlightIterator:
+    def split(self, value: str, unit: None = None) -> FlightIterator:
         ...
 
     @flight_iterator
-    def split(  # noqa: F811
+    def split(
         self, value: Union[int, str] = 10, unit: Optional[str] = None
     ) -> Iterator["Flight"]:
         """Iterates on legs of a Flight based on the distribution of timestamps.
@@ -1700,7 +1698,7 @@ class Flight(
         if strategy is None:
 
             def identity(x: pd.DataFrame) -> pd.DataFrame:
-                return x  # noqa: E704
+                return x
 
             strategy = identity
 
@@ -2083,7 +2081,7 @@ class Flight(
         ...
 
     @overload
-    def distance(  # noqa: F811
+    def distance(
         self,
         other: Union["Airspace", Polygon, PointMixin],
         column_name: str = "distance",
@@ -2091,12 +2089,12 @@ class Flight(
         ...
 
     @overload
-    def distance(  # noqa: F811
+    def distance(
         self, other: "Flight", column_name: str = "distance"
     ) -> Optional[pd.DataFrame]:
         ...
 
-    def distance(  # noqa: F811
+    def distance(
         self,
         other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
         column_name: str = "distance",
@@ -2158,7 +2156,7 @@ class Flight(
                 }
             )
 
-        from .airspace import Airspace  # noqa: F811
+        from .airspace import Airspace
 
         if isinstance(other, Airspace):
             other = other.flatten()
@@ -2636,7 +2634,7 @@ class Flight(
         """
 
         from ..data import opensky
-        from ..data.adsb.raw_data import RawData  # noqa: F811
+        from ..data.adsb.raw_data import RawData
 
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")
@@ -2997,7 +2995,7 @@ class Flight(
                 (
                     subtab.assign(
                         timestamp=lambda df: df.timestamp.dt.tz_localize(
-                            datetime.now().astimezone().tzinfo
+                            datetime.now().astimezone().tzinfo  # noqa: DTZ005
                         ).dt.tz_convert("utc")
                     ).plot(ax=ax, x="timestamp", **kw)
                 )

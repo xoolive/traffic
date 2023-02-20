@@ -26,11 +26,10 @@ from ...core.geodesy import bearing, destination
 from ...core.mixins import DataFrameMixin, HBoxMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
-    import altair as alt  # noqa: F401
-    from cartopy.crs import PlateCarree  # noqa: F401
-    from cartopy.mpl.geoaxes import GeoAxesSubplot  # noqa: F401
+    import altair as alt
+    from cartopy.mpl.geoaxes import GeoAxesSubplot
 
-    from ...core.structure import Airport  # noqa: F401
+    from ...core.structure import Airport
 
 __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "ProfHoekstra/bluesky/master/data/navdata"
@@ -99,7 +98,7 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
         text_kw: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:  # coverage: ignore
-        from cartopy.crs import PlateCarree  # noqa: F811
+        from cartopy.crs import PlateCarree
 
         if runways is True:
             params = {

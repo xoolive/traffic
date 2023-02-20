@@ -59,7 +59,7 @@ def test_history() -> None:
         "2019-11-11 10:00", "2019-11-11 10:10", bounds=lfbo_tma
     )
 
-    t_decoded = t_tma.filter().query_ehs(df).eval(desc="", max_workers=4)
+    t_decoded = t_tma.filter().query_ehs(df).eval()
     assert len(t_decoded) == len(t_tma)
 
 

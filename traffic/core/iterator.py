@@ -6,10 +6,9 @@ from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 import rich.repr
 
 if TYPE_CHECKING:
-    from . import Flight  # noqa: F401
-    from . import Traffic  # noqa: F401
-    from .lazy import LazyTraffic  # noqa: F401
-    from .mixins import _HBox  # noqa: F401
+    from . import Flight
+    from .lazy import LazyTraffic
+    from .mixins import _HBox
 
 
 @rich.repr.auto()
@@ -134,7 +133,7 @@ class FlightIterator:
 
         >>> flight.has("emergency")
         """
-        return self.next() is not None  # noqa: B305
+        return self.next() is not None
 
     def next(self) -> Optional["Flight"]:
         """Returns the first/next element in the FlightIterator.
@@ -191,7 +190,7 @@ class FlightIterator:
         >>> flight.all('aligned_on_ils("LFBO")')
 
         """
-        from traffic.core import Flight, Traffic  # noqa: F811
+        from traffic.core import Flight, Traffic
 
         if flight_id is None:
             t = Traffic.from_flights(flight for i, flight in enumerate(self))
@@ -243,7 +242,7 @@ class FlightIterator:
         *args: Any,
         **kwargs: Any,
     ) -> Optional["Flight"]:
-        from traffic.core import Flight, Traffic  # noqa: F811
+        from traffic.core import Flight, Traffic
 
         in_ = Traffic.from_flights(
             segment.assign(index_=i) for i, segment in enumerate(self)

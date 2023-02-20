@@ -35,7 +35,7 @@ _log = logging.getLogger(__name__)
 
 
 def check_cert_not_after(certificate: Certificate) -> None:
-    if certificate.not_valid_after < datetime.utcnow():
+    if certificate.not_valid_after < datetime.utcnow():  # noqa: DTZ003
         raise ValueError(
             "Client certificate expired: Not After: "
             f"{certificate.not_valid_after:%Y-%m-%d %H:%M:%SZ}"

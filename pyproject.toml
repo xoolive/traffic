@@ -60,16 +60,16 @@ pyOpenSSL = ">=22.0"
 paramiko = ">=2.7"
 ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
-pyModeS = "^2.14"
+pyModeS = "^2.16"
 # pyModeS = { path = "../pyModeS", extras = ["rtlsdr"], develop = true }
 openap = ">=1.1"
 metar = ">=1.8"
 click = ">=8.1"
 typing-extensions = ">=4.2"
 fastparquet = ">=0.7"
+astor = "^0.8.1"  # probably to be removed with impunity
 # onnxruntime is usually late to release, although available on conda-forge
 onnxruntime = { version = ">=1.12", python = "<3.11" }
-# cryptography = "<37.0.0"  # https://github.com/nextstrain/cli/issues/171
 xarray = { version = ">=0.18.2", optional = true }
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
 scikit-learn = { version = ">=1.0", optional = true }
@@ -79,19 +79,17 @@ Flask-Cors = { version = ">=3.0.10", optional = true }
 waitress = { version = ">=2.1.1", optional = true }
 pyspark = { version = ">=3.3.0", optional = true }
 pyrtlsdr = { version = "^0.2.93", optional = true }
-astor = "^0.8.1"
 
 [tool.poetry.extras]
 full = ["xarray", "libarchive", "scikit-learn", "textual", "pyspark"]
 web = ["Flask", "Flask-Cors", "waitress", "textual"]
 sdr =  ["pyrtlsdr"]
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pre-commit = ">=2.13.0"
-isort = ">=5.9.1"
 black = ">=21.6"
-flake8 = ">=5.0"
 mypy = ">=0.981"
+ruff = "^0.0.247"
 Sphinx = ">=5.1"
 sphinx-rtd-theme = ">=0.5.2"
 jupyter_sphinx = ">=0.3.2"
@@ -129,10 +127,21 @@ exclude = '''
 )/
 '''
 
-[tool.isort]
-line_length = 80
-profile = "black"
-known_first_party = ["numpy", "pandas", "pyproj", "shapely"]
+[tool.ruff]
+select = [
+  "E", "W",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+  "NPY",  # numpy
+  # "PD",  # pandas
+  "DTZ", # flake8-datetimez
+  "RUF"
+]
+line-length = 80
+target-version = "py38"
+
+[tool.ruff.isort]
+known-first-party = ["numpy", "pandas", "pyproj", "shapely"]
 
 [tool.mypy]
 python_version = 3.8
@@ -142,8 +151,6 @@ color_output = true
 pretty = true
 show_column_numbers = true
 strict = true
-
-# probably redundant, but useful when switching strict to false
 check_untyped_defs = true
 ignore_missing_imports = true
 warn_no_return = true
