@@ -27,6 +27,7 @@ from ipyleaflet import Map as LeafletMap
 from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
 
+import numpy as np
 import pandas as pd
 import pyproj
 from shapely.geometry import Polygon, base
@@ -47,10 +48,7 @@ if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
 
-    from ..algorithms.clustering import (
-        ClusteringProtocol,
-        TransformerProtocol,
-    )
+    from ..algorithms.clustering import ClusteringProtocol, TransformerProtocol
     from ..algorithms.cpa import CPA
     from ..algorithms.generation import GenerationProtocol, ScalerProtocol
     from .airspace import Airspace
@@ -373,6 +371,17 @@ class Traffic(HBoxMixin, GeographyMixin):
         if self.flight_ids is not None:
             return self.flight_ids  # type: ignore
         return list({*self.aircraft, *self.callsigns})
+
+    def sample(
+        self,
+        n: Optional[int] = None,
+    ) -> Optional["Traffic"]:
+        sampled_ids: list[str] = list(
+            np.random.choice(
+                self.data.flight_id.unique(), size=n, replace=False
+            )
+        )
+        return self[sampled_ids]
 
     def iterate(
         self,
