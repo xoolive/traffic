@@ -8,12 +8,19 @@
 
     // Formatting
     "editor.formatOnSave": true,
+    "editor.rulers": [80],
     "python.formatting.provider": "black",
 
     "[python]": {
       "editor.codeActionsOnSave": {
         "source.organizeImports": true
       }
+    },
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
 
     // Testing
@@ -29,8 +36,14 @@
 
     // File list
     "files.exclude": {
+      "**/.git/": true,
+      "**/.ipynb_checkpoints/": true,
+      "**/.mypy_cache/": true,
+      "**/__pycache__/": true,
+      "**/.pytest_cache/": true,
+      "**/.ruff_cache/": true,
+      "build/": true,
       "dist/": true,
-      "build:": true,
       "docs/_build": true,
       "docs/node_modules": true
     }

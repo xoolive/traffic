@@ -274,10 +274,10 @@ class NavigationFeatures:
         given airport. The runway number is appended as a new ``ILS`` column.
 
         :param airport: Airport where the ILS is located
-        :param max_b_diff: maximum tolerance on bearing difference between ILS and
-        flight  trajectory.
-        :param min_duration: minimum duration a flight has to spend on the ILS to be
-        considered as aligned.
+        :param angle_tolerance: maximum tolerance on bearing difference between
+            ILS and flight trajectory.
+        :param min_duration: minimum duration a flight has to spend on the ILS
+            to be considered as aligned.
 
         Example usage:
 
@@ -333,7 +333,8 @@ class NavigationFeatures:
                     * np.radians(df.bearing - threshold.bearing).abs()
                 )
                 .query(
-                    f"b_diff < {angle_tolerance} and cos((bearing - track) * {rad}) > 0"
+                    f"b_diff < {angle_tolerance} and "
+                    f"cos((bearing - track) * {rad}) > 0"
                 )
             )
             if tentative is not None:
@@ -858,7 +859,7 @@ class NavigationFeatures:
         delta_threshold: float = 5e-2,
         airport: None | str | Airport = None,
         runway: None | str = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Iterator["Flight"]:
         """
         Iterates on all point merge segments in a trajectory before landing at
