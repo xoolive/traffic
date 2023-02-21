@@ -524,7 +524,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     # overridden by the decorator anyway
 
     @lazy_evaluation()
-    def filter_if(self, *args, **kwargs):  # type: ignore
+    def median_filter_if(self, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()

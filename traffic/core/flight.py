@@ -1639,7 +1639,7 @@ class Flight(
 
         return res
 
-    def filter(
+    def median_filter(
         self,
         strategy: Optional[
             Callable[[pd.DataFrame], pd.DataFrame]
