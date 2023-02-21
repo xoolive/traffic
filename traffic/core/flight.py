@@ -30,16 +30,15 @@ from typing import (
     overload,
 )
 
+import numpy as np
+import pandas as pd
+import pyproj
 import rich.repr
 from ipyleaflet import Map as LeafletMap
 from ipyleaflet import Polyline as LeafletPolyline
 from ipywidgets import HTML
-from rich.console import Console, ConsoleOptions, RenderResult
-
-import numpy as np
-import pandas as pd
-import pyproj
 from pandas.core.internals import DatetimeTZBlock
+from rich.console import Console, ConsoleOptions, RenderResult
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
@@ -1605,7 +1604,7 @@ class Flight(
                 value = value.fillna(method="pad")
                 # FutureWarning: a value is trying to be set on a copy of a
                 # slice from a DataFrame
-                data.isetitem(idx, value)
+                data.iloc[:, idx] = value
 
         elif isinstance(rule, int):
             # ./site-packages/pandas/core/indexes/base.py:2820: FutureWarning:
