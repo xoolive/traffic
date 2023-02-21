@@ -23,12 +23,13 @@ from typing import (
     overload,
 )
 
-import numpy as np
-import pandas as pd
-import pyproj
 from ipyleaflet import Map as LeafletMap
 from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
+
+import numpy as np
+import pandas as pd
+import pyproj
 from shapely.geometry import Polygon, base
 
 from ..algorithms.clustering import Clustering, centroid
@@ -382,7 +383,6 @@ class Traffic(HBoxMixin, GeographyMixin):
             dataset. Default is None, in which case a single value is returned.
 
         :return: A Traffic of n random sampled flights.
-        :rtype: Optional["Traffic"]
         """
 
         sampled_ids: list[str] = list(
