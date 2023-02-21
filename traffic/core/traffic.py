@@ -552,13 +552,17 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def filter(  # type: ignore
+    def median_filter(  # type: ignore
         self,
         strategy: Callable[
             [pd.DataFrame], pd.DataFrame
         ] = lambda x: x.bfill().ffill(),
         **kwargs,
     ):
+        ...
+
+    @lazy_evaluation()
+    def smoothing(self, paracol: str, kernel_size: int):
         ...
 
     @lazy_evaluation()
