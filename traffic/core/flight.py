@@ -1768,6 +1768,23 @@ class Flight(
 
         return self.__class__(data)
 
+    def smoothing(self, paracol: str, kernel_size: int) -> "Flight":
+        """Smoothens a parameter with a rolling mean.
+
+        This function applies a rolling mean with specified kernel width to flight parameter.
+
+        :param paracol: name of the column containing the parameter to smoothen
+        :param kernel_size: size of the kernel to use for the rolling mean
+        :return: a new Flight object with the smoothed parameter
+        
+        """
+        data = self.data
+        data['paracol_copy'] = data[paracol]
+        data[paracol] = data[paracol].rolling(kernel_size, center=True).mean()
+        data.loc[data[paracol].isnull(), paracol] = data['paracol_copy']
+        data=data.drop(['paracol_copy'], axis=1)
+        return self.__class__(data)
+
     def filter_position(self, cascades: int = 2) -> Optional["Flight"]:
         # TODO improve based on agg_time or EKF
         flight: Optional["Flight"] = self
