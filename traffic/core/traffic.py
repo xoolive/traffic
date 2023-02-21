@@ -552,7 +552,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def median_filter(  # type: ignore
+    def original_filter(  # type: ignore
         self,
         strategy: Callable[
             [pd.DataFrame], pd.DataFrame
@@ -563,6 +563,21 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @lazy_evaluation()
     def smoothing(self, paracol: str, kernel_size: int):
+        ...
+
+    @lazy_evaluation()
+    def median_filter(self, paracol: str, window: int):
+        ...
+
+    @lazy_evaluation()
+    def deriv_filter(
+        self,
+        paracol: str,
+        th1: float,
+        th2: float,
+        window: int,
+        timecol: str = "timestamp",
+    ):
         ...
 
     @lazy_evaluation()

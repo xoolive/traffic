@@ -1639,7 +1639,7 @@ class Flight(
 
         return res
 
-    def median_filter(
+    def original_filter(
         self,
         strategy: Optional[
             Callable[[pd.DataFrame], pd.DataFrame]
@@ -1768,6 +1768,61 @@ class Flight(
 
         return self.__class__(data)
 
+    def median_filter(
+        self,
+        paracol: str,
+        window: int,
+    ) -> "Flight":
+        data = self.data.reset_index(drop=True)
+        paracol_copy = data[paracol]
+        data[paracol] = data[paracol].rolling(window, center=True).median()
+        data.loc[data[paracol].isnull(), paracol] = paracol_copy
+        return self.__class__(data)
+
+    def deriv_filter(
+        self,
+        paracol: str,
+        th1: float,
+        th2: float,
+        window: int,
+        timecol: str = "timestamp",
+    ) -> "Flight":
+        data = self.data.reset_index(drop=True)
+        data["timediff"] = data[timecol].diff().astype("timedelta64[s]")
+        data["diff_1"] = abs(data[paracol].diff())
+        if paracol == "track":
+            data.loc[
+                (data["diff_1"] < 370) & (data["diff_1"] > 350), "diff_1"
+            ] = 0
+        data["diff_2"] = abs(data.diff_1.diff())
+
+        data["deriv_1"] = data.diff_1 / data.timediff
+        data["deriv_2"] = data.diff_2 / data.timediff
+        data.loc[
+            (data["deriv_1"] >= th1) | (data["deriv_2"] >= th2), "spike"
+        ] = True
+        data["spike"].fillna(False, inplace=True)
+        data.loc[data["spike"] == True, "spike_time"] = data.timestamp
+
+        if data["spike_time"].isnull().all() == False:
+            data["spike_time_prev"] = data["spike_time"].ffill()
+            data["spike_time_prev"] = (
+                data["timestamp"] - data["spike_time_prev"]
+            ).astype("timedelta64[s]")
+            data["spike_time_next"] = data["spike_time"].bfill()
+            data["spike_time_next"] = (
+                data["spike_time_next"] - data["timestamp"]
+            ).astype("timedelta64[s]")
+            data.loc[
+                (
+                    (data["spike_time_prev"] <= window)
+                    & (data["spike_time_next"] <= window)
+                ),
+                "in_window",
+            ] = True
+            data.loc[(data["in_window"] == True), paracol] = np.NaN
+        return self.__class__(data)
+
     def smoothing(self, paracol: str, kernel_size: int) -> "Flight":
         """Smoothens a parameter with a rolling mean.
 
@@ -1776,13 +1831,12 @@ class Flight(
         :param paracol: name of the column containing the parameter to smoothen
         :param kernel_size: size of the kernel to use for the rolling mean
         :return: a new Flight object with the smoothed parameter
-        
+
         """
-        data = self.data
-        data['paracol_copy'] = data[paracol]
+        data = self.data.reset_index(drop=True)
+        paracol_copy = data[paracol]
         data[paracol] = data[paracol].rolling(kernel_size, center=True).mean()
-        data.loc[data[paracol].isnull(), paracol] = data['paracol_copy']
-        data=data.drop(['paracol_copy'], axis=1)
+        data.loc[data[paracol].isnull(), paracol] = paracol_copy
         return self.__class__(data)
 
     def filter_position(self, cascades: int = 2) -> Optional["Flight"]:
