@@ -1,7 +1,6 @@
 from typing import cast
 
 from cartes.crs import CH1903p  # type: ignore
-
 from traffic.core import Traffic
 from traffic.data.samples import collections, get_sample
 
