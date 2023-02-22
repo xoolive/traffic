@@ -566,6 +566,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
+    def filter_zhaw(self):
+        ...
+
+    @lazy_evaluation()
     def median_filter(self, paracol: str, window: int):
         ...
 

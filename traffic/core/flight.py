@@ -1768,6 +1768,41 @@ class Flight(
 
         return self.__class__(data)
 
+    def filter_zhaw(self) -> "Flight":
+        trajs_filt = (
+            # altitude
+            self.median_filter(paracol="altitude", kernel=11)
+            .deriv_filter(paracol="altitude", th1=200, th2=150, window=10)
+            .cluster_filter(paracol="altitude", groupsize=15, paradiff_big=500)
+            .smoothing(paracol="altitude", kernel_size=10)
+            # geoaltitude
+            .median_filter(paracol="geoaltitude", kernel=9)
+            .deriv_filter(paracol="geoaltitude", th1=200, th2=150, window=10)
+            .cluster_filter(paracol="geoaltitude", groupsize=15, paradiff_big=500)
+            .smoothing(paracol="geoaltitude", kernel_size=10)
+            # vertical rate
+            .median_filter(paracol="vertical_rate", kernel=5)
+            .deriv_filter(paracol="vertical_rate", th1=1500, th2=1000, window=5)
+            .cluster_filter(paracol="vertical_rate", groupsize=15, paradiff_big=2000)
+            .smoothing(paracol="vertical_rate", kernel_size=5)
+            # groundspeed
+            .median_filter(paracol="groundspeed", kernel=9)
+            .deriv_filter(paracol="groundspeed", th1=12, th2=10, window=3)
+            .smoothing(paracol="groundspeed", kernel_size=7)
+            # onground
+            .cluster_filter(paracol="onground", groupsize=15)
+            # track
+            .median_filter(paracol="track", kernel=5)
+            .deriv_filter(paracol="track", th1=12, th2=10, window=2)
+            .cluster_filter(paracol="track", groupsize=20, paradiff_big=20)
+            .smoothing(paracol="track", kernel_size=3)
+            # latitude
+            .cluster_filter(paracol="latitude", paradiff_big=0.02, groupsize=10)
+            # longitude
+            .cluster_filter(paracol="longitude", paradiff_big=0.02, groupsize=10)
+        )
+        return trajs_filt
+
     def median_filter(self, paracol: str, kernel: int) -> "Flight":
         """Moving median filter to remove spikes in the data.
 
@@ -1829,8 +1864,8 @@ class Flight(
         self,
         paracol: str,
         groupsize: int,
-        timediff_big: float,
-        paradiff_big: float,
+        timediff_big: float = 60,
+        paradiff_big: float = 1000,
         timecol: str = "timestamp",
     ) -> "Flight":
         """Filter a parameter with a clustering approach. Datapoints are clustered based on
