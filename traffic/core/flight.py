@@ -30,15 +30,16 @@ from typing import (
     overload,
 )
 
-import numpy as np
-import pandas as pd
-import pyproj
 import rich.repr
 from ipyleaflet import Map as LeafletMap
 from ipyleaflet import Polyline as LeafletPolyline
 from ipywidgets import HTML
-from pandas.core.internals import DatetimeTZBlock
 from rich.console import Console, ConsoleOptions, RenderResult
+
+import numpy as np
+import pandas as pd
+import pyproj
+from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
