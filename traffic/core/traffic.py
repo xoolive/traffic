@@ -552,7 +552,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def original_filter(  # type: ignore
+    def filter(  # type: ignore
         self,
         strategy: Callable[
             [pd.DataFrame], pd.DataFrame
@@ -578,6 +578,11 @@ class Traffic(HBoxMixin, GeographyMixin):
         window: int,
         timecol: str = "timestamp",
     ):
+
+        ...
+
+    @lazy_evaluation()
+    def cluster_filter(self, paracol, timecol, groupsize, timediff_big, paradiff_big):
         ...
 
     @lazy_evaluation()

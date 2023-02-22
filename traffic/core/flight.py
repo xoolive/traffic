@@ -1639,7 +1639,7 @@ class Flight(
 
         return res
 
-    def original_filter(
+    def filter(
         self,
         strategy: Optional[
             Callable[[pd.DataFrame], pd.DataFrame]
@@ -1768,14 +1768,15 @@ class Flight(
 
         return self.__class__(data)
 
-    def median_filter(
-        self,
-        paracol: str,
-        window: int,
-    ) -> "Flight":
+    def median_filter(self, paracol: str, kernel: int) -> "Flight":
+        """Moving median filter to remove spikes in the data.
+
+        :param paracol: Name of the column to be filtered.
+        :param window: Size of the window for the median filter.
+        """
         data = self.data.reset_index(drop=True)
         paracol_copy = data[paracol]
-        data[paracol] = data[paracol].rolling(window, center=True).median()
+        data[paracol] = data[paracol].rolling(kernel, center=True).median()
         data.loc[data[paracol].isnull(), paracol] = paracol_copy
         return self.__class__(data)
 
@@ -1787,52 +1788,105 @@ class Flight(
         window: int,
         timecol: str = "timestamp",
     ) -> "Flight":
+        """Filter method based on the first and second derivative of a parameter.
+
+        :param paracol: Name of the column on which to apply the filtering.
+        :param th1: Threshold for the first derivative above which a datapoint is declared a spike.
+        :param th2: Threshold for the second derivative above which a datapoint is declared a spike.
+        :param window: Window in seconds. If two spikes are detected within this window,
+                       the datapoints between them are also removed.
+        :param timecol: The time column to use, by default "timestamp".
+        """
+
         data = self.data.reset_index(drop=True)
-        data["timediff"] = data[timecol].diff().astype("timedelta64[s]")
-        data["diff_1"] = abs(data[paracol].diff())
+        timediff = data[timecol].diff().astype("timedelta64[s]")
+        diff1 = abs(data[paracol].diff())
         if paracol == "track":
-            data.loc[
-                (data["diff_1"] < 370) & (data["diff_1"] > 350), "diff_1"
-            ] = 0
-        data["diff_2"] = abs(data.diff_1.diff())
+            diff1.loc[(diff1 < 370) & (diff1 > 350)] = 0
+        diff2 = abs(diff1.diff())
 
-        data["deriv_1"] = data.diff_1 / data.timediff
-        data["deriv_2"] = data.diff_2 / data.timediff
-        data.loc[
-            (data["deriv_1"] >= th1) | (data["deriv_2"] >= th2), "spike"
-        ] = True
-        data["spike"].fillna(False, inplace=True)
-        data.loc[data["spike"] == True, "spike_time"] = data.timestamp
+        deriv1 = diff1 / timediff
+        deriv2 = diff2 / timediff
+        spike = ((deriv1 >= th1) | (deriv2 >= th2)).fillna(False, inplace=False)
 
-        if data["spike_time"].isnull().all() == False:
-            data["spike_time_prev"] = data["spike_time"].ffill()
-            data["spike_time_prev"] = (
-                data["timestamp"] - data["spike_time_prev"]
-            ).astype("timedelta64[s]")
-            data["spike_time_next"] = data["spike_time"].bfill()
-            data["spike_time_next"] = (
-                data["spike_time_next"] - data["timestamp"]
-            ).astype("timedelta64[s]")
-            data.loc[
-                (
-                    (data["spike_time_prev"] <= window)
-                    & (data["spike_time_next"] <= window)
-                ),
-                "in_window",
-            ] = True
-            data.loc[(data["in_window"] == True), paracol] = np.NaN
+        spike_time = pd.Series(np.nan, index=data.index)
+        spike_time.loc[spike == True] = data[timecol].loc[spike == True]
+
+        if spike_time.isnull().all() == False:
+            spike_time_prev = spike_time.ffill()
+            spike_delta_prev = (data["timestamp"] - spike_time_prev).astype(
+                "timedelta64[s]"
+            )
+            spike_time_next = spike_time.bfill()
+            spike_delta_next = (spike_time_next - data["timestamp"]).astype(
+                "timedelta64[s]"
+            )
+            in_window = (spike_delta_prev <= window) & (spike_delta_next <= window)
+            data.loc[(in_window == True), paracol] = np.NaN
+        return self.__class__(data)
+
+    def cluster_filter(
+        self,
+        paracol: str,
+        groupsize: int,
+        timediff_big: float,
+        paradiff_big: float,
+        timecol: str = "timestamp",
+    ) -> "Flight":
+        """Filter a parameter with a clustering approach. Datapoints are clustered based on
+        difference in time and parameter value. If the cluster is larger than the defined groupsize
+        the datapoints are kept, otherwise they are removed.
+
+        :param paracol: Name of the column to filter.
+        :param groupsize: Minimum size of a cluster in order not to be removed
+        :param timediff_big: Threshold above which a difference in time is considered a new cluster.
+        :param paradiff_big: Theshold above which a difference in parameter value is considered a
+                             new cluster.
+        :param timecol: Name of the column containing the timestamp information,by default
+                        "timestamp".
+        """
+
+        data = self.data.reset_index(drop=True)
+        data = data.drop_duplicates([timecol], keep="last")
+
+        if paracol == "onground":
+            statechange = data[paracol].diff().astype(bool)
+            data["group"] = statechange.eq(True).cumsum()
+            groups = data["group"].value_counts()
+            keepers = groups[groups > groupsize].index.tolist()
+            data[paracol] = data[paracol].where(
+                data["group"].isin(keepers), float("NaN")
+            )
+
+        else:
+            timediff = data[timecol].diff().astype("timedelta64[s]")
+            temp_index = data.index
+            temp_values = data[paracol].dropna()
+            paradiff = abs(temp_values.diff().reindex(temp_index))
+            bigdiff = pd.Series(
+                np.where(
+                    ((timediff > timediff_big) | (paradiff > paradiff_big)),
+                    True,
+                    False,
+                )
+            )
+            data["group"] = bigdiff.eq(True).cumsum()
+            groups = data[data[paracol].notna()]["group"].value_counts()
+            keepers = groups[groups > groupsize].index.tolist()
+            data[paracol] = data[paracol].where(
+                data["group"].isin(keepers), float("NaN")
+            )
+
+        data = data.drop(columns=["group"])
         return self.__class__(data)
 
     def smoothing(self, paracol: str, kernel_size: int) -> "Flight":
-        """Smoothens a parameter with a rolling mean.
+        """Smoothen a parameter using a rolling mean with a specified kernel size.
 
-        This function applies a rolling mean with specified kernel width to flight parameter.
-
-        :param paracol: name of the column containing the parameter to smoothen
-        :param kernel_size: size of the kernel to use for the rolling mean
-        :return: a new Flight object with the smoothed parameter
-
+        :param paracol: Name of the column to smooth.
+        :param kernel_size: The size of the kernel to use for the rolling mean.
         """
+
         data = self.data.reset_index(drop=True)
         paracol_copy = data[paracol]
         data[paracol] = data[paracol].rolling(kernel_size, center=True).mean()
