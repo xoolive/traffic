@@ -9,6 +9,7 @@ import pytest
 from cartes.osm import Overpass
 from requests import RequestException
 
+import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from traffic.algorithms.douglas_peucker import douglas_peucker
@@ -63,6 +64,15 @@ def test_properties() -> None:
         " typecode='B738', flag='🇳🇱')"
     )
     assert flight.flight_id is None
+
+
+def test_dtype() -> None:
+    # See PR 324
+
+    assert any(
+        dtype == np.float64
+        for dtype in belevingsvlucht.resample("1s").data.dtypes
+    )
 
 
 @pytest.mark.skipif(True, reason="TODO this is wrong...")

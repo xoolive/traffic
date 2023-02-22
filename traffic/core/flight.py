@@ -1605,7 +1605,7 @@ class Flight(
                 value = value.fillna(method="pad")
                 # FutureWarning: a value is trying to be set on a copy of a
                 # slice from a DataFrame
-                data.isetitem(idx, value)
+                data.iloc[:, idx] = value
 
         elif isinstance(rule, int):
             # ./site-packages/pandas/core/indexes/base.py:2820: FutureWarning:
