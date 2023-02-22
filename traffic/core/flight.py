@@ -734,7 +734,12 @@ class Flight(
         data = self.data.query("longitude == longitude")
         if "altitude" not in data.columns:
             data = data.assign(altitude=0)
-        yield from zip(data["longitude"], data["latitude"], data["altitude"])
+        yield from zip(
+            data["longitude"].to_numpy(),
+            data["latitude"].to_numpy(),
+            # This is a bit more robust to the new dtypes with pd.NA
+            data["altitude"].astype(float).to_numpy(),
+        )
 
     def coords4d(self, delta_t: bool = False) -> Iterator[Entry]:
         data = self.data.query("longitude == longitude")
@@ -2760,7 +2765,7 @@ class Flight(
 
         kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
         return LeafletPolyline(
-            locations=list((lat, lon) for (lon, lat, _) in shape.coords),
+            locations=list((lat, lon) for (lon, lat, *_) in shape.coords),
             **kwargs,
         )
 
