@@ -1769,6 +1769,9 @@ class Flight(
         return self.__class__(data)
 
     def filter_zhaw(self) -> "Flight":
+        """Applies a collection of filters to the trajectory. Depending on the feature, the kind
+        of filter steps that are applied and the parameters of the filters may vary.
+        """
         trajs_filt = (
             # altitude
             self.median_filter(paracol="altitude", kernel=11)
@@ -1784,7 +1787,7 @@ class Flight(
             .median_filter(paracol="vertical_rate", kernel=5)
             .deriv_filter(paracol="vertical_rate", th1=1500, th2=1000, window=5)
             .cluster_filter(paracol="vertical_rate", groupsize=15, paradiff_big=2000)
-            .smoothing(paracol="vertical_rate", kernel_size=5)
+            .smoothing(paracol="vertical_rate", kernel_size=3)
             # groundspeed
             .median_filter(paracol="groundspeed", kernel=9)
             .deriv_filter(paracol="groundspeed", th1=12, th2=10, window=3)
