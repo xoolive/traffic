@@ -4782,14 +4782,14 @@ files = [
 
 [[package]]
 name = "types-waitress"
-version = "2.1.4.4"
+version = "2.1.4.5"
 description = "Typing stubs for waitress"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "types-waitress-2.1.4.4.tar.gz", hash = "sha256:c2681d1e6254105660927989b5bccb412ba6a12159dd7ed646d4adc7d81056d7"},
-    {file = "types_waitress-2.1.4.4-py3-none-any.whl", hash = "sha256:1c11bb897f815f72ab1369dbaf46db49032c4ade158db9e6ea66d7f11a8491d6"},
+    {file = "types-waitress-2.1.4.5.tar.gz", hash = "sha256:c6e3411b88dece0e4f0a39c7cbd26f7f3cfd9c06580a0d63f366470dbdd4dfd5"},
+    {file = "types_waitress-2.1.4.5-py3-none-any.whl", hash = "sha256:025ff41ba512723929c5d7b71f650cb620df4cdf67169da784b767d89a368ee5"},
 ]
 
 [[package]]
