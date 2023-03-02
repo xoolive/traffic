@@ -1,5 +1,6 @@
-import numpy as np
 from traffic.core.geodesy import bearing, destination, distance, greatcircle
+
+import numpy as np
 
 
 def test_geodesy() -> None:

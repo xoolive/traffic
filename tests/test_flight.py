@@ -8,9 +8,6 @@ from typing import Any, Optional, cast
 import pytest
 from cartes.osm import Overpass
 from requests import RequestException
-
-import pandas as pd
-from pandas.testing import assert_frame_equal
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import airports, eurofirs, navaids, runways
@@ -23,6 +20,10 @@ from traffic.data.samples import (
     get_sample,
     zurich_airport,
 )
+
+import numpy as np
+import pandas as pd
+from pandas.testing import assert_frame_equal
 
 # This part only serves on travis when the downloaded file is corrupted
 # This shouldn't happen much as caching is now activated.
@@ -63,6 +64,15 @@ def test_properties() -> None:
         " typecode='B738', flag='🇳🇱')"
     )
     assert flight.flight_id is None
+
+
+def test_dtype() -> None:
+    # See PR 324
+
+    assert any(
+        dtype == np.float64
+        for dtype in belevingsvlucht.resample("1s").data.dtypes
+    )
 
 
 @pytest.mark.skipif(True, reason="TODO this is wrong...")

@@ -118,12 +118,12 @@ jobs:
 
       - name: Style checking
         run: |
-          poetry run ruff traffic tests
-          poetry run black --check traffic tests
+          poetry run ruff src tests
+          poetry run black --check src tests
 
       - name: Type checking
         run: |
-          poetry run mypy traffic tests
+          poetry run mypy src tests
 
       - name: Run tests
         env:

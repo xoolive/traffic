@@ -1,5 +1,4 @@
 import pytest
-
 from traffic.core import Airspace
 from traffic.data import eurofirs
 

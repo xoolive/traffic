@@ -1,5 +1,4 @@
 import pytest
-
 from traffic.data import airways, eurofirs
 
 

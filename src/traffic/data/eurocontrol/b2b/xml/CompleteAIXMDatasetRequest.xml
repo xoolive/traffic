@@ -1,0 +1,8 @@
+<airspace:CompleteAIXMDatasetRequest xmlns:airspace="eurocontrol/cfmu/b2b/AirspaceServices">
+    <sendTime>{send_time:%Y-%m-%d %H:%M:%S}</sendTime>
+    <queryCriteria>
+        <airac>
+            <airacId>{airac_id}</airacId>
+        </airac>
+    </queryCriteria>
+</airspace:CompleteAIXMDatasetRequest>

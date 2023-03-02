@@ -2,7 +2,6 @@ from datetime import timedelta
 from typing import Optional, cast
 
 import pytest
-
 from traffic.core import Flight, Traffic
 from traffic.data import opensky
 from traffic.data.samples import belevingsvlucht, lfbo_tma
