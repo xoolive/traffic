@@ -588,11 +588,11 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def median_filter(self, paracol: str, window: int):
+    def filter_median(self, paracol: str, window: int):
         ...
 
     @lazy_evaluation()
-    def deriv_filter(
+    def filter_deriv(
         self,
         paracol: str,
         th1: float,
@@ -604,7 +604,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def cluster_filter(self, paracol, timecol, groupsize, timediff_big, paradiff_big):
+    def filter_cluster(self, paracol, timecol, groupsize, timediff_big, paradiff_big):
         ...
 
     @lazy_evaluation()

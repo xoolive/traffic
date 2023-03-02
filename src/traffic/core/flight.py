@@ -1779,39 +1779,39 @@ class Flight(
         """
         trajs_filt = (
             # altitude
-            self.median_filter(paracol="altitude", kernel=11)
-            .deriv_filter(paracol="altitude", th1=200, th2=150, window=10)
-            .cluster_filter(paracol="altitude", groupsize=15, paradiff_big=500)
+            self.filter_median(paracol="altitude", kernel=11)
+            .filter_deriv(paracol="altitude", th1=200, th2=150, window=10)
+            .filter_cluster(paracol="altitude", groupsize=15, paradiff_big=500)
             .smoothing(paracol="altitude", kernel_size=10)
             # geoaltitude
-            .median_filter(paracol="geoaltitude", kernel=9)
-            .deriv_filter(paracol="geoaltitude", th1=200, th2=150, window=10)
-            .cluster_filter(paracol="geoaltitude", groupsize=15, paradiff_big=500)
+            .filter_median(paracol="geoaltitude", kernel=9)
+            .filter_deriv(paracol="geoaltitude", th1=200, th2=150, window=10)
+            .filter_cluster(paracol="geoaltitude", groupsize=15, paradiff_big=500)
             .smoothing(paracol="geoaltitude", kernel_size=10)
             # vertical rate
-            .median_filter(paracol="vertical_rate", kernel=5)
-            .deriv_filter(paracol="vertical_rate", th1=1500, th2=1000, window=5)
-            .cluster_filter(paracol="vertical_rate", groupsize=15, paradiff_big=2000)
+            .filter_median(paracol="vertical_rate", kernel=5)
+            .filter_deriv(paracol="vertical_rate", th1=1500, th2=1000, window=5)
+            .filter_cluster(paracol="vertical_rate", groupsize=15, paradiff_big=2000)
             .smoothing(paracol="vertical_rate", kernel_size=3)
             # groundspeed
-            .median_filter(paracol="groundspeed", kernel=9)
-            .deriv_filter(paracol="groundspeed", th1=12, th2=10, window=3)
+            .filter_median(paracol="groundspeed", kernel=9)
+            .filter_deriv(paracol="groundspeed", th1=12, th2=10, window=3)
             .smoothing(paracol="groundspeed", kernel_size=7)
             # onground
-            .cluster_filter(paracol="onground", groupsize=15)
+            .filter_cluster(paracol="onground", groupsize=15)
             # track
-            .median_filter(paracol="track", kernel=5)
-            .deriv_filter(paracol="track", th1=12, th2=10, window=2)
-            .cluster_filter(paracol="track", groupsize=20, paradiff_big=20)
+            .filter_median(paracol="track", kernel=5)
+            .filter_deriv(paracol="track", th1=12, th2=10, window=2)
+            .filter_cluster(paracol="track", groupsize=20, paradiff_big=20)
             .smoothing(paracol="track", kernel_size=3)
             # latitude
-            .cluster_filter(paracol="latitude", paradiff_big=0.02, groupsize=10)
+            .filter_cluster(paracol="latitude", paradiff_big=0.02, groupsize=10)
             # longitude
-            .cluster_filter(paracol="longitude", paradiff_big=0.02, groupsize=10)
+            .filter_cluster(paracol="longitude", paradiff_big=0.02, groupsize=10)
         )
         return trajs_filt
 
-    def median_filter(self, paracol: str, kernel: int) -> "Flight":
+    def filter_median(self, paracol: str, kernel: int) -> "Flight":
         """Moving median filter to remove spikes in the data.
 
         :param paracol: Name of the column to be filtered.
@@ -1823,7 +1823,7 @@ class Flight(
         data.loc[data[paracol].isnull(), paracol] = paracol_copy
         return self.__class__(data)
 
-    def deriv_filter(
+    def filter_deriv(
         self,
         paracol: str,
         th1: float,
@@ -1868,7 +1868,7 @@ class Flight(
             data.loc[(in_window == True), paracol] = np.NaN
         return self.__class__(data)
 
-    def cluster_filter(
+    def filter_cluster(
         self,
         paracol: str,
         groupsize: int,
