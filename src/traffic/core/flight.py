@@ -1778,57 +1778,77 @@ class Flight(
         of filter steps that are applied and the parameters of the filters may vary.
         """
         trajs_filt = (
-            # altitude
-            self.filter_median(paracol="altitude", kernel=11)
-            .filter_deriv(paracol="altitude", th1=200, th2=150, window=10)
-            .filter_cluster(paracol="altitude", groupsize=15, paradiff_big=500)
-            .smoothing(paracol="altitude", kernel_size=10)
-            # geoaltitude
-            .filter_median(paracol="geoaltitude", kernel=9)
-            .filter_deriv(paracol="geoaltitude", th1=200, th2=150, window=10)
-            .filter_cluster(paracol="geoaltitude", groupsize=15, paradiff_big=500)
-            .smoothing(paracol="geoaltitude", kernel_size=10)
-            # vertical rate
-            .filter_median(paracol="vertical_rate", kernel=5)
-            .filter_deriv(paracol="vertical_rate", th1=1500, th2=1000, window=5)
-            .filter_cluster(paracol="vertical_rate", groupsize=15, paradiff_big=2000)
-            .smoothing(paracol="vertical_rate", kernel_size=3)
-            # groundspeed
-            .filter_median(paracol="groundspeed", kernel=9)
-            .filter_deriv(paracol="groundspeed", th1=12, th2=10, window=3)
-            .smoothing(paracol="groundspeed", kernel_size=7)
-            # onground
-            .filter_cluster(paracol="onground", groupsize=15)
-            # track
-            .filter_median(paracol="track", kernel=5)
-            .filter_deriv(paracol="track", th1=12, th2=10, window=2)
-            .filter_cluster(paracol="track", groupsize=20, paradiff_big=20)
-            .smoothing(paracol="track", kernel_size=3)
-            # latitude
-            .filter_cluster(paracol="latitude", paradiff_big=0.02, groupsize=10)
-            # longitude
-            .filter_cluster(paracol="longitude", paradiff_big=0.02, groupsize=10)
+            self.filter_median(
+                paracols=[
+                    "altitude",
+                    "geoaltitude",
+                    "vertical_rate",
+                    "groundspeed",
+                    "track",
+                ],
+                kernels=[11, 9, 5, 9, 5],
+            )
+            .filter_deriv(
+                paracols=[
+                    "altitude",
+                    "geoaltitude",
+                    "vertical_rate",
+                    "groundspeed",
+                    "track",
+                ],
+                th1s=[200, 200, 1500, 12, 12],
+                th2s=[150, 150, 1000, 10, 10],
+                windows=[10, 10, 5, 3, 2],
+            )
+            .filter_cluster(
+                paracols=[
+                    "altitude",
+                    "geoaltitude",
+                    "vertical_rate",
+                    "onground",
+                    "track",
+                    "latitude",
+                    "longitude",
+                ],
+                groupsizes=[15, 15, 15, 15, 20, 20, 20],
+                paradiffs_big=[500, 500, 2000, 99, 20, 0.02, 0.02],
+            )
+            .smoothing(
+                paracols=[
+                    "altitude",
+                    "geoaltitude",
+                    "vertical_rate",
+                    "groundspeed",
+                    "track",
+                ],
+                kernel_sizes=[10, 10, 3, 7, 3],
+            )
         )
         return trajs_filt
 
-    def filter_median(self, paracol: str, kernel: int) -> "Flight":
+    def filter_median(
+        self,
+        paracols: List[str],
+        kernels: List[int],
+    ) -> "Flight":
         """Moving median filter to remove spikes in the data.
 
         :param paracol: Name of the column to be filtered.
         :param window: Size of the window for the median filter.
         """
         data = self.data.reset_index(drop=True)
-        paracol_copy = data[paracol]
-        data[paracol] = data[paracol].rolling(kernel, center=True).median()
-        data.loc[data[paracol].isnull(), paracol] = paracol_copy
+        for paracol, kernel in zip(paracols, kernels):
+            paracol_copy = data[paracol]
+            data[paracol] = data[paracol].rolling(kernel, center=True).median()
+            data.loc[data[paracol].isnull(), paracol] = paracol_copy
         return self.__class__(data)
 
     def filter_deriv(
         self,
-        paracol: str,
-        th1: float,
-        th2: float,
-        window: int,
+        paracols: List[str],
+        th1s: List[float],
+        th2s: List[float],
+        windows: List[int],
         timecol: str = "timestamp",
     ) -> "Flight":
         """Filter method based on the first and second derivative of a parameter.
@@ -1843,37 +1863,42 @@ class Flight(
 
         data = self.data.reset_index(drop=True)
         timediff = data[timecol].diff().astype("timedelta64[s]")
-        diff1 = abs(data[paracol].diff())
-        if paracol == "track":
-            diff1.loc[(diff1 < 370) & (diff1 > 350)] = 0
-        diff2 = abs(diff1.diff())
+        for paracol, th1, th2, window in zip(paracols, th1s, th2s, windows):
+            diff1 = abs(data[paracol].diff())
+            if paracol == "track":
+                diff1.loc[(diff1 < 370) & (diff1 > 350)] = 0
+            diff2 = abs(diff1.diff())
 
-        deriv1 = diff1 / timediff
-        deriv2 = diff2 / timediff
-        spike = ((deriv1 >= th1) | (deriv2 >= th2)).fillna(False, inplace=False)
-
-        spike_time = pd.Series(np.nan, index=data.index)
-        spike_time.loc[spike == True] = data[timecol].loc[spike == True]
-
-        if spike_time.isnull().all() == False:
-            spike_time_prev = spike_time.ffill()
-            spike_delta_prev = (data["timestamp"] - spike_time_prev).astype(
-                "timedelta64[s]"
+            deriv1 = diff1 / timediff
+            deriv2 = diff2 / timediff
+            spike = ((deriv1 >= th1) | (deriv2 >= th2)).fillna(
+                False, inplace=False
             )
-            spike_time_next = spike_time.bfill()
-            spike_delta_next = (spike_time_next - data["timestamp"]).astype(
-                "timedelta64[s]"
-            )
-            in_window = (spike_delta_prev <= window) & (spike_delta_next <= window)
-            data.loc[(in_window == True), paracol] = np.NaN
+
+            spike_time = pd.Series(np.nan, index=data.index)
+            spike_time.loc[spike == True] = data[timecol].loc[spike == True]
+
+            if spike_time.isnull().all() == False:
+                spike_time_prev = spike_time.ffill()
+                spike_delta_prev = (data["timestamp"] - spike_time_prev).astype(
+                    "timedelta64[s]"
+                )
+                spike_time_next = spike_time.bfill()
+                spike_delta_next = (spike_time_next - data["timestamp"]).astype(
+                    "timedelta64[s]"
+                )
+                in_window = (spike_delta_prev <= window) & (
+                    spike_delta_next <= window
+                )
+                data.loc[(in_window == True), paracol] = np.NaN
         return self.__class__(data)
 
     def filter_cluster(
         self,
-        paracol: str,
-        groupsize: int,
-        timediff_big: float = 60,
-        paradiff_big: float = 1000,
+        paracols: List[str],
+        groupsizes: List[int],
+        paradiffs_big: List[float],
+        timediffs_big: List[float] = None,
         timecol: str = "timestamp",
     ) -> "Flight":
         """Filter a parameter with a clustering approach. Datapoints are clustered based on
@@ -1891,49 +1916,58 @@ class Flight(
 
         data = self.data.reset_index(drop=True)
         data = data.drop_duplicates([timecol], keep="last")
+        if timediffs_big is None:
+            timediffs_big = [60] * len(paracols)
 
-        if paracol == "onground":
-            statechange = data[paracol].diff().astype(bool)
-            data["group"] = statechange.eq(True).cumsum()
-            groups = data["group"].value_counts()
-            keepers = groups[groups > groupsize].index.tolist()
-            data[paracol] = data[paracol].where(
-                data["group"].isin(keepers), float("NaN")
-            )
-
-        else:
-            timediff = data[timecol].diff().astype("timedelta64[s]")
-            temp_index = data.index
-            temp_values = data[paracol].dropna()
-            paradiff = abs(temp_values.diff().reindex(temp_index))
-            bigdiff = pd.Series(
-                np.where(
-                    ((timediff > timediff_big) | (paradiff > paradiff_big)),
-                    True,
-                    False,
+        for paracol, groupsize, timediff_big, paradiff_big in zip(
+            paracols, groupsizes, timediffs_big, paradiffs_big
+        ):
+            if paracol == "onground":
+                statechange = data[paracol].diff().astype(bool)
+                data["group"] = statechange.eq(True).cumsum()
+                groups = data["group"].value_counts()
+                keepers = groups[groups > groupsize].index.tolist()
+                data[paracol] = data[paracol].where(
+                    data["group"].isin(keepers), float("NaN")
                 )
-            )
-            data["group"] = bigdiff.eq(True).cumsum()
-            groups = data[data[paracol].notna()]["group"].value_counts()
-            keepers = groups[groups > groupsize].index.tolist()
-            data[paracol] = data[paracol].where(
-                data["group"].isin(keepers), float("NaN")
-            )
 
-        data = data.drop(columns=["group"])
+            else:
+                timediff = data[timecol].diff().astype("timedelta64[s]")
+                temp_index = data.index
+                temp_values = data[paracol].dropna()
+                paradiff = abs(temp_values.diff().reindex(temp_index))
+                bigdiff = pd.Series(
+                    np.where(
+                        ((timediff > timediff_big) | (paradiff > paradiff_big)),
+                        True,
+                        False,
+                    )
+                )
+                data["group"] = bigdiff.eq(True).cumsum()
+                groups = data[data[paracol].notna()]["group"].value_counts()
+                keepers = groups[groups > groupsize].index.tolist()
+                data[paracol] = data[paracol].where(
+                    data["group"].isin(keepers), float("NaN")
+                )
+
+            data = data.drop(columns=["group"])
         return self.__class__(data)
 
-    def smoothing(self, paracol: str, kernel_size: int) -> "Flight":
+    def smoothing(
+        self, paracols: List[str], kernel_sizes: List[int]
+    ) -> "Flight":
         """Smoothen a parameter using a rolling mean with a specified kernel size.
 
         :param paracol: Name of the column to smooth.
         :param kernel_size: The size of the kernel to use for the rolling mean.
         """
-
-        data = self.data.reset_index(drop=True)
-        paracol_copy = data[paracol]
-        data[paracol] = data[paracol].rolling(kernel_size, center=True).mean()
-        data.loc[data[paracol].isnull(), paracol] = paracol_copy
+        for paracol, kernel_size in zip(paracols, kernel_sizes):
+            data = self.data.reset_index(drop=True)
+            paracol_copy = data[paracol]
+            data[paracol] = (
+                data[paracol].rolling(kernel_size, center=True).mean()
+            )
+            data.loc[data[paracol].isnull(), paracol] = paracol_copy
         return self.__class__(data)
 
     def filter_position(self, cascades: int = 2) -> Optional["Flight"]:
