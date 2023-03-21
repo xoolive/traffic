@@ -296,6 +296,8 @@ class Traffic(HBoxMixin, GeographyMixin):
                 flight = flight.after(index.start)
             if flight is not None and hasattr(index, "stop"):  # more natural
                 flight = flight.before(index.stop)
+            if flight is not None and hasattr(index, "flight_id"):
+                flight = flight.assign(flight_id=index.flight_id)
 
             return flight
 
