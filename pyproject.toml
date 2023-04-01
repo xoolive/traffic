@@ -89,7 +89,7 @@ sdr =  ["pyrtlsdr"]
 pre-commit = ">=2.13.0"
 black = ">=21.6"
 mypy = ">=0.981"
-ruff = "^0.0.247"
+ruff = ">=0.0.247,<0.0.261"
 Sphinx = ">=5.1"
 sphinx-rtd-theme = ">=0.5.2"
 jupyter_sphinx = ">=0.3.2"
