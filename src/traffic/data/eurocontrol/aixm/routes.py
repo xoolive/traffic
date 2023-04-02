@@ -1,334 +1,411 @@
-# %%
+from __future__ import annotations
+
+import logging
+import zipfile
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Iterator, Type, TypeVar
 
 from lxml import etree
-from pathlib import Path
-import os
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+
 import pandas as pd
-from traffic.data import aixm_navaids
 
-path = Path("../../../../../AIRAC_2207/")
+from ....core.structure import Navaid, Route
+from ... import aixm_navaids
+from ...basic.airways import Airways
 
-# %%
-# PARSER DE ROUTE.BASELINE
-all_points: Dict[str, Dict[str, Any]] = {}
-extensions: List[Dict[str, Any]] = []
+# https://github.com/python/mypy/issues/2511
+T = TypeVar("T", bound="AIXMRoutesParser")
 
-dirname = path
+_log = logging.getLogger(__name__)
 
-ns: Dict[str, str] = dict()
 
-for _, (key, value) in etree.iterparse(
-    (dirname / "Route.BASELINE").as_posix(),
-    events=["start-ns"],
-):
-    ns[key] = value
+class AIXMRoutesParser(Airways):
+    name: str = "aixm_airways"
+    filename: Path
+    priority: int = 2
+    cache_dir: Path
 
-points = etree.parse((dirname / "Route.BASELINE").as_posix())
+    @classmethod
+    def from_file(
+        cls: Type[T], filename: str | Path, **kwargs: Any
+    ) -> None | T:
+        instance = cls(None)
+        instance.filename = Path(filename)
+        return instance
 
-for point in points.findall("adrmsg:hasMember/aixm:Route", ns):
-    identifier = point.find("gml:identifier", ns)
-    assert identifier is not None
-    assert identifier.text is not None
+    @lru_cache()
+    def __getitem__(self, name: str) -> None | Route:
+        output = self.data.query("name == @name")
+        if output.shape[0] == 0:
+            return None
 
-    designatorPrefix = point.find(
-        "aixm:timeSlice/aixm:RouteTimeSlice/aixm:designatorPrefix",
-        ns,
-    )
+        cumul = []
+        for x, d in output.groupby("routeFormed"):
+            keys = dict(zip(d.start_id, d.end_id))
+            start_set = set(d.start_id) - set(d.end_id)
+            start = start_set.pop()
+            unfold_list = [{"id": start}]
+            while start is not None:
+                start = keys.get(start, None)
+                if start is not None:
+                    unfold_list.append({"id": start})
+            cumul.append(
+                pd.DataFrame.from_records(unfold_list)
+                .merge(aixm_navaids.data)
+                .assign(routeFormed=x, route=d.name.max())
+            )
+        output = pd.concat(cumul)
 
-    designatorSecondLetter = point.find(
-        "aixm:timeSlice/aixm:RouteTimeSlice/aixm:designatorSecondLetter", ns
-    )
+        return Route(
+            name,
+            list(
+                Navaid(
+                    x["name"],
+                    x["type"],
+                    x["latitude"],
+                    x["longitude"],
+                    0,
+                    None,
+                    None,
+                    None,
+                )
+                for _, x in output.iterrows()
+            ),
+        )
 
-    designatorNumber = point.find(
-        "aixm:timeSlice/aixm:RouteTimeSlice/aixm:designatorNumber", ns
-    )
+    @property
+    def data(self) -> pd.DataFrame:
+        if self._data is not None:
+            return self._data
 
-    multipleIdentifier = point.find(
-        "aixm:timeSlice/aixm:RouteTimeSlice/aixm:multipleIdentifier", ns
-    )
+        cache_file = self.cache_dir / (self.filename.stem + "_airways.parquet")
+        if not cache_file.exists():
+            self._data = self.parse_data()
+            if self._data is not None:
+                self._data.to_parquet(cache_file)
+        else:
+            _log.info("Loading aixm route database")
+            self._data = pd.read_parquet(cache_file)
 
-    beginPosition = point.find(
-        "aixm:timeSlice/aixm:RouteTimeSlice/gml:validTime/gml:TimePeriod/gml:beginPosition",
-        ns,
-    )
+        return self._data
 
-    endPosition = point.find(
-        "aixm:timeSlice/aixm:RouteTimeSlice/gml:validTime/gml:TimePeriod/gml:endPosition",
-        ns,
-    )
+    def parse_data(self) -> pd.DataFrame:
+        assert self.filename is not None
+        if self.filename is None or not self.filename.exists():
+            msg = "Edit configuration file with AIXM directory"
+            raise RuntimeError(msg)
 
-    designatorPrefix_str = (
-        designatorPrefix.text if designatorPrefix is not None else None
-    )
-    designatorSecondLetter_str = (
-        designatorSecondLetter.text
-        if designatorSecondLetter is not None
-        else None
-    )
-    designatorNumber_str = (
-        designatorNumber.text if designatorNumber is not None else None
-    )
-    multipleIdentifier_str = (
-        multipleIdentifier.text if multipleIdentifier is not None else None
-    )
-    beginPosition_str = (
-        beginPosition.text if beginPosition is not None else None
-    )
+        route_definition = "Route.BASELINE"
+        segment_definition = "RouteSegment.BASELINE"
 
-    endPosition_str = endPosition.text if endPosition is not None else None
+        if not (self.filename / route_definition).exists():
+            zippath = zipfile.ZipFile(
+                self.filename.joinpath(f"{route_definition}.zip").as_posix()
+            )
+            zippath.extractall(self.filename.as_posix())
 
-    all_points[identifier.text] = {
-        "identifier": identifier.text,
-        "prefix": designatorPrefix_str,
-        "secondLetter": designatorSecondLetter_str,
-        "number": designatorNumber_str,
-        "multipleIdentifier": multipleIdentifier_str,
-        "beginPosition": beginPosition_str,
-        "endPosition": endPosition_str,
-    }
+        # The versions for namespaces may be incremented and make everything
+        # fail just for that reason!
+        ns: dict[str, str] = {}
+        for _, (key, value) in etree.iterparse(
+            (self.filename / route_definition).as_posix(),
+            events=["start-ns"],
+        ):
+            ns[key] = value
 
-data_routes = pd.DataFrame.from_records(point for point in all_points.values())
+        tree = etree.parse((self.filename / route_definition).as_posix())
+        self.data_routes = pd.DataFrame.from_records(
+            self.parse_routes(tree, ns)
+        )
 
-# %% PARSER DE SEGMENTS
+        if not (self.filename / segment_definition).exists():
+            zippath = zipfile.ZipFile(
+                self.filename.joinpath(f"{segment_definition}.zip").as_posix()
+            )
+            zippath.extractall(self.filename.as_posix())
 
-all_points_seg: Dict[str, Dict[str, Any]] = {}
-extensions_seg: List[Dict[str, Any]] = []
+        ns.clear()
 
-dirname = path
+        for _, (key, value) in etree.iterparse(
+            (self.filename / segment_definition).as_posix(),
+            events=["start-ns"],
+        ):
+            ns[key] = value
 
-ns_seg: Dict[str, str] = dict()
+        tree = etree.parse((self.filename / segment_definition).as_posix())
+        self.data_segments = pd.DataFrame.from_records(
+            self.parse_segments(tree, ns)
+        )
 
-for _, (key, value) in etree.iterparse(
-    (dirname / "RouteSegment.BASELINE").as_posix(),
-    events=["start-ns"],
-):
-    ns_seg[key] = value
+        start = pd.DataFrame(
+            {
+                "identifier": self.data_segments["identifier"],
+                "start_pt": self.data_segments["start_designatedPoint"],
+                "start_nav": self.data_segments["start_navaid"],
+            }
+        )
+        start_merged = start["start_pt"].fillna(start["start_nav"])
+        self.data_segments["start_id"] = start_merged
+        self.data_segments = self.data_segments.drop(
+            columns=["start_designatedPoint", "start_navaid"]
+        )
 
-    points = etree.parse((dirname / "RouteSegment.BASELINE").as_posix())
+        end = pd.DataFrame(
+            {
+                "identifier": self.data_segments["identifier"],
+                "end_pt": self.data_segments["end_designatedPoint"],
+                "end_nav": self.data_segments["end_navaid"],
+            }
+        )
+        end_merged = end["end_pt"].fillna(end["end_nav"])
+        self.data_segments["end_id"] = end_merged
+        self.data_segments = self.data_segments.drop(
+            columns=["end_designatedPoint", "end_navaid"]
+        )
 
-for point in points.findall("adrmsg:hasMember/aixm:RouteSegment", ns_seg):
-    identifier = point.find("gml:identifier", ns_seg)
-    assert identifier is not None
-    assert identifier.text is not None
+        to_merge_start = pd.DataFrame(
+            {
+                "start_id": aixm_navaids.data["id"],
+                "start_name": aixm_navaids.data["name"],
+            }
+        )
+        to_merge_end = pd.DataFrame(
+            {
+                "end_id": aixm_navaids.data["id"],
+                "end_name": aixm_navaids.data["name"],
+            }
+        )
 
-    beginPosition = point.find(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/gml:validTime/gml:TimePeriod/gml:beginPosition",
-        ns_seg,
-    )
+        self.data_segments = self.data_segments.merge(
+            to_merge_start, on="start_id"
+        )
+        self.data_segments = self.data_segments.merge(to_merge_end, on="end_id")
 
-    endPosition = point.find(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/gml:validTime/"
-        "gml:TimePeriod/gml:endPosition",
-        ns_seg,
-    )
+        return (
+            pd.concat(
+                [
+                    self.data_routes.query("prefix.notnull()").eval(
+                        "name = prefix + secondLetter + number"
+                    ),
+                    self.data_routes.query("prefix.isnull()").eval(
+                        "name =  secondLetter + number"
+                    ),
+                ]
+            )
+            .drop(columns=["prefix", "secondLetter", "number"])
+            .rename(columns={"identifier": "routeFormed"})
+            .merge(self.data_segments, on="routeFormed")
+        )
 
-    upperLimit = point.find(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:upperLimit",
-        ns_seg,
-    )
+    def parse_routes(
+        self, tree: etree.ElementTree, ns: dict[str, str]
+    ) -> Iterator[dict[str, Any]]:
+        for point in tree.findall("adrmsg:hasMember/aixm:Route", ns):
+            identifier = point.find("gml:identifier", ns)
+            assert identifier is not None
+            assert identifier.text is not None
 
-    lowerLimit = point.find(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:lowerLimit",
-        ns_seg,
-    )
+            designatorPrefix = point.find(
+                "aixm:timeSlice/aixm:RouteTimeSlice/aixm:designatorPrefix",
+                ns,
+            )
 
-    routeFormed = point.find(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:routeFormed",
-        ns_seg,
-    )
+            designatorSecondLetter = point.find(
+                "aixm:timeSlice/aixm:RouteTimeSlice/aixm:designatorSecondLetter",
+                ns,
+            )
 
-    start_designatedPoint = point.find(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:start/"
-        "aixm:EnRouteSegmentPoint/aixm:pointChoice_fixDesignatedPoint",
-        ns_seg,
-    )
+            designatorNumber = point.find(
+                "aixm:timeSlice/aixm:RouteTimeSlice/aixm:designatorNumber", ns
+            )
 
-    end_designatedPoint = point.find(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:end/"
-        "aixm:EnRouteSegmentPoint/aixm:pointChoice_fixDesignatedPoint",
-        ns_seg,
-    )
+            multipleIdentifier = point.find(
+                "aixm:timeSlice/aixm:RouteTimeSlice/aixm:multipleIdentifier", ns
+            )
 
-    start_navaid = point.find(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:start/"
-        "aixm:EnRouteSegmentPoint/aixm:pointChoice_navaidSystem",
-        ns_seg,
-    )
+            beginPosition = point.find(
+                "aixm:timeSlice/aixm:RouteTimeSlice/gml:validTime/gml:TimePeriod/gml:beginPosition",
+                ns,
+            )
 
-    end_navaid = point.find(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:end/"
-        "aixm:EnRouteSegmentPoint/aixm:pointChoice_navaidSystem",
-        ns_seg,
-    )
+            endPosition = point.find(
+                "aixm:timeSlice/aixm:RouteTimeSlice/gml:validTime/gml:TimePeriod/gml:endPosition",
+                ns,
+            )
 
-    directions = point.findall(
-        "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:availability/"
-        "aixm:RouteAvailability/aixm:direction",
-        ns_seg,
-    )
+            designatorPrefix_str = (
+                designatorPrefix.text if designatorPrefix is not None else None
+            )
+            designatorSecondLetter_str = (
+                designatorSecondLetter.text
+                if designatorSecondLetter is not None
+                else None
+            )
+            designatorNumber_str = (
+                designatorNumber.text if designatorNumber is not None else None
+            )
+            multipleIdentifier_str = (
+                multipleIdentifier.text
+                if multipleIdentifier is not None
+                else None
+            )
+            beginPosition_str = (
+                beginPosition.text if beginPosition is not None else None
+            )
 
-    if directions is None or len(directions) < 1:
-        direction_str = "BOTH"
-    elif directions is not None and len(directions) > 1:
-        direction_str = directions[0].text
-        for d in directions:
-            if d.text != direction_str:
+            endPosition_str = (
+                endPosition.text if endPosition is not None else None
+            )
+
+            yield {
+                "identifier": identifier.text,
+                "prefix": designatorPrefix_str,
+                "secondLetter": designatorSecondLetter_str,
+                "number": designatorNumber_str,
+                "multipleIdentifier": multipleIdentifier_str,
+                "beginPosition": beginPosition_str,
+                "endPosition": endPosition_str,
+            }
+
+    def parse_segments(
+        self, tree: etree.ElementTree, ns: dict[str, str]
+    ) -> Iterator[dict[str, Any]]:
+        for point in tree.findall("adrmsg:hasMember/aixm:RouteSegment", ns):
+            identifier = point.find("gml:identifier", ns)
+            assert identifier is not None
+            assert identifier.text is not None
+
+            beginPosition = point.find(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/gml:validTime/gml:TimePeriod/gml:beginPosition",
+                ns,
+            )
+
+            endPosition = point.find(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/gml:validTime/"
+                "gml:TimePeriod/gml:endPosition",
+                ns,
+            )
+
+            upperLimit = point.find(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:upperLimit",
+                ns,
+            )
+
+            lowerLimit = point.find(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:lowerLimit",
+                ns,
+            )
+
+            routeFormed = point.find(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:routeFormed",
+                ns,
+            )
+
+            start_designatedPoint = point.find(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:start/"
+                "aixm:EnRouteSegmentPoint/aixm:pointChoice_fixDesignatedPoint",
+                ns,
+            )
+
+            end_designatedPoint = point.find(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:end/"
+                "aixm:EnRouteSegmentPoint/aixm:pointChoice_fixDesignatedPoint",
+                ns,
+            )
+
+            start_navaid = point.find(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:start/"
+                "aixm:EnRouteSegmentPoint/aixm:pointChoice_navaidSystem",
+                ns,
+            )
+
+            end_navaid = point.find(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:end/"
+                "aixm:EnRouteSegmentPoint/aixm:pointChoice_navaidSystem",
+                ns,
+            )
+
+            directions = point.findall(
+                "aixm:timeSlice/aixm:RouteSegmentTimeSlice/aixm:availability/"
+                "aixm:RouteAvailability/aixm:direction",
+                ns,
+            )
+
+            if directions is None or len(directions) < 1:
                 direction_str = "BOTH"
-    else:
-        direction_str = directions[0].text
+            elif directions is not None and len(directions) > 1:
+                direction_str = directions[0].text
+                for d in directions:
+                    if d.text != direction_str:
+                        direction_str = "BOTH"
+            else:
+                direction_str = directions[0].text
 
-    # direction_str = direction.text if direction is not None else None
+            # direction_str = direction.text if direction is not None else None
 
-    beginPosition_str = (
-        beginPosition.text if beginPosition is not None else None
-    )
+            beginPosition_str = (
+                beginPosition.text if beginPosition is not None else None
+            )
 
-    endPosition_str = endPosition.text if endPosition is not None else None
+            endPosition_str = (
+                endPosition.text if endPosition is not None else None
+            )
 
-    upperLimit_str = upperLimit.text if upperLimit is not None else None
+            upperLimit_str = upperLimit.text if upperLimit is not None else None
 
-    lowerLimit_str = lowerLimit.text if lowerLimit is not None else None
+            lowerLimit_str = lowerLimit.text if lowerLimit is not None else None
 
-    routeFormed_str = (
-        routeFormed.get("{http://www.w3.org/1999/xlink}href").split(":")[2]
-        if routeFormed is not None
-        else None
-    )
+            routeFormed_str = (
+                routeFormed.get("{http://www.w3.org/1999/xlink}href").split(
+                    ":"
+                )[2]
+                if routeFormed is not None
+                else None
+            )
 
-    start_designatedPoint_str = (
-        start_designatedPoint.get("{http://www.w3.org/1999/xlink}href").split(
-            ":"
-        )[2]
-        if start_designatedPoint is not None
-        else None
-    )
+            start_designatedPoint_str = (
+                start_designatedPoint.get(
+                    "{http://www.w3.org/1999/xlink}href"
+                ).split(":")[2]
+                if start_designatedPoint is not None
+                else None
+            )
 
-    start_navaid_str = (
-        start_navaid.get("{http://www.w3.org/1999/xlink}href").split(":")[2]
-        if start_navaid is not None
-        else None
-    )
+            start_navaid_str = (
+                start_navaid.get("{http://www.w3.org/1999/xlink}href").split(
+                    ":"
+                )[2]
+                if start_navaid is not None
+                else None
+            )
 
-    end_designatedPoint_str = (
-        end_designatedPoint.get("{http://www.w3.org/1999/xlink}href").split(
-            ":"
-        )[2]
-        if end_designatedPoint is not None
-        else None
-    )
+            end_designatedPoint_str = (
+                end_designatedPoint.get(
+                    "{http://www.w3.org/1999/xlink}href"
+                ).split(":")[2]
+                if end_designatedPoint is not None
+                else None
+            )
 
-    end_navaid_str = (
-        end_navaid.get("{http://www.w3.org/1999/xlink}href").split(":")[2]
-        if end_navaid is not None
-        else None
-    )
+            end_navaid_str = (
+                end_navaid.get("{http://www.w3.org/1999/xlink}href").split(":")[
+                    2
+                ]
+                if end_navaid is not None
+                else None
+            )
 
-    all_points_seg[identifier.text] = {
-        "identifier": identifier.text,
-        "beginPosition": beginPosition_str,
-        "endPosition": endPosition_str,
-        "upperLimit": upperLimit_str,
-        "lowerLimit": lowerLimit_str,
-        "start_designatedPoint": start_designatedPoint_str,
-        "start_navaid": start_navaid_str,
-        "end_designatedPoint": end_designatedPoint_str,
-        "end_navaid": end_navaid_str,
-        "routeFormed": routeFormed_str,
-        "direction": direction_str,
-    }
-
-data_segments = pd.DataFrame.from_records(
-    point for point in all_points_seg.values()
-)
-
-# %%
-# MERGE START AND END NAVAIDS
-
-start = pd.DataFrame(
-    {
-        "identifier": data_segments["identifier"],
-        "start_pt": data_segments["start_designatedPoint"],
-        "start_nav": data_segments["start_navaid"],
-    }
-)
-start_merged = start["start_pt"].fillna(start["start_nav"])
-data_segments["start_id"] = start_merged
-data_segments = data_segments.drop(
-    columns=["start_designatedPoint", "start_navaid"]
-)
-
-end = pd.DataFrame(
-    {
-        "identifier": data_segments["identifier"],
-        "end_pt": data_segments["end_designatedPoint"],
-        "end_nav": data_segments["end_navaid"],
-    }
-)
-end_merged = end["end_pt"].fillna(end["end_nav"])
-data_segments["end_id"] = end_merged
-data_segments = data_segments.drop(
-    columns=["end_designatedPoint", "end_navaid"]
-)
-
-# ADD NAVAID NAMES
-
-
-to_merge_start = pd.DataFrame(
-    {
-        "start_id": aixm_navaids.data["id"],
-        "start_name": aixm_navaids.data["name"],
-    }
-)
-to_merge_end = pd.DataFrame(
-    {"end_id": aixm_navaids.data["id"], "end_name": aixm_navaids.data["name"]}
-)
-
-data_segments = data_segments.merge(to_merge_start, on="start_id")
-data_segments = data_segments.merge(to_merge_end, on="end_id")
-
-# %%
-
-routes = (
-    pd.concat(
-        [
-            data_routes.query("prefix.notnull()").eval(
-                "name = prefix + secondLetter + number"
-            ),
-            data_routes.query("prefix.isnull()").eval(
-                "name =  secondLetter + number"
-            ),
-        ]
-    )
-    .drop(columns=["prefix", "secondLetter", "number"])
-    .rename(columns={"identifier": "routeFormed"})
-    .merge(data_segments, on="routeFormed")
-)
-
-# %%
-
-# df = routes.query("name == 'UN869'")
-cumul = []
-for x, d in tqdm(df.groupby("routeFormed"), total=routes.routeFormed.nunique()):
-    keys = dict(zip(d.start_id, d.end_id))
-    start_set = set(d.start_id) - set(d.end_id)
-    start = start_set.pop()
-    unfold_list = [{"id": start}]
-    while start is not None:
-        start = keys.get(start, None)
-        if start is not None:
-            unfold_list.append({"id": start})
-    cumul.append(
-        pd.DataFrame.from_records(unfold_list)
-        .merge(aixm_navaids.data)
-        .assign(routeFormed=x, route=d.name.max())
-        .drop(columns=["type", "description"])
-    )
-
-pd.concat(cumul)
-# %%
-airways_data = pd.concat(cumul)
-
-# %%
-airways_data
-# %%
+            yield {
+                "identifier": identifier.text,
+                "beginPosition": beginPosition_str,
+                "endPosition": endPosition_str,
+                "upperLimit": upperLimit_str,
+                "lowerLimit": lowerLimit_str,
+                "start_designatedPoint": start_designatedPoint_str,
+                "start_navaid": start_navaid_str,
+                "end_designatedPoint": end_designatedPoint_str,
+                "end_navaid": end_navaid_str,
+                "routeFormed": routeFormed_str,
+                "direction": direction_str,
+            }
