@@ -908,9 +908,9 @@ class PointMixin(object):
 
         if "s" not in text_kw:
             if hasattr(self, "callsign"):
-                text_kw["s"] = getattr(self, "callsign")  # noqa: B009
+                text_kw["s"] = getattr(self, "callsign")
             if hasattr(self, "name"):
-                text_kw["s"] = getattr(self, "name")  # noqa: B009
+                text_kw["s"] = getattr(self, "name")
 
         cumul: list["Artist"] = []
         cumul.append(ax.scatter(self.longitude, self.latitude, **kwargs))

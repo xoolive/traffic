@@ -386,11 +386,10 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         :return: A Traffic of n random sampled flights.
         """
+        rng = np.random.default_rng()
 
         sampled_ids: list[str] = list(
-            np.random.choice(
-                self.data.flight_id.unique(), size=n, replace=False
-            )
+            rng.choice(self.data.flight_id.unique(), size=n, replace=False)
         )
         return self[sampled_ids]
 
