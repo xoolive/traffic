@@ -60,13 +60,13 @@ pyOpenSSL = ">=22.0"
 paramiko = ">=2.7"
 ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
-pyModeS = "^2.16"
+pyModeS = ">=2.16"
 # pyModeS = { path = "../pyModeS", extras = ["rtlsdr"], develop = true }
 openap = ">=1.1"
 metar = ">=1.8"
 click = ">=8.1"
 typing-extensions = ">=4.2"
-fastparquet = ">=0.7"
+pyarrow = ">=11.0.0"
 astor = "^0.8.1"  # probably to be removed with impunity
 # onnxruntime is usually late to release, although available on conda-forge
 onnxruntime = { version = ">=1.12", python = "<3.11" }
@@ -89,7 +89,7 @@ sdr =  ["pyrtlsdr"]
 pre-commit = ">=2.13.0"
 black = ">=21.6"
 mypy = ">=0.981"
-ruff = "^0.0.247"
+ruff = ">=0.0.247"
 Sphinx = ">=5.1"
 sphinx-rtd-theme = ">=0.5.2"
 jupyter_sphinx = ">=0.3.2"
