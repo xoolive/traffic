@@ -85,11 +85,13 @@ class METAR:  # coverage: ignore
                         m.split(",")[-1],
                         month=datetime.strptime(
                             m.split(",")[1], "%Y-%m-%d %H:%M"
-                        ).month,
+                        )
+                        .replace(tzinfo=timezone.utc)
+                        .month,
                         year=datetime.strptime(
                             m.split(",")[1], "%Y-%m-%d %H:%M"
                         )
-                        .astimezone(timezone.utc)
+                        .replace(tzinfo=timezone.utc)
                         .year,
                         strict=False,
                         utcdelta=timedelta(hours=0),
