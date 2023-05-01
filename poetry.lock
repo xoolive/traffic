@@ -4252,14 +4252,14 @@ mpmath = ">=0.19"
 
 [[package]]
 name = "textual"
-version = "0.20.1"
+version = "0.22.3"
 description = "Modern Text User Interface framework"
 category = "main"
 optional = true
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "textual-0.20.1-py3-none-any.whl", hash = "sha256:8495ea90388c8361ea125dca463358201e98a85ec765ff4fddb6d668fabeb490"},
-    {file = "textual-0.20.1.tar.gz", hash = "sha256:51d668ed5b2422e20ae29f506d52fd2c52fa254fb80e85a01ef08aa5d616ab9f"},
+    {file = "textual-0.22.3-py3-none-any.whl", hash = "sha256:1ef6457b9d8b727a67d2344bf2d0b530dce1afab55e1bf4e964e430929301baa"},
+    {file = "textual-0.22.3.tar.gz", hash = "sha256:a68172f7797e9f269270491e039f1e48096530dff64dbfe893e8477f2d4e200c"},
 ]
 
 [package.dependencies]
