@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Union
 
-import pandas as pd
 import requests
 from metar import Metar
+
+import pandas as pd
 
 from ...core.structure import Airport
 from ...core.time import timelike, to_datetime
