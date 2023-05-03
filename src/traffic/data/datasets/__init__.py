@@ -61,6 +61,36 @@ datasets = dict(
         filename="squawk7700_trajectories.parquet.gz",
         reader=_squawk7700_reader,
     ),
+    landing_dublin_2019=dict(
+        url="https://data.4tu.nl/file/4e042fbc-4f76-4f28-ac4b-a0120558ceba/94ec5814-6ee9-4cbc-88f2-ca5e1e0dfbf8",
+        md5sum="73cc3b882df958cc3b5de547740a5006",
+        filename="EIDW_dataset.parquet",
+        reader=Traffic.from_file,
+    ),
+    landing_cdg_2019=dict(
+        url="https://data.4tu.nl/file/4e042fbc-4f76-4f28-ac4b-a0120558ceba/0ad60c2d-a63d-446a-976f-d61fe262c144",
+        md5sum="9a2af398037fbfb66f16bf171ca7cf93",
+        filename="LFPG_dataset.parquet",
+        reader=Traffic.from_file,
+    ),
+    landing_amsterdam_2019=dict(
+        url="https://data.4tu.nl/file/4e042fbc-4f76-4f28-ac4b-a0120558ceba/901d842e-658c-40a6-98cc-64688a560f57",
+        md5sum="419ab7390ee0f3deb0d46fbeecc29c57",
+        filename="EHAM_dataset.parquet",
+        reader=Traffic.from_file,
+    ),
+    landing_heathrow_2019=dict(
+        url="https://data.4tu.nl/file/4e042fbc-4f76-4f28-ac4b-a0120558ceba/b40a8064-3b90-4416-8a32-842104b21e4d",
+        md5sum="161470e4e93f088cead98178408aa8d1",
+        filename="EGLL_dataset.parquet",
+        reader=Traffic.from_file,
+    ),
+    landing_londoncity_2019=dict(
+        url="https://data.4tu.nl/file/4e042fbc-4f76-4f28-ac4b-a0120558ceba/74006294-2a66-4b63-9e32-424da2f74201",
+        md5sum="a7ff695355759e72703f101a1e43298c",
+        filename="EGLC_dataset.parquet",
+        reader=Traffic.from_file,
+    ),
 )
 
 __all__ = list(datasets.keys())
