@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional
 
 from tqdm import tqdm
-
 from traffic.data import SO6, nm_airspaces
 from traffic.drawing import kml
 
@@ -15,7 +14,6 @@ def so6_to_kml(
     start_time: Optional[str],
     stop_time: Optional[str],
 ) -> None:
-
     so6 = SO6.from_file(input_file.as_posix())
     if so6 is None:
         raise RuntimeError
@@ -31,9 +29,7 @@ def so6_to_kml(
 
     with kml.export(output_file.as_posix()) as doc:
         if sector is not None:
-            doc.append(
-                sector.export_kml(color="blue", alpha=0.3)  # type: ignore
-            )
+            doc.append(sector.export_kml(color="blue", alpha=0.3))
 
         # iterate on so6 yield callsign, flight
         for callsign, flight in tqdm(so6):
@@ -41,7 +37,6 @@ def so6_to_kml(
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Export SO6 to KML")
 
     parser.add_argument(

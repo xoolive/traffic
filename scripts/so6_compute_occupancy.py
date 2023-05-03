@@ -2,17 +2,17 @@ import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-import pandas as pd
-from shapely.ops import cascaded_union
 from tqdm import tqdm
-
 from traffic.core.time import to_datetime
 from traffic.data import SO6, nm_airspaces
 
+import pandas as pd
+from shapely.ops import cascaded_union
 
-def occupancy(data, configuration):
+
+def occupancy(data: Any, configuration: Any) -> int:
     return len(data.intersects(configuration))
 
 
@@ -25,7 +25,6 @@ def compute_stats(
     starting_from: Optional[str],
     ending_at: Optional[str],
 ) -> pd.DataFrame:
-
     so6 = SO6.from_file(input_file.as_posix())
     if so6 is None:
         raise RuntimeError
@@ -93,7 +92,6 @@ def compute_stats(
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Statistics of occupancy on a SO6 file"
     )

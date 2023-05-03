@@ -7,9 +7,9 @@ from typing import List
 
 import altair as alt
 from tqdm.rich import tqdm
+from traffic.data import airports
 
 import pandas as pd
-from traffic.data import airports
 
 alt.renderers.set_embed_options(actions=False)
 
@@ -94,7 +94,6 @@ source = (
 def airline_chart(
     source: alt.Chart, subset: List[str], name: str, loess: bool = True
 ) -> alt.Chart:
-
     chart = source.transform_filter(
         alt.FieldOneOfPredicate(field="airline", oneOf=subset)
     )
@@ -176,7 +175,6 @@ source = (
 
 
 def airport_chart(source: alt.Chart, subset: List[str], name: str) -> alt.Chart:
-
     chart = source.transform_filter(
         alt.FieldOneOfPredicate(field="airport", oneOf=subset)
     )

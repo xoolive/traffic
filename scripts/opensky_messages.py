@@ -1,7 +1,8 @@
 # %%
 import altair as alt
-import pandas as pd
 import requests
+
+import pandas as pd
 
 c = requests.get("https://opensky-network.org/api/stats/facts?extended=true")
 data = c.json()

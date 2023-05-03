@@ -1,12 +1,11 @@
 from itertools import count
 
 import matplotlib.pyplot as plt
-from cartes.crs import Mercator  # type: ignore
+from cartes.crs import Mercator
 from cartes.osm import Overpass
 
 
 def main() -> None:
-
     nrows = 5
     ncols = 4
 
@@ -15,13 +14,13 @@ def main() -> None:
         "LFPG",  # Charles de Gaulle Airport
         "EHAM",  # Amsterdam Airport Schiphol
         "EDDF",  # Frankfurt am Main Airport
-        "LEMD",  # Adolfo Suárez Madrid–Barajas Airport
-        "LEBL",  # Josep Tarradellas Barcelona–El Prat Airport
+        "LEMD",  # Adolfo Suárez Madrid-Barajas Airport
+        "LEBL",  # Josep Tarradellas Barcelona-El Prat Airport
         "LTFM",  # Istanbul Airport
         "UUEE",  # Sheremetyevo International Airport
         "EDDM",  # Munich Airport
         "EGKK",  # Gatwick Airport
-        "LIRF",  # Leonardo da Vinci–Fiumicino Airport
+        "LIRF",  # Leonardo da Vinci-Fiumicino Airport
         "EIDW",  # Dublin Airport
         "LFPO",  # Orly Airport
         "LOWW",  # Vienna International Airport

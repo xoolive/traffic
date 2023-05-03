@@ -3,7 +3,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 from tqdm import tqdm
-
 from traffic.core import Airspace
 from traffic.data import SO6, nm_airspaces
 
@@ -31,7 +30,6 @@ def prepare_all(filename: Path, output_dir: Path, sectorname: str) -> None:
 def glob_all(
     directory: Path, output_dir: Path, sectorname: str, max_workers: int = 4
 ) -> None:
-
     if not directory.is_dir():
         raise ValueError(f"Directory {directory} does not exist")
 
@@ -53,7 +51,6 @@ def glob_all(
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Clip SO6 on sector")
 
     parser.add_argument(
