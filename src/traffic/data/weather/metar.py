@@ -1,10 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Union
 
+import pandas as pd
 import requests
 from metar import Metar
-
-import pandas as pd
 
 from ...core.structure import Airport
 from ...core.time import timelike, to_datetime
@@ -56,6 +55,8 @@ class METAR:  # coverage: ignore
             if stop is not None
             else start + timedelta(hours=24)
         )
+        if stop == start:
+            stop += timedelta(hours=1)
 
         str_ap = ""
         for ap in self.airports:
@@ -70,7 +71,7 @@ class METAR:  # coverage: ignore
             f"year2={stop.year}&"
             f"month2={stop.month}&"
             f"day2={stop.day}&"
-            f"hour2={stop.hour+1}&"
+            f"hour2={stop.hour}&"
             f"tz=Etc%2FUTC&format=onlycomma&latlon=no&elev=no&"
             f"missing=M&trace=T&direct=no&report_type=3&report_type=4"
         )
@@ -85,14 +86,15 @@ class METAR:  # coverage: ignore
                         month=datetime.strptime(
                             m.split(",")[1], "%Y-%m-%d %H:%M"
                         )
-                        .astimezone(timezone.utc)
+                        .replace(tzinfo=timezone.utc)
                         .month,
                         year=datetime.strptime(
                             m.split(",")[1], "%Y-%m-%d %H:%M"
                         )
-                        .astimezone(timezone.utc)
+                        .replace(tzinfo=timezone.utc)
                         .year,
                         strict=False,
+                        utcdelta=timedelta(hours=0),
                     )
                 )
                 for m in list_[1:]
