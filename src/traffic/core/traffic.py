@@ -231,7 +231,7 @@ class Traffic(HBoxMixin, GeographyMixin):
                     return None
                 return self.__class__(df)
             else:
-                df = self.data.query(f"flight_id not in {repr(flight_id)}")
+                df = self.data.query(f"flight_id not in {flight_id!r}")
                 if df.shape[0] == 0:
                     return None
                 return self.__class__(df)

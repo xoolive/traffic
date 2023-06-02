@@ -269,7 +269,7 @@ class Generation:
 
     def __repr__(self) -> str:
         head = "Generation"
-        body = [f"Generative model: {repr(self.generation)}"]
+        body = [f"Generative model: {self.generation!r}"]
         body += [f"Features: {self.features}"]
         if self.scaler is not None:
             body += [repr(self.scaler)]
