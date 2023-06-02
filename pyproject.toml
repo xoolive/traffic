@@ -69,7 +69,7 @@ typing-extensions = ">=4.2"
 pyarrow = ">=11.0.0"
 astor = "^0.8.1"  # probably to be removed with impunity
 # onnxruntime is usually late to release, although available on conda-forge
-onnxruntime = { version = ">=1.12", python = "<3.11" }
+onnxruntime = { version = ">=1.12", python = "<3.12" }
 xarray = { version = ">=0.18.2", optional = true }
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
 scikit-learn = { version = ">=1.0", optional = true }
@@ -94,7 +94,6 @@ Sphinx = ">=5.1"
 sphinx-rtd-theme = ">=0.5.2"
 jupyter_sphinx = ">=0.3.2"
 sphinx-autodoc-typehints = ">=1.17,!=1.21.4"
-altair-saver = ">=0.5.0"
 pytest = ">=7.1"
 pytest-cov = ">=4.0"
 pytest-timeout = ">=2.1"
