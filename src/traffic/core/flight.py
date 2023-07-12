@@ -49,6 +49,7 @@ from ..algorithms.openap import OpenAP
 from ..core.structure import Airport
 from ..core.types import ProgressbarType
 from . import geodesy as geo
+from .intervals import Interval, IntervalCollection
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
@@ -332,6 +333,36 @@ class Flight(
         objects returns a Traffic object
         """
         return self + other
+
+    @flight_iterator
+    def __sub__(
+        self, other: Union[Flight, FlightIterator]
+    ) -> Iterator["Flight"]:
+        right: Interval | IntervalCollection
+        if isinstance(other, Flight):
+            left = Interval(self.start, self.stop)
+            right = Interval(other.start, other.stop)
+            difference = left - right
+            if difference is None:
+                return
+            for i in difference:
+                segment = self.between(i.start, i.stop)
+                if segment is not None:
+                    yield segment
+        if isinstance(other, FlightIterator):
+            left = Interval(self.start, self.stop)
+            right = IntervalCollection(
+                [Interval(segment.start, segment.stop) for segment in other]
+            )
+            difference = left - right
+            if difference is None:
+                return
+            for i in difference:
+                segment = self.between(i.start, i.stop)
+                if segment is not None:
+                    yield segment
+
+        return NotImplemented
 
     def __len__(self) -> int:
         """Number of samples associated to a trajectory.

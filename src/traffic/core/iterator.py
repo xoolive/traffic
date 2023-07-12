@@ -217,9 +217,7 @@ class FlightIterator:
         >>> flight.query("altitude < 5000").split().max(key="start")
         """
 
-        return max(
-            self, key=lambda x: getattr(x, key), default=None  # type: ignore
-        )
+        return max(self, key=lambda x: getattr(x, key), default=None)
 
     def min(self, key: str = "duration") -> Optional["Flight"]:
         """Returns the shortest element in the Iterator.
@@ -232,9 +230,7 @@ class FlightIterator:
 
         >>> flight.query("altitude < 5000").split().min(key="stop")
         """
-        return min(
-            self, key=lambda x: getattr(x, key), default=None  # type: ignore
-        )
+        return min(self, key=lambda x: getattr(x, key), default=None)
 
     def __call__(
         self,

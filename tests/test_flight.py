@@ -106,6 +106,22 @@ def test_iterators() -> None:
     assert max_xy_time[2] == last_point.timestamp.to_pydatetime().timestamp()
 
 
+def test_subtract() -> None:
+    flight = belevingsvlucht
+    assert sum(1 for _ in flight.holding_pattern()) == 1
+    hp = flight.next("holding_pattern")
+    assert hp is not None
+    assert pd.Timedelta("9T") < hp.duration < pd.Timedelta("11T")
+
+    without_hp = flight - hp
+    assert sum(1 for _ in without_hp) == 2
+    total_duration = sum(
+        (segment.duration for segment in without_hp), hp.duration
+    )
+    assert flight.duration - pd.Timedelta("1T") <= total_duration
+    assert total_duration <= flight.duration
+
+
 def test_time_methods() -> None:
     flight = belevingsvlucht
     first10 = flight.first(minutes=10)
