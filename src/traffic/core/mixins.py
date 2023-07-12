@@ -812,7 +812,7 @@ class GeoDBMixin(DataFrameMixin):
             _extent = extent.extent
         if isinstance(extent, Nominatim):
             _extent = extent.extent
-        if isinstance(extent, tuple):
+        if isinstance(extent, (tuple, list)):
             _extent = extent
 
         west, east, south, north = _extent
