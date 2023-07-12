@@ -110,7 +110,7 @@ class SimpleApp(App):
     aircraft_widget: AircraftListWidget = AircraftListWidget()
     flask_thread: threading.Thread | None = None
 
-    BINDINGS = [
+    BINDINGS = [  # noqa: RUF012
         ("escape,q", "quit", "Quit"),
     ]
 

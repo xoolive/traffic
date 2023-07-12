@@ -56,7 +56,7 @@ A = TypeVar("A", bound="Airspaces")
 
 
 class Airspaces(DataFrameMixin):
-    columns_options: dict[str, dict[str, Any]] = dict(
+    columns_options: dict[str, dict[str, Any]] = dict(  # noqa: RUF012
         designator=dict(),
         name=dict(),
         type=dict(),

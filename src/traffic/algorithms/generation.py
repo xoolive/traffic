@@ -136,14 +136,14 @@ class Generation:
         ``inverse_transform()`` methods.
     """
 
-    _required_traffic_columns = [
+    _required_traffic_columns = (
         "altitude",
         "callsign",
         "icao24",
         "latitude",
         "longitude",
         "timestamp",
-    ]
+    )
 
     _repr_indent = 4
 

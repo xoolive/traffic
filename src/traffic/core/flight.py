@@ -308,9 +308,7 @@ class Flight(
 
     # --- Special methods ---
 
-    def __add__(
-        self, other: Union[Literal[0], "Flight", "Traffic"]
-    ) -> "Traffic":
+    def __add__(self, other: Union[Literal[0], Flight, "Traffic"]) -> "Traffic":
         """
         As Traffic is thought as a collection of Flights, the sum of two Flight
         objects returns a Traffic object
@@ -326,7 +324,7 @@ class Flight(
         return Traffic.from_flights([self, other])  # type: ignore
 
     def __radd__(
-        self, other: Union[Literal[0], "Flight", "Traffic"]
+        self, other: Union[Literal[0], Flight, "Traffic"]
     ) -> "Traffic":
         """
         As Traffic is thought as a collection of Flights, the sum of two Flight
@@ -530,10 +528,10 @@ class Flight(
 
     def pipe(
         self,
-        func: str | Callable[..., None | "Flight" | bool],
+        func: str | Callable[..., None | Flight | bool],
         *args: Any,
         **kwargs: Any,
-    ) -> None | "Flight" | bool:
+    ) -> None | Flight | bool:
         """
         Applies `func` to the object.
 
@@ -550,12 +548,12 @@ class Flight(
 
         return func(self, *args, **kwargs)
 
-    def filter_if(self, test: Callable[["Flight"], bool]) -> Optional["Flight"]:
+    def filter_if(self, test: Callable[[Flight], bool]) -> Optional[Flight]:
         _log.warning("Use Flight.pipe(...) instead", DeprecationWarning)
         return self if test(self) else None
 
     def has(
-        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+        self, method: Union[str, Callable[[Flight], Iterator[Flight]]]
     ) -> bool:
         """Returns True if flight.method() returns a non-empty iterator.
 
@@ -568,7 +566,7 @@ class Flight(
         return self.next(method) is not None
 
     def sum(
-        self, method: Union[str, Callable[["Flight"], Iterator["Flight"]]]
+        self, method: Union[str, Callable[[Flight], Iterator[Flight]]]
     ) -> int:
         """Returns the number of segments returned by flight.method().
 
@@ -587,9 +585,9 @@ class Flight(
 
     def label(
         self,
-        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+        method: Union[str, Callable[[Flight], Iterator[Flight]]],
         **kwargs: Any,
-    ) -> "Flight":
+    ) -> Flight:
         """Returns the same flight with extra information from iterators.
 
         Every keyword argument will be used to create a new column in the Flight
@@ -684,9 +682,9 @@ class Flight(
 
     def all(
         self,
-        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
+        method: Union[str, Callable[[Flight], Iterator[Flight]]],
         flight_id: None | str = None,
-    ) -> Optional["Flight"]:
+    ) -> Optional[Flight]:
         """Returns the concatenation of segments returned by flight.method().
 
         Example usage:
@@ -716,8 +714,8 @@ class Flight(
 
     def next(
         self,
-        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
-    ) -> Optional["Flight"]:
+        method: Union[str, Callable[[Flight], Iterator[Flight]]],
+    ) -> Optional[Flight]:
         """
         Returns the first segment of trajectory yielded by flight.method()
 
@@ -734,8 +732,8 @@ class Flight(
 
     def final(
         self,
-        method: Union[str, Callable[["Flight"], Iterator["Flight"]]],
-    ) -> Optional["Flight"]:
+        method: Union[str, Callable[[Flight], Iterator[Flight]]],
+    ) -> Optional[Flight]:
         """
         Returns the final (last) segment of trajectory yielded by
         flight.method()
@@ -838,7 +836,7 @@ class Flight(
 
     def feature_gt(
         self,
-        feature: Union[str, Callable[["Flight"], Any]],
+        feature: Union[str, Callable[[Flight], Any]],
         value: Any,
         strict: bool = True,
     ) -> bool:
@@ -866,7 +864,7 @@ class Flight(
 
     def feature_lt(
         self,
-        feature: Union[str, Callable[["Flight"], Any]],
+        feature: Union[str, Callable[[Flight], Any]],
         value: Any,
         strict: bool = True,
     ) -> bool:
@@ -908,7 +906,7 @@ class Flight(
             value = pd.Timedelta(value)
         return self.feature_gt(attrgetter("duration"), value, strict)
 
-    def abs(self, features: Union[str, List[str]], **kwargs: Any) -> "Flight":
+    def abs(self, features: Union[str, List[str]], **kwargs: Any) -> Flight:
         """Assign absolute versions of features to new columns.
 
         >>> flight.abs("track")
@@ -929,7 +927,11 @@ class Flight(
             assign_dict[value] = self.data[key].abs()
         return self.assign(**assign_dict)
 
-    def diff(self, features: Union[str, List[str]], **kwargs: Any) -> "Flight":
+    def diff(
+        self,
+        features: Union[None, str, List[str]] = None,
+        **kwargs: Any,
+    ) -> Flight:
         """Assign differential versions of features to new columns.
 
         >>> flight.diff("track")
@@ -941,6 +943,8 @@ class Flight(
 
         """
         assign_dict = dict()
+        if features is None:
+            features = []
         if isinstance(features, str):
             features = [features]
         if isinstance(features, Iterable):
@@ -1169,8 +1173,8 @@ class Flight(
     # -- Time handling, splitting, interpolation and resampling --
 
     def skip(
-        self, value: deltalike = None, **kwargs: Any
-    ) -> Optional["Flight"]:
+        self, value: None | deltalike = None, **kwargs: Any
+    ) -> Optional[Flight]:
         """Removes the first n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -1190,7 +1194,7 @@ class Flight(
             return None
         return self.__class__(df)
 
-    def first(self, value: deltalike = None, **kwargs: Any) -> "Flight":
+    def first(self, value: Optional[deltalike] = None, **kwargs: Any) -> Flight:
         """Returns the first n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -1212,8 +1216,8 @@ class Flight(
         return self.__class__(df)
 
     def shorten(
-        self, value: deltalike = None, **kwargs: Any
-    ) -> Optional["Flight"]:
+        self, value: Optional[deltalike] = None, **kwargs: Any
+    ) -> Optional[Flight]:
         """Removes the last n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -1233,7 +1237,7 @@ class Flight(
             return None
         return self.__class__(df)
 
-    def last(self, value: deltalike = None, **kwargs: Any) -> "Flight":
+    def last(self, value: Optional[deltalike] = None, **kwargs: Any) -> Flight:
         """Returns the last n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -1254,7 +1258,7 @@ class Flight(
             return None  # type: ignore
         return self.__class__(df)
 
-    def before(self, time: timelike, strict: bool = True) -> Optional["Flight"]:
+    def before(self, time: timelike, strict: bool = True) -> Optional[Flight]:
         """Returns the part of the trajectory flown before a given timestamp.
 
         - ``time`` can be passed as a string, an epoch, a Python datetime, or
@@ -1262,7 +1266,7 @@ class Flight(
         """
         return self.between(self.start, time, strict)
 
-    def after(self, time: timelike, strict: bool = True) -> Optional["Flight"]:
+    def after(self, time: timelike, strict: bool = True) -> Optional[Flight]:
         """Returns the part of the trajectory flown after a given timestamp.
 
         - ``time`` can be passed as a string, an epoch, a Python datetime, or
@@ -1272,7 +1276,7 @@ class Flight(
 
     def between(
         self, start: timelike, stop: time_or_delta, strict: bool = True
-    ) -> Optional["Flight"]:
+    ) -> Optional[Flight]:
         """Returns the part of the trajectory flown between start and stop.
 
         - ``start`` and ``stop`` can be passed as a string, an epoch, a Python
@@ -1352,9 +1356,7 @@ class Flight(
 
     @flight_iterator
     def sliding_windows(
-        self,
-        duration: deltalike,
-        step: deltalike,
+        self, duration: deltalike, step: deltalike
     ) -> Iterator["Flight"]:
         duration_ = to_timedelta(duration)
         step_ = to_timedelta(step)
@@ -1404,8 +1406,8 @@ class Flight(
         self,
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
-        key: Callable[[Optional["Flight"]], Any] = attrgetter_duration,
-    ) -> Optional["Flight"]:
+        key: Callable[[Optional[Flight]], Any] = attrgetter_duration,
+    ) -> Optional[Flight]:
         """Returns the biggest (by default, longest) part of trajectory.
 
         Example usage:
@@ -1435,7 +1437,7 @@ class Flight(
         name: str,
         *args: Any,
         **kwargs: Any,
-    ) -> Optional["Flight"]:
+    ) -> Optional[Flight]:
         return getattr(self, name)(*args, **kwargs)(fun)  # type: ignore
 
     def apply_time(
@@ -1443,7 +1445,7 @@ class Flight(
         freq: str = "1T",
         merge: bool = True,
         **kwargs: Any,
-    ) -> "Flight":
+    ) -> Flight:
         """Apply features on time windows.
 
         The following is performed:
@@ -1491,11 +1493,8 @@ class Flight(
         return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
 
     def agg_time(
-        self,
-        freq: str = "1T",
-        merge: bool = True,
-        **kwargs: Any,
-    ) -> "Flight":
+        self, freq: str = "1T", merge: bool = True, **kwargs: Any
+    ) -> Flight:
         """Aggregate features on time windows.
 
         The following is performed:
@@ -1551,7 +1550,7 @@ class Flight(
 
         return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
 
-    def handle_last_position(self) -> "Flight":
+    def handle_last_position(self) -> Flight:
         # The following is True for all data coming from the Impala shell.
         # The following is an attempt to fix #7
         # Note the fun/fast way to produce 1 or trigger NaN (division by zero)
@@ -1578,7 +1577,7 @@ class Flight(
         rule: str | int = "1s",
         how: str | dict[str, Iterable[str]] = "interpolate",
         projection: None | str | pyproj.Proj | "crs.Projection" = None,
-    ) -> "Flight":
+    ) -> Flight:
         """Resample the trajectory at a given frequency or for a target number
         of samples.
 
@@ -1682,7 +1681,7 @@ class Flight(
             Callable[[pd.DataFrame], pd.DataFrame]
         ] = lambda x: x.bfill().ffill(),
         **kwargs: int,
-    ) -> "Flight":
+    ) -> Flight:
         """Filters the trajectory given features with a median filter.
 
         The method first applies a median filter on each feature of the
@@ -1805,9 +1804,9 @@ class Flight(
 
         return self.__class__(data)
 
-    def filter_position(self, cascades: int = 2) -> Optional["Flight"]:
+    def filter_position(self, cascades: int = 2) -> Optional[Flight]:
         # TODO improve based on agg_time or EKF
-        flight: Optional["Flight"] = self
+        flight: Optional[Flight] = self
         for _ in range(cascades):
             if flight is None:
                 return None
@@ -1816,7 +1815,7 @@ class Flight(
             )
         return flight
 
-    def comet(self, **kwargs: Any) -> "Flight":
+    def comet(self, **kwargs: Any) -> Flight:
         """Computes a comet for a trajectory.
 
         The method uses the last position of a trajectory (method `at()
@@ -1879,7 +1878,7 @@ class Flight(
 
     def assign_id(
         self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0
-    ) -> "Flight":
+    ) -> Flight:
         """Assigns a flight_id to a Flight.
 
         This method is more generally used by the corresponding Traffic and
@@ -1893,7 +1892,7 @@ class Flight(
                 raise RuntimeError(msg)
         return self.assign(flight_id=name.format(self=self, idx=idx))
 
-    def onground(self) -> Optional["Flight"]:
+    def onground(self) -> Optional[Flight]:
         if "altitude" not in self.data.columns:
             return self
         if "onground" in self.data.columns and self.data.onground.dtype == bool:
@@ -1901,7 +1900,7 @@ class Flight(
         else:
             return self.query("altitude != altitude")
 
-    def airborne(self) -> Optional["Flight"]:
+    def airborne(self) -> Optional[Flight]:
         """Returns the airborne part of the Flight.
 
         The airborne part is determined by an ``onground`` flag or null values
@@ -1914,7 +1913,7 @@ class Flight(
         else:
             return self.query("altitude == altitude")
 
-    def unwrap(self, features: Union[None, str, List[str]] = None) -> "Flight":
+    def unwrap(self, features: Union[None, str, List[str]] = None) -> Flight:
         """Unwraps angles in the DataFrame.
 
         All features representing angles may be unwrapped (through Numpy) to
@@ -1944,7 +1943,7 @@ class Flight(
 
         return reset.assign(**result_dict)
 
-    def compute_TAS(self) -> "Flight":
+    def compute_TAS(self) -> Flight:
         """Computes the wind triangle for each timestamp.
 
         This method requires ``groundspeed``, ``track``, ``wind_u`` and
@@ -1970,7 +1969,7 @@ class Flight(
             heading=lambda df: (90 - np.degrees(df.heading_rad)) % 360,
         ).drop(columns=["tas_x", "tas_y", "heading_rad"])
 
-    def compute_wind(self) -> "Flight":
+    def compute_wind(self) -> Flight:
         """Computes the wind triangle for each timestamp.
 
         This method requires ``groundspeed``, ``track``, true airspeed
@@ -2096,7 +2095,7 @@ class Flight(
 
     def bearing(
         self, other: PointMixin, column_name: str = "bearing"
-    ) -> "Flight":
+    ) -> Flight:
         # temporary, should implement full stuff
         size = self.data.shape[0]
         return self.assign(
@@ -2122,20 +2121,20 @@ class Flight(
         self,
         other: Union["Airspace", Polygon, PointMixin],
         column_name: str = "distance",
-    ) -> "Flight":
+    ) -> Flight:
         ...
 
     @overload
     def distance(
-        self, other: "Flight", column_name: str = "distance"
+        self, other: Flight, column_name: str = "distance"
     ) -> Optional[pd.DataFrame]:
         ...
 
     def distance(
         self,
-        other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
+        other: Union[None, Flight, "Airspace", Polygon, PointMixin] = None,
         column_name: str = "distance",
-    ) -> Union[None, float, "Flight", pd.DataFrame]:
+    ) -> Union[None, float, Flight, pd.DataFrame]:
         """Computes the distance from a Flight to another entity.
 
         The behaviour is different according to the type of the second
@@ -2256,7 +2255,7 @@ class Flight(
         self,
         dme: "Navaids" | Tuple["Navaid", "Navaid"],
         column_name: str = "NSE",
-    ) -> "Flight":
+    ) -> Flight:
         """Adds the DME/DME Navigation System Error.
 
         Computes the max Navigation System Error using DME-DME navigation. The
@@ -2366,7 +2365,7 @@ class Flight(
         *,
         reverse: bool = False,
         **kwargs: Any,
-    ) -> "Flight":
+    ) -> Flight:
         """Enrich the structure with new ``cumdist`` column computed from
         latitude and longitude columns.
 
@@ -2447,7 +2446,7 @@ class Flight(
         tolerance: float,
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
-    ) -> "Flight":
+    ) -> Flight:
         """Simplifies a trajectory with Douglas-Peucker algorithm.
 
         The method uses latitude and longitude, projects the trajectory to a
@@ -2554,7 +2553,7 @@ class Flight(
 
     def clip(
         self, shape: Union[ShapelyMixin, base.BaseGeometry], strict: bool = True
-    ) -> Optional["Flight"]:
+    ) -> Optional[Flight]:
         """Clips the trajectory to a given shape.
 
         For a shapely Geometry, the first time of entry and the last time of
@@ -2610,7 +2609,7 @@ class Flight(
             .sum()
         )
 
-    def query_opensky(self, **kwargs: Any) -> Optional["Flight"]:
+    def query_opensky(self, **kwargs: Any) -> Optional[Flight]:
         """Returns data from the same Flight as stored in OpenSky database.
 
         This may be useful if you write your own parser for data from a
@@ -2640,14 +2639,14 @@ class Flight(
         }
         if self.callsign is not None:
             query_params["callsign"] = self.callsign
-        return cast(Optional["Flight"], opensky.history(**query_params))
+        return cast(Optional[Flight], opensky.history(**query_params))
 
     def query_ehs(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
         failure_mode: str = "warning",
         progressbar: Union[bool, ProgressbarType[Any]] = True,
-    ) -> "Flight":
+    ) -> Flight:
         """Extends data with extra columns from EHS messages.
 
         By default, raw messages are requested from the OpenSky Network
@@ -2682,7 +2681,7 @@ class Flight(
         if not isinstance(self.callsign, str):
             raise RuntimeError("Several callsigns for this flight")
 
-        def fail_warning() -> "Flight":
+        def fail_warning() -> Flight:
             """Called when nothing can be added to data."""
             id_ = self.flight_id
             if id_ is None:
@@ -2690,7 +2689,7 @@ class Flight(
             _log.warning(f"No data on Impala for flight {id_}.")
             return self
 
-        def fail_silent() -> "Flight":
+        def fail_silent() -> Flight:
             return self
 
         failure_dict = dict(warning=fail_warning, silent=fail_silent)

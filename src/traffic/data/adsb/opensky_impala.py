@@ -52,7 +52,7 @@ def open_cache_file(cachename: Path) -> Generator[TextIO, None, None]:
 
 
 class Impala(object):
-    _impala_columns = [
+    _impala_columns = (
         "time",
         "icao24",
         "lat",
@@ -71,9 +71,9 @@ class Impala(object):
         "lastcontact",
         # "serials", keep commented, array<int>
         "hour",
-    ]
+    )
 
-    _flarm_columns = [
+    _flarm_columns = (
         "sensortype",
         "sensorlatitude",
         "sensorlongitude",
@@ -96,9 +96,9 @@ class Impala(object):
         "typeogn",
         "crccorrect",
         "hour",
-    ]
+    )
 
-    _raw_tables = [
+    _raw_tables = (
         "acas_data4",
         "allcall_replies_data4",
         "identification_data4",
@@ -106,7 +106,7 @@ class Impala(object):
         "position_data4",
         "rollcall_replies_data4",
         "velocity_data4",
-    ]
+    )
 
     basic_request = (
         "select {columns} from state_vectors_data4 {other_tables} "
@@ -1080,7 +1080,7 @@ class Impala(object):
             request_pattern=pattern,
             start=start,
             stop=stop,
-            columns=self._flarm_columns,
+            columns=list(self._flarm_columns),
             cached=cached,
             compress=compress,
             progressbar=progressbar,
@@ -1181,7 +1181,7 @@ class Impala(object):
         """
 
         if table_name is None:
-            table_name = self._raw_tables
+            table_name = list(self._raw_tables)
 
         if not isinstance(table_name, str):  # better than Iterable but not str
             return RawData.from_list(

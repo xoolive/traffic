@@ -982,7 +982,7 @@ class ModeS_Decoder:
     timer_thread: Optional[StoppableThread]
     timer_functions: list[
         tuple[pd.Timestamp, pd.Timedelta, Callable[[Decoder], None]]
-    ] = list()
+    ] = list()  # noqa: RUF012
 
     def __init__(
         self,
