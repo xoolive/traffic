@@ -281,20 +281,23 @@ class LazyTraffic:
 
 @overload
 def lazy_evaluation(
-    default: "Literal[None, False]" = False, idx_name: Optional[str] = None
+    default: "Literal[None, False]" = False,
+    idx_name: Optional[str] = None,
 ) -> Callable[..., Callable[..., LazyTraffic]]:
     ...
 
 
 @overload
 def lazy_evaluation(
-    default: "Literal[True]", idx_name: Optional[str] = None
+    default: "Literal[True]",
+    idx_name: Optional[str] = None,
 ) -> Callable[..., Callable[..., "Traffic"]]:
     ...
 
 
 def lazy_evaluation(
-    default: None | bool = False, idx_name: None | str = None
+    default: None | bool = False,
+    idx_name: None | str = None,
 ) -> Callable[..., Callable[..., "Traffic" | LazyTraffic]]:
     """A decorator to delegate methods to :class:`~traffic.core.Flight` in a
     lazy manner.

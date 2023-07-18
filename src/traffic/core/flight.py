@@ -227,10 +227,16 @@ class Flight(
         for further processing, e.g. ``groundspeed``, ``vertical_rate``,
         ``track``, ``heading``, ``IAS`` (indicated airspeed) or ``squawk``.
 
-    .. note::
+    .. tip::
 
-        All navigation related methods are described more in depth on a
-        `dedicated page <navigation.html>`_.
+        Read more about:
+
+        - :ref:`arithmetic of trajectories
+          <How to use arithmetic operators on trajectories?>`
+        - :ref:`navigation specific methods <Navigation events>`
+
+        - :ref:`sample flights <How to access sample trajectories?>` provided
+          for testing purposes in the module ``traffic.data.samples``
 
     **Abridged contents:**
 
@@ -266,8 +272,8 @@ class Flight(
           :meth:`unwrap`
 
         - filtering and resampling methods:
-          :meth:`comet`,
           :meth:`filter`,
+          :meth:`forward`,
           :meth:`resample`
 
         - TMA events:
@@ -297,10 +303,6 @@ class Flight(
           :meth:`plot`,
           :meth:`plot_time`
 
-    .. tip::
-
-        :ref:`Sample flights <How to access sample trajectories?>` are provided
-        for testing purposes in module ``traffic.data.samples``
 
     """
 
@@ -308,10 +310,15 @@ class Flight(
 
     # --- Special methods ---
 
-    def __add__(self, other: Union[Literal[0], Flight, "Traffic"]) -> "Traffic":
-        """
-        As Traffic is thought as a collection of Flights, the sum of two Flight
-        objects returns a Traffic object
+    def __add__(self, other: Literal[0] | Flight | "Traffic") -> "Traffic":
+        """Concatenation operator.
+
+        :param other: is the other Flight or Traffic.
+
+        :return: The sum of two Flights returns a Traffic collection.
+            Summing a Flight with 0 returns a Traffic collection with only one
+            trajectory, for compatibility reasons with the sum() builtin.
+
         """
         # keep import here to avoid recursion
         from .traffic import Traffic
@@ -334,33 +341,49 @@ class Flight(
 
     @flight_iterator
     def __sub__(
-        self, other: Union[Flight, FlightIterator]
+        self, other: Flight | FlightIterator | Interval | IntervalCollection
     ) -> Iterator["Flight"]:
+        """Difference operator.
+
+        :param other: refers to anything having one or several start and end
+            (a.k.a. stop) dates.
+
+        :return: After intervals are pruned from a trajectory, unconnected
+            segments may remain. You should iterate on the result of the ``-``
+            operator.
+        """
         right: Interval | IntervalCollection
-        if isinstance(other, Flight):
-            left = Interval(self.start, self.stop)
+        left = Interval(self.start, self.stop)
+
+        if isinstance(other, (Interval, IntervalCollection)):
+            right = other
+        elif isinstance(other, Flight):
             right = Interval(other.start, other.stop)
-            difference = left - right
-            if difference is None:
-                return
-            for i in difference:
-                segment = self.between(i.start, i.stop)
-                if segment is not None:
-                    yield segment
-        if isinstance(other, FlightIterator):
-            left = Interval(self.start, self.stop)
+        elif isinstance(other, FlightIterator):
             right = IntervalCollection(
                 [Interval(segment.start, segment.stop) for segment in other]
             )
-            difference = left - right
-            if difference is None:
-                return
-            for i in difference:
-                segment = self.between(i.start, i.stop)
-                if segment is not None:
-                    yield segment
+        else:
+            return NotImplemented
 
-        return NotImplemented
+        difference = left - right
+        if difference is None:
+            return None
+        yield from self[difference]
+
+    def __and__(self, other: Flight) -> None | Flight:
+        """Overlapping of trajectories.
+
+        :param other:
+
+        :return: the segment of trajectory that overlaps ``other``, if any.
+        """
+        left = Interval(self.start, self.stop)
+        right = Interval(other.start, other.stop)
+        concurrency = left & right
+        if concurrency is None:
+            return None
+        return self[concurrency]
 
     def __len__(self) -> int:
         """Number of samples associated to a trajectory.
@@ -406,9 +429,6 @@ class Flight(
         title += f"<li><b>start:</b> {self.start}</li>"
         title += f"<li><b>stop:</b> {self.stop}</li>"
         title += f"<li><b>duration:</b> {self.duration}</li>"
-
-        if self.diverted is not None:
-            title += f"<li><b>diverted to: {self.diverted}</b></li>"
 
         sampling_rate = self.data.timestamp.diff().mean().total_seconds()
         title += f"<li><b>sampling rate:</b> {sampling_rate:.0f} second(s)</li>"
@@ -499,9 +519,45 @@ class Flight(
             keys.append("diverted")
         return keys
 
-    def __getitem__(self, name: str) -> Any:
-        if name in self.keys():
-            return getattr(self, name)
+    @overload
+    def __getitem__(self, key: Interval) -> Flight:
+        ...
+
+    @overload
+    def __getitem__(self, key: IntervalCollection) -> FlightIterator:
+        ...
+
+    def __getitem__(self, key: str | Interval | IntervalCollection) -> Any:
+        """Indexation of flights.
+
+        :param key: the key parameter passed in the brackets
+
+        :return:
+            - if key is a string, the bracket operator is equivalent to the
+              dot notation\\
+              (e.g. ``flight["duration"]`` is equivalent to ``flight.duration``)
+            - if key is an Interval, the bracket operator is equivalent to the
+              :meth:`between` method
+            - if key is an IntervalCollection, the operator iterates on all the
+              intervals provided
+        """
+        if isinstance(key, Interval):
+            return self.between(key.start, key.stop)
+
+        if isinstance(key, IntervalCollection):
+
+            @flight_iterator
+            def yield_segments() -> Iterator["Flight"]:
+                for interval in key:
+                    segment = self.between(interval.start, interval.stop)
+                    if segment is not None:
+                        yield segment
+
+            return yield_segments()
+
+        if isinstance(key, str) and key in self.keys():
+            return getattr(self, key)
+
         raise NotImplementedError()
 
     def __getattr__(self, name: str) -> Any:
@@ -1054,6 +1110,7 @@ class Flight(
                 else ""
             )
             + (f"{self.destination}" if self.destination else " ")
+            + (f"diverted to {self.diverted}" if self.diverted else "")
             + (
                 ")"
                 if self.origin is not None or self.destination is not None
@@ -1169,6 +1226,20 @@ class Flight(
             return aircraft.get(self.icao24)
 
         return None
+
+    def summary(self, attributes: list[str], **kwargs: Any) -> dict[str, Any]:
+        """Returns a summary of the current Flight structure containing
+        featured attributes.
+
+        Example usage:
+
+        >>> t.summary(['icao24', 'start', 'stop', 'duration'])
+
+        Consider monkey-patching properties to the Flight class if you need more
+        information in your summary dictionary.
+
+        """
+        return dict((key, getattr(self, key)) for key in attributes)
 
     # -- Time handling, splitting, interpolation and resampling --
 
@@ -1816,7 +1887,10 @@ class Flight(
         return flight
 
     def comet(self, **kwargs: Any) -> Flight:
-        """Computes a comet for a trajectory.
+        raise DeprecationWarning("Use Flight.forward() method instead")
+
+    def forward(self, **kwargs: Any) -> Flight:
+        """Projects the trajectory in a straight line.
 
         The method uses the last position of a trajectory (method `at()
         <#traffic.core.Flight.at>`_) and uses the ``track`` (in degrees),
@@ -1830,8 +1904,8 @@ class Flight(
 
         .. code:: python
 
-            flight.comet(minutes=10)
-            flight.before("2018-12-24 23:55").comet(minutes=10)  # Merry XMas!
+            flight.forward(minutes=10)
+            flight.before("2018-12-24 23:55").forward(minutes=10)  # Merry XMas!
 
         """
 

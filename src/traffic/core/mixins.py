@@ -563,13 +563,16 @@ class GeographyMixin(DataFrameMixin):
         **kwargs: Any,
     ) -> pd.DataFrame:
         """Aggregates values of a traffic over a grid of x/y, with x and y
-        computed by `traffic.core.GeographyMixin.compute_xy()`.
+        computed by :meth:`~traffic.core.GeographyMixin.compute_xy()`.
 
-        The resolution of the grid is passed as a dictionary parameter.
-        By default, the grid is made by rounding x and y to the lower ten
-        kilometer values. ``dict(x=5000, y=3000)`` will take 1 value per 5000
-        meters for x (10000, 15000, 20000, ...) and 1 value per 3000 meters for
-        y (9000, 12000, 15000, 18000, 20000, ...).
+        :param resolution: The resolution of the grid is passed as a dictionary
+             parameter. By default, the grid is made by rounding x and y to the
+             lower ten kilometer values.
+             ``dict(x=5000, y=3000)`` will take 1 value per 5000 meters for x
+             (10000, 15000, 20000, ...) and 1 value per 3000 meters for y (9000,
+             12000, 15000, 18000, 20000, ...).
+
+        :param projection: is used to compute the x and y values.
 
         The kwargs specifies how to aggregate values:
 
@@ -578,9 +581,9 @@ class GeographyMixin(DataFrameMixin):
         - ``icao24="nunique"`` would return the number of different aircraft
           int the given cell.
 
-        The returned pandas DataFrame is indexed over x and y values. It is
-        conveniently chainable with the ``.to_xarray()`` method in order to
-        plot density heatmaps.
+        :return: a :class:`~pandas.DataFrame` indexed over x and y values. It is
+            conveniently chainable with the ``.to_xarray()`` method in order to
+            plot density heatmaps.
 
         Example usage:
 

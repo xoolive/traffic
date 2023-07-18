@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import warnings
+import zipfile
 from datetime import timedelta
+from io import BytesIO
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -20,12 +22,14 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
 from ipyleaflet import Map as LeafletMap
 from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
+from tqdm.rich import tqdm
 
 import numpy as np
 import pandas as pd
@@ -39,6 +43,7 @@ from ..core.cache import property_cache
 from ..core.structure import Airport
 from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight, attrgetter_duration
+from .intervals import Interval, IntervalCollection
 from .lazy import LazyTraffic, lazy_evaluation
 from .mixins import DataFrameMixin, GeographyMixin, HBoxMixin, PointMixin
 from .sv import StateVectors
@@ -169,10 +174,80 @@ class Traffic(HBoxMixin, GeographyMixin):
         _log.warning(f"{path.suffixes} extension is not supported")
         return None
 
+    @classmethod
+    def from_fr24(
+        cls: Type[TrafficTypeVar],
+        metadata: str | Path,
+        trajectories: str | Path,
+        **kwargs: Any,
+    ) -> TrafficTypeVar:
+        """Parses data as usually provided by FlightRadar24.
+
+        When FlightRadar24 provides data excerpts from their database, they
+        usually provide:
+
+        :param metadata: a CSV file with metadata
+
+        :param trajectories: a zip file containing one file per flight with
+            trajectory information.
+
+        :return: a regular Traffic object.
+        """
+        fr24_meta = pd.read_csv(metadata)
+
+        def extract_flights(filename: str | Path) -> Iterator[pd.DataFrame]:
+            with zipfile.ZipFile(filename) as zfh:
+                for fileinfo in tqdm(zfh.infolist()):
+                    with zfh.open(fileinfo) as fh:
+                        stem = fileinfo.filename.split(".")[0]
+                        flight_id = stem.split("_")[1]
+                        b = BytesIO(fh.read())
+                        b.seek(0)
+                        yield pd.read_csv(b).assign(flight_id=(flight_id))
+
+        df = pd.concat(extract_flights(trajectories))
+
+        return cls(
+            df.rename(columns=dict(heading="track"))
+            .merge(
+                fr24_meta.rename(
+                    columns=dict(
+                        equip="typecode",
+                        schd_from="origin",
+                        schd_to="destination",
+                    )
+                ).assign(
+                    flight_id=fr24_meta.flight_id.astype(str),
+                    icao24=fr24_meta.aircraft_id.apply(hex)
+                    .str[2:]
+                    .str.pad(6, "left", fillchar="0"),
+                    callsign=fr24_meta.callsign.fillna(""),
+                    diverted=np.where(
+                        fr24_meta.schd_to == fr24_meta.real_to,
+                        np.nan,  # None would cause a typing error \o/
+                        fr24_meta.real_to,
+                    ),
+                ),
+                on="flight_id",
+            )
+            .eval(
+                "timestamp = @pd.to_datetime(snapshot_id, utc=True, unit='s')"
+            )
+        )
+
     # --- Special methods ---
     # operators + (union), & (intersection), - (difference), ^ (xor)
 
-    def __add__(self, other: Union[Literal[0], Flight, "Traffic"]) -> "Traffic":
+    def __add__(self, other: Literal[0] | Flight | Traffic) -> Traffic:
+        """Concatenation operator.
+
+        :param other: is the other Flight or Traffic.
+
+        :return: The sum of two Traffic returns a Traffic collection.
+            Summing a Traffic with 0 returns the same Traffic, for compatibility
+            reasons with the sum() builtin.
+
+        """
         # useful for compatibility with sum() function
         if other == 0:
             return self
@@ -184,23 +259,75 @@ class Traffic(HBoxMixin, GeographyMixin):
         return self + other
 
     def __and__(self, other: "Traffic") -> Optional["Traffic"]:
+        """Intersection of collections.
+
+        :param other:
+
+        :return: the subset of trajectories present in both collections.
+            The result is based on the ``flight_id`` if present, and on
+            intervals otherwise.
+        """
         if not isinstance(other, Traffic):
-            raise RuntimeError(
-                "Operator `&` is only applicable between Traffic structures."
-            )
-        list_id = other.flight_ids
-        if list_id is None or self.flight_ids is None:
-            raise RuntimeError(
-                "No flight_id is provided in the given Traffic structures."
-            )
-        df = self.data.query("flight_id in @list_id")
-        if df.shape[0] == 0:
+            return NotImplemented
+
+        # The easy case, when Traffic collections have a ``flight_id``
+        if (
+            self.flight_ids is not None
+            and (list_id := other.flight_ids) is not None  # noqa: F841
+        ):
+            df = self.data.query("flight_id in @list_id")
+            if df.shape[0] == 0:
+                return None
+            return self.__class__(df)
+
+        # Otherwise build intervals
+        cumul = []
+        self_stats = self.summary(["icao24", "start", "stop"])
+        other_stats = other.summary(["icao24", "start", "stop"])
+        for (icao24,), lines in self_stats.groupby(["icao24"]):
+            self_interval = IntervalCollection(lines)
+            self_interval = self_interval.reset_index()
+            other_df = other_stats.query("icao24 == @icao24")
+            if cast(pd.DataFrame, other_df).shape[0] > 0:
+                other_interval = IntervalCollection(other_df)
+                other_interval = other_interval.reset_index()
+                if overlap := self_interval & other_interval:
+                    for interval in overlap:
+                        cumul.append(
+                            dict(
+                                start=interval.start,
+                                stop=interval.stop,
+                                icao24=icao24,
+                            )
+                        )
+
+        if len(cumul) == 0:
             return None
-        return self.__class__(df)
+
+        result_intervals = pd.DataFrame.from_records(cumul)
+        return self[result_intervals]  # type: ignore
 
     def __sub__(
-        self, other: str | List[str] | Set[str] | Flight | "Traffic"
-    ) -> Optional["Traffic"]:
+        self, other: str | list[str] | set[str] | Flight | Traffic
+    ) -> None | Traffic:
+        """Remove trajectories from a Traffic object.
+
+        :param other:
+            - When the ``other`` attribute is a string, or a list/set of
+              strings, all flights matching the ``flight_id``, ``callsign`` or
+              ``icao24`` attribute are removed from the collection;
+            - When the ``other`` attribute is a Flight, the collection will be
+              pruned of the trajectory with the same ``flight_id``; or the
+              segment of trajectory for that ``icao24`` address between the
+              ``start`` and ``stop`` timestamps;
+            - When the ``other`` attribute is a Traffic object, the difference
+              is computed based on the ``flight_id`` if both structures have
+              one; otherwise, we iterate through flights and consider removing
+              part of the trajectory.
+
+        :return: a new collection of trajectories as a Traffic object
+
+        """
         if isinstance(other, str):
             other = [other]
 
@@ -246,18 +373,47 @@ class Traffic(HBoxMixin, GeographyMixin):
                 return self.__class__(df)
             else:
                 # Remove flights one by one if no flight_id exists
-                # very not optimal, but what else...
-                res: Optional[Traffic] = self
-                for flight in other:
-                    if res is None:
-                        return None
+                cumul = []
+                self_stats = self.summary(["icao24", "start", "stop"])
+                other_stats = other.summary(["icao24", "start", "stop"])
+                # for (icao24,), lines in tqdm(
+                #     self_stats.groupby(["icao24"]),
+                #     total=self_stats.icao24.nunique(),
+                # ):
+                for (icao24,), lines in self_stats.groupby(["icao24"]):
+                    self_interval = IntervalCollection(lines)
+                    self_interval = self_interval.reset_index()
+                    other_df = other_stats.query("icao24 == @icao24")
+                    if cast(pd.DataFrame, other_df).shape[0] == 0:
+                        for interval in self_interval:
+                            cumul.append(
+                                dict(
+                                    start=interval.start,
+                                    stop=interval.stop,
+                                    icao24=icao24,
+                                )
+                            )
                     else:
-                        res = res - flight
-                return res
+                        other_interval = IntervalCollection(other_df)
+                        other_interval = other_interval.reset_index()
+                        if difference := self_interval - other_interval:
+                            for interval in difference:
+                                cumul.append(
+                                    dict(
+                                        start=interval.start,
+                                        stop=interval.stop,
+                                        icao24=icao24,
+                                    )
+                                )
+                if len(cumul) == 0:
+                    return None
 
-        return self
+                result_intervals = pd.DataFrame.from_records(cumul)
+                return self[result_intervals]  # type: ignore
 
-    def __xor__(self, other: "Traffic") -> Optional["Traffic"]:
+        return NotImplemented
+
+    def __xor__(self, other: "Traffic") -> None | Traffic:
         left = self - other
         right = other - self
         if left is None:
@@ -266,7 +422,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             return left
         return right + left
 
-    def _getSeries(self, index: pd.Series) -> Optional[Flight]:
+    def _getSeries(self, index: pd.Series) -> None | Flight:
         p_callsign = hasattr(index, "callsign")
         p_icao24 = hasattr(index, "icao24")
 
@@ -304,50 +460,109 @@ class Traffic(HBoxMixin, GeographyMixin):
         return None
 
     @overload
-    def __getitem__(self, index: int) -> Optional[Flight]:
+    def __getitem__(self, key: int) -> None | Flight:
         ...
 
     @overload
-    def __getitem__(self, index: str) -> Optional[Flight]:
+    def __getitem__(self, key: str) -> None | Flight:
         ...
 
     @overload
-    def __getitem__(self, index: slice) -> Optional["Traffic"]:
+    def __getitem__(self, key: slice) -> None | Traffic:
         ...
 
     @overload
-    def __getitem__(self, index: IterStr) -> Optional["Traffic"]:
+    def __getitem__(self, key: IterStr) -> None | Traffic:
+        ...
+
+    @overload
+    def __getitem__(self, key: Traffic) -> None | Traffic:
         ...
 
     def __getitem__(
-        self, index: Union[pd.Series, pd.DataFrame, int, slice, IterStr]
-    ) -> Union[None, Flight, "Traffic"]:
-        if isinstance(index, pd.Series):
-            return self._getSeries(index)
+        self,
+        key: int | slice | str | IterStr | pd.Series | pd.DataFrame | Traffic,
+    ) -> None | Flight | Traffic:
+        """Indexation of collections.
 
-        if isinstance(index, pd.DataFrame):
+        :param key:
+            - if the key is an integer, will return a Flight object
+              (in order of iteration);
+            - if the key is a slice, will return a Traffic object
+              (in order of iteration);
+            - if the key is a string, will return a Flight object, based on
+              the ``flight_id``, ``icao24`` or ``callsign``;
+            - if the key is a list of string, will return a Traffic object,
+              based on the same criteria as above;
+            - if the key is a pd.Series, will return a Flight object.
+              The key must contain an ``icao24`` feature. It may contain a
+              ``callsign``, a ``start`` (or ``firstSeen``) timestamp, a ``stop``
+              (or ``lastSeen``) timestamp. If it contains a ``flight_id``
+              column, this will be assigned to the Flight.
+            - if the key is a pd.DataFrame, will return a Traffic object.
+              The key must contain an ``icao24`` feature. It may contain a
+              ``callsign``, a ``start`` (or ``firstSeen``) timestamp, a ``stop``
+              (or ``lastSeen``) timestamp. If it contains a ``flight_id``
+              column, this will be assigned to the Flight.
+            - if the key is a Traffic object, will return a new Traffic
+              collection, based on the ``flight_id`` elements present in key.
+              If no ``flight_id`` is available, it will return the subset of
+              trajectories in ``self`` that overlap with any trajectory in key
+              (with the same icao24 indicator)
+
+
+        :return: According to the type of the key, the result could be
+            a Flight or a Traffic object.
+
+        """
+        if isinstance(key, pd.Series):
+            return self._getSeries(key)
+
+        if isinstance(key, pd.DataFrame):
             return self.__class__.from_flights(
-                flight for flight in self.iterate(by=index)
+                flight for flight in self.iterate(by=key)
             )
 
-        if isinstance(index, int):
+        if isinstance(key, int):
             for i, flight in enumerate(self.iterate()):
-                if i == index:
+                if i == key:
                     return flight
             return None
 
-        if isinstance(index, slice):
-            max_size = index.stop if index.stop is not None else len(self)
-            indices = list(range(max_size)[index])
+        if isinstance(key, slice):
+            max_size = key.stop if key.stop is not None else len(self)
+            indices = list(range(max_size)[key])
             return self.__class__.from_flights(
                 flight
                 for i, flight in enumerate(self.iterate())
                 if i in indices
             )
 
-        if not isinstance(index, str):  # List[str], Set[str], Iterable[str]
+        if isinstance(key, Traffic):
+            if (
+                self.flight_ids is not None
+                and (flight_ids := key.flight_ids) is not None
+            ):
+                return self[flight_ids]  # type: ignore
+
+            cumul: list[Flight] = []
+            other_stats = key.summary(["icao24", "start", "stop"])
+            for flight in self:
+                other_df = other_stats.query("icao24 == @flight.icao24")
+                if cast(pd.DataFrame, other_df).shape[0] > 0:
+                    other_interval = IntervalCollection(other_df)
+                    if any(
+                        Interval(flight.start, flight.stop).overlap(other)
+                        for other in other_interval
+                    ):
+                        cumul.append(flight)
+            if len(cumul) == 0:
+                return None
+            return Traffic.from_flights(cumul)
+
+        if not isinstance(key, str):  # List[str], Set[str], Iterable[str]
             _log.debug("Selecting flights from a list of identifiers")
-            subset = repr(list(index))
+            subset = repr(list(key))
             query_str = f"callsign in {subset} or icao24 in {subset}"
             if "flight_id" in self.data.columns:
                 return self.query(f"flight_id in {subset} or " + query_str)
@@ -356,11 +571,11 @@ class Traffic(HBoxMixin, GeographyMixin):
             else:
                 return self.query(f"icao24 in {subset}")
 
-        query_str = f"callsign == '{index}' or icao24 == '{index}'"
+        query_str = f"callsign == '{key}' or icao24 == '{key}'"
         if "callsign" not in self.data.columns:
-            query_str = f"icao24 == '{index}'"
+            query_str = f"icao24 == '{key}'"
         if "flight_id" in self.data.columns:
-            df = self.data.query(f"flight_id == '{index}' or " + query_str)
+            df = self.data.query(f"flight_id == '{key}' or " + query_str)
         else:
             df = self.data.query(query_str)
 
@@ -377,7 +592,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     def sample(
         self,
         n: Optional[int] = None,
-    ) -> Optional["Traffic"]:
+    ) -> None | Traffic:
         """Returns a random sample of traffic data.
 
         :param self: An instance of the Traffic class.
@@ -871,6 +1086,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             .rename(columns={"timestamp": "count"})
         )
 
+    @lazy_evaluation(default=True)
     def summary(
         self,
         attributes: List[str],
@@ -890,8 +1106,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         if iterate_kw is None:
             iterate_kw = dict()
         return pd.DataFrame.from_records(
-            dict((key, getattr(flight, key)) for key in attributes)
-            for flight in self.iterate(**iterate_kw)
+            flight.summary(attributes) for flight in self.iterate(**iterate_kw)
         )
 
     def geoencode(self, *args: Any, **kwargs: Any) -> NoReturn:

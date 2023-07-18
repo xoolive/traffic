@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Iterator, Literal
+from typing import Any, Iterator, Literal, overload
 
 import pandas as pd
 
@@ -92,19 +92,29 @@ class Interval:
 
         return NotImplemented
 
+    @overload
+    def intersection(self, other: Interval) -> None | Interval:
+        ...
+
+    @overload
+    def intersection(
+        self, other: IntervalCollection
+    ) -> None | IntervalCollection:
+        ...
+
     def intersection(
         self, other: Interval | IntervalCollection
-    ) -> None | IntervalCollection:
+    ) -> None | Interval | IntervalCollection:
         return self & other
 
-    def __and__(self, other: Interval) -> None | IntervalCollection:
+    def __and__(self, other: Interval) -> None | Interval:
         """returns the time that exists in both intervals"""
 
         if isinstance(other, Interval):
             if self.overlap(other):
                 start = max(self.start, other.start)
                 stop = min(self.stop, other.stop)
-                return IntervalCollection(start=start, stop=stop)
+                return Interval(start, stop)
             return None
 
         return NotImplemented
@@ -300,7 +310,7 @@ class IntervalCollection(DataFrameMixin):
             candidates = self.data.query("start <= @horizon < stop")
             while candidates.shape[0] > 0:
                 horizon = candidates["stop"].max()
-                candidates = self.data.query("start <= @horizon <= stop")
+                candidates = self.data.query("start <= @horizon < stop")
 
             cumul.append(Interval(swiping_line, horizon))
 

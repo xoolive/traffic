@@ -115,12 +115,17 @@ class TestCollection:
     def test_duration_simple(self) -> None:
         assert c7.total_duration() == pd.Timedelta(seconds=60)
 
-    def test_compile(self) -> None:
+    def test_consolidate(self) -> None:
         assert c1.consolidate() == IntervalCollection(h0, h5)
         assert c2.consolidate() == IntervalCollection(h0, h5)
         assert c3.consolidate() == IntervalCollection(h0, h8)
         assert c5.consolidate() == c5
         assert c6.consolidate() == c6
+
+        other = IntervalCollection(i1, i2, i3, i4)
+        res = other.consolidate()
+        assert res is not None
+        assert next(iter(res)) == Interval(h0, h8)
 
 
 class TestCollectionAdd:
