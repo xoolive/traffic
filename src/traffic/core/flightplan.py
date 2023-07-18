@@ -493,7 +493,10 @@ class FlightPlan(ShapelyMixin):
             if isinstance(e, Direct):
                 from traffic.data import navaids
 
-                previous, next_ = elts[i - 1], elts[i + 1]
+                # previous, next_ = elts[i - 1], elts[i + 1]
+                # if flightplan ends with DCT, lets[i+1] will be out of bounds
+                previous = elts[i - 1]
+                next_ = None if i + 1 >= len(elts) else elts[i + 1]
 
                 if previous is None or next_ is None:
                     warnings.warn(f"Missing information around {elts[i]}")
