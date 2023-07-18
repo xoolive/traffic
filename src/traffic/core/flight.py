@@ -3109,7 +3109,7 @@ class Flight(
                 (
                     subtab.assign(
                         timestamp=lambda df: df.timestamp.dt.tz_localize(
-                            datetime.now().astimezone().tzinfo  # noqa: DTZ005
+                            datetime.now().astimezone().tzinfo
                         ).dt.tz_convert("utc")
                     ).plot(ax=ax, x="timestamp", **kw)
                 )
