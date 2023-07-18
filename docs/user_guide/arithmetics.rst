@@ -6,7 +6,7 @@ How to use arithmetic operators on trajectories?
 - :ref:`Differences on trajectories with the - (minus) operator`
 - :ref:`Differences on collections with the - (minus) operator`
 - :ref:`Indexation with the [] (bracket) operator`
-- :ref:`Intersection of trajectories with the & (and) operator`
+- :ref:`Overlapping of trajectories with the & (and) operator`
 - :ref:`Intersection of collections with the & (and) operator`
 
 Visualization with the | (or) operator
