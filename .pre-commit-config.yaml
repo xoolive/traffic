@@ -17,12 +17,12 @@ repos:
     hooks:
       - id: poetry-check
   - repo: https://github.com/floatingpurr/sync_with_poetry
-    rev: 0.3.0
+    rev: 1.1.0
     hooks:
       - id: sync_with_poetry
         args: [] # optional args
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 23.7.0
     hooks:
       - id: black
   - repo: https://github.com/charliermarsh/ruff-pre-commit
@@ -30,7 +30,7 @@ repos:
     hooks:
       - id: ruff
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.3.0
+    rev: v1.4.1
     hooks:
       - id: mypy
         exclude: ^docs/conf.py
