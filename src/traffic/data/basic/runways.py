@@ -23,7 +23,13 @@ from shapely.ops import linemerge
 
 from ... import cache_expiration
 from ...core.geodesy import bearing, destination
-from ...core.mixins import DataFrameMixin, HBoxMixin, PointMixin, ShapelyMixin
+from ...core.mixins import (
+    DataFrameMixin,
+    HBoxMixin,
+    PointMixin,
+    ShapelyMixin,
+    GeographyMixin,
+)
 
 if TYPE_CHECKING:
     import altair as alt
@@ -50,7 +56,7 @@ class Threshold(ThresholdTuple, PointMixin):
 RunwaysType = Dict[str, List[Tuple[Threshold, Threshold]]]
 
 
-class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
+class RunwayAirport(HBoxMixin, ShapelyMixin, GeographyMixin):
     def __init__(
         self,
         data: Optional[pd.DataFrame] = None,
