@@ -33,9 +33,9 @@ from .flight import Flight
 from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
-    from .traffic import Traffic
     from pyspark.sql import DataFrame as SDF
-    from typing_extensions import Literal
+
+    from .traffic import Traffic
 
 _log = logging.getLogger(__name__)
 

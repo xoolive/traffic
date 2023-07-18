@@ -118,7 +118,7 @@ def wraps(name: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
             Union[None, bool, np.bool_, Flight],
             getattr(Flight, name)(Flight(df), *args, **kwargs),
         )
-        if result is False or result is np.False_:
+        if result is None or result is False or result is np.False_:
             return df.iloc[:0, :].copy()
         if result is True or result is np.True_:
             return df
@@ -131,7 +131,6 @@ def wraps(name: str, *args: Any, **kwargs: Any) -> pd.DataFrame:
 def get_implementation(
     name: str, *args: Any, **kwargs: Any
 ) -> Callable[[SDF], SDF]:
-
     func = _implementations.get(name, None)
     logging.debug(f"get_implementation({name}): {func}")
 
@@ -161,7 +160,6 @@ def feature_lt(
     value: Any,
     strict: bool = True,
 ) -> SDF:
-
     if isinstance(feature, str):
         *name_split, agg = feature.split("_")
         feature = "_".join(name_split)
@@ -193,8 +191,7 @@ def assign_id(
     identifier: str = "icao24",
     time: str = "timestamp",
     threshold: float = 10 * 60,
-):
-
+) -> SDF:
     # keep the column names for later use
     cols = sdf.columns
 
