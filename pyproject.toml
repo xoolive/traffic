@@ -62,6 +62,7 @@ ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
 pyModeS = ">=2.16"
 # pyModeS = { path = "../pyModeS", extras = ["rtlsdr"], develop = true }
+pyopensky = { path = "../pyopensky", develop = true }
 openap = ">=1.1"
 metar = ">=1.8"
 click = ">=8.1"
@@ -82,9 +83,10 @@ pyrtlsdr = { version = "^0.2.93", optional = true }
 poetry = "^1.5.1"
 
 [tool.poetry.extras]
-full = ["xarray", "libarchive", "scikit-learn", "textual", "pyspark"]
+full = ["xarray", "libarchive", "scikit-learn", "textual"]
 web = ["Flask", "Flask-Cors", "waitress", "textual"]
 sdr =  ["pyrtlsdr"]
+spark = ["pyspark"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = ">=2.13.0"

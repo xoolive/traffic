@@ -5,7 +5,7 @@ from pyspark.conf import SparkConf
 
 conf = SparkConf()
 conf.setAppName("my_spark_app")
-conf.setMaster("spark://160.85.67.62:7077")
+# conf.setMaster("spark://160.85.67.62:7077")
 conf.set("spark.executor.memory", "600G")
 conf.set("spark.driver.memory", "12G")
 conf.set("spark.driver.maxResultSize", "12G")
@@ -38,3 +38,52 @@ t = (
     .eval(spark=spark)
 )
 t
+
+# %%
+
+from traffic.core.spark import SparkTraffic
+
+sample = SparkTraffic.from_parquet(
+    "/home/xo/sample_traffic/sample_traffic_12_00.parquet",
+    spark=spark,
+)
+# %%
+sample.show()
+# %%
+from traffic.data import airports
+
+ts = (
+    sample.resample("1s")
+    .intersects(airports["LSZH"])
+    .has('aligned_on_ils("LSZH")')
+    # .traffic
+)
+# ts.explain()
+t = ts.traffic
+# %%
+from ipyleaflet import Map
+
+m = Map(center=airports["LSZH"].latlon, zoom=9)
+for flight in t:
+    m.add(flight)
+m
+
+# %%
+ts = (
+    sample.inside_bbox((-10, 30, 30, 60))
+    .resample("1s")
+    .has("holding_pattern")
+    # .traffic
+)
+# ts.explain()
+t = ts.traffic
+t
+# %%
+from ipyleaflet import Map
+
+m = Map(center=(45, 10), zoom=4)
+for flight in t[:30]:
+    m.add(flight, highlight=dict(red="holding_pattern"))
+m
+
+# %%
