@@ -962,7 +962,9 @@ class Flight(
             value = pd.Timedelta(value)
         return self.feature_gt(attrgetter("duration"), value, strict)
 
-    def abs(self, features: Union[str, List[str]], **kwargs: Any) -> Flight:
+    def abs(
+        self, features: Union[None, str, List[str]] = None, **kwargs: Any
+    ) -> Flight:
         """Assign absolute versions of features to new columns.
 
         >>> flight.abs("track")
@@ -974,6 +976,8 @@ class Flight(
 
         """
         assign_dict = dict()
+        if features is None:
+            features = []
         if isinstance(features, str):
             features = [features]
         if isinstance(features, Iterable):

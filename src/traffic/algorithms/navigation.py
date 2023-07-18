@@ -1493,3 +1493,17 @@ class NavigationFeatures:
 
         if previous_candidate is not None:
             yield previous_candidate
+
+    @flight_iterator
+    def thermals(self) -> Iterator["Flight"]:
+        """Detects thermals for gliders."""
+        self = cast("Flight", self)
+        all_segments = (
+            self.unwrap()
+            .diff("track_unwrapped")
+            .agg_time("1T", vertical_rate="max", track_unwrapped_diff="median")
+            .abs(track_unwrapped_diff_median="track_unwrapped_diff_median")
+            .query("vertical_rate_max > 2 and track_unwrapped_diff_median > 5")
+        )
+        if all_segments is not None:
+            yield from all_segments.split("1T")
