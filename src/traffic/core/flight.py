@@ -360,9 +360,13 @@ class Flight(
         elif isinstance(other, Flight):
             right = Interval(other.start, other.stop)
         elif isinstance(other, FlightIterator):
-            right = IntervalCollection(
-                [Interval(segment.start, segment.stop) for segment in other]
-            )
+            intervals = [
+                Interval(segment.start, segment.stop) for segment in other
+            ]
+            if len(intervals) == 0:
+                yield self
+                return
+            right = IntervalCollection(intervals)
         else:
             return NotImplemented
 
