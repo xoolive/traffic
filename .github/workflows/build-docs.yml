@@ -109,7 +109,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install -E full
+          poetry install -E full -E web  # TODO web necessary for the traffic cache command below
 
           # This should not be necessary... but sometimes it is
           # https://traffic-viz.github.io/troubleshooting/installation.html
@@ -126,9 +126,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRAFFIC_NOPLUGIN: ""
         run: |
-          # until altair 4.3 is released
-          poetry run pip install git+https://github.com/altair-viz/altair.git
-
           # This downloads the cache for cartes atlas
           poetry run python -c "from cartes.atlas import default, world_atlas"
           # This downloads files to have in cache first
