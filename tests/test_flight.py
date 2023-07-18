@@ -588,17 +588,17 @@ def test_agg_time() -> None:
     assert app.min("factor") < 1 / 15
 
 
-def test_comet() -> None:
+def test_forward() -> None:
     flight = belevingsvlucht
 
     subset = flight.query("altitude < 300")
     assert subset is not None
     takeoff = subset.split("10T").next()
     assert takeoff is not None
-    comet = takeoff.comet(minutes=1)
+    forward = takeoff.forward(minutes=1)
 
     t_point = takeoff.point
-    c_point = comet.point
+    c_point = forward.point
     assert t_point is not None
     assert c_point is not None
     assert t_point.altitude + 2000 < c_point.altitude

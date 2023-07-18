@@ -131,6 +131,8 @@ jobs:
 
           # This downloads the cache for cartes atlas
           poetry run python -c "from cartes.atlas import default, world_atlas"
+          # This downloads files to have in cache first
+          poetry run traffic cache --fill
 
           export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
 

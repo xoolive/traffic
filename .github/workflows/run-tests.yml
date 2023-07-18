@@ -143,6 +143,7 @@ jobs:
           # Don't purge OpenSky cache files here :)
           sed -i "/purge = / d" $TRAFFIC_CONFIG
 
+          poetry run traffic cache --fill  # download files to have in cache first
           poetry run pytest --cov --cov-report xml
 
       - name: Upload coverage to Codecov

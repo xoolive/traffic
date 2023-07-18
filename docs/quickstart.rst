@@ -767,7 +767,7 @@ For reference, look at the subtle differences between the following processing:
         flight = t4[0]
         segments = flight.aligned_on_ils("LFPG")
         first = next(segments)
-        comet = first.first("70s").comet(minutes=4)
+        forward = first.first("70s").forward(minutes=4)
 
         chart = (
             alt.layer(
@@ -777,7 +777,7 @@ For reference, look at the subtle differences between the following processing:
                     labels=dict(fontSize=10),
                 ),
                 flight.geoencode().mark_line(stroke="#bab0ac"),
-                comet.geoencode(stroke="#79706e", strokeDash=[7, 3], strokeWidth=0.8),
+                forward.geoencode(stroke="#79706e", strokeDash=[7, 3], strokeWidth=0.8),
                 first.geoencode().encode(alt.Color("ILS")),
                 next(segments).geoencode().encode(alt.Color("ILS")),
             )

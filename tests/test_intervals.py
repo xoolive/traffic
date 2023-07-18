@@ -90,16 +90,16 @@ class TestIntervalUnion:
 
 class TestIntervalIntersection:
     def test_partialsupleft(self) -> None:
-        assert i1 & i4 == IntervalCollection(h1, h2)
+        assert i1 & i4 == Interval(h1, h2)
 
     def test_partialsupright(self) -> None:
-        assert i2 & i4 == IntervalCollection(h3, h5)
+        assert i2 & i4 == Interval(h3, h5)
 
     def test_totalsup(self) -> None:
-        assert i2 & i5 == IntervalCollection(h3, h6)
+        assert i2 & i5 == Interval(h3, h6)
 
     def test_partialsupmiddle(self) -> None:
-        assert i5 & i2 == IntervalCollection(h3, h6)
+        assert i5 & i2 == Interval(h3, h6)
 
     def test_nosup_left(self) -> None:
         assert i1 & i2 is None
@@ -108,7 +108,7 @@ class TestIntervalIntersection:
         assert i2 & i1 is None
 
     def test_equal(self) -> None:
-        assert i1 & i1 == IntervalCollection(h0, h2)
+        assert i1 & i1 == Interval(h0, h2)
 
 
 class TestCollection:
