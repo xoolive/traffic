@@ -991,6 +991,30 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         return self.__class__(df)
 
+    def between_feature(
+        self,
+        feature: str,
+        value_min: None | float = None,
+        value_max: None | float = None,
+        strict: bool = False,
+    ) -> None | "Traffic":
+        df = self.data
+        if strict:
+            if value_min is not None:
+                df = df.query(f"{feature} > @value_min")
+            if value_max is not None:
+                df = df.query(f"{feature} < @value_max")
+        else:
+            if value_min is not None:
+                df = df.query(f"{feature} >= @value_min")
+            if value_max is not None:
+                df = df.query(f"{feature} <= @value_max")
+
+        if df.shape[0] == 0:
+            return None
+
+        return self.__class__(df)
+
     @lazy_evaluation(default=True)
     def airborne(self) -> Optional["Traffic"]:
         """Returns the airborne part of the Traffic.
