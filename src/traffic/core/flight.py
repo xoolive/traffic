@@ -1114,7 +1114,12 @@ class Flight(
                 else ""
             )
             + (f"{self.destination}" if self.destination else " ")
-            + (f"diverted to {self.diverted}" if self.diverted else "")
+            + (
+                f" diverted to {self.diverted}"
+                # it must not be None nor nan
+                if self.diverted and self.diverted == self.diverted
+                else ""
+            )
             + (
                 ")"
                 if self.origin is not None or self.destination is not None
@@ -1231,7 +1236,7 @@ class Flight(
 
         return None
 
-    def summary(self, attributes: list[str], **kwargs: Any) -> dict[str, Any]:
+    def summary(self, attributes: list[str]) -> dict[str, Any]:
         """Returns a summary of the current Flight structure containing
         featured attributes.
 
