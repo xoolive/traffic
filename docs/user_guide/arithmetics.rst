@@ -118,7 +118,7 @@ The following lets us get one or many trajectories:
     switzerland['EZY12VJ']
 
 The DataFrame indexation can be useful for example with the following use case.
-We want to get full trajectories or aircraft entering the Swiss airspace at a
+We want to get full trajectories of aircraft entering the Swiss airspace at a
 particular hour.  We first compute the statistics for each trajectory, then
 build a trajectory subcollection.
 
@@ -174,7 +174,7 @@ aircraft is flying.
 Intersection of collections with the & (and) operator
 -----------------------------------------------------
 
-When applied on collections, the & operator return the subset of trajectories
+When applied on collections, the & operator returns the subset of trajectories
 that are present in both collections.
 
 .. automethod:: traffic.core.Traffic.__and__
