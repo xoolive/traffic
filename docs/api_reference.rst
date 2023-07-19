@@ -31,6 +31,7 @@ and stack them before triggering only one iteration.
    api_reference/traffic.core.flight
    api_reference/traffic.core.flightplan
    api_reference/traffic.core.geodesy
+   api_reference/traffic.core.intervals
    api_reference/traffic.core.iterator
    api_reference/traffic.core.lazy
    api_reference/traffic.core.mixins

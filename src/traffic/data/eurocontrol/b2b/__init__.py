@@ -42,7 +42,7 @@ class NMB2B(FlightManagement, Measures):
         pkcs12_filename =
         pkcs12_password =
         # mode = OPS  # default: PREOPS
-        # version = 25.0.0 # default: 25.0.0
+        # version =
 
 
     """

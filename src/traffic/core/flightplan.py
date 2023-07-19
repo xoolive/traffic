@@ -400,7 +400,7 @@ class FlightPlan(ShapelyMixin):
 
     @lru_cache()
     def _parse(self) -> List[Any]:
-        cumul: List[Any] = list()  # List[ShapelyMixin] ?
+        cumul: List[Union[None, ShapelyMixin]] = list()
         elts = self.decompose()
 
         for i, e in enumerate(elts):
@@ -437,7 +437,7 @@ class FlightPlan(ShapelyMixin):
                     warnings.warn(f"Missing information around {elts[i]}")
                     continue
 
-                if len(cumul) > 0:
+                if len(cumul) > 0 and cumul[-1] is not None:
                     # avoid obvious duplicates
                     elt1, *_, elt2 = cumul[-1].shape.coords
                     lon1, lat1, *_ = elt1
@@ -499,7 +499,7 @@ class FlightPlan(ShapelyMixin):
                     warnings.warn(f"Missing information around {elts[i]}")
                     continue
 
-                if len(cumul) > 0:
+                if len(cumul) > 0 and cumul[-1] is not None:
                     # avoid obvious duplicates
                     elt1, *_, elt2 = cumul[-1].shape.coords
                     lon1, lat1, *_ = elt1

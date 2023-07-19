@@ -141,7 +141,7 @@ class OpenSky(Impala):
 
     # All Impala specific functions are implemented in opensky_impala.py
 
-    _json_columns = [
+    _json_columns = (
         "icao24",
         "callsign",
         "origin_country",
@@ -159,7 +159,7 @@ class OpenSky(Impala):
         "squawk",
         "spi",
         "position_source",
-    ]
+    )
 
     def __init__(
         self,
@@ -232,7 +232,7 @@ class OpenSky(Impala):
         try:
             c.raise_for_status()
             json = c.json()
-            columns = self._json_columns
+            columns = list(self._json_columns)
             # For some reason, OpenSky may return 18 fields instead of 17
             if len(json["states"]) > 0:
                 if len(json["states"][0]) > len(self._json_columns):
@@ -414,8 +414,13 @@ class OpenSky(Impala):
         c.raise_for_status()
         return SensorRange(c.json())
 
-    def api_global_coverage(self) -> Coverage:
-        c = self.session.get("https://opensky-network.org/api/range/coverage")
+    def api_global_coverage(self, day: Optional[timelike] = None) -> Coverage:
+        if day is None:
+            day = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
+        day = int(to_datetime(day).timestamp())
+        c = self.session.get(
+            f"https://opensky-network.org/api/range/coverage?day={day}"
+        )
         c.raise_for_status()
         return Coverage(c.json())
 

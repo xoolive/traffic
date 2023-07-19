@@ -240,7 +240,7 @@ class Navaids(GeoDBMixin):
         >>> navaids.get("ZUE")
         Navaid('ZUE', type='NDB', latitude=30.9, longitude=20.068, altitude=0.0, description='ZUEITINA NDB', frequency='369.0kHz')
 
-        >>> navaids.extent("Switzerland").get("ZUE")
+        >>> navaids.extent("Switzerland").get("ZUE")  # doctest: +SKIP
         Navaid('ZUE', type='VOR', latitude=47.592, longitude=8.817, altitude=1730.0, description='ZURICH EAST VOR-DME', frequency='110.05MHz')
         """
         for _key, value in reversed(

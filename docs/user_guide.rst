@@ -43,6 +43,7 @@ Good practices
 .. toctree::
    :maxdepth: 1
 
+   user_guide/arithmetics
    user_guide/projection
    user_guide/processing
    user_guide/simplify

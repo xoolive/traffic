@@ -136,14 +136,14 @@ class Generation:
         ``inverse_transform()`` methods.
     """
 
-    _required_traffic_columns = [
+    _required_traffic_columns = (
         "altitude",
         "callsign",
         "icao24",
         "latitude",
         "longitude",
         "timestamp",
-    ]
+    )
 
     _repr_indent = 4
 
@@ -269,7 +269,7 @@ class Generation:
 
     def __repr__(self) -> str:
         head = "Generation"
-        body = [f"Generative model: {repr(self.generation)}"]
+        body = [f"Generative model: {self.generation!r}"]
         body += [f"Features: {self.features}"]
         if self.scaler is not None:
             body += [repr(self.scaler)]

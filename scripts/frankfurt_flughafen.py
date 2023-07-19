@@ -1,6 +1,5 @@
 # %%
 import altair as alt
-
 from traffic.data import airports
 
 airport = airports["EDDF"]

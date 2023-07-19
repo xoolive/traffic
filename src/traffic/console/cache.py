@@ -29,6 +29,13 @@ def main(args_list: List[str]) -> None:
         action="store_true",
         help="open the cache directory in your native file browser",
     )
+    group.add_argument(
+        "--fill",
+        "-f",
+        dest="fill",
+        action="store_true",
+        help="download necessary data to put in cache before tests",
+    )
 
     args = parser.parse_args(args_list)
 
@@ -38,3 +45,11 @@ def main(args_list: List[str]) -> None:
     if args.open:
         logger.info("Open cache directory {}".format(cache_dir))
         dispatch_open(cache_dir)
+
+    if args.fill:
+        from traffic.data import aircraft, airports, navaids
+
+        p = airports["EHAM"]
+        n = navaids["NARAK"]
+        a = aircraft["F-HNAV"]
+        assert p is not None and n is not None and a is not None

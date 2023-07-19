@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .eurocontrol.aixm.airports import AIXMAirportParser
     from .eurocontrol.aixm.airspaces import AIXMAirspaceParser
     from .eurocontrol.aixm.navpoints import AIXMNavaidParser
+    from .eurocontrol.aixm.routes import AIXMRoutesParser
     from .eurocontrol.b2b import NMB2B
     from .eurocontrol.ddr.airspaces import NMAirspaceParser
     from .eurocontrol.ddr.allft import AllFT
@@ -36,6 +37,7 @@ __all__ = [
     "runways",
     "aixm_airports",
     "aixm_airspaces",
+    "aixm_airways",
     "aixm_navaids",
     "nm_airspaces",
     "nm_airways",
@@ -57,6 +59,7 @@ navaids: "Navaids"
 runways: "Runways"
 aixm_airports: "AIXMAirportParser"
 aixm_airspaces: "AIXMAirspaceParser"
+aixm_airways: "AIXMRoutesParser"
 aixm_navaids: "AIXMNavaidParser"
 nm_airspaces: "NMAirspaceParser"
 nm_airways: "NMRoutes"
@@ -97,7 +100,7 @@ pkcs12_password = config.get("nmb2b", "pkcs12_password", fallback="")
 nmb2b_mode = config.get("nmb2b", "mode", fallback="PREOPS")
 if nmb2b_mode not in ["OPS", "PREOPS"]:
     raise RuntimeError("mode must be one of OPS or PREOPS")
-nmb2b_version = config.get("nmb2b", "version", fallback="25.0.0")
+nmb2b_version = config.get("nmb2b", "version", fallback="26.0.0")
 
 
 _cached_imports: Dict[str, Any] = dict()
@@ -173,6 +176,14 @@ def __getattr__(name: str) -> Any:
 
         AIXMNavaidParser.cache_dir = cache_dir
         res = AIXMNavaidParser.from_file(Path(aixm_path_str))
+        _cached_imports[name] = res
+        return res
+
+    if name == "aixm_airways":  # coverage: ignore
+        from .eurocontrol.aixm.routes import AIXMRoutesParser
+
+        AIXMRoutesParser.cache_dir = cache_dir
+        res = AIXMRoutesParser.from_file(Path(aixm_path_str))
         _cached_imports[name] = res
         return res
 

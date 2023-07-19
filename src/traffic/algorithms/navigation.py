@@ -918,7 +918,7 @@ class NavigationFeatures:
             if navaids_extent is None:
                 _log.warn(msg)
                 return None
-            point_merge = navaids_extent.global_get(point_merge)  # type: ignore
+            point_merge = navaids_extent.get(point_merge)  # type: ignore
             if point_merge is None:
                 _log.warn("Navaid for point_merge not found")
                 return None
@@ -930,7 +930,7 @@ class NavigationFeatures:
             if navaids_extent is None:
                 _log.warn(msg)
                 return None
-            secondary_point = navaids_extent.global_get(secondary_point)
+            secondary_point = navaids_extent.get(secondary_point)
             if secondary_point is None:
                 _log.warn("Navaid for secondary_point not found")
                 return None
@@ -1493,3 +1493,17 @@ class NavigationFeatures:
 
         if previous_candidate is not None:
             yield previous_candidate
+
+    @flight_iterator
+    def thermals(self) -> Iterator["Flight"]:
+        """Detects thermals for gliders."""
+        self = cast("Flight", self)
+        all_segments = (
+            self.unwrap()
+            .diff("track_unwrapped")
+            .agg_time("1T", vertical_rate="max", track_unwrapped_diff="median")
+            .abs(track_unwrapped_diff_median="track_unwrapped_diff_median")
+            .query("vertical_rate_max > 2 and track_unwrapped_diff_median > 5")
+        )
+        if all_segments is not None:
+            yield from all_segments.split("1T")

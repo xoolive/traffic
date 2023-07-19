@@ -80,7 +80,7 @@ class Airways(GeoDBMixin):
     """
 
     cache_dir: Path
-    alternatives: dict[str, "Airways"] = dict()
+    alternatives: dict[str, "Airways"] = dict()  # noqa: RUF012
     name: str = "default"
 
     def __init__(self, data: None | pd.DataFrame = None) -> None:

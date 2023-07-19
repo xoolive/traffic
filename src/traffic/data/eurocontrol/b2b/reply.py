@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type, TypeVar, cast
+from typing import Any, Optional, Type, TypeVar
 from xml.dom import minidom
 from xml.etree import ElementTree
 
@@ -19,7 +19,7 @@ class B2BReply:
         if self.reply is None:
             return "[empty]"
         s = ElementTree.tostring(self.reply)
-        return cast(str, minidom.parseString(s).toprettyxml(indent="  "))
+        return minidom.parseString(s).toprettyxml(indent="  ")
 
     def __repr__(self) -> str:
         res = str(self)

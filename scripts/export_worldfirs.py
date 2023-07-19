@@ -6,12 +6,12 @@ from typing import Any
 
 import geopandas as gpd
 import topojson as tp
+from traffic.data import aixm_airspaces
 
 import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon, mapping, shape
 from shapely.ops import transform, unary_union
-from traffic.data import aixm_airspaces
 
 # %%
 
@@ -71,7 +71,7 @@ gdf = (
         '(type == "FIR" or type == "UIR" or type == "NO_FIR" or '
         'designator == "BODO") and not (type == "FIR" and designator == "XXXX")'
     )
-    .consolidate()  # type: ignore
+    .consolidate()
     .assign(
         geometry=lambda gdf: gdf.geometry.apply(
             lambda geom: transform(match180, geom)
