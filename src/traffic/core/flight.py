@@ -1760,14 +1760,15 @@ class Flight(
     ) -> Flight:
         """Filters a trajectory with predefined methods.
 
-        :filter: (default:
+        :param filter: (default:
             :class:`~traffic.algorithms.filters.FilterAboveSigmaMedian`) is one
-            of the filters predefined in :module:`~traffic.algorithms.filters`
+            of the filters predefined in :ref:`traffic.algorithms.filters`
             or any filter implementing the
             :class:`~traffic.algorithms.filters.Filter` protocol.
 
-        :strategy: (default: backward fill followed by forward fill)
+        :param strategy: (default: backward fill followed by forward fill)
             is applied after the filter to deal with resulting NaN values.
+
             - Explicitely specify to `None` if NaN values should be left as is.
             - ``lambda x: x.interpolate()`` may be a smart strategy
 
