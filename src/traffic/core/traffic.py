@@ -786,41 +786,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def filter(  # type: ignore
-        self,
-        strategy: Callable[
-            [pd.DataFrame], pd.DataFrame
-        ] = lambda x: x.bfill().ffill(),
-        **kwargs,
-    ):
-        ...
-
-    @lazy_evaluation()
-    def smoothing(self, paracol: str, kernel_size: int):
-        ...
-
-    @lazy_evaluation()
-    def filter_zhaw(self):
-        ...
-
-    @lazy_evaluation()
-    def filter_median(self, paracol: str, window: int):
-        ...
-
-    @lazy_evaluation()
-    def filter_deriv(
-        self,
-        paracol: str,
-        th1: float,
-        th2: float,
-        window: int,
-        timecol: str = "timestamp",
-    ):
-
-        ...
-
-    @lazy_evaluation()
-    def filter_cluster(self, paracol, timecol, groupsize, timediff_big, paradiff_big):
+    def filter(self, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()

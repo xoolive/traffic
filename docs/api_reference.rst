@@ -23,6 +23,7 @@ to be applied on every :class:`~traffic.core.Flight`  in the collection
 and stack them before triggering only one iteration.
 
 .. toctree::
+   :maxdepth: 1
 
    api_reference/traffic.core.aero
    api_reference/traffic.core.airspace
@@ -39,3 +40,4 @@ and stack them before triggering only one iteration.
    api_reference/traffic.core.sv
    api_reference/traffic.core.time
    api_reference/traffic.core.traffic
+   api_reference/traffic.algorithms.filters

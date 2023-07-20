@@ -44,6 +44,7 @@ from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
 from ..algorithms.douglas_peucker import douglas_peucker
+from ..algorithms.filters import FilterAboveSigmaMedian, FilterBase
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
 from ..core.structure import Airport
@@ -1752,329 +1753,39 @@ class Flight(
 
     def filter(
         self,
-        strategy: Optional[
-            Callable[[pd.DataFrame], pd.DataFrame]
-        ] = lambda x: x.bfill().ffill(),
-        **kwargs: int,
+        filter: FilterBase = FilterAboveSigmaMedian(),
+        strategy: None
+        | Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x.bfill().ffill(),
+        **kwargs: int | tuple[int],
     ) -> Flight:
-        """Filters the trajectory given features with a median filter.
+        """Filters a trajectory with predefined methods.
 
-        The method first applies a median filter on each feature of the
-        DataFrame. A default kernel size is applied for a number of features
-        (resp. latitude, longitude, altitude, track, groundspeed, IAS, TAS) but
-        other kernel values may be passed as kwargs parameters.
+        :filter: (default:
+            :class:`~traffic.algorithms.filters.FilterAboveSigmaMedian`) is one
+            of the filters predefined in :module:`~traffic.algorithms.filters`
+            or any filter implementing the
+            :class:`~traffic.algorithms.filters.Filter` protocol.
 
-        Rather than returning averaged values, the method computes thresholds
-        on sliding windows (as an average of squared differences) and replace
-        unacceptable values with NaNs.
-
-        Then, a strategy may be applied to fill the NaN values, by default a
-        forward/backward fill. Other strategies may be passed, for instance *do
-        nothing*: ``None``; or *interpolate*: ``lambda x: x.interpolate()``.
-
-        .. note::
-
-            This method if often more efficient when applied several times with
-            different kernel values.Kernel values may be passed as integers, or
-            list/tuples of integers for cascade of filters:
-
-            .. code:: python
-
-                # this cascade of filters appears to work well on altitude
-                flight.filter(altitude=17).filter(altitude=53)
-
-                # this is equivalent to the default value
-                flight.filter(altitude=(17, 53))
+        :strategy: (default: backward fill followed by forward fill)
+            is applied after the filter to deal with resulting NaN values.
+            - Explicitely specify to `None` if NaN values should be left as is.
+            - ``lambda x: x.interpolate()`` may be a smart strategy
 
         """
+        if filter is None:
+            filter = FilterAboveSigmaMedian(**kwargs)
 
-        import scipy.signal
-
-        ks_dict: Dict[str, Union[int, Iterable[int]]] = {
-            "altitude": (17, 53),
-            "selected_mcp": (17, 53),
-            "selected_fms": (17, 53),
-            "IAS": 23,
-            "TAS": 23,
-            "Mach": 23,
-            "groundspeed": 5,
-            "compute_gs": (17, 53),
-            "compute_track": 17,
-            "onground": 3,
-            "latitude": 1,  # the method doesn't apply well to positions
-            "longitude": 1,
-            **kwargs,
-        }
-
-        if strategy is None:
-
-            def identity(x: pd.DataFrame) -> pd.DataFrame:
-                return x
-
-            strategy = identity
-
-        def cascaded_filters(
-            df: pd.DataFrame,
-            feature: str,
-            kernel_size: int,
-            filt: Callable[[pd.Series, int], Any] = scipy.signal.medfilt,
-        ) -> pd.DataFrame:
-            """Produces a mask for data to be discarded.
-
-            The filtering applies a low pass filter (e.g medfilt) to a signal
-            and measures the difference between the raw and the filtered signal.
-
-            The average of the squared differences is then produced (sq_eps) and
-            used as a threshold for filtering.
-
-            Errors may raised if the kernel_size is too large
-            """
-            y = df[feature].astype(float)
-            y_m = filt(y, kernel_size)
-            sq_eps = (y - y_m) ** 2
-            return pd.DataFrame(
-                {
-                    "timestamp": df["timestamp"],
-                    "y": y,
-                    "y_m": y_m,
-                    "sq_eps": sq_eps,
-                    "sigma": np.sqrt(filt(sq_eps, kernel_size)),
-                },
-                index=df.index,
-            )
-
-        new_data = self.data.sort_values(by="timestamp").copy()
-
-        if len(kwargs) == 0:
-            features = [
-                cast(str, feature)
-                for feature in self.data.columns
-                if self.data[feature].dtype
-                in [np.float32, np.float64, np.int32, np.int64]
-            ]
-        else:
-            features = list(kwargs.keys())
-
-        kernels_size: List[Union[int, Iterable[int]]] = [0 for _ in features]
-        for idx, feature in enumerate(features):
-            kernels_size[idx] = ks_dict.get(feature, 17)
-
-        for feat, ks_list in zip(features, kernels_size):
-            if isinstance(ks_list, int):
-                ks_list = [ks_list]
-            else:
-                ks_list = list(ks_list)
-
-            for ks in ks_list:
-                # Prepare each feature for the filtering
-                df = cascaded_filters(new_data[["timestamp", feat]], feat, ks)
-
-                # Decision to accept/reject data points in the time series
-                new_data.loc[df.sq_eps > df.sigma, feat] = None
-
-        data = strategy(new_data)
-
-        if "onground" in data.columns:
-            data = data.assign(onground=data.onground.astype(bool))
-
-        return self.__class__(data)
-
-    def filter_zhaw(self) -> "Flight":
-        """Applies a collection of filters to the trajectory. Depending on the feature, the kind
-        of filter steps that are applied and the parameters of the filters may vary.
-        """
-        trajs_filt = (
-            self.filter_median(
-                paracols=[
-                    "altitude",
-                    "geoaltitude",
-                    "vertical_rate",
-                    "groundspeed",
-                    "track",
-                ],
-                kernels=[11, 9, 5, 9, 5],
-            )
-            .filter_deriv(
-                paracols=[
-                    "altitude",
-                    "geoaltitude",
-                    "vertical_rate",
-                    "groundspeed",
-                    "track",
-                ],
-                th1s=[200, 200, 1500, 12, 12],
-                th2s=[150, 150, 1000, 10, 10],
-                windows=[10, 10, 5, 3, 2],
-            )
-            .filter_cluster(
-                paracols=[
-                    "altitude",
-                    "geoaltitude",
-                    "vertical_rate",
-                    "onground",
-                    "track",
-                    "latitude",
-                    "longitude",
-                ],
-                groupsizes=[15, 15, 15, 15, 20, 20, 20],
-                paradiffs_big=[500, 500, 2000, 99, 20, 0.02, 0.02],
-            )
-            .smoothing(
-                paracols=[
-                    "altitude",
-                    "geoaltitude",
-                    "vertical_rate",
-                    "groundspeed",
-                    "track",
-                ],
-                kernel_sizes=[10, 10, 3, 7, 3],
-            )
+        new_data = filter.apply(
+            self.data.sort_values(by="timestamp").reset_index(drop=True).copy()
         )
-        return trajs_filt
 
-    def filter_median(
-        self,
-        paracols: List[str],
-        kernels: List[int],
-    ) -> "Flight":
-        """Moving median filter to remove spikes in the data.
+        if strategy is not None:
+            new_data = strategy(new_data)
 
-        :param paracol: Name of the column to be filtered.
-        :param window: Size of the window for the median filter.
-        """
-        data = self.data.reset_index(drop=True)
-        for paracol, kernel in zip(paracols, kernels):
-            paracol_copy = data[paracol]
-            data[paracol] = data[paracol].rolling(kernel, center=True).median()
-            data.loc[data[paracol].isnull(), paracol] = paracol_copy
-        return self.__class__(data)
+        if "onground" in new_data.columns:
+            new_data = new_data.assign(onground=new_data.onground.astype(bool))
 
-    def filter_deriv(
-        self,
-        paracols: List[str],
-        th1s: List[float],
-        th2s: List[float],
-        windows: List[int],
-        timecol: str = "timestamp",
-    ) -> "Flight":
-        """Filter method based on the first and second derivative of a parameter.
-
-        :param paracol: Name of the column on which to apply the filtering.
-        :param th1: Threshold for the first derivative above which a datapoint is declared a spike.
-        :param th2: Threshold for the second derivative above which a datapoint is declared a spike.
-        :param window: Window in seconds. If two spikes are detected within this window,
-                       the datapoints between them are also removed.
-        :param timecol: The time column to use, by default "timestamp".
-        """
-
-        data = self.data.reset_index(drop=True)
-        timediff = data[timecol].diff().astype("timedelta64[s]")
-        for paracol, th1, th2, window in zip(paracols, th1s, th2s, windows):
-            diff1 = abs(data[paracol].diff())
-            if paracol == "track":
-                diff1.loc[(diff1 < 370) & (diff1 > 350)] = 0
-            diff2 = abs(diff1.diff())
-
-            deriv1 = diff1 / timediff
-            deriv2 = diff2 / timediff
-            spike = ((deriv1 >= th1) | (deriv2 >= th2)).fillna(
-                False, inplace=False
-            )
-
-            spike_time = pd.Series(np.nan, index=data.index)
-            spike_time.loc[spike == True] = data[timecol].loc[spike == True]
-
-            if spike_time.isnull().all() == False:
-                spike_time_prev = spike_time.ffill()
-                spike_delta_prev = (data["timestamp"] - spike_time_prev).astype(
-                    "timedelta64[s]"
-                )
-                spike_time_next = spike_time.bfill()
-                spike_delta_next = (spike_time_next - data["timestamp"]).astype(
-                    "timedelta64[s]"
-                )
-                in_window = (spike_delta_prev <= window) & (
-                    spike_delta_next <= window
-                )
-                data.loc[(in_window == True), paracol] = np.NaN
-        return self.__class__(data)
-
-    def filter_cluster(
-        self,
-        paracols: List[str],
-        groupsizes: List[int],
-        paradiffs_big: List[float],
-        timediffs_big: List[float] = None,
-        timecol: str = "timestamp",
-    ) -> "Flight":
-        """Filter a parameter with a clustering approach. Datapoints are clustered based on
-        difference in time and parameter value. If the cluster is larger than the defined groupsize
-        the datapoints are kept, otherwise they are removed.
-
-        :param paracol: Name of the column to filter.
-        :param groupsize: Minimum size of a cluster in order not to be removed
-        :param timediff_big: Threshold above which a difference in time is considered a new cluster.
-        :param paradiff_big: Theshold above which a difference in parameter value is considered a
-                             new cluster.
-        :param timecol: Name of the column containing the timestamp information,by default
-                        "timestamp".
-        """
-
-        data = self.data.reset_index(drop=True)
-        data = data.drop_duplicates([timecol], keep="last")
-        if timediffs_big is None:
-            timediffs_big = [60] * len(paracols)
-
-        for paracol, groupsize, timediff_big, paradiff_big in zip(
-            paracols, groupsizes, timediffs_big, paradiffs_big
-        ):
-            if paracol == "onground":
-                statechange = data[paracol].diff().astype(bool)
-                data["group"] = statechange.eq(True).cumsum()
-                groups = data["group"].value_counts()
-                keepers = groups[groups > groupsize].index.tolist()
-                data[paracol] = data[paracol].where(
-                    data["group"].isin(keepers), float("NaN")
-                )
-
-            else:
-                timediff = data[timecol].diff().astype("timedelta64[s]")
-                temp_index = data.index
-                temp_values = data[paracol].dropna()
-                paradiff = abs(temp_values.diff().reindex(temp_index))
-                bigdiff = pd.Series(
-                    np.where(
-                        ((timediff > timediff_big) | (paradiff > paradiff_big)),
-                        True,
-                        False,
-                    )
-                )
-                data["group"] = bigdiff.eq(True).cumsum()
-                groups = data[data[paracol].notna()]["group"].value_counts()
-                keepers = groups[groups > groupsize].index.tolist()
-                data[paracol] = data[paracol].where(
-                    data["group"].isin(keepers), float("NaN")
-                )
-
-            data = data.drop(columns=["group"])
-        return self.__class__(data)
-
-    def smoothing(
-        self, paracols: List[str], kernel_sizes: List[int]
-    ) -> "Flight":
-        """Smoothen a parameter using a rolling mean with a specified kernel size.
-
-        :param paracol: Name of the column to smooth.
-        :param kernel_size: The size of the kernel to use for the rolling mean.
-        """
-        for paracol, kernel_size in zip(paracols, kernel_sizes):
-            data = self.data.reset_index(drop=True)
-            paracol_copy = data[paracol]
-            data[paracol] = (
-                data[paracol].rolling(kernel_size, center=True).mean()
-            )
-            data.loc[data[paracol].isnull(), paracol] = paracol_copy
-        return self.__class__(data)
+        return self.__class__(new_data)
 
     def filter_position(self, cascades: int = 2) -> Optional[Flight]:
         # TODO improve based on agg_time or EKF
@@ -3306,7 +3017,7 @@ class Flight(
                 (
                     subtab.assign(
                         timestamp=lambda df: df.timestamp.dt.tz_localize(
-                            datetime.now().astimezone().tzinfo
+                            datetime.now(tz=None).astimezone().tzinfo
                         ).dt.tz_convert("utc")
                     ).plot(ax=ax, x="timestamp", **kw)
                 )
