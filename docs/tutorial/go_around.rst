@@ -101,7 +101,7 @@ factors. To be honest, nothing clear comes out of this one.
 
     # the desc= argument in eval() creates a progress bar
     goarounds = subset.has('go_around("LSZH")').eval(max_workers=4)
-    summary = goarounds.summary(['callsign', 'registration', 'stop'])
+    summary = goarounds.summary(['callsign', 'registration', 'stop']).eval()
 
     alt.Chart(summary).mark_square(size=100).encode(
         alt.X("utchours(stop):T", title="Hour of day"),
@@ -177,8 +177,8 @@ a runway configuration change:
     data = (
         landing_zurich_2019.between("2019-10-15 10:10", "2019-10-15 10:50")
         .all("aligned_on_LSZH", flight_id="{self.callsign}_{i}")
-        .eval()
         .summary(["callsign", "ILS_max", "start", "stop"])
+        .eval()
         .rename(columns=dict(start="final approach", stop="landing"))
     )
 

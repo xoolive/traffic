@@ -315,7 +315,7 @@ class Airspace(ShapelyMixin):
     @property
     def point(self) -> PointMixin:
         p = PointMixin()
-        p.longitude, p.latitude = list(self.centroid.coords)[0]
+        p.longitude, p.latitude = next(iter(self.centroid.coords))
         return p
 
     def decompose(self, extr_p: ExtrudedPolygon) -> Iterator[Polygon]:
