@@ -1,5 +1,5 @@
 traffic.core.intervals
---------------------
+----------------------
 
 .. autoclass:: traffic.core.intervals.Interval
     :members:
