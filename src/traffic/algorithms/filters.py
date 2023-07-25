@@ -239,7 +239,7 @@ class FilterDerivative(FilterBase):
         self.time_column = time_column
 
     def apply(self, data: pd.DataFrame) -> pd.DataFrame:
-        timediff = data[self.time_column].diff().astype("timedelta64[s]")
+        timediff = data[self.time_column].diff().dt.total_seconds()
         for column, params in self.columns.items():
             if column not in data.columns:
                 continue
@@ -265,8 +265,8 @@ class FilterDerivative(FilterBase):
                 spike_time_next = spike_time.bfill()
                 spike_delta_next = spike_time_next - data["timestamp"]
                 in_window = np.bitwise_and(
-                    spike_delta_prev.astype("timedelta64[s]") <= window,
-                    spike_delta_next.astype("timedelta64[s]") <= window,
+                    spike_delta_prev.dt.total_seconds() <= window,
+                    spike_delta_next.dt.total_seconds() <= window,
                 )
                 data.loc[(in_window), column] = np.NaN
 
@@ -332,12 +332,10 @@ class FilterClustering(FilterBase):
                 )
 
             else:
-                timediff = (
-                    data[self.time_column].diff().astype("timedelta64[s]")
-                )
+                timediff = data[self.time_column].diff().dt.total_seconds()
                 temp_index = data.index
                 temp_values = data[column].dropna()
-                paradiff = abs(temp_values.diff().reindex(temp_index))
+                paradiff = temp_values.diff().reindex(temp_index).abs()
                 bigdiff = pd.Series(
                     np.bitwise_or(
                         (timediff > param.get("time_threshold", 60)),
