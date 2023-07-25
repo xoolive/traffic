@@ -207,7 +207,13 @@ class DerivativeParams(TypedDict):
 
 
 class FilterDerivative(FilterBase):
-    """Filter based on the 1st and 2nd derivatives of parameters"""
+    """Filter based on the 1st and 2nd derivatives of parameters
+
+    The method computes the absolute value of the 1st and 2nd derivatives
+    of the parameters. If the value of the derivatives is above the defined
+    threshold values, the datapoint is removed
+
+    """
 
     # default parameter values
     default: ClassVar[dict[str, DerivativeParams]] = dict(
@@ -227,12 +233,12 @@ class FilterDerivative(FilterBase):
 
         :param kwargs: each keyword argument has the name of a feature.
             the value must be a dictionary with the following keys:
-            - first: threshold for the first derivative
-            - second: threshold for the second derivative
+            - first: threshold value for the first derivative
+            - second: threshold value for the second derivative
             - kernel: the kernel size in seconds
 
-        If two spikes are detected within this window, the datapoints between
-        them are also removed.
+        If two spikes are detected within the width of the kernel, all
+        datapoints inbetween are also removed.
 
         """
         self.columns = {**self.default, **kwargs}
@@ -280,12 +286,11 @@ class ClusteringParams(TypedDict):
 
 
 class FilterClustering(FilterBase):
-    """Filter based on a clustering.
+    """Filter based on clustering.
 
-    Filter a parameter with a clustering approach. Datapoints are clustered
-    based on difference in time and parameter value. If the cluster is larger
-    than the defined group_size the datapoints are kept, otherwise they are
-    removed.
+    The method creates clusters of datapoints based on the difference in time
+    and parameter value. If the cluster is larger than the defined group size
+    the datapoints are kept, otherwise they are removed.
 
     """
 
@@ -307,7 +312,7 @@ class FilterClustering(FilterBase):
 
         :param kwargs: each keyword argument has the name of a feature.
             the value must be a dictionary with the following keys:
-            - group_size: minimum size of the cluster
+            - group_size: minimum size of the cluster to be kept
             - value_threshold: within the value threshold, the samples fall in
               the same cluster
             - time_threshold: within the time threshold, the samples fall in
