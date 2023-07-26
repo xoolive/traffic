@@ -22,6 +22,9 @@ import pyproj
 from shapely.geometry import Point, base, mapping
 from shapely.ops import transform
 
+from typing_extensions import Annotated
+from . import types as tt
+
 if TYPE_CHECKING:
     import altair as alt
     import xarray
@@ -849,9 +852,10 @@ class GeoDBMixin(DataFrameMixin):
 
 
 class PointMixin(object):
-    latitude: float
-    longitude: float
-    altitude: float
+    latitude: tt.angle
+    longitude: tt.angle
+    altitude: tt.altitude
+    track: tt.angle
     timestamp: pd.Timestamp
     name: str
 
