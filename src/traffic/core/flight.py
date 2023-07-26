@@ -130,10 +130,6 @@ def _split(
         yield data
 
 
-# flake B008
-attrgetter_duration = attrgetter("duration")
-
-# flake B006
 default_angle_features = ["track", "heading"]
 
 
@@ -1486,7 +1482,7 @@ class Flight(
         self,
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
-        key: Callable[[Optional[Flight]], Any] = attrgetter_duration,
+        key: str = "duration",
     ) -> Optional[Flight]:
         """Returns the biggest (by default, longest) part of trajectory.
 
@@ -1504,12 +1500,11 @@ class Flight(
 
         """
 
-        # warnings.warn("Use split().max() instead.", DeprecationWarning)
-        return max(
-            self.split(value, unit),  # type: ignore
-            key=key,
-            default=None,
+        warnings.warn("Use split().max() instead.", DeprecationWarning)
+        assert (isinstance(value, str) and unit is None) or (
+            isinstance(value, int) and isinstance(unit, str)
         )
+        return self.split(value, unit).max(key=key)  # type: ignore
 
     def apply_segments(
         self,

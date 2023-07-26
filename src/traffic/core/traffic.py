@@ -42,7 +42,7 @@ from ..algorithms.generation import Generation
 from ..core.cache import property_cache
 from ..core.structure import Airport
 from ..core.time import time_or_delta, timelike, to_datetime
-from .flight import Flight, attrgetter_duration
+from .flight import Flight
 from .intervals import Interval, IntervalCollection
 from .lazy import LazyTraffic, lazy_evaluation
 from .mixins import DataFrameMixin, GeographyMixin, HBoxMixin, PointMixin
@@ -914,7 +914,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         self,
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
-        key: Callable[[Optional["Flight"]], Any] = attrgetter_duration,
+        key: str = "duration",
     ):
         ...
 
