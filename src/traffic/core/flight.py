@@ -43,8 +43,8 @@ from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
+from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
-from ..algorithms.filters import FilterAboveSigmaMedian, FilterBase
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
 from ..core.structure import Airport
@@ -1753,7 +1753,7 @@ class Flight(
 
     def filter(
         self,
-        filter: FilterBase = FilterAboveSigmaMedian(),
+        filter: str | filters.FilterBase = "default",
         strategy: None
         | Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x.bfill().ffill(),
         **kwargs: int | tuple[int],
@@ -1765,6 +1765,8 @@ class Flight(
             of the filters predefined in :ref:`traffic.algorithms.filters`
             or any filter implementing the
             :class:`~traffic.algorithms.filters.Filter` protocol.
+            Use "aggressive" for an experimental filter by @krumjan
+
 
         :param strategy: (default: backward fill followed by forward fill)
             is applied after the filter to deal with resulting NaN values.
@@ -1773,8 +1775,18 @@ class Flight(
             - ``lambda x: x.interpolate()`` may be a smart strategy
 
         """
-        if filter is None:
-            filter = FilterAboveSigmaMedian(**kwargs)
+        filter_dict = dict(
+            default=filters.FilterAboveSigmaMedian(**kwargs),
+            aggressive=filters.FilterMedian()
+            | filters.FilterDerivative()
+            | filters.FilterClustering()
+            | filters.FilterMean(),
+        )
+
+        if isinstance(filter, str):
+            filter = filter_dict.get(
+                filter, filters.FilterAboveSigmaMedian(**kwargs)
+            )
 
         new_data = filter.apply(
             self.data.sort_values(by="timestamp").reset_index(drop=True).copy()
