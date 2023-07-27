@@ -1675,13 +1675,13 @@ files = [
 
 [[package]]
 name = "ipykernel"
-version = "6.24.0"
+version = "6.25.0"
 description = "IPython Kernel for Jupyter"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "ipykernel-6.24.0-py3-none-any.whl", hash = "sha256:2f5fffc7ad8f1fd5aadb4e171ba9129d9668dbafa374732cf9511ada52d6547f"},
-    {file = "ipykernel-6.24.0.tar.gz", hash = "sha256:29cea0a716b1176d002a61d0b0c851f34536495bc4ef7dd0222c88b41b816123"},
+    {file = "ipykernel-6.25.0-py3-none-any.whl", hash = "sha256:f0042e867ac3f6bca1679e6a88cbd6a58ed93a44f9d0866aecde6efe8de76659"},
+    {file = "ipykernel-6.25.0.tar.gz", hash = "sha256:e342ce84712861be4b248c4a73472be4702c1b0dd77448bfd6bcfb3af9d5ddf9"},
 ]
 
 [package.dependencies]
@@ -2480,13 +2480,13 @@ files = [
 
 [[package]]
 name = "more-itertools"
-version = "9.1.0"
+version = "10.0.0"
 description = "More routines for operating on iterables, beyond itertools"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "more-itertools-9.1.0.tar.gz", hash = "sha256:cabaa341ad0389ea83c17a94566a53ae4c9d07349861ecb14dc6d0345cf9ac5d"},
-    {file = "more_itertools-9.1.0-py3-none-any.whl", hash = "sha256:d2bc7f02446e86a68911e58ded76d6561eea00cddfb2a91e7019bbb586c799f3"},
+    {file = "more-itertools-10.0.0.tar.gz", hash = "sha256:cd65437d7c4b615ab81c0640c0480bc29a550ea032891977681efd28344d51e1"},
+    {file = "more_itertools-10.0.0-py3-none-any.whl", hash = "sha256:928d514ffd22b5b0a8fce326d57f423a55d2ff783b093bab217eda71e732330f"},
 ]
 
 [[package]]
@@ -2742,13 +2742,13 @@ test = ["flaky", "ipykernel (>=6.19.3)", "ipython", "ipywidgets", "nbconvert (>=
 
 [[package]]
 name = "nbconvert"
-version = "7.7.2"
+version = "7.7.3"
 description = "Converting Jupyter Notebooks"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "nbconvert-7.7.2-py3-none-any.whl", hash = "sha256:25e0cf2b663ee0cd5a90afb6b2f2940bf1abe5cc5bc995b88c8156ca65fa7ede"},
-    {file = "nbconvert-7.7.2.tar.gz", hash = "sha256:36d3e7bf32f0c075878176cdeeb645931c994cbed5b747bc7a570ba8cd2321f3"},
+    {file = "nbconvert-7.7.3-py3-none-any.whl", hash = "sha256:3022adadff3f86578a47fab7c2228bb3ca9c56a24345642a22f917f6168b48fc"},
+    {file = "nbconvert-7.7.3.tar.gz", hash = "sha256:4a5996bf5f3cd16aa0431897ba1aa4c64842c2079f434b3dc6b8c4b252ef3355"},
 ]
 
 [package.dependencies]
@@ -4908,13 +4908,13 @@ files = [
 
 [[package]]
 name = "tomlkit"
-version = "0.11.8"
+version = "0.12.0"
 description = "Style preserving TOML library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "tomlkit-0.11.8-py3-none-any.whl", hash = "sha256:8c726c4c202bdb148667835f68d68780b9a003a9ec34167b6c673b38eff2a171"},
-    {file = "tomlkit-0.11.8.tar.gz", hash = "sha256:9330fc7faa1db67b541b28e62018c17d20be733177d290a13b24c62d1614e0c3"},
+    {file = "tomlkit-0.12.0-py3-none-any.whl", hash = "sha256:926f1f37a1587c7a4f6c7484dae538f1345d96d793d9adab5d3675957b1d0766"},
+    {file = "tomlkit-0.12.0.tar.gz", hash = "sha256:01f0477981119c7d8ee0f67ebe0297a7c95b14cf9f4b102b45486deb77018716"},
 ]
 
 [[package]]
@@ -5233,23 +5233,23 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.24.1"
+version = "20.24.2"
 description = "Virtual Python Environment builder"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "virtualenv-20.24.1-py3-none-any.whl", hash = "sha256:01aacf8decd346cf9a865ae85c0cdc7f64c8caa07ff0d8b1dfc1733d10677442"},
-    {file = "virtualenv-20.24.1.tar.gz", hash = "sha256:2ef6a237c31629da6442b0bcaa3999748108c7166318d1f55cc9f8d7294e97bd"},
+    {file = "virtualenv-20.24.2-py3-none-any.whl", hash = "sha256:43a3052be36080548bdee0b42919c88072037d50d56c28bd3f853cbe92b953ff"},
+    {file = "virtualenv-20.24.2.tar.gz", hash = "sha256:fd8a78f46f6b99a67b7ec5cf73f92357891a7b3a40fd97637c27f854aae3b9e0"},
 ]
 
 [package.dependencies]
-distlib = ">=0.3.6,<1"
-filelock = ">=3.12,<4"
-platformdirs = ">=3.5.1,<4"
+distlib = ">=0.3.7,<1"
+filelock = ">=3.12.2,<4"
+platformdirs = ">=3.9.1,<4"
 
 [package.extras]
 docs = ["furo (>=2023.5.20)", "proselint (>=0.13)", "sphinx (>=7.0.1)", "sphinx-argparse (>=0.4)", "sphinxcontrib-towncrier (>=0.2.1a0)", "towncrier (>=23.6)"]
-test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.3.1)", "pytest-env (>=0.8.1)", "pytest-freezer (>=0.4.6)", "pytest-mock (>=3.10)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=67.8)", "time-machine (>=2.9)"]
+test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.4)", "pytest-env (>=0.8.2)", "pytest-freezer (>=0.4.8)", "pytest-mock (>=3.11.1)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=68)", "time-machine (>=2.10)"]
 
 [[package]]
 name = "waitress"
