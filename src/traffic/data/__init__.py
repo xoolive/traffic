@@ -10,6 +10,7 @@ from .. import cache_dir, config, config_file
 if TYPE_CHECKING:
     from .adsb.decode import ModeS_Decoder
     from .adsb.opensky import OpenSky
+    from .anp.anp import Anp
     from .basic.aircraft import Aircraft
     from .basic.airports import Airports
     from .basic.airways import Airways
@@ -32,6 +33,7 @@ __all__ = [
     "aircraft",
     "airports",
     "airways",
+    "anp",
     "navaids",
     "runways",
     "aixm_airports",
@@ -54,6 +56,7 @@ __all__ = [
 aircraft: "Aircraft"
 airports: "Airports"
 airways: "Airways"
+anp: "Anp"
 navaids: "Navaids"
 runways: "Runways"
 aixm_airports: "AIXMAirportParser"
@@ -145,6 +148,16 @@ def __getattr__(name: str) -> Any:
 
         Airways.cache_dir = cache_dir
         res = Airways()
+        _cached_imports[name] = res
+        return res
+
+    if name == "anp":
+        from .anp.anp import Anp
+
+        anp_path = config.get("anp", "database", fallback=None)
+        subs_path = config.get("anp", "substitution", fallback=None)
+
+        res = Anp(anp_path, subs_path).filter()
         _cached_imports[name] = res
         return res
 
