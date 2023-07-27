@@ -47,6 +47,7 @@ from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
+from ..core.aero import vatmos, vtas2casw, vtempbase
 from ..core.structure import Airport
 from ..core.types import ProgressbarType
 from . import geodesy as geo
@@ -1247,6 +1248,65 @@ class Flight(
         """
         return dict((key, getattr(self, key)) for key in attributes)
 
+    @property
+    def anp(self) -> None | str:
+        """
+        Returns the ANP aircraft_id which most closely matches this aircraft,
+        based on the ANP substitutions table (by ICAO code).
+        """
+        from ..data import anp
+
+        if subs_tuple := self.anp_substitution:
+            icao_code, variant = subs_tuple
+            return str(
+                anp.substitution.loc[
+                    (anp.substitution["ICAO_CODE"] == icao_code)
+                    & (anp.substitution["AIRCRAFT_VARIANT"] == variant),
+                    "ANP_PROXY",
+                ].iloc[0]
+            )
+        return None
+
+    @property
+    def anp_substitution(self) -> Tuple[str, str]:
+        """
+        Returns the ICAO code and aircraft variant which most closely matches
+        this aircraft, based on the ANP substitutions table (by ICAO code).
+
+        The aircraft typecode is used to search the ANP substitutions. If
+        multiple matches are found (more than one substitution for a single
+        ICAO code), the most similar engine description is used.
+
+        For the string comparison, a jaro winkler similarity is used.
+        https://en.wikipedia.org/wiki/Jaro%E2%80%93Winkler_distance
+        """
+        from jellyfish import jaro_winkler_similarity
+
+        from ..data import anp
+
+        acft = self.aircraft
+        if acft is None:
+            return None
+
+        candidates = anp.substitution.loc[
+            anp.substitution["ICAO_CODE"] == acft.typecode, :
+        ].copy()
+        if candidates.empty:
+            return None
+
+        if len(candidates) == 1:
+            return tuple(candidates[["ICAO_CODE", "AIRCRAFT_VARIANT"]].iloc[0])
+
+        # Multiple matches on ICAO code, find the most similar between
+        # aircraft database engines and ANP aircraft variant
+        variants = candidates["AIRCRAFT_VARIANT"].str.lower()
+        scores = variants.apply(
+            lambda acft_var: jaro_winkler_similarity(acft_var, acft.engines)
+        )
+        return tuple(
+            candidates[["ICAO_CODE", "AIRCRAFT_VARIANT"]].loc[scores.idxmax()]
+        )
+
     # -- Time handling, splitting, interpolation and resampling --
 
     def skip(
@@ -2089,6 +2149,198 @@ class Flight(
             data.wind_v.values,
             **kwargs,
         )
+
+    # -- Additional Features --
+
+    def compute_CAS(self) -> Flight:
+        """
+        Compute calibrated airspeed (CAS) for each timestamp.
+
+        This method requires true airspeed (``TAS``), ``pressure`` and
+         ``density`` features.
+        """
+
+        if "TAS" not in self.data.columns:
+            raise RuntimeError(
+                "No TAS in trajectory. Consider Flight.compute_TAS()"
+            )
+
+        if any(f not in self.data.columns for f in ["pressure", "density"]):
+            raise RuntimeError(
+                "No weather data in trajectory."
+                "Consider Flight.include_weather()"
+            )
+
+        return self.assign(
+            CAS=(
+                vtas2casw(
+                    self.data["TAS"] * 0.514444,  # kts to m/s
+                    self.data["pressure"] * 100,  # hpa to pa
+                    self.data["density"],
+                )
+                / 0.514444  # meters/second to knots
+            )
+        )
+
+    def compute_acceleration(self) -> Flight:
+        """
+        Computes the acceleration (m/s^2) at each timestamp as the average of
+        the acceleration at the previous and next segments.
+        """
+
+        return self.assign(
+            acceleration=(
+                self.data["groundspeed"].diff()
+                * 0.514444  # knots to m/s
+                / self.data["timestamp"].diff().dt.seconds
+            )
+            .rolling(2)
+            .mean()
+            .shift(-1)
+            .bfill()
+            .ffill()
+        )
+
+    def compute_climb_angle(self) -> Flight:
+        """
+        Computes the climb angle (°) at each timestamp as the average of the
+        climb angle at the previous and next segments. By convention,
+        positive angles indicate a climb and negative angles a descent.
+        """
+
+        return self.assign(
+            climb_angle=(
+                np.degrees(
+                    np.arctan(
+                        self.data["altitude"].diff()
+                        * 0.3048
+                        / (self.data["cumdist"].diff().abs() * 1852.0)
+                    )
+                )
+            )
+            .rolling(2)
+            .mean()
+            .shift(-1)
+            .bfill()
+            .ffill()
+        )
+
+    def compute_weather(
+        self,
+        src: str = "ISA",
+        metar_station: Optional[str] = None,
+        include_wind: bool = False,
+    ) -> Flight:
+        """
+        Enriches the data with temperature, density and pressure columns.
+        Wind features will be included (wind_u and wind_v ) if include_wind is
+        set to True (only available if src is "METAR")
+
+        :param src: The source of the weather data. Possible values are:
+            - "ISA": Apply the ISA atmospheric model with standard values.
+            - "METAR": Apply the ISA atmospheric model with non-standard
+            values. The non-standard values are fetch from METAR data. The
+            METAR report closest to each timestamp will be used.
+
+        :param metar_station: The station from which to fetch non-standard
+        values. Mandatory if src is "METAR".
+
+        :param include_wind: If true and source is METAR, wind features will
+        be added.
+        """
+
+        # ISA
+        if src.lower() == "isa":
+            if include_wind:
+                _log.warning(
+                    "Weather from ISA does not include wind data, "
+                    "'include_wind' flag will be ignored."
+                )
+
+            df = self.data
+            df["pressure"], df["density"], df["temperature"] = vatmos(
+                df.data["altitude"] * 0.3048  # feet to meter
+            )
+            df["temperature"] -= 273.15  # kelvin to celsius
+            df["pressure"] /= 100.0  # pascals to hectopascals
+
+            return self.__class__(df)
+
+        # METAR
+        if src.lower() == "metar":
+            from ..data.weather.metar import Metars
+
+            if metar_station is None:
+                raise RuntimeError(
+                    "metar_station parameter must be provided "
+                    "when including weather from metars."
+                )
+
+            # Fetch Metars
+            md = Metars.get(
+                metar_station,
+                self.start - timedelta(hours=1),
+                self.stop + timedelta(hours=1),
+            )
+            if md is None:
+                return self
+
+            df = self.data
+            df["idx"] = df.apply(
+                lambda r: (md.data["valid"] - r["timestamp"]).abs().idxmin(),
+                axis="columns",
+            )
+
+            # Wind
+            if include_wind:
+                md = md.compute_wind()
+                df = df.assign(
+                    wind_u=md.data.loc[df["idx"], "wind_u"].reset_index(
+                        drop=True
+                    ),
+                    wind_v=md.data.loc[df["idx"], "wind_v"].reset_index(
+                        drop=True
+                    ),
+                )
+
+            # Temperature, Pressure and Density
+            df = df.assign(
+                metar_elevation=md.data.loc[df["idx"], "elevation"].reset_index(
+                    drop=True
+                ),
+                metar_temperature=md.data.loc[
+                    df["idx"], "temperature"
+                ].reset_index(drop=True),
+                metar_base_temperature=lambda d: vtempbase(
+                    d["metar_elevation"] * 0.3048,  # feet to meter
+                    d["metar_temperature"] + 273.15,  # kelvin to celsius
+                ),
+                metar_sea_level_pressure=md.data.loc[
+                    df["idx"], "sea_level_pressure"
+                ].reset_index(drop=True),
+            )
+
+            df["pressure"], df["density"], df["temperature"] = vatmos(
+                df["altitude"] * 0.3048,  # feet to meter
+                df["metar_base_temperature"],
+                df["metar_sea_level_pressure"] * 100.0,  # hectopascal to pascal
+            )
+
+            df["temperature"] -= 273.15  # kelvin to celsius
+            df["pressure"] /= 100.0  # pascals to hectopascals
+            df = df.drop(
+                columns=[
+                    "idx",
+                    "metar_elevation",
+                    "metar_temperature",
+                    "metar_sea_level_pressure",
+                    "metar_base_temperature",
+                ]
+            )
+
+            return self.__class__(df)
+
+        raise RuntimeError(f"Invalid weather source {src}")
 
     # -- Distances --
 
