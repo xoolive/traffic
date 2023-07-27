@@ -761,18 +761,27 @@ class Traffic(HBoxMixin, GeographyMixin):
         rep = f"<h4><b>Traffic</b></h4> with {shape} identifiers"
         return rep + styler._repr_html_()  # type: ignore
 
-    def aircraft_data(self) -> "Traffic":
+    def aircraft_data(
+            self, features: Union[str, List[str], None] = None
+    ) -> "Traffic":
         """
         Add registration and aircraft typecode based on the `aircraft database
         <aircraft.html>`_.
+        Additional columns from the database can be added with the features
+        parameter
 
         """
+
+        f = {"icao24", "registration", "typecode"}
+        if isinstance(features, str):
+            f = {*f, features}
+        elif isinstance(features, Iterable):
+            f = {*f, *features}
+
         from ..data import aircraft
 
         return self.merge(
-            aircraft.data[["icao24", "registration", "typecode"]]
-            .query('typecode != ""')
-            .drop_duplicates("icao24"),
+            aircraft.data[f].query('typecode != ""').drop_duplicates("icao24"),
             on="icao24",
             how="left",
         )
