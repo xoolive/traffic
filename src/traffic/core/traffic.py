@@ -39,6 +39,7 @@ from shapely.geometry import Polygon, base
 from ..algorithms.clustering import Clustering, centroid
 from ..algorithms.cpa import closest_point_of_approach
 from ..algorithms.generation import Generation
+from ..core.aero import vatmos, vtempbase
 from ..core.cache import property_cache
 from ..core.structure import Airport
 from ..core.time import time_or_delta, timelike, to_datetime
@@ -1586,3 +1587,121 @@ class Traffic(HBoxMixin, GeographyMixin):
             *args,
             **kwargs,
         )
+
+    def compute_weather(
+        self,
+        src: str = "ISA",
+        metar_station: Optional[str] = None,
+        include_wind: bool = False,
+    ) -> Traffic:
+        """
+        Enriches the data with temperature, density and pressure columns.
+        Wind features will be included (wind_u and wind_v ) if include_wind is
+        set to True (only available if src is "METAR")
+
+        :param src: The source of the weather data. Possible values are:
+            - "ISA": Apply the ISA atmospheric model with standard values.
+            - "METAR": Apply the ISA atmospheric model with non-standard
+            values. The non-standard values are fetch from METAR data. The
+            METAR report closest to each timestamp will be used.
+
+        :param metar_station: The station from which to fetch non-standard
+        values. Mandatory if src is "METAR".
+
+        :param include_wind: If true and source is METAR, wind features will
+        be added.
+        """
+
+        # ISA
+        if src.lower() == "isa":
+            if include_wind:
+                _log.warning(
+                    "Weather from ISA does not include wind data, "
+                    "'include_wind' flag will be ignored."
+                )
+
+            df = self.data
+            df["pressure"], df["density"], df["temperature"] = vatmos(
+                df.data["altitude"] * 0.3048  # feet to meter
+            )
+            df["temperature"] -= 273.15  # kelvin to celsius
+            df["pressure"] /= 100.0  # pascals to hectopascals
+
+            return self.__class__(df)
+
+        # METAR
+        if src.lower() == "metar":
+            from ..data.weather.metar import Metars
+
+            if metar_station is None:
+                raise RuntimeError(
+                    "metar_station parameter must be provided "
+                    "when including weather from metars."
+                )
+
+            # Fetch Metars
+            md = Metars.get(
+                metar_station,
+                self.data["timestamp"].min() - timedelta(hours=1),
+                self.data["timestamp"].max() + timedelta(hours=1),
+            )
+
+            if md is None:
+                return self
+
+            df = self.data
+            df["idx"] = df.apply(
+                lambda r: (md.data["valid"] - r["timestamp"]).abs().idxmin(),
+                axis="columns",
+            )
+
+            # Wind
+            if include_wind:
+                md = md.compute_wind()
+                df = df.assign(
+                    wind_u=md.data.loc[df.data["idx"], "wind_u"].reset_index(
+                        drop=True
+                    ),
+                    wind_v=md.data.loc[df.data["idx"], "wind_v"].reset_index(
+                        drop=True
+                    ),
+                )
+
+            # Temperature, Pressure and Density
+            df = df.assign(
+                metar_elevation=md.data.loc[df["idx"], "elevation"].reset_index(
+                    drop=True
+                ),
+                metar_temperature=md.data.loc[
+                    df["idx"], "temperature"
+                ].reset_index(drop=True),
+                metar_base_temperature=lambda d: vtempbase(
+                    df["metar_elevation"] * 0.3048,  # feet to meter
+                    df["metar_temperature"] + 273.15,  # kelvin to celsius
+                ),
+                metar_sea_level_pressure=md.data.loc[
+                    df["idx"], "sea_level_pressure"
+                ].reset_index(drop=True),
+            )
+
+            df["pressure"], df["density"], df["temperature"] = vatmos(
+                df["altitude"] * 0.3048,  # feet to meter
+                df["metar_base_temperature"],
+                df["metar_sea_level_pressure"] * 100.0,  # hectopascal to pascal
+            )
+
+            df["temperature"] -= 273.15  # kelvin to celsius
+            df["pressure"] /= 100.0  # pascals to hectopascals
+            df = df.drop(
+                columns=[
+                    "idx",
+                    "metar_elevation",
+                    "metar_temperature",
+                    "metar_sea_level_pressure",
+                    "metar_base_temperature",
+                ]
+            )
+
+            return self.__class__(df)
+
+        raise RuntimeError(f"Invalid weather source {src}")
