@@ -12,7 +12,7 @@ degrees.
 
 """
 
-from typing import Tuple, cast
+from typing import Tuple, cast, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -44,22 +44,33 @@ a0 = np.sqrt(gamma * R * T0)  # sea level speed of sound ISA
 # -- Vectorized aero functions --
 
 
-def vatmos(h: Numeric) -> Tuple[Numeric, Numeric, Numeric]:  # h in m
+def vatmos(
+    h: Numeric, Tb: Union[float, Numeric] = T0, pb: Union[float, Numeric] = p0
+) -> Tuple[Numeric, Numeric, Numeric]:  # h [m], Tb [K], pb [Pa]
     """International Standard Atmosphere calculator
 
     :param h:  altitude in meters 0.0 < h < 84852.
         (will be clipped when outside range, integer input allowed)
+
+    :param Tb: the sea level temperature in Kelvin. By default, the ISA sea
+    level temperature.
+
+    :param pb: the sea level pressure in Pa. By default, the ISA sea level
+    pressure.
 
     :return:
         - the pressure (in Pa)
         - the air density :math:`\\rho` (in kg/m3)
         - the temperature (in K)
     """
+    # Base Density
+    rhob = pb / (R * Tb)
+
     # Temp
-    T = vtemp(h)
+    T = vtemp(h, Tb)
 
     # Density
-    rhotrop = 1.225 * (T / 288.15) ** 4.256848030018761
+    rhotrop = rhob * (T / Tb) ** 4.256848030018761  # = -(g0*M/((R*)*beta))-1
     dhstrat = np.maximum(0.0, h - 11000.0)
     rho = rhotrop * np.exp(-dhstrat / 6341.552161)  # = *g0/(287.05*216.65))
 
@@ -69,17 +80,24 @@ def vatmos(h: Numeric) -> Tuple[Numeric, Numeric, Numeric]:  # h in m
     return p, rho, T
 
 
-def vtemp(h: Numeric) -> Numeric:  # h [m]
+def vtemp(
+    h: Numeric, Tb: Union[float, Numeric] = T0
+) -> Numeric:  # h [m], Tb [K]
     """Temperature only version of ISA atmosphere
 
     :param h: the altitude in meters, :math:`0 < h < 84852`
         (will be clipped when outside range, integer input allowed)
+    :param Tb: the base temperature in Kelvin
 
     :return: the temperature (in K)
 
     """
-    T = np.maximum(288.15 - 0.0065 * h, Tstrat)
+    T = np.maximum(Tb + beta * h, Tstrat)
     return T
+
+
+def vtempbase(h: Numeric, t: Numeric) -> Numeric:
+    return T0 + t - vtemp(h)
 
 
 # Atmos wrappings:
@@ -198,6 +216,10 @@ def vtas2cas(tas: Numeric, h: Numeric) -> Numeric:
     :return: Computed Air Speed, (in m/s)
     """
     p, rho, T = vatmos(h)
+    return vtas2casw(tas, p, rho)
+
+
+def vtas2casw(tas: Numeric, p: Numeric, rho: Numeric) -> Numeric:
     qdyn = p * ((1.0 + rho * tas * tas / (7.0 * p)) ** 3.5 - 1.0)
     cas = np.sqrt(7.0 * p0 / rho0 * ((qdyn / p0 + 1.0) ** (2.0 / 7.0) - 1.0))
 
