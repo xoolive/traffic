@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from .eurocontrol.ddr.routes import NMRoutes
     from .eurocontrol.ddr.so6 import SO6
     from .eurocontrol.eurofirs import Eurofirs
+    from .weather.metar import Metars
 
 # Parse configuration and input specific parameters in below classes
 
@@ -34,6 +35,7 @@ __all__ = [
     "airports",
     "airways",
     "anp",
+    "metars",
     "navaids",
     "runways",
     "aixm_airports",
@@ -57,6 +59,7 @@ aircraft: "Aircraft"
 airports: "Airports"
 airways: "Airways"
 anp: "Anp"
+metars: "Metars"
 navaids: "Navaids"
 runways: "Runways"
 aixm_airports: "AIXMAirportParser"
@@ -165,6 +168,32 @@ def __getattr__(name: str) -> Any:
         from .eurocontrol.eurofirs import eurofirs
 
         return eurofirs
+
+    if name == "metars":
+        from .weather.metar import Metars
+
+        Metars.cache_dir = cache_dir
+        (cache_dir / "metars").mkdir(parents=True, exist_ok=True)
+
+        filename = config.get("weather", "database", fallback="")
+        if filename != "":
+            res = Metars.from_file(filename)
+        else:
+            stations = (
+                config.get("weather", "stations", fallback="")
+                .replace(" ", "")
+                .spli(",")
+            )
+            if stations:
+                start_time = config.get("weather", "start_time", fallback=None)
+                end_time = config.get("weather", "start_time", fallback=None)
+                res = Metars.fetch(stations, start_time, end_time)
+            else:
+                raise RuntimeError(
+                    "Set the metar parameters in the config file")
+
+        _cached_imports[name] = res
+        return res
 
     if name == "navaids":
         from .basic.navaid import Navaids
