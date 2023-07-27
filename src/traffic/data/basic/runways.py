@@ -40,6 +40,7 @@ class ThresholdTuple(NamedTuple):
     longitude: float
     bearing: float
     name: str
+    elevation: float = 0.0
 
 
 class Threshold(ThresholdTuple, PointMixin):
@@ -62,7 +63,8 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
     @property
     def data(self) -> pd.DataFrame:
         return pd.DataFrame.from_records(
-            self.list, columns=["latitude", "longitude", "bearing", "name"]
+            self.list,
+            columns=["latitude", "longitude", "bearing", "name", "elevation"],
         )
 
     @property
@@ -239,9 +241,11 @@ class Runways(object):
                 lat0 = line.le_latitude_deg
                 lon0 = line.le_longitude_deg
                 name0 = line.le_ident
+                elev0 = line.le_elevation_ft
                 lat1 = line.he_latitude_deg
                 lon1 = line.he_longitude_deg
                 name1 = line.he_ident
+                elev1 = line.he_elevation_ft
 
                 if lat0 != lat0 or lat1 != lat1:
                     # some faulty records here...
@@ -252,8 +256,8 @@ class Runways(object):
                 brng0 = brng0 if brng0 > 0 else 360 + brng0
                 brng1 = brng1 if brng1 > 0 else 360 + brng1
 
-                thr0 = Threshold(lat0, lon0, brng0, name0)
-                thr1 = Threshold(lat1, lon1, brng1, name1)
+                thr0 = Threshold(lat0, lon0, brng0, name0, elev0)
+                thr1 = Threshold(lat1, lon1, brng1, name1, elev1)
                 cur.append((thr0, thr1))
 
         with self._cache.open("wb") as fh:
