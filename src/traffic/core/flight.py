@@ -43,6 +43,7 @@ from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
+from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
@@ -1752,132 +1753,52 @@ class Flight(
 
     def filter(
         self,
-        strategy: Optional[
-            Callable[[pd.DataFrame], pd.DataFrame]
-        ] = lambda x: x.bfill().ffill(),
-        **kwargs: int,
+        filter: str | filters.FilterBase = "default",
+        strategy: None
+        | Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x.bfill().ffill(),
+        **kwargs: int | tuple[int],
     ) -> Flight:
-        """Filters the trajectory given features with a median filter.
+        """Filters a trajectory with predefined methods.
 
-        The method first applies a median filter on each feature of the
-        DataFrame. A default kernel size is applied for a number of features
-        (resp. latitude, longitude, altitude, track, groundspeed, IAS, TAS) but
-        other kernel values may be passed as kwargs parameters.
+        :param filter: (default:
+            :class:`~traffic.algorithms.filters.FilterAboveSigmaMedian`) is one
+            of the filters predefined in :ref:`traffic.algorithms.filters`
+            or any filter implementing the
+            :class:`~traffic.algorithms.filters.Filter` protocol.
+            Use "aggressive" for an experimental filter by @krumjan
 
-        Rather than returning averaged values, the method computes thresholds
-        on sliding windows (as an average of squared differences) and replace
-        unacceptable values with NaNs.
 
-        Then, a strategy may be applied to fill the NaN values, by default a
-        forward/backward fill. Other strategies may be passed, for instance *do
-        nothing*: ``None``; or *interpolate*: ``lambda x: x.interpolate()``.
+        :param strategy: (default: backward fill followed by forward fill)
+            is applied after the filter to deal with resulting NaN values.
 
-        .. note::
-
-            This method if often more efficient when applied several times with
-            different kernel values.Kernel values may be passed as integers, or
-            list/tuples of integers for cascade of filters:
-
-            .. code:: python
-
-                # this cascade of filters appears to work well on altitude
-                flight.filter(altitude=17).filter(altitude=53)
-
-                # this is equivalent to the default value
-                flight.filter(altitude=(17, 53))
+            - Explicitely specify to `None` if NaN values should be left as is.
+            - ``lambda x: x.interpolate()`` may be a smart strategy
 
         """
+        filter_dict = dict(
+            default=filters.FilterAboveSigmaMedian(**kwargs),
+            aggressive=filters.FilterMedian()
+            | filters.FilterDerivative()
+            | filters.FilterClustering()
+            | filters.FilterMean(),
+        )
 
-        import scipy.signal
-
-        ks_dict: Dict[str, Union[int, Iterable[int]]] = {
-            "altitude": (17, 53),
-            "selected_mcp": (17, 53),
-            "selected_fms": (17, 53),
-            "IAS": 23,
-            "TAS": 23,
-            "Mach": 23,
-            "groundspeed": 5,
-            "compute_gs": (17, 53),
-            "compute_track": 17,
-            "onground": 3,
-            "latitude": 1,  # the method doesn't apply well to positions
-            "longitude": 1,
-            **kwargs,
-        }
-
-        if strategy is None:
-
-            def identity(x: pd.DataFrame) -> pd.DataFrame:
-                return x
-
-            strategy = identity
-
-        def cascaded_filters(
-            df: pd.DataFrame,
-            feature: str,
-            kernel_size: int,
-            filt: Callable[[pd.Series, int], Any] = scipy.signal.medfilt,
-        ) -> pd.DataFrame:
-            """Produces a mask for data to be discarded.
-
-            The filtering applies a low pass filter (e.g medfilt) to a signal
-            and measures the difference between the raw and the filtered signal.
-
-            The average of the squared differences is then produced (sq_eps) and
-            used as a threshold for filtering.
-
-            Errors may raised if the kernel_size is too large
-            """
-            y = df[feature].astype(float)
-            y_m = filt(y, kernel_size)
-            sq_eps = (y - y_m) ** 2
-            return pd.DataFrame(
-                {
-                    "timestamp": df["timestamp"],
-                    "y": y,
-                    "y_m": y_m,
-                    "sq_eps": sq_eps,
-                    "sigma": np.sqrt(filt(sq_eps, kernel_size)),
-                },
-                index=df.index,
+        if isinstance(filter, str):
+            filter = filter_dict.get(
+                filter, filters.FilterAboveSigmaMedian(**kwargs)
             )
 
-        new_data = self.data.sort_values(by="timestamp").copy()
+        new_data = filter.apply(
+            self.data.sort_values(by="timestamp").reset_index(drop=True).copy()
+        )
 
-        if len(kwargs) == 0:
-            features = [
-                cast(str, feature)
-                for feature in self.data.columns
-                if self.data[feature].dtype
-                in [np.float32, np.float64, np.int32, np.int64]
-            ]
-        else:
-            features = list(kwargs.keys())
+        if strategy is not None:
+            new_data = strategy(new_data)
 
-        kernels_size: List[Union[int, Iterable[int]]] = [0 for _ in features]
-        for idx, feature in enumerate(features):
-            kernels_size[idx] = ks_dict.get(feature, 17)
+        if "onground" in new_data.columns:
+            new_data = new_data.assign(onground=new_data.onground.astype(bool))
 
-        for feat, ks_list in zip(features, kernels_size):
-            if isinstance(ks_list, int):
-                ks_list = [ks_list]
-            else:
-                ks_list = list(ks_list)
-
-            for ks in ks_list:
-                # Prepare each feature for the filtering
-                df = cascaded_filters(new_data[["timestamp", feat]], feat, ks)
-
-                # Decision to accept/reject data points in the time series
-                new_data.loc[df.sq_eps > df.sigma, feat] = None
-
-        data = strategy(new_data)
-
-        if "onground" in data.columns:
-            data = data.assign(onground=data.onground.astype(bool))
-
-        return self.__class__(data)
+        return self.__class__(new_data)
 
     def filter_position(self, cascades: int = 2) -> Optional[Flight]:
         # TODO improve based on agg_time or EKF
@@ -3109,7 +3030,7 @@ class Flight(
                 (
                     subtab.assign(
                         timestamp=lambda df: df.timestamp.dt.tz_localize(
-                            datetime.now().astimezone().tzinfo
+                            datetime.now(tz=None).astimezone().tzinfo
                         ).dt.tz_convert("utc")
                     ).plot(ax=ax, x="timestamp", **kw)
                 )

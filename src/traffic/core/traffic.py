@@ -809,13 +809,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def filter(  # type: ignore
-        self,
-        strategy: Callable[
-            [pd.DataFrame], pd.DataFrame
-        ] = lambda x: x.bfill().ffill(),
-        **kwargs,
-    ):
+    def filter(self, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
