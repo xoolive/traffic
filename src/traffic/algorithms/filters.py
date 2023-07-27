@@ -355,38 +355,3 @@ class FilterClustering(FilterBase):
                 )
 
         return data.drop(columns=["group"])
-
-
-# apply as flight.filter(zhaw_filter, strategy=None)
-# zhaw_filter = (
-#     FilterMedian(
-#         altitude=11,
-#         geoaltitude=9,
-#         vertical_rate=5,
-#         groundspeed=9,
-#         track=5,
-#     )
-#     | FilterDerivative(
-#         altitude=dict(first=200, second=150, kernel=10),
-#         geoaltitude=dict(first=200, second=150, kernel=10),
-#         vertical_rate=dict(first=1500, second=1000, kernel=5),
-#         groundspeed=dict(first=12, second=10, kernel=3),
-#         track=dict(first=12, second=10, kernel=2),
-#     )
-#     | FilterClustering(
-#         altitude=dict(group_size=15, value_threshold=500),
-#         geoaltitude=dict(group_size=15, value_threshold=500),
-#         vertical_rate=dict(group_size=15, value_threshold=500),
-#         onground=dict(group_size=15, value_threshold=500),
-#         track=dict(group_size=15, value_threshold=500),
-#         latitude=dict(group_size=15, value_threshold=500),
-#         longitude=dict(group_size=15, value_threshold=500),
-#     )
-#     | FilterMean(
-#         altitude=10,
-#         geoaltitude=10,
-#         vertical_rate=3,
-#         groundspeed=7,
-#         track=3,
-#     )
-# )
