@@ -158,8 +158,11 @@ class Anp(object):
 
         if anp_zip_path is not None:
             self._anp_from_zip(anp_zip_path)
+
         if anp_substitution_path is not None:
             self._substitution_from_xlsx(anp_substitution_path)
+
+        self.flap_retraction_schedule = pd.read_csv(self.flap_retraction_file)
 
     # -- Aircraft Properties --
     def engine_count(self, acft_id: str) -> int:

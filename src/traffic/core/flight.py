@@ -1249,26 +1249,26 @@ class Flight(
         return dict((key, getattr(self, key)) for key in attributes)
 
     @property
-    def anp(self) -> None | str:
+    def anp(self) -> str | None:
         """
         Returns the ANP aircraft_id which most closely matches this aircraft,
         based on the ANP substitutions table (by ICAO code).
         """
-        from ..data import anp
+        from ..data import anp_data
 
         if subs_tuple := self.anp_substitution:
             icao_code, variant = subs_tuple
             return str(
-                anp.substitution.loc[
-                    (anp.substitution["ICAO_CODE"] == icao_code)
-                    & (anp.substitution["AIRCRAFT_VARIANT"] == variant),
+                anp_data.substitution.loc[
+                    (anp_data.substitution["ICAO_CODE"] == icao_code)
+                    & (anp_data.substitution["AIRCRAFT_VARIANT"] == variant),
                     "ANP_PROXY",
                 ].iloc[0]
             )
         return None
 
     @property
-    def anp_substitution(self) -> Tuple[str, str]:
+    def anp_substitution(self) -> Tuple[str, str] | None:
         """
         Returns the ICAO code and aircraft variant which most closely matches
         this aircraft, based on the ANP substitutions table (by ICAO code).
@@ -1282,15 +1282,15 @@ class Flight(
         """
         from jellyfish import jaro_winkler_similarity
 
-        from ..data import anp
+        from ..data import anp_data
 
         acft = self.aircraft
         if acft is None:
             return None
 
-        candidates = anp.substitution.loc[
-            anp.substitution["ICAO_CODE"] == acft.typecode, :
-        ].copy()
+        candidates = anp_data.substitution.loc[
+                     anp_data.substitution["ICAO_CODE"] == acft.typecode, :
+                     ].copy()
         if candidates.empty:
             return None
 
@@ -2268,7 +2268,7 @@ class Flight(
 
         # METAR
         if src.lower() == "metar":
-            from ..data.weather.metar import Metars
+            from ..data import metars
 
             if metar_station is None:
                 raise RuntimeError(
@@ -2277,7 +2277,7 @@ class Flight(
                 )
 
             # Fetch Metars
-            md = Metars.get(
+            md = metars.fetch(
                 metar_station,
                 self.start - timedelta(hours=1),
                 self.stop + timedelta(hours=1),

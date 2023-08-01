@@ -10,7 +10,7 @@ from .. import cache_dir, config, config_file
 if TYPE_CHECKING:
     from .adsb.decode import ModeS_Decoder
     from .adsb.opensky import OpenSky
-    from .anp.anp import Anp
+    from .anp_data.anp import Anp
     from .basic.aircraft import Aircraft
     from .basic.airports import Airports
     from .basic.airways import Airways
@@ -34,7 +34,7 @@ __all__ = [
     "aircraft",
     "airports",
     "airways",
-    "anp",
+    "anp_data",
     "metars",
     "navaids",
     "runways",
@@ -58,7 +58,7 @@ __all__ = [
 aircraft: "Aircraft"
 airports: "Airports"
 airways: "Airways"
-anp: "Anp"
+anp_data: "Anp"
 metars: "Metars"
 navaids: "Navaids"
 runways: "Runways"
@@ -97,7 +97,6 @@ proxy_values = dict(
     for key, value in [("http", http_proxy), ("https", https_proxy)]
     if value != "<>"
 )
-
 
 _cached_imports: Dict[str, Any] = dict()
 
@@ -154,7 +153,7 @@ def __getattr__(name: str) -> Any:
         _cached_imports[name] = res
         return res
 
-    if name == "anp":
+    if name == "anp_data":
         from .anp.anp import Anp
 
         anp_path = config.get("anp", "database", fallback=None)
@@ -182,15 +181,14 @@ def __getattr__(name: str) -> Any:
             stations = (
                 config.get("weather", "stations", fallback="")
                 .replace(" ", "")
-                .spli(",")
             )
-            if stations:
+            if stations != "":
+                stations = stations.split(",")
                 start_time = config.get("weather", "start_time", fallback=None)
                 end_time = config.get("weather", "start_time", fallback=None)
                 res = Metars.fetch(stations, start_time, end_time)
             else:
-                raise RuntimeError(
-                    "Set the metar parameters in the config file")
+                res = Metars()
 
         _cached_imports[name] = res
         return res

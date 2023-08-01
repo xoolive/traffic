@@ -324,6 +324,10 @@ class Metars(DataFrameMixin):
             )
             df["sea_level_pressure"] = df["press_temp_2"]
             df = df.drop(columns=["press_temp_1", "press_temp_2"])
+            df = df.fillna({
+                "wind_direction": 0.0,
+                "wind_speed": 0.0,
+            })
             df.to_parquet(
                 cls.cache_dir / "metars" / f"metar_iem_{station}_"
                 f"{start_time.strftime('%Y%m%d%H')}_"
