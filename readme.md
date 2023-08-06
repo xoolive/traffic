@@ -74,7 +74,7 @@ Tests are checked on [Github Actions](https://github.com/xoolive/traffic/actions
 
 In addition to unit tests, code is checked against:
 
-- formatting with [black](https://black.readthedocs.io/), [isort](https://pycqa.github.io/isort/) and [flake8](https://flake8.pycqa.org/);
+- formatting with [black](https://black.readthedocs.io/) and [ruff](https://beta.ruff.rs/docs/);
 - static typing with [mypy](https://mypy.readthedocs.io/)
 
 [pre-commit](https://pre-commit.com/) hooks are available in the repository.
