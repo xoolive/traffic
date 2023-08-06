@@ -4,6 +4,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Dict,  # for python 3.8 and impunity
     Generic,
     Protocol,
     Type,
@@ -422,7 +423,7 @@ class ProcessXYZFilterBase(FilterBase):
     @impunity
     def postprocess(
         self, df: pd.DataFrame
-    ) -> dict[str, npt.NDArray[np.float64]]:
+    ) -> Dict[str, npt.NDArray[np.float64]]:
         x: Annotated[Any, "m"] = df.x
         y: Annotated[Any, "m"] = df.y
         z: Annotated[Any, "m"] = df.z
