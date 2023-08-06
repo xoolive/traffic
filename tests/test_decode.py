@@ -3,11 +3,11 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+
+import pandas as pd
 from traffic.core import Flight, Traffic
 from traffic.data import ModeS_Decoder
 from traffic.data.samples import collections, get_sample
-
-import pandas as pd
 
 
 def long_enough(flight: Flight) -> bool:

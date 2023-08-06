@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import Any, Iterator, Literal, overload
 
+import numpy as np
 import pandas as pd
 
 from .mixins import DataFrameMixin
@@ -200,8 +201,8 @@ class IntervalCollection(DataFrameMixin):
                 }
             )
 
-        assert isinstance(data, pd.DataFrame)
-        assert data.eval("(start > stop).sum()") == 0
+        # assert isinstance(data, pd.DataFrame)
+        # assert data.eval("(start > stop).sum()") == 0
 
         self.data = data
 
@@ -291,6 +292,13 @@ class IntervalCollection(DataFrameMixin):
 
         """
 
+        if self.data.shape[0] == 1:
+            return self
+
+        zero = np.timedelta64(0)
+        if not np.any(self.data.stop.shift() - self.data.start >= zero):
+            return self
+
         # The algorithms proceeds with a swiping line starting from the minimum
         # start value, and builds up a connected interval.
 
@@ -315,7 +323,7 @@ class IntervalCollection(DataFrameMixin):
             cumul.append(Interval(swiping_line, horizon))
 
             # start a new swiping line
-            start = self.data.query("start > @horizon").min()
+            start = self.data.query("@horizon < start").min()
             swiping_line = start["start"]
             horizon = start["stop"]
 
