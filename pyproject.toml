@@ -31,6 +31,7 @@ include = [
   "license.md",
   "traffic.conf",
   "py.typed",
+  ".dat",
   "*.json.*",
   ".onnx",
   "allft_fields.txt"

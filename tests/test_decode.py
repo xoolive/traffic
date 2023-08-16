@@ -1,11 +1,9 @@
 import time
-from pathlib import Path
-from typing import cast
 
 import pytest
-from traffic.core import Flight, Traffic
+from traffic.core import Flight
 from traffic.data import ModeS_Decoder
-from traffic.data.samples import collections, get_sample
+from traffic.data.samples import sample_dump1090, switzerland
 
 import pandas as pd
 
@@ -16,8 +14,6 @@ def long_enough(flight: Flight) -> bool:
 
 @pytest.mark.skipif(True, reason="only for local debug")
 def test_decode() -> None:
-    switzerland = cast(Traffic, get_sample(collections, "switzerland"))
-
     tap_switzerland = (
         switzerland.query(  # type: ignore
             'callsign.str.startswith("TAP127")', engine="python"
@@ -50,11 +46,9 @@ def test_decode() -> None:
 
 
 def test_dump1090_bin() -> None:
-    filename = Path(__file__).parent.parent / "data" / "sample_dump1090.bin"
-
     time_0 = pd.Timestamp("2020-02-12 10:07Z")
     decoder = ModeS_Decoder.from_binary(
-        filename, "LFBO", time_fmt="dump1090", time_0=time_0
+        sample_dump1090, "LFBO", time_fmt="dump1090", time_0=time_0
     )
     t = decoder.traffic
 

@@ -82,7 +82,6 @@ Standalone applications
 
    user_guide/plugins
    user_guide/cli_tui
-   user_guide/gui
    user_guide/docker
 
 Troubleshooting
