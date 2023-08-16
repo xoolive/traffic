@@ -42,7 +42,7 @@ class Airways(GeoDBMixin):
     >>> airways['Z50']
     Route('Z50', navaids=['EGOBA', 'SOT', 'BULTI', 'AYE', 'AVMON', ...])
 
-    >>> airways.extent("Occitanie")["UN869"]
+    >>> airways.extent((-0.33, 4.85, 42.34, 45.05))["UN869"]
     Route('UN869', navaids=['XOMBO', 'TIVLI', 'AGN', 'NARAK', 'NASEP', ...])
 
     .. note::
