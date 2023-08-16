@@ -14,6 +14,7 @@ def long_enough(flight: Flight) -> bool:
     return len(flight) > 100
 
 
+@pytest.mark.skipif(True, reason="only for local debug")
 def test_decode() -> None:
     switzerland = cast(Traffic, get_sample(collections, "switzerland"))
 

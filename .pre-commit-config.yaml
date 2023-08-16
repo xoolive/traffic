@@ -30,16 +30,17 @@ repos:
     hooks:
       - id: ruff
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.4.1
+    rev: v1.5.0
     hooks:
       - id: mypy
         exclude: ^docs/conf.py
         additional_dependencies:
           - types-pkg-resources
           - types-requests
-          - types-paramiko
           - types-flask
           - types-waitress
+          - impunity
+          - pitot
           - pyModeS
           - pytest
   - repo: https://github.com/pre-commit/mirrors-prettier

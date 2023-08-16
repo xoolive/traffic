@@ -57,7 +57,6 @@ cartes = ">=0.7.4"
 pyopensky = { git = "https://github.com/open-aviation/pyopensky", branch = "v2.0" }
 # pyopensky = { path = "../pyopensky", develop = true }
 requests = ">=2.27"
-paramiko = ">=2.7"
 ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
 pyModeS = ">=2.17"
@@ -106,7 +105,6 @@ types-requests = ">=2.25.0"
 types-flask = ">=1.1.6"
 types-waitress = ">=2.0.8"
 requests = { extras = ["socks"], version = ">=2.27" }
-types-paramiko = "^3.3.0.0"
 
 
 [build-system]
@@ -162,8 +160,9 @@ warn_unused_ignores = true
 [tool.pytest.ini_options]
 addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff"
 testpaths = [
-    "src/traffic/data/basic/",
     "src/traffic/core/intervals.py",
+    "src/traffic/core/time.py",
+    "src/traffic/data/basic/",
     "tests"
 ]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]
