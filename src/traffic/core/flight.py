@@ -62,7 +62,7 @@ if TYPE_CHECKING:
     from matplotlib.artist import Artist
     from matplotlib.axes._subplots import Axes
 
-    from ..data.adsb.raw_data import RawData
+    from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
     from .airspace import Airspace
@@ -2593,10 +2593,11 @@ class Flight(
     # -- OpenSky specific methods --
 
     def query_opensky_sensors(self, where_condition: str = "") -> pd.DataFrame:
+        # TODO Deprecate??
         from ..data import opensky
 
         return (
-            opensky.request(
+            opensky.impala_client.request(
                 "select s.ITEM, count(*) from state_vectors_data4, "
                 "state_vectors_data4.serials s "
                 f"where icao24='{self.icao24}' and "
@@ -2673,7 +2674,7 @@ class Flight(
         """
 
         from ..data import opensky
-        from ..data.adsb.raw_data import RawData
+        from ..data.adsb.decode import RawData
 
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")

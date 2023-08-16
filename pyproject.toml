@@ -2,7 +2,7 @@
 name = "traffic"
 homepage = "https://github.com/xoolive/traffic/"
 documentation = "https://traffic-viz.github.io/"
-version = "2.8.2.dev41"
+version = "0.0.0"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"
@@ -37,7 +37,7 @@ include = [
 ]
 
 [tool.poetry-dynamic-versioning]
-enable = false
+enable = true
 bump = true
 metadata = false
 
@@ -60,7 +60,7 @@ requests = ">=2.27"
 paramiko = ">=2.7"
 ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
-pyModeS = ">=2.16"
+pyModeS = ">=2.17"
 # pyModeS = { path = "../pyModeS", extras = ["rtlsdr"], develop = true }
 openap = ">=1.1"
 metar = ">=1.8"

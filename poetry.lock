@@ -3177,24 +3177,24 @@ tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
 name = "pymodes"
-version = "2.16"
+version = "2.17"
 description = "Python Mode-S and ADS-B Decoder"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "pymodes-2.16-cp310-cp310-macosx_12_0_x86_64.whl", hash = "sha256:f9121279860486a373f3793804d76b5ec340719d1d9f4e1e8add942f2bf89a49"},
-    {file = "pymodes-2.16-cp310-cp310-manylinux_2_35_x86_64.whl", hash = "sha256:cc7e2f1ac5c4df282d7aed4bc8b084825d2e7a3cf165156bfd1830d5c82c4755"},
-    {file = "pymodes-2.16-cp310-cp310-win_amd64.whl", hash = "sha256:1b06c9d3b29d0f669bbf9e706ab9f09e43251b9f2b63d1db31428941c3f198c2"},
-    {file = "pymodes-2.16-cp311-cp311-macosx_12_0_x86_64.whl", hash = "sha256:a6eddcd48bf5923d2c86a53e50a1d0e3ed2f7da2025757879b447bcbe0532f1f"},
-    {file = "pymodes-2.16-cp311-cp311-manylinux_2_35_x86_64.whl", hash = "sha256:aca7766b4a81872bced6a7d05cd30f1bf35b3d0ef4fa47470f330065bc504d74"},
-    {file = "pymodes-2.16-cp311-cp311-win_amd64.whl", hash = "sha256:b4d525daad4889175361dee756b156d7cea0ca5b8965a3a5550a713373118e50"},
-    {file = "pymodes-2.16-cp38-cp38-macosx_12_0_x86_64.whl", hash = "sha256:12978f0457c9b9b28c60b69e2199be56137e61ca37cab5ae6f39fc56c95cc395"},
-    {file = "pymodes-2.16-cp38-cp38-manylinux_2_35_x86_64.whl", hash = "sha256:24f3b88d9cbab23e24ca7ad56a82a270b3b3a25025a1a32203735005f2bc95a8"},
-    {file = "pymodes-2.16-cp38-cp38-win_amd64.whl", hash = "sha256:0710ca0625dd6c19f933b16361b507b53a39faf281ecd267960739fbb1729783"},
-    {file = "pymodes-2.16-cp39-cp39-macosx_12_0_x86_64.whl", hash = "sha256:4c578494ec866d938552a386c9bbe2b258ce4b42bfef951efe053707f9433997"},
-    {file = "pymodes-2.16-cp39-cp39-manylinux_2_35_x86_64.whl", hash = "sha256:63ab195b1f563c5430cf0566f344894b04353c0b466ac4e04ea9a772c4ecffc1"},
-    {file = "pymodes-2.16-cp39-cp39-win_amd64.whl", hash = "sha256:76df48cc6fc9400842ba69c98f6d0186306581970b3251b3b8367e39c38e7fb9"},
-    {file = "pymodes-2.16.tar.gz", hash = "sha256:9f11e17dd9113af6e09d9c834e6279057059a1a306aaf64712a4c4e6e823b605"},
+    {file = "pymodes-2.17-cp310-cp310-macosx_12_0_x86_64.whl", hash = "sha256:958e93140e0e39feb9f8f75e477d1ac84aa1d2386acb4e310163167709dad473"},
+    {file = "pymodes-2.17-cp310-cp310-manylinux_2_35_x86_64.whl", hash = "sha256:37148ec22c5989089aa444894cd6b0907eace4ad76042062226cc3007cec65c5"},
+    {file = "pymodes-2.17-cp310-cp310-win_amd64.whl", hash = "sha256:c089c2dbec3a5ee01327d58f89458c4df3bfd4039a2be6e700ec6c66e7109ad7"},
+    {file = "pymodes-2.17-cp311-cp311-macosx_12_0_x86_64.whl", hash = "sha256:753e6909a2b1b366e5467f0687add32df82f287edc492309d60889833e1bd916"},
+    {file = "pymodes-2.17-cp311-cp311-manylinux_2_35_x86_64.whl", hash = "sha256:59e49ade4a6b13843bac3f846d404a1272bdfd6330b2675bc78535b545e05179"},
+    {file = "pymodes-2.17-cp311-cp311-win_amd64.whl", hash = "sha256:67ea37760910cc2508377fdcdf9c551827366e513319fb6d361e2296401de51b"},
+    {file = "pymodes-2.17-cp38-cp38-macosx_12_0_x86_64.whl", hash = "sha256:2c6f5f2d34f5dd0a4eb737610462725d8859c897da04048d3bd4812b60b19a8f"},
+    {file = "pymodes-2.17-cp38-cp38-manylinux_2_35_x86_64.whl", hash = "sha256:7419ac69d256e2a8df107b93c1568ef5f4daccf4325d30d19ab3c89fdf26d175"},
+    {file = "pymodes-2.17-cp38-cp38-win_amd64.whl", hash = "sha256:6ae4ec6c10921f5ce0a4453a83d11056b1c8b470c4dd66539512905038549c6a"},
+    {file = "pymodes-2.17-cp39-cp39-macosx_12_0_x86_64.whl", hash = "sha256:4bbc61840634041b795fafcdcee3177ca140801a18167ddcf195ec50e7c57e40"},
+    {file = "pymodes-2.17-cp39-cp39-manylinux_2_35_x86_64.whl", hash = "sha256:46f7efd313a4bb7bc835f1c13e3e1465b82e9d816b34b263e526c60925b66d00"},
+    {file = "pymodes-2.17-cp39-cp39-win_amd64.whl", hash = "sha256:521e69a94a86586b7c34ee8347a070d9a546da6c1066ced64762f74ec9ce3afb"},
+    {file = "pymodes-2.17.tar.gz", hash = "sha256:fe73e9ae3bfdb58416f42a08e4e1b132680bac46ff572815caae6eb47dc40941"},
 ]
 
 [package.dependencies]
@@ -4920,4 +4920,4 @@ web = ["Flask", "Flask-Cors", "pyb2b", "textual", "waitress"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<4.0"
-content-hash = "1cb10e09ee0a63cf62b5a48b04b3c692584ec2c02597789852a79b27acee3e53"
+content-hash = "7b74872d481b732f4c28755fe2d300ea5e2c006101544cb447ba1ceb7b3de9cf"

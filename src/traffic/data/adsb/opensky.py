@@ -1,38 +1,40 @@
+from __future__ import annotations
+
 import logging
-import time
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
+    Iterable,
     List,
-    Optional,
-    Set,
+    Literal,
     Tuple,
     TypedDict,
-    Union,
-    cast,
+    TypeVar,
+    overload,
 )
 
-from requests import Session
+from pyopensky import impala, rest, schema, trino
+from pyopensky.api import OpenSkyDBAPI
 
 import pandas as pd
 from shapely.geometry import Polygon
-from shapely.geometry.base import BaseGeometry
 
-from ...core import Flight
-from ...core import StateVectors as SVMixin
+from ...core import Flight, StateVectors, Traffic
 from ...core.mixins import PointMixin, ShapelyMixin
-from ...core.time import round_time, timelike, to_datetime
+from ...core.time import timelike
+from ...core.types import HasBounds, ProgressbarType
 from ..basic.airports import Airport
-from .opensky_impala import Impala
+from .decode import RawData
+from .flarm import FlarmData
 
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
 
 _log = logging.getLogger(__name__)
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class Coverage(object):
@@ -65,20 +67,6 @@ class Coverage(object):
             cmap=cmap,
             **kwargs,
         )
-
-
-class StateVectors(SVMixin):
-    """Plots the state vectors returned by OpenSky REST API."""
-
-    def __init__(self, data: pd.DataFrame, opensky: "OpenSky") -> None:
-        super().__init__(data)
-        self.opensky = opensky
-
-    def __getitem__(self, identifier: str) -> Flight:
-        icao24 = self.data.query(
-            "callsign == @identifier or icao24 == @identifier"
-        ).icao24.item()
-        return self.opensky.api_tracks(icao24)
 
 
 class SensorRangeJSON(TypedDict):
@@ -120,8 +108,78 @@ class SensorRange(ShapelyMixin):
             )
 
 
-class OpenSky(Impala):
-    """Wrapper to OpenSky REST API and Impala Shell.
+def copy_documentation(source_fun: Any) -> Callable[[F], F]:
+    def new_function(input_fun: F) -> F:
+        input_fun.__doc__ = source_fun.__doc__
+        return input_fun
+
+    return new_function
+
+
+def format_history(
+    df: pd.DataFrame, nautical_units: bool = True
+) -> pd.DataFrame:
+    """
+    This function can be used in tandem with `_format_dataframe()` to
+    convert (historical data specific) column types and optionally convert
+    the units back to nautical miles, feet and feet/min.
+
+    """
+
+    if "lastcontact" in df.columns:
+        df = df.drop(["lastcontact"], axis=1)
+
+    if "lat" in df.columns and df.lat.dtype == object:
+        df = df[df.lat != "lat"]  # header is regularly repeated
+
+    # restore all types
+    for column_name in [
+        "lat",
+        "lon",
+        "velocity",
+        "heading",
+        "vertrate",
+        "baroaltitude",
+        "geoaltitude",
+        # "lastposupdate",
+        # "lastcontact",
+    ]:
+        if column_name in df.columns:
+            df[column_name] = df[column_name].astype(float)
+
+    if "onground" in df.columns and df.onground.dtype != bool:
+        df.onground = df.onground == "true"
+        df.alert = df.alert == "true"
+        df.spi = df.spi == "true"
+
+    # better (to me) formalism about columns
+    df = df.rename(
+        columns={
+            "lat": "latitude",
+            "lon": "longitude",
+            "heading": "track",
+            "velocity": "groundspeed",
+            "vertrate": "vertical_rate",
+            "baroaltitude": "altitude",
+            "time": "timestamp",
+            "lastposupdate": "last_position",
+        }
+    )
+
+    if nautical_units:
+        df.altitude = (df.altitude / 0.3048).round(0)
+        if "geoaltitude" in df.columns:
+            df.geoaltitude = (df.geoaltitude / 0.3048).round(0)
+        if "groundspeed" in df.columns:
+            df.groundspeed = (df.groundspeed / 1852 * 3600).round(0)
+        if "vertical_rate" in df.columns:
+            df.vertical_rate = (df.vertical_rate / 0.3048 * 60).round(0)
+
+    return df
+
+
+class OpenSky:
+    """Wrapper to OpenSky REST API, Trino database and Impala Shell.
 
     An instance is automatically constructed when importing traffic.data with
     the name opensky. Credentials are fetched from the configuration file.
@@ -139,430 +197,364 @@ class OpenSky(Impala):
 
     """
 
-    # All Impala specific functions are implemented in opensky_impala.py
+    def __init__(self) -> None:
+        self.rest_client = rest.REST()
+        self.impala_client = impala.Impala()
+        self.trino_client = trino.Trino()
 
-    _json_columns = (
-        "icao24",
-        "callsign",
-        "origin_country",
-        "last_position",
-        "timestamp",
-        "longitude",
-        "latitude",
-        "altitude",
-        "onground",
-        "groundspeed",
-        "track",
-        "vertical_rate",
-        "sensors",
-        "geoaltitude",
-        "squawk",
-        "spi",
-        "position_source",
-    )
+        self.db_client: OpenSkyDBAPI = (
+            self.trino_client
+            if self.trino_client.token() is not None
+            else self.impala_client
+        )
 
-    def __init__(
-        self,
-        username: str,
-        password: str,
-        cache_dir: Path,
-        session: Session,
-        proxy_command: str,
-    ) -> None:
-        super().__init__(username, password, cache_dir, proxy_command)
-        self.session = session
-
+    @copy_documentation(rest.REST.states)
     def api_states(
         self,
         own: bool = False,
-        bounds: Union[
-            BaseGeometry, Tuple[float, float, float, float], None
-        ] = None,
+        bounds: None
+        | str
+        | HasBounds
+        | tuple[float, float, float, float] = None,
     ) -> StateVectors:
-        """Returns the current state vectors from OpenSky REST API.
+        df = self.rest_client.states(own, bounds).pipe(format_history)
+        return StateVectors(df)
 
-        If own parameter is set to True, returns only the state vectors
-        associated to own sensors (requires authentication)
-
-        bounds parameter can be a shape or a tuple of float.
-
-        Official documentation
-        ----------------------
-
-        Limitations for anonymous (unauthenticated) users
-
-        Anonymous are those users who access the API without using credentials.
-        The limitations for anonymous users are:
-
-        Anonymous users can only get the most recent state vectors, i.e. the
-        time parameter will be ignored.  Anonymous users can only retrieve data
-        with a time resolution of 10 seconds. That means, the API will return
-        state vectors for time now - (now mod 10)
-
-        Limitations for OpenSky users
-
-        An OpenSky user is anybody who uses a valid OpenSky account (see below)
-        to access the API. The rate limitations for OpenSky users are:
-
-        - OpenSky users can retrieve data of up to 1 hour in the past. If the
-        time parameter has a value t < now-3600 the API will return
-        400 Bad Request.
-
-        - OpenSky users can retrieve data with a time resolution of 5 seconds.
-        That means, if the time parameter was set to t , the API will return
-        state vectors for time t-(t mod 5).
-
-        """
-
-        what = "own" if (own and self.auth is not None) else "all"
-
-        if bounds is not None:
-            try:
-                # thinking of shapely bounds attribute (in this order)
-                # I just don't want to add the shapely dependency here
-                west, south, east, north = bounds.bounds  # type: ignore
-            except AttributeError:
-                west, south, east, north = bounds
-
-            what += f"?lamin={south}&lamax={north}&lomin={west}&lomax={east}"
-
-        c = self.session.get(
-            f"https://opensky-network.org/api/states/{what}", auth=self.auth
-        )
-        try:
-            c.raise_for_status()
-            json = c.json()
-            columns = list(self._json_columns)
-            # For some reason, OpenSky may return 18 fields instead of 17
-            if len(json["states"]) > 0:
-                if len(json["states"][0]) > len(self._json_columns):
-                    columns.append("_")
-            r = pd.DataFrame.from_records(json["states"], columns=columns)
-        except Exception:
-            _log.warning("Error in received data, retrying in 10 seconds")
-            time.sleep(10)
-            return self.api_states(own, bounds)
-
-        r = r.drop(["origin_country", "spi", "sensors"], axis=1)
-        r = r.dropna()
-
-        r = self._format_dataframe(r)
-        r = self._format_history(r)
-
-        return StateVectors(r, self)
-
-    def api_tracks(
-        self, icao24: str, time: Optional[timelike] = None
-    ) -> Flight:
-        """Returns a Flight corresponding to a given aircraft.
-
-        Official documentation
-        ----------------------
-
-        Retrieve the trajectory for a certain aircraft at a given time. The
-        trajectory is a list of waypoints containing position, barometric
-        altitude, true track and an on-ground flag.
-
-        In contrast to state vectors, trajectories do not contain all
-        information we have about the flight, but rather show the aircraft`s
-        general movement pattern. For this reason, waypoints are selected among
-        available state vectors given the following set of rules:
-
-        - The first point is set immediately after the the aircraft`s expected
-        departure, or after the network received the first position when the
-        aircraft entered its reception range.
-        - The last point is set right before the aircraft`s expected arrival, or
-        the aircraft left the networks reception range.
-        - There is a waypoint at least every 15 minutes when the aircraft is
-        in-flight.
-        - A waypoint is added if the aircraft changes its track more than 2.5°.
-        - A waypoint is added if the aircraft changes altitude by more than 100m
-        (~330ft).
-        - A waypoint is added if the on-ground state changes.
-
-        Tracks are strongly related to flights. Internally, we compute flights
-        and tracks within the same processing step. As such, it may be
-        beneficial to retrieve a list of flights with the API methods from
-        above, and use these results with the given time stamps to retrieve
-        detailed track information.
-
-        """
-        time = int(to_datetime(time).timestamp()) if time is not None else 0
-        c = self.session.get(
-            f"https://opensky-network.org/api/tracks/"
-            f"?icao24={icao24}&time={time}"
-        )
-        c.raise_for_status()
-        json = c.json()
-
-        df = pd.DataFrame.from_records(
-            json["path"],
-            columns=[
-                "timestamp",
-                "latitude",
-                "longitude",
-                "altitude",
-                "track",
-                "onground",
-            ],
-        ).assign(icao24=json["icao24"], callsign=json["callsign"])
-
-        df = self._format_dataframe(df)
-        df = self._format_history(df)
-
+    @copy_documentation(rest.REST.tracks)
+    def api_tracks(self, icao24: str, time: None | timelike = None) -> Flight:
+        df = self.rest_client.tracks(icao24, time).pipe(format_history)
         return Flight(df)
 
-    def api_routes(self, callsign: str) -> Tuple[Airport, ...]:
-        """Returns the route associated to a callsign."""
-        from .. import airports
+    @copy_documentation(rest.REST.routes)
+    def api_routes(self, callsign: str) -> tuple[str, str]:
+        return self.rest_client.routes(callsign)
 
-        c = self.session.get(
-            f"https://opensky-network.org/api/routes?callsign={callsign}"
-        )
-        c.raise_for_status()
-        json = c.json()
-
-        return tuple(cast(Airport, airports[a]) for a in json["route"])
-
+    @copy_documentation(rest.REST.aircraft)
     def api_aircraft(
         self,
         icao24: str,
-        begin: Optional[timelike] = None,
-        end: Optional[timelike] = None,
+        begin: None | timelike = None,
+        end: None | timelike = None,
     ) -> pd.DataFrame:
-        """Returns a flight table associated to an aircraft.
+        return self.rest_client.aircraft(icao24, begin, end)
 
-        Official documentation
-        ----------------------
+    @copy_documentation(rest.REST.sensors)
+    def api_sensors(self, day: None | timelike = None) -> set[str]:
+        return self.rest_client.sensors(day)
 
-        This API call retrieves flights for a particular aircraft within a
-        certain time interval. Resulting flights departed and arrived within
-        [begin, end]. If no flights are found for the given period, HTTP stats
-        404 - Not found is returned with an empty response body.
-
-        """
-
-        if begin is None:
-            begin = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
-        begin = to_datetime(begin)
-        if end is None:
-            end = begin + timedelta(days=1)
-        else:
-            end = to_datetime(end)
-
-        begin = int(begin.timestamp())
-        end = int(end.timestamp())
-
-        c = self.session.get(
-            f"https://opensky-network.org/api/flights/aircraft"
-            f"?icao24={icao24}&begin={begin}&end={end}"
-        )
-        c.raise_for_status()
-        return (
-            pd.DataFrame.from_records(c.json())[
-                [
-                    "firstSeen",
-                    "lastSeen",
-                    "icao24",
-                    "callsign",
-                    "estDepartureAirport",
-                    "estArrivalAirport",
-                ]
-            ]
-            .assign(
-                firstSeen=lambda df: pd.to_datetime(
-                    df.firstSeen * 1e9
-                ).dt.tz_localize("utc"),
-                lastSeen=lambda df: pd.to_datetime(
-                    df.lastSeen * 1e9
-                ).dt.tz_localize("utc"),
-            )
-            .sort_values("lastSeen")
-        )
-
-    @property
-    def api_sensors(self) -> Set[str]:
-        """The set of sensors serials you own (require authentication)."""
-        today = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
-        c = self.session.get(
-            f"https://opensky-network.org/api/sensor/myStats"
-            f"?days={int(today.timestamp())}",
-            auth=self.auth,
-        )
-        c.raise_for_status()
-        return set(c.json()[0]["stats"].keys())
-
+    @copy_documentation(rest.REST.range)
     def api_range(
-        self, serial: str, date: Optional[timelike] = None
+        self, serial: str, day: None | timelike = None
     ) -> SensorRange:
-        """Wraps a polygon representing a sensor's range.
+        json = self.rest_client.range(serial, day)
+        return SensorRange(json)
 
-        By default, returns the current range. Otherwise, you may enter a
-        specific day (as a string, as an epoch or as a datetime)
-        """
+    @copy_documentation(rest.REST.global_coverage)
+    def api_global_coverage(self, day: None | timelike = None) -> Coverage:
+        json = self.rest_client.global_coverage(day)
+        return Coverage(json)
 
-        if date is None:
-            date = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
-        else:
-            date = to_datetime(date)
-        date = int(date.timestamp())
-
-        c = self.session.get(
-            f"https://opensky-network.org/api/range/days"
-            f"?days={date}&serials={serial}"
-        )
-        c.raise_for_status()
-        return SensorRange(c.json())
-
-    def api_global_coverage(self, day: Optional[timelike] = None) -> Coverage:
-        if day is None:
-            day = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
-        day = int(to_datetime(day).timestamp())
-        c = self.session.get(
-            f"https://opensky-network.org/api/range/coverage?day={day}"
-        )
-        c.raise_for_status()
-        return Coverage(c.json())
-
+    @copy_documentation(rest.REST.arrival)
     def api_arrival(
         self,
-        airport: Union[str, Airport],
-        begin: Optional[timelike] = None,
-        end: Optional[timelike] = None,
+        airport: str | Airport,
+        begin: None | timelike = None,
+        end: None | timelike = None,
     ) -> pd.DataFrame:
-        """Returns a flight table associated to an airport.
-
-        By default, returns the current table. Otherwise, you may enter a
-        specific date (as a string, as an epoch or as a datetime)
-
-        Official documentation
-        ----------------------
-
-        Retrieve flights for a certain airport which arrived within a given time
-        interval [begin, end]. If no flights are found for the given period,
-        HTTP stats 404 - Not found is returned with an empty response body.
-
-        """
-
-        if isinstance(airport, str):
-            from .. import airports
-
-            airport_handle = airports[airport]
-            if airport_handle is None:
-                raise RuntimeError(f"Unknown airport {airport}")
-            airport_code = airport_handle.icao
-        else:
-            airport_code = airport.icao
-
-        if begin is None:
-            begin = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
-        begin = to_datetime(begin)
-        if end is None:
-            end = begin + timedelta(days=1)
-        else:
-            end = to_datetime(end)
-
-        begin = int(begin.timestamp())
-        end = int(end.timestamp())
-
-        c = self.session.get(
-            f"https://opensky-network.org/api/flights/arrival"
-            f"?begin={begin}&airport={airport_code}&end={end}"
-        )
-        c.raise_for_status()
-
-        return (
-            pd.DataFrame.from_records(c.json())[
-                [
-                    "firstSeen",
-                    "lastSeen",
-                    "icao24",
-                    "callsign",
-                    "estDepartureAirport",
-                    "estArrivalAirport",
-                ]
-            ]
-            .query("callsign == callsign")
-            .assign(
-                firstSeen=lambda df: pd.to_datetime(
-                    df.firstSeen * 1e9
-                ).dt.tz_localize("utc"),
-                lastSeen=lambda df: pd.to_datetime(
-                    df.lastSeen * 1e9
-                ).dt.tz_localize("utc"),
-                callsign=lambda df: df.callsign.str.strip(),
-            )
-            .sort_values("lastSeen")
+        return self.rest_client.arrival(
+            airport if isinstance(airport, str) else airport.icao, begin, end
         )
 
+    @copy_documentation(rest.REST.departure)
     def api_departure(
         self,
-        airport: Union[str, Airport],
-        begin: Optional[timelike] = None,
-        end: Optional[timelike] = None,
+        airport: str | Airport,
+        begin: None | timelike = None,
+        end: None | timelike = None,
     ) -> pd.DataFrame:
-        """Returns a flight table associated to an airport.
-
-        By default, returns the current table. Otherwise, you may enter a
-        specific date (as a string, as an epoch or as a datetime)
-
-        Official documentation
-        ----------------------
-
-        Retrieve flights for a certain airport which departed within a given
-        time interval [begin, end]. If no flights are found for the given
-        period, HTTP stats 404 - Not found is returned with an empty response
-        body.
-
-        """
-
-        if isinstance(airport, str):
-            from .. import airports
-
-            airport_handle = airports[airport]
-            if airport_handle is None:
-                raise RuntimeError(f"Unknown airport {airport}")
-            airport_code = airport_handle.icao
-        else:
-            airport_code = airport.icao
-
-        if begin is None:
-            begin = round_time(datetime.now(timezone.utc), by=timedelta(days=1))
-        begin = to_datetime(begin)
-        if end is None:
-            end = begin + timedelta(days=1)
-        else:
-            end = to_datetime(end)
-
-        begin = int(begin.timestamp())
-        end = int(end.timestamp())
-
-        c = self.session.get(
-            f"https://opensky-network.org/api/flights/departure"
-            f"?begin={begin}&airport={airport_code}&end={end}"
+        return self.rest_client.departure(
+            airport if isinstance(airport, str) else airport.icao, begin, end
         )
-        c.raise_for_status()
 
-        return (
-            pd.DataFrame.from_records(c.json())[
-                [
-                    "firstSeen",
-                    "lastSeen",
-                    "icao24",
-                    "callsign",
-                    "estDepartureAirport",
-                    "estArrivalAirport",
-                ]
-            ]
-            .query("callsign == callsign")
-            .assign(
-                firstSeen=lambda df: pd.to_datetime(
-                    df.firstSeen * 1e9
-                ).dt.tz_localize("utc"),
-                lastSeen=lambda df: pd.to_datetime(
-                    df.lastSeen * 1e9
-                ).dt.tz_localize("utc"),
-                callsign=lambda df: df.callsign.str.strip(),
-            )
-            .sort_values("firstSeen")
+    @copy_documentation(trino.Trino.flightlist)
+    def flightlist(
+        self,
+        start: timelike,
+        stop: None | timelike = None,
+        *args: Any,  # more reasonable to be explicit about arguments
+        departure_airport: None | str | list[str] = None,
+        arrival_airport: None | str | list[str] = None,
+        airport: None | str | list[str] = None,
+        callsign: None | str | list[str] = None,
+        icao24: None | str | list[str] = None,
+        cached: bool = True,
+        compress: bool = False,
+        limit: None | int = None,
+        **kwargs: Any,
+    ) -> None | pd.DataFrame:
+        return self.db_client.flightlist(
+            start,
+            stop,
+            *args,
+            departure_airport=departure_airport,
+            arrival_airport=arrival_airport,
+            airport=airport,
+            callsign=callsign,
+            icao24=icao24,
+            cached=cached,
+            compress=compress,
+            limit=limit,
+            **kwargs,
         )
+        ...
+
+    @overload
+    def history(
+        self,
+        start: timelike,
+        stop: None | timelike = None,
+        *args: Any,
+        # date_delta: timedelta = timedelta(hours=1),
+        callsign: None | str | list[str] = None,
+        icao24: None | str | list[str] = None,
+        serials: None | int | Iterable[int] = None,
+        bounds: None
+        | str
+        | HasBounds
+        | tuple[float, float, float, float] = None,
+        departure_airport: None | str = None,
+        arrival_airport: None | str = None,
+        airport: None | str = None,
+        cached: bool = True,
+        compress: bool = False,
+        limit: None | int = None,
+        return_flight: Literal[False] = False,
+        **kwargs: Any,
+    ) -> None | Traffic:
+        ...
+
+    @overload
+    def history(
+        self,
+        start: timelike,
+        stop: None | timelike = None,
+        *args: Any,
+        # date_delta: timedelta = timedelta(hours=1),
+        callsign: None | str | list[str] = None,
+        icao24: None | str | list[str] = None,
+        serials: None | int | Iterable[int] = None,
+        bounds: None
+        | str
+        | HasBounds
+        | tuple[float, float, float, float] = None,
+        departure_airport: None | str = None,
+        arrival_airport: None | str = None,
+        airport: None | str = None,
+        cached: bool = True,
+        compress: bool = False,
+        limit: None | int = None,
+        return_flight: Literal[True],
+        **kwargs: Any,
+    ) -> None | Flight:
+        ...
+
+    @copy_documentation(trino.Trino.history)
+    def history(
+        self,
+        start: timelike,
+        stop: None | timelike = None,
+        *args: Any,
+        # date_delta: timedelta = timedelta(hours=1),
+        callsign: None | str | list[str] = None,
+        icao24: None | str | list[str] = None,
+        serials: None | int | Iterable[int] = None,
+        bounds: None
+        | str
+        | HasBounds
+        | tuple[float, float, float, float] = None,
+        departure_airport: None | str = None,
+        arrival_airport: None | str = None,
+        airport: None | str = None,
+        cached: bool = True,
+        compress: bool = False,
+        limit: None | int = None,
+        return_flight: bool = False,
+        **kwargs: Any,
+    ) -> None | Flight | Traffic:
+        df = self.db_client.history(
+            start,
+            stop,
+            *args,
+            callsign=callsign,
+            icao24=icao24,
+            serials=serials,
+            bounds=bounds,
+            departure_airport=departure_airport,
+            arrival_airport=arrival_airport,
+            airport=airport,
+            cached=cached,
+            compress=compress,
+            limit=limit,
+            **kwargs,
+        )
+        if df is None:
+            return None
+
+        df = format_history(df)
+
+        if return_flight:
+            return Flight(df)
+
+        return Traffic(df)
+        ...
+
+    @copy_documentation(trino.Trino.rawdata)
+    def rawdata(
+        self,
+        start: timelike,
+        stop: None | timelike = None,
+        *args: Any,  # more reasonable to be explicit about arguments
+        icao24: None | str | list[str] = None,
+        serials: None | int | Iterable[int] = None,
+        bounds: None | HasBounds | tuple[float, float, float, float] = None,
+        callsign: None | str | list[str] = None,
+        departure_airport: None | str = None,
+        arrival_airport: None | str = None,
+        airport: None | str = None,
+        cached: bool = True,
+        compress: bool = False,
+        limit: None | int = None,
+        **kwargs: Any,
+    ) -> None | RawData:
+        df = self.db_client.rawdata(
+            start,
+            stop,
+            *args,
+            icao24=icao24,
+            serials=serials,
+            bounds=bounds,
+            callsign=callsign,
+            departure_airport=departure_airport,
+            arrival_airport=arrival_airport,
+            airport=airport,
+            cached=cached,
+            compress=compress,
+            limit=limit,
+            **kwargs,
+        )
+
+        if df is None:
+            return None
+
+        return RawData(df)
+
+    @copy_documentation(trino.Trino.rawdata)
+    def extended(
+        self,
+        start: timelike,
+        stop: None | timelike = None,
+        *args: Any,  # more reasonable to be explicit about arguments
+        icao24: None | str | list[str] = None,
+        serials: None | int | Iterable[int] = None,
+        bounds: None | HasBounds | tuple[float, float, float, float] = None,
+        callsign: None | str | list[str] = None,
+        departure_airport: None | str = None,
+        arrival_airport: None | str = None,
+        airport: None | str = None,
+        cached: bool = True,
+        compress: bool = False,
+        limit: None | int = None,
+        **kwargs: Any,
+    ) -> None | RawData:
+        kwargs = {
+            **kwargs,
+            **(
+                # this one is with impala
+                dict(table_name="rollcall_replies_data4")
+                if isinstance(self.db_client, impala.Impala)
+                # this one is with Trino
+                else dict(Table=schema.RollcallRepliesData4)  # default anyway
+            ),
+        }
+
+        df = self.rawdata(
+            start,
+            stop,
+            *args,
+            icao24=icao24,
+            serials=serials,
+            bounds=bounds,
+            callsign=callsign,
+            departure_airport=departure_airport,
+            arrival_airport=arrival_airport,
+            airport=airport,
+            cached=cached,
+            compress=compress,
+            limit=limit,
+            **kwargs,
+        )
+
+        if df is None:
+            return None
+
+        return RawData(df)
+
+    @copy_documentation(impala.Impala.flarm)
+    def flarm(
+        self,
+        start: timelike,
+        stop: None | timelike = None,
+        *args: Any,  # more reasonable to be explicit about arguments
+        sensor_name: None | str | list[str] = None,
+        cached: bool = True,
+        compress: bool = False,
+        limit: None | int = None,
+        other_params: str = "",
+        progressbar: bool | ProgressbarType[Any] = True,
+    ) -> None | FlarmData:
+        df = self.impala_client.flarm(
+            start,
+            stop,
+            *args,
+            sensor_name=sensor_name,
+            cached=cached,
+            compress=compress,
+            limit=limit,
+            other_params=other_params,
+            progressbar=progressbar,
+        )
+        if df is None:
+            return None
+
+        else:
+            return FlarmData(df)
+
+
+# below this line is only helpful references
+# ------------------------------------------
+# [hadoop-1:21000] > describe rollcall_replies_data4;
+# +----------------------+-------------------+---------+
+# | name                 | type              | comment |
+# +----------------------+-------------------+---------+
+# | sensors              | array<struct<     |         |
+# |                      |   serial:int,     |         |
+# |                      |   mintime:double, |         |
+# |                      |   maxtime:double  |         |
+# |                      | >>                |         |
+# | rawmsg               | string            |         |
+# | mintime              | double            |         |
+# | maxtime              | double            |         |
+# | msgcount             | bigint            |         |
+# | icao24               | string            |         |
+# | message              | string            |         |
+# | isid                 | boolean           |         |
+# | flightstatus         | tinyint           |         |
+# | downlinkrequest      | tinyint           |         |
+# | utilitymsg           | tinyint           |         |
+# | interrogatorid       | tinyint           |         |
+# | identifierdesignator | tinyint           |         |
+# | valuecode            | smallint          |         |
+# | altitude             | double            |         |
+# | identity             | string            |         |
+# | hour                 | int               |         |
+# +----------------------+-------------------+---------+
