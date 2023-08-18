@@ -1,5 +1,4 @@
-# flake8: noqa
-
+# ruff: noqa: E501
 from __future__ import annotations
 
 import io
@@ -9,7 +8,7 @@ import re
 import zipfile
 from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, ClassVar, Dict, TypeVar
 
 import rich.repr
 from tqdm.rich import tqdm
@@ -180,7 +179,7 @@ class Aircraft(DataFrameMixin):
     """
 
     cache_dir: Path
-    columns_options: dict[str, dict[str, Any]] = dict(
+    columns_options: ClassVar[dict[str, dict[str, Any]]] = dict(
         icao24=dict(), registration=dict(), typecode=dict(), model=dict()
     )
 

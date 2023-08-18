@@ -61,7 +61,7 @@ if TYPE_CHECKING:
     from cartopy import crs
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
-    from matplotlib.axes._subplots import Axes
+    from matplotlib.axes import Axes
 
     from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
@@ -1854,9 +1854,9 @@ class Flight(
         duration: tt.seconds = delta.total_seconds()
 
         new_lat, new_lon, _ = geo.destination(
-            last_line.latitude,  # unit: degree
-            last_line.longitude,  # unit: degree
-            last_line.track,  # unit: degree
+            last_line.latitude,
+            last_line.longitude,
+            last_line.track,
             new_gs * duration,
         )
 
@@ -2177,7 +2177,7 @@ class Flight(
             if first is None or last is None:
                 return 0
             result: tt.distance = geo.distance(
-                first.latitude,  # unit: degree
+                first.latitude,
                 first.longitude,
                 last.latitude,
                 last.longitude,
