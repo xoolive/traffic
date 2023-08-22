@@ -49,7 +49,7 @@ class Airports(GeoDBMixin):
         open=("airports_ourairports.parquet", "download_airports"),
     )
 
-    columns_options: ClassVar[dict[str, dict[str, Any]]] = dict(
+    columns_options: ClassVar[dict[str, dict[str, Any]]] = dict(  # type: ignore
         name=dict(),
         country=dict(justify="right"),
         icao=dict(style="blue bold"),

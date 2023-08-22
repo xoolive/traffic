@@ -1819,8 +1819,10 @@ class Flight(
     def comet(self, **kwargs: Any) -> Flight:
         raise DeprecationWarning("Use Flight.forward() method instead")
 
-    @impunity
-    def forward(self, **kwargs: Any) -> "Flight":
+    @impunity(ignore_warnings=True)
+    def forward(
+        self, delta: None | str | pd.Timedelta = None, **kwargs: Any
+    ) -> "Flight":
         """Projects the trajectory in a straight line.
 
         The method uses the last position of a trajectory (method `at()
@@ -1844,7 +1846,10 @@ class Flight(
         if last_line is None:
             raise ValueError("Unknown data for this flight")
         window = self.last(seconds=20)
-        delta = timedelta(**kwargs)
+        if isinstance(delta, str):
+            delta = pd.Timedelta(delta)
+        if delta is None:
+            delta = timedelta(**kwargs)
 
         if window is None:
             raise RuntimeError("Flight expect at least 20 seconds of data")
@@ -2137,7 +2142,7 @@ class Flight(
     ) -> Optional[pd.DataFrame]:
         ...
 
-    @impunity
+    @impunity(ignore_warnings=True)
     def distance(
         self,
         other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
@@ -2362,7 +2367,7 @@ class Flight(
             .rename(columns=dict(NSE=column_name))
         )
 
-    @impunity
+    @impunity(ignore_warnings=True)
     def cumulative_distance(
         self,
         compute_gs: bool = True,
@@ -2654,8 +2659,8 @@ class Flight(
     def query_ehs(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
-        failure_mode: str = "warning",
-        progressbar: Union[bool, tt.ProgressbarType[Any]] = True,
+        failure_mode: str = "info",
+        progressbar: Union[bool, tt.ProgressbarType[Any]] = False,
     ) -> Flight:
         """Extends data with extra columns from EHS messages.
 
@@ -2696,13 +2701,23 @@ class Flight(
             id_ = self.flight_id
             if id_ is None:
                 id_ = self.callsign
-            _log.warning(f"No data on Impala for flight {id_}.")
+            _log.warning(f"No data found on OpenSky database for flight {id_}.")
+            return self
+
+        def fail_info() -> Flight:
+            """Called when nothing can be added to data."""
+            id_ = self.flight_id
+            if id_ is None:
+                id_ = self.callsign
+            _log.info(f"No data found on OpenSky database for flight {id_}.")
             return self
 
         def fail_silent() -> Flight:
             return self
 
-        failure_dict = dict(warning=fail_warning, silent=fail_silent)
+        failure_dict = dict(
+            warning=fail_warning, info=fail_info, silent=fail_silent
+        )
         failure = failure_dict[failure_mode]
 
         if data is None:
@@ -2745,9 +2760,16 @@ class Flight(
         identifier = (
             self.flight_id if self.flight_id is not None else self.callsign
         )
+        reference: None | str | tuple[float, float] = None
+        if isinstance(self.origin, str):
+            reference = self.origin
+        elif position := self.query("latitude.notnull()"):
+            p0 = position.at_ratio(0)
+            assert p0 is not None
+            reference = p0.latlon
 
         t = RawData(referenced_df).decode(
-            reference=self.origin if isinstance(self.origin, str) else None,
+            reference=reference,
             progressbar=progressbar,
             progressbar_kw=dict(leave=False, desc=f"{identifier}:"),
         )

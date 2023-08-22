@@ -477,7 +477,7 @@ class OpenSky:
             ),
         }
 
-        df = self.rawdata(
+        return self.rawdata(
             start,
             stop,
             *args,
@@ -493,11 +493,6 @@ class OpenSky:
             limit=limit,
             **kwargs,
         )
-
-        if df is None:
-            return None
-
-        return RawData(df)
 
     @copy_documentation(impala.Impala.flarm)
     def flarm(

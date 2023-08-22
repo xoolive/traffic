@@ -1,10 +1,10 @@
 import logging
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
+import pitot.geodesy as geo
+
 import numpy as np
 import pandas as pd
-
-from . import geodesy as geo
 
 if TYPE_CHECKING:
     from ..data.basic.airports import Airports

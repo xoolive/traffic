@@ -51,11 +51,13 @@ CesiumJS = "traffic.plugins.cesiumjs"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
+impunity = ">=1.0.4"
+# impunity = { path = "../impunity", develop = true}
 pitot = ">=0.3.1"
 # pitot = { path = "../pitot", develop = true }
 cartes = ">=0.7.4"
 # cartes = { path = "../cartes", develop = true }
-pyopensky = { git = "https://github.com/open-aviation/pyopensky", branch = "v2.0" }
+pyopensky = ">=2.0"
 # pyopensky = { path = "../pyopensky", develop = true }
 requests = ">=2.27"
 ipywidgets = ">=7.6"

@@ -179,7 +179,7 @@ class Aircraft(DataFrameMixin):
     """
 
     cache_dir: Path
-    columns_options: ClassVar[dict[str, dict[str, Any]]] = dict(
+    columns_options: ClassVar[dict[str, dict[str, Any]]] = dict(  # type: ignore
         icao24=dict(), registration=dict(), typecode=dict(), model=dict()
     )
 

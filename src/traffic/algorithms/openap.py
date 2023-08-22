@@ -55,7 +55,7 @@ class OpenAP:
             .str.replace("LVL", "LEVEL")
         )
 
-    @impunity
+    @impunity(ignore_warnings=True)
     def fuelflow(
         self,
         initial_mass: None | str | float = None,
