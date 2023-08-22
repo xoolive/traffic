@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     import altair as alt
     from cartes.osm import Overpass
     from matplotlib.artist import Artist
-    from matplotlib.axes._subplots import Axes
+    from matplotlib.axes import Axes
 
 
 class AirportNamedTuple(NamedTuple):

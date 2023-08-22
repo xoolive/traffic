@@ -17,6 +17,7 @@ from typing import (
     Iterator,
     Optional,
     TextIO,
+    Tuple,
     Type,
     TypedDict,
     TypeVar,
@@ -27,12 +28,17 @@ from typing import (
 import pyModeS as pms
 from tqdm.rich import tqdm
 
+import numpy as np
 import pandas as pd
 
 from ...core import Flight, Traffic
+from ...core.mixins import DataFrameMixin
+from ...core.types import ProgressbarType
 from ...data.basic.airports import Airport
 
-Decoder = TypeVar("Decoder", bound="ModeS_Decoder")
+D = TypeVar("D", bound="ModeS_Decoder")
+R = TypeVar("R", bound="RawData")
+U = Tuple[int, Tuple[Any, Any]]
 
 _log = logging.getLogger(__name__)
 
@@ -194,23 +200,26 @@ class Entry(TypedDict, total=False):
     vertical_rate_barometric: Optional[int]
     vertical_rate_inertial: Optional[int]
     # Uncertainty
-    NUCp: int
-    NACp: int
-    HPL: Optional[int]
+    NIC: Optional[int]
+    NUCp: Optional[int]
+    NUCv: Optional[int]
+    NACp: Optional[int]
+    NACv: Optional[int]
+    HPL: Optional[float]
     RCu: Optional[int]
     RCv: Optional[int]
-    HCR: Optional[int]
-    VPL: Optional[int]
-    HVE: Optional[int]
-    VVE: Optional[int]
-    HFM: Optional[int]
-    VFM: Optional[int]
+    HCR: Optional[float]
+    VPL: Optional[float]
+    HVE: Optional[float]
+    VVE: Optional[float]
+    HFM: Optional[float]
+    VFM: Optional[float]
     EPU: Optional[int]
     VEPU: Optional[int]
     version: Optional[int]
-    pHCR: Optional[int]
-    pVPL: Optional[int]
-    sil_base: Optional[int]
+    pHCR: Optional[float]
+    pVPL: Optional[float]
+    sil_base: Optional[str]
 
 
 class Aircraft(object):
@@ -456,7 +465,7 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {  # type: ignore
+                self.cumul[-1] = {
                     **last_entry,
                     **dict(callsign=self._callsign),
                 }
@@ -481,7 +490,7 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {  # type: ignore
+                self.cumul[-1] = {
                     **last_entry,
                     **dict(
                         # FMS selected altitude (ft)
@@ -521,7 +530,7 @@ class Aircraft(object):
             # or squawk from idcode (DF 5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {  # type: ignore
+                self.cumul[-1] = {
                     **last_entry,
                     **dict(
                         # Humidity (%)
@@ -567,7 +576,7 @@ class Aircraft(object):
             # or squawk from idcode (DF 5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {  # type: ignore
+                self.cumul[-1] = {
                     **last_entry,
                     **dict(
                         # Turbulence level (0-3)
@@ -625,7 +634,7 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {  # type: ignore
+                self.cumul[-1] = {
                     **last_entry,
                     **dict(
                         # Ground speed (kt)
@@ -671,7 +680,7 @@ class Aircraft(object):
             # or squawk from idcode (DF5 or 21)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {  # type: ignore
+                self.cumul[-1] = {
                     **last_entry,
                     **dict(
                         # Indicated airspeed (kt)
@@ -714,7 +723,7 @@ class Aircraft(object):
         t, msg = args
         with self.lock:
             nuc_p, hpl, rcu, rcv = pms.adsb.nuc_p(msg)
-            current = dict(
+            current: Entry = dict(
                 NUCp=nuc_p,
                 # Horizontal Protection Limit
                 HPL=hpl,
@@ -725,12 +734,10 @@ class Aircraft(object):
             )
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}  # type: ignore
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(  # type: ignore
-                        timestamp=t, icao24=self.icao24, **current
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -745,7 +752,7 @@ class Aircraft(object):
         with self.lock:
             nic, hcr, vpl = pms.adsb.nic_v1(msg, self.nic_s)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
-            current = dict(
+            current: Entry = dict(
                 NIC=nic,
                 # Horizontal Containment Radius
                 HCR=hcr,
@@ -753,12 +760,10 @@ class Aircraft(object):
                 VPL=vpl,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}  # type: ignore
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(  # type: ignore
-                        timestamp=t, icao24=self.icao24, **current
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -773,19 +778,17 @@ class Aircraft(object):
         with self.lock:
             nic, hcr = pms.adsb.nic_v2(msg, self.nic_a, self.nic_bc)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
-            current = dict(
+            current: Entry = dict(
                 NIC=nic,
                 # Horizontal Containment Radius
                 HCR=hcr,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}  # type: ignore
+                self.cumul[-1] = {**last_entry, **current}
 
             else:
                 self.cumul.append(
-                    dict(  # type: ignore
-                        timestamp=t, icao24=self.icao24, **current
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -798,7 +801,7 @@ class Aircraft(object):
         with self.lock:
             nuc_v, hve, vve = pms.adsb.nuc_v(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
-            current = dict(
+            current: Entry = dict(
                 NUCv=nuc_v,
                 # Horizontal Velocity Error
                 HVE=hve,
@@ -806,12 +809,10 @@ class Aircraft(object):
                 VVE=vve,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}  # type: ignore
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(  # type: ignore
-                        timestamp=t, icao24=self.icao24, **current
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -824,7 +825,7 @@ class Aircraft(object):
         with self.lock:
             nac_v, hfm, vfm = pms.adsb.nac_v(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
-            current = dict(
+            current: Entry = dict(
                 NACv=nac_v,
                 # Horizontal Figure of Merit for rate (GNSS)
                 HFM=hfm,
@@ -832,12 +833,10 @@ class Aircraft(object):
                 VFM=vfm,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}  # type: ignore
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(  # type: ignore
-                        timestamp=t, icao24=self.icao24, **current
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -850,7 +849,7 @@ class Aircraft(object):
         with self.lock:
             epu, vepu, nacp = pms.adsb.nac_p(msg)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
-            current = dict(
+            current: Entry = dict(
                 # Estimated Position Uncertainty
                 EPU=epu,
                 # Vertical Estimated Position Uncertainty
@@ -859,12 +858,10 @@ class Aircraft(object):
                 NACp=nacp,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}  # type: ignore
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(  # type: ignore
-                        timestamp=t, icao24=self.icao24, **current
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
     @property
@@ -877,7 +874,7 @@ class Aircraft(object):
         with self.lock:
             phcr, pvpl, base = pms.adsb.sil(msg, self.version)
             last_entry = self.cumul[-1] if len(self.cumul) > 0 else None
-            current = dict(
+            current: Entry = dict(
                 version=self.version,
                 # Probability exceeding Horizontal Containment Radius
                 pHCR=phcr,
@@ -886,12 +883,10 @@ class Aircraft(object):
                 sil_base=base,
             )
             if last_entry is not None and last_entry["timestamp"] == t:
-                self.cumul[-1] = {**last_entry, **current}  # type: ignore
+                self.cumul[-1] = {**last_entry, **current}
             else:
                 self.cumul.append(
-                    dict(  # type: ignore
-                        timestamp=t, icao24=self.icao24, **current
-                    )
+                    dict(timestamp=t, icao24=self.icao24, **current)
                 )
 
 
@@ -981,7 +976,7 @@ class ModeS_Decoder:
     decode_thread: Optional[StoppableThread]
     timer_thread: Optional[StoppableThread]
     timer_functions: list[
-        tuple[pd.Timestamp, pd.Timedelta, Callable[[Decoder], None]]
+        tuple[pd.Timestamp, pd.Timedelta, Callable[[D], None]]
     ] = list()  # noqa: RUF012
 
     def __init__(
@@ -1027,14 +1022,12 @@ class ModeS_Decoder:
     @classmethod
     def on_timer(
         cls, frequency: pd.Timedelta | str
-    ) -> Callable[[Callable[[Decoder], None]], Callable[[Decoder], None]]:
+    ) -> Callable[[Callable[[D], None]], Callable[[D], None]]:
         now = pd.Timestamp("now", tz="utc")
         if isinstance(frequency, str):
             frequency = pd.Timedelta(frequency)
 
-        def decorate(
-            function: Callable[[Decoder], None]
-        ) -> Callable[[Decoder], None]:
+        def decorate(function: Callable[[D], None]) -> Callable[[D], None]:
             _log.info(f"Schedule {function.__name__} with {frequency}")
             heapq.heappush(
                 cls.timer_functions,
@@ -1075,14 +1068,14 @@ class ModeS_Decoder:
 
     @classmethod
     def from_file(
-        cls: Type[Decoder],
+        cls: Type[D],
         filename: str | Path,
         reference: str | Airport | tuple[float, float],
         uncertainty: bool = False,
         crc_check: bool = False,
         template: str = "time, longmsg",
         sep: str = ",",
-    ) -> Decoder:
+    ) -> D:
         """Decode raw messages dumped in a text file.
 
         The file should contain for each line at least a timestamp and an
@@ -1137,7 +1130,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_binary(
-        cls: Type[Decoder],
+        cls: Type[D],
         filename: Union[str, Path],
         reference: Union[str, Airport, tuple[float, float]],
         *,
@@ -1147,7 +1140,7 @@ class ModeS_Decoder:
         time_0: Optional[datetime] = None,
         redefine_mag: int = 10,
         fh: Optional[TextIO] = None,
-    ) -> Decoder:
+    ) -> D:
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
@@ -1190,11 +1183,11 @@ class ModeS_Decoder:
 
     @classmethod
     def from_rtlsdr(
-        cls: Type[Decoder],
+        cls: Type[D],
         reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_rtlsdr.csv",
         uncertainty: bool = False,
-    ) -> Decoder:  # coverage: ignore
+    ) -> D:  # coverage: ignore
         """Decode raw messages dumped from a RTL-SDR receiver.
 
         :param reference: the reference location, as specified above
@@ -1233,7 +1226,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_socket(
-        cls: Type[Decoder],
+        cls: Type[D],
         s: socket.socket,
         reference: Union[str, Airport, tuple[float, float]],
         *,
@@ -1243,7 +1236,7 @@ class ModeS_Decoder:
         time_0: Optional[datetime] = None,
         redefine_mag: int = 7,
         fh: Optional[TextIO] = None,
-    ) -> Decoder:  # coverage: ignore
+    ) -> D:  # coverage: ignore
         decoder = cls(reference)
         redefine_freq = 2**redefine_mag - 1
         decode_time_here = decode_time.get(time_fmt, decode_time_default)
@@ -1346,11 +1339,11 @@ class ModeS_Decoder:
 
     @classmethod
     def from_dump1090(
-        cls: Type[Decoder],
+        cls: Type[D],
         reference: Union[str, Airport, tuple[float, float]],
         file_pattern: str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
         uncertainty: bool = False,
-    ) -> Decoder:  # coverage: ignore
+    ) -> D:  # coverage: ignore
         """Decode raw messages dumped from `dump1090
         <https://github.com/MalcolmRobb/dump1090/>`_
 
@@ -1388,7 +1381,7 @@ class ModeS_Decoder:
 
     @classmethod
     def from_address(
-        cls: Type[Decoder],
+        cls: Type[D],
         host: str,
         port: int,
         reference: Union[str, Airport, tuple[float, float]],
@@ -1396,7 +1389,7 @@ class ModeS_Decoder:
         time_fmt: str = "radarcape",
         uncertainty: bool = False,
         tcp: bool = True,
-    ) -> Decoder:  # coverage: ignore
+    ) -> D:  # coverage: ignore
         """Decode raw messages transmitted over a TCP or UDP network.
 
         The file should contain for each line at least a timestamp and an
@@ -1659,3 +1652,135 @@ class ModeS_Decoder:
         with self.acs[icao].lock:
             ac = self.acs[icao]
         return ac.flight
+
+
+def encode_time_dump1090(times: pd.Series) -> pd.Series:
+    if isinstance(times.iloc[0], pd.datetime):
+        times = times.astype(np.int64) * 1e-9
+    ref_time = times.iloc[0]
+    rel_times = times - ref_time
+    rel_times = rel_times * 12e6
+    rel_times = rel_times.apply(lambda row: hex(int(row))[2:].zfill(12))
+    return rel_times
+
+
+encode_time: Dict[str, Callable[[pd.Series], pd.Series]] = {
+    "dump1090": encode_time_dump1090
+}
+
+
+class RawData(DataFrameMixin):
+    def __init__(self, data: pd.DataFrame, *args: Any, **kwargs: Any) -> None:
+        super().__init__(data, *args, **kwargs)
+
+        for column_name in ["timestamp", "mintime", "maxtime"]:
+            if column_name in self.data.columns:
+                if data[column_name].dtype == np.float64:
+                    self.data = self.data.assign(
+                        **{
+                            column_name: pd.to_datetime(
+                                data[column_name], unit="s", utc=True
+                            )
+                        }
+                    )
+
+    def __add__(self: R, other: R) -> R:
+        return self.__class__.from_list([self, other])
+
+    @classmethod
+    def from_list(cls: Type[R], elts: Iterable[Optional[R]]) -> R:
+        res = cls(
+            pd.concat(list(x.data for x in elts if x is not None), sort=False)
+        )
+        return res.sort_values("mintime")
+
+    def decode(
+        self: R,
+        reference: Union[None, str, Airport, Tuple[float, float]] = None,
+        *,
+        uncertainty: bool = False,
+        # assume that data you get from a file or DB is already CRC-checked
+        crc_check: bool = False,
+        progressbar: Union[bool, ProgressbarType[U]] = True,
+        progressbar_kw: Optional[Dict[str, Any]] = None,
+        redefine_mag: int = 10,
+    ) -> Optional[Traffic]:
+        decoder = ModeS_Decoder(reference)
+        redefine_freq = 2**redefine_mag - 1
+
+        if progressbar is True:
+            if progressbar_kw is None:
+                progressbar_kw = dict()
+
+            def custom_tqdm(x: Iterable[U]) -> Iterable[U]:
+                return tqdm(  # type: ignore
+                    x, total=self.data.shape[0], **progressbar_kw
+                )
+
+            progressbar = custom_tqdm
+        elif progressbar is False:
+
+            def identity(x: Iterable[U]) -> Iterable[U]:
+                return x
+
+            progressbar = identity
+
+        data = self.data.rename(  # fill with other common renaming rules
+            columns={
+                "mintime": "timestamp",
+                "time": "timestamp",
+                "groundspeed": "spd",
+                "speed": "spd",
+                "altitude": "alt",
+                "track": "trk",
+            }
+        )
+
+        use_extra = all(x in data.columns for x in ["alt", "spd", "trk"])
+
+        for i, (_, line) in progressbar(enumerate(data.iterrows())):
+            extra = (
+                dict(
+                    spd=line.spd,
+                    trk=line.trk,
+                    alt=line.alt,
+                    crc_check=crc_check,
+                    uncertainty=uncertainty,
+                )
+                if use_extra
+                else dict(uncertainty=uncertainty, crc_check=crc_check)
+            )
+
+            decoder.process(line.timestamp, line.rawmsg, **extra)
+
+            if i & redefine_freq == redefine_freq:
+                decoder.redefine_reference(line.timestamp)
+
+        return decoder.traffic
+
+    def assign_type(self) -> "RawData":
+        def get_typecode(msg: str) -> Optional[int]:
+            tc = pms.adsb.typecode(msg)
+            if tc is None:
+                return None
+            elif 9 <= tc <= 18:
+                return 3
+            elif tc == 19:
+                return 4
+            elif 1 <= tc <= 4:
+                return 1
+            else:
+                return None
+
+        return self.assign(msg_type=lambda df: df.rawmsg.apply(get_typecode))
+
+    def assign_beast(self, time_fmt: str = "dump1090") -> "RawData":
+        # Only one time encoder implemented for now
+        encoder = encode_time.get(time_fmt, encode_time_dump1090)
+
+        return self.assign(encoded_time=lambda df: encoder(df.mintime)).assign(
+            beast=lambda df: "@" + df.encoded_time + df.rawmsg
+        )
+
+    def to_beast(self, time_fmt: str = "dump1090") -> pd.Series:
+        return self.assign_beast(time_fmt).data["beast"]

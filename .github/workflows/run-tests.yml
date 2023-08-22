@@ -46,10 +46,10 @@ jobs:
           repository: xoolive/traffic_data
           token: ${{ secrets.PRIVATE_TOKEN }}
           persist-credentials: false
-          path: ./data/traffic_data
+          path: ./traffic_data
 
       - name: Create LFS file list (private repository)
-        working-directory: ./data/traffic_data
+        working-directory: ./traffic_data
         run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
         shell: bash
 
@@ -57,11 +57,11 @@ jobs:
         uses: actions/cache@v3
         id: lfs-cache
         with:
-          path: ./data/traffic_data/.git/lfs
-          key: lfs-${{ hashFiles('./data/traffic_data/.lfs-assets-id') }}-v1
+          path: ./traffic_data/.git/lfs
+          key: lfs-${{ hashFiles('./traffic_data/.lfs-assets-id') }}-v1
 
       - name: Git LFS Pull (private repository)
-        working-directory: ./data/traffic_data
+        working-directory: ./traffic_data
         run: |
           git remote set-url origin https://xoolive:${{ secrets.PRIVATE_TOKEN }}@github.com/xoolive/traffic_data.git
           git lfs pull
@@ -128,17 +128,16 @@ jobs:
       - name: Run tests
         env:
           LD_LIBRARY_PATH: /usr/local/lib
-          TRAFFIC_CACHE_NO_EXPIRE: ""
           TRAFFIC_NOPLUGIN: ""
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
-          PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
+          # PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
         run: |
           export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
 
-          sed -i "/nm_path =/ s,= $,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
-          sed -i "/pkcs12_filename =/ s,= .*$,= $PWD/data/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
-          sed -i "/pkcs12_password =/ s,= $,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
+          sed -i "/nm_path =/ s,= $,= $PWD/traffic_data/airac_2111," $TRAFFIC_CONFIG
+          # sed -i "/pkcs12_filename =/ s,= .*$,= $PWD/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
+          # sed -i "/pkcs12_password =/ s,= $,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
 
           # Don't purge OpenSky cache files here :)
           sed -i "/purge = / d" $TRAFFIC_CONFIG

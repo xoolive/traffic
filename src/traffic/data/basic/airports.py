@@ -1,10 +1,9 @@
-# flake8: noqa
-
+# ruff: noqa: E501
 from __future__ import annotations
 
 import io
 from pathlib import Path
-from typing import Optional
+from typing import Any, ClassVar
 
 import requests
 from tqdm.rich import tqdm
@@ -43,14 +42,14 @@ class Airports(GeoDBMixin):
     """
 
     cache_dir: Path
-    expiration_days: Optional[int]
+    expiration_days: None | int
 
-    src_dict = dict(
+    src_dict: ClassVar[dict[str, tuple[str, str]]] = dict(
         fr24=("airports_fr24.parquet", "download_fr24"),
         open=("airports_ourairports.parquet", "download_airports"),
     )
 
-    columns_options = dict(
+    columns_options: ClassVar[dict[str, dict[str, Any]]] = dict(  # type: ignore
         name=dict(),
         country=dict(justify="right"),
         icao=dict(style="blue bold"),
@@ -60,7 +59,7 @@ class Airports(GeoDBMixin):
     )
 
     def __init__(self, data: None | pd.DataFrame = None) -> None:
-        self._data: Optional[pd.DataFrame] = data
+        self._data: None | pd.DataFrame = data
         self._src = "open"
 
     def download_airports(self) -> None:  # coverage: ignore

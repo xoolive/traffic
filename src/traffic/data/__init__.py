@@ -238,7 +238,7 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "opensky":
-        from . import session
+        # from . import session
         from .adsb.opensky import OpenSky
 
         # give priority to the OPENSKY_CACHE environment variable
@@ -251,11 +251,11 @@ def __getattr__(name: str) -> Any:
             opensky_cache_path = cache_dir / "opensky"
 
         opensky = OpenSky(
-            opensky_username,
-            opensky_password,
-            opensky_cache_path,
-            session,
-            paramiko_proxy,
+            # opensky_username,
+            # opensky_password,
+            # opensky_cache_path,
+            # session,
+            # paramiko_proxy,
         )
         res = opensky
         _cached_imports[name] = res

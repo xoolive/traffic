@@ -37,10 +37,12 @@ repos:
         additional_dependencies:
           - types-pkg-resources
           - types-requests
-          - types-paramiko
           - types-flask
           - types-waitress
+          - impunity
+          - pitot
           - pyModeS
+          - pyopensky
           - pytest
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.0.0-alpha.0

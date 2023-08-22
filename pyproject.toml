@@ -2,7 +2,7 @@
 name = "traffic"
 homepage = "https://github.com/xoolive/traffic/"
 documentation = "https://traffic-viz.github.io/"
-version = "2.8.2.dev41"
+version = "0.0.0"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"
@@ -31,13 +31,14 @@ include = [
   "license.md",
   "traffic.conf",
   "py.typed",
+  ".dat",
   "*.json.*",
   ".onnx",
   "allft_fields.txt"
 ]
 
 [tool.poetry-dynamic-versioning]
-enable = false
+enable = true
 bump = true
 metadata = false
 
@@ -50,17 +51,18 @@ CesiumJS = "traffic.plugins.cesiumjs"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
+impunity = ">=1.0.4"
+# impunity = { path = "../impunity", develop = true}
 pitot = ">=0.3.1"
 # pitot = { path = "../pitot", develop = true }
 cartes = ">=0.7.4"
 # cartes = { path = "../cartes", develop = true }
-pyopensky = { git = "https://github.com/open-aviation/pyopensky", branch = "v2.0" }
+pyopensky = ">=2.0"
 # pyopensky = { path = "../pyopensky", develop = true }
 requests = ">=2.27"
-paramiko = ">=2.7"
 ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
-pyModeS = ">=2.16"
+pyModeS = ">=2.17"
 # pyModeS = { path = "../pyModeS", extras = ["rtlsdr"], develop = true }
 openap = ">=1.1"
 metar = ">=1.8"
@@ -106,7 +108,6 @@ types-requests = ">=2.25.0"
 types-flask = ">=1.1.6"
 types-waitress = ">=2.0.8"
 requests = { extras = ["socks"], version = ">=2.27" }
-types-paramiko = "^3.3.0.0"
 
 
 [build-system]
@@ -162,8 +163,9 @@ warn_unused_ignores = true
 [tool.pytest.ini_options]
 addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff"
 testpaths = [
-    "src/traffic/data/basic/",
     "src/traffic/core/intervals.py",
+    "src/traffic/core/time.py",
+    "src/traffic/data/basic/",
     "tests"
 ]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]

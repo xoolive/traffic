@@ -18,13 +18,13 @@ from typing import (
     cast,
 )
 
+import pitot.geodesy as geo
 from typing_extensions import NotRequired, TypedDict
 
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, MultiLineString, Point, Polygon
+from shapely.geometry import LineString, MultiLineString, Point, Polygon, base
 
-from ..core.geodesy import destination, distance, mrr_diagonal
 from ..core.iterator import flight_iterator
 from ..core.time import deltalike, to_timedelta
 
@@ -37,7 +37,34 @@ if TYPE_CHECKING:
     from ..data.basic.airports import Airports
     from ..data.basic.navaid import Navaids
 
+
 _log = logging.getLogger(__name__)
+
+
+def mrr_diagonal(geom: base.BaseGeometry) -> float:
+    """
+    Returns the length of the diagonal of the minimum rotated rectangle around
+    a given shape.
+
+    Consider using a :meth:`~traffic.core.mixins.ShapelyMixin.project_shape`
+    method before applying this method if you need a distance in meters.
+
+    """
+    if len(geom) <= 1:
+        return 0
+    if len(geom) == 2:
+        return geo.distance(  # type: ignore
+            lat1=geom[0].y, lon1=geom[0].x, lat2=geom[1].y, lon2=geom[1].x
+        )
+    mrr = LineString(geom).minimum_rotated_rectangle
+    if isinstance(mrr, Point):
+        return 0
+    try:  # in most cases, mrr is a Polygon
+        x, y = mrr.exterior.coords.xy
+    except AttributeError:  # then it should be a LineString
+        p0, p1 = mrr.coords[0], mrr.coords[-1]
+        return geo.distance(p0[1], p0[0], p1[1], p1[0])  # type: ignore
+    return geo.distance(y[0], x[0], y[2], x[2])  # type: ignore
 
 
 class PointMergeParams(TypedDict):
@@ -547,31 +574,31 @@ class NavigationFeatures:
         base = zone_length * np.tan(opening * np.pi / 180) + little_base
 
         # Create shapes around each runway
-        list_p0 = destination(
+        list_p0 = geo.destination(
             list(_airport.runways.data.latitude),
             list(_airport.runways.data.longitude),
             list(_airport.runways.data.bearing),
             [zone_length for i in range(nb_run)],
         )
-        list_p1 = destination(
+        list_p1 = geo.destination(
             list(_airport.runways.data.latitude),
             list(_airport.runways.data.longitude),
             [x + 90 for x in list(_airport.runways.data.bearing)],
             [little_base for i in range(nb_run)],
         )
-        list_p2 = destination(
+        list_p2 = geo.destination(
             list(_airport.runways.data.latitude),
             list(_airport.runways.data.longitude),
             [x - 90 for x in list(_airport.runways.data.bearing)],
             [little_base for i in range(nb_run)],
         )
-        list_p3 = destination(
+        list_p3 = geo.destination(
             list_p0[0],
             list_p0[1],
             [x - 90 for x in list(_airport.runways.data.bearing)],
             [base for i in range(nb_run)],
         )
-        list_p4 = destination(
+        list_p4 = geo.destination(
             list_p0[0],
             list_p0[1],
             [x + 90 for x in list(_airport.runways.data.bearing)],
@@ -1461,8 +1488,8 @@ class NavigationFeatures:
             def extremities_dist(twy: MultiLineString) -> float:
                 p1_proj = twy.interpolate(twy.project(p1))
                 p2_proj = twy.interpolate(twy.project(p2))
-                d1 = distance(p1_proj.y, p1_proj.x, p1.y, p1.x)
-                d2 = distance(p2_proj.y, p2_proj.x, p2.y, p2.x)
+                d1 = geo.distance(p1_proj.y, p1_proj.x, p1.y, p1.x)
+                d2 = geo.distance(p2_proj.y, p2_proj.x, p2.y, p2.x)
                 return d1 + d2  # type: ignore
 
             temp_ = taxiways.assign(dist=np.vectorize(extremities_dist))

@@ -1,5 +1,4 @@
-# flake8: noqa
-
+# ruff: noqa: E501
 from __future__ import annotations
 
 import logging
@@ -7,7 +6,7 @@ import re
 from functools import lru_cache
 from numbers import Integral, Real
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence, Type, TypeVar
 
 from ipyleaflet import Marker as LeafletMarker
 from ipywidgets import HTML
@@ -22,12 +21,14 @@ import pyproj
 from shapely.geometry import Point, base, mapping
 from shapely.ops import transform
 
+from . import types as tt
+
 if TYPE_CHECKING:
     import altair as alt
     import xarray
     from cartopy import crs
     from matplotlib.artist import Artist
-    from matplotlib.axes._subplots import Axes
+    from matplotlib.axes import Axes
 
 
 T = TypeVar("T", bound="DataFrameMixin")
@@ -46,7 +47,9 @@ class DataFrameMixin(object):
 
     __slots__ = ()
 
-    table_options: dict[str, Any] = dict(show_lines=False, box=SIMPLE_HEAVY)
+    table_options: ClassVar[dict[str, Any]] = dict(
+        show_lines=False, box=SIMPLE_HEAVY
+    )
     max_rows: int = 10
     columns_options: None | dict[str, dict[str, Any]] = None
     _obfuscate: None | list[str] = None
@@ -59,8 +62,8 @@ class DataFrameMixin(object):
 
     @classmethod
     def from_file(
-        cls: Type[T], filename: Union[str, Path], **kwargs: Any
-    ) -> Optional[T]:
+        cls: Type[T], filename: str | Path, **kwargs: Any
+    ) -> None | T:
         """Read data from various formats.
 
         This class method dispatches the loading of data in various format to
@@ -211,9 +214,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.merge(*args, **kwargs))
 
-    def query(
-        self: T, query_str: str, *args: Any, **kwargs: Any
-    ) -> Optional[T]:
+    def query(self: T, query_str: str, *args: Any, **kwargs: Any) -> None | T:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.query` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -248,7 +249,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.reset_index(*args, **kwargs))
 
-    def sort_values(self: T, by: Union[str, Sequence[str]], **kwargs: Any) -> T:
+    def sort_values(self: T, by: str | Sequence[str], **kwargs: Any) -> T:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.sort_values` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -257,7 +258,7 @@ class DataFrameMixin(object):
         return self.__class__(self.data.sort_values(by, **kwargs))
 
     def to_pickle(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to pickle format.
 
@@ -270,7 +271,7 @@ class DataFrameMixin(object):
         self.data.to_pickle(filename, *args, **kwargs)
 
     def to_csv(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to CSV format.
 
@@ -283,7 +284,7 @@ class DataFrameMixin(object):
         self.data.to_csv(filename, *args, **kwargs)
 
     def to_hdf(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to HDF format.
 
@@ -296,7 +297,7 @@ class DataFrameMixin(object):
         self.data.to_hdf(filename, *args, **kwargs)
 
     def to_json(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to JSON format.
 
@@ -309,7 +310,7 @@ class DataFrameMixin(object):
         self.data.to_json(filename, *args, **kwargs)
 
     def to_parquet(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to parquet format.
 
@@ -322,7 +323,7 @@ class DataFrameMixin(object):
         self.data.to_parquet(filename, *args, **kwargs)
 
     def to_feather(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to feather format.
 
@@ -335,7 +336,7 @@ class DataFrameMixin(object):
         self.data.to_feather(filename, *args, **kwargs)
 
     def to_excel(
-        self, filename: Union[str, Path], *args: Any, **kwargs: Any
+        self, filename: str | Path, *args: Any, **kwargs: Any
     ) -> None:  # coverage: ignore
         """Exports to Excel format.
 
@@ -527,7 +528,7 @@ class GeographyMixin(DataFrameMixin):
         return self.__class__(self.data.assign(x=x, y=y))
 
     def compute_latlon_from_xy(
-        self: T, projection: Union[pyproj.Proj, "crs.Projection"]
+        self: T, projection: pyproj.Proj | crs.Projection
     ) -> T:
         """Enrich a DataFrame with new longitude and latitude columns computed
         from x and y columns.
@@ -747,7 +748,7 @@ class GeoDBMixin(DataFrameMixin):
         self: G,
         extent: str | ShapelyMixin | tuple[float, float, float, float],
         buffer: float = 0.5,
-    ) -> Optional[G]:
+    ) -> None | G:
         """
         Selects the subset of data inside the given extent.
 
@@ -848,10 +849,11 @@ class GeoDBMixin(DataFrameMixin):
         )
 
 
-class PointMixin(object):
-    latitude: float
-    longitude: float
-    altitude: float
+class PointMixin:
+    latitude: tt.angle
+    longitude: tt.angle
+    altitude: tt.altitude
+    track: tt.angle
     timestamp: pd.Timestamp
     name: str
 
@@ -889,7 +891,6 @@ class PointMixin(object):
         **kwargs: Any,
     ) -> list["Artist"]:  # coverage: ignore
         if shift is None:
-            # flake B006
             shift = dict(units="dots", x=15)
 
         if text_kw is None:

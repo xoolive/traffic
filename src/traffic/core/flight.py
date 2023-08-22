@@ -31,9 +31,11 @@ from typing import (
 )
 
 import rich.repr
+from impunity import impunity
 from ipyleaflet import Map as LeafletMap
 from ipyleaflet import Polyline as LeafletPolyline
 from ipywidgets import HTML
+from pitot import geodesy as geo
 from rich.console import Console, ConsoleOptions, RenderResult
 
 import numpy as np
@@ -47,9 +49,8 @@ from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
+from ..core import types as tt
 from ..core.structure import Airport
-from ..core.types import ProgressbarType
-from . import geodesy as geo
 from .intervals import Interval, IntervalCollection
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
@@ -60,9 +61,9 @@ if TYPE_CHECKING:
     from cartopy import crs
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
-    from matplotlib.axes._subplots import Axes
+    from matplotlib.axes import Axes
 
-    from ..data.adsb.raw_data import RawData
+    from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
     from .airspace import Airspace
@@ -1818,7 +1819,10 @@ class Flight(
     def comet(self, **kwargs: Any) -> Flight:
         raise DeprecationWarning("Use Flight.forward() method instead")
 
-    def forward(self, **kwargs: Any) -> Flight:
+    @impunity(ignore_warnings=True)
+    def forward(
+        self, delta: None | str | pd.Timedelta = None, **kwargs: Any
+    ) -> "Flight":
         """Projects the trajectory in a straight line.
 
         The method uses the last position of a trajectory (method `at()
@@ -1842,22 +1846,27 @@ class Flight(
         if last_line is None:
             raise ValueError("Unknown data for this flight")
         window = self.last(seconds=20)
-        delta = timedelta(**kwargs)
+        if isinstance(delta, str):
+            delta = pd.Timedelta(delta)
+        if delta is None:
+            delta = timedelta(**kwargs)
 
         if window is None:
             raise RuntimeError("Flight expect at least 20 seconds of data")
 
-        new_gs = window.data.groundspeed.mean()
-        new_vr = window.data.vertical_rate.mean()
+        new_gs: tt.speed = window.data.groundspeed.mean()
+        new_vr: tt.vertical_rate = window.data.vertical_rate.mean()
+        duration: tt.seconds = delta.total_seconds()
 
         new_lat, new_lon, _ = geo.destination(
             last_line.latitude,
             last_line.longitude,
             last_line.track,
-            new_gs * delta.total_seconds() * 1852 / 3600,
+            new_gs * duration,
         )
 
-        new_alt = last_line.altitude + new_vr * delta.total_seconds() / 60
+        last_alt: tt.altitude = last_line.altitude
+        new_alt: tt.altitude = last_alt + new_vr * duration
 
         return Flight(
             pd.DataFrame.from_records(
@@ -2133,11 +2142,12 @@ class Flight(
     ) -> Optional[pd.DataFrame]:
         ...
 
+    @impunity(ignore_warnings=True)
     def distance(
         self,
-        other: Union[None, Flight, "Airspace", Polygon, PointMixin] = None,
+        other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
         column_name: str = "distance",
-    ) -> Union[None, float, Flight, pd.DataFrame]:
+    ) -> Union[None, float, "Flight", pd.DataFrame]:
         """Computes the distance from a Flight to another entity.
 
         The behaviour is different according to the type of the second
@@ -2171,29 +2181,25 @@ class Flight(
             last = self.at_ratio(1)
             if first is None or last is None:
                 return 0
-            return (
-                geo.distance(
-                    first.latitude,
-                    first.longitude,
-                    last.latitude,
-                    last.longitude,
-                )
-                / 1852  # in nautical miles
+            result: tt.distance = geo.distance(
+                first.latitude,
+                first.longitude,
+                last.latitude,
+                last.longitude,
             )
+            return result
+
+        distance_vec: tt.distance_array
 
         if isinstance(other, PointMixin):
             size = self.data.shape[0]
-            return self.assign(
-                **{
-                    column_name: geo.distance(
-                        self.data.latitude.values,
-                        self.data.longitude.values,
-                        other.latitude * np.ones(size),
-                        other.longitude * np.ones(size),
-                    )
-                    / 1852  # in nautical miles
-                }
+            distance_vec = geo.distance(
+                self.data.latitude.values,
+                self.data.longitude.values,
+                other.latitude * np.ones(size),
+                other.longitude * np.ones(size),
             )
+            return self.assign(**{column_name: distance_vec})
 
         from .airspace import Airspace
 
@@ -2243,14 +2249,14 @@ class Flight(
             cols.append("flight_id")
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
+        distance_vec = geo.distance(
+            table.latitude_x.values,
+            table.longitude_x.values,
+            table.latitude_y.values,
+            table.longitude_y.values,
+        )
         return table.assign(
-            lateral=geo.distance(
-                table.latitude_x.values,
-                table.longitude_x.values,
-                table.latitude_y.values,
-                table.longitude_y.values,
-            )
-            / 1852,  # in nautical miles
+            lateral=distance_vec,
             vertical=(table.altitude_x - table.altitude_y).abs(),
         )
 
@@ -2361,6 +2367,7 @@ class Flight(
             .rename(columns=dict(NSE=column_name))
         )
 
+    @impunity(ignore_warnings=True)
     def cumulative_distance(
         self,
         compute_gs: bool = True,
@@ -2368,7 +2375,7 @@ class Flight(
         *,
         reverse: bool = False,
         **kwargs: Any,
-    ) -> Flight:
+    ) -> "Flight":
         """Enrich the structure with new ``cumdist`` column computed from
         latitude and longitude columns.
 
@@ -2395,7 +2402,8 @@ class Flight(
 
         delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
         delta_1 = delta.iloc[1:]
-        d = geo.distance(
+        distance_nm: tt.distance_array
+        distance_nm = geo.distance(
             (delta_1.latitude - delta_1.latitude_1).values,
             (delta_1.longitude - delta_1.longitude_1).values,
             delta_1.latitude.values,
@@ -2403,12 +2411,15 @@ class Flight(
         )
 
         res = cur_sorted.assign(
-            cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant")
+            cumdist=np.pad(distance_nm.cumsum(), (1, 0), "constant")
         )
 
         if compute_gs:
-            gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
-            res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "edge")))
+            secs: tt.seconds_array = delta_1.timestamp_1.dt.total_seconds()
+            groundspeed: tt.speed_array = distance_nm / secs
+            res = res.assign(
+                compute_gs=np.abs(np.pad(groundspeed, (1, 0), "edge"))
+            )
 
         if compute_track:
             track = geo.bearing(
@@ -2593,10 +2604,11 @@ class Flight(
     # -- OpenSky specific methods --
 
     def query_opensky_sensors(self, where_condition: str = "") -> pd.DataFrame:
+        # TODO Deprecate??
         from ..data import opensky
 
         return (
-            opensky.request(
+            opensky.impala_client.request(
                 "select s.ITEM, count(*) from state_vectors_data4, "
                 "state_vectors_data4.serials s "
                 f"where icao24='{self.icao24}' and "
@@ -2647,8 +2659,8 @@ class Flight(
     def query_ehs(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
-        failure_mode: str = "warning",
-        progressbar: Union[bool, ProgressbarType[Any]] = True,
+        failure_mode: str = "info",
+        progressbar: Union[bool, tt.ProgressbarType[Any]] = False,
     ) -> Flight:
         """Extends data with extra columns from EHS messages.
 
@@ -2673,7 +2685,7 @@ class Flight(
         """
 
         from ..data import opensky
-        from ..data.adsb.raw_data import RawData
+        from ..data.adsb.decode import RawData
 
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")
@@ -2689,13 +2701,23 @@ class Flight(
             id_ = self.flight_id
             if id_ is None:
                 id_ = self.callsign
-            _log.warning(f"No data on Impala for flight {id_}.")
+            _log.warning(f"No data found on OpenSky database for flight {id_}.")
+            return self
+
+        def fail_info() -> Flight:
+            """Called when nothing can be added to data."""
+            id_ = self.flight_id
+            if id_ is None:
+                id_ = self.callsign
+            _log.info(f"No data found on OpenSky database for flight {id_}.")
             return self
 
         def fail_silent() -> Flight:
             return self
 
-        failure_dict = dict(warning=fail_warning, silent=fail_silent)
+        failure_dict = dict(
+            warning=fail_warning, info=fail_info, silent=fail_silent
+        )
         failure = failure_dict[failure_mode]
 
         if data is None:
@@ -2738,9 +2760,16 @@ class Flight(
         identifier = (
             self.flight_id if self.flight_id is not None else self.callsign
         )
+        reference: None | str | tuple[float, float] = None
+        if isinstance(self.origin, str):
+            reference = self.origin
+        elif position := self.query("latitude.notnull()"):
+            p0 = position.at_ratio(0)
+            assert p0 is not None
+            reference = p0.latlon
 
         t = RawData(referenced_df).decode(
-            reference=self.origin if isinstance(self.origin, str) else None,
+            reference=reference,
             progressbar=progressbar,
             progressbar_kw=dict(leave=False, desc=f"{identifier}:"),
         )

@@ -474,8 +474,9 @@ def _flight_intersects(
     - If a shapely Geometry is passed, the 2D trajectory alone is
       considered.
     """
-    linestring = flight.linestring
-    if linestring is None:
+    if "altitude" in flight.data.columns:
+        flight = flight.query("altitude.notnull()")  # type: ignore
+    if flight is None or (linestring := flight.linestring) is None:
         return False
     if isinstance(shape, base.BaseGeometry):
         return not linestring.intersection(shape).is_empty
