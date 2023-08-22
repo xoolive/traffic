@@ -5,7 +5,7 @@ Following the invasion of Ukraine, most European countries banned Russian
 aircraft from flying their airspace.  This raised the question of Kaliningrad
 exclave being isolated from the rest of the country. It seems that after
 February 27, commercial flights between mainland Russia and Kaliningrad have
-been flying on the thin border between Finland, Sweden and Baltic states 
+been flying on the thin border between Finland, Sweden and Baltic states
 :ref:`Flight Information Regions (FIR) <How to access airspace information?>`.
 
 Actually, operations are almost in a "business as usual" situation:
@@ -20,16 +20,14 @@ Actually, operations are almost in a "business as usual" situation:
     :hide-output:
 
     from traffic.data import opensky
-    import pandas as pd
 
     t = opensky.history(
         "2022-02-22",
         "2022-03-06",
-        date_delta=pd.Timedelta("1day"),
         callsign=[
             # Some callsigns between Moscow, Saint Petersburg and Kaliningrad
-            "AFL1000", "AFL1002", "AFL1004", "AFL1006", "AFL1008",
-            "SDM6323", "SDM6325", "SDM6329",
+            "AFL1000 ", "AFL1002 ", "AFL1004 ", "AFL1006 ", "AFL1008 ",
+            "SDM6323 ", "SDM6325 ", "SDM6329 ",
         ],
     )
 

@@ -3,7 +3,7 @@ How to access ADS-B data from OpenSky history database?
 
 For more advanced request or a dig in further history, you may be
 eligible for an direct access to the history database through their
-`Impala <https://opensky-network.org/impala-guide>`__ shell.
+`Impala <https://opensky-network.org/impala-guide>`__ shell or Trino database.
 
 .. warning::
 
@@ -19,8 +19,8 @@ Provided functions are here to help:
   files;
 - parse results with pandas and wrap results in appropriate data structures.
 
-The first thing to do is to put your credentials in you configuration
-file. Edit the following lines to your configuration file.
+The first thing to do is to put your credentials in your configuration
+file. Edit the following lines of your configuration file.
 
 
 .. parsed-literal::
@@ -43,7 +43,7 @@ the contents of the variable.
 Historical traffic data
 -----------------------
 
-.. automethod:: traffic.data.adsb.opensky_impala.Impala.history
+.. automethod:: traffic.data.adsb.opensky.OpenSky.history
 
 Examples of requests
 ~~~~~~~~~~~~~~~~~~~~
@@ -119,10 +119,10 @@ Database but you may access them and decode them from your computer.
     | ``Flight.query_ehs()`` messages also takes a dataframe argument to avoid
       making possibly numerous requests to the Impala database.
     | Consider using `opensky.extended()
-      <#traffic.data.adsb.opensky_impala.Impala.extended>`_ and request all
+      <#traffic.data.adsb.opensky.OpenSky.extended>`_ and request all
       necessary data, then pass the resulting dataframe as an argument.
 
-.. automethod:: traffic.data.adsb.opensky_impala.Impala.extended
+.. automethod:: traffic.data.adsb.opensky.OpenSky.extended
 
 Examples of requests
 ~~~~~~~~~~~~~~~~~~~~
@@ -190,14 +190,9 @@ Examples of requests
 Flight list by airport
 ----------------------
 
-.. automethod:: traffic.data.adsb.opensky_impala.Impala.flightlist
+.. automethod:: traffic.data.adsb.opensky.OpenSky.flightlist
 
 Requests for raw data
 ---------------------
 
-.. automethod:: traffic.data.adsb.opensky_impala.Impala.rawdata
-
-Custom requests
----------------
-
-.. automethod:: traffic.data.adsb.opensky_impala.Impala.request
+.. automethod:: traffic.data.adsb.opensky.OpenSky.rawdata

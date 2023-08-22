@@ -84,14 +84,9 @@ jobs:
         with:
           path: |
             ~/.cache/traffic/
+            ~/.cache/opensky/
             ~/.cache/cartes/
           key: traffic-${{ runner.os }}
-
-      - name: Populate first cache files
-        if: steps.cache-folder.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ~/.cache/traffic/
-          cp data/navdata/earth_*.dat ~/.cache/traffic/
 
       - name: Ubuntu system dependencies
         run: |

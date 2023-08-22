@@ -28,7 +28,7 @@ Sources of data
    data_sources/airspaces
    data_sources/flightplans
    data_sources/opensky_rest
-   data_sources/opensky_impala
+   data_sources/opensky_db
    data_sources/decode
 
 .. toctree::
