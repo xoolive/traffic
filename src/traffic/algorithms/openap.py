@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import count
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Union, cast
 
 from impunity import impunity
 from pitot import aero
@@ -58,9 +58,9 @@ class OpenAP:
     @impunity(ignore_warnings=True)
     def fuelflow(
         self,
-        initial_mass: None | str | float = None,
-        typecode: None | str = None,
-        engine: None | str = None,
+        initial_mass: Union[None, str, float] = None,
+        typecode: Union[None, str] = None,
+        engine: Union[None, str] = None,
     ) -> "Flight":
         """Estimates the fuel flow with OpenAP.
 
@@ -161,7 +161,7 @@ class OpenAP:
 
     @impunity
     def emission(
-        self, mass: None | float = None, engine: None | str = None
+        self, mass: Union[None, float] = None, engine: Union[None, str] = None
     ) -> "Flight":
         import openap
 

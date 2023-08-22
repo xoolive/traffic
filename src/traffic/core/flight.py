@@ -1821,7 +1821,7 @@ class Flight(
 
     @impunity(ignore_warnings=True)
     def forward(
-        self, delta: None | str | pd.Timedelta = None, **kwargs: Any
+        self, delta: Union[None, str, pd.Timedelta] = None, **kwargs: Any
     ) -> "Flight":
         """Projects the trajectory in a straight line.
 
