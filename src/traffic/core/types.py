@@ -14,6 +14,7 @@ ProgressbarType = Callable[[Iterable[T]], Iterable[T]]
 class HasBounds(Protocol):
     bounds: tuple[float, float, float, float]
 
+
 ## Types for physical units (impunity)
 
 # sequence = Union[Sequence[float], npt.NDArray[np.float64]]
