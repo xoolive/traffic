@@ -1492,7 +1492,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         Example usage:
 
-        >>> from traffic.core.projection import EuroPP
+        >>> from cartes.crs import EuroPP
         >>> from sklearn.cluster import DBSCAN
         >>> from sklearn.preprocessing import StandardScaler
         >>>
