@@ -88,6 +88,14 @@ jobs:
             ~/.cache/cartes/
           key: traffic-${{ runner.os }}
 
+      - name: Cache folder for documentation
+        uses: actions/cache@v3
+        id: docs-folder
+        with:
+          path: |
+            docs/_build/
+          key: docs-${{ runner.os }}
+
       - name: Ubuntu system dependencies
         run: |
           sudo apt update

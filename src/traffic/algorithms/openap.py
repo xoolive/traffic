@@ -139,7 +139,7 @@ class OpenAP:
         if TAS is None:
             CAS: tt.speed_array = self.data.get("CAS", None)
             if CAS is not None:
-                TAS = aero.vcas2tas(CAS, altitude)
+                TAS = aero.cas2tas(CAS, altitude)
 
         if TAS is None:
             TAS = self.data.groundspeed  # unit: knots
@@ -190,7 +190,7 @@ class OpenAP:
         if TAS is None:
             CAS: tt.speed_array = self.data.get("CAS", None)
             if CAS is not None:
-                TAS = aero.vcas2tas(CAS, altitude)
+                TAS = aero.cas2tas(CAS, altitude)
 
         if TAS is None:
             TAS = self.data.groundspeed
