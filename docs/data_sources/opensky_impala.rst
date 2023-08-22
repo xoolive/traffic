@@ -103,44 +103,6 @@ Then you may send requests:
             serials=1433801924,
         )
 
-- with information about coverage:
-
-    .. jupyter-execute::
-        :hide-output:
-
-        from cartes.crs import EuroPP, PlateCarree
-        from cartes.utils.features import countries
-
-        flight = opensky.history(
-            "2018-06-11 15:00",
-            "2018-06-11 17:00",
-            callsign="KLM1308",
-            count=True,
-            return_flight=True,
-        )
-
-    .. jupyter-execute::
-
-        import matplotlib.pyplot as plt
-
-        with plt.style.context("traffic"):
-            fig, ax = plt.subplots(subplot_kw=dict(projection=EuroPP()))
-            ax.add_feature(countries())
-            ax.set_extent((-7, 13, 40, 55))
-            ax.spines["geo"].set_visible(False)
-
-            # no specific method for that in traffic
-            # but switch back to pandas DataFrame for manual plot
-            flight.data.plot.scatter(
-                ax=ax,
-                x="longitude",
-                y="latitude",
-                c="count",
-                transform=PlateCarree(),
-                s=5,
-                cmap="viridis",
-            )
-
 Extended Mode-S (EHS)
 ---------------------
 
