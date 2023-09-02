@@ -69,7 +69,7 @@ jobs:
           key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install and configure Poetry
-        uses: snok/install-poetry@v1.3.3
+        uses: snok/install-poetry@v1.3.4
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
