@@ -130,10 +130,10 @@ ACFT_ID,Flap_ID,R,Start CAS (kt),Comment
 747SP,10,0.095316,160,
 747SP,D-20,0.110347,141.5,
 747SP,D-30,0.143096,132.4,
-757300,ZERO,#N/A,250,Schedule and coefficients from 757PW
-757300,5,#N/A,160,Schedule and coefficients from 757PW
-757300,D-25,#N/A,136.5,Schedule and coefficients from 757PW
-757300,D-30,#N/A,134.2,Schedule and coefficients from 757PW
+757300,ZERO,0.0548,250,Schedule and coefficients from 757PW
+757300,5,0.0722,160,Schedule and coefficients from 757PW
+757300,D-25,0.1186,136.5,Schedule and coefficients from 757PW
+757300,D-30,0.1342,134.2,Schedule and coefficients from 757PW
 757PW,ZERO,0.0548,250,
 757PW,5,0.0722,160,
 757PW,D-25,0.1186,136.5,

@@ -2199,6 +2199,7 @@ class Flight(
             .shift(-1)
             .bfill()
             .ffill()
+            .clip(-5.0, 5.0)
         )
 
     def compute_climb_angle(self) -> Flight:
@@ -2223,6 +2224,7 @@ class Flight(
             .shift(-1)
             .bfill()
             .ffill()
+            .clip(-45.0, 45.0)
         )
 
     def compute_weather(
