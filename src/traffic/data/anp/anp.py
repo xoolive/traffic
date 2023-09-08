@@ -1,6 +1,6 @@
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Tuple, Union
 from zipfile import ZipFile
 
 import numpy as np
@@ -351,7 +351,7 @@ class Anp(object):
             cutback: Union[float, int, None] = None,
             vert_rate: Optional[Numeric] = None,
             break_temp: float = 30.0,
-    ) -> Numeric:
+    ) -> Tuple[Numeric, int]:
         """
         Calculate departure thrust for n points with the thrust rating
         equations B-1, B-4 and B-5 of Doc29.
@@ -377,6 +377,9 @@ class Anp(object):
         cutback was performed
         :param break_temp: (default: ``30``) the temperature at which the
         engine thrust output begins to sink
+
+        :returns The calculated thrust and the index at which thrust cutback
+        was estimated.
         """
         from scipy.signal import find_peaks
 
@@ -445,7 +448,7 @@ class Anp(object):
                         + c_c["Gb"] * alt[idx:] * alt[idx:]  # type: ignore
                         + c_c["H"] * temp[idx:]  # type: ignore
                 )
-                return np.concatenate([takeoff_thrust, climb_thrust])
+                return np.concatenate([takeoff_thrust, climb_thrust]), idx
 
             else:
                 takeoff_thrust = c_t["F"] * cas[:idx] + (  # type: ignore
@@ -463,7 +466,7 @@ class Anp(object):
                                ) / (
                                        1 - 0.006 * break_temp
                                )
-                return np.concatenate([takeoff_thrust, climb_thrust])
+                return np.concatenate([takeoff_thrust, climb_thrust]), idx
 
         elif (
                 acft_id in
@@ -509,7 +512,7 @@ class Anp(object):
                            )
             climb_thrust = np.minimum(climb_thrust.values, max_thrust.values)
 
-            return np.concatenate([takeoff_thrust, climb_thrust])
+            return np.concatenate([takeoff_thrust, climb_thrust]), idx
         else:
             raise RuntimeError(
                 f"Neither jet nor propeller engine "
@@ -573,12 +576,5 @@ class Anp(object):
                 "DELTA_DEP_dB",
                 "DELTA_APP_dB",
             ],
-            dtype={
-                "ICAO_CODE": str,
-                "AIRCRAFT_VARIANT": str,
-                "ANP_PROXY": str,
-                "DELTA_DEP_dB": np.float64,
-                "DELTA_APP_dB": np.float64,
-            },
             keep_default_na=False,
         )

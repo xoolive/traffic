@@ -276,7 +276,7 @@ class Metars(DataFrameMixin):
             "report_type": [3, 4],
         }
 
-        time.sleep(0.01)
+        time.sleep(0.5)
         res = session.get(url, params=payload)  # type: ignore
         res.raise_for_status()
         cols = [
