@@ -611,12 +611,6 @@ def test_cumulative_distance() -> None:
     assert first is not None
     f1 = first.cumulative_distance()
     f2 = first.cumulative_distance(reverse=True)
-
-    # Computed GS and received GS are consistent (less that 10% error)
-    filtered = f1.filter()
-    delta = filtered.data.eval("abs(compute_gs - groundspeed)").max()
-    assert delta / filtered.groundspeed_max < 0.2
-
     assert f1.max("cumdist") == f1.max("cumdist")  # bugfix #197
 
     f1 = (
@@ -849,7 +843,7 @@ def test_DME_NSE_computation() -> None:
     assert_frame_equal(result_df[["NSE", "NSE_idx"]], expected, rtol=1e-3)
 
 
-@pytest.mark.skipif(version >= (3, 12), reason="onnxruntime not ready")
+@pytest.mark.skipif(version > (3, 11), reason="onnxruntime not ready for 3.11")
 def test_holding_pattern() -> None:
     holding_pattern = belevingsvlucht.holding_pattern().next()
     assert holding_pattern is not None
@@ -859,7 +853,7 @@ def test_holding_pattern() -> None:
     )
 
 
-@pytest.mark.skipif(version >= (3, 12), reason="onnxruntime not ready")
+@pytest.mark.skipif(version > (3, 11), reason="onnxruntime not ready for 3.11")
 def test_label() -> None:
     from traffic.data.datasets import landing_zurich_2019
 

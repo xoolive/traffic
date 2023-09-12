@@ -400,7 +400,7 @@ class OpenSky:
         if df is None:
             return None
 
-        df = format_history(df)
+        df = format_history(df).sort_values("timestamp")
 
         if return_flight:
             return Flight(df)
@@ -446,7 +446,7 @@ class OpenSky:
         if df is None:
             return None
 
-        return RawData(df)
+        return RawData(df).sort_values("mintime")
 
     @copy_documentation(trino.Trino.rawdata)
     def extended(
