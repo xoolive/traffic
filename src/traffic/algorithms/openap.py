@@ -102,7 +102,8 @@ class OpenAP:
         if actype is None:
             return self
 
-        if actype.lower() not in openap.prop.available_aircraft(use_synonym=True):
+        available_aircraft = openap.prop.available_aircraft(use_synonym=True)
+        if actype.lower() not in available_aircraft:
             return self
 
         ac = openap.prop.aircraft(actype)
@@ -173,7 +174,8 @@ class OpenAP:
         if actype is None:
             return self
 
-        if actype.lower() not in openap.prop.available_aircraft(use_synonym=True):
+        available_aircraft = openap.prop.available_aircraft(use_synonym=True)
+        if actype.lower() not in available_aircraft:
             return self
 
         if "fuelflow" not in self.data.columns:
