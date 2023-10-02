@@ -24,7 +24,7 @@ jobs:
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - run: |
           git fetch --prune --unshallow --tags
@@ -41,7 +41,7 @@ jobs:
           echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")" >> $GITHUB_ENV
 
       - name: Download extra data from private repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: xoolive/traffic_data
           token: ${{ secrets.PRIVATE_TOKEN }}
