@@ -1040,19 +1040,23 @@ class NavigationFeatures:
         # The following cast secures the typing
         self = cast("Flight", self)
 
+        providers = rt.get_available_providers()
+
         if model_path is None:
             pkg = "traffic.algorithms.onnx.holding_pattern"
             data = get_data(pkg, "scaler.onnx")
-            scaler_sess = rt.InferenceSession(data)
+            scaler_sess = rt.InferenceSession(data, providers=providers)
             data = get_data(pkg, "classifier.onnx")
-            classifier_sess = rt.InferenceSession(data)
+            classifier_sess = rt.InferenceSession(data, providers=providers)
         else:
             model_path = Path(model_path)
             scaler_sess = rt.InferenceSession(
-                (model_path / "scaler.onnx").read_bytes()
+                (model_path / "scaler.onnx").read_bytes(),
+                providers=providers,
             )
             classifier_sess = rt.InferenceSession(
-                (model_path / "classifier.onnx").read_bytes()
+                (model_path / "classifier.onnx").read_bytes(),
+                providers=providers,
             )
 
         start, stop = None, None

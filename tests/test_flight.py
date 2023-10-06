@@ -843,7 +843,7 @@ def test_DME_NSE_computation() -> None:
     assert_frame_equal(result_df[["NSE", "NSE_idx"]], expected, rtol=1e-3)
 
 
-@pytest.mark.skipif(version > (3, 11), reason="onnxruntime not ready for 3.11")
+@pytest.mark.skipif(version > (3, 12), reason="onnxruntime not ready for 3.12")
 def test_holding_pattern() -> None:
     holding_pattern = belevingsvlucht.holding_pattern().next()
     assert holding_pattern is not None
@@ -853,7 +853,7 @@ def test_holding_pattern() -> None:
     )
 
 
-@pytest.mark.skipif(version > (3, 11), reason="onnxruntime not ready for 3.11")
+@pytest.mark.skipif(version > (3, 12), reason="onnxruntime not ready for 3.12")
 def test_label() -> None:
     from traffic.data.datasets import landing_zurich_2019
 
