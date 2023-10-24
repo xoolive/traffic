@@ -1,8 +1,8 @@
-# flake8: noqa
+# ruff: noqa: I001
 """
 It is crucial that the imports do not change order,
 hence the following line:
-isort:skip_file
+# ruff: noqa: I001
 """
 
 import logging

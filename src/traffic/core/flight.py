@@ -31,9 +31,11 @@ from typing import (
 )
 
 import rich.repr
+from impunity import impunity
 from ipyleaflet import Map as LeafletMap
 from ipyleaflet import Polyline as LeafletPolyline
 from ipywidgets import HTML
+from pitot import geodesy as geo
 from rich.console import Console, ConsoleOptions, RenderResult
 
 import numpy as np
@@ -47,10 +49,8 @@ from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
-from ..core.aero import vatmos, vtas2casw, vtempbase
+from ..core import types as tt
 from ..core.structure import Airport
-from ..core.types import ProgressbarType
-from . import geodesy as geo
 from .intervals import Interval, IntervalCollection
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
@@ -61,9 +61,9 @@ if TYPE_CHECKING:
     from cartopy import crs
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
-    from matplotlib.axes._subplots import Axes
+    from matplotlib.axes import Axes
 
-    from ..data.adsb.raw_data import RawData
+    from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
     from .airspace import Airspace
@@ -1248,65 +1248,6 @@ class Flight(
         """
         return dict((key, getattr(self, key)) for key in attributes)
 
-    @property
-    def anp(self) -> str | None:
-        """
-        Returns the ANP aircraft_id which most closely matches this aircraft,
-        based on the ANP substitutions table (by ICAO code).
-        """
-        from ..data import anp_data
-
-        if subs_tuple := self.anp_substitution:
-            icao_code, variant = subs_tuple
-            return str(
-                anp_data.substitution.loc[
-                    (anp_data.substitution["ICAO_CODE"] == icao_code)
-                    & (anp_data.substitution["AIRCRAFT_VARIANT"] == variant),
-                    "ANP_PROXY",
-                ].iloc[0]
-            )
-        return None
-
-    @property
-    def anp_substitution(self) -> Tuple[str, str] | None:
-        """
-        Returns the ICAO code and aircraft variant which most closely matches
-        this aircraft, based on the ANP substitutions table (by ICAO code).
-
-        The aircraft typecode is used to search the ANP substitutions. If
-        multiple matches are found (more than one substitution for a single
-        ICAO code), the most similar engine description is used.
-
-        For the string comparison, a jaro winkler similarity is used.
-        https://en.wikipedia.org/wiki/Jaro%E2%80%93Winkler_distance
-        """
-        from jellyfish import jaro_winkler_similarity
-
-        from ..data import anp_data
-
-        acft = self.aircraft
-        if acft is None:
-            return None
-
-        candidates = anp_data.substitution.loc[
-                     anp_data.substitution["ICAO_CODE"] == acft.typecode, :
-                     ].copy()
-        if candidates.empty:
-            return None
-
-        if len(candidates) == 1:
-            return tuple(candidates[["ICAO_CODE", "AIRCRAFT_VARIANT"]].iloc[0])
-
-        # Multiple matches on ICAO code, find the most similar between
-        # aircraft database engines and ANP aircraft variant
-        variants = candidates["AIRCRAFT_VARIANT"].str.lower()
-        scores = variants.apply(
-            lambda acft_var: jaro_winkler_similarity(acft_var, acft.engines)
-        )
-        return tuple(
-            candidates[["ICAO_CODE", "AIRCRAFT_VARIANT"]].loc[scores.idxmax()]
-        )
-
     # -- Time handling, splitting, interpolation and resampling --
 
     def skip(
@@ -1711,7 +1652,7 @@ class Flight(
     def resample(
         self,
         rule: str | int = "1s",
-        how: str | dict[str, Iterable[str]] = "interpolate",
+        how: None | str | dict[str, Iterable[str]] = "interpolate",
         projection: None | str | pyproj.Proj | "crs.Projection" = None,
     ) -> Flight:
         """Resample the trajectory at a given frequency or for a target number
@@ -1766,18 +1707,22 @@ class Flight(
                 .reset_index()
             )
 
+            if how is None:
+                how = {}
+
             if isinstance(how, str):
                 how = {how: set(data.columns) - {"timestamp"}}
 
             for meth, columns in how.items():
-                idx = data.columns.get_indexer(columns)
-                value = getattr(data.iloc[:, idx], meth)()
-                # final fillna() is necessary for non-interpolable dtypes
-                value = value.fillna(method="pad")
-                # FutureWarning: a value is trying to be set on a copy of a
-                # slice from a DataFrame
-                # data.iloc[:, idx] = value
-                data[data.columns[idx]] = value
+                if meth is not None:
+                    idx = data.columns.get_indexer(columns)
+                    value = getattr(data.iloc[:, idx], meth)()
+                    # final fillna() is necessary for non-interpolable dtypes
+                    value = value.fillna(method="pad")
+                    # FutureWarning: a value is trying to be set on a copy of a
+                    # slice from a DataFrame
+                    # data.iloc[:, idx] = value
+                    data[data.columns[idx]] = value
 
         elif isinstance(rule, int):
             # ./site-packages/pandas/core/indexes/base.py:2820: FutureWarning:
@@ -1874,7 +1819,10 @@ class Flight(
     def comet(self, **kwargs: Any) -> Flight:
         raise DeprecationWarning("Use Flight.forward() method instead")
 
-    def forward(self, **kwargs: Any) -> Flight:
+    @impunity(ignore_warnings=True)
+    def forward(
+        self, delta: Union[None, str, pd.Timedelta] = None, **kwargs: Any
+    ) -> "Flight":
         """Projects the trajectory in a straight line.
 
         The method uses the last position of a trajectory (method `at()
@@ -1898,22 +1846,27 @@ class Flight(
         if last_line is None:
             raise ValueError("Unknown data for this flight")
         window = self.last(seconds=20)
-        delta = timedelta(**kwargs)
+        if isinstance(delta, str):
+            delta = pd.Timedelta(delta)
+        if delta is None:
+            delta = timedelta(**kwargs)
 
         if window is None:
             raise RuntimeError("Flight expect at least 20 seconds of data")
 
-        new_gs = window.data.groundspeed.mean()
-        new_vr = window.data.vertical_rate.mean()
+        new_gs: tt.speed = window.data.groundspeed.mean()
+        new_vr: tt.vertical_rate = window.data.vertical_rate.mean()
+        duration: tt.seconds = delta.total_seconds()
 
         new_lat, new_lon, _ = geo.destination(
             last_line.latitude,
             last_line.longitude,
             last_line.track,
-            new_gs * delta.total_seconds() * 1852 / 3600,
+            new_gs * duration,
         )
 
-        new_alt = last_line.altitude + new_vr * delta.total_seconds() / 60
+        last_alt: tt.altitude = last_line.altitude
+        new_alt: tt.altitude = last_alt + new_vr * duration
 
         return Flight(
             pd.DataFrame.from_records(
@@ -2150,200 +2103,6 @@ class Flight(
             **kwargs,
         )
 
-    # -- Additional Features --
-
-    def compute_CAS(self) -> Flight:
-        """
-        Compute calibrated airspeed (CAS) for each timestamp.
-
-        This method requires true airspeed (``TAS``), ``pressure`` and
-         ``density`` features.
-        """
-
-        if "TAS" not in self.data.columns:
-            raise RuntimeError(
-                "No TAS in trajectory. Consider Flight.compute_TAS()"
-            )
-
-        if any(f not in self.data.columns for f in ["pressure", "density"]):
-            raise RuntimeError(
-                "No weather data in trajectory."
-                "Consider Flight.include_weather()"
-            )
-
-        return self.assign(
-            CAS=(
-                vtas2casw(
-                    self.data["TAS"] * 0.514444,  # kts to m/s
-                    self.data["pressure"] * 100,  # hpa to pa
-                    self.data["density"],
-                )
-                / 0.514444  # meters/second to knots
-            )
-        )
-
-    def compute_acceleration(self) -> Flight:
-        """
-        Computes the acceleration (m/s^2) at each timestamp as the average of
-        the acceleration at the previous and next segments.
-        """
-
-        return self.assign(
-            acceleration=(
-                self.data["groundspeed"].diff()
-                * 0.514444  # knots to m/s
-                / self.data["timestamp"].diff().dt.seconds
-            )
-            .rolling(2)
-            .mean()
-            .shift(-1)
-            .bfill()
-            .ffill()
-            .clip(-5.0, 5.0)
-        )
-
-    def compute_climb_angle(self) -> Flight:
-        """
-        Computes the climb angle (°) at each timestamp as the average of the
-        climb angle at the previous and next segments. By convention,
-        positive angles indicate a climb and negative angles a descent.
-        """
-
-        return self.assign(
-            climb_angle=(
-                np.degrees(
-                    np.arctan(
-                        self.data["altitude"].diff()
-                        * 0.3048
-                        / (self.data["cumdist"].diff().abs() * 1852.0)
-                    )
-                )
-            )
-            .rolling(2)
-            .mean()
-            .shift(-1)
-            .bfill()
-            .ffill()
-            .clip(-45.0, 45.0)
-        )
-
-    def compute_weather(
-        self,
-        src: str = "ISA",
-        metar_station: Optional[str] = None,
-        include_wind: bool = False,
-    ) -> Flight:
-        """
-        Enriches the data with temperature, density and pressure columns.
-        Wind features will be included (wind_u and wind_v ) if include_wind is
-        set to True (only available if src is "METAR")
-
-        :param src: The source of the weather data. Possible values are:
-            - "ISA": Apply the ISA atmospheric model with standard values.
-            - "METAR": Apply the ISA atmospheric model with non-standard
-            values. The non-standard values are fetch from METAR data. The
-            METAR report closest to each timestamp will be used.
-
-        :param metar_station: The station from which to fetch non-standard
-        values. Mandatory if src is "METAR".
-
-        :param include_wind: If true and source is METAR, wind features will
-        be added.
-        """
-
-        # ISA
-        if src.lower() == "isa":
-            if include_wind:
-                _log.warning(
-                    "Weather from ISA does not include wind data, "
-                    "'include_wind' flag will be ignored."
-                )
-
-            df = self.data
-            df["pressure"], df["density"], df["temperature"] = vatmos(
-                df.data["altitude"] * 0.3048  # feet to meter
-            )
-            df["temperature"] -= 273.15  # kelvin to celsius
-            df["pressure"] /= 100.0  # pascals to hectopascals
-
-            return self.__class__(df)
-
-        # METAR
-        if src.lower() == "metar":
-            from ..data import metars
-
-            if metar_station is None:
-                raise RuntimeError(
-                    "metar_station parameter must be provided "
-                    "when including weather from metars."
-                )
-
-            # Fetch Metars
-            md = metars.fetch(
-                metar_station,
-                self.start - timedelta(hours=1),
-                self.stop + timedelta(hours=1),
-            )
-            if md is None:
-                return self
-
-            df = self.data
-            df["idx"] = df.apply(
-                lambda r: (md.data["valid"] - r["timestamp"]).abs().idxmin(),
-                axis="columns",
-            )
-
-            # Wind
-            if include_wind:
-                md = md.compute_wind()
-                df = df.assign(
-                    wind_u=md.data.loc[df["idx"], "wind_u"].reset_index(
-                        drop=True
-                    ),
-                    wind_v=md.data.loc[df["idx"], "wind_v"].reset_index(
-                        drop=True
-                    ),
-                )
-
-            # Temperature, Pressure and Density
-            df = df.assign(
-                metar_elevation=md.data.loc[df["idx"], "elevation"].reset_index(
-                    drop=True
-                ),
-                metar_temperature=md.data.loc[
-                    df["idx"], "temperature"
-                ].reset_index(drop=True),
-                metar_base_temperature=lambda d: vtempbase(
-                    d["metar_elevation"] * 0.3048,  # feet to meter
-                    d["metar_temperature"] + 273.15,  # kelvin to celsius
-                ),
-                metar_sea_level_pressure=md.data.loc[
-                    df["idx"], "sea_level_pressure"
-                ].reset_index(drop=True),
-            )
-
-            df["pressure"], df["density"], df["temperature"] = vatmos(
-                df["altitude"] * 0.3048,  # feet to meter
-                df["metar_base_temperature"],
-                df["metar_sea_level_pressure"] * 100.0,  # hectopascal to pascal
-            )
-
-            df["temperature"] -= 273.15  # kelvin to celsius
-            df["pressure"] /= 100.0  # pascals to hectopascals
-            df = df.drop(
-                columns=[
-                    "idx",
-                    "metar_elevation",
-                    "metar_temperature",
-                    "metar_sea_level_pressure",
-                    "metar_base_temperature",
-                ]
-            )
-
-            return self.__class__(df)
-
-        raise RuntimeError(f"Invalid weather source {src}")
-
     # -- Distances --
 
     def bearing(
@@ -2383,11 +2142,12 @@ class Flight(
     ) -> Optional[pd.DataFrame]:
         ...
 
+    @impunity(ignore_warnings=True)
     def distance(
         self,
-        other: Union[None, Flight, "Airspace", Polygon, PointMixin] = None,
+        other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
         column_name: str = "distance",
-    ) -> Union[None, float, Flight, pd.DataFrame]:
+    ) -> Union[None, float, "Flight", pd.DataFrame]:
         """Computes the distance from a Flight to another entity.
 
         The behaviour is different according to the type of the second
@@ -2421,29 +2181,25 @@ class Flight(
             last = self.at_ratio(1)
             if first is None or last is None:
                 return 0
-            return (
-                geo.distance(
-                    first.latitude,
-                    first.longitude,
-                    last.latitude,
-                    last.longitude,
-                )
-                / 1852  # in nautical miles
+            result: tt.distance = geo.distance(
+                first.latitude,
+                first.longitude,
+                last.latitude,
+                last.longitude,
             )
+            return result
+
+        distance_vec: tt.distance_array
 
         if isinstance(other, PointMixin):
             size = self.data.shape[0]
-            return self.assign(
-                **{
-                    column_name: geo.distance(
-                        self.data.latitude.values,
-                        self.data.longitude.values,
-                        other.latitude * np.ones(size),
-                        other.longitude * np.ones(size),
-                    )
-                    / 1852  # in nautical miles
-                }
+            distance_vec = geo.distance(
+                self.data.latitude.values,
+                self.data.longitude.values,
+                other.latitude * np.ones(size),
+                other.longitude * np.ones(size),
             )
+            return self.assign(**{column_name: distance_vec})
 
         from .airspace import Airspace
 
@@ -2493,14 +2249,14 @@ class Flight(
             cols.append("flight_id")
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
+        distance_vec = geo.distance(
+            table.latitude_x.values,
+            table.longitude_x.values,
+            table.latitude_y.values,
+            table.longitude_y.values,
+        )
         return table.assign(
-            lateral=geo.distance(
-                table.latitude_x.values,
-                table.longitude_x.values,
-                table.latitude_y.values,
-                table.longitude_y.values,
-            )
-            / 1852,  # in nautical miles
+            lateral=distance_vec,
             vertical=(table.altitude_x - table.altitude_y).abs(),
         )
 
@@ -2611,6 +2367,7 @@ class Flight(
             .rename(columns=dict(NSE=column_name))
         )
 
+    @impunity(ignore_warnings=True)
     def cumulative_distance(
         self,
         compute_gs: bool = True,
@@ -2618,7 +2375,7 @@ class Flight(
         *,
         reverse: bool = False,
         **kwargs: Any,
-    ) -> Flight:
+    ) -> "Flight":
         """Enrich the structure with new ``cumdist`` column computed from
         latitude and longitude columns.
 
@@ -2645,7 +2402,8 @@ class Flight(
 
         delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
         delta_1 = delta.iloc[1:]
-        d = geo.distance(
+        distance_nm: tt.distance_array
+        distance_nm = geo.distance(
             (delta_1.latitude - delta_1.latitude_1).values,
             (delta_1.longitude - delta_1.longitude_1).values,
             delta_1.latitude.values,
@@ -2653,12 +2411,15 @@ class Flight(
         )
 
         res = cur_sorted.assign(
-            cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant")
+            cumdist=np.pad(distance_nm.cumsum(), (1, 0), "constant")
         )
 
         if compute_gs:
-            gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
-            res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "edge")))
+            secs: tt.seconds_array = delta_1.timestamp_1.dt.total_seconds()
+            groundspeed: tt.speed_array = distance_nm / secs
+            res = res.assign(
+                compute_gs=np.abs(np.pad(groundspeed, (1, 0), "edge"))
+            )
 
         if compute_track:
             track = geo.bearing(
@@ -2843,10 +2604,11 @@ class Flight(
     # -- OpenSky specific methods --
 
     def query_opensky_sensors(self, where_condition: str = "") -> pd.DataFrame:
+        # TODO Deprecate??
         from ..data import opensky
 
         return (
-            opensky.request(
+            opensky.impala_client.request(
                 "select s.ITEM, count(*) from state_vectors_data4, "
                 "state_vectors_data4.serials s "
                 f"where icao24='{self.icao24}' and "
@@ -2897,8 +2659,8 @@ class Flight(
     def query_ehs(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
-        failure_mode: str = "warning",
-        progressbar: Union[bool, ProgressbarType[Any]] = True,
+        failure_mode: str = "info",
+        progressbar: Union[bool, tt.ProgressbarType[Any]] = False,
     ) -> Flight:
         """Extends data with extra columns from EHS messages.
 
@@ -2923,7 +2685,7 @@ class Flight(
         """
 
         from ..data import opensky
-        from ..data.adsb.raw_data import RawData
+        from ..data.adsb.decode import RawData
 
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")
@@ -2939,13 +2701,23 @@ class Flight(
             id_ = self.flight_id
             if id_ is None:
                 id_ = self.callsign
-            _log.warning(f"No data on Impala for flight {id_}.")
+            _log.warning(f"No data found on OpenSky database for flight {id_}.")
+            return self
+
+        def fail_info() -> Flight:
+            """Called when nothing can be added to data."""
+            id_ = self.flight_id
+            if id_ is None:
+                id_ = self.callsign
+            _log.info(f"No data found on OpenSky database for flight {id_}.")
             return self
 
         def fail_silent() -> Flight:
             return self
 
-        failure_dict = dict(warning=fail_warning, silent=fail_silent)
+        failure_dict = dict(
+            warning=fail_warning, info=fail_info, silent=fail_silent
+        )
         failure = failure_dict[failure_mode]
 
         if data is None:
@@ -2988,9 +2760,16 @@ class Flight(
         identifier = (
             self.flight_id if self.flight_id is not None else self.callsign
         )
+        reference: None | str | tuple[float, float] = None
+        if isinstance(self.origin, str):
+            reference = self.origin
+        elif position := self.query("latitude.notnull()"):
+            p0 = position.at_ratio(0)
+            assert p0 is not None
+            reference = p0.latlon
 
         t = RawData(referenced_df).decode(
-            reference=self.origin if isinstance(self.origin, str) else None,
+            reference=reference,
             progressbar=progressbar,
             progressbar_kw=dict(leave=False, desc=f"{identifier}:"),
         )

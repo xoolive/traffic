@@ -16,7 +16,7 @@ jobs:
   documentation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - run: |
           git fetch --prune --unshallow --tags
@@ -32,15 +32,15 @@ jobs:
           echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")"
 
       - name: Download extra data from private repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: xoolive/traffic_data
           token: ${{ secrets.PRIVATE_TOKEN }}
           persist-credentials: false
-          path: ./data/traffic_data
+          path: ./traffic_data
 
       - name: Create LFS file list (private repository)
-        working-directory: ./data/traffic_data
+        working-directory: ./traffic_data
         run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
         shell: bash
 
@@ -48,11 +48,11 @@ jobs:
         uses: actions/cache@v3
         id: lfs-cache
         with:
-          path: ./data/traffic_data/.git/lfs
-          key: lfs-${{ hashFiles('./data/traffic_data/.lfs-assets-id') }}-v1
+          path: ./traffic_data/.git/lfs
+          key: lfs-${{ hashFiles('./traffic_data/.lfs-assets-id') }}-v1
 
       - name: Git LFS Pull (private repository)
-        working-directory: ./data/traffic_data
+        working-directory: ./traffic_data
         run: |
           git remote set-url origin https://xoolive:${{ secrets.PRIVATE_TOKEN }}@github.com/xoolive/traffic_data.git
           git lfs pull
@@ -69,7 +69,7 @@ jobs:
           key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install and configure Poetry
-        uses: snok/install-poetry@v1.3.3
+        uses: snok/install-poetry@v1.3.4
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
@@ -84,14 +84,17 @@ jobs:
         with:
           path: |
             ~/.cache/traffic/
+            ~/.cache/opensky/
             ~/.cache/cartes/
           key: traffic-${{ runner.os }}
 
-      - name: Populate first cache files
-        if: steps.cache-folder.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ~/.cache/traffic/
-          cp data/navdata/earth_*.dat ~/.cache/traffic/
+      - name: Cache folder for documentation
+        uses: actions/cache@v3
+        id: docs-folder
+        with:
+          path: |
+            docs/_build/
+          key: docs-${{ runner.os }}
 
       - name: Ubuntu system dependencies
         run: |
@@ -122,9 +125,10 @@ jobs:
           LD_LIBRARY_PATH: /usr/local/lib
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
-          PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
+          # PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRAFFIC_NOPLUGIN: ""
+          TRAFFIC_CACHE_NO_EXPIRE: ""
         run: |
           # This downloads the cache for cartes atlas
           poetry run python -c "from cartes.atlas import default, world_atlas"
@@ -133,12 +137,12 @@ jobs:
 
           export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
 
-          sed -i "/nm_path =/ s,=$,= $PWD/data/traffic_data/airac_2111," $TRAFFIC_CONFIG
-          sed -i "/pkcs12_filename =/ s,=.*$,= $PWD/data/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
-          sed -i "/pkcs12_password =/ s,=$,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
+          sed -i "/nm_path =/ s,=$,= $PWD/traffic_data/airac_2111," $TRAFFIC_CONFIG
+          # sed -i "/pkcs12_filename =/ s,=.*$,= $PWD/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
+          # sed -i "/pkcs12_password =/ s,=$,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
 
           # Run the documentation
-          cd docs && OPENSKY_CACHE=../data/opensky_cache poetry run make html
+          cd docs && poetry run make html
 
       - name: Deploy pages
         uses: peaceiris/actions-gh-pages@v3

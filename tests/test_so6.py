@@ -1,23 +1,19 @@
 from datetime import timedelta
-from pathlib import Path
 
-from traffic.data import SO6, eurofirs
+from traffic.data import eurofirs
+from traffic.data.samples import sample_m3
 
 
 def test_so6() -> None:
-    so6_path = Path(__file__).parent.parent / "data" / "sample_m3.so6.7z"
-    so6 = SO6.from_file(so6_path)
+    assert len(sample_m3) == 11043
 
-    assert so6 is not None
-    assert len(so6) == 11043
-
-    hop36pp = so6["HOP36PP"]
+    hop36pp = sample_m3["HOP36PP"]
 
     assert hop36pp.origin == "LFML"
     assert hop36pp.destination == "LFBD"
     assert hop36pp.typecode == "A319"
     assert hop36pp.flight_id == 332206265  # type: ignore
-    assert so6[332206265].callsign == "HOP36PP"
+    assert sample_m3[332206265].callsign == "HOP36PP"
 
     LFBB = eurofirs["LFBB"]
     LFEE = eurofirs["LFEE"]
@@ -28,7 +24,7 @@ def test_so6() -> None:
     assert hop36pp.intersects(LFBB)
     assert not hop36pp.intersects(LFEE)
 
-    clipped = so6["HOP36PP"].clip(LFBB.flatten())
+    clipped = sample_m3["HOP36PP"].clip(LFBB.flatten())
     assert clipped is not None
     assert str(clipped.start)[:19] == "2018-01-01 18:30:20"
     assert str(clipped.stop)[:19] == "2018-01-01 18:52:10"
@@ -37,12 +33,15 @@ def test_so6() -> None:
     assert len(next(hop36pp.clip_altitude(18000, 20000))) == 1
 
     # This flight is on holding pattern and causes issues with intersection
-    clipped = so6["BAW3TV"].clip(LFBB.flatten())
+    clipped = sample_m3["BAW3TV"].clip(LFBB.flatten())
     assert clipped is not None
     assert str(clipped.start)[:19] == "2018-01-01 14:51:19"
     assert str(clipped.stop)[:19] == "2018-01-01 16:30:30"
 
-    assert sum(1 for _ in so6["HOP36PP"].coords4d()) == len(so6["HOP36PP"]) + 1
+    assert (
+        sum(1 for _ in sample_m3["HOP36PP"].coords4d())
+        == len(sample_m3["HOP36PP"]) + 1
+    )
 
     assert 26638 < hop36pp.at("2018/01/01 18:40").altitude < 26639
     assert hop36pp.between(
@@ -52,11 +51,11 @@ def test_so6() -> None:
         "2018/01/01 18:25", timedelta(minutes=5)
     ).intersects(LFBB)
 
-    noon = so6.at("2018/01/01 12:00")
+    noon = sample_m3.at("2018/01/01 12:00")
     bdx_flights = noon.inside_bbox(LFBB).intersects(LFBB)
     assert len(bdx_flights) == 3
 
     assert bdx_flights.data.shape[0] == 3
-    select = so6[bdx_flights]
+    select = sample_m3[bdx_flights]
     assert select is not None
     assert select.data.shape[0] == 28

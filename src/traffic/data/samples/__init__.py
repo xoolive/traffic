@@ -1,19 +1,26 @@
+from __future__ import annotations
+
 import types
 from functools import lru_cache
 from pathlib import Path
-from typing import Union, cast
+from typing import Any, Union, cast
 
 import pandas as pd
 from traffic.core import Airspace
 
 from ...core import Flight, Traffic
+from ..eurocontrol.ddr.so6 import SO6
 
 _current_dir = Path(__file__).parent
-__all__ = sorted(f.stem[:-5] for f in _current_dir.glob("**/*.json.gz"))
+__all__ = [
+    *sorted(f.stem[:-5] for f in _current_dir.glob("**/*.json.gz")),
+    "sample_so6",
+    "sample_dump1090",
+]
 
 
 @lru_cache()
-def get_flight(filename: str, directory: Path) -> Union[Flight, Traffic]:
+def get_flight(filename: str, directory: Path) -> Flight | Traffic:
     flight: Union[None, Flight, Traffic] = Traffic.from_file(
         directory / f"{filename}.json.gz", dtype={"icao24": str}
     )
@@ -55,23 +62,29 @@ def assign_id(t: Union[Traffic, Flight], name: str) -> Union[Traffic, Flight]:
         return t.assign(flight_id=name)
 
 
+airbus_tree: Flight
+belevingsvlucht: Flight
+elal747: Flight
+lfbo_tma: Airspace
+noisy: Flight
+quickstart: Traffic
+sample_dump1090: Path
+sample_m3: SO6
+switzerland: Traffic
+texas_longhorn: Flight
+zurich_airport: Traffic
+
+
 @lru_cache()
-def __getattr__(name: str) -> Union[Flight, Traffic]:
+def __getattr__(name: str) -> Any:
+    if name == "sample_dump1090":
+        return Path(_current_dir / "dump1090" / "sample_dump1090.bin")
+    if name == "sample_m3":
+        return SO6.from_file(_current_dir / "so6" / "sample_m3.so6.7z")
+    if name == "lfbo_tma":
+        return Airspace.from_file(_current_dir / "airspaces" / "LFBOTMA.json")
     filelist = list(_current_dir.glob(f"**/{name}.json.gz"))
     if len(filelist) == 0:
         msg = f"File {name}.json.gz not found in available samples"
         raise AttributeError(msg)
     return get_flight(name, filelist[0].parent)
-
-
-airbus_tree: Flight = cast(Flight, __getattr__("airbus_tree"))
-belevingsvlucht: Flight = cast(Flight, __getattr__("belevingsvlucht"))
-elal747: Flight = cast(Flight, __getattr__("elal747"))
-texas_longhorn: Flight = cast(Flight, __getattr__("texas_longhorn"))
-quickstart: Traffic = cast(Traffic, __getattr__("quickstart"))
-switzerland: Traffic = cast(Traffic, __getattr__("switzerland"))
-zurich_airport: Traffic = cast(Traffic, __getattr__("zurich_airport"))
-
-lfbo_tma = Airspace.from_file(
-    Path(__file__).parent / "airspaces" / "LFBOTMA.json"
-)

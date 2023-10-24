@@ -1,10 +1,11 @@
-# flake8: noqa
+# ruff: noqa: E501
+
 from __future__ import annotations
 
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterator
+from typing import ClassVar, Iterator
 
 import pandas as pd
 
@@ -12,9 +13,6 @@ from ...core.mixins import GeoDBMixin
 from ...core.structure import Navaid, NavaidTuple
 
 _log = logging.getLogger(__name__)
-
-__github_url = "https://raw.githubusercontent.com/"
-base_url = __github_url + "xoolive/traffic/master/data/navdata"
 
 
 class Navaids(GeoDBMixin):
@@ -49,7 +47,7 @@ class Navaids(GeoDBMixin):
     """
 
     cache_dir: Path
-    alternatives: dict[str, "Navaids"] = dict()
+    alternatives: ClassVar[dict[str, "Navaids"]] = dict()
     name: str = "default"
     priority: int = 0
 
@@ -62,23 +60,12 @@ class Navaids(GeoDBMixin):
     def available(self) -> bool:
         return True
 
-    def download_data(self) -> None:  # coverage: ignore
-        """Downloads the latest version of the navaid database from the
-        repository.
-        """
-
-        from .. import session
-
-        iter_lines: Iterator[bytes]
+    def parse_data(self) -> None:  # coverage: ignore
         navaids = []
 
-        cache_file = self.cache_dir / "earth_fix.dat"
-        if cache_file.exists():
-            iter_lines = cache_file.open("rb")
-        else:
-            c = session.get(f"{base_url}/earth_fix.dat")
-            c.raise_for_status()
-            iter_lines = c.iter_lines()
+        cache_file = Path(__file__).parent.parent / "navdata" / "earth_fix.dat"
+        assert cache_file.exists()
+        iter_lines = cache_file.open("rb")
 
         for line_bytes in iter_lines:
             line = line_bytes.decode(encoding="ascii", errors="ignore").strip()
@@ -108,13 +95,9 @@ class Navaids(GeoDBMixin):
                 )
             )
 
-        cache_file = self.cache_dir / "earth_nav.dat"
-        if cache_file.exists():
-            iter_lines = cache_file.open("rb")
-        else:
-            c = session.get(f"{base_url}/earth_nav.dat")
-            c.raise_for_status()
-            iter_lines = c.iter_lines()
+        cache_file = Path(__file__).parent.parent / "navdata" / "earth_nav.dat"
+        assert cache_file.exists()
+        iter_lines = cache_file.open("rb")
 
         for line_bytes in iter_lines:
             line = line_bytes.decode(encoding="ascii", errors="ignore").strip()
@@ -193,18 +176,20 @@ class Navaids(GeoDBMixin):
             navaids, columns=NavaidTuple._fields
         )
 
-        self._data.to_pickle(self.cache_dir / "traffic_navaid.pkl")
+        self._data.to_parquet(self.cache_dir / "traffic_navaid.parquet")
 
     @property
     def data(self) -> pd.DataFrame:
         if self._data is not None:
             return self._data
 
-        if not (self.cache_dir / "traffic_navaid.pkl").exists():
-            self.download_data()
+        if not (self.cache_dir / "traffic_navaid.parquet").exists():
+            self.parse_data()
         else:
             _log.info("Loading navaid database")
-            self._data = pd.read_pickle(self.cache_dir / "traffic_navaid.pkl")
+            self._data = pd.read_parquet(
+                self.cache_dir / "traffic_navaid.parquet"
+            )
 
         if self._data is not None:
             self._data = self._data.rename(

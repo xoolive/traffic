@@ -475,6 +475,7 @@ for name, handle in inspect.getmembers(
         annots["return"] == annots["self"]
         or annots["return"] == Optional[annots["self"]]  # noqa: F821
         or annots["return"] == f"Optional[{annots['self']}]"
+        or annots["return"] == f"None | {annots['self']}"
     ):
 
         def make_lambda(name: str) -> Callable[..., LazyTraffic]:

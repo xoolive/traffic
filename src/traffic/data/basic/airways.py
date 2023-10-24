@@ -1,22 +1,14 @@
 from __future__ import annotations
 
 import logging
-from io import BytesIO
 from pathlib import Path
-from typing import Tuple, Union
 
 import pandas as pd
-from shapely.geometry.base import BaseGeometry
 
 from ...core.mixins import GeoDBMixin
 from ...core.structure import Navaid, Route
 
 _log = logging.getLogger(__name__)
-
-__github_url = "https://raw.githubusercontent.com/"
-base_url = __github_url + "xoolive/traffic/master/data/navdata"
-
-BoundsType = Union[BaseGeometry, Tuple[float, float, float, float]]
 
 
 class Airways(GeoDBMixin):
@@ -42,7 +34,7 @@ class Airways(GeoDBMixin):
     >>> airways['Z50']
     Route('Z50', navaids=['EGOBA', 'SOT', 'BULTI', 'AYE', 'AVMON', ...])
 
-    >>> airways.extent("Occitanie")["UN869"]
+    >>> airways.extent((-0.33, 4.85, 42.34, 45.05))["UN869"]
     Route('UN869', navaids=['XOMBO', 'TIVLI', 'AGN', 'NARAK', 'NASEP', ...])
 
     .. note::
@@ -88,20 +80,12 @@ class Airways(GeoDBMixin):
         if self.available:
             Airways.alternatives[self.name] = self
 
-    def download_data(self) -> None:  # coverage: ignore
-        from .. import session
-
-        cache_file = self.cache_dir / "earth_awy.dat"
-        if cache_file.exists():
-            self._data = pd.read_csv(cache_file, sep=" ", header=None)
-        else:
-            c = session.get(f"{base_url}/earth_awy.dat")
-            c.raise_for_status()
-            b = BytesIO(c.content)
-            self._data = pd.read_csv(b, sep=" ", header=None)
-
+    def parse_data(self) -> None:  # coverage: ignore
+        cache_file = Path(__file__).parent.parent / "navdata" / "earth_awy.dat"
+        assert cache_file.exists()
+        self._data = pd.read_csv(cache_file, sep=" ", header=None)
         self._data.columns = ["route", "id", "navaid", "latitude", "longitude"]
-        self._data.to_pickle(self.cache_dir / "traffic_airways.pkl")
+        self._data.to_parquet(self.cache_dir / "traffic_airways.parquet")
 
     @property
     def available(self) -> bool:
@@ -112,11 +96,13 @@ class Airways(GeoDBMixin):
         if self._data is not None:
             return self._data
 
-        if not (self.cache_dir / "traffic_airways.pkl").exists():
-            self.download_data()
+        if not (self.cache_dir / "traffic_airways.parquet").exists():
+            self.parse_data()
         else:
             _log.info("Loading airways database")
-            self._data = pd.read_pickle(self.cache_dir / "traffic_airways.pkl")
+            self._data = pd.read_parquet(
+                self.cache_dir / "traffic_airways.parquet"
+            )
 
         if self._data is not None:
             self._data = self._data.rename(

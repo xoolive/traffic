@@ -14,6 +14,7 @@ from typing import (
 from zipfile import ZipFile
 
 import requests
+from pitot.geodesy import bearing, destination
 from tqdm.rich import tqdm
 
 import numpy as np
@@ -22,7 +23,6 @@ from shapely.geometry import base, shape
 from shapely.ops import linemerge
 
 from ... import cache_expiration
-from ...core.geodesy import bearing, destination
 from ...core.mixins import DataFrameMixin, HBoxMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:

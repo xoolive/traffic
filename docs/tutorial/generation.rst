@@ -38,7 +38,7 @@ from the north.
 
     import matplotlib.pyplot as plt
     from traffic.data.datasets import landing_zurich_2019
-    from traffic.core.projection import EuroPP
+    from cartes.crs import EuroPP
 
     t = (
         landing_zurich_2019
