@@ -21,14 +21,12 @@ repos:
     hooks:
       - id: sync_with_poetry
         args: [] # optional args
-  - repo: https://github.com/psf/black
-    rev: 23.10.1
-    hooks:
-      - id: black
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.280"
+    rev: v0.1.4
     hooks:
       - id: ruff
+      - id: ruff-format
+        args: [--check]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.6.1
     hooks:
@@ -37,6 +35,7 @@ repos:
         additional_dependencies:
           - types-pkg-resources
           - types-requests
+          - types-paramiko
           - types-flask
           - types-waitress
           - impunity

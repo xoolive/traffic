@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import codecs
 import heapq
 import logging
 import os
@@ -45,7 +46,7 @@ _log = logging.getLogger(__name__)
 MSG_SIZES = {0x31: 11, 0x32: 16, 0x33: 23, 0x34: 23}
 
 
-def next_beast_msg(chunk_it: Iterator[bytes]) -> Iterator[bytes]:
+def next_beast_msg(chunk_it: Iterable[bytes]) -> Iterator[bytes]:
     """Iterate in Beast binary feed.
 
     <esc> "1" : 6 byte MLAT timestamp, 1 byte signal level,
@@ -137,7 +138,7 @@ def decode_time_dump1090(
 
 decode_time: dict[str, Callable[[str, Optional[datetime]], datetime]] = {
     "radarcape": decode_time_radarcape,
-    "dump1090": decode_time_dump1090,
+    "dump1090": decode_time_default,
     "default": decode_time_default,
 }
 
@@ -914,8 +915,10 @@ class DumpFormat:
         self.sep = sep
         self.cols = list(x.strip() for x in template.split(sep))
         time_gen = (i for i, elt in enumerate(self.cols) if elt == "time")
-        self.time_index = next(time_gen, None)
-        if self.time_index is None:
+        time_index = next(time_gen, None)
+        if time_index is not None:
+            self.time_index = time_index
+        else:
             msg = "Format invalid: must contain 'time'"
             raise ValueError(msg)
 
@@ -937,7 +940,8 @@ class DumpFormat:
     def get_timestamp(self, line: str) -> datetime:
         elts = line.split(self.sep)
         return datetime.fromtimestamp(
-            float(elts[self.time_index].strip()), timezone.utc  # type: ignore
+            float(elts[self.time_index].strip()),
+            timezone.utc,
         )
 
     def get_msg(self, line: str) -> str:
@@ -1336,6 +1340,83 @@ class ModeS_Decoder:
 
     def __del__(self) -> None:
         self.stop()
+
+    @classmethod
+    def from_dump1090_output(
+        cls: Type[D],
+        filename: str | Path,
+        reference: Union[str, Airport, tuple[float, float]],
+        uncertainty: bool = False,
+        file_pattern: None | str = "~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv",
+        crc_check: bool = False,
+        reference_time: str = "now",
+    ) -> D:  # coverage: ignore
+        """Decode raw messages dumped from `dump1090
+        <https://github.com/MalcolmRobb/dump1090/>`_ with option mlat
+
+        :param filename: the path to the file containing the data
+        :param reference: the reference location, as specified above
+        :param file_pattern: the filename where to dump received hexadecimal
+            messages
+
+            Timestamp format specifiers are accepted.
+
+            | Default value: ``"~/ADSB_EHS_RAW_%Y%m%d_dump1090.csv"``
+            | (The ``~`` character gets expanded as your home directory)
+
+        :param uncertainty: if True, decode also `uncertainty information
+            <https://mode-s.org/decode/content/ads-b/7-uncertainty.html>`_
+
+        :param crc_check: if True, perform CRC check on messages and discard
+            invalid messages. DF 4, 5, 20 and 21 messages don't have CRC so the
+            parameter should be set to False if you only have those messages.
+
+        .. warning::
+
+            dump1090 must be run the ``--mlat`` option.
+
+        """
+        # TODO edit
+        now = pd.Timestamp(reference_time, tz="utc")
+
+        filename = Path(filename)
+        decoder = cls(reference)
+        b_content = filename.read_bytes()
+        try:
+            all_lines = b_content.decode()
+        except UnicodeDecodeError:
+            all_lines = codecs.encode(b_content, "hex").decode()
+
+        if all_lines.startswith("@"):  # dump1090 with --mlat option
+            decoder.process_msgs(
+                list(
+                    (
+                        now + timedelta(seconds=int(line[1:13], 16) / 12e6),
+                        line[13:-1],
+                    )
+                    for line in all_lines.split("\n")
+                    if line.startswith("@")
+                ),
+                uncertainty=uncertainty,
+                crc_check=crc_check,
+            )
+
+        elif all_lines.startswith("1a"):  # xxd -p on radarcape dump
+            content = bytes.fromhex(all_lines.replace("\n", ""))
+            for bin_msg in next_beast_msg([content]):
+                msg = "".join(["{:02x}".format(t) for t in bin_msg])
+                print(msg)
+                if len(bin_msg) < 23:
+                    continue
+                t = decode_time_radarcape(msg, now)
+                decoder.process(
+                    t,
+                    msg[18:],
+                    uncertainty=uncertainty,
+                    crc_check=crc_check,
+                )
+
+        return decoder
 
     @classmethod
     def from_dump1090(

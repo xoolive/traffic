@@ -472,8 +472,8 @@ class OpenSky:
     ) -> None | RawData:
         kwargs = {
             **kwargs,
+            # this one is with impala
             **(
-                # this one is with impala
                 dict(table_name="rollcall_replies_data4")
                 if isinstance(self.db_client, impala.Impala)
                 # this one is with Trino
