@@ -40,7 +40,7 @@ data source set as lowest priority)
 
     from ipyleaflet import Map, basemaps
 
-    m = Map(center=(32.3, 99), zoom=4, basemap=basemaps.Stadia.Stamen)
+    m = Map(center=(32.3, 99), zoom=4, basemap=basemaps.Stadia.StamenTerrain)
     m.add(airways["L888"])
 
     m
