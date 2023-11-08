@@ -553,7 +553,9 @@ class Flight(
             @flight_iterator
             def yield_segments() -> Iterator["Flight"]:
                 for interval in key:
-                    segment = self.between(interval.start, interval.stop)
+                    segment = self.between(
+                        interval.start, interval.stop, strict=False
+                    )
                     if segment is not None:
                         yield segment
 
@@ -1897,7 +1899,9 @@ class Flight(
     def comet(self, **kwargs: Any) -> Flight:
         raise DeprecationWarning("Use Flight.forward() method instead")
 
-    def forward(self, **kwargs: Any) -> Flight:
+    def forward(
+        self, delta: None | str | pd.Timedelta = None, **kwargs: Any
+    ) -> Flight:
         """Projects the trajectory in a straight line.
 
         The method uses the last position of a trajectory (method `at()
@@ -1921,7 +1925,10 @@ class Flight(
         if last_line is None:
             raise ValueError("Unknown data for this flight")
         window = self.last(seconds=20)
-        delta = timedelta(**kwargs)
+        if isinstance(delta, str):
+            delta = pd.Timedelta(delta)
+        if delta is None:
+            delta = timedelta(**kwargs)
 
         if window is None:
             raise RuntimeError("Flight expect at least 20 seconds of data")
