@@ -382,13 +382,17 @@ class Route(HBoxMixin, ShapelyMixin):
         idx1, idx2 = names.index(elt1), names.index(elt2)
         if idx1 == idx2:
             raise RuntimeError("The two references must be different")
-        if idx1 > idx2:
-            idx2, idx1 = idx1, idx2
         # fmt: off
-        return Route(
-            name=self.name + f" between {elt1} and {elt2}",
-            navaids=self.navaids[idx1: idx2 + 1],
-        )
+        if idx1 > idx2:
+            return Route(
+                name=self.name + f" between {elt1} and {elt2}",
+                navaids=self.navaids[idx2:idx1+1][::-1],
+            )
+        else:
+            return Route(
+                name=self.name + f" between {elt1} and {elt2}",
+                navaids=self.navaids[idx1:idx2 + 1],
+            )
         # fmt: on
 
     def plot(self, ax: "Axes", **kwargs: Any) -> None:  # coverage: ignore
