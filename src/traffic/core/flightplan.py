@@ -566,14 +566,15 @@ class FlightPlan(ShapelyMixin):
                 cumul[first.name] = _Point(
                     first.latitude, first.longitude, first.name
                 )
-                cumul[last.name] = _Point(
-                    last.latitude, last.longitude, last.name
-                )
+
                 if all_points:
                     for elt in args:
                         cumul[elt.name] = _Point(
                             elt.latitude, elt.longitude, elt.name
                         )
+                cumul[last.name] = _Point(
+                    last.latitude, last.longitude, last.name
+                )
 
         return cumul
 
