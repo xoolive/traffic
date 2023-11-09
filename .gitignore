@@ -119,3 +119,6 @@ dmypy.json
 
 node_modules/
 package-lock.json
+
+# PyCharm
+.idea

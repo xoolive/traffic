@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from numbers import Real
 
 from pyopensky.time import (
@@ -14,6 +14,7 @@ import pandas as pd
 
 __all__ = [
     "deltalike",
+    "round_time",
     "time_or_delta",
     "timelike",
     "timetuple",
@@ -54,3 +55,25 @@ def to_datetime(time: timelike) -> datetime:
             "datetime (resp. pd.Timestamp) constructor."
         )
     return time  # type: ignore
+
+def round_time(
+    time: timelike,
+    how: str = "before",
+    by: timedelta = timedelta(hours=1),
+) -> datetime:
+    dt = to_datetime(time)
+
+    round_to = by.total_seconds()
+    if dt.tzinfo is None:  # coverage: ignore
+        seconds = (dt - dt.min).seconds
+    else:
+        seconds = (dt - dt.min.replace(tzinfo=timezone.utc)).seconds
+
+    if how == "after":
+        rounding = (seconds + round_to) // round_to * round_to
+    elif how == "before":
+        rounding = seconds // round_to * round_to
+    else:  # coverage: ignore
+        raise ValueError("parameter how must be `before` or `after`")
+
+    return dt + timedelta(0, rounding - seconds, -dt.microsecond)
