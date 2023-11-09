@@ -12,7 +12,7 @@ def predict_fp(
     fp: FlightPlan,
     start: str | pd.Timestamp,
     stop: str | pd.Timestamp,
-    minutes: str = 15,
+    minutes: str = 15,  # REPLACE WITH INT
     angle_precision: int = 2,
     min_distance: int = 150,
 ):
