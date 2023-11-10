@@ -10,7 +10,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
-  POETRY_VERSION: "1.6.1"
+  POETRY_VERSION: "1.7.0"
 
 jobs:
   documentation:
