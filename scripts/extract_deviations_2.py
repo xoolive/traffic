@@ -253,19 +253,19 @@ def traitement(info: Tuple[Traffic, str]) -> None:
                         ].timestamp.iloc[0]
 
                         # length of neighbor deviation
-                        temp_dict["min_f_dev"] = pd.Timedelta(
-                            seconds=sum(
-                                f.duration.total_seconds()
-                                for f in (
-                                    voisins[idmin_f]
-                                    - voisins[idmin_f].aligned_on_navpoint(
-                                        metadata_simple[idmin_f],
-                                        angle_precision,
-                                        min_distance=min_distance,
-                                    )
-                                )
-                            )
-                        )
+                        # temp_dict["min_f_dev"] = pd.Timedelta(
+                        #     seconds=sum(
+                        #         f.duration.total_seconds()
+                        #         for f in (
+                        #             voisins[idmin_f]
+                        #             - voisins[idmin_f].aligned_on_navpoint(
+                        #                 metadata_simple[idmin_f],
+                        #                 angle_precision,
+                        #                 min_distance=min_distance,
+                        #             )
+                        #         )
+                        #     )
+                        # )
                         if pred_possible:
                             # we use the same neighbor to compute predicted distance
                             # df_dist_forward = pred.distance(voisins[idmin_f])
