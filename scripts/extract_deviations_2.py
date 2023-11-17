@@ -201,11 +201,11 @@ def traitement(info: Tuple[Traffic, str]) -> None:
 
                     if pred_possible:
                         # compute prediction
-                        pred = (
-                            flight.before(flight_trou.start)  # type: ignore
-                            .forward(minutes=forward_time)
-                            .resample("1s")
-                        )
+                        # pred = (
+                        #     flight.before(flight_trou.start)  # type: ignore
+                        #     .forward(minutes=forward_time)
+                        #     .resample("1s")
+                        # )
                         pred_fp = predict_fp(
                             flight,
                             metadata_simple[id],
@@ -268,15 +268,15 @@ def traitement(info: Tuple[Traffic, str]) -> None:
                         )
                         if pred_possible:
                             # we use the same neighbor to compute predicted distance
-                            df_dist_forward = pred.distance(voisins[idmin_f])
-                            temp_dict["min_p_id"] = idmin_f
-                            temp_dict[
-                                "min_p_dist"
-                            ] = df_dist_forward.lateral.min()
-                            temp_dict["min_p_time"] = df_dist_forward.loc[
-                                df_dist_forward.lateral
-                                == df_dist_forward.lateral.min()
-                            ].timestamp.iloc[0]
+                            # df_dist_forward = pred.distance(voisins[idmin_f])
+                            # temp_dict["min_p_id"] = idmin_f
+                            # temp_dict[
+                            #     "min_p_dist"
+                            # ] = df_dist_forward.lateral.min()
+                            # temp_dict["min_p_time"] = df_dist_forward.loc[
+                            #     df_dist_forward.lateral
+                            #     == df_dist_forward.lateral.min()
+                            # ].timestamp.iloc[0]
 
                             df_dist_fp = pred_fp.distance(voisins[idmin_f])
                             temp_dict["min_fp_id"] = idmin_f
