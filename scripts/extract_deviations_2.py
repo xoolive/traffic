@@ -18,7 +18,7 @@ import os
 from traffic.core.mixins import DataFrameMixin
 from function_parsing_sector import sectors_openings
 import multiprocessing as mp
-from typing import Tuple, List
+from typing import Tuple, List, Callable
 
 extent = "LFBBBDX"
 prefix_sector = "LFBB"
@@ -56,7 +56,6 @@ def dist_lat_min(f1: Flight, f2: Flight) -> Any:
         if f1 & f2 is None:  # no overlap
             print(f"no overlap with {f2.flight_id}")
             return None
-        # print('yes overlap')
         return cast(pd.DataFrame, f1.distance(f2))["lateral"].min()
     except TypeError as e:
         print(
@@ -73,7 +72,6 @@ assert t2 is not None
 nbworkers = 60
 nt2 = len(t2)
 nbsubsets = nt2 // nbworkers
-print("before subsets2")
 
 subsetst2 = [
     t2[nbsubsets * i : nbsubsets * (i + 1)]
@@ -90,7 +88,6 @@ couples_datas = [
 
 def traitement(info: Tuple[Traffic, str]) -> None:
     subset, sortie = info
-    print(len(subset))
     list_dicts = []
     ids_error = []
     for flight in subset:
@@ -182,11 +179,7 @@ def traitement(info: Tuple[Traffic, str]) -> None:
                             min_distance=min_distance,
                         )
 
-                        # zero neighbors
-                        temp_dict["nb_voisins"] = 0
-
                     if voisins is not None:
-                        temp_dict["nb_voisins"] = len(voisins)
                         # distance to closest neighbor + flight_id + timestamp
 
                         (min_f, idmin_f) = min(
@@ -223,12 +216,14 @@ def traitement(info: Tuple[Traffic, str]) -> None:
 
 
 def do_parallel(
-    f: function,
-    datas: List[Tuple[Traffic, str]],
+    # f: function,
+    f: Callable[[Tuple[Traffic | Any, str]], None],
+    datas: List[Tuple[Traffic | Any, str]],
     nworkers: int = mp.cpu_count() // 2,
 ) -> None:
     with mp.Pool(nworkers) as pool:
-        l = pool.map(f, datas, chunksize=1)
+        # l = pool.map(f, datas, chunksize=1)
+        pool.map(f, datas, chunksize=1)
 
 
 do_parallel(traitement, couples_datas, nbworkers)
