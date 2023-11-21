@@ -64,9 +64,9 @@ def dist_lat_min(f1: Flight, f2: Flight) -> Any:
         return None
 
 
-probleme = t2["AA39472649"]
-assert probleme is not None
-t2 = t2 - probleme
+problem = t2["AA39472649"]
+assert problem is not None
+t2 = t2 - problem
 assert t2 is not None
 
 nbworkers = 60
@@ -81,13 +81,13 @@ subsetst2 = [
 ]
 
 couples_datas = [
-    (sub, f"test_extract_deviations/stats_para_{i}.parquet")
+    (sub, i, f"test_extract_deviations/stats_para_{i}.parquet")
     for i, sub in enumerate(subsetst2)
 ]
 
 
-def traitement(info: Tuple[Traffic, str]) -> None:
-    subset, sortie = info
+def traitement(info: Tuple[Traffic, int, str]) -> None:
+    subset, iworker, sortie = info
     list_dicts = []
     ids_error = []
     for flight in subset:
@@ -117,12 +117,12 @@ def traitement(info: Tuple[Traffic, str]) -> None:
                     flmin = flight_trou.altitude_min - margin_fl
                     flmax = flight_trou.altitude_max + margin_fl
 
-                    stop_voisins = min(
+                    stop_neighbours = min(
                         flight_trou.start + pd.Timedelta(minutes=forward_time),
                         flight.stop,
                     )
                     flight_interest = flight.between(
-                        flight_trou.start, stop_voisins
+                        flight_trou.start, stop_neighbours
                     )
                     assert flight_interest is not None
 
@@ -133,13 +133,20 @@ def traitement(info: Tuple[Traffic, str]) -> None:
                     if offlimits is not None:
                         istop = offlimits.data.index[0]
                         flight_interest.data = flight_interest.data.loc[:istop]
-                        stop_voisins = flight_interest.stop
+                        stop_neighbours = flight_interest.stop
 
-                    voisins = (
+                    # print(f"{iworker}: {len(t2)}")
+                    # assert t2 is not None
+                    # allothers = t2 - flight
+                    # print(len(allothers))
+                    # print(f"{iworker}: {len(t2)} ok")
+                    # assert allothers is not None
+                    neighbours = (
                         (t2 - flight)
                         .between(
+                            # allothers.between(
                             start=flight_trou.start,
-                            stop=stop_voisins,
+                            stop=stop_neighbours,
                             strict=False,
                         )
                         .iterate_lazy()
@@ -150,52 +157,54 @@ def traitement(info: Tuple[Traffic, str]) -> None:
 
                     pred_possible = flight.before(flight_trou.start) is not None
 
-                    if voisins is None and not pred_possible:
+                    if neighbours is None and not pred_possible:
                         temp_dict = {
                             **temp_dict,
                             **dict(
-                                nb_voisins=0,
+                                # nb_neighbours=0,
                                 min_f_dist=None,
-                                min_f_id=None,
-                                min_p_dist=None,
-                                min_p_id=None,
-                                max_dev_angle=None,
-                                q90_dev_angle=None,
-                                deviation_area=None,
-                                min_f_dev=None,  # deviation time for closest
+                                # min_f_id=None,
+                                # min_p_dist=None,
+                                # min_p_id=None,
+                                # max_dev_angle=None,
+                                # q90_dev_angle=None,
+                                # deviation_area=None,
+                                # min_f_dev=None,  # deviation time for closest
                             ),
                         }
                         continue
 
                     if pred_possible:
                         # compute prediction
-
+                        fp = metadata_simple[id]
+                        assert isinstance(fp, FlightPlan)
                         pred_fp = predict_fp(
                             flight,
-                            metadata_simple[id],
+                            # metadata_simple[id],
+                            fp,
                             flight_trou.start,
                             flight_trou.stop,
                             minutes=forward_time,
                             min_distance=min_distance,
                         )
 
-                    if voisins is not None:
+                    if neighbours is not None:
                         # distance to closest neighbor + flight_id + timestamp
 
                         (min_f, idmin_f) = min(
                             (dist_lat_min(flight_interest, f), f.flight_id)
-                            for f in voisins
+                            for f in neighbours
                         )
                         temp_dict["neighbour_id"] = idmin_f
                         temp_dict["min_f_dist"] = min_f
-                        temp_dict["min_f_id"] = idmin_f
-                        df_dist = flight_interest.distance(voisins[idmin_f])
+                        # temp_dict["min_f_id"] = idmin_f
+                        df_dist = flight_interest.distance(neighbours[idmin_f])
                         temp_dict["min_f_time"] = df_dist.loc[
                             df_dist.lateral == df_dist.lateral.min()
                         ].timestamp.iloc[0]
 
                         if pred_possible:
-                            df_dist_fp = pred_fp.distance(voisins[idmin_f])
+                            df_dist_fp = pred_fp.distance(neighbours[idmin_f])
                             temp_dict["min_fp_id"] = idmin_f
                             temp_dict["min_fp_dist"] = df_dist_fp.lateral.min()
                             temp_dict["min_fp_time"] = df_dist_fp.loc[
@@ -218,7 +227,7 @@ def traitement(info: Tuple[Traffic, str]) -> None:
 def do_parallel(
     # f: function,
     f: Callable[[Tuple[Traffic | Any, str]], None],
-    datas: List[Tuple[Traffic | Any, str]],
+    datas: List[Tuple[Traffic | Any, int, str]],
     nworkers: int = mp.cpu_count() // 2,
 ) -> None:
     with mp.Pool(nworkers) as pool:
