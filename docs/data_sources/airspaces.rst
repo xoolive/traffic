@@ -13,7 +13,7 @@ Basically, sectors are split when controllers’ workload increases, and merged
 when it decreases.
 
 An `Airspace <../traffic.core.airspace.html>`__ is represented as a set of
-polygons of geographical coordinates, extruded to a lower and upper altitudes. 
+polygons of geographical coordinates, extruded to a lower and upper altitudes.
 Airspaces can be of different types, corresponding to different kinds of
 activities allowed (civil, military, glider, etc.) or services provided.
 

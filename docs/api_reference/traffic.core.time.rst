@@ -6,4 +6,3 @@ traffic.core.time
     :inherited-members:
     :no-undoc-members:
     :show-inheritance:
-

@@ -1,24 +1,23 @@
 ---
 title: traffic, a toolbox for processing and analysing air traffic data
 tags:
-- trajectory
-- ADS-B
-- Mode S
-- air traffic management
-- data visualisation
+  - trajectory
+  - ADS-B
+  - Mode S
+  - air traffic management
+  - data visualisation
 authors:
-- affiliation: 1
-  name: Xavier Olive
-  orcid: 0000-0002-2335-5774
+  - affiliation: 1
+    name: Xavier Olive
+    orcid: 0000-0002-2335-5774
 affiliations:
-- index: 1
-  name: ONERA, Université de Toulouse, France
+  - index: 1
+    name: ONERA, Université de Toulouse, France
 date: "15 June 2019"
 bibliography: paper.bib
 ---
 
 # Summary
-
 
 Problems tackled by researchers and data scientists in aviation and air traffic
 management (ATM) require manipulating large amounts of data representing
@@ -103,5 +102,3 @@ We expect to improve the library with optimisations in processing time, enriched
 algorithms and more powerful visualisation capabilities.
 
 # References
-
-

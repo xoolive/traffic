@@ -1,6 +1,6 @@
 from io import BytesIO
 from pathlib import Path
-from typing import List, Optional, Set, Tuple, Union
+from typing import ClassVar, Dict, List, Optional, Set, Tuple, Union
 from zipfile import ZipFile
 
 import numpy as np
@@ -140,27 +140,50 @@ class Anp(object):
     performance calculations with ANP data.
     """
 
-    flap_retraction_file: Path = Path(__file__).parent / "Flap Schedules.csv"
+    cache_dir: ClassVar[Path]
+    expiration_days: None | int
+
+    anp_url_map: ClassVar[Dict[str, str]] = {
+        "2.3": "https://www.easa.europa.eu/en/downloads/138164/en",
+        "2.2": "https://www.easa.europa.eu/en/downloads/138158/en",
+        "2.1": "https://www.easa.europa.eu/en/downloads/138157/en",
+        "2.0": "https://www.easa.europa.eu/en/downloads/138156/en",
+        "1.0": "https://www.easa.europa.eu/en/downloads/138155/en",
+    }
+    substitutions_url: ClassVar[
+        str
+    ] = "https://www.easa.europa.eu/en/downloads/138165/en"
+
+    flap_retraction_file: ClassVar[Path] = (
+        Path(__file__).parent / "Flap Schedules.csv"
+    )
 
     def __init__(
-            self,
-            anp_zip_path: Union[str, None] = None,
-            anp_substitution_path: Union[str, None] = None,
+        self,
+        anp_version: str | None = "2.3",
+        anp_substitution: Union[str, None] = None,
     ):
         """
-        :param anp_zip_path: Path to a zip file with the ANP tables. If
-        None no ANP tables will be loaded.
+        :param anp_version: Either one of the versions found in the anp_url_map
+        or a path to a zip file with the ANP tables.
 
         :param anp_substitution_path: Path to a local .xlsx file with the
-        ANP substitution table. If None the substitution table will not be
-        loaded.
+        ANP substitution table. If None the substitution table will be
+        downloaded from the EASA website.
         """
 
-        if anp_zip_path is not None:
-            self._anp_from_zip(anp_zip_path)
+        if anp_version is None:
+            anp_version = "2.3"
 
-        if anp_substitution_path is not None:
-            self._substitution_from_xlsx(anp_substitution_path)
+        if anp_version in self.anp_url_map:
+            self._anp_download(anp_version)
+        else:
+            self._anp_from_zip(anp_version)
+
+        if anp_substitution is None:
+            self._substitution_download()
+        else:
+            self._substitution_from_xlsx(anp_substitution)
 
         self.flap_retraction_schedule = pd.read_csv(self.flap_retraction_file)
 
@@ -183,11 +206,11 @@ class Anp(object):
         )
 
     def takeoff_weight(
-            self,
-            acft_id: str,
-            percentage: float = 1.0,
-            stage_length: Union[None, int] = None,
-            flight_distance: Union[None, float] = None,
+        self,
+        acft_id: str,
+        percentage: float = 1.0,
+        stage_length: Union[None, int] = None,
+        flight_distance: Union[None, float] = None,
     ) -> float:
         """
         Get the takeoff weight of an aircraft as MTOW multiplied by a percentage
@@ -217,8 +240,8 @@ class Anp(object):
         weight = float(
             df.loc[
                 (
-                        df["ACFT_ID"] == acft_id
-                        and df["Stage Length"] == stage_length
+                    df["ACFT_ID"] == acft_id
+                    and df["Stage Length"] == stage_length
                 ),
                 "Weight (lb)",
             ]
@@ -264,25 +287,19 @@ class Anp(object):
         if "default weights" in by:
             r._filter(set(r.default_weights["ACFT_ID"]))  # type: ignore
         if "flap retraction" in by:
-            r._filter(
-                set(r.flap_retraction_schedule["ACFT_ID"])  # type: ignore
-            )
+            r._filter(set(r.flap_retraction_schedule["ACFT_ID"]))  # type: ignore
 
         if "substitution" in by:
             r._filter(set(r.substitution["ANP_PROXY"]))  # type: ignore
 
         if "thrust coefficients" in by:
-            ids = set(
-                r.jet_engine_coefficients["ACFT_ID"]  # type: ignore
-            ) | set(
+            ids = set(r.jet_engine_coefficients["ACFT_ID"]) | set(  # type: ignore
                 r.propeller_engine_coefficients["ACFT_ID"]  # type: ignore
             )
             r._filter(ids)
 
         if "aerodynamic coefficients" in by:
-            r._filter(
-                set(r.aerodynamic_coefficients["ACFT_ID"])  # type: ignore
-            )
+            r._filter(set(r.aerodynamic_coefficients["ACFT_ID"]))  # type: ignore
 
         return r
 
@@ -302,14 +319,14 @@ class Anp(object):
 
     # -- Physical Quantities --
     def thrust_force_balance(
-            self,
-            acft_id: str,
-            w: Union[int, float, Numeric, None],
-            cas: Numeric,
-            accel: Numeric,
-            ang: Numeric,
-            p: Numeric,
-            w_percentage: float = 1.0,
+        self,
+        acft_id: str,
+        w: Union[int, float, Numeric, None],
+        cas: Numeric,
+        accel: Numeric,
+        ang: Numeric,
+        p: Numeric,
+        w_percentage: float = 1.0,
     ) -> Numeric:
         """
         Calculate arrival thrust for n points calculated with the force balance
@@ -341,16 +358,16 @@ class Anp(object):
         )
 
     def thrust_rating(
-            self,
-            acft_id: str,
-            alt: Optional[Numeric],
-            cas: Optional[Numeric],
-            tas: Optional[Numeric],
-            temp: Optional[Numeric],
-            press: Optional[Numeric],
-            cutback: Union[float, int, None] = None,
-            vert_rate: Optional[Numeric] = None,
-            break_temp: float = 30.0,
+        self,
+        acft_id: str,
+        alt: Optional[Numeric],
+        cas: Optional[Numeric],
+        tas: Optional[Numeric],
+        temp: Optional[Numeric],
+        press: Optional[Numeric],
+        cutback: Union[float, int, None] = None,
+        vert_rate: Optional[Numeric] = None,
+        break_temp: float = 30.0,
     ) -> Tuple[Numeric, int]:
         """
         Calculate departure thrust for n points with the thrust rating
@@ -363,7 +380,7 @@ class Anp(object):
         determine how the cutback point is estimated.
         - If cutback is an int, it is used as an index to the cutback point
         - If cutback is a float, the cutback index is found by searching the
-        alt array (assumes an ascendily sorted array)
+        alt array (assumes an ascending sorted array)
         - If cutback is None, vert_rate must be passed and the first local
         maxima (width of 3) is used as cutback index.
 
@@ -393,9 +410,7 @@ class Anp(object):
             idx_500 = alt_afe.searchsorted(500)
             idx_3300 = alt_afe.searchsorted(3300, side="right")
             # TODO: Find peaks based on derivative
-            idx, _ = find_peaks(
-                vert_rate[idx_500:idx_3300], width=3  # type: ignore
-            )
+            idx, _ = find_peaks(vert_rate[idx_500:idx_3300], width=3)  # type: ignore
 
             # Defaults back to 1500ft thrust cutback if no peaks are found
             idx = idx[0] if idx.size != 0 else alt_afe.searchsorted(1500)
@@ -410,21 +425,16 @@ class Anp(object):
         else:
             idx = cutback
 
-        if (
-                acft_id
-                in self.jet_engine_coefficients["ACFT_ID"].values
-                # type: ignore
-        ):
+        if acft_id in self.jet_engine_coefficients["ACFT_ID"].values:  # type: ignore
             assert all(param is not None for param in [alt, cas, temp])
 
             c = self.jet_engine_coefficients.loc[  # type: ignore
-                self.jet_engine_coefficients["ACFT_ID"]  # type: ignore
-                == acft_id
-                ]
+                self.jet_engine_coefficients["ACFT_ID"] == acft_id  # type: ignore
+            ]
 
             if high_temperature and all(
-                    rating in c["Thrust Rating"].values
-                    for rating in ["MaxTkoffHiTemp", "MaxClimbHiTemp"]
+                rating in c["Thrust Rating"].values
+                for rating in ["MaxTkoffHiTemp", "MaxClimbHiTemp"]
             ):
                 c_t = c.loc[c["Thrust Rating"] == "MaxTkoffHiTemp"].squeeze()
                 c_c = c.loc[c["Thrust Rating"] == "MaxClimbHiTemp"].squeeze()
@@ -435,82 +445,91 @@ class Anp(object):
 
             if not high_temperature:
                 takeoff_thrust = (
-                        c_t["E"]
-                        + c_t["F"] * cas[:idx]  # type: ignore
-                        + c_t["Ga"] * alt[:idx]  # type: ignore
-                        + c_t["Gb"] * alt[:idx] * alt[:idx]  # type: ignore
-                        + c_t["H"] * temp[:idx]  # type: ignore
+                    c_t["E"]
+                    + c_t["F"] * cas[:idx]  # type: ignore
+                    + c_t["Ga"] * alt[:idx]  # type: ignore
+                    + c_t["Gb"] * alt[:idx] * alt[:idx]  # type: ignore
+                    + c_t["H"] * temp[:idx]  # type: ignore
                 )
 
                 climb_thrust = (
-                        c_c["E"]
-                        + c_c["F"] * cas[idx:]  # type: ignore
-                        + c_c["Ga"] * alt[idx:]  # type: ignore
-                        + c_c["Gb"] * alt[idx:] * alt[idx:]  # type: ignore
-                        + c_c["H"] * temp[idx:]  # type: ignore
+                    c_c["E"]
+                    + c_c["F"] * cas[idx:]  # type: ignore
+                    + c_c["Ga"] * alt[idx:]  # type: ignore
+                    + c_c["Gb"] * alt[idx:] * alt[idx:]  # type: ignore
+                    + c_c["H"] * temp[idx:]  # type: ignore
                 )
                 return np.concatenate([takeoff_thrust, climb_thrust]), idx
 
             else:
-                takeoff_thrust = c_t["F"] * cas[:idx] + (  # type: ignore
+                takeoff_thrust = (
+                    c_t["F"] * cas[:idx]
+                    + (  # type: ignore
                         c_t["E"] + c_t["H"] * break_temp
-                ) * (
-                                         1 - 0.006 * temp[:idx]  # type: ignore
-                                 ) / (
-                                         1 - 0.006 * break_temp
-                                 )
+                    )
+                    * (
+                        1 - 0.006 * temp[:idx]  # type: ignore
+                    )
+                    / (1 - 0.006 * break_temp)
+                )
 
-                climb_thrust = c_c["F"] * cas[idx:] + (  # type: ignore
+                climb_thrust = (
+                    c_c["F"] * cas[idx:]
+                    + (  # type: ignore
                         c_c["E"] + c_c["H"] * break_temp
-                ) * (
-                                       1 - 0.006 * temp[idx:]  # type: ignore
-                               ) / (
-                                       1 - 0.006 * break_temp
-                               )
+                    )
+                    * (
+                        1 - 0.006 * temp[idx:]  # type: ignore
+                    )
+                    / (1 - 0.006 * break_temp)
+                )
                 return np.concatenate([takeoff_thrust, climb_thrust]), idx
 
-        elif (
-                acft_id in
-                (self.propeller_engine_coefficients[
-                    "ACFT_ID"
-                ].values)  # type: ignore
-        ):
+        elif acft_id in (self.propeller_engine_coefficients["ACFT_ID"].values):  # type: ignore
             assert all(param is not None for param in [tas, press])
 
             c = self.propeller_engine_coefficients.loc[  # type: ignore
-                self.propeller_engine_coefficients["ACFT_ID"]  # type: ignore
-                == acft_id
-                ]
+                self.propeller_engine_coefficients["ACFT_ID"] == acft_id  # type: ignore
+            ]
             c_t = c.loc[c["Thrust Rating"] == "MaxTakeoff"].squeeze()
             c_c = c.loc[c["Thrust Rating"] == "MaxClimb"].squeeze()
 
             # Propeller thrust is very high thrust at low true air speeds
             # Values is capped at 125% of rated thrust
-            max_thrust = self.aircraft.loc[
-                self.aircraft["ACFT_ID"] == acft_id,
-                "Max Sea Level Static Thrust (lb)"
-            ].astype(float) * 1.25
+            max_thrust = (
+                self.aircraft.loc[  # type ignore
+                    self.aircraft["ACFT_ID"] == acft_id,
+                    "Max Sea Level Static Thrust (lb)",
+                ].astype(float)
+                * 1.25
+            )
 
             takeoff_thrust = (
-                                     326
-                                     * c_t["Propeller Efficiency"]
-                                     * c_t[
-                                         "Installed Net Propulsive Power (hp)"]
-                                     / tas[:idx]  # type: ignore
-                             ) / (
-                                     press[:idx] / 1013.25  # type: ignore
-                             )
-            takeoff_thrust = np.minimum(takeoff_thrust.values,
-                                        max_thrust.values)
+                (
+                    326
+                    * c_t["Propeller Efficiency"]
+                    * c_t["Installed Net Propulsive Power (hp)"]
+                    / tas[:idx]  # type: ignore
+                )
+                / (
+                    press[:idx] / 1013.25  # type: ignore
+                )
+            )
+            takeoff_thrust = np.minimum(
+                takeoff_thrust.values, max_thrust.values
+            )
 
             climb_thrust = (
-                                   326
-                                   * c_c["Propeller Efficiency"]
-                                   * c_c["Installed Net Propulsive Power (hp)"]
-                                   / tas[idx:]  # type: ignore
-                           ) / (
-                                   press[idx:] / 1013.25  # type: ignore
-                           )
+                (
+                    326
+                    * c_c["Propeller Efficiency"]
+                    * c_c["Installed Net Propulsive Power (hp)"]
+                    / tas[idx:]  # type: ignore
+                )
+                / (
+                    press[idx:] / 1013.25  # type: ignore
+                )
+            )
             climb_thrust = np.minimum(climb_thrust.values, max_thrust.values)
 
             return np.concatenate([takeoff_thrust, climb_thrust]), idx
@@ -523,7 +542,7 @@ class Anp(object):
     def _r_coefficient(self, acft_id: str, cas: Numeric) -> Numeric:
         acft_schedule = self.flap_retraction_schedule[
             self.flap_retraction_schedule["ACFT_ID"] == acft_id
-            ]
+        ]
         idx = np.maximum(
             np.searchsorted(
                 -acft_schedule["Start CAS (kt)"].values, -cas, side="right"
@@ -536,18 +555,32 @@ class Anp(object):
     def _get_flap_retraction_schedule(self) -> None:
         self.flap_retraction_schedule = pd.read_csv(self.flap_retraction_file)
 
+    # -- Load & Download --
+    def _anp_download(self, version: str) -> None:
+        from .. import session
+
+        f = session.get(self.anp_url_map[version], stream=True)
+        buffer = BytesIO()
+        [buffer.write(chunk) for chunk in f.iter_content(1024)]
+
+        file = self.cache_dir / "anp.zip"
+        with open(file, "wb") as f:
+            f.write(buffer.getbuffer())
+
+        self._anp_from_zip(file)
+
     def _anp_from_zip(self, path: Path) -> None:
         zp = ZipFile(path)
         zp_file_list = [zip_file_info.filename for zip_file_info in zp.filelist]
 
         for anp_file, cols in anp_file_dict.items():
             if zp_file := next(
-                    (
-                            zp_file
-                            for zp_file in zp_file_list
-                            if anp_file in zp_file.lower()
-                    ),
-                    None,
+                (
+                    zp_file
+                    for zp_file in zp_file_list
+                    if anp_file in zp_file.lower()
+                ),
+                None,
             ):
                 data = pd.read_csv(
                     BytesIO(zp.read(zp_file)), sep=None, engine="python"
@@ -565,6 +598,19 @@ class Anp(object):
                     f"The ANP table {anp_file} was not found "
                     f"in the zip file {path.as_posix()}."
                 )
+
+    def _substitution_download(self) -> None:
+        from .. import session
+
+        f = session.get(self.substitution_url, stream=True)
+        buffer = BytesIO()
+        [buffer.write(chunk) for chunk in f.iter_content(1024)]
+
+        file = self.cache_dir / "anp_substitution.xlsx"
+        with open(file, "wb") as f:
+            f.write(buffer.getbuffer())
+
+        self._substitution_from_xlsx(file)
 
     def _substitution_from_xlsx(self, path: Path) -> None:
         self.substitution = pd.read_excel(

@@ -230,8 +230,14 @@ class Metars(DataFrameMixin):
                     continue
                 try:
                     if (
-                        pd.to_datetime(strs[idx + 2], format="%Y%m%d%H", utc=True) <= start_time
-                        and pd.to_datetime(strs[idx + 3], format="%Y%m%d%H", utc=True) >= stop_time
+                        pd.to_datetime(
+                            strs[idx + 2], format="%Y%m%d%H", utc=True
+                        )
+                        <= start_time
+                        and pd.to_datetime(
+                            strs[idx + 3], format="%Y%m%d%H", utc=True
+                        )
+                        >= stop_time
                     ):
                         return file
                 except ValueError:
@@ -324,10 +330,12 @@ class Metars(DataFrameMixin):
             )
             df["sea_level_pressure"] = df["press_temp_2"]
             df = df.drop(columns=["press_temp_1", "press_temp_2"])
-            df = df.fillna({
-                "wind_direction": 0.0,
-                "wind_speed": 0.0,
-            })
+            df = df.fillna(
+                {
+                    "wind_direction": 0.0,
+                    "wind_speed": 0.0,
+                }
+            )
             df.to_parquet(
                 cls.cache_dir / "metars" / f"metar_iem_{station}_"
                 f"{start_time.strftime('%Y%m%d%H')}_"
@@ -352,6 +360,10 @@ class Metars(DataFrameMixin):
             start_time = to_datetime(stop_time) - timedelta(hours=2.0)
 
         return (
-            round_time(to_datetime(start_time).astimezone(timezone.utc), how="before"),
-            round_time(to_datetime(stop_time).astimezone(timezone.utc), how="after"),
+            round_time(
+                to_datetime(start_time).astimezone(timezone.utc), how="before"
+            ),
+            round_time(
+                to_datetime(stop_time).astimezone(timezone.utc), how="after"
+            ),
         )

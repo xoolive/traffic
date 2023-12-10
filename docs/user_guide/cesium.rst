@@ -9,7 +9,7 @@ the ``data/`` directory. You may drag and drop it on the
 http://cesiumjs.org/ page after you open it on your browser.
 
 
-.. warning:: 
+.. warning::
 
     The plugin must be `activated <plugins.html>`__ in your configuration file.
 

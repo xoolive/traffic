@@ -8,18 +8,18 @@ by a trajectory (here from the so6 file)
 
     from traffic.data import SO6
     so6 = SO6.from_file('data/sample_m3.so6.7z')
-    
+
     with plt.style.context('traffic'):
         fig = plt.figure()
         ax = plt.axes(projection=Lambert93())
-    
+
         ax.add_feature(countries())
         ax.gridlines()
         ax.set_extent(nm_airspaces['LFFFUIR'])
-    
+
         nm_airspaces['LFFFUIR'].plot(ax, lw=2, alpha=.5, linestyle='dashed')
         so6['DAH1008'].plot(ax, marker='.')
-        
+
         # display elementary sectors (ES) crossed by the trajectory
         for airspace in nm_airspaces.search("LF.*/ES"):
             if so6['DAH1008'].intersects(airspace):
@@ -45,7 +45,7 @@ at noon.
         .inside_bbox(nm_airspaces['LFBBBDX'])
         .intersects(nm_airspaces['LFBBBDX'])
     )
-    
+
     # full so6 limited to flights hereabove
     so6_bdx_noon = so6.select(bdx_noon)
 
@@ -53,17 +53,17 @@ at noon.
 
     from cartes.crs import EuroPP
     from cartes.utils.features import countries
-    
+
     with plt.style.context('traffic'):
         fig = plt.figure()
         ax = plt.axes(projection=EuroPP())
-    
+
         ax.add_feature(countries())
         ax.gridlines()
         ax.set_extent((-10, 15, 35, 55))
-    
+
         nm_airspaces['LFBBBDX'].plot(ax, lw=2, alpha=.5)
-    
+
         for _, flight in so6_bdx_noon:
             flight.plot(ax, color='#aa3a3a', lw=.4, alpha=.5)
 
@@ -73,4 +73,3 @@ at noon.
    :scale: 70 %
    :alt: Trajectories over Bordeaux AAC
    :align: center
-

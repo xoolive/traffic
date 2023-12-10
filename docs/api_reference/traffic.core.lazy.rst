@@ -11,4 +11,3 @@ traffic.core.lazy
 
     .. autofunction:: apply
     .. autofunction:: lazy_evaluation
-

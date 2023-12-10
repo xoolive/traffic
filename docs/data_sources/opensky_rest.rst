@@ -76,7 +76,7 @@ bounds:
 .. jupyter-execute::
   :raises:
 
-  # Have you seen Santa Claus coming to Toulouse? 
+  # Have you seen Santa Claus coming to Toulouse?
   opensky.api_arrival("LFBO", "2021-12-24 20:00", "2021-12-25 06:00")
 
 

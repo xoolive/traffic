@@ -26,10 +26,10 @@ Arctic night.
 .. code:: python
 
     import altair as alt
-    
+
     (
         f.assign(arctic_circle=66.5)
-        .chart("latitude", "arctic_circle") 
+        .chart("latitude", "arctic_circle")
         .encode(
             alt.Color("variable", legend=alt.Legend(title="angle")),
         )
@@ -60,12 +60,12 @@ aircraft.
 .. code:: python
 
     import pandas as pd
-    
+
     from astropy.coordinates import get_sun, AltAz, EarthLocation
     from astropy.time import Time
-    
+
     # use astropy to compute the position of the Sun w.r.t the aircraft
-    
+
     time = Time(f.data.timestamp)
     sun_position = get_sun(time)
     aircraft_position = EarthLocation(
@@ -75,9 +75,9 @@ aircraft.
     )
     aircraft_frame = AltAz(obstime=time, location=aircraft_position)
     sun_altaz = sun_position.transform_to(aircraft_frame)
-    
+
     # include sun altitude and azimuth in the flight data
-    
+
     df = pd.DataFrame(
         dict(
             timestamp=f.data.timestamp,
@@ -85,7 +85,7 @@ aircraft.
             sun_azimuth=list(x.value for x in sun_altaz.az),
         )
     )
-    
+
     g = f.merge(df, on="timestamp")
 
 .. code:: ipython3
@@ -142,19 +142,19 @@ The next step is to plot the trajectory with different colors:
 
     from ipyleaflet import Map, basemaps
     from ipywidgets import Layout
-    
+
     map_ = Map(
         center=(60, 80),
         zoom=2,
         layout=Layout(height="500px", max_width="500px"),
         basemap=basemaps.CartoDB.Positron,
     )
-    
+
     map_.add_layer(g, color="#eeba30")  # yellow
     map_.add_layer(g.query("sun_altitude < 0"), color="#dc6900")  # orange
     map_.add_layer(g.query("sun_altitude < -6"), color="#ae0001")  # red
     map_.add_layer(g.query("sun_altitude < -10"), color="#372e29")  # black
-    
+
     map_
 
 
@@ -182,31 +182,31 @@ for daylight, orange for twilight, etc.)
 .. code:: python
 
     import re
-    
+
     import cv2
     import exifread
-    
+
     from ipywidgets import Image, Layout
     from ipyleaflet import Popup
-    
+
     # for each JPG file in the folder (a pathlib.Path)
-    
+
     for file in sorted(list(picture_directory.glob("**/*.JPG"))):
         with file.open("rb") as fh:
-    
+
             # parse EXIF information
             exif_tags = exifread.process_file(fh)
             s = exif_tags["EXIF DateTimeDigitized"].values
-    
+
             # Parse time and correct the timestamp of your device (+01:00 for mine)
             ts = pd.Timestamp(re.sub(r"(\d+):(\d+):(\d+) ", r"\1/\2/\3 ", s) + "+01:00")
-    
+
             # safeguard, the picture must have been taken during the flight
             assert f.start <= ts <= f.stop
-    
+
             # read the image
             img = cv2.imread(file.as_posix())
-    
+
             # resize the image
             scale = 0.1
             width = int(img.shape[1] * scale)
@@ -214,12 +214,12 @@ for daylight, orange for twilight, etc.)
             dim = (width, height)
             resized = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
             _, arr = cv2.imencode(".jpg", resized)
-    
+
             # build an Image to place on the map
             image = Image(value=arr.tobytes(), layout=Layout(min_width="200px"))
-    
+
             point = f.before(ts).at()
             marker = point.leaflet(title=f"{ts}", draggable=False)
             marker.popup = image
-    
+
             map_.add_layer(marker)

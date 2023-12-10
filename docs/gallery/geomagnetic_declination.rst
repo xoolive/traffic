@@ -165,4 +165,4 @@ There are, for sure, few points requested with heading angles. Yet we can clearl
         # Simplify the formatting for dates on the x-axis
         ax.xaxis.set_major_formatter(DateFormatter("%H:%M"))
         fig.autofmt_xdate(rotation=0, ha="center")
-    
+

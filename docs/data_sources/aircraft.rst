@@ -10,4 +10,3 @@ traffic lets you easily switch database to a file you would be able to provide.
     :members:
     :no-inherited-members:
     :no-undoc-members:
-

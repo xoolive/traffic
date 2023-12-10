@@ -10,7 +10,7 @@ from .. import cache_dir, config, config_file
 if TYPE_CHECKING:
     from .adsb.decode import ModeS_Decoder
     from .adsb.opensky import OpenSky
-    from .anp_data.anp import Anp
+    from .anp.anp import Anp
     from .basic.aircraft import Aircraft
     from .basic.airports import Airports
     from .basic.airways import Airways
@@ -156,6 +156,8 @@ def __getattr__(name: str) -> Any:
     if name == "anp_data":
         from .anp.anp import Anp
 
+        Anp.cache_dir = cache_dir
+
         anp_path = config.get("anp", "database", fallback=None)
         subs_path = config.get("anp", "substitution", fallback=None)
 
@@ -178,9 +180,8 @@ def __getattr__(name: str) -> Any:
         if filename != "":
             res = Metars.from_file(filename)
         else:
-            stations = (
-                config.get("weather", "stations", fallback="")
-                .replace(" ", "")
+            stations = config.get("weather", "stations", fallback="").replace(
+                " ", ""
             )
             if stations != "":
                 stations = stations.split(",")

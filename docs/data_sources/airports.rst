@@ -71,10 +71,10 @@ Altair representation
 .. jupyter-execute::
 
    import altair as alt
-   
+
    from traffic.data import airports
    from traffic.data.samples import belevingsvlucht
-   
+
    chart = (
        alt.layer(
            airports["EHAM"].geoencode(
@@ -97,7 +97,7 @@ Altair representation
        )
        .configure_view(stroke=None)
    )
-   
+
    chart
 
 Matplotlib representation

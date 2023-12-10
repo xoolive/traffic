@@ -9,7 +9,7 @@ Impact of COVID-19 on worldwide aviation
     The dataset constructed for the analysis on this page is now `available online <https://opensky-network.org/datasets/covid-19/>`_, with a proper introduction on the `OpenSky Network blog <https://opensky-network.org/community/blog/item/6-opensky-covid-19-flight-dataset>`_.
     Many thanks to the whole team.
 
-The pandemic of coronavirus is having a serious impact on aviation around the world. The slowdown appears on data, with some regional peculiarities. 
+The pandemic of coronavirus is having a serious impact on aviation around the world. The slowdown appears on data, with some regional peculiarities.
 The underlying data is currently updated daily.
 
 Similar initiatives to analyse the impact of COVID-19 on aviation are available here:
@@ -25,10 +25,10 @@ With the same dataset, we found:
 - a focus on American airports by `@ethanklapper <https://twitter.com/ethanklapper/status/1246167346693144578>`_ on Twitter
 - an excellent Observable notebook by `@lounjukk <https://observablehq.com/@lounjukk/flights-during-covid-19-pandemic>`_ replaying all the traffic on a world map
 - `Baptiste Coulmont <http://coulmont.com/blog/2020/05/04/dataconfinement1/>`_ analyses the impact of the lockdown in France based on various sources of open data, including this dataset (in French)
-- French newspaper `Liberation <https://www.liberation.fr/apps/2020/05/bilan-confinement/>`_ did a similar job few days later, with more data visualisations 
+- French newspaper `Liberation <https://www.liberation.fr/apps/2020/05/bilan-confinement/>`_ did a similar job few days later, with more data visualisations
 - `How COVID-19 has rocked US domestic flights <https://evandenmark.github.io/ForSpaciousSkies/>`_ by `@EvDenmark <https://twitter.com/EvDenmark/status/1260922351732101120>`_
 - `How have SARS-CoV-2's limitations impacted global aviation traffic? <https://sirbenedick.github.io/corona-aviation-impact/>`_ by `@sirbenedick <https://github.com/SirBenedick>`_
-- `Visualization of Air Traffic during Covid-19 Pandemic <https://towardsdatascience.com/visualization-of-air-traffic-during-covid-19-pandemic-c5941b049401>`_ 
+- `Visualization of Air Traffic during Covid-19 Pandemic <https://towardsdatascience.com/visualization-of-air-traffic-during-covid-19-pandemic-c5941b049401>`_
 - `What Explains Temporal and Geographic Variation in the Early US Coronavirus Pandemic? <https://www.nber.org/papers/w27965>`_, DOI: `10.3386/w27965 <https://doi.org/10.3386/w27965>`_
 - `Air Traffic during the Covid Pandemic <https://linnea.cloud/aviation-intelligence/covid-traffic>`_ by Linnea Cloud
 
@@ -202,4 +202,4 @@ We will select a few subset of airports for visualisation and build a specific t
     ).resolve_scale(color="independent")
 
     result
-    
+

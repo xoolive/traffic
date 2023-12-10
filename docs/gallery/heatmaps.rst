@@ -22,32 +22,32 @@ First download the data from the `Impala shell </opensky_impala.html>`__ over yo
 .. code:: python
 
     from traffic.data import opensky
-    
+
     # Setting up the start and end times for the retrieval
     # This one is the pre-crisis day
     pre_day = "2020-02-25"
-    
+
     # This one is the post-crisis day
     post_day = "2020-04-07"
-    
+
     # This bounding box covers Western Europe (4 major airports)
     # lon0, lat0, lon1, lat1
     bounds = [-3, 45., 10., 55.]
-    
+
     pre_data = opensky.history(
         start=pre_day,
         bounds=bounds,
         other_params=" and onground=false "
     )
-    
+
     post_data = opensky.history(
         start=post_day,
         bounds=bounds,
         other_params=" and onground=false "
     )
-    
+
     # Saving data (optional)
-    
+
     pre_data.to_pickle("2020-02-25_extended_muac.pkl")
     post_data.to_pickle("2020-04-07_extended_muac.pkl")
 
@@ -69,7 +69,7 @@ timestamps.
         .resample("10s")  # we don't need so many points for a heatmap
         .eval(desc="", max_workers=4)  # multiprocessed (watch your RAM usage!)
     )
-    
+
     after_covid19 = (
         post_data.clean_invalid()
         .assign_id()
@@ -77,9 +77,9 @@ timestamps.
         .resample("10s")
         .eval(desc="", max_workers=4)
     )
-    
+
     # Saving data (optional)
-    
+
     before_covid19.to_pickle("before_covid19.pkl")
     after_covid19.to_pickle("after_covid19.pkl")
 
@@ -89,25 +89,25 @@ The `.agg_latlon() </traffic.core.traffic.html#traffic.core.Traffic.agg_latlon>`
 .. code:: python
 
     import matplotlib.pyplot as plt
-    
+
     from matplotlib.offsetbox import AnchoredText
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    
+
     from cartopy.crs import EuroPP, PlateCarree
     from cartes.utils.features import countries, ocean
-    
-    
+
+
     with plt.style.context("traffic"):
-    
+
         fig = plt.figure(figsize=(15, 10), frameon=False)
         ax = fig.subplots(1, 2, subplot_kw=dict(projection=EuroPP()))
-    
+
         for ax_ in ax:
             ax_.add_feature(countries(scale="50m", linewidth=1.5))
             ax_.background_patch.set_facecolor("#eeeeee")
-    
+
         vmax = None  # this trick will keep the same colorbar scale for both maps
-    
+
         for i, data in enumerate([before_covid19, after_covid19]):
             cax = (
                 data.query("altitude > 10000")
@@ -126,13 +126,13 @@ The `.agg_latlon() </traffic.core.traffic.html#traffic.core.Traffic.agg_latlon>`
                     add_colorbar=False,
                 )
             )
-    
+
             cbaxes = inset_axes(ax[i], "4%", "60%", loc=3)
             cb = fig.colorbar(cax, cax=cbaxes)
-            
+
             # keep this value to scale the colorbar for the second day
             vmax = cb.vmax
-    
+
             text = AnchoredText(
                 f"{data.start_time:%B %d, %Y}",
                 loc=1,
@@ -141,8 +141,5 @@ The `.agg_latlon() </traffic.core.traffic.html#traffic.core.Traffic.agg_latlon>`
             )
             text.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
             ax[i].add_artist(text)
-    
+
         fig.set_tight_layout(True)
-
-
-

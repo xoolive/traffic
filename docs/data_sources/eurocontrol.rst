@@ -46,4 +46,3 @@ Then edit the following line accordingly, only set the path to data you have acc
     [global]
     aixm_path = /home/xo/Documents/data/AIRAC_2111
     nm_path = /home/xo/Documents/data/ENV_PostOPS_AIRAC_2111_04NOV2021_With_Airspace_Closure
-

@@ -6,4 +6,3 @@ traffic.core.mixins
     :inherited-members:
     :no-undoc-members:
     :show-inheritance:
-

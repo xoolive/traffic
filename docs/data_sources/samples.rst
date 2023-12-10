@@ -15,7 +15,7 @@ import automatically dispatch to :class:`~traffic.core.Flight` or
     of the documentation (e.g. :ref:`calibration flights <calibration flights>`
     or :ref:`trajectory clustering <How to implement trajectory clustering?>`)
     may refer to other available sample trajectories.
-    
+
 Belevingsvlucht
 ~~~~~~~~~~~~~~~
 
@@ -173,5 +173,3 @@ the ``surveys`` category:
 
     # this will do surveys.flight1 | surveys.flight2 | surveys.flight3 | etc.
     reduce(or_, t_surveys)
-
-
