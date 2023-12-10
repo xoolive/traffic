@@ -392,6 +392,7 @@ class Anp(object):
             alt_afe = alt - alt[0]  # type: ignore
             idx_500 = alt_afe.searchsorted(500)
             idx_3300 = alt_afe.searchsorted(3300, side="right")
+            # TODO: Find peaks based on derivative
             idx, _ = find_peaks(
                 vert_rate[idx_500:idx_3300], width=3  # type: ignore
             )

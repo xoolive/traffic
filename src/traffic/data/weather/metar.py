@@ -230,8 +230,8 @@ class Metars(DataFrameMixin):
                     continue
                 try:
                     if (
-                        to_datetime(strs[idx + 2]) <= start_time
-                        and to_datetime(strs[idx + 3]) >= stop_time
+                        pd.to_datetime(strs[idx + 2], format="%Y%m%d%H", utc=True) <= start_time
+                        and pd.to_datetime(strs[idx + 3], format="%Y%m%d%H", utc=True) >= stop_time
                     ):
                         return file
                 except ValueError:
@@ -352,6 +352,6 @@ class Metars(DataFrameMixin):
             start_time = to_datetime(stop_time) - timedelta(hours=2.0)
 
         return (
-            to_datetime(start_time).astimezone(timezone.utc),
-            to_datetime(stop_time).astimezone(timezone.utc),
+            round_time(to_datetime(start_time).astimezone(timezone.utc), how="before"),
+            round_time(to_datetime(stop_time).astimezone(timezone.utc), how="after"),
         )
