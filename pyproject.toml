@@ -95,7 +95,6 @@ rtlsdr =  ["pyrtlsdr"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = ">=2.13.0"
-black = ">=21.6"
 mypy = ">=0.981"
 ruff = ">=0.0.247"
 Sphinx = ">=5.1"
@@ -109,6 +108,7 @@ codecov = ">=2.1.11"
 ipykernel = "^6.25.0"
 types-pkg-resources = ">=0.1.3"
 types-requests = ">=2.25.0"
+types-paramiko = ">=3.3.0.0"
 types-flask = ">=1.1.6"
 types-waitress = ">=2.0.8"
 requests = { extras = ["socks"], version = ">=2.27" }
@@ -117,21 +117,6 @@ requests = { extras = ["socks"], version = ">=2.27" }
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
-
-[tool.black]
-line-length = 80
-target_version = ['py38', 'py39', 'py310', 'py311']
-include = '\.pyi?$'
-exclude = '''
-/(
-    __pycache__
-  | \.git
-  | \.mypy_cache
-  | \.ipynb_checkpoints
-  | build
-  | dist
-)/
-'''
 
 [tool.ruff]
 select = [

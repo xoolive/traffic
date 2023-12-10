@@ -531,9 +531,11 @@ class NavigationFeatures:
             for block in groupby_intervals(table):
                 d_max = block.eval("duration.max()")
                 t_threshold = d_max - pd.Timedelta("30s")  # noqa: F841
-                yield block.sort_values("shift_mean").query(
-                    "duration >= @t_threshold"
-                ).head(1)
+                yield (
+                    block.sort_values("shift_mean")
+                    .query("duration >= @t_threshold")
+                    .head(1)
+                )
 
         return pd.concat(list(most_probable_navpoints(self))).merge(
             navaids_.data, left_on="navaid", right_on="name"

@@ -23,7 +23,7 @@ from shapely.geometry import Polygon
 
 from ...core import Flight, StateVectors, Traffic
 from ...core.mixins import PointMixin, ShapelyMixin
-from ...core.time import timelike
+from ...core.time import deltalike, timelike
 from ...core.types import HasBounds, ProgressbarType
 from ..basic.airports import Airport
 from .decode import RawData
@@ -423,7 +423,9 @@ class OpenSky:
         bounds: None | HasBounds | tuple[float, float, float, float] = None,
         callsign: None | str | list[str] = None,
         departure_airport: None | str = None,
+        time_after_departure: deltalike = None,
         arrival_airport: None | str = None,
+        time_before_arrival: deltalike = None,
         airport: None | str = None,
         cached: bool = True,
         compress: bool = False,
@@ -439,7 +441,9 @@ class OpenSky:
             bounds=bounds,
             callsign=callsign,
             departure_airport=departure_airport,
+            time_after_departure=time_after_departure,
             arrival_airport=arrival_airport,
+            time_before_arrival=time_before_arrival,
             airport=airport,
             cached=cached,
             compress=compress,
@@ -463,7 +467,9 @@ class OpenSky:
         bounds: None | HasBounds | tuple[float, float, float, float] = None,
         callsign: None | str | list[str] = None,
         departure_airport: None | str = None,
+        time_after_departure: deltalike = None,
         arrival_airport: None | str = None,
+        time_before_arrival: deltalike = None,
         airport: None | str = None,
         cached: bool = True,
         compress: bool = False,
@@ -472,8 +478,8 @@ class OpenSky:
     ) -> None | RawData:
         kwargs = {
             **kwargs,
+            # this one is with impala
             **(
-                # this one is with impala
                 dict(table_name="rollcall_replies_data4")
                 if isinstance(self.db_client, impala.Impala)
                 # this one is with Trino
@@ -490,7 +496,9 @@ class OpenSky:
             bounds=bounds,
             callsign=callsign,
             departure_airport=departure_airport,
+            time_after_departure=time_after_departure,
             arrival_airport=arrival_airport,
+            time_before_arrival=time_before_arrival,
             airport=airport,
             cached=cached,
             compress=compress,
