@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_VERSION: "1.5.1"
+  POETRY_VERSION: "1.7.0"
 
 jobs:
   deploy:
@@ -114,7 +114,7 @@ jobs:
       - name: Style checking
         run: |
           poetry run ruff src tests
-          poetry run black --check src tests
+          poetry run ruff format --check src tests
 
       - name: Type checking
         run: |

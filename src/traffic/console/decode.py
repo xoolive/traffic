@@ -94,11 +94,11 @@ class AircraftListWidget(Widget):
                     ac_elt.icao24,
                     format(tail, "%typecode %registration") if tail else "",
                     ac_elt.callsign,
-                    str(ac_elt.lat),
-                    str(ac_elt.lon),
+                    f"{ac_elt.lat:.5}",
+                    f"{ac_elt.lon:.5}",
                     str(ac_elt.alt),
                     str(ac_elt.spd),
-                    str(ac_elt.trk),
+                    f"{ac_elt.trk:.0}",
                     str(len(cumul)),
                     format(cumul[-1]["timestamp"], "%H:%M:%S"),
                 )
@@ -145,8 +145,7 @@ def get_icao24(icao24: str) -> dict[str, list[Entry]]:
     if aircraft_or_none:
         return {
             icao24: list(
-                entry
-                | dict(timestamp=entry["timestamp"].timestamp())  # type: ignore
+                entry | dict(timestamp=entry["timestamp"].timestamp())  # type: ignore
                 for entry in aircraft_or_none.cumul
             )
         }
@@ -198,6 +197,7 @@ def get_icao24(icao24: str) -> dict[str, list[Entry]]:
     default=False,
     help="Display aircraft table in text user interface mode",
 )
+@click.option("-t", "--reference-time", default="now")
 @click.option("-v", "--verbose", count=True, help="Verbosity level")
 def main(
     source: str,
@@ -211,6 +211,7 @@ def main(
     log_file: str | None = None,
     tui: bool = True,
     verbose: int = 0,
+    reference_time: str = "now",
 ) -> None:
     """Decode ADS-B data from a source of raw binary data.
 
@@ -242,6 +243,26 @@ def main(
         logger.addHandler(file_handler)
 
     dump_file = Path(filename).with_suffix(".csv").as_posix()
+
+    if source == "-":
+        assert initial_reference is not None
+        decoder = Decoder.from_dump1090_output(
+            filename="/dev/stdin",
+            reference=initial_reference,
+            uncertainty=decode_uncertainty,
+            reference_time=reference_time,
+        )
+        traffic = decoder.traffic
+        if traffic is not None:
+            console = Console()
+            console.print(traffic)
+            icao24 = traffic.basic_stats.reset_index().iloc[0].icao24
+            flight = traffic[icao24]
+            console.print(flight)
+            output = Path(filename).with_suffix(".parquet")
+            traffic.to_parquet(output)
+            logging.warning(f"File written: {output}")
+        return None
 
     if Path(source).expanduser().exists():
         assert initial_reference is not None

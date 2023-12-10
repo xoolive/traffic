@@ -1696,7 +1696,8 @@ class Flight(
                 data.assign(
                     _mark=lambda df: df.last_position
                     != df.shift(1).last_position
-                ).assign(
+                )
+                .assign(
                     latitude=lambda df: df.latitude * df._mark / df._mark,
                     longitude=lambda df: df.longitude * df._mark / df._mark,
                     altitude=lambda df: df.altitude * df._mark / df._mark,
