@@ -160,7 +160,7 @@ class Airports(GeoDBMixin):
 
         return self._data
 
-    def __getitem__(self, name: str) -> None | Airport:
+    def __getitem__(self, name: str) -> Airport:
         """
         Any airport can be accessed by the bracket notation.
 
@@ -177,7 +177,7 @@ class Airports(GeoDBMixin):
                 "iata == @name.upper() or icao == @name.upper()"
             )
             if x.shape[0] == 0:
-                return None
+                raise ValueError(f"Unknown airport {name} in current database")
             p = x.iloc[0]
         return Airport(
             p.altitude,
