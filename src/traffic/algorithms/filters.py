@@ -394,6 +394,49 @@ class FilterClustering(FilterBase):
         return data.drop(columns=["group"])
 
 
+class ProcessXYFilterBase(FilterBase):
+    def __init__(self, reject_sigma: int = 3) -> None:
+        super().__init__()
+        self.reject_sigma = reject_sigma
+
+    @impunity
+    def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
+        groundspeed: Annotated[Any, "kts"] = df.groundspeed
+        track: Annotated[Any, "radians"] = np.radians(90 - df.track)
+
+        velocity: Annotated[Any, "m/s"] = groundspeed
+
+        x: Annotated[Any, "m"] = df.x
+        y: Annotated[Any, "m"] = df.y
+
+        dx: Annotated[Any, "m/s"] = velocity * np.cos(track)
+        dy: Annotated[Any, "m/s"] = velocity * np.sin(track)
+
+        return pd.DataFrame({"x": x, "y": y, "dx": dx, "dy": dy})
+
+    @impunity
+    def postprocess(
+        self, df: pd.DataFrame
+    ) -> Dict[str, npt.NDArray[np.float64]]:
+        x: Annotated[Any, "m"] = df.x
+        y: Annotated[Any, "m"] = df.y
+
+        dx: Annotated[Any, "m/s"] = df.dx
+        dy: Annotated[Any, "m/s"] = df.dy
+
+        velocity: Annotated[Any, "m/s"] = np.sqrt(dx**2 + dy**2)
+        track = 90 - np.degrees(np.arctan2(dy, dx))
+        track = track % 360
+        groundspeed: Annotated[Any, "kts"] = velocity
+
+        return dict(
+            x=x,
+            y=y,
+            groundspeed=groundspeed,
+            track=track,
+        )
+
+
 class ProcessXYZFilterBase(FilterBase):
     def __init__(self, reject_sigma: int = 3) -> None:
         super().__init__()
@@ -539,7 +582,8 @@ class KalmanFilter6D(ProcessXYZFilterBase):
             self.x_cor = x_pre + K @ nu
 
             # covariance correction
-            self.p_cor = (_id6 - K @ H) @ p_pre @ (_id6 - K @ H).T + K @ R @ K.T
+            imkh = _id6 - K @ H
+            self.p_cor = imkh @ p_pre @ imkh.T + K @ R @ K.T
 
             # DEBUG: p_cor should be symmetric
             # assert np.abs(self.p_cor - self.p_cor.T).sum() < 1e-6
@@ -645,9 +689,8 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
             self.x1_cor = x_pre + K @ nu
 
             # covariance correction
-            self.p1_cor = (_id6 - K @ H) @ p_pre @ (
-                _id6 - K @ H
-            ).T + K @ R @ K.T
+            imkh = _id6 - K @ H
+            self.p1_cor = imkh @ p_pre @ imkh.T + K @ R @ K.T
 
             # DEBUG symmetric matrices
             # assert np.abs(self.p1_cor - self.p1_cor.T).sum() < 1e-6
@@ -707,9 +750,8 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
             self.x2_cor = x_pre + K @ nu
 
             # covariance correction
-            self.p2_cor = (_id6 - K @ H) @ p_pre @ (
-                _id6 - K @ H
-            ).T + K @ R @ K.T
+            imkh = _id6 - K @ H
+            self.p2_cor = imkh @ p_pre @ imkh.T + K @ R @ K.T
 
             # DEBUG symmetric matrices
             # assert np.abs(self.p2_cor - self.p2_cor.T).sum() < 1e-6
