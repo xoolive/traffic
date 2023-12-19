@@ -326,7 +326,7 @@ def lazy_evaluation(
     """
 
     def wrapper(
-        f: Callable[..., "Traffic"]
+        f: Callable[..., "Traffic"],
     ) -> Callable[..., Union["Traffic", LazyTraffic]]:
         # Check parameters passed (esp. filter_if) are not lambda because those
         # are not serializable therefore **silently** fail when multiprocessed.
