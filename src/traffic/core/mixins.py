@@ -433,9 +433,9 @@ class ShapelyMixin(object):
         """
         import altair as alt
 
-        return alt.Chart(alt.Data(values=self.geojson())).mark_geoshape(
-            stroke="#aaaaaa", **kwargs
-        )
+        return alt.Chart(
+            alt.Data(values=self.geojson())  # type: ignore
+        ).mark_geoshape(stroke="#aaaaaa", **kwargs)
 
     def project_shape(
         self, projection: None | pyproj.Proj | "crs.Projection" = None
@@ -632,7 +632,7 @@ class GeographyMixin(DataFrameMixin):
         """
         import altair as alt
 
-        return (
+        return (  # type: ignore
             alt.Chart(
                 self.data.query(
                     "latitude == latitude and longitude == longitude"
@@ -837,7 +837,7 @@ class GeoDBMixin(DataFrameMixin):
         """
         import altair as alt
 
-        return (
+        return (  # type: ignore
             alt.Chart(self.data)
             .mark_circle(**kwargs)
             .encode(

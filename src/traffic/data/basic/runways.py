@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pickle
 from io import BytesIO
 from pathlib import Path
@@ -159,15 +161,15 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
                 longitude="longitude:Q", latitude="latitude:Q", text="name:N"
             )
             rwy_layers = [
-                rwy_labels.transform_filter(alt.datum.name == name).mark_text(
-                    angle=bearing, **params
-                )
+                rwy_labels.transform_filter(
+                    alt.datum.name == name  # type: ignore
+                ).mark_text(angle=bearing, **params)
                 for (name, bearing) in zip(self.data.name, self.data.bearing)
             ]
 
-            return alt.layer(*rwy_layers)
+            return alt.layer(*rwy_layers)  # type: ignore
 
-        return None
+        raise ValueError("mode must be 'geometry' or 'labels'")
 
 
 class Runways(object):

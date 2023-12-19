@@ -2993,9 +2993,9 @@ class Flight(
         if len(features) > 0:
             base = base.transform_fold(
                 list(features), as_=["variable", "value"]
-            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))
+            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))  # type: ignore
 
-        return base.mark_line()
+        return base.mark_line()  # type: ignore
 
     def encode(self, **kwargs: Any) -> NoReturn:  # coverage: ignore
         """

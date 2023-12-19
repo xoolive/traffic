@@ -209,7 +209,7 @@ class Airport(
 
             for key, value in footprint.items():
                 cumul.append(
-                    base.transform_filter(
+                    base.transform_filter(  # type: ignore
                         f"datum.aeroway == '{key}'"
                     ).mark_geoshape(**value)
                 )
@@ -227,7 +227,7 @@ class Airport(
             raise TypeError(
                 "At least one of footprint, runways and labels must be True"
             )
-        return alt.layer(*cumul)
+        return alt.layer(*cumul)  # type: ignore
 
     def plot(  # type: ignore
         self,
