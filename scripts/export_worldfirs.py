@@ -1,11 +1,11 @@
-# %%
+# ruff: noqa: E402
 from __future__ import annotations
 
+# %%
 from pathlib import Path
 from typing import Any
 
 import geopandas as gpd
-import topojson as tp
 from traffic.data import aixm_airspaces
 
 import numpy as np
@@ -66,12 +66,14 @@ def match180(x: Any, y: Any, z: None = None) -> tuple[Any, ...]:
     )
 
 
+subset = aixm_airspaces.query(
+    '(type == "FIR" or type == "UIR" or type == "NO_FIR" or '
+    'designator == "BODO") and not (type == "FIR" and designator == "XXXX")'
+)
+assert subset is not None
+
 gdf = (
-    aixm_airspaces.query(
-        '(type == "FIR" or type == "UIR" or type == "NO_FIR" or '
-        'designator == "BODO") and not (type == "FIR" and designator == "XXXX")'
-    )
-    .consolidate()
+    subset.consolidate()
     .assign(
         geometry=lambda gdf: gdf.geometry.apply(
             lambda geom: transform(match180, geom)
@@ -150,6 +152,7 @@ def format_name(line: pd.Series) -> str:
 gdf = gdf.assign(name=[format_name(line) for _, line in gdf.iterrows()])
 
 # %%
+import topojson as tp
 
 t = tp.Topology(gdf)
 Path("worldfirs.json").write_text(t.to_json().replace("Infinity", "null"))
