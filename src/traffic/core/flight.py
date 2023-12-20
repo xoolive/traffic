@@ -358,9 +358,13 @@ class Flight(
         elif isinstance(other, Flight):
             right = Interval(other.start, other.stop)
         elif isinstance(other, FlightIterator):
-            right = IntervalCollection(
-                [Interval(segment.start, segment.stop) for segment in other]
-            )
+            intervals = [
+                Interval(segment.start, segment.stop) for segment in other
+            ]
+            if len(intervals) == 0:
+                yield self
+                return
+            right = IntervalCollection(intervals)
         else:
             return NotImplemented
 
@@ -547,7 +551,9 @@ class Flight(
             @flight_iterator
             def yield_segments() -> Iterator["Flight"]:
                 for interval in key:
-                    segment = self.between(interval.start, interval.stop)
+                    segment = self.between(
+                        interval.start, interval.stop, strict=False
+                    )
                     if segment is not None:
                         yield segment
 
