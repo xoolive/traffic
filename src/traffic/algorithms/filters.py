@@ -395,10 +395,6 @@ class FilterClustering(FilterBase):
 
 
 class ProcessXYFilterBase(FilterBase):
-    def __init__(self, reject_sigma: int = 3) -> None:
-        super().__init__()
-        self.reject_sigma = reject_sigma
-
     @impunity
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
         groundspeed: Annotated[Any, "kts"] = df.groundspeed
@@ -438,10 +434,6 @@ class ProcessXYFilterBase(FilterBase):
 
 
 class ProcessXYZFilterBase(FilterBase):
-    def __init__(self, reject_sigma: int = 3) -> None:
-        super().__init__()
-        self.reject_sigma = reject_sigma
-
     @impunity
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
         alt: Annotated[Any, "ft"] = df.altitude
@@ -499,6 +491,10 @@ class KalmanFilter6D(ProcessXYZFilterBase):
     x_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
     p_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
     p_pre: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+
+    def __init__(self, reject_sigma: int = 3) -> None:
+        super().__init__()
+        self.reject_sigma = reject_sigma
 
     def apply(self, data: pd.DataFrame) -> pd.DataFrame:
         df = self.preprocess(data)
@@ -605,6 +601,10 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
     p2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
 
     xs: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+
+    def __init__(self, reject_sigma: int = 3) -> None:
+        super().__init__()
+        self.reject_sigma = reject_sigma
 
     def apply(self, data: pd.DataFrame) -> pd.DataFrame:
         df = self.preprocess(data)
@@ -771,6 +771,163 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
         filtered = pd.DataFrame(
             self.tracked_variables["xs"],
             columns=["x", "y", "z", "dx", "dy", "dz"],
+        )
+
+        return data.assign(**self.postprocess(filtered))
+
+
+class KalmanTaxiway(ProcessXYFilterBase):
+    # Descriptors are convenient to store the evolution of the process
+    x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    p1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    p2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+
+    xs: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    shl: TrackVariable[Any] = TrackVariable()
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        # bruit de mesure
+        self.R = np.diag([9, 9, 2, 2, 1]) ** 2
+
+        # plus de bruit de modèle sur les dérivées qui sont pas recalées
+        self.Q = 0.5 * np.diag([0.25, 0.25, 2, 2])
+        self.Q += 0.5 * np.diag(self.Q.diagonal()[2:], k=2)
+        self.Q += 0.5 * np.diag(self.Q.diagonal()[2:], k=-2)
+
+    def distance(
+        self, prediction: npt.NDArray[np.float64]
+    ) -> tuple[float, float, float]:
+        raise NotImplementedError
+
+    def apply(self, data: pd.DataFrame) -> pd.DataFrame:
+        df = self.preprocess(data)
+
+        for cumul in self.tracked_variables.values():
+            cumul.clear()
+
+        # initial state
+        _id4 = np.eye(df.shape[1])
+        dt = 1
+
+        self.x_mes = df.iloc[0].values
+        self.x1_cor = df.iloc[0].values
+        self.p1_cor = _id4 * 1e5
+
+        # >>> First FORWARD  <<<
+
+        for i in range(1, df.shape[0]):
+            # measurement
+            self.x_mes = df.iloc[i].values
+
+            # prediction
+            A = np.eye(4) + dt * np.eye(4, k=2)
+            x1_cor = self.x1_cor
+            print(f"{x1_cor=}")
+            x1_cor[2:] = np.where(x1_cor[2:] == x1_cor[2:], x1_cor[2:], 0)
+            print(f"{x1_cor=}")
+
+            x_pre = A @ x1_cor
+            print(x_pre)
+            p_pre = A @ self.p1_cor @ A.T + self.Q
+
+            distance, dx, dy = self.distance(x_pre)
+
+            H = np.r_[
+                _id4.copy(),
+                np.array([[dx, dy, 0, 0]]),
+            ]
+
+            # DEBUG symmetric matrices
+            assert np.abs(p_pre - p_pre.T).sum() < 1e-6
+            assert np.all(np.linalg.eigvals(p_pre) > 0)
+
+            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, x_pre)
+            idx = np.where(self.x_mes != self.x_mes)
+            H[idx, idx] = 0
+
+            # innovation
+            nu = np.r_[x_mes - x_pre, [-distance]]
+            S = H @ p_pre @ H.T + self.R
+
+            # Kalman gain
+            K = p_pre @ H.T @ np.linalg.inv(S)
+            # state correction
+            self.x1_cor = x_pre + K @ nu
+
+            # covariance correction
+            imkh = _id4 - K @ H
+            self.p1_cor = imkh @ p_pre @ imkh.T + K @ self.R @ K.T
+
+            # DEBUG symmetric matrices
+            assert np.abs(self.p1_cor - self.p1_cor.T).sum() < 1e-6
+            assert np.all(np.linalg.eigvals(self.p1_cor) > 0)
+
+        # >>> Now BACKWARD  <<<
+        self.x2_cor = self.x1_cor
+        self.p2_cor = 100 * self.p1_cor
+        dt = -dt
+
+        for i in range(df.shape[0] - 1, 0, -1):
+            # measurement
+            self.x_mes = df.iloc[i].values
+
+            # prediction
+            A = np.eye(4) + dt * np.eye(4, k=2)
+            x_pre = A @ self.x2_cor
+            p_pre = A @ self.p2_cor @ A.T + self.Q
+
+            distance, dx, dy = self.distance(x_pre)
+
+            H = np.r_[
+                _id4.copy(),
+                np.array([[dx, dy, 0, 0]]),
+            ]
+
+            # DEBUG symmetric matrices
+            assert np.abs(p_pre - p_pre.T).sum() < 1e-6
+            assert np.all(np.linalg.eigvals(p_pre) > 0)
+
+            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, x_pre)
+            idx = np.where(self.x_mes != self.x_mes)
+            H[idx, idx] = 0
+
+            # innovation
+            nu = np.r_[x_mes - x_pre, [-distance]]
+            S = H @ p_pre @ H.T + self.R
+
+            # Kalman gain
+            K = p_pre @ H.T @ np.linalg.inv(S)
+
+            # state correction
+            self.x2_cor = x_pre + K @ nu
+
+            # covariance correction
+            imkh = _id4 - K @ H
+            self.p2_cor = imkh @ p_pre @ imkh.T + K @ self.R @ K.T
+
+            # DEBUG symmetric matrices
+            assert np.abs(self.p2_cor - self.p2_cor.T).sum() < 1e-6
+            assert np.all(np.linalg.eigvals(self.p2_cor) > 0)
+
+        # and the smoothing
+        x1_cor = np.array(self.tracked_variables["x1_cor"])
+        p1_cor = np.array(self.tracked_variables["p1_cor"])
+        x2_cor = np.array(self.tracked_variables["x2_cor"][::-1])
+        p2_cor = np.array(self.tracked_variables["p2_cor"][::-1])
+
+        for i in range(1, df.shape[0]):
+            s1 = np.linalg.inv(p1_cor[i])
+            s2 = np.linalg.inv(p2_cor[i])
+            self.ps = np.linalg.inv(s1 + s2)
+            self.xs = (self.ps @ (s1 @ x1_cor[i] + s2 @ x2_cor[i])).T
+
+        filtered = pd.DataFrame(
+            self.tracked_variables["xs"],
+            columns=["x", "y", "dx", "dy"],
         )
 
         return data.assign(**self.postprocess(filtered))
