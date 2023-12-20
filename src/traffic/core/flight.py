@@ -1800,8 +1800,14 @@ class Flight(
                 filter, filters.FilterAboveSigmaMedian(**kwargs)
             )
 
+        preprocess = self
+        if filter.projection is not None:
+            preprocess = preprocess.compute_xy(filter.projection)
+
         new_data = filter.apply(
-            self.data.sort_values(by="timestamp").reset_index(drop=True).copy()
+            preprocess.data.sort_values(by="timestamp")
+            .reset_index(drop=True)
+            .copy()
         )
 
         if strategy is not None:
@@ -1810,7 +1816,10 @@ class Flight(
         if "onground" in new_data.columns:
             new_data = new_data.assign(onground=new_data.onground.astype(bool))
 
-        return self.__class__(new_data)
+        postprocess = self.__class__(new_data)
+        if filter.projection is not None:
+            postprocess = postprocess.compute_latlon_from_xy(filter.projection)
+        return postprocess
 
     def filter_position(self, cascades: int = 2) -> Optional[Flight]:
         # TODO improve based on agg_time or EKF

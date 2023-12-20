@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -20,6 +21,10 @@ from typing_extensions import Annotated, NotRequired
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+import pyproj
+
+if TYPE_CHECKING:
+    from cartopy import crs
 
 
 class Filter(Protocol):
@@ -29,6 +34,7 @@ class Filter(Protocol):
 
 class FilterBase(Filter):
     tracked_variables: dict[str, list[Any]]
+    projection: None | "crs.Projection" | pyproj.Proj = None
 
     def __or__(self, other: FilterBase) -> FilterBase:
         """Composition operator on filters."""
