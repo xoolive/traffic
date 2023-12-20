@@ -832,20 +832,14 @@ class KalmanTaxiway(ProcessXYFilterBase):
             # prediction
             A = np.eye(4) + dt * np.eye(4, k=2)
             x1_cor = self.x1_cor
-            print(f"{x1_cor=}")
             x1_cor[2:] = np.where(x1_cor[2:] == x1_cor[2:], x1_cor[2:], 0)
-            print(f"{x1_cor=}")
 
             x_pre = A @ x1_cor
-            print(x_pre)
             p_pre = A @ self.p1_cor @ A.T + self.Q
 
             distance, dx, dy = self.distance(x_pre)
 
-            H = np.r_[
-                _id4.copy(),
-                np.array([[dx, dy, 0, 0]]),
-            ]
+            H = np.r_[_id4.copy(), np.array([[dx, dy, 0, 0]])]
 
             # DEBUG symmetric matrices
             assert np.abs(p_pre - p_pre.T).sum() < 1e-6
@@ -888,10 +882,7 @@ class KalmanTaxiway(ProcessXYFilterBase):
 
             distance, dx, dy = self.distance(x_pre)
 
-            H = np.r_[
-                _id4.copy(),
-                np.array([[dx, dy, 0, 0]]),
-            ]
+            H = np.r_[_id4.copy(), np.array([[dx, dy, 0, 0]])]
 
             # DEBUG symmetric matrices
             assert np.abs(p_pre - p_pre.T).sum() < 1e-6
