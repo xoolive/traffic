@@ -1,19 +1,17 @@
 {
   "folders": [{ "path": "." }],
   "settings": {
-    // Linting + type checking
-    "python.linting.flake8Enabled": false,
-    "python.linting.mypyEnabled": true,
-    "python.linting.enabled": true,
-
     // Formatting
     "editor.formatOnSave": true,
     "editor.rulers": [80],
-    "python.formatting.provider": "black",
+    "mypy-type-checker.importStrategy": "fromEnvironment",
     "ruff.importStrategy": "fromEnvironment",
 
     "[python]": {
+      "files.insertFinalNewline": true,
+      "editor.defaultFormatter": "charliermarsh.ruff",
       "editor.codeActionsOnSave": {
+        "source.fixAll": true,
         "source.organizeImports": true
       }
     },
@@ -23,11 +21,6 @@
     "[jsonc]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-
-    // Testing
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.testing.pytestArgs": ["tests"],
 
     // Settings to build documentation
     "esbonio.sphinx.confDir": "${workspaceFolder}/docs",
@@ -52,6 +45,8 @@
   "extensions": {
     "recommendations": [
       "ms-python.python",
+      "ms-python.mypy-type-checker",
+      "ms-python.black-formatter",
       "charliermarsh.ruff",
       "valentjn.vscode-ltex",
       "ritwickdey.LiveServer"

@@ -107,7 +107,7 @@ those before an attempt of explanation.
                 color: '#0033FF'
             }
         ).bindPopup(function (layer) {
-            return "<b>Trajectory " 
+            return "<b>Trajectory "
               + layer.feature.properties.flight_id
               + "</b><br/> with aircraft "
               + layer.feature.properties.registration
@@ -191,7 +191,7 @@ Then, we can write a simple .query() followed by a .split() method to select all
 segments with a constant bearing and distance with respect to the selected VOR.
 
 .. jupyter-execute::
-    
+
     from functools import reduce
     from operator import or_
 
@@ -237,7 +237,7 @@ We have all we need to enhance the interesting parts of the trajectory now:
 
         # airport information
         airports["LFKJ"].point.plot(ax, **point_params)
-        
+
         # VOR information
         shift_vor = dict(units="dots", x=20, y=10)
         vor.plot(ax, marker="h", shift=shift_vor, **point_params)
@@ -307,7 +307,7 @@ calibration trajectories from the sample dataset. [3]_
         vormap = L.map( 'vormap', {
             center: [41.770528, 8.774667],
             scrollWheelZoom: false,
-            zoom: 8 
+            zoom: 8
         })
 
         L.tileLayer('http://stamen-tiles-a.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png', {
@@ -325,10 +325,10 @@ calibration trajectories from the sample dataset. [3]_
             calibration_trajectories,
             style={
                 color: '#FED976',
-                weight: 2 
+                weight: 2
             }
         ).bindPopup(function (layer) {
-            return "<b>Trajectory " 
+            return "<b>Trajectory "
               + layer.feature.properties.flight_id
               + "</b><br/> with aircraft "
               + layer.feature.properties.registration
@@ -342,7 +342,7 @@ calibration trajectories from the sample dataset. [3]_
                style: function (feature) {
                    return {
                        color: feature.properties.color,
-                       weight: 2 
+                       weight: 2
                   };
                }
             }
@@ -408,6 +408,7 @@ of the writing, so we added them manually.
             for name in calibration.__all__
         )
         .summary(["flight_id", "icao24", "start"])
+        .eval()
         .merge(aircraft.data)
         .sort_values(["registration", "start"])
         .groupby(["registration", "typecode", "icao24"])

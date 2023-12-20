@@ -31,9 +31,11 @@ from typing import (
 )
 
 import rich.repr
+from impunity import impunity
 from ipyleaflet import Map as LeafletMap
 from ipyleaflet import Polyline as LeafletPolyline
 from ipywidgets import HTML
+from pitot import geodesy as geo
 from rich.console import Console, ConsoleOptions, RenderResult
 
 import numpy as np
@@ -43,12 +45,12 @@ from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
+from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
+from ..core import types as tt
 from ..core.structure import Airport
-from ..core.types import ProgressbarType
-from . import geodesy as geo
 from .intervals import Interval, IntervalCollection
 from .iterator import FlightIterator, flight_iterator
 from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
@@ -59,9 +61,9 @@ if TYPE_CHECKING:
     from cartopy import crs
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
-    from matplotlib.axes._subplots import Axes
+    from matplotlib.axes import Axes
 
-    from ..data.adsb.raw_data import RawData
+    from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
     from .airspace import Airspace
@@ -130,10 +132,6 @@ def _split(
         yield data
 
 
-# flake B008
-attrgetter_duration = attrgetter("duration")
-
-# flake B006
 default_angle_features = ["track", "heading"]
 
 
@@ -1120,7 +1118,12 @@ class Flight(
                 else ""
             )
             + (f"{self.destination}" if self.destination else " ")
-            + (f"diverted to {self.diverted}" if self.diverted else "")
+            + (
+                f" diverted to {self.diverted}"
+                # it must not be None nor nan
+                if self.diverted and self.diverted == self.diverted
+                else ""
+            )
             + (
                 ")"
                 if self.origin is not None or self.destination is not None
@@ -1237,7 +1240,7 @@ class Flight(
 
         return None
 
-    def summary(self, attributes: list[str], **kwargs: Any) -> dict[str, Any]:
+    def summary(self, attributes: list[str]) -> dict[str, Any]:
         """Returns a summary of the current Flight structure containing
         featured attributes.
 
@@ -1487,7 +1490,7 @@ class Flight(
         self,
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
-        key: Callable[[Optional[Flight]], Any] = attrgetter_duration,
+        key: str = "duration",
     ) -> Optional[Flight]:
         """Returns the biggest (by default, longest) part of trajectory.
 
@@ -1505,12 +1508,11 @@ class Flight(
 
         """
 
-        # warnings.warn("Use split().max() instead.", DeprecationWarning)
-        return max(
-            self.split(value, unit),  # type: ignore
-            key=key,
-            default=None,
+        warnings.warn("Use split().max() instead.", DeprecationWarning)
+        assert (isinstance(value, str) and unit is None) or (
+            isinstance(value, int) and isinstance(unit, str)
         )
+        return self.split(value, unit).max(key=key)  # type: ignore
 
     def apply_segments(
         self,
@@ -1641,7 +1643,8 @@ class Flight(
                 data.assign(
                     _mark=lambda df: df.last_position
                     != df.shift(1).last_position
-                ).assign(
+                )
+                .assign(
                     latitude=lambda df: df.latitude * df._mark / df._mark,
                     longitude=lambda df: df.longitude * df._mark / df._mark,
                     altitude=lambda df: df.altitude * df._mark / df._mark,
@@ -1656,7 +1659,7 @@ class Flight(
     def resample(
         self,
         rule: str | int = "1s",
-        how: str | dict[str, Iterable[str]] = "interpolate",
+        how: None | str | dict[str, Iterable[str]] = "interpolate",
         projection: None | str | pyproj.Proj | "crs.Projection" = None,
     ) -> Flight:
         """Resample the trajectory at a given frequency or for a target number
@@ -1711,18 +1714,22 @@ class Flight(
                 .reset_index()
             )
 
+            if how is None:
+                how = {}
+
             if isinstance(how, str):
                 how = {how: set(data.columns) - {"timestamp"}}
 
             for meth, columns in how.items():
-                idx = data.columns.get_indexer(columns)
-                value = getattr(data.iloc[:, idx], meth)()
-                # final fillna() is necessary for non-interpolable dtypes
-                value = value.fillna(method="pad")
-                # FutureWarning: a value is trying to be set on a copy of a
-                # slice from a DataFrame
-                # data.iloc[:, idx] = value
-                data[data.columns[idx]] = value
+                if meth is not None:
+                    idx = data.columns.get_indexer(columns)
+                    value = getattr(data.iloc[:, idx], meth)()
+                    # final fillna() is necessary for non-interpolable dtypes
+                    value = value.fillna(method="pad")
+                    # FutureWarning: a value is trying to be set on a copy of a
+                    # slice from a DataFrame
+                    # data.iloc[:, idx] = value
+                    data[data.columns[idx]] = value
 
         elif isinstance(rule, int):
             # ./site-packages/pandas/core/indexes/base.py:2820: FutureWarning:
@@ -1758,132 +1765,52 @@ class Flight(
 
     def filter(
         self,
-        strategy: Optional[
-            Callable[[pd.DataFrame], pd.DataFrame]
-        ] = lambda x: x.bfill().ffill(),
-        **kwargs: int,
+        filter: str | filters.FilterBase = "default",
+        strategy: None
+        | Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x.bfill().ffill(),
+        **kwargs: int | tuple[int],
     ) -> Flight:
-        """Filters the trajectory given features with a median filter.
+        """Filters a trajectory with predefined methods.
 
-        The method first applies a median filter on each feature of the
-        DataFrame. A default kernel size is applied for a number of features
-        (resp. latitude, longitude, altitude, track, groundspeed, IAS, TAS) but
-        other kernel values may be passed as kwargs parameters.
+        :param filter: (default:
+            :class:`~traffic.algorithms.filters.FilterAboveSigmaMedian`) is one
+            of the filters predefined in :ref:`traffic.algorithms.filters`
+            or any filter implementing the
+            :class:`~traffic.algorithms.filters.Filter` protocol.
+            Use "aggressive" for an experimental filter by @krumjan
 
-        Rather than returning averaged values, the method computes thresholds
-        on sliding windows (as an average of squared differences) and replace
-        unacceptable values with NaNs.
 
-        Then, a strategy may be applied to fill the NaN values, by default a
-        forward/backward fill. Other strategies may be passed, for instance *do
-        nothing*: ``None``; or *interpolate*: ``lambda x: x.interpolate()``.
+        :param strategy: (default: backward fill followed by forward fill)
+            is applied after the filter to deal with resulting NaN values.
 
-        .. note::
-
-            This method if often more efficient when applied several times with
-            different kernel values.Kernel values may be passed as integers, or
-            list/tuples of integers for cascade of filters:
-
-            .. code:: python
-
-                # this cascade of filters appears to work well on altitude
-                flight.filter(altitude=17).filter(altitude=53)
-
-                # this is equivalent to the default value
-                flight.filter(altitude=(17, 53))
+            - Explicitely specify to `None` if NaN values should be left as is.
+            - ``lambda x: x.interpolate()`` may be a smart strategy
 
         """
+        filter_dict = dict(
+            default=filters.FilterAboveSigmaMedian(**kwargs),
+            aggressive=filters.FilterMedian()
+            | filters.FilterDerivative()
+            | filters.FilterClustering()
+            | filters.FilterMean(),
+        )
 
-        import scipy.signal
-
-        ks_dict: Dict[str, Union[int, Iterable[int]]] = {
-            "altitude": (17, 53),
-            "selected_mcp": (17, 53),
-            "selected_fms": (17, 53),
-            "IAS": 23,
-            "TAS": 23,
-            "Mach": 23,
-            "groundspeed": 5,
-            "compute_gs": (17, 53),
-            "compute_track": 17,
-            "onground": 3,
-            "latitude": 1,  # the method doesn't apply well to positions
-            "longitude": 1,
-            **kwargs,
-        }
-
-        if strategy is None:
-
-            def identity(x: pd.DataFrame) -> pd.DataFrame:
-                return x
-
-            strategy = identity
-
-        def cascaded_filters(
-            df: pd.DataFrame,
-            feature: str,
-            kernel_size: int,
-            filt: Callable[[pd.Series, int], Any] = scipy.signal.medfilt,
-        ) -> pd.DataFrame:
-            """Produces a mask for data to be discarded.
-
-            The filtering applies a low pass filter (e.g medfilt) to a signal
-            and measures the difference between the raw and the filtered signal.
-
-            The average of the squared differences is then produced (sq_eps) and
-            used as a threshold for filtering.
-
-            Errors may raised if the kernel_size is too large
-            """
-            y = df[feature].astype(float)
-            y_m = filt(y, kernel_size)
-            sq_eps = (y - y_m) ** 2
-            return pd.DataFrame(
-                {
-                    "timestamp": df["timestamp"],
-                    "y": y,
-                    "y_m": y_m,
-                    "sq_eps": sq_eps,
-                    "sigma": np.sqrt(filt(sq_eps, kernel_size)),
-                },
-                index=df.index,
+        if isinstance(filter, str):
+            filter = filter_dict.get(
+                filter, filters.FilterAboveSigmaMedian(**kwargs)
             )
 
-        new_data = self.data.sort_values(by="timestamp").copy()
+        new_data = filter.apply(
+            self.data.sort_values(by="timestamp").reset_index(drop=True).copy()
+        )
 
-        if len(kwargs) == 0:
-            features = [
-                cast(str, feature)
-                for feature in self.data.columns
-                if self.data[feature].dtype
-                in [np.float32, np.float64, np.int32, np.int64]
-            ]
-        else:
-            features = list(kwargs.keys())
+        if strategy is not None:
+            new_data = strategy(new_data)
 
-        kernels_size: List[Union[int, Iterable[int]]] = [0 for _ in features]
-        for idx, feature in enumerate(features):
-            kernels_size[idx] = ks_dict.get(feature, 17)
+        if "onground" in new_data.columns:
+            new_data = new_data.assign(onground=new_data.onground.astype(bool))
 
-        for feat, ks_list in zip(features, kernels_size):
-            if isinstance(ks_list, int):
-                ks_list = [ks_list]
-            else:
-                ks_list = list(ks_list)
-
-            for ks in ks_list:
-                # Prepare each feature for the filtering
-                df = cascaded_filters(new_data[["timestamp", feat]], feat, ks)
-
-                # Decision to accept/reject data points in the time series
-                new_data.loc[df.sq_eps > df.sigma, feat] = None
-
-        data = strategy(new_data)
-
-        if "onground" in data.columns:
-            data = data.assign(onground=data.onground.astype(bool))
-
-        return self.__class__(data)
+        return self.__class__(new_data)
 
     def filter_position(self, cascades: int = 2) -> Optional[Flight]:
         # TODO improve based on agg_time or EKF
@@ -1899,9 +1826,10 @@ class Flight(
     def comet(self, **kwargs: Any) -> Flight:
         raise DeprecationWarning("Use Flight.forward() method instead")
 
+    @impunity(ignore_warnings=True)
     def forward(
-        self, delta: None | str | pd.Timedelta = None, **kwargs: Any
-    ) -> Flight:
+        self, delta: Union[None, str, pd.Timedelta] = None, **kwargs: Any
+    ) -> "Flight":
         """Projects the trajectory in a straight line.
 
         The method uses the last position of a trajectory (method `at()
@@ -1933,17 +1861,19 @@ class Flight(
         if window is None:
             raise RuntimeError("Flight expect at least 20 seconds of data")
 
-        new_gs = window.data.groundspeed.mean()
-        new_vr = window.data.vertical_rate.mean()
+        new_gs: tt.speed = window.data.groundspeed.mean()
+        new_vr: tt.vertical_rate = window.data.vertical_rate.mean()
+        duration: tt.seconds = delta.total_seconds()
 
         new_lat, new_lon, _ = geo.destination(
             last_line.latitude,
             last_line.longitude,
             last_line.track,
-            new_gs * delta.total_seconds() * 1852 / 3600,
+            new_gs * duration,
         )
 
-        new_alt = last_line.altitude + new_vr * delta.total_seconds() / 60
+        last_alt: tt.altitude = last_line.altitude
+        new_alt: tt.altitude = last_alt + new_vr * duration
 
         return Flight(
             pd.DataFrame.from_records(
@@ -2219,11 +2149,12 @@ class Flight(
     ) -> Optional[pd.DataFrame]:
         ...
 
+    @impunity(ignore_warnings=True)
     def distance(
         self,
-        other: Union[None, Flight, "Airspace", Polygon, PointMixin] = None,
+        other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
         column_name: str = "distance",
-    ) -> Union[None, float, Flight, pd.DataFrame]:
+    ) -> Union[None, float, "Flight", pd.DataFrame]:
         """Computes the distance from a Flight to another entity.
 
         The behaviour is different according to the type of the second
@@ -2257,29 +2188,25 @@ class Flight(
             last = self.at_ratio(1)
             if first is None or last is None:
                 return 0
-            return (
-                geo.distance(
-                    first.latitude,
-                    first.longitude,
-                    last.latitude,
-                    last.longitude,
-                )
-                / 1852  # in nautical miles
+            result: tt.distance = geo.distance(
+                first.latitude,
+                first.longitude,
+                last.latitude,
+                last.longitude,
             )
+            return result
+
+        distance_vec: tt.distance_array
 
         if isinstance(other, PointMixin):
             size = self.data.shape[0]
-            return self.assign(
-                **{
-                    column_name: geo.distance(
-                        self.data.latitude.values,
-                        self.data.longitude.values,
-                        other.latitude * np.ones(size),
-                        other.longitude * np.ones(size),
-                    )
-                    / 1852  # in nautical miles
-                }
+            distance_vec = geo.distance(
+                self.data.latitude.values,
+                self.data.longitude.values,
+                other.latitude * np.ones(size),
+                other.longitude * np.ones(size),
             )
+            return self.assign(**{column_name: distance_vec})
 
         from .airspace import Airspace
 
@@ -2329,14 +2256,14 @@ class Flight(
             cols.append("flight_id")
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
+        distance_vec = geo.distance(
+            table.latitude_x.values,
+            table.longitude_x.values,
+            table.latitude_y.values,
+            table.longitude_y.values,
+        )
         return table.assign(
-            lateral=geo.distance(
-                table.latitude_x.values,
-                table.longitude_x.values,
-                table.latitude_y.values,
-                table.longitude_y.values,
-            )
-            / 1852,  # in nautical miles
+            lateral=distance_vec,
             vertical=(table.altitude_x - table.altitude_y).abs(),
         )
 
@@ -2447,6 +2374,7 @@ class Flight(
             .rename(columns=dict(NSE=column_name))
         )
 
+    @impunity(ignore_warnings=True)
     def cumulative_distance(
         self,
         compute_gs: bool = True,
@@ -2454,7 +2382,7 @@ class Flight(
         *,
         reverse: bool = False,
         **kwargs: Any,
-    ) -> Flight:
+    ) -> "Flight":
         """Enrich the structure with new ``cumdist`` column computed from
         latitude and longitude columns.
 
@@ -2481,7 +2409,8 @@ class Flight(
 
         delta = pd.concat([coords, coords.add_suffix("_1").diff()], axis=1)
         delta_1 = delta.iloc[1:]
-        d = geo.distance(
+        distance_nm: tt.distance_array
+        distance_nm = geo.distance(
             (delta_1.latitude - delta_1.latitude_1).values,
             (delta_1.longitude - delta_1.longitude_1).values,
             delta_1.latitude.values,
@@ -2489,12 +2418,15 @@ class Flight(
         )
 
         res = cur_sorted.assign(
-            cumdist=np.pad(d.cumsum() / 1852, (1, 0), "constant")
+            cumdist=np.pad(distance_nm.cumsum(), (1, 0), "constant")
         )
 
         if compute_gs:
-            gs = d / delta_1.timestamp_1.dt.total_seconds() * (3600 / 1852)
-            res = res.assign(compute_gs=np.abs(np.pad(gs, (1, 0), "edge")))
+            secs: tt.seconds_array = delta_1.timestamp_1.dt.total_seconds()
+            groundspeed: tt.speed_array = distance_nm / secs
+            res = res.assign(
+                compute_gs=np.abs(np.pad(groundspeed, (1, 0), "edge"))
+            )
 
         if compute_track:
             track = geo.bearing(
@@ -2679,10 +2611,11 @@ class Flight(
     # -- OpenSky specific methods --
 
     def query_opensky_sensors(self, where_condition: str = "") -> pd.DataFrame:
+        # TODO Deprecate??
         from ..data import opensky
 
         return (
-            opensky.request(
+            opensky.impala_client.request(
                 "select s.ITEM, count(*) from state_vectors_data4, "
                 "state_vectors_data4.serials s "
                 f"where icao24='{self.icao24}' and "
@@ -2733,8 +2666,8 @@ class Flight(
     def query_ehs(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
-        failure_mode: str = "warning",
-        progressbar: Union[bool, ProgressbarType[Any]] = True,
+        failure_mode: str = "info",
+        progressbar: Union[bool, tt.ProgressbarType[Any]] = False,
     ) -> Flight:
         """Extends data with extra columns from EHS messages.
 
@@ -2759,7 +2692,7 @@ class Flight(
         """
 
         from ..data import opensky
-        from ..data.adsb.raw_data import RawData
+        from ..data.adsb.decode import RawData
 
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")
@@ -2775,13 +2708,23 @@ class Flight(
             id_ = self.flight_id
             if id_ is None:
                 id_ = self.callsign
-            _log.warning(f"No data on Impala for flight {id_}.")
+            _log.warning(f"No data found on OpenSky database for flight {id_}.")
+            return self
+
+        def fail_info() -> Flight:
+            """Called when nothing can be added to data."""
+            id_ = self.flight_id
+            if id_ is None:
+                id_ = self.callsign
+            _log.info(f"No data found on OpenSky database for flight {id_}.")
             return self
 
         def fail_silent() -> Flight:
             return self
 
-        failure_dict = dict(warning=fail_warning, silent=fail_silent)
+        failure_dict = dict(
+            warning=fail_warning, info=fail_info, silent=fail_silent
+        )
         failure = failure_dict[failure_mode]
 
         if data is None:
@@ -2824,9 +2767,16 @@ class Flight(
         identifier = (
             self.flight_id if self.flight_id is not None else self.callsign
         )
+        reference: None | str | tuple[float, float] = None
+        if isinstance(self.origin, str):
+            reference = self.origin
+        elif position := self.query("latitude.notnull()"):
+            p0 = position.at_ratio(0)
+            assert p0 is not None
+            reference = p0.latlon
 
         t = RawData(referenced_df).decode(
-            reference=self.origin if isinstance(self.origin, str) else None,
+            reference=reference,
             progressbar=progressbar,
             progressbar_kw=dict(leave=False, desc=f"{identifier}:"),
         )
@@ -3049,9 +2999,9 @@ class Flight(
         if len(features) > 0:
             base = base.transform_fold(
                 list(features), as_=["variable", "value"]
-            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))
+            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))  # type: ignore
 
-        return base.mark_line()
+        return base.mark_line()  # type: ignore
 
     def encode(self, **kwargs: Any) -> NoReturn:  # coverage: ignore
         """
@@ -3120,7 +3070,7 @@ class Flight(
                 (
                     subtab.assign(
                         timestamp=lambda df: df.timestamp.dt.tz_localize(
-                            datetime.now().astimezone().tzinfo  # noqa: DTZ005
+                            datetime.now(tz=None).astimezone().tzinfo
                         ).dt.tz_convert("utc")
                     ).plot(ax=ax, x="timestamp", **kw)
                 )

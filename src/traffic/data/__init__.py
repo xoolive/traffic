@@ -19,7 +19,6 @@ if TYPE_CHECKING:
     from .eurocontrol.aixm.airspaces import AIXMAirspaceParser
     from .eurocontrol.aixm.navpoints import AIXMNavaidParser
     from .eurocontrol.aixm.routes import AIXMRoutesParser
-    from .eurocontrol.b2b import NMB2B
     from .eurocontrol.ddr.airspaces import NMAirspaceParser
     from .eurocontrol.ddr.allft import AllFT
     from .eurocontrol.ddr.navpoints import NMNavaids
@@ -63,7 +62,6 @@ aixm_airways: "AIXMRoutesParser"
 aixm_navaids: "AIXMNavaidParser"
 nm_airspaces: "NMAirspaceParser"
 nm_airways: "NMRoutes"
-nm_b2b: "NMB2B"
 nm_navaids: "NMNavaids"
 eurofirs: "Eurofirs"
 opensky: "OpenSky"
@@ -93,14 +91,6 @@ proxy_values = dict(
     for key, value in [("http", http_proxy), ("https", https_proxy)]
     if value != "<>"
 )
-
-
-pkcs12_filename = config.get("nmb2b", "pkcs12_filename", fallback="")
-pkcs12_password = config.get("nmb2b", "pkcs12_password", fallback="")
-nmb2b_mode = config.get("nmb2b", "mode", fallback="PREOPS")
-if nmb2b_mode not in ["OPS", "PREOPS"]:
-    raise RuntimeError("mode must be one of OPS or PREOPS")
-nmb2b_version = config.get("nmb2b", "version", fallback="26.0.0")
 
 
 _cached_imports: Dict[str, Any] = dict()
@@ -248,7 +238,7 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "opensky":
-        from . import session
+        # from . import session
         from .adsb.opensky import OpenSky
 
         # give priority to the OPENSKY_CACHE environment variable
@@ -261,11 +251,11 @@ def __getattr__(name: str) -> Any:
             opensky_cache_path = cache_dir / "opensky"
 
         opensky = OpenSky(
-            opensky_username,
-            opensky_password,
-            opensky_cache_path,
-            session,
-            paramiko_proxy,
+            # opensky_username,
+            # opensky_password,
+            # opensky_cache_path,
+            # session,
+            # paramiko_proxy,
         )
         res = opensky
         _cached_imports[name] = res
@@ -291,21 +281,10 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "nm_b2b":
-        from . import session
-        from .eurocontrol.b2b import NMB2B
-
-        if pkcs12_filename != "" and pkcs12_password != "":
-            _log.debug(f"pcks12_filename: {pkcs12_filename}")
-            nm_b2b = NMB2B(
-                getattr(NMB2B, nmb2b_mode),
-                nmb2b_version,
-                session,
-                pkcs12_filename,
-                pkcs12_password,
-            )
-            res = nm_b2b
-            _cached_imports[name] = res
-            return res
+        raise NotImplementedError(
+            "This has been deprecated from traffic."
+            "Please install optional library pyb2b instead."
+        )
 
     if name == "AllFT":
         from .eurocontrol.ddr.allft import AllFT

@@ -261,7 +261,7 @@ class FlightIterator:
 
 
 def flight_iterator(
-    fun: Callable[..., Iterator["Flight"]]
+    fun: Callable[..., Iterator["Flight"]],
 ) -> Callable[..., FlightIterator]:
     msg = (
         "The @flight_iterator decorator can only be set on methods "

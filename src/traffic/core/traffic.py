@@ -42,7 +42,7 @@ from ..algorithms.generation import Generation
 from ..core.cache import property_cache
 from ..core.structure import Airport
 from ..core.time import time_or_delta, timelike, to_datetime
-from .flight import Flight, attrgetter_duration
+from .flight import Flight
 from .intervals import Interval, IntervalCollection
 from .lazy import LazyTraffic, lazy_evaluation
 from .mixins import DataFrameMixin, GeographyMixin, HBoxMixin, PointMixin
@@ -271,35 +271,51 @@ class Traffic(HBoxMixin, GeographyMixin):
             return NotImplemented
 
         # The easy case, when Traffic collections have a ``flight_id``
-        if (
-            self.flight_ids is not None
-            and (list_id := other.flight_ids) is not None  # noqa: F841
-        ):
-            df = self.data.query("flight_id in @list_id")
-            if df.shape[0] == 0:
-                return None
-            return self.__class__(df)
+        if (flight_ids := other.flight_ids) is not None:
+            if self.flight_ids is not None:
+                df = self.data.query("flight_id in @flight_ids")
+                if df.shape[0] == 0:
+                    return None
+                return self.__class__(df)
 
         # Otherwise build intervals
         cumul = []
-        self_stats = self.summary(["icao24", "start", "stop"])
-        other_stats = other.summary(["icao24", "start", "stop"])
+        self_stats = self.summary(["icao24", "start", "stop"]).eval()
+        columns = ["icao24", "start", "stop"]
+        if flight_ids is not None:
+            columns.append("flight_id")
+        other_stats = cast(pd.DataFrame, other.summary(columns).eval())
+        assert self_stats is not None and other_stats is not None
         for (icao24,), lines in self_stats.groupby(["icao24"]):
             self_interval = IntervalCollection(lines)
             self_interval = self_interval.reset_index()
             other_df = other_stats.query("icao24 == @icao24")
-            if cast(pd.DataFrame, other_df).shape[0] > 0:
+            if other_df.shape[0] > 0:
                 other_interval = IntervalCollection(other_df)
                 other_interval = other_interval.reset_index()
                 if overlap := self_interval & other_interval:
                     for interval in overlap:
-                        cumul.append(
-                            dict(
-                                start=interval.start,
-                                stop=interval.stop,
-                                icao24=icao24,
-                            )
+                        line = other_df.query(
+                            "start <= @interval.start and "
+                            "stop >= @interval.stop"
                         )
+                        if flight_ids:
+                            cumul.append(
+                                dict(
+                                    start=interval.start,
+                                    stop=interval.stop,
+                                    icao24=icao24,
+                                    flight_id=line.iloc[0].flight_id,
+                                )
+                            )
+                        else:
+                            cumul.append(
+                                dict(
+                                    start=interval.start,
+                                    stop=interval.stop,
+                                    icao24=icao24,
+                                )
+                            )
 
         if len(cumul) == 0:
             return None
@@ -374,12 +390,9 @@ class Traffic(HBoxMixin, GeographyMixin):
             else:
                 # Remove flights one by one if no flight_id exists
                 cumul = []
-                self_stats = self.summary(["icao24", "start", "stop"])
-                other_stats = other.summary(["icao24", "start", "stop"])
-                # for (icao24,), lines in tqdm(
-                #     self_stats.groupby(["icao24"]),
-                #     total=self_stats.icao24.nunique(),
-                # ):
+                self_stats = self.summary(["icao24", "start", "stop"]).eval()
+                other_stats = other.summary(["icao24", "start", "stop"]).eval()
+                assert self_stats is not None and other_stats is not None
                 for (icao24,), lines in self_stats.groupby(["icao24"]):
                     self_interval = IntervalCollection(lines)
                     self_interval = self_interval.reset_index()
@@ -443,15 +456,15 @@ class Traffic(HBoxMixin, GeographyMixin):
 
             if flight is not None and hasattr(index, "firstSeen"):
                 # refers to OpenSky REST API
-                flight = flight.after(index.firstSeen)
+                flight = flight.after(index.firstSeen, strict=False)
             if flight is not None and hasattr(index, "lastSeen"):
                 # refers to OpenSky REST API
-                flight = flight.before(index.lastSeen)
+                flight = flight.before(index.lastSeen, strict=False)
 
             if flight is not None and hasattr(index, "start"):  # more natural
-                flight = flight.after(index.start)
+                flight = flight.after(index.start, strict=False)
             if flight is not None and hasattr(index, "stop"):  # more natural
-                flight = flight.before(index.stop)
+                flight = flight.before(index.stop, strict=False)
             if flight is not None and hasattr(index, "flight_id"):
                 flight = flight.assign(flight_id=index.flight_id)
 
@@ -539,23 +552,33 @@ class Traffic(HBoxMixin, GeographyMixin):
             )
 
         if isinstance(key, Traffic):
-            if (
-                self.flight_ids is not None
-                and (flight_ids := key.flight_ids) is not None
-            ):
-                return self[flight_ids]  # type: ignore
+            if (flight_ids := key.flight_ids) is not None:
+                if self.flight_ids is not None:
+                    return self[flight_ids]  # type: ignore
 
             cumul: list[Flight] = []
-            other_stats = key.summary(["icao24", "start", "stop"])
+            columns = ["icao24", "start", "stop"]
+            if flight_ids is not None:
+                columns.append("flight_id")
+            other_stats = cast(pd.DataFrame, key.summary(columns).eval())
             for flight in self:
                 other_df = other_stats.query("icao24 == @flight.icao24")
-                if cast(pd.DataFrame, other_df).shape[0] > 0:
+                if other_df.shape[0] > 0:
                     other_interval = IntervalCollection(other_df)
                     if any(
                         Interval(flight.start, flight.stop).overlap(other)
                         for other in other_interval
                     ):
-                        cumul.append(flight)
+                        if flight_ids:
+                            line = other_df.query(
+                                "start <= @flight.stop and "
+                                "stop >= @flight.start"
+                            )
+                            cumul.append(
+                                flight.assign(flight_id=line.iloc[0].flight_id)
+                            )
+                        else:
+                            cumul.append(flight)
             if len(cumul) == 0:
                 return None
             return Traffic.from_flights(cumul)
@@ -786,13 +809,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def filter(  # type: ignore
-        self,
-        strategy: Callable[
-            [pd.DataFrame], pd.DataFrame
-        ] = lambda x: x.bfill().ffill(),
-        **kwargs,
-    ):
+    def filter(self, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
@@ -891,7 +908,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         self,
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
-        key: Callable[[Optional["Flight"]], Any] = attrgetter_duration,
+        key: str = "duration",
     ):
         ...
 
@@ -1086,28 +1103,9 @@ class Traffic(HBoxMixin, GeographyMixin):
             .rename(columns={"timestamp": "count"})
         )
 
-    @lazy_evaluation(default=True)
-    def summary(
-        self,
-        attributes: List[str],
-        iterate_kw: Optional[Dict[str, Any]] = None,
-    ) -> pd.DataFrame:
-        """Returns a summary of the current Traffic structure containing
-        featured attributes.
-
-        Example usage:
-
-        >>> t.summary(['icao24', 'start', 'stop', 'duration'])
-
-        Consider monkey-patching properties to the Flight class if you need more
-        information in your summary DataFrame.
-
-        """
-        if iterate_kw is None:
-            iterate_kw = dict()
-        return pd.DataFrame.from_records(
-            flight.summary(attributes) for flight in self.iterate(**iterate_kw)
-        )
+    @lazy_evaluation()
+    def summary(self, attributes: list[str]) -> pd.DataFrame:
+        ...
 
     def geoencode(self, *args: Any, **kwargs: Any) -> NoReturn:
         """
@@ -1494,7 +1492,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         Example usage:
 
-        >>> from traffic.core.projection import EuroPP
+        >>> from cartes.crs import EuroPP
         >>> from sklearn.cluster import DBSCAN
         >>> from sklearn.preprocessing import StandardScaler
         >>>

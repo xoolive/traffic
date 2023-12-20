@@ -2,7 +2,7 @@
 name = "traffic"
 homepage = "https://github.com/xoolive/traffic/"
 documentation = "https://traffic-viz.github.io/"
-version = "2.8.2.dev41"
+version = "0.0.0"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"
@@ -31,14 +31,14 @@ include = [
   "license.md",
   "traffic.conf",
   "py.typed",
+  ".dat",
   "*.json.*",
-  ".xml",
   ".onnx",
   "allft_fields.txt"
 ]
 
 [tool.poetry-dynamic-versioning]
-enable = false
+enable = true
 bump = true
 metadata = false
 
@@ -51,25 +51,27 @@ CesiumJS = "traffic.plugins.cesiumjs"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
-# pitot = "^0.2"
+impunity = ">=1.0.4"
+# impunity = { path = "../impunity", develop = true}
+pitot = ">=0.3.1"
+# pitot = { path = "../pitot", develop = true }
 cartes = ">=0.7.4"
 # cartes = { path = "../cartes", develop = true }
+pyopensky = ">=2.0"
+# pyopensky = { path = "../pyopensky", develop = true }
 requests = ">=2.27"
-requests-pkcs12 = ">=1.10"
-pyOpenSSL = ">=22.0"
-paramiko = ">=2.7"
 ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
-pyModeS = ">=2.16"
+pyModeS = ">=2.17"
 # pyModeS = { path = "../pyModeS", extras = ["rtlsdr"], develop = true }
 openap = ">=1.1"
 metar = ">=1.8"
 click = ">=8.1"
 typing-extensions = ">=4.2"
 pyarrow = ">=11.0.0"
-astor = "^0.8.1"  # probably to be removed with impunity
 # onnxruntime is usually late to release, although available on conda-forge
 onnxruntime = { version = ">=1.12", python = "<3.12" }
+# -- Optional dependencies --
 xarray = { version = ">=0.18.2", optional = true }
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
 scikit-learn = { version = ">=1.0", optional = true }
@@ -78,17 +80,17 @@ Flask = { version = ">=2.1.1", optional = true }
 Flask-Cors = { version = ">=3.0.10", optional = true }
 waitress = { version = ">=2.1.1", optional = true }
 pyspark = { version = ">=3.3.0", optional = true }
-pyrtlsdr = { version = "^0.2.93", optional = true }
-poetry = "^1.5.1"
+pyrtlsdr = { version = ">=0.2.93", optional = true }
+pyb2b = { version = ">=0.1", optional = true }
+# pyb2b = { path = "../pyb2b", develop = true }
 
 [tool.poetry.extras]
 full = ["xarray", "libarchive", "scikit-learn", "textual", "pyspark"]
-web = ["Flask", "Flask-Cors", "waitress", "textual"]
-sdr =  ["pyrtlsdr"]
+web = ["Flask", "Flask-Cors", "waitress", "textual", "pyb2b"]
+rtlsdr =  ["pyrtlsdr"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = ">=2.13.0"
-black = ">=21.6"
 mypy = ">=0.981"
 ruff = ">=0.0.247"
 Sphinx = ">=5.1"
@@ -99,10 +101,10 @@ pytest = ">=7.1"
 pytest-cov = ">=4.0"
 pytest-timeout = ">=2.1"
 codecov = ">=2.1.11"
+ipykernel = "^6.25.0"
 types-pkg-resources = ">=0.1.3"
 types-requests = ">=2.25.0"
-types-paramiko = ">=0.1.7"
-types-pyOpenSSL = ">=22.0"
+types-paramiko = ">=3.3.0.0"
 types-flask = ">=1.1.6"
 types-waitress = ">=2.0.8"
 requests = { extras = ["socks"], version = ">=2.27" }
@@ -111,21 +113,6 @@ requests = { extras = ["socks"], version = ">=2.27" }
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
-
-[tool.black]
-line-length = 80
-target_version = ['py38', 'py39', 'py310', 'py311']
-include = '\.pyi?$'
-exclude = '''
-/(
-    __pycache__
-  | \.git
-  | \.mypy_cache
-  | \.ipynb_checkpoints
-  | build
-  | dist
-)/
-'''
 
 [tool.ruff]
 select = [
@@ -139,7 +126,6 @@ select = [
 ]
 line-length = 80
 target-version = "py38"
-exclude = ["src/traffic/data/eurocontrol/b2b/"]  # will be in a different package
 
 [tool.ruff.isort]
 known-first-party = ["numpy", "pandas", "pyproj", "shapely"]
@@ -161,5 +147,10 @@ warn_unused_ignores = true
 
 [tool.pytest.ini_options]
 addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff"
-testpaths = ["src/traffic/data/basic/", "src/traffic/core/intervals.py", "tests"]
+testpaths = [
+    "src/traffic/core/intervals.py",
+    "src/traffic/core/time.py",
+    "src/traffic/data/basic/",
+    "tests"
+]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]

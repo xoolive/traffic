@@ -80,7 +80,7 @@ def compute_latlon_from_trackgs(
         coordinates of the trajectories.
     """
 
-    from ..core.geodesy import destination
+    from pitot.geodesy import destination
 
     df = data.copy(deep=True)
     if not forward:

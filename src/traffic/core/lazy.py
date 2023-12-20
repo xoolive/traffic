@@ -326,7 +326,7 @@ def lazy_evaluation(
     """
 
     def wrapper(
-        f: Callable[..., "Traffic"]
+        f: Callable[..., "Traffic"],
     ) -> Callable[..., Union["Traffic", LazyTraffic]]:
         # Check parameters passed (esp. filter_if) are not lambda because those
         # are not serializable therefore **silently** fail when multiprocessed.
@@ -475,6 +475,7 @@ for name, handle in inspect.getmembers(
         annots["return"] == annots["self"]
         or annots["return"] == Optional[annots["self"]]  # noqa: F821
         or annots["return"] == f"Optional[{annots['self']}]"
+        or annots["return"] == f"None | {annots['self']}"
     ):
 
         def make_lambda(name: str) -> Callable[..., LazyTraffic]:

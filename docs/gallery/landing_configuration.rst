@@ -17,6 +17,7 @@ available in the traffic library.
         .all("aligned_on_ils('LSZH')", flight_id="{self.flight_id}_{i}")
         .eval()
         .summary(["flight_id", "stop", "ILS_max"])
+        .eval()
         .sort_values("stop")
     )
 

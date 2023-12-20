@@ -2,9 +2,10 @@ import logging
 from pathlib import Path
 from typing import List, Optional, Union, cast
 
+from pitot.aero import tas2cas
+
 import pandas as pd
 from traffic.core import Traffic
-from traffic.core.aero import vtas2cas
 from traffic.core.time import timelike
 from traffic.data import aircraft
 
@@ -52,7 +53,7 @@ def to_bluesky(
     if "cas" not in traffic.data.columns:
         traffic = Traffic(
             traffic.data.assign(
-                cas=vtas2cas(traffic.data.ground_speed, traffic.data[altitude])
+                cas=tas2cas(traffic.data.ground_speed, traffic.data[altitude])
             )
         )
 

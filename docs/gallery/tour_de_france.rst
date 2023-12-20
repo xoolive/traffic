@@ -26,7 +26,7 @@ official map at the bottom of the page.
         .eval()
     )
 
-    stats = preprocessed.summary(["flight_id", "start", "stop", "duration"])
+    stats = preprocessed.summary(["flight_id", "start", "stop", "duration"]).eval()
 
     m = preprocessed.map_leaflet(
         zoom=6, layout=Layout(max_width="600px", height="600px"),

@@ -1,4 +1,4 @@
-# flake8: noqa
+# ruff: noqa: E501
 
 from pathlib import Path
 from typing import Any

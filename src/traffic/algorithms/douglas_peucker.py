@@ -1,5 +1,4 @@
-# flake8: noqa
-from typing import Any, Optional, Union, cast
+from typing import Union, cast
 
 import numpy as np
 import pandas as pd
@@ -12,11 +11,11 @@ def _douglas_peucker_rec(
     mask: np.ndarray,  # type: ignore
     tolerance: float,
 ) -> None:
-    l = len(x)
-    if l < 3:
+    len_x = len(x)
+    if len_x < 3:
         return
 
-    v = np.array([[y[len(x) - 1] - y[0]], [x[0] - x[len(x) - 1]]])
+    v = np.array([[y[len_x - 1] - y[0]], [x[0] - x[len_x - 1]]])
     d = np.abs(
         np.dot(
             np.dstack([x[1:-1] - x[0], y[1:-1] - y[0]])[0],
@@ -25,7 +24,7 @@ def _douglas_peucker_rec(
     )
 
     if np.max(d) < tolerance:
-        mask[np.s_[1 : l - 1]] = 0
+        mask[np.s_[1 : len_x - 1]] = 0
         return
 
     arg = cast(int, np.argmax(d))
@@ -40,8 +39,8 @@ def _douglas_peucker_rec_3d(
     mask: np.ndarray,  # type: ignore
     tolerance: float,
 ) -> None:
-    l = len(x)
-    if l < 3:
+    len_x = len(x)
+    if len_x < 3:
         return
 
     start = np.array([x[0], y[0], z[0]])
@@ -51,7 +50,7 @@ def _douglas_peucker_rec_3d(
     d = np.sqrt(np.sum(d * d, axis=1))
 
     if np.max(d) < tolerance:
-        mask[np.s_[1 : l - 1]] = 0
+        mask[np.s_[1 : len_x - 1]] = 0
         return
 
     arg = cast(int, np.argmax(d))

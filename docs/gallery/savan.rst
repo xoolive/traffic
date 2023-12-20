@@ -27,12 +27,12 @@ in-flight calibration for navigational aids)
 
     from traffic.data.samples import savan
 
-    savan.summary(['icao24', 'callsign', 'start', 'stop'])
+    savan.summary(['icao24', 'callsign', 'start', 'stop']).eval()
 
 Trajectories can be considered individually:
 
 .. jupyter-execute::
-    
+
     savan['SAVAN01'].map_leaflet(zoom=5)
 
 But it makes more sense to plot them all together. The following cells detail
@@ -50,7 +50,7 @@ how we come to the full map below:
        savan['SAVAN01'].simplify(1e3).geoencode(),
        savan['SAVAN02'].simplify(1e3).geoencode()
    )
-   
+
 .. jupyter-execute::
 
    alt.layer(
@@ -65,7 +65,7 @@ how we come to the full map below:
        *(flight.simplify(1e3).geoencode().encode(alt.Color('callsign')) for flight in savan)
    )
 
-The `cartes <https://cartes-viz.github.io/atlas.html>`_ package helps providing 
+The `cartes <https://cartes-viz.github.io/atlas.html>`_ package helps providing
 layouts for better maps.
 
 .. jupyter-execute::
@@ -105,15 +105,15 @@ library, but it is not very difficult to code it directly.
 .. jupyter-execute::
 
    from cartes.osm import Nominatim
-   
+
    france_shape = Nominatim.search("France métropolitaine").shape
    france_shape
-   
+
 .. jupyter-execute::
 
    from shapely.geometry import Point
    from traffic.data.basic.navaid import Navaids
-   
+
    vors = navaids.extent('France métropolitaine').query('type == "VOR"')
    vors_fr = Navaids(
     vors.data.loc[
@@ -121,16 +121,16 @@ library, but it is not very difficult to code it directly.
     ]
    )
    vors_fr
-   
+
 
 Here comes a better map now:
 
 .. jupyter-execute::
-   
+
    base_vor = alt.Chart(vors_fr.data).mark_point().encode(
       alt.Longitude('longitude'), alt.Latitude('latitude')
    )
-   
+
    map_chart = (
       alt.layer(
          alt.Chart(france.topo_feature)
@@ -146,7 +146,7 @@ Here comes a better map now:
       .configure_legend(orient='bottom', columns=5)
    )
    map_chart
-   
+
 
 A way to dig into how VOR installations are well covered on 360 degrees by SAVAN
 trajectories is to compute for each VOR and for each trajectory, which legs
@@ -176,7 +176,7 @@ We can then produce plots to check for the coverage, here limited on
 South-eastern France and Corsica:
 
 .. jupyter-execute::
-    
+
     chart = (
         alt.Chart(coverage.data)
         .mark_circle()
