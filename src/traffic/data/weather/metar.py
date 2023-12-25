@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, ClassVar, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -36,7 +36,7 @@ class Metars(DataFrameMixin):
 
     cache_dir: Path
 
-    _metar_columns = [
+    _metar_columns: ClassVar[List[str]] = [
         "station",
         "valid",
         "elevation",
@@ -53,9 +53,7 @@ class Metars(DataFrameMixin):
         super().__init__(data)
 
     @classmethod
-    def from_file(
-        cls, filename: Union[Path, str], **kwargs: Any
-    ) -> Optional["Metars"]:
+    def from_file(cls, filename: Union[Path, str], **kwargs: Any) -> Optional["Metars"]:
         """
         Loads metar data from a file on disk.
 
@@ -115,9 +113,7 @@ class Metars(DataFrameMixin):
         for station in stations:
             if path := cls._get_cache_file(station, start_time, stop_time):
                 cumul.append(
-                    pd.read_parquet(path).query(
-                        "@start_time <= valid <= @stop_time"
-                    )
+                    pd.read_parquet(path).query("@start_time <= valid <= @stop_time")
                 )
             else:
                 cumul.append(cls._iem_download(station, start_time, stop_time))
@@ -230,13 +226,9 @@ class Metars(DataFrameMixin):
                     continue
                 try:
                     if (
-                        pd.to_datetime(
-                            strs[idx + 2], format="%Y%m%d%H", utc=True
-                        )
+                        pd.to_datetime(strs[idx + 2], format="%Y%m%d%H", utc=True)
                         <= start_time
-                        and pd.to_datetime(
-                            strs[idx + 3], format="%Y%m%d%H", utc=True
-                        )
+                        and pd.to_datetime(strs[idx + 3], format="%Y%m%d%H", utc=True)
                         >= stop_time
                     ):
                         return file
@@ -299,10 +291,7 @@ class Metars(DataFrameMixin):
         ]
 
         df = pd.DataFrame(
-            [
-                row.split(",")
-                for row in res.content.decode("utf-8").split("\n")[1:-1]
-            ],
+            [row.split(",") for row in res.content.decode("utf-8").split("\n")[1:-1]],
             columns=cols,
         )
         if df.empty:
@@ -318,9 +307,7 @@ class Metars(DataFrameMixin):
                 "sea_level_pressure",
                 "press_temp_1",
             ]
-            df[cols_floats] = df[cols_floats].apply(
-                pd.to_numeric, errors="coerce"
-            )
+            df[cols_floats] = df[cols_floats].apply(pd.to_numeric, errors="coerce")
             df["valid"] = pd.to_datetime(df["valid"], utc=True)
             df["press_temp_2"] = df.apply(
                 lambda r: r.sea_level_pressure
@@ -360,10 +347,6 @@ class Metars(DataFrameMixin):
             start_time = to_datetime(stop_time) - timedelta(hours=2.0)
 
         return (
-            round_time(
-                to_datetime(start_time).astimezone(timezone.utc), how="before"
-            ),
-            round_time(
-                to_datetime(stop_time).astimezone(timezone.utc), how="after"
-            ),
+            round_time(to_datetime(start_time).astimezone(timezone.utc), how="before"),
+            round_time(to_datetime(stop_time).astimezone(timezone.utc), how="after"),
         )

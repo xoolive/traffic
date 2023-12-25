@@ -150,13 +150,11 @@ class Anp(object):
         "2.0": "https://www.easa.europa.eu/en/downloads/138156/en",
         "1.0": "https://www.easa.europa.eu/en/downloads/138155/en",
     }
-    substitutions_url: ClassVar[
+    substitution_url: ClassVar[
         str
     ] = "https://www.easa.europa.eu/en/downloads/138165/en"
 
-    flap_retraction_file: ClassVar[Path] = (
-        Path(__file__).parent / "Flap Schedules.csv"
-    )
+    flap_retraction_file: ClassVar[Path] = Path(__file__).parent / "Flap Schedules.csv"
 
     def __init__(
         self,
@@ -239,10 +237,7 @@ class Anp(object):
         df = self.default_weights  # type: ignore
         weight = float(
             df.loc[
-                (
-                    df["ACFT_ID"] == acft_id
-                    and df["Stage Length"] == stage_length
-                ),
+                (df["ACFT_ID"] == acft_id and df["Stage Length"] == stage_length),
                 "Weight (lb)",
             ]
         )
@@ -462,26 +457,20 @@ class Anp(object):
                 return np.concatenate([takeoff_thrust, climb_thrust]), idx
 
             else:
-                takeoff_thrust = (
-                    c_t["F"] * cas[:idx]
-                    + (  # type: ignore
-                        c_t["E"] + c_t["H"] * break_temp
-                    )
-                    * (
-                        1 - 0.006 * temp[:idx]  # type: ignore
-                    )
-                    / (1 - 0.006 * break_temp)
+                takeoff_thrust = c_t["F"] * cas[:idx] + (  # type: ignore
+                    c_t["E"] + c_t["H"] * break_temp
+                ) * (
+                    1 - 0.006 * temp[:idx]  # type: ignore
+                ) / (
+                    1 - 0.006 * break_temp
                 )
 
-                climb_thrust = (
-                    c_c["F"] * cas[idx:]
-                    + (  # type: ignore
-                        c_c["E"] + c_c["H"] * break_temp
-                    )
-                    * (
-                        1 - 0.006 * temp[idx:]  # type: ignore
-                    )
-                    / (1 - 0.006 * break_temp)
+                climb_thrust = c_c["F"] * cas[idx:] + (  # type: ignore
+                    c_c["E"] + c_c["H"] * break_temp
+                ) * (
+                    1 - 0.006 * temp[idx:]  # type: ignore
+                ) / (
+                    1 - 0.006 * break_temp
                 )
                 return np.concatenate([takeoff_thrust, climb_thrust]), idx
 
@@ -505,30 +494,22 @@ class Anp(object):
             )
 
             takeoff_thrust = (
-                (
-                    326
-                    * c_t["Propeller Efficiency"]
-                    * c_t["Installed Net Propulsive Power (hp)"]
-                    / tas[:idx]  # type: ignore
-                )
-                / (
-                    press[:idx] / 1013.25  # type: ignore
-                )
+                326
+                * c_t["Propeller Efficiency"]
+                * c_t["Installed Net Propulsive Power (hp)"]
+                / tas[:idx]  # type: ignore
+            ) / (
+                press[:idx] / 1013.25  # type: ignore
             )
-            takeoff_thrust = np.minimum(
-                takeoff_thrust.values, max_thrust.values
-            )
+            takeoff_thrust = np.minimum(takeoff_thrust.values, max_thrust.values)
 
             climb_thrust = (
-                (
-                    326
-                    * c_c["Propeller Efficiency"]
-                    * c_c["Installed Net Propulsive Power (hp)"]
-                    / tas[idx:]  # type: ignore
-                )
-                / (
-                    press[idx:] / 1013.25  # type: ignore
-                )
+                326
+                * c_c["Propeller Efficiency"]
+                * c_c["Installed Net Propulsive Power (hp)"]
+                / tas[idx:]  # type: ignore
+            ) / (
+                press[idx:] / 1013.25  # type: ignore
             )
             climb_thrust = np.minimum(climb_thrust.values, max_thrust.values)
 
@@ -544,9 +525,7 @@ class Anp(object):
             self.flap_retraction_schedule["ACFT_ID"] == acft_id
         ]
         idx = np.maximum(
-            np.searchsorted(
-                -acft_schedule["Start CAS (kt)"].values, -cas, side="right"
-            )
+            np.searchsorted(-acft_schedule["Start CAS (kt)"].values, -cas, side="right")
             - 1,
             0,
         )
@@ -575,16 +554,10 @@ class Anp(object):
 
         for anp_file, cols in anp_file_dict.items():
             if zp_file := next(
-                (
-                    zp_file
-                    for zp_file in zp_file_list
-                    if anp_file in zp_file.lower()
-                ),
+                (zp_file for zp_file in zp_file_list if anp_file in zp_file.lower()),
                 None,
             ):
-                data = pd.read_csv(
-                    BytesIO(zp.read(zp_file)), sep=None, engine="python"
-                )
+                data = pd.read_csv(BytesIO(zp.read(zp_file)), sep=None, engine="python")
                 for col in cols:
                     if col not in data.columns:
                         raise RuntimeError(
