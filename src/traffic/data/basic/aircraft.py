@@ -15,7 +15,7 @@ import rich.repr
 import pandas as pd
 
 from ...core.mixins import DataFrameMixin, FormatMixin
-from ...progress_bar import tqdm
+from ...core.progress_bar import tqdm
 
 _log = logging.getLogger(__name__)
 

@@ -16,7 +16,7 @@ import pyproj
 
 from ..core import Flight
 from ..core.mixins import DataFrameMixin
-from ..progress_bar import tqdm
+from ..core.progress_bar import tqdm
 
 if TYPE_CHECKING:
     from cartopy import crs

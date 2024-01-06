@@ -35,7 +35,7 @@ from ...core import Flight, Traffic
 from ...core.mixins import DataFrameMixin
 from ...core.types import ProgressbarType
 from ...data.basic.airports import Airport
-from ...progress_bar import tqdm
+from ...core.progress_bar import tqdm
 
 D = TypeVar("D", bound="ModeS_Decoder")
 R = TypeVar("R", bound="RawData")

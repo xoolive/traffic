@@ -20,7 +20,7 @@ from ....core.airspace import (
     unary_union_with_alt,
 )
 from ... import aixm_navaids
-from ....progress_bar import tqdm
+from ....core.progress_bar import tqdm
 
 T = TypeVar("T", bound="AIXMAirspaceParser")
 
