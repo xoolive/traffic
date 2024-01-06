@@ -24,13 +24,13 @@ from typing import (
 )
 
 import astor
-from tqdm.rich import tqdm
 
 import numpy as np
 import pandas as pd
 
 from .flight import Flight
 from .mixins import GeographyMixin
+from .progress_bar import tqdm
 
 if TYPE_CHECKING:
     from .traffic import Traffic

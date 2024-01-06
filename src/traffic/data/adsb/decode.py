@@ -27,7 +27,6 @@ from typing import (
 )
 
 import pyModeS as pms
-from tqdm.rich import tqdm
 
 import numpy as np
 import pandas as pd
@@ -36,6 +35,7 @@ from ...core import Flight, Traffic
 from ...core.mixins import DataFrameMixin
 from ...core.types import ProgressbarType
 from ...data.basic.airports import Airport
+from ...progress_bar import tqdm
 
 D = TypeVar("D", bound="ModeS_Decoder")
 R = TypeVar("R", bound="RawData")

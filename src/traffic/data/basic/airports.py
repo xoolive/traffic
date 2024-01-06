@@ -6,13 +6,13 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 import requests
-from tqdm.rich import tqdm
 
 import pandas as pd
 
 from ... import cache_expiration
 from ...core.mixins import GeoDBMixin
 from ...core.structure import Airport
+from ...progress_bar import tqdm
 
 __all__ = ["Airport", "Airports"]
 

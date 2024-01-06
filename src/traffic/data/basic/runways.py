@@ -17,7 +17,6 @@ from zipfile import ZipFile
 
 import requests
 from pitot.geodesy import bearing, destination
-from tqdm.rich import tqdm
 
 import numpy as np
 import pandas as pd
@@ -26,6 +25,7 @@ from shapely.ops import linemerge
 
 from ... import cache_expiration
 from ...core.mixins import DataFrameMixin, HBoxMixin, PointMixin, ShapelyMixin
+from ...progress_bar import tqdm
 
 if TYPE_CHECKING:
     import altair as alt

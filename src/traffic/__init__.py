@@ -12,7 +12,7 @@ import pandas as pd
 from . import drawing  # noqa: F401
 
 __version__ = version("traffic")
-__all__ = ["config_dir", "config_file", "cache_dir"]
+__all__ = ["config_dir", "config_file", "cache_dir", "tqdm_style"]
 
 # Set up the library root logger
 _log = logging.getLogger(__name__)
@@ -64,6 +64,10 @@ if cache_purge_cfg != "" and not cache_no_expire:  # coverage: ignore
 
 if not cache_dir.exists():
     cache_dir.mkdir(parents=True)
+
+# -- Tqdm Style Configuration --
+tqdm_style = config.get("tqdm", "style", fallback="default")
+_log.info(f"Selected tqdm style: {tqdm_style}")
 
 # -- Plugin management --
 

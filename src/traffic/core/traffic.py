@@ -29,7 +29,6 @@ from typing import (
 from ipyleaflet import Map as LeafletMap
 from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
-from tqdm.rich import tqdm
 
 import numpy as np
 import pandas as pd
@@ -46,6 +45,7 @@ from .flight import Flight
 from .intervals import Interval, IntervalCollection
 from .lazy import LazyTraffic, lazy_evaluation
 from .mixins import DataFrameMixin, GeographyMixin, HBoxMixin, PointMixin
+from .progress_bar import tqdm
 from .sv import StateVectors
 
 if TYPE_CHECKING:

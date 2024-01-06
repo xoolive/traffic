@@ -15,13 +15,12 @@ from typing import (
     cast,
 )
 
-from tqdm.rich import tqdm
-
 import pandas as pd
 
 from ....core import Flight
 from ....core.mixins import DataFrameMixin, _HBox
 from .so6 import _prepare_libarchive
+from ....progress_bar import tqdm
 
 AllFTTypeVar = TypeVar("AllFTTypeVar", bound="AllFT")
 

@@ -2,12 +2,11 @@ import io
 from hashlib import md5
 from typing import Any, Dict
 
-from tqdm.rich import tqdm
-
 import pandas as pd
 
 from ... import cache_dir, config
 from ...core import Traffic
+from ...progress_bar import tqdm
 
 _squawk7700_url = "https://zenodo.org/record/3937483/"
 

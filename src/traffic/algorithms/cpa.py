@@ -11,13 +11,12 @@ from typing import (
     cast,
 )
 
-from tqdm.rich import tqdm
-
 import pandas as pd
 import pyproj
 
 from ..core import Flight
 from ..core.mixins import DataFrameMixin
+from ..progress_bar import tqdm
 
 if TYPE_CHECKING:
     from cartopy import crs

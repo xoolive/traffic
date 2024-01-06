@@ -11,11 +11,11 @@ from pathlib import Path
 from typing import Any, ClassVar, Dict, TypeVar
 
 import rich.repr
-from tqdm.rich import tqdm
 
 import pandas as pd
 
 from ...core.mixins import DataFrameMixin, FormatMixin
+from ...progress_bar import tqdm
 
 _log = logging.getLogger(__name__)
 
