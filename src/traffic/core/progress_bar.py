@@ -1,5 +1,3 @@
-import os
-
 from traffic import tqdm_style
 
 # Choose the appropriate tqdm based on the style
