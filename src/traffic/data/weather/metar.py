@@ -75,6 +75,7 @@ class Metars(DataFrameMixin):
                         f"but was not found in {path.as_posix()}"
                     )
                     return None
+            tentative["valid"] = pd.to_datetime(tentative["valid"])
             return tentative
 
         _log.warning(f"{path.suffixes} extension is not supported")
@@ -124,7 +125,7 @@ class Metars(DataFrameMixin):
         return Metars(pd.concat(cumul))
 
     def __getitem__(self, airport: str) -> Optional["Metars"]:
-        df = self.data.query("station == @airport")
+        df = self.data.loc[self.data["station"] == airport]
 
         if df.shape[0] == 0:
             return None
@@ -162,7 +163,7 @@ class Metars(DataFrameMixin):
             if not enable_download:
                 return None
 
-            new_metar = self.get(stations, start_time, stop_time)
+            new_metar = Metars.get(stations, start_time, stop_time)
 
             if new_metar is not None:
                 self.data = new_metar.data

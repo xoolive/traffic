@@ -483,15 +483,15 @@ class Anp(object):
             c_t = c.loc[c["Thrust Rating"] == "MaxTakeoff"].squeeze()
             c_c = c.loc[c["Thrust Rating"] == "MaxClimb"].squeeze()
 
-            # Propeller thrust is very high thrust at low true air speeds
-            # Values is capped at 125% of rated thrust
+            # Propeller thrust is very high at low true air speeds
+            # Values are capped at 125% of rated thrust
             max_thrust = (
                 self.aircraft.loc[  # type ignore
                     self.aircraft["ACFT_ID"] == acft_id,
                     "Max Sea Level Static Thrust (lb)",
                 ].astype(float)
                 * 1.25
-            )
+            ).iloc[0]
 
             takeoff_thrust = (
                 326
@@ -501,7 +501,7 @@ class Anp(object):
             ) / (
                 press[:idx] / 1013.25  # type: ignore
             )
-            takeoff_thrust = np.minimum(takeoff_thrust.values, max_thrust.values)
+            takeoff_thrust = np.minimum(takeoff_thrust, max_thrust)
 
             climb_thrust = (
                 326
@@ -511,7 +511,7 @@ class Anp(object):
             ) / (
                 press[idx:] / 1013.25  # type: ignore
             )
-            climb_thrust = np.minimum(climb_thrust.values, max_thrust.values)
+            climb_thrust = np.minimum(climb_thrust, max_thrust)
 
             return np.concatenate([takeoff_thrust, climb_thrust]), idx
         else:

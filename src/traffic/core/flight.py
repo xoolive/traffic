@@ -328,9 +328,7 @@ class Flight(
         # This just cannot return None in this case.
         return Traffic.from_flights([self, other])  # type: ignore
 
-    def __radd__(
-        self, other: Union[Literal[0], Flight, "Traffic"]
-    ) -> "Traffic":
+    def __radd__(self, other: Union[Literal[0], Flight, "Traffic"]) -> "Traffic":
         """
         As Traffic is thought as a collection of Flights, the sum of two Flight
         objects returns a Traffic object
@@ -606,9 +604,7 @@ class Flight(
         _log.warning("Use Flight.pipe(...) instead", DeprecationWarning)
         return self if test(self) else None
 
-    def has(
-        self, method: Union[str, Callable[[Flight], Iterator[Flight]]]
-    ) -> bool:
+    def has(self, method: Union[str, Callable[[Flight], Iterator[Flight]]]) -> bool:
         """Returns True if flight.method() returns a non-empty iterator.
 
         Example usage:
@@ -619,9 +615,7 @@ class Flight(
         """
         return self.next(method) is not None
 
-    def sum(
-        self, method: Union[str, Callable[[Flight], Iterator[Flight]]]
-    ) -> int:
+    def sum(self, method: Union[str, Callable[[Flight], Iterator[Flight]]]) -> int:
         """Returns the number of segments returned by flight.method().
 
         Example usage:
@@ -630,11 +624,7 @@ class Flight(
         >>> flight.sum("runway_change")
         >>> flight.sum(lambda f: f.aligned_on_ils("LFBO"))
         """
-        fun = (
-            getattr(self.__class__, method)
-            if isinstance(method, str)
-            else method
-        )
+        fun = getattr(self.__class__, method) if isinstance(method, str) else method
         return sum(1 for _ in fun(self))
 
     def label(
@@ -696,16 +686,11 @@ class Flight(
 
         """
 
-        fun = (
-            getattr(self.__class__, method)
-            if isinstance(method, str)
-            else method
-        )
+        fun = getattr(self.__class__, method) if isinstance(method, str) else method
 
         result = self.assign(
             **dict(
-                (key, False if value is True else None)
-                for key, value in kwargs.items()
+                (key, False if value is True else None) for key, value in kwargs.items()
             )
         )
 
@@ -717,8 +702,7 @@ class Flight(
                     if re.match("^lambda", value):
                         code = ast.parse(value)
                         if any(
-                            isinstance(piece, ast.Lambda)
-                            for piece in ast.walk(code)
+                            isinstance(piece, ast.Lambda) for piece in ast.walk(code)
                         ):
                             value = eval(value)
                 if callable(value):
@@ -748,15 +732,9 @@ class Flight(
         >>> flight.all('aligned_on_ils("LFBO")')
         >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
         """
-        fun = (
-            getattr(self.__class__, method)
-            if isinstance(method, str)
-            else method
-        )
+        fun = getattr(self.__class__, method) if isinstance(method, str) else method
         if flight_id is None:
-            t = sum(
-                flight.assign(index_=i) for i, flight in enumerate(fun(self))
-            )
+            t = sum(flight.assign(index_=i) for i, flight in enumerate(fun(self)))
         else:
             t = sum(
                 flight.assign(flight_id=flight_id.format(self=flight, i=i))
@@ -777,11 +755,7 @@ class Flight(
         >>> flight.next("runway_change")
         >>> flight.next(lambda f: f.aligned_on_ils("LFBO"))
         """
-        fun = (
-            getattr(self.__class__, method)
-            if isinstance(method, str)
-            else method
-        )
+        fun = getattr(self.__class__, method) if isinstance(method, str) else method
         return next(fun(self), None)
 
     def final(
@@ -796,11 +770,7 @@ class Flight(
         >>> flight.final("runway_change")
         >>> flight.final(lambda f: f.aligned_on_ils("LFBO"))
         """
-        fun = (
-            getattr(self.__class__, method)
-            if isinstance(method, str)
-            else method
-        )
+        fun = getattr(self.__class__, method) if isinstance(method, str) else method
         segment = None
         for segment in fun(self):
             continue
@@ -1027,9 +997,7 @@ class Flight(
         """Returns the duration of the flight."""
         return self.stop - self.start
 
-    def _get_unique(
-        self, field: str, warn: bool = True
-    ) -> Union[str, Set[str], None]:
+    def _get_unique(self, field: str, warn: bool = True) -> Union[str, Set[str], None]:
         if field not in self.data.columns:
             return None
         tmp = self.data[field].unique()
@@ -1100,11 +1068,7 @@ class Flight(
     @property
     def trip(self) -> str:
         return (
-            (
-                "("
-                if self.origin is not None or self.destination is not None
-                else ""
-            )
+            ("(" if self.origin is not None or self.destination is not None else "")
             + (f"{self.origin}" if self.origin else " ")
             + (
                 " to "
@@ -1118,11 +1082,7 @@ class Flight(
                 if self.diverted and self.diverted == self.diverted
                 else ""
             )
-            + (
-                ")"
-                if self.origin is not None or self.destination is not None
-                else ""
-            )
+            + (")" if self.origin is not None or self.destination is not None else "")
         )
 
     @property
@@ -1289,8 +1249,8 @@ class Flight(
             return None
 
         candidates = anp_data.substitution.loc[
-                     anp_data.substitution["ICAO_CODE"] == acft.typecode, :
-                     ].copy()
+            anp_data.substitution["ICAO_CODE"] == acft.typecode, :
+        ].copy()
         if candidates.empty:
             return None
 
@@ -1303,15 +1263,11 @@ class Flight(
         scores = variants.apply(
             lambda acft_var: jaro_winkler_similarity(acft_var, acft.engines)
         )
-        return tuple(
-            candidates[["ICAO_CODE", "AIRCRAFT_VARIANT"]].loc[scores.idxmax()]
-        )
+        return tuple(candidates[["ICAO_CODE", "AIRCRAFT_VARIANT"]].loc[scores.idxmax()])
 
     # -- Time handling, splitting, interpolation and resampling --
 
-    def skip(
-        self, value: None | deltalike = None, **kwargs: Any
-    ) -> Optional[Flight]:
+    def skip(self, value: None | deltalike = None, **kwargs: Any) -> Optional[Flight]:
         """Removes the first n days, hours, minutes or seconds of the Flight.
 
         The elements passed as kwargs as passed as is to the datetime.timedelta
@@ -1601,9 +1557,7 @@ class Flight(
 
         if len(kwargs) == 0:
             raise RuntimeError("No feature provided for aggregation.")
-        temp_flight = self.assign(
-            rounded=lambda df: df.timestamp.dt.round(freq)
-        )
+        temp_flight = self.assign(rounded=lambda df: df.timestamp.dt.round(freq))
 
         agg_data = None
 
@@ -1628,9 +1582,7 @@ class Flight(
 
         return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
 
-    def agg_time(
-        self, freq: str = "1T", merge: bool = True, **kwargs: Any
-    ) -> Flight:
+    def agg_time(self, freq: str = "1T", merge: bool = True, **kwargs: Any) -> Flight:
         """Aggregate features on time windows.
 
         The following is performed:
@@ -1652,10 +1604,7 @@ class Flight(
             data: pd.DataFrame, how: Callable[..., Any] = "_".join
         ) -> pd.DataFrame:
             data.columns = (
-                [
-                    how(filter(None, map(str, levels)))
-                    for levels in data.columns.values
-                ]
+                [how(filter(None, map(str, levels))) for levels in data.columns.values]
                 if isinstance(data.columns, pd.MultiIndex)
                 else data.columns
             )
@@ -1663,9 +1612,7 @@ class Flight(
 
         if len(kwargs) == 0:
             raise RuntimeError("No feature provided for aggregation.")
-        temp_flight = self.assign(
-            rounded=lambda df: df.timestamp.dt.round(freq)
-        )
+        temp_flight = self.assign(rounded=lambda df: df.timestamp.dt.round(freq))
 
         # force the agg_data to be multi-indexed in columns
         kwargs_modified: Dict["str", List[Any]] = dict(
@@ -1694,10 +1641,8 @@ class Flight(
         if "last_position" in self.data.columns:
             data = (
                 data.assign(
-                    _mark=lambda df: df.last_position
-                    != df.shift(1).last_position
-                )
-                .assign(
+                    _mark=lambda df: df.last_position != df.shift(1).last_position
+                ).assign(
                     latitude=lambda df: df.latitude * df._mark / df._mark,
                     longitude=lambda df: df.longitude * df._mark / df._mark,
                     altitude=lambda df: df.altitude * df._mark / df._mark,
@@ -1849,9 +1794,7 @@ class Flight(
         )
 
         if isinstance(filter, str):
-            filter = filter_dict.get(
-                filter, filters.FilterAboveSigmaMedian(**kwargs)
-            )
+            filter = filter_dict.get(filter, filters.FilterAboveSigmaMedian(**kwargs))
 
         new_data = filter.apply(
             self.data.sort_values(by="timestamp").reset_index(drop=True).copy()
@@ -2032,10 +1975,8 @@ class Flight(
             )
 
         return self.assign(
-            tas_x=lambda df: df.groundspeed * np.sin(np.radians(df.track))
-            - df.wind_u,
-            tas_y=lambda df: df.groundspeed * np.cos(np.radians(df.track))
-            - df.wind_v,
+            tas_x=lambda df: df.groundspeed * np.sin(np.radians(df.track)) - df.wind_u,
+            tas_y=lambda df: df.groundspeed * np.cos(np.radians(df.track)) - df.wind_v,
             TAS=lambda df: np.abs(df.tas_x + 1j * df.tas_y),
             heading_rad=lambda df: np.angle(df.tas_x + 1j * df.tas_y),
             heading=lambda df: (90 - np.degrees(df.heading_rad)) % 360,
@@ -2143,12 +2084,8 @@ class Flight(
                 if r_lat is not None and r_lon is not None:
                     data = (
                         copy_self.assign(
-                            latitude=lambda x: (
-                                (r_lat * x.latitude).round() / r_lat
-                            ),
-                            longitude=lambda x: (
-                                (r_lon * x.longitude).round() / r_lon
-                            ),
+                            latitude=lambda x: ((r_lat * x.latitude).round() / r_lat),
+                            longitude=lambda x: ((r_lon * x.longitude).round() / r_lon),
                         )
                         .groupby(["latitude", "longitude"])
                         .agg(dict(wind_u="mean", wind_v="mean"))
@@ -2175,24 +2112,21 @@ class Flight(
         from .aero import vtas2casw
 
         if "TAS" not in self.data.columns:
-            raise RuntimeError(
-                "No TAS in trajectory. Consider Flight.compute_TAS()"
-            )
+            raise RuntimeError("No TAS in trajectory. Consider Flight.compute_TAS()")
 
         if any(f not in self.data.columns for f in ["pressure", "density"]):
             raise RuntimeError(
-                "No weather data in trajectory."
-                "Consider Flight.include_weather()"
+                "No weather data in trajectory." "Consider Flight.include_weather()"
             )
 
         return self.assign(
             CAS=(
-                    vtas2casw(
-                        self.data["TAS"] * 0.514444,  # kts to m/s
-                        self.data["pressure"] * 100,  # hpa to pa
-                        self.data["density"],
-                    )
-                    / 0.514444  # meters/second to knots
+                vtas2casw(
+                    self.data["TAS"] * 0.514444,  # kts to m/s
+                    self.data["pressure"] * 100,  # hpa to pa
+                    self.data["density"],
+                )
+                / 0.514444  # meters/second to knots
             )
         )
 
@@ -2204,9 +2138,9 @@ class Flight(
 
         return self.assign(
             acceleration=(
-                    self.data["groundspeed"].diff()
-                    * 0.514444  # knots to m/s
-                    / self.data["timestamp"].diff().dt.seconds
+                self.data["groundspeed"].diff()
+                * 0.514444  # knots to m/s
+                / self.data["timestamp"].diff().dt.seconds
             )
             .rolling(2)
             .mean()
@@ -2240,10 +2174,10 @@ class Flight(
         )
 
     def compute_weather(
-            self,
-            src: str = "ISA",
-            metar_station: Optional[str] = None,
-            include_wind: bool = False,
+        self,
+        src: str = "ISA",
+        metar_station: Optional[str] = None,
+        include_wind: bool = False,
     ) -> Flight:
         """
         Enriches the data with temperature, density and pressure columns.
@@ -2283,7 +2217,7 @@ class Flight(
 
         # METAR
         if src.lower() == "metar":
-            from ..data.weather.metar import Metars
+            from ..data import metars
 
             if metar_station is None:
                 raise RuntimeError(
@@ -2292,7 +2226,7 @@ class Flight(
                 )
 
             # Fetch Metars
-            md = Metars.get(
+            md = metars.fetch(
                 metar_station,
                 self.start - timedelta(hours=1),
                 self.stop + timedelta(hours=1),
@@ -2306,50 +2240,41 @@ class Flight(
                 axis="columns",
             )
 
-            # Wind
             if include_wind:
                 md = md.compute_wind()
-                df = df.assign(
-                    wind_u=md.data.loc[df["idx"], "wind_u"].reset_index(
-                        drop=True
-                    ),
-                    wind_v=md.data.loc[df["idx"], "wind_v"].reset_index(
-                        drop=True
-                    ),
-                )
 
-            # Temperature, Pressure and Density
-            df = df.assign(
-                metar_elevation=md.data.loc[df["idx"], "elevation"].reset_index(
-                    drop=True
-                ),
-                metar_temperature=md.data.loc[
-                    df["idx"], "temperature"
-                ].reset_index(drop=True),
-                metar_base_temperature=lambda d: vtempbase(
-                    d["metar_elevation"] * 0.3048,  # feet to meter
-                    d["metar_temperature"] + 273.15,  # kelvin to celsius
-                ),
-                metar_sea_level_pressure=md.data.loc[
-                    df["idx"], "sea_level_pressure"
-                ].reset_index(drop=True),
+            df = df.merge(
+                md.data[
+                    [
+                        "elevation",
+                        "temperature",
+                        "sea_level_pressure",
+                        "wind_u",
+                        "wind_v",
+                    ]
+                ],
+                how="left",
+                left_on="idx",
+                right_index=True,
             )
-
+            df["base_temperature"] = vtempbase(
+                df["elevation"] * 0.3048,  # feet to meter
+                df["temperature"] + 273.15,  # kelvin to celsius
+            )
             df["pressure"], df["density"], df["temperature"] = vatmos(
                 df["altitude"] * 0.3048,  # feet to meter
-                df["metar_base_temperature"],
-                df["metar_sea_level_pressure"] * 100.0,  # hectopascal to pascal
-            )
+                df["base_temperature"],
+                df["sea_level_pressure"] * 100.0,  # hectopascal to pascal
+            )  # new temperature overwrites metar temperature
 
             df["temperature"] -= 273.15  # kelvin to celsius
             df["pressure"] /= 100.0  # pascals to hectopascals
             df = df.drop(
                 columns=[
                     "idx",
-                    "metar_elevation",
-                    "metar_temperature",
-                    "metar_sea_level_pressure",
-                    "metar_base_temperature",
+                    "elevation",
+                    "sea_level_pressure",
+                    "base_temperature",
                 ]
             )
 
@@ -2359,9 +2284,7 @@ class Flight(
 
     # -- Distances --
 
-    def bearing(
-        self, other: PointMixin, column_name: str = "bearing"
-    ) -> Flight:
+    def bearing(self, other: PointMixin, column_name: str = "bearing") -> Flight:
         # temporary, should implement full stuff
         size = self.data.shape[0]
         return self.assign(
@@ -2547,9 +2470,7 @@ class Flight(
             values = df[column_name] * 0.125 / 100
             return np.where(values < 0.085, 0.085, values)
 
-        def angle_from_bearings_deg(
-            bearing_1: float, bearing_2: float
-        ) -> float:
+        def angle_from_bearings_deg(bearing_1: float, bearing_2: float) -> float:
             # Returns the subtended given by 2 bearings.
             angle = np.abs(bearing_1 - bearing_2)
             return np.where(angle > 180, 360 - angle, angle)  # type: ignore
@@ -2563,9 +2484,7 @@ class Flight(
                 self,
             )
             nse_colnames = list(
-                column
-                for column in flight.data.columns
-                if column.startswith("nse_")
+                column for column in flight.data.columns if column.startswith("nse_")
             )
             return (
                 flight.assign(
@@ -2671,9 +2590,7 @@ class Flight(
         if compute_gs:
             secs: tt.seconds_array = delta_1.timestamp_1.dt.total_seconds()
             groundspeed: tt.speed_array = distance_nm / secs
-            res = res.assign(
-                compute_gs=np.abs(np.pad(groundspeed, (1, 0), "edge"))
-            )
+            res = res.assign(compute_gs=np.abs(np.pad(groundspeed, (1, 0), "edge")))
 
         if compute_track:
             track = geo.bearing(
@@ -2683,9 +2600,7 @@ class Flight(
                 delta_1.longitude.values,
             )
             track = np.where(track > 0, track, 360 + track)
-            res = res.assign(
-                compute_track=np.abs(np.pad(track, (1, 0), "edge"))
-            )
+            res = res.assign(compute_track=np.abs(np.pad(track, (1, 0), "edge")))
 
         return res.sort_values("timestamp", ascending=True)
 
@@ -2785,9 +2700,7 @@ class Flight(
                 datetime.fromtimestamp(t, timezone.utc)
                 for t in np.stack(intersection.coords)[:, 2]
             )
-            between = self.between(
-                min(time_list), max(time_list), strict=strict
-            )
+            between = self.between(min(time_list), max(time_list), strict=strict)
             if between is not None:
                 yield between
             return None
@@ -2969,9 +2882,7 @@ class Flight(
         def fail_silent() -> Flight:
             return self
 
-        failure_dict = dict(
-            warning=fail_warning, info=fail_info, silent=fail_silent
-        )
+        failure_dict = dict(warning=fail_warning, info=fail_info, silent=fail_silent)
         failure = failure_dict[failure_mode]
 
         if data is None:
@@ -2980,8 +2891,7 @@ class Flight(
         else:
             df = data if isinstance(data, pd.DataFrame) else data.data
             df = df.query(
-                "icao24 == @self.icao24 and "
-                "@self.start < mintime < @self.stop"
+                "icao24 == @self.icao24 and " "@self.start < mintime < @self.stop"
             )
 
         if df is None or df.shape[0] == 0:
@@ -3011,9 +2921,7 @@ class Flight(
             )
         )
 
-        identifier = (
-            self.flight_id if self.flight_id is not None else self.callsign
-        )
+        identifier = self.flight_id if self.flight_id is not None else self.callsign
         reference: None | str | tuple[float, float] = None
         if isinstance(self.origin, str):
             reference = self.origin

@@ -180,14 +180,12 @@ def __getattr__(name: str) -> Any:
         if filename != "":
             res = Metars.from_file(filename)
         else:
-            stations = config.get("weather", "stations", fallback="").replace(
-                " ", ""
-            )
+            stations = config.get("weather", "stations", fallback="").replace(" ", "")
             if stations != "":
                 stations = stations.split(",")
                 start_time = config.get("weather", "start_time", fallback=None)
-                end_time = config.get("weather", "start_time", fallback=None)
-                res = Metars.fetch(stations, start_time, end_time)
+                end_time = config.get("weather", "end_time", fallback=None)
+                res = Metars.get(stations, start_time, end_time)
             else:
                 res = Metars()
 
@@ -224,9 +222,7 @@ def __getattr__(name: str) -> Any:
         AIXMAirportParser.cache_dir = cache_dir
         res = AIXMAirportParser(
             data=None,
-            aixm_path=Path(aixm_path_str)
-            if aixm_path_str is not None
-            else None,
+            aixm_path=Path(aixm_path_str) if aixm_path_str is not None else None,
         )
         _cached_imports[name] = res
         return res
@@ -237,9 +233,7 @@ def __getattr__(name: str) -> Any:
         AIXMAirspaceParser.cache_dir = cache_dir
         res = AIXMAirspaceParser(
             data=None,
-            aixm_path=Path(aixm_path_str)
-            if aixm_path_str is not None
-            else None,
+            aixm_path=Path(aixm_path_str) if aixm_path_str is not None else None,
         )
         _cached_imports[name] = res
         return res
