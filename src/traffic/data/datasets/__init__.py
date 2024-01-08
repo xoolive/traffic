@@ -5,8 +5,7 @@ from typing import Any, Dict
 import pandas as pd
 
 from ... import cache_dir, config
-from ...core import Traffic
-from ...core.progress_bar import tqdm
+from ...core import Traffic, tqdm
 
 _squawk7700_url = "https://zenodo.org/record/3937483/"
 
