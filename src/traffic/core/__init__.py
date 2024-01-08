@@ -1,4 +1,4 @@
-# ruff: noqa: I001
+# ruff: noqa: I001, E402
 """
 It is crucial that the imports do not change order,
 hence the following line:
@@ -8,7 +8,35 @@ hence the following line:
 import logging
 import sys
 from types import TracebackType
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable, Iterator, Optional, TypeVar
+
+from tqdm.auto import tqdm as _tqdm_auto
+from tqdm.autonotebook import tqdm as _tqdm_autonotebook
+from tqdm.rich import tqdm as _tqdm_rich
+from tqdm.std import tqdm as _tqdm_std
+
+from .. import tqdm_style
+from .types import ProgressbarType
+
+T = TypeVar("T")
+
+
+def silent_tqdm(
+    iterable: Iterable[T], *args: Any, **kwargs: Any
+) -> Iterator[T]:
+    yield from iterable  # Dummy tqdm function
+
+
+tqdm_dict: Dict[str, ProgressbarType] = {
+    "autonotebook": _tqdm_autonotebook,
+    "auto": _tqdm_auto,
+    "rich": _tqdm_rich,
+    "silent": silent_tqdm,
+    "std": _tqdm_std,
+}
+
+
+tqdm = tqdm_dict[tqdm_style]
 
 # WARNING!! Don't change order of import in this file
 from .flight import Flight
@@ -30,6 +58,7 @@ __all__ = [
     "LazyTraffic",
     "loglevel",
     "faulty_flight",
+    "tqdm",
 ]
 
 

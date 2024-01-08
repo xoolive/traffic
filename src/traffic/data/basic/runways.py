@@ -24,8 +24,8 @@ from shapely.geometry import base, shape
 from shapely.ops import linemerge
 
 from ... import cache_expiration
+from ...core import tqdm
 from ...core.mixins import DataFrameMixin, HBoxMixin, PointMixin, ShapelyMixin
-from ...core.progress_bar import tqdm
 
 if TYPE_CHECKING:
     import altair as alt

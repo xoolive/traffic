@@ -31,15 +31,14 @@ import pyModeS as pms
 import numpy as np
 import pandas as pd
 
-from ...core import Flight, Traffic
+from ...core import Flight, Traffic, tqdm
 from ...core.mixins import DataFrameMixin
 from ...core.types import ProgressbarType
 from ...data.basic.airports import Airport
-from ...core.progress_bar import tqdm
 
 D = TypeVar("D", bound="ModeS_Decoder")
 R = TypeVar("R", bound="RawData")
-U = Tuple[int, Tuple[Any, Any]]
+T = TypeVar("T")
 
 _log = logging.getLogger(__name__)
 
@@ -1782,7 +1781,7 @@ class RawData(DataFrameMixin):
         uncertainty: bool = False,
         # assume that data you get from a file or DB is already CRC-checked
         crc_check: bool = False,
-        progressbar: Union[bool, ProgressbarType[U]] = True,
+        progressbar: Union[bool, ProgressbarType] = True,
         progressbar_kw: Optional[Dict[str, Any]] = None,
         redefine_mag: int = 10,
     ) -> Optional[Traffic]:
@@ -1793,16 +1792,20 @@ class RawData(DataFrameMixin):
             if progressbar_kw is None:
                 progressbar_kw = dict()
 
-            def custom_tqdm(x: Iterable[U]) -> Iterable[U]:
-                return tqdm(  # type: ignore
-                    x, total=self.data.shape[0], **progressbar_kw
+            def custom_tqdm(
+                iterable: Iterable[T], *args: Any, **kwargs: Any
+            ) -> Iterator[T]:
+                yield from tqdm(
+                    iterable, total=self.data.shape[0], **progressbar_kw
                 )
 
             progressbar = custom_tqdm
         elif progressbar is False:
 
-            def identity(x: Iterable[U]) -> Iterable[U]:
-                return x
+            def identity(
+                iterable: Iterable[T], *args: Any, **kwargs: Any
+            ) -> Iterator[T]:
+                yield from iterable
 
             progressbar = identity
 

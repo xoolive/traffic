@@ -28,9 +28,9 @@ import astor
 import numpy as np
 import pandas as pd
 
+from . import tqdm
 from .flight import Flight
 from .mixins import GeographyMixin
-from .progress_bar import tqdm
 
 if TYPE_CHECKING:
     from .traffic import Traffic

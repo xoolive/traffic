@@ -10,9 +10,9 @@ import requests
 import pandas as pd
 
 from ... import cache_expiration
+from ...core import tqdm
 from ...core.mixins import GeoDBMixin
 from ...core.structure import Airport
-from ...core.progress_bar import tqdm
 
 __all__ = ["Airport", "Airports"]
 

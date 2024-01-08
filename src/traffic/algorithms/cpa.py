@@ -14,9 +14,8 @@ from typing import (
 import pandas as pd
 import pyproj
 
-from ..core import Flight
+from ..core import Flight, tqdm
 from ..core.mixins import DataFrameMixin
-from ..core.progress_bar import tqdm
 
 if TYPE_CHECKING:
     from cartopy import crs

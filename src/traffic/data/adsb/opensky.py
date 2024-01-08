@@ -517,7 +517,7 @@ class OpenSky:
         compress: bool = False,
         limit: None | int = None,
         other_params: str = "",
-        progressbar: bool | ProgressbarType[Any] = True,
+        progressbar: bool | ProgressbarType = True,
     ) -> None | FlarmData:
         df = self.impala_client.flarm(
             start,

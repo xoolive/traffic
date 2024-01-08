@@ -6,9 +6,8 @@ from pathlib import Path
 from typing import Any, Union, cast
 
 import pandas as pd
-from traffic.core import Airspace
 
-from ...core import Flight, Traffic
+from ...core import Airspace, Flight, Traffic
 from ..eurocontrol.ddr.so6 import SO6
 
 _current_dir = Path(__file__).parent

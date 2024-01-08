@@ -13,6 +13,7 @@ import pandas as pd
 from shapely.geometry import Polygon
 from shapely.ops import orient, unary_union
 
+from ....core import tqdm
 from ....core.airspace import (
     Airspace,
     Airspaces,
@@ -20,7 +21,6 @@ from ....core.airspace import (
     unary_union_with_alt,
 )
 from ... import aixm_navaids
-from ....core.progress_bar import tqdm
 
 T = TypeVar("T", bound="AIXMAirspaceParser")
 

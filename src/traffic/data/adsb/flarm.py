@@ -6,9 +6,9 @@ from typing_extensions import Annotated
 
 import pandas as pd
 
+from ...core import tqdm
 from ...core.mixins import DataFrameMixin
 from ...core.traffic import Traffic
-from ...core.progress_bar import tqdm
 
 T = TypeVar("T", bound="FlarmData")
 

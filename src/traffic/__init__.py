@@ -66,7 +66,7 @@ if not cache_dir.exists():
     cache_dir.mkdir(parents=True)
 
 # -- Tqdm Style Configuration --
-tqdm_style = config.get("global", "tqdm_style", fallback="default")
+tqdm_style = config.get("global", "tqdm_style", fallback="auto")
 _log.info(f"Selected tqdm style: {tqdm_style}")
 
 # -- Plugin management --

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable, TypeVar
+from typing import Any, Iterable, Iterator, TypeVar
 
 from typing_extensions import Annotated, Protocol
 
@@ -8,7 +8,13 @@ import numpy as np
 import numpy.typing as npt
 
 T = TypeVar("T")
-ProgressbarType = Callable[[Iterable[T]], Iterable[T]]
+
+
+class ProgressbarType(Protocol):
+    def __call__(
+        self, iterable: Iterable[T], *args: Any, **kwargs: Any
+    ) -> Iterator[T]:
+        ...
 
 
 class HasBounds(Protocol):
