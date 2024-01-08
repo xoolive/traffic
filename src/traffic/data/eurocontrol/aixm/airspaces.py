@@ -8,12 +8,12 @@ from typing import Any, Iterable, List, Tuple, TypeVar
 import geopandas as gpd
 from geopandas.geodataframe import GeoDataFrame
 from lxml import etree
-from tqdm.rich import tqdm
 
 import pandas as pd
 from shapely.geometry import Polygon
 from shapely.ops import orient, unary_union
 
+from ....core import tqdm
 from ....core.airspace import (
     Airspace,
     Airspaces,

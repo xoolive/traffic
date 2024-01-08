@@ -24,11 +24,11 @@ from typing import (
 )
 
 import astor
-from tqdm.rich import tqdm
 
 import numpy as np
 import pandas as pd
 
+from . import tqdm
 from .flight import Flight
 from .mixins import GeographyMixin
 

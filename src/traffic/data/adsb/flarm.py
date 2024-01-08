@@ -2,11 +2,11 @@ from typing import Iterable, Optional, Type, TypeVar
 
 from pitot.geodesy import distance
 from pyModeS.decoder.flarm import DecodedMessage, flarm
-from tqdm.rich import tqdm
 from typing_extensions import Annotated
 
 import pandas as pd
 
+from ...core import tqdm
 from ...core.mixins import DataFrameMixin
 from ...core.traffic import Traffic
 

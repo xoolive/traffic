@@ -2676,7 +2676,7 @@ class Flight(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
         failure_mode: str = "info",
-        progressbar: Union[bool, tt.ProgressbarType[Any]] = False,
+        progressbar: Union[bool, tt.ProgressbarType] = False,
     ) -> Flight:
         """Extends data with extra columns from EHS messages.
 

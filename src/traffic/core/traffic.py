@@ -29,7 +29,6 @@ from typing import (
 from ipyleaflet import Map as LeafletMap
 from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
-from tqdm.rich import tqdm
 
 import numpy as np
 import pandas as pd
@@ -42,6 +41,7 @@ from ..algorithms.generation import Generation
 from ..core.cache import property_cache
 from ..core.structure import Airport
 from ..core.time import time_or_delta, timelike, to_datetime
+from . import tqdm
 from .flight import Flight
 from .intervals import Interval, IntervalCollection
 from .lazy import LazyTraffic, lazy_evaluation

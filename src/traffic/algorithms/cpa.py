@@ -11,12 +11,10 @@ from typing import (
     cast,
 )
 
-from tqdm.rich import tqdm
-
 import pandas as pd
 import pyproj
 
-from ..core import Flight
+from ..core import Flight, tqdm
 from ..core.mixins import DataFrameMixin
 
 if TYPE_CHECKING:
