@@ -151,6 +151,7 @@ testpaths = [
     "src/traffic/core/intervals.py",
     "src/traffic/core/time.py",
     "src/traffic/data/basic/",
+    "src/traffic/data/datasets/",
     "tests"
 ]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]

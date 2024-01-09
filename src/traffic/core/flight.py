@@ -3085,6 +3085,12 @@ class Flight(
                 )
 
     @classmethod
+    def from_fr24(cls, filename: Union[Path, str]) -> Flight:
+        from ..data.datasets.flightradar24 import FlightRadar24
+
+        return FlightRadar24.from_file(filename)
+
+    @classmethod
     def from_file(
         cls: Type[T], filename: Union[Path, str], **kwargs: Any
     ) -> Optional[T]:

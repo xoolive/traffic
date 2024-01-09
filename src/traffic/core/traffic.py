@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-import zipfile
 from datetime import timedelta
-from io import BytesIO
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -41,7 +39,6 @@ from ..algorithms.generation import Generation
 from ..core.cache import property_cache
 from ..core.structure import Airport
 from ..core.time import time_or_delta, timelike, to_datetime
-from . import tqdm
 from .flight import Flight
 from .intervals import Interval, IntervalCollection
 from .lazy import LazyTraffic, lazy_evaluation
@@ -176,11 +173,10 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @classmethod
     def from_fr24(
-        cls: Type[TrafficTypeVar],
+        cls,
         metadata: str | Path,
         trajectories: str | Path,
-        **kwargs: Any,
-    ) -> TrafficTypeVar:
+    ) -> Traffic:
         """Parses data as usually provided by FlightRadar24.
 
         When FlightRadar24 provides data excerpts from their database, they
@@ -193,47 +189,9 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         :return: a regular Traffic object.
         """
-        fr24_meta = pd.read_csv(metadata)
+        from ..data.datasets.flightradar24 import FlightRadar24
 
-        def extract_flights(filename: str | Path) -> Iterator[pd.DataFrame]:
-            with zipfile.ZipFile(filename) as zfh:
-                for fileinfo in tqdm(zfh.infolist()):
-                    with zfh.open(fileinfo) as fh:
-                        stem = fileinfo.filename.split(".")[0]
-                        flight_id = stem.split("_")[1]
-                        b = BytesIO(fh.read())
-                        b.seek(0)
-                        yield pd.read_csv(b).assign(flight_id=(flight_id))
-
-        df = pd.concat(extract_flights(trajectories))
-
-        return cls(
-            df.rename(columns=dict(heading="track"))
-            .merge(
-                fr24_meta.rename(
-                    columns=dict(
-                        equip="typecode",
-                        schd_from="origin",
-                        schd_to="destination",
-                    )
-                ).assign(
-                    flight_id=fr24_meta.flight_id.astype(str),
-                    icao24=fr24_meta.aircraft_id.apply(hex)
-                    .str[2:]
-                    .str.pad(6, "left", fillchar="0"),
-                    callsign=fr24_meta.callsign.fillna(""),
-                    diverted=np.where(
-                        fr24_meta.schd_to == fr24_meta.real_to,
-                        np.nan,  # None would cause a typing error \o/
-                        fr24_meta.real_to,
-                    ),
-                ),
-                on="flight_id",
-            )
-            .eval(
-                "timestamp = @pd.to_datetime(snapshot_id, utc=True, unit='s')"
-            )
-        )
+        return FlightRadar24.from_archive(metadata, trajectories)
 
     # --- Special methods ---
     # operators + (union), & (intersection), - (difference), ^ (xor)
