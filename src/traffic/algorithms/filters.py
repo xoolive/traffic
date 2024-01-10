@@ -687,32 +687,27 @@ class EKF7D(ProcessXYZZFilterBase):
         return x_pred
 
     def update_A_jacobian(
-        self, x_pre: npt.NDArray[np.float64], dt: float
+        self, x_cor: npt.NDArray[np.float64], dt: float
     ) -> npt.NDArray[np.float64]:
         # Unpack the state vector
-        _, _, _, _, math_angle, velocity, vert_rate = x_pre
+        _, _, _, _, math_angle, velocity, vert_rate = x_cor
+        cos_a = np.cos(math_angle)
+        sin_a = np.sin(math_angle)
 
         # Compute the Jacobian matrix
         A_jacobian = np.eye(7)
-        A_jacobian[0, 4] = (
-            -velocity * np.sin(math_angle) * dt
-        )  # Partial derivative of x_dot w.r.t math_angle
-        A_jacobian[0, 5] = (
-            np.cos(np.radians(math_angle)) * dt
-        )  # Partial derivative of x_dot w.r.t groundspeed
-        A_jacobian[1, 4] = (
-            -velocity * np.sin(math_angle) * dt
-        )  # Partial derivative of y_dot w.r.t math_angle
-        A_jacobian[1, 5] = (
-            np.sin(np.radians(math_angle)) * dt
-        )  # Partial derivative of y_dot w.r.t groundspeed
-        A_jacobian[
-            2, 6
-        ] = dt  # Partial derivative of altitude_dot w.r.t vert_rate
-        A_jacobian[
-            3, 6
-        ] = dt  # Partial derivative of geoaltitude_dot w.r.t vert_rate
-
+        # Partial derivative of x_dot w.r.t math_angle
+        A_jacobian[0, 4] = -velocity * sin_a * dt
+        # Partial derivative of x_dot w.r.t velocity
+        A_jacobian[0, 5] = cos_a * dt
+        # Partial derivative of y_dot w.r.t math_angle
+        A_jacobian[1, 4] = velocity * cos_a * dt
+        # Partial derivative of y_dot w.r.t velocity
+        A_jacobian[1, 5] = sin_a * dt
+        # Partial derivative of altitude_dot w.r.t vert_rate
+        A_jacobian[2, 6] = dt
+        # Partial derivative of geoaltitude_dot w.r.t vert_rate
+        A_jacobian[3, 6] = dt
         return A_jacobian
 
     def __init__(self, reject_sigma: int = 3) -> None:
@@ -1056,28 +1051,23 @@ class EKFSmoother7D(ProcessXYZZFilterBase):
     ) -> npt.NDArray[np.float64]:
         # Unpack the state vector
         _, _, _, _, math_angle, velocity, vert_rate = x_cor
+        cos_a = np.cos(math_angle)
+        sin_a = np.sin(math_angle)
 
         # Compute the Jacobian matrix
         A_jacobian = np.eye(7)
-        A_jacobian[0, 4] = (
-            -velocity * np.sin(math_angle) * dt
-        )  # Partial derivative of x_dot w.r.t math_angle
-        A_jacobian[0, 5] = (
-            np.cos(np.radians(math_angle)) * dt
-        )  # Partial derivative of x_dot w.r.t groundspeed
-        A_jacobian[1, 4] = (
-            -velocity * np.sin(math_angle) * dt
-        )  # Partial derivative of y_dot w.r.t math_angle
-        A_jacobian[1, 5] = (
-            np.sin(np.radians(math_angle)) * dt
-        )  # Partial derivative of y_dot w.r.t groundspeed
-        A_jacobian[
-            2, 6
-        ] = dt  # Partial derivative of altitude_dot w.r.t vert_rate
-        A_jacobian[
-            3, 6
-        ] = dt  # Partial derivative of geoaltitude_dot w.r.t vert_rate
-
+        # Partial derivative of x_dot w.r.t math_angle
+        A_jacobian[0, 4] = -velocity * sin_a * dt
+        # Partial derivative of x_dot w.r.t velocity
+        A_jacobian[0, 5] = cos_a * dt
+        # Partial derivative of y_dot w.r.t math_angle
+        A_jacobian[1, 4] = velocity * cos_a * dt
+        # Partial derivative of y_dot w.r.t velocity
+        A_jacobian[1, 5] = sin_a * dt
+        # Partial derivative of altitude_dot w.r.t vert_rate
+        A_jacobian[2, 6] = dt
+        # Partial derivative of geoaltitude_dot w.r.t vert_rate
+        A_jacobian[3, 6] = dt
         return A_jacobian
 
     def apply(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -1114,7 +1104,7 @@ class EKFSmoother7D(ProcessXYZZFilterBase):
         #             20**2,  # altitude [m] 3
         #             20**2,  # geoaltitude [m] 4
         #             10*1.5**2,  # track [deg]
-        #             1.5**2,  # groundspeed [m/s]
+        #             1.5**2,  # velocity [m/s]
         #             1**2,  # vertical_rate [m/s] 7
         #         ]
         # )
@@ -1200,8 +1190,6 @@ class EKFSmoother7D(ProcessXYZZFilterBase):
             x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
 
             # prediction
-            # A = np.eye(6) + dt * np.eye(6, k=3)
-            # x_pre = A @ self.x2_cor
             x_pre = self.state_transition(self.x2_cor, dt)
             A = self.update_A_jacobian(x_pre, dt)
             p_pre = A @ self.p2_cor @ A.T + Q
