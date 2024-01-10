@@ -1,14 +1,15 @@
-from typing import Union, cast
+from typing import Any, Union, cast
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pyproj
 
 
 def _douglas_peucker_rec(
-    x: np.ndarray,  # type: ignore
-    y: np.ndarray,  # type: ignore
-    mask: np.ndarray,  # type: ignore
+    x: npt.NDArray[Any],
+    y: npt.NDArray[Any],
+    mask: npt.NDArray[Any],
     tolerance: float,
 ) -> None:
     len_x = len(x)
@@ -33,10 +34,10 @@ def _douglas_peucker_rec(
 
 
 def _douglas_peucker_rec_3d(
-    x: np.ndarray,  # type: ignore
-    y: np.ndarray,  # type: ignore
-    z: np.ndarray,  # type: ignore
-    mask: np.ndarray,  # type: ignore
+    x: npt.NDArray[Any],
+    y: npt.NDArray[Any],
+    z: npt.NDArray[Any],
+    mask: npt.NDArray[Any],
     tolerance: float,
 ) -> None:
     len_x = len(x)
@@ -137,7 +138,7 @@ def douglas_peucker(
             z = df[z].values
         z = z_factor * np.array(z)
 
-    mask = np.ones(len(x), dtype=bool)
+    mask: npt.NDArray[Any] = np.ones(len(x), dtype=bool)
     if z is None:
         _douglas_peucker_rec(x, y, mask, tolerance)
     else:
