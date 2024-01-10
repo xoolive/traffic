@@ -598,6 +598,236 @@ class KalmanFilter6D(ProcessXYZFilterBase):
         return data.assign(**self.postprocess(filtered))
 
 
+class ProcessXYZZFilterBase(FilterBase):
+    @impunity
+    def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
+        groundspeed: Annotated[Any, "kts"] = df.groundspeed
+        # the angle is wrapped between 0 and 2pi, we need to unwrap it
+        math_angle: Annotated[Any, "radians"] = np.unwrap(
+            np.radians(90 - df.track)
+        )
+        velocity: Annotated[Any, "m/s"] = groundspeed
+
+        x: Annotated[Any, "m"] = df.x
+        y: Annotated[Any, "m"] = df.y
+
+        altitude: Annotated[Any, "ft"] = df.altitude
+        geoaltitude: Annotated[Any, "ft"] = df.geoaltitude
+        alt_baro: Annotated[Any, "m"] = altitude
+        alt_geo: Annotated[Any, "m"] = geoaltitude
+
+        vertical_rate: Annotated[Any, "ft/min"] = df.vertical_rate
+        vert_rate: Annotated[Any, "m/s"] = vertical_rate
+
+        return pd.DataFrame(
+            {
+                "x": x,
+                "y": y,
+                "alt_baro": alt_baro,
+                "alt_geo": alt_geo,
+                "math_angle": math_angle,
+                "velocity": velocity,
+                "vert_rate": vert_rate,
+            }
+        )
+
+    @impunity
+    def postprocess(
+        self, df: pd.DataFrame
+    ) -> Dict[str, npt.NDArray[np.float64]]:
+        x: Annotated[Any, "m"] = df.x
+        y: Annotated[Any, "m"] = df.y
+        alt_baro: Annotated[Any, "m"] = df.alt_baro
+        alt_geo: Annotated[Any, "m"] = df.alt_geo
+        math_angle: Annotated[Any, "radians"] = df.math_angle
+        velocity: Annotated[Any, "m/s"] = df.velocity
+        vert_rate: Annotated[Any, "m/s"] = df.vert_rate
+
+        altitude: Annotated[Any, "ft"] = alt_baro
+        geoaltitude: Annotated[Any, "ft"] = alt_geo
+        track: Annotated[Any, "degree"] = (90 - np.degrees(math_angle)) % 360
+        groundspeed: Annotated[Any, "kts"] = velocity
+        vertical_rate: Annotated[Any, "ft/min"] = vert_rate
+
+        return dict(
+            x=x,
+            y=y,
+            altitude=altitude,
+            geoaltitude=geoaltitude,
+            track=track,
+            groundspeed=groundspeed,
+            vertical_rate=vertical_rate,
+        )
+
+
+class EKF7D(ProcessXYZZFilterBase):
+    # Descriptors are convenient to store the evolution of the process
+    x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    p_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    p_pre: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+
+    def state_transition(self, dt: float) -> npt.NDArray[np.float64]:
+        # Unpack the state vector
+        _, _, alt_baro, alt_geo, math_angle, velocity, vert_rate = self.x_cor
+
+        # Compute the derivatives
+        x_dot = velocity * np.cos(math_angle)
+        y_dot = velocity * np.sin(math_angle)
+        alt_baro_dot = vert_rate
+        alt_geo_dot = vert_rate
+
+        # Compute the predicted state
+        x_pred = self.x_cor.copy()
+        x_pred[0] += x_dot * dt
+        x_pred[1] += y_dot * dt
+        x_pred[2] += alt_baro_dot * dt
+        x_pred[3] += alt_geo_dot * dt
+        # math_angle, velocity, vert_rate) assumed to be constant over the dt
+        return x_pred
+
+    def update_A_jacobian(
+        self, x_pre: npt.NDArray[np.float64], dt: float
+    ) -> npt.NDArray[np.float64]:
+        # Unpack the state vector
+        _, _, _, _, math_angle, velocity, vert_rate = x_pre
+
+        # Compute the Jacobian matrix
+        A_jacobian = np.eye(7)
+        A_jacobian[0, 4] = (
+            -velocity * np.sin(math_angle) * dt
+        )  # Partial derivative of x_dot w.r.t math_angle
+        A_jacobian[0, 5] = (
+            np.cos(np.radians(math_angle)) * dt
+        )  # Partial derivative of x_dot w.r.t groundspeed
+        A_jacobian[1, 4] = (
+            -velocity * np.sin(math_angle) * dt
+        )  # Partial derivative of y_dot w.r.t math_angle
+        A_jacobian[1, 5] = (
+            np.sin(np.radians(math_angle)) * dt
+        )  # Partial derivative of y_dot w.r.t groundspeed
+        A_jacobian[
+            2, 6
+        ] = dt  # Partial derivative of altitude_dot w.r.t vert_rate
+        A_jacobian[
+            3, 6
+        ] = dt  # Partial derivative of geoaltitude_dot w.r.t vert_rate
+
+        return A_jacobian
+
+    def __init__(self, reject_sigma: int = 3) -> None:
+        super().__init__()
+        self.reject_sigma = reject_sigma
+
+    def apply(self, data: pd.DataFrame) -> pd.DataFrame:
+        df = self.preprocess(data)
+
+        for cumul in self.tracked_variables.values():
+            cumul.clear()
+
+        # initial state
+        _id7 = np.eye(df.shape[1])
+
+        self.x_mes = df.iloc[0].values
+        self.x_cor = df.iloc[0].values
+        self.p_pre = _id7 * 1e5
+        self.p_cor = _id7 * 1e5
+
+        R = (
+            np.diag(
+                [
+                    (df.x - df.x.rolling(17).mean()).std(),
+                    (df.y - df.y.rolling(17).mean()).std(),
+                    (df.alt_baro - df.alt_baro.rolling(17).mean()).std(),
+                    (df.alt_geo - df.alt_geo.rolling(17).mean()).std(),
+                    (df.math_angle - df.math_angle.rolling(17).mean()).std(),
+                    (df.velocity - df.velocity.rolling(17).mean()).std(),
+                    (df.vert_rate - df.vert_rate.rolling(17).mean()).std(),
+                ]
+            )
+            ** 2
+        )
+
+        # plus de bruit de modèle sur les dérivées qui sont pas recalées
+        Q = 1e-1 * np.diag([0.25, 0.25, 0.25, 0.25, 1, 1, 1]) * R
+        Q += 0.5 * np.diag(Q.diagonal()[4:], k=4)
+        Q += 0.5 * np.diag(Q.diagonal()[4:], k=-4)
+
+        for i in range(1, df.shape[0]):
+            # measurement
+            dt = (
+                data.iloc[i]["timestamp"] - data.iloc[i - 1]["timestamp"]
+            ).total_seconds()
+            self.x_mes = df.iloc[i].values
+            # replace NaN values with crazy values
+            # they will be filtered out because out of the 3 \sigma enveloppe
+            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
+
+            # prediction
+            # Use the state_transition function to predict the next state
+            x_pre = self.state_transition(dt)
+            # Calculate the Jacobian of the state transition function
+            A = self.update_A_jacobian(x_pre, dt)
+            p_pre = A @ self.p_cor @ A.T + Q
+            H = _id7.copy()
+
+            # DEBUG: p_pre should be symmetric
+            # assert np.abs(p_pre - p_pre.T).sum() < 1e-6
+
+            # innovation
+            nu = x_mes - x_pre
+            S = H @ p_pre @ H.T + R
+
+            if (nu.T @ np.linalg.inv(S) @ nu) > self.reject_sigma**2 * 6:
+                sm1 = np.linalg.inv(S)
+
+                x = (sm1 @ nu) * nu
+
+                # identify faulty measurements
+                idx = np.where(x > self.reject_sigma**2)
+
+                # replace the measure by the prediction for faulty data
+                x_mes[idx] = x_pre[idx]
+                nu = x_mes - x_pre
+
+                # ignore the fault data for the covariance update
+                H[idx, idx] = 0
+
+                p_pre = A @ self.p_cor @ A.T + Q
+                S = H @ p_pre @ H.T + R
+
+            # Logging the final value...
+            self.p_pre = p_pre
+
+            # Kalman gain
+            K = p_pre @ H.T @ np.linalg.inv(S)
+
+            # state correction
+            self.x_cor = x_pre + K @ nu
+
+            # covariance correction
+            imkh = _id7 - K @ H
+            self.p_cor = imkh @ p_pre @ imkh.T + K @ R @ K.T
+
+            # DEBUG: p_cor should be symmetric
+            # assert np.abs(self.p_cor - self.p_cor.T).sum() < 1e-6
+
+        filtered = pd.DataFrame(
+            self.tracked_variables["x_cor"],
+            columns=[
+                "x",
+                "y",
+                "alt_baro",
+                "alt_geo",
+                "math_angle",
+                "velocity",
+                "vert_rate",
+            ],
+        )
+
+        return data.assign(**self.postprocess(filtered))
+
+
 class KalmanSmoother6D(ProcessXYZFilterBase):
     # Descriptors are convenient to store the evolution of the process
     x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
@@ -620,7 +850,6 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
 
         # initial state
         _id6 = np.eye(df.shape[1])
-        dt = 1
 
         self.x_mes = df.iloc[0].values
         self.x1_cor = df.iloc[0].values
@@ -648,6 +877,9 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
         # >>> First FORWARD  <<<
 
         for i in range(1, df.shape[0]):
+            dt = (
+                data.iloc[i]["timestamp"] - data.iloc[i - 1]["timestamp"]
+            ).total_seconds()
             # measurement
             self.x_mes = df.iloc[i].values
 
@@ -704,10 +936,12 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
         # >>> Now BACKWARD  <<<
         self.x2_cor = self.x1_cor
         self.p2_cor = 100 * self.p1_cor
-        dt = -dt
 
         for i in range(df.shape[0] - 1, 0, -1):
             # measurement
+            dt = (
+                data.iloc[i - 1]["timestamp"] - data.iloc[i]["timestamp"]
+            ).total_seconds()
             self.x_mes = df.iloc[i].values
             # replace NaN values with crazy values
             # they will be filtered out because out of the 3 \sigma enveloppe
@@ -777,6 +1011,268 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
         filtered = pd.DataFrame(
             self.tracked_variables["xs"],
             columns=["x", "y", "z", "dx", "dy", "dz"],
+        )
+
+        return data.assign(**self.postprocess(filtered))
+
+
+class EKFSmoother7D(ProcessXYZZFilterBase):
+    # Descriptors are convenient to store the evolution of the process
+    x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    p1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    p2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+
+    xs: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+
+    def __init__(self, reject_sigma: int = 3) -> None:
+        super().__init__()
+        self.reject_sigma = reject_sigma
+
+    def state_transition(
+        self, x: npt.NDArray[np.float64], dt: float
+    ) -> npt.NDArray[np.float64]:
+        # Unpack the state vector
+        _, _, alt_baro, alt_geo, math_angle, velocity, vert_rate = x
+
+        # Compute the derivatives
+        x_dot = velocity * np.cos(math_angle)
+        y_dot = velocity * np.sin(math_angle)
+        alt_baro_dot = vert_rate
+        alt_geo_dot = vert_rate
+
+        # Compute the predicted state
+        x_pred = x.copy()
+        x_pred[0] += x_dot * dt
+        x_pred[1] += y_dot * dt
+        x_pred[2] += alt_baro_dot * dt
+        x_pred[3] += alt_geo_dot * dt
+        # math_angle, velocity, vert_rate) assumed to be constant over the dt
+        return x_pred
+
+    def update_A_jacobian(
+        self, x_cor: npt.NDArray[np.float64], dt: float
+    ) -> npt.NDArray[np.float64]:
+        # Unpack the state vector
+        _, _, _, _, math_angle, velocity, vert_rate = x_cor
+
+        # Compute the Jacobian matrix
+        A_jacobian = np.eye(7)
+        A_jacobian[0, 4] = (
+            -velocity * np.sin(math_angle) * dt
+        )  # Partial derivative of x_dot w.r.t math_angle
+        A_jacobian[0, 5] = (
+            np.cos(np.radians(math_angle)) * dt
+        )  # Partial derivative of x_dot w.r.t groundspeed
+        A_jacobian[1, 4] = (
+            -velocity * np.sin(math_angle) * dt
+        )  # Partial derivative of y_dot w.r.t math_angle
+        A_jacobian[1, 5] = (
+            np.sin(np.radians(math_angle)) * dt
+        )  # Partial derivative of y_dot w.r.t groundspeed
+        A_jacobian[
+            2, 6
+        ] = dt  # Partial derivative of altitude_dot w.r.t vert_rate
+        A_jacobian[
+            3, 6
+        ] = dt  # Partial derivative of geoaltitude_dot w.r.t vert_rate
+
+        return A_jacobian
+
+    def apply(self, data: pd.DataFrame) -> pd.DataFrame:
+        df = self.preprocess(data)
+
+        for cumul in self.tracked_variables.values():
+            cumul.clear()
+
+        # initial state
+        _id7 = np.eye(df.shape[1])
+
+        self.x_mes = df.iloc[0].values
+        self.x1_cor = df.iloc[0].values
+        self.p1_cor = _id7 * 1e5
+
+        R = (
+            np.diag(
+                [
+                    (df.x - df.x.rolling(17).mean()).std(),
+                    (df.y - df.y.rolling(17).mean()).std(),
+                    (df.alt_baro - df.alt_baro.rolling(17).mean()).std(),
+                    (df.alt_geo - df.alt_geo.rolling(17).mean()).std(),
+                    (df.math_angle - df.math_angle.rolling(17).mean()).std(),
+                    (df.velocity - df.velocity.rolling(17).mean()).std(),
+                    (df.vert_rate - df.vert_rate.rolling(17).mean()).std(),
+                ]
+            )
+            ** 2
+        )
+        # R = np.diag(
+        #     [
+        #             6**2,  # x - GPS position [m] 1
+        #             6**2,  # y - GPS position [m] 2
+        #             20**2,  # altitude [m] 3
+        #             20**2,  # geoaltitude [m] 4
+        #             10*1.5**2,  # track [deg]
+        #             1.5**2,  # groundspeed [m/s]
+        #             1**2,  # vertical_rate [m/s] 7
+        #         ]
+        # )
+
+        # plus de bruit de modèle sur les dérivées qui sont pas recalées
+        Q = 1e-1 * np.diag([0.25, 0.25, 0.25, 0.25, 1, 1, 1]) * R
+        Q += 0.5 * np.diag(Q.diagonal()[4:], k=4)
+        Q += 0.5 * np.diag(Q.diagonal()[4:], k=-4)
+
+        # >>> First FORWARD  <<<
+
+        for i in range(1, df.shape[0]):
+            dt = (
+                data.iloc[i]["timestamp"] - data.iloc[i - 1]["timestamp"]
+            ).total_seconds()
+            # measurement
+            self.x_mes = df.iloc[i].values
+
+            # replace NaN values with crazy values
+            # they will be filtered out because out of the 3 \sigma enveloppe
+            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
+
+            # prediction
+            # Use the state_transition function to predict the next state
+            x_pre = self.state_transition(self.x1_cor, dt)
+            # Calculate the Jacobian of the state transition function
+            A = self.update_A_jacobian(x_pre, dt)
+            p_pre = A @ self.p1_cor @ A.T + Q
+            H = _id7.copy()
+
+            # DEBUG symmetric matrices
+            # assert np.abs(p_pre - p_pre.T).sum() < 1e-6
+
+            # innovation
+            nu = x_mes - x_pre
+            S = H @ p_pre @ H.T + R
+
+            if (nu.T @ np.linalg.inv(S) @ nu) > self.reject_sigma**2 * 6:
+                # 3 sigma ^2 * nb_dim (6)
+
+                sm1 = np.linalg.inv(S)
+
+                x = (sm1 @ nu) * nu
+
+                # identify faulty measurements
+                idx = np.where(x > self.reject_sigma**2)
+
+                # replace the measure by the prediction for faulty data
+                x_mes[idx] = x_pre[idx]
+                nu = x_mes - x_pre
+
+                # ignore the fault data for the covariance update
+                H[idx, idx] = 0
+
+                p_pre = A @ self.p1_cor @ A.T + Q
+                S = H @ p_pre @ H.T + R
+
+            # Kalman gain
+            K = p_pre @ H.T @ np.linalg.inv(S)
+
+            # state correction
+            self.x1_cor = x_pre + K @ nu
+
+            # covariance correction
+            imkh = _id7 - K @ H
+            self.p1_cor = imkh @ p_pre @ imkh.T + K @ R @ K.T
+
+            # DEBUG symmetric matrices
+            # assert np.abs(self.p1_cor - self.p1_cor.T).sum() < 1e-6
+
+        # >>> Now BACKWARD  <<<
+        self.x2_cor = self.x1_cor
+        self.p2_cor = 100 * self.p1_cor
+
+        for i in range(df.shape[0] - 1, 0, -1):
+            dt = (
+                data.iloc[i - 1]["timestamp"] - data.iloc[i]["timestamp"]
+            ).total_seconds()
+            # measurement
+            self.x_mes = df.iloc[i].values
+            # replace NaN values with crazy values
+            # they will be filtered out because out of the 3 \sigma enveloppe
+            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
+
+            # prediction
+            # A = np.eye(6) + dt * np.eye(6, k=3)
+            # x_pre = A @ self.x2_cor
+            x_pre = self.state_transition(self.x2_cor, dt)
+            A = self.update_A_jacobian(x_pre, dt)
+            p_pre = A @ self.p2_cor @ A.T + Q
+            H = _id7.copy()
+
+            # DEBUG symmetric matrices
+            # assert np.abs(p_pre - p_pre.T).sum() < 1e-6
+
+            # innovation
+            nu = x_mes - x_pre
+            S = H @ p_pre @ H.T + R
+
+            if (nu.T @ np.linalg.inv(S) @ nu) > self.reject_sigma**2 * 6:
+                # 3 sigma ^2 * nb_dim (6)
+
+                sm1 = np.linalg.inv(S)
+
+                x = (sm1 @ nu) * nu
+
+                # identify faulty measurements
+                idx = np.where(x > self.reject_sigma**2)
+
+                # replace the measure by the prediction for faulty data
+                x_mes[idx] = x_pre[idx]
+                nu = x_mes - x_pre
+
+                # ignore the fault data for the covariance update
+                H[idx, idx] = 0
+
+                p_pre = A @ self.p2_cor @ A.T + Q
+                S = H @ p_pre @ H.T + R
+
+            # Logging the final value...
+            self.p_pre = p_pre
+
+            # Kalman gain
+            K = p_pre @ H.T @ np.linalg.inv(S)
+
+            # state correction
+            self.x2_cor = x_pre + K @ nu
+
+            # covariance correction
+            imkh = _id7 - K @ H
+            self.p2_cor = imkh @ p_pre @ imkh.T + K @ R @ K.T
+
+            # DEBUG symmetric matrices
+            # assert np.abs(self.p2_cor - self.p2_cor.T).sum() < 1e-6
+
+        # and the smoothing
+        x1_cor = np.array(self.tracked_variables["x1_cor"])
+        p1_cor = np.array(self.tracked_variables["p1_cor"])
+        x2_cor = np.array(self.tracked_variables["x2_cor"][::-1])
+        p2_cor = np.array(self.tracked_variables["p2_cor"][::-1])
+
+        for i in range(1, df.shape[0]):
+            s1 = np.linalg.inv(p1_cor[i])
+            s2 = np.linalg.inv(p2_cor[i])
+            self.ps = np.linalg.inv(s1 + s2)
+            self.xs = (self.ps @ (s1 @ x1_cor[i] + s2 @ x2_cor[i])).T
+
+        filtered = pd.DataFrame(
+            self.tracked_variables["xs"],
+            columns=[
+                "x",
+                "y",
+                "alt_baro",
+                "alt_geo",
+                "math_angle",
+                "velocity",
+                "vert_rate",
+            ],
         )
 
         return data.assign(**self.postprocess(filtered))
