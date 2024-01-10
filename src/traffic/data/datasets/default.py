@@ -7,7 +7,7 @@ from tqdm.rich import tqdm
 
 from ... import cache_dir
 
-client = httpx.Client()
+client = httpx.Client(follow_redirects=True)
 
 
 class Entry(TypedDict):
@@ -50,8 +50,12 @@ class Default:
                                 )
                                 n_bytes = response.num_bytes_downloaded
 
-            if md5_hash.hexdigest() != entry["md5sum"]:
+            if (digest := md5_hash.hexdigest()) != entry["md5sum"]:
                 filename.unlink()
-                raise ValueError("Mismatch in MD5 hash")
+                msg = (
+                    "Mismatch in MD5 hash expected:"
+                    f"{entry['md5sum']} got: {digest}"
+                )
+                raise ValueError(msg)
 
         return filename

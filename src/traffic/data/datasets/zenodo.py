@@ -11,7 +11,7 @@ from tqdm.rich import tqdm
 
 from ... import cache_dir
 
-client = httpx.Client()
+client = httpx.Client(follow_redirects=True)
 
 
 class JSON(TypedDict):
@@ -95,8 +95,12 @@ class Zenodo:
                             )
                             n_bytes = response.num_bytes_downloaded
 
-            if f"md5:{md5_hash.hexdigest()}" != entry["checksum"]:
+            if (digest := f"md5:{md5_hash.hexdigest()}") != entry["checksum"]:
                 filename.unlink()
-                raise ValueError("Mismatch in MD5 hash")
+                msg = (
+                    "Mismatch in MD5 hash expected:"
+                    f"{entry['checksum']} got: {digest}"
+                )
+                raise ValueError(msg)
 
         return filename

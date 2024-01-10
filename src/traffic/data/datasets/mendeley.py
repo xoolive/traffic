@@ -10,7 +10,7 @@ from tqdm.rich import tqdm
 
 from ... import cache_dir
 
-client = httpx.Client()
+client = httpx.Client(follow_redirects=True)
 
 
 class ContentDetails(TypedDict):
@@ -61,13 +61,9 @@ class Mendeley:
         if not (filename := dirname / key).exists():
             entry = next(e for e in self.spec if e["filename"] == key)
 
-            response = client.get(entry["content_details"]["download_url"])
-            if response.status_code != 302:
-                response.raise_for_status()
-
             with filename.open("wb") as file_handle:
                 with client.stream(
-                    "GET", response.headers["location"]
+                    "GET", entry["content_details"]["download_url"]
                 ) as response:
                     total = int(response.headers["Content-Length"])
                     if total != entry["size"]:
@@ -90,11 +86,13 @@ class Mendeley:
                             )
                             n_bytes = response.num_bytes_downloaded
 
-            if (
-                sha256_hash.hexdigest()
-                != entry["content_details"]["sha256_hash"]
-            ):
+            digest = sha256_hash.hexdigest()
+            if digest != entry["content_details"]["sha256_hash"]:
                 filename.unlink()
-                raise ValueError("Mismatch in SHA256 hash")
+                msg = (
+                    "Mismatch in SHA256 hash expected:"
+                    f"{entry['content_details']['sha256_hash']} got: {digest}"
+                )
+                raise ValueError(msg)
 
         return filename
