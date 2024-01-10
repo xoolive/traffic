@@ -184,18 +184,19 @@ class Airport(
 
         return runways[self]
 
-    def geoencode(  # type: ignore
+    def geoencode(
         self,
-        footprint: Union[bool, Dict[str, Any]] = True,
-        runways: Union[bool, Dict[str, Any]] = True,
-        labels: Union[bool, Dict[str, Any]] = True,
-    ) -> "alt.Chart":  # coverage: ignore
+        footprint: Union[bool, Dict[str, Dict[str, Any]]] = True,
+        runways: Union[bool, Dict[str, Dict[str, Any]]] = True,
+        labels: Union[bool, Dict[str, Dict[str, Any]]] = True,
+        **kwargs: Any,
+    ) -> "alt.LayerChart":  # coverage: ignore
         import altair as alt
 
         base = alt.Chart(self).mark_geoshape()
         cumul = []
         if footprint:
-            params = dict(
+            params: Dict[str, Dict[str, Any]] = dict(
                 aerodrome=dict(color="gainsboro", opacity=0.5),
                 apron=dict(color="darkgray", opacity=0.5),
                 terminal=dict(color="#888888"),
@@ -203,13 +204,11 @@ class Airport(
                 taxiway=dict(filled=False, color="silver", strokeWidth=1.5),
             )
             if isinstance(footprint, dict):
-                footprint = {**params, **footprint}
-            else:
-                footprint = params
+                params = {**params, **footprint}
 
-            for key, value in footprint.items():
+            for key, value in params.items():
                 cumul.append(
-                    base.transform_filter(  # type: ignore
+                    base.transform_filter(
                         f"datum.aeroway == '{key}'"
                     ).mark_geoshape(**value)
                 )
@@ -227,7 +226,7 @@ class Airport(
             raise TypeError(
                 "At least one of footprint, runways and labels must be True"
             )
-        return alt.layer(*cumul)  # type: ignore
+        return alt.layer(*cumul)
 
     def plot(  # type: ignore
         self,
