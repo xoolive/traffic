@@ -183,7 +183,9 @@ class Metars(DataFrameMixin):
 
             return None
 
-        return self.__class__(df)
+        return self.__class__(
+            df.drop_duplicates(subset=["valid", "station"])
+        )  # TEMP drop duplicates, fix for strange behavior
 
     def compute_wind(self) -> "Metars":
         """
