@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Dict  # for python 3.8 and impunity
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
+    Dict,  # for python 3.8 and impunity
     Generic,
     Protocol,
     Type,
@@ -14,13 +14,14 @@ from typing import (
     cast,
 )
 
+from impunity import impunity
+from scipy import linalg, signal
+from typing_extensions import Annotated, NotRequired
+
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pyproj
-from impunity import impunity
-from scipy import linalg, signal
-from typing_extensions import Annotated, NotRequired
 
 if TYPE_CHECKING:
     from cartopy import crs
@@ -796,7 +797,7 @@ class EKF7D(ProcessXYZZFilterBase):
             ** 2
         )
 
-        Q = np.diag([0.1, 0.1, 0.01, 0.01, 0.1, 1, 0.1]) * R
+        Q = np.diag([0.1, 0.1, 0.01, 0.01, 0.3, 1, 0.5]) * R
         filtered_states, filtered_covariances = extended_kalman_filter(
             measurements=measurements,
             initial_state=x0,
