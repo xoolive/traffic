@@ -59,7 +59,8 @@ cartes = ">=0.7.4"
 # cartes = { path = "../cartes", develop = true }
 pyopensky = ">=2.0"
 # pyopensky = { path = "../pyopensky", develop = true }
-requests = ">=2.27"
+httpx = "^0.26.0"
+requests = ">=2.27"  # TODO when we remove requests, remove the types- too
 ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
 pyModeS = ">=2.17"
@@ -151,6 +152,7 @@ testpaths = [
     "src/traffic/core/intervals.py",
     "src/traffic/core/time.py",
     "src/traffic/data/basic/",
+    "src/traffic/data/datasets/",
     "tests"
 ]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]

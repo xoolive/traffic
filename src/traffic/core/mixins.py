@@ -424,7 +424,9 @@ class ShapelyMixin(object):
         """
         return mapping(self.shape)  # type: ignore
 
-    def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
+    def geoencode(
+        self, **kwargs: Any
+    ) -> "alt.LayerChart | alt.Chart":  # coverage: ignore
         """Returns an `altair <http://altair-viz.github.io/>`_ encoding of the
         shape to be composed in an interactive visualization. Specific plot
         features, such as line widths, can be passed with the kwargs argument.
@@ -433,9 +435,8 @@ class ShapelyMixin(object):
         """
         import altair as alt
 
-        return alt.Chart(
-            alt.Data(values=self.geojson())  # type: ignore
-        ).mark_geoshape(stroke="#aaaaaa", **kwargs)
+        data = alt.Data(values=self.geojson())  # type: ignore
+        return alt.Chart(data).mark_geoshape(stroke="#aaaaaa", **kwargs)
 
     def project_shape(
         self, projection: None | pyproj.Proj | "crs.Projection" = None
