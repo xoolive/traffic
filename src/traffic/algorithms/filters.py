@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from typing import Dict  # for python 3.8 and impunity
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
-    Dict,  # for python 3.8 and impunity
     Generic,
     Protocol,
     Type,
@@ -14,14 +14,13 @@ from typing import (
     cast,
 )
 
-from impunity import impunity
-from scipy import signal
-from typing_extensions import Annotated, NotRequired
-
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pyproj
+from impunity import impunity
+from scipy import linalg, signal
+from typing_extensions import Annotated, NotRequired
 
 if TYPE_CHECKING:
     from cartopy import crs
@@ -629,7 +628,7 @@ class ProcessXYZZFilterBase(FilterBase):
                 "velocity": velocity,
                 "vert_rate": vert_rate,
             }
-        )
+        ).set_index(df["timestamp"])
 
     @impunity
     def postprocess(
@@ -661,166 +660,164 @@ class ProcessXYZZFilterBase(FilterBase):
 
 
 class EKF7D(ProcessXYZZFilterBase):
-    # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    x_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p_pre: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-
-    def state_transition(self, dt: float) -> npt.NDArray[np.float64]:
+    @staticmethod
+    def state_transition_function(state: pd.Series, dt: float) -> pd.Series:
         # Unpack the state vector
-        _, _, alt_baro, alt_geo, math_angle, velocity, vert_rate = self.x_cor
+        _x, _y, _alt_baro, _alt_geo, math_angle, velocity, vert_rate = state
 
         # Compute the derivatives
         x_dot = velocity * np.cos(math_angle)
         y_dot = velocity * np.sin(math_angle)
-        alt_baro_dot = vert_rate
-        alt_geo_dot = vert_rate
+        altitude_dot = vert_rate
+        geoaltitude_dot = vert_rate
 
         # Compute the predicted state
-        x_pred = self.x_cor.copy()
-        x_pred[0] += x_dot * dt
-        x_pred[1] += y_dot * dt
-        x_pred[2] += alt_baro_dot * dt
-        x_pred[3] += alt_geo_dot * dt
-        # math_angle, velocity, vert_rate) assumed to be constant over the dt
-        return x_pred
+        state_pred = state.copy()
+        state_pred.loc["x"] += x_dot * dt
+        state_pred.loc["y"] += y_dot * dt
+        state_pred.loc["alt_baro"] += altitude_dot * dt
+        state_pred.loc["alt_geo"] += geoaltitude_dot * dt
+        # Other state variables (math_angle, velocity, vert_rate) are assumed
+        # to be constant over the time step
+        return state_pred
 
-    def update_A_jacobian(
-        self, x_cor: npt.NDArray[np.float64], dt: float
+    @staticmethod
+    def jacobian_state_transition(
+        x: pd.Series, dt: float
     ) -> npt.NDArray[np.float64]:
         # Unpack the state vector
-        _, _, _, _, math_angle, velocity, vert_rate = x_cor
-        cos_a = np.cos(math_angle)
-        sin_a = np.sin(math_angle)
+        _, _, _, _, math_angle, velocity, _ = x
 
         # Compute the Jacobian matrix
-        A_jacobian = np.eye(7)
-        # Partial derivative of x_dot w.r.t math_angle
-        A_jacobian[0, 4] = -velocity * sin_a * dt
-        # Partial derivative of x_dot w.r.t velocity
-        A_jacobian[0, 5] = cos_a * dt
-        # Partial derivative of y_dot w.r.t math_angle
-        A_jacobian[1, 4] = velocity * cos_a * dt
-        # Partial derivative of y_dot w.r.t velocity
-        A_jacobian[1, 5] = sin_a * dt
-        # Partial derivative of altitude_dot w.r.t vert_rate
-        A_jacobian[2, 6] = dt
-        # Partial derivative of geoaltitude_dot w.r.t vert_rate
-        A_jacobian[3, 6] = dt
-        return A_jacobian
+        F_jacobian = np.eye(7)
+        # Partial derivative of x_dot w.r.t math_angle:
+        F_jacobian[0, 4] = -velocity * np.sin(math_angle) * dt
+        # Partial derivative of x_dot w.r.t velocity:
+        F_jacobian[0, 5] = np.cos(math_angle) * dt
+        # Partial derivative of y_dot w.r.t math_angle:
+        F_jacobian[1, 4] = velocity * np.cos(math_angle) * dt
+        # Partial derivative of y_dot w.r.t velocity:
+        F_jacobian[1, 5] = np.sin(math_angle) * dt
+        # Partial derivative of altitude_dot w.r.t vertical_rate
+        F_jacobian[2, 6] = dt
+        # Partial derivative of geoaltitude_dot w.r.t vertical_rate
+        F_jacobian[3, 6] = dt
 
-    def __init__(self, reject_sigma: int = 3) -> None:
+        return F_jacobian
+
+    def __init__(self, smooth=True, reject_sigma: int = 3) -> None:
         super().__init__()
         self.reject_sigma = reject_sigma
+        self.smooth = smooth
 
     def apply(self, data: pd.DataFrame) -> pd.DataFrame:
-        df = self.preprocess(data)
-
-        for cumul in self.tracked_variables.values():
-            cumul.clear()
+        measurements = self.preprocess(data)
 
         # initial state
-        _id7 = np.eye(df.shape[1])
+        x0 = measurements.iloc[0]  # Initial state
+        P = np.eye(7)  # Initial covariance
 
-        self.x_mes = df.iloc[0].values
-        self.x_cor = df.iloc[0].values
-        self.p_pre = _id7 * 1e5
-        self.p_cor = _id7 * 1e5
-
+        std_dev_gps = 0
+        std_dev_baro = 0
+        window_size = 17
+        std_dev_track = 0
+        std_dev_gps_speed = 0
+        std_dev_baro_speed = 0
         R = (
             np.diag(
                 [
-                    (df.x - df.x.rolling(17).mean()).std(),
-                    (df.y - df.y.rolling(17).mean()).std(),
-                    (df.alt_baro - df.alt_baro.rolling(17).mean()).std(),
-                    (df.alt_geo - df.alt_geo.rolling(17).mean()).std(),
-                    (df.math_angle - df.math_angle.rolling(17).mean()).std(),
-                    (df.velocity - df.velocity.rolling(17).mean()).std(),
-                    (df.vert_rate - df.vert_rate.rolling(17).mean()).std(),
+                    (
+                        (
+                            measurements.x
+                            - measurements.x.rolling(window_size).mean()
+                        ).std()
+                        ** 2
+                        + std_dev_gps**2
+                    )
+                    ** 0.5,
+                    (
+                        (
+                            measurements.y
+                            - measurements.y.rolling(window_size).mean()
+                        ).std()
+                        ** 2
+                        + std_dev_gps**2
+                    )
+                    ** 0.5,
+                    (
+                        (
+                            measurements.alt_baro
+                            - measurements.alt_baro.rolling(window_size).mean()
+                        ).std()
+                        ** 2
+                        + std_dev_baro**2
+                    )
+                    ** 0.5,
+                    (
+                        (
+                            measurements.alt_geo
+                            - measurements.alt_geo.rolling(window_size).mean()
+                        ).std()
+                        ** 2
+                        + std_dev_gps**2
+                    )
+                    ** 0.5,
+                    (
+                        (
+                            measurements.math_angle
+                            - measurements.math_angle.rolling(
+                                window_size
+                            ).mean()
+                        ).std()
+                        ** 2
+                        + std_dev_track**2
+                    )
+                    ** 0.5,
+                    (
+                        (
+                            measurements.velocity
+                            - measurements.velocity.rolling(window_size).mean()
+                        ).std()
+                        ** 2
+                        + std_dev_gps_speed**2
+                    )
+                    ** 0.5,
+                    (
+                        (
+                            measurements.vert_rate
+                            - measurements.vert_rate.rolling(window_size).mean()
+                        ).std()
+                        ** 2
+                        + std_dev_baro_speed**2
+                    )
+                    ** 0.5,
                 ]
             )
             ** 2
         )
 
-        # plus de bruit de modèle sur les dérivées qui sont pas recalées
-        Q = 1e-1 * np.diag([0.25, 0.25, 0.25, 0.25, 1, 1, 1]) * R
-        Q += 0.5 * np.diag(Q.diagonal()[4:], k=4)
-        Q += 0.5 * np.diag(Q.diagonal()[4:], k=-4)
-
-        for i in range(1, df.shape[0]):
-            # measurement
-            dt = (
-                data.iloc[i]["timestamp"] - data.iloc[i - 1]["timestamp"]
-            ).total_seconds()
-            self.x_mes = df.iloc[i].values
-            # replace NaN values with crazy values
-            # they will be filtered out because out of the 3 \sigma enveloppe
-            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
-
-            # prediction
-            # Use the state_transition function to predict the next state
-            x_pre = self.state_transition(dt)
-            # Calculate the Jacobian of the state transition function
-            A = self.update_A_jacobian(x_pre, dt)
-            p_pre = A @ self.p_cor @ A.T + Q
-            H = _id7.copy()
-
-            # DEBUG: p_pre should be symmetric
-            # assert np.abs(p_pre - p_pre.T).sum() < 1e-6
-
-            # innovation
-            nu = x_mes - x_pre
-            S = H @ p_pre @ H.T + R
-
-            if (nu.T @ np.linalg.inv(S) @ nu) > self.reject_sigma**2 * 6:
-                sm1 = np.linalg.inv(S)
-
-                x = (sm1 @ nu) * nu
-
-                # identify faulty measurements
-                idx = np.where(x > self.reject_sigma**2)
-
-                # replace the measure by the prediction for faulty data
-                x_mes[idx] = x_pre[idx]
-                nu = x_mes - x_pre
-
-                # ignore the fault data for the covariance update
-                H[idx, idx] = 0
-
-                p_pre = A @ self.p_cor @ A.T + Q
-                S = H @ p_pre @ H.T + R
-
-            # Logging the final value...
-            self.p_pre = p_pre
-
-            # Kalman gain
-            K = p_pre @ H.T @ np.linalg.inv(S)
-
-            # state correction
-            self.x_cor = x_pre + K @ nu
-
-            # covariance correction
-            imkh = _id7 - K @ H
-            self.p_cor = imkh @ p_pre @ imkh.T + K @ R @ K.T
-
-            # DEBUG: p_cor should be symmetric
-            # assert np.abs(self.p_cor - self.p_cor.T).sum() < 1e-6
-
-        filtered = pd.DataFrame(
-            self.tracked_variables["x_cor"],
-            columns=[
-                "x",
-                "y",
-                "alt_baro",
-                "alt_geo",
-                "math_angle",
-                "velocity",
-                "vert_rate",
-            ],
+        Q = np.diag([0.1, 0.1, 0.01, 0.01, 0.1, 1, 0.1]) * R
+        filtered_states, filtered_covariances = extended_kalman_filter(
+            measurements=measurements,
+            initial_state=x0,
+            initial_covariance=P,
+            Q=Q,
+            R=R,
+            jacobian_state_transition=EKF7D.jacobian_state_transition,
+            state_transition_function=EKF7D.state_transition_function,
+            reject_sigma=self.reject_sigma,
         )
+        if self.smooth:
+            filtered_states = rts_smoother(
+                filtered_states,
+                filtered_covariances,
+                Q,
+                measurements.index,
+                EKF7D.jacobian_state_transition,
+                EKF7D.state_transition_function,
+            )
 
-        return data.assign(**self.postprocess(filtered))
+        return data.assign(**self.postprocess(filtered_states))
 
 
 class KalmanSmoother6D(ProcessXYZFilterBase):
@@ -1011,261 +1008,6 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
         return data.assign(**self.postprocess(filtered))
 
 
-class EKFSmoother7D(ProcessXYZZFilterBase):
-    # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    x1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    x2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-
-    xs: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-
-    def __init__(self, reject_sigma: int = 3) -> None:
-        super().__init__()
-        self.reject_sigma = reject_sigma
-
-    def state_transition(
-        self, x: npt.NDArray[np.float64], dt: float
-    ) -> npt.NDArray[np.float64]:
-        # Unpack the state vector
-        _, _, alt_baro, alt_geo, math_angle, velocity, vert_rate = x
-
-        # Compute the derivatives
-        x_dot = velocity * np.cos(math_angle)
-        y_dot = velocity * np.sin(math_angle)
-        alt_baro_dot = vert_rate
-        alt_geo_dot = vert_rate
-
-        # Compute the predicted state
-        x_pred = x.copy()
-        x_pred[0] += x_dot * dt
-        x_pred[1] += y_dot * dt
-        x_pred[2] += alt_baro_dot * dt
-        x_pred[3] += alt_geo_dot * dt
-        # math_angle, velocity, vert_rate) assumed to be constant over the dt
-        return x_pred
-
-    def update_A_jacobian(
-        self, x_cor: npt.NDArray[np.float64], dt: float
-    ) -> npt.NDArray[np.float64]:
-        # Unpack the state vector
-        _, _, _, _, math_angle, velocity, vert_rate = x_cor
-        cos_a = np.cos(math_angle)
-        sin_a = np.sin(math_angle)
-
-        # Compute the Jacobian matrix
-        A_jacobian = np.eye(7)
-        # Partial derivative of x_dot w.r.t math_angle
-        A_jacobian[0, 4] = -velocity * sin_a * dt
-        # Partial derivative of x_dot w.r.t velocity
-        A_jacobian[0, 5] = cos_a * dt
-        # Partial derivative of y_dot w.r.t math_angle
-        A_jacobian[1, 4] = velocity * cos_a * dt
-        # Partial derivative of y_dot w.r.t velocity
-        A_jacobian[1, 5] = sin_a * dt
-        # Partial derivative of altitude_dot w.r.t vert_rate
-        A_jacobian[2, 6] = dt
-        # Partial derivative of geoaltitude_dot w.r.t vert_rate
-        A_jacobian[3, 6] = dt
-        return A_jacobian
-
-    def apply(self, data: pd.DataFrame) -> pd.DataFrame:
-        df = self.preprocess(data)
-
-        for cumul in self.tracked_variables.values():
-            cumul.clear()
-
-        # initial state
-        _id7 = np.eye(df.shape[1])
-
-        self.x_mes = df.iloc[0].values
-        self.x1_cor = df.iloc[0].values
-        self.p1_cor = _id7 * 1e5
-
-        R = (
-            np.diag(
-                [
-                    (df.x - df.x.rolling(17).mean()).std(),
-                    (df.y - df.y.rolling(17).mean()).std(),
-                    (df.alt_baro - df.alt_baro.rolling(17).mean()).std(),
-                    (df.alt_geo - df.alt_geo.rolling(17).mean()).std(),
-                    (df.math_angle - df.math_angle.rolling(17).mean()).std(),
-                    (df.velocity - df.velocity.rolling(17).mean()).std(),
-                    (df.vert_rate - df.vert_rate.rolling(17).mean()).std(),
-                ]
-            )
-            ** 2
-        )
-        # R = np.diag(
-        #     [
-        #             6**2,  # x - GPS position [m] 1
-        #             6**2,  # y - GPS position [m] 2
-        #             20**2,  # altitude [m] 3
-        #             20**2,  # geoaltitude [m] 4
-        #             10*1.5**2,  # track [deg]
-        #             1.5**2,  # velocity [m/s]
-        #             1**2,  # vertical_rate [m/s] 7
-        #         ]
-        # )
-
-        # plus de bruit de modèle sur les dérivées qui sont pas recalées
-        Q = 1e-1 * np.diag([0.25, 0.25, 0.25, 0.25, 1, 1, 1]) * R
-        Q += 0.5 * np.diag(Q.diagonal()[4:], k=4)
-        Q += 0.5 * np.diag(Q.diagonal()[4:], k=-4)
-
-        # >>> First FORWARD  <<<
-
-        for i in range(1, df.shape[0]):
-            dt = (
-                data.iloc[i]["timestamp"] - data.iloc[i - 1]["timestamp"]
-            ).total_seconds()
-            # measurement
-            self.x_mes = df.iloc[i].values
-
-            # replace NaN values with crazy values
-            # they will be filtered out because out of the 3 \sigma enveloppe
-            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
-
-            # prediction
-            # Use the state_transition function to predict the next state
-            x_pre = self.state_transition(self.x1_cor, dt)
-            # Calculate the Jacobian of the state transition function
-            A = self.update_A_jacobian(x_pre, dt)
-            p_pre = A @ self.p1_cor @ A.T + Q
-            H = _id7.copy()
-
-            # DEBUG symmetric matrices
-            # assert np.abs(p_pre - p_pre.T).sum() < 1e-6
-
-            # innovation
-            nu = x_mes - x_pre
-            S = H @ p_pre @ H.T + R
-
-            if (nu.T @ np.linalg.inv(S) @ nu) > self.reject_sigma**2 * 6:
-                # 3 sigma ^2 * nb_dim (6)
-
-                sm1 = np.linalg.inv(S)
-
-                x = (sm1 @ nu) * nu
-
-                # identify faulty measurements
-                idx = np.where(x > self.reject_sigma**2)
-
-                # replace the measure by the prediction for faulty data
-                x_mes[idx] = x_pre[idx]
-                nu = x_mes - x_pre
-
-                # ignore the fault data for the covariance update
-                H[idx, idx] = 0
-
-                p_pre = A @ self.p1_cor @ A.T + Q
-                S = H @ p_pre @ H.T + R
-
-            # Kalman gain
-            K = p_pre @ H.T @ np.linalg.inv(S)
-
-            # state correction
-            self.x1_cor = x_pre + K @ nu
-
-            # covariance correction
-            imkh = _id7 - K @ H
-            self.p1_cor = imkh @ p_pre @ imkh.T + K @ R @ K.T
-
-            # DEBUG symmetric matrices
-            # assert np.abs(self.p1_cor - self.p1_cor.T).sum() < 1e-6
-
-        # >>> Now BACKWARD  <<<
-        self.x2_cor = self.x1_cor
-        self.p2_cor = 100 * self.p1_cor
-
-        for i in range(df.shape[0] - 1, 0, -1):
-            dt = (
-                data.iloc[i - 1]["timestamp"] - data.iloc[i]["timestamp"]
-            ).total_seconds()
-            # measurement
-            self.x_mes = df.iloc[i].values
-            # replace NaN values with crazy values
-            # they will be filtered out because out of the 3 \sigma enveloppe
-            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
-
-            # prediction
-            x_pre = self.state_transition(self.x2_cor, dt)
-            A = self.update_A_jacobian(x_pre, dt)
-            p_pre = A @ self.p2_cor @ A.T + Q
-            H = _id7.copy()
-
-            # DEBUG symmetric matrices
-            # assert np.abs(p_pre - p_pre.T).sum() < 1e-6
-
-            # innovation
-            nu = x_mes - x_pre
-            S = H @ p_pre @ H.T + R
-
-            if (nu.T @ np.linalg.inv(S) @ nu) > self.reject_sigma**2 * 6:
-                # 3 sigma ^2 * nb_dim (6)
-
-                sm1 = np.linalg.inv(S)
-
-                x = (sm1 @ nu) * nu
-
-                # identify faulty measurements
-                idx = np.where(x > self.reject_sigma**2)
-
-                # replace the measure by the prediction for faulty data
-                x_mes[idx] = x_pre[idx]
-                nu = x_mes - x_pre
-
-                # ignore the fault data for the covariance update
-                H[idx, idx] = 0
-
-                p_pre = A @ self.p2_cor @ A.T + Q
-                S = H @ p_pre @ H.T + R
-
-            # Logging the final value...
-            self.p_pre = p_pre
-
-            # Kalman gain
-            K = p_pre @ H.T @ np.linalg.inv(S)
-
-            # state correction
-            self.x2_cor = x_pre + K @ nu
-
-            # covariance correction
-            imkh = _id7 - K @ H
-            self.p2_cor = imkh @ p_pre @ imkh.T + K @ R @ K.T
-
-            # DEBUG symmetric matrices
-            # assert np.abs(self.p2_cor - self.p2_cor.T).sum() < 1e-6
-
-        # and the smoothing
-        x1_cor = np.array(self.tracked_variables["x1_cor"])
-        p1_cor = np.array(self.tracked_variables["p1_cor"])
-        x2_cor = np.array(self.tracked_variables["x2_cor"][::-1])
-        p2_cor = np.array(self.tracked_variables["p2_cor"][::-1])
-
-        for i in range(1, df.shape[0]):
-            s1 = np.linalg.inv(p1_cor[i])
-            s2 = np.linalg.inv(p2_cor[i])
-            self.ps = np.linalg.inv(s1 + s2)
-            self.xs = (self.ps @ (s1 @ x1_cor[i] + s2 @ x2_cor[i])).T
-
-        filtered = pd.DataFrame(
-            self.tracked_variables["xs"],
-            columns=[
-                "x",
-                "y",
-                "alt_baro",
-                "alt_geo",
-                "math_angle",
-                "velocity",
-                "vert_rate",
-            ],
-        )
-
-        return data.assign(**self.postprocess(filtered))
-
-
 class KalmanTaxiway(ProcessXYFilterBase):
     # Descriptors are convenient to store the evolution of the process
     x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
@@ -1412,3 +1154,105 @@ class KalmanTaxiway(ProcessXYFilterBase):
         )
 
         return data.assign(**self.postprocess(filtered))
+
+
+def extended_kalman_filter(
+    measurements: pd.DataFrame,
+    initial_state: pd.Series,
+    initial_covariance: npt.NDArray[np.float64],
+    Q: npt.NDArray[np.float64],
+    R: npt.NDArray[np.float64],
+    jacobian_state_transition: Callable[
+        [pd.Series, float], npt.NDArray[np.float64]
+    ],
+    state_transition_function: Callable[[pd.Series, float], pd.Series],
+    reject_sigma: float = 3,
+) -> pd.DataFrame:
+    num_states = len(initial_state)
+    states = np.repeat(
+        initial_state.values.reshape(1, -1), measurements.shape[0], axis=0
+    )
+    covariances = np.zeros((measurements.shape[0], num_states, num_states))
+
+    x = initial_state
+    P = initial_covariance
+    timestamps = measurements.index.to_series()
+
+    for i in range(1, len(timestamps)):
+        dt = (timestamps[i] - timestamps[i - 1]).total_seconds()
+
+        # Prediction Step
+        F = jacobian_state_transition(x, dt)
+        # Predicted (a priori) state estimate:
+        x = state_transition_function(x, dt)
+        # Predicted (a priori) estimate covariance:
+        P = F @ P @ F.T + Q
+
+        # Measurement update with rejection mechanism
+        measurement = measurements.iloc[i]
+        H = np.eye(num_states)
+        # Innovation or measurement pre-fit residual:
+        nu = measurement - x
+        # Innovation (or pre-fit residual) covariance:
+        S = H @ P @ H.T + R
+        std_devs = np.sqrt(np.diag(S))
+
+        # Component-wise standard deviation check (gating)
+        for j in range(num_states):
+            if abs(nu[j]) > abs(reject_sigma * std_devs[j]):
+                print(
+                    f"Rejecting measurement {timestamps[i]} for state {measurements.columns[j]}"
+                )
+                measurement.iloc[j] = x.iloc[j]  # Replace faulty measurement
+                H[j, j] = 0  # Ignore this component in the update
+
+        # Here we recompute the matrix in case something was rejected:
+        # Innovation (or pre-fit residual) covariance:
+        S = H @ P @ H.T + R
+        # Optimal Kalman gain:
+        K = linalg.solve(S, H @ P, assume_a="pos").T
+        # Updated (a posteriori) state estimate:
+        x = x + K @ nu
+        # Updated (a posteriori) estimate covariance:
+        P = (np.eye(num_states) - K @ H) @ P
+
+        states[i] = x
+        covariances[i] = P
+
+    return pd.DataFrame(states, columns=measurements.columns), covariances
+
+
+def rts_smoother(
+    states: pd.DataFrame,
+    covariances: npt.NDArray[np.float64],
+    Q: npt.NDArray[np.float64],
+    timestamps: pd.Series,
+    jacobian_state_transition: Callable[
+        [pd.Series, float], npt.NDArray[np.float64]
+    ],
+    state_transition_function: Callable[[pd.Series, float], pd.Series],
+):
+    num_time_steps = states.shape[0]
+    smoothed_states = states.copy()
+    smoothed_covariances = covariances.copy()
+
+    for i in range(num_time_steps - 2, -1, -1):
+        dt = (timestamps[i + 1] - timestamps[i]).total_seconds()
+
+        F = jacobian_state_transition(states.iloc[i], dt)
+
+        # predicted state
+        predicted_state = state_transition_function(states.iloc[i], dt)
+        # predicted covariance
+        Pp = F @ covariances[i] @ F.T + Q
+
+        # G = linalg.solve(Pp, F @ covariances[i], assume_a="pos").T
+        G = covariances[i] @ F.T @ np.linalg.inv(Pp)
+        smoothed_states.iloc[i] = states.iloc[i] + G @ (
+            states.iloc[i + 1] - predicted_state
+        )
+        smoothed_covariances[i] = (
+            covariances[i] + G @ (covariances[i + 1] - Pp) @ G.T
+        )
+
+    return smoothed_states
