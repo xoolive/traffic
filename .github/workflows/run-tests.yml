@@ -54,7 +54,7 @@ jobs:
         shell: bash
 
       - name: Restore LFS cache (private repository)
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: lfs-cache
         with:
           path: ./traffic_data/.git/lfs
@@ -70,7 +70,7 @@ jobs:
 
       # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
       - name: Cache Packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.local
@@ -88,7 +88,7 @@ jobs:
         run: poetry run python -c "import sys; print(sys.version)"
 
       - name: Cache folder for traffic
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-folder
         with:
           path: |
