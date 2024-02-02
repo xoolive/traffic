@@ -69,7 +69,7 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
 
     @property
     def list(self) -> List[Threshold]:
-        return sum((list(runway) for runway in self._runways), [])
+        return list(thr for runway in self._runways for thr in runway)
 
     def geojson(self) -> List[Dict[str, Any]]:
         return [

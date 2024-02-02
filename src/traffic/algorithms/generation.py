@@ -23,25 +23,25 @@ if TYPE_CHECKING:
 
 class ScalerProtocol(Protocol):
     def fit_transform(
-        self, X: npt.NDArray[np.float_]
-    ) -> npt.NDArray[np.float_]:
+        self, X: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         ...
 
     def inverse_transform(
-        self, X: npt.NDArray[np.float_]
-    ) -> npt.NDArray[np.float_]:
+        self, X: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         ...
 
 
 class GenerationProtocol(Protocol):
     def fit(
-        self, X: npt.NDArray[np.float_], **kwargs: Any
+        self, X: npt.NDArray[np.float64], **kwargs: Any
     ) -> "GenerationProtocol":
         ...
 
     def sample(
         self, n_samples: int
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ...
 
 
@@ -157,7 +157,7 @@ class Generation:
         self.features = features
         self.scaler = scaler
 
-    def prepare_features(self, t: "Traffic") -> npt.NDArray[np.float_]:
+    def prepare_features(self, t: "Traffic") -> npt.NDArray[np.float64]:
         X = np.stack(list(f.data[self.features].values.ravel() for f in t))
         if self.scaler is not None:
             X = self.scaler.fit_transform(X)
@@ -165,7 +165,7 @@ class Generation:
 
     def build_traffic(
         self,
-        X: npt.NDArray[np.float_],
+        X: npt.NDArray[np.float64],
         projection: Union[pyproj.Proj, "crs.Projection", None] = None,
         coordinates: Optional[Coordinates] = None,
         forward: bool = True,

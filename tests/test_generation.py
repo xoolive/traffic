@@ -15,7 +15,7 @@ class NaiveGeneration:
     """
 
     def fit(
-        self, X: npt.NDArray[np.float_], **kwargs: Any
+        self, X: npt.NDArray[np.float64], **kwargs: Any
     ) -> "NaiveGeneration":
         self.x = X[0]
 
@@ -23,7 +23,7 @@ class NaiveGeneration:
 
     def sample(
         self, n_samples: int
-    ) -> Tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         return (
             np.repeat(self.x[np.newaxis, ...], n_samples, axis=0),
             np.array([]),

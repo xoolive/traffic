@@ -117,6 +117,10 @@ requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.ruff]
+line-length = 80
+target-version = "py39"
+
+[tool.ruff.lint]
 select = [
   "E", "W",  # pycodestyle
   "F",  # pyflakes
@@ -126,14 +130,12 @@ select = [
   "DTZ", # flake8-datetimez
   "RUF"
 ]
-line-length = 80
-target-version = "py38"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["numpy", "pandas", "pyproj", "shapely"]
 
 [tool.mypy]
-python_version = 3.8
+python_version = 3.9
 platform = "posix"
 
 color_output = true
