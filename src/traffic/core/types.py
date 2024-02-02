@@ -18,7 +18,9 @@ class ProgressbarType(Protocol):
 
 
 class HasBounds(Protocol):
-    bounds: tuple[float, float, float, float]
+    @property
+    def bounds(self) -> tuple[float, float, float, float]:
+        ...
 
 
 ## Types for physical units (impunity)

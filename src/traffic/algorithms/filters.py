@@ -22,6 +22,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import pyproj
+from pandas.api.extensions import ExtensionArray
 
 if TYPE_CHECKING:
     from cartopy import crs
@@ -182,7 +183,7 @@ class FilterAboveSigmaMedian(FilterBase):
         df: pd.DataFrame,
         feature: str,
         kernel_size: int,
-        filt: Callable[[pd.Series, int], Any] = signal.medfilt,
+        filt: Callable[[pd.Series[float], int], Any] = signal.medfilt,
     ) -> pd.DataFrame:
         """Produces a mask for data to be discarded.
 
@@ -212,7 +213,7 @@ class FilterAboveSigmaMedian(FilterBase):
         columns = self.columns
         if self.empty_kwargs:
             features = [
-                cast(str, feature)
+                feature
                 for feature in data.columns
                 if data[feature].dtype
                 in [np.float32, np.float64, np.int32, np.int64]
@@ -303,7 +304,8 @@ class FilterDerivative(FilterBase):
             deriv2 = diff2 / timediff
             spike = np.bitwise_or(
                 (deriv1 >= params["first"]), (deriv2 >= params["second"])
-            ).fillna(False, inplace=False)
+            )
+            spike = spike.fillna(False, inplace=False)
 
             spike_time = pd.Series(np.nan, index=data.index)
             spike_time.loc[spike] = data[self.time_column].loc[spike]
@@ -317,7 +319,7 @@ class FilterDerivative(FilterBase):
                     spike_delta_prev.dt.total_seconds() <= window,
                     spike_delta_next.dt.total_seconds() <= window,
                 )
-                data.loc[(in_window), column] = np.NaN
+                data.loc[(in_window), column] = np.nan
 
         return data
 
@@ -404,7 +406,7 @@ class ProcessXYFilterBase(FilterBase):
     @impunity
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
         groundspeed: Annotated[Any, "kts"] = df.groundspeed
-        track: Annotated[Any, "radians"] = np.radians(90 - df.track)
+        track: Annotated[Any, "radians"] = np.radians(90.0 - df.track)
 
         velocity: Annotated[Any, "m/s"] = groundspeed
 
@@ -414,27 +416,41 @@ class ProcessXYFilterBase(FilterBase):
         dx: Annotated[Any, "m/s"] = velocity * np.cos(track)
         dy: Annotated[Any, "m/s"] = velocity * np.sin(track)
 
-        return pd.DataFrame({"x": x, "y": y, "dx": dx, "dy": dy})
+        return pd.DataFrame(
+            {
+                "x": x,
+                "y": y,
+                "dx": dx,
+                "dy": dy,
+                "v": velocity,
+                "theta": track,
+            }
+        )
 
     @impunity
-    def postprocess(
-        self, df: pd.DataFrame
-    ) -> Dict[str, npt.NDArray[np.float64]]:
-        x: Annotated[Any, "m"] = df.x
-        y: Annotated[Any, "m"] = df.y
+    def postprocess(self, df: pd.DataFrame) -> Dict[str, ExtensionArray]:
+        x: Annotated[pd.Series[float], "m"] = df.x
+        y: Annotated[pd.Series[float], "m"] = df.y
+        velocity: Annotated[pd.Series[float] | npt.NDArray[np.float64], "m/s"]
 
-        dx: Annotated[Any, "m/s"] = df.dx
-        dy: Annotated[Any, "m/s"] = df.dy
+        if "dx" in df.columns:
+            dx: Annotated[pd.Series[float], "m/s"] = df.dx
+            dy: Annotated[pd.Series[float], "m/s"] = df.dy
 
-        velocity: Annotated[Any, "m/s"] = np.sqrt(dx**2 + dy**2)
-        track = 90 - np.degrees(np.arctan2(dy, dx))
-        track = track % 360
+            velocity = np.sqrt(dx**2 + dy**2)
+            track = 90.0 - np.degrees(np.arctan2(dy, dx))
+            track = track % 360
+        else:
+            velocity = df.v
+            track = 90 - np.degrees(df.theta.values)
+            track = track % 360
+
         groundspeed: Annotated[Any, "kts"] = velocity
 
         return dict(
-            x=x,
-            y=y,
-            groundspeed=groundspeed,
+            x=x.values,
+            y=y.values,
+            groundspeed=groundspeed.values,
             track=track,
         )
 
@@ -444,7 +460,7 @@ class ProcessXYZFilterBase(FilterBase):
     def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
         alt: Annotated[Any, "ft"] = df.altitude
         groundspeed: Annotated[Any, "kts"] = df.groundspeed
-        track: Annotated[Any, "radians"] = np.radians(90 - df.track)
+        track: Annotated[Any, "radians"] = np.radians(90.0 - df.track)
         vertical_rate: Annotated[Any, "ft/min"] = df.vertical_rate
 
         velocity: Annotated[Any, "m/s"] = groundspeed
@@ -465,29 +481,30 @@ class ProcessXYZFilterBase(FilterBase):
     def postprocess(
         self, df: pd.DataFrame
     ) -> Dict[str, npt.NDArray[np.float64]]:
-        x: Annotated[Any, "m"] = df.x
-        y: Annotated[Any, "m"] = df.y
-        z: Annotated[Any, "m"] = df.z
+        x: Annotated[pd.Series[float], "m"] = df.x
+        y: Annotated[pd.Series[float], "m"] = df.y
+        z: Annotated[pd.Series[float], "m"] = df.z
 
-        dx: Annotated[Any, "m/s"] = df.dx
-        dy: Annotated[Any, "m/s"] = df.dy
-        dz: Annotated[Any, "m/s"] = df.dz
+        dx: Annotated[pd.Series[float], "m/s"] = df.dx
+        dy: Annotated[pd.Series[float], "m/s"] = df.dy
+        dz: Annotated[pd.Series[float], "m/s"] = df.dz
 
-        velocity: Annotated[Any, "m/s"] = np.sqrt(dx**2 + dy**2)
-        track = 90 - np.degrees(np.arctan2(dy, dx))
+        velocity: Annotated[pd.Series[float], "m/s"]
+        velocity = np.sqrt(dx**2 + dy**2)
+        track = 90.0 - np.degrees(np.arctan2(dy, dx))
         track = track % 360
 
-        altitude: Annotated[Any, "ft"] = z
-        groundspeed: Annotated[Any, "kts"] = velocity
-        vertical_rate: Annotated[Any, "ft/min"] = dz
+        altitude: Annotated[pd.Series[float], "ft"] = z
+        groundspeed: Annotated[pd.Series[float], "kts"] = velocity
+        vertical_rate: Annotated[pd.Series[float], "ft/min"] = dz
 
         return dict(
-            x=x,
-            y=y,
-            altitude=altitude,
-            groundspeed=groundspeed,
-            track=track,
-            vertical_rate=vertical_rate,
+            x=x.values,
+            y=y.values,
+            altitude=altitude.values,
+            groundspeed=groundspeed.values,
+            track=track.values,
+            vertical_rate=vertical_rate.values,
         )
 
 
@@ -785,6 +802,7 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
 class KalmanTaxiway(ProcessXYFilterBase):
     # Descriptors are convenient to store the evolution of the process
     x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x_pre: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
     x1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
     p1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
     x2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
@@ -792,6 +810,7 @@ class KalmanTaxiway(ProcessXYFilterBase):
 
     xs: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
     shl: TrackVariable[Any] = TrackVariable()
+    closest_line: TrackVariable[Any] = TrackVariable()
 
     def __init__(self) -> None:
         super().__init__()
@@ -805,12 +824,12 @@ class KalmanTaxiway(ProcessXYFilterBase):
         self.Q += 0.5 * np.diag(self.Q.diagonal()[2:], k=-2)
 
     def distance(
-        self, prediction: npt.NDArray[np.float64]
+        self, prediction: npt.NDArray[np.float64], idx: int
     ) -> tuple[float, float, float]:
         raise NotImplementedError
 
     def apply(self, data: pd.DataFrame) -> pd.DataFrame:
-        df = self.preprocess(data)
+        df = self.preprocess(data)[["x", "y", "dx", "dy"]]
 
         for cumul in self.tracked_variables.values():
             cumul.clear()
@@ -820,6 +839,7 @@ class KalmanTaxiway(ProcessXYFilterBase):
         dt = 1
 
         self.x_mes = df.iloc[0].values
+        self.x_pre = self.x_mes
         self.x1_cor = df.iloc[0].values
         self.p1_cor = _id4 * 1e5
 
@@ -835,9 +855,10 @@ class KalmanTaxiway(ProcessXYFilterBase):
             x1_cor[2:] = np.where(x1_cor[2:] == x1_cor[2:], x1_cor[2:], 0)
 
             x_pre = A @ x1_cor
+            self.x_pre = x_pre
             p_pre = A @ self.p1_cor @ A.T + self.Q
 
-            distance, dx, dy = self.distance(x_pre)
+            distance, dx, dy = self.distance(x_pre, i)
 
             H = np.r_[_id4.copy(), np.array([[dx, dy, 0, 0]])]
 
@@ -880,7 +901,7 @@ class KalmanTaxiway(ProcessXYFilterBase):
             x_pre = A @ self.x2_cor
             p_pre = A @ self.p2_cor @ A.T + self.Q
 
-            distance, dx, dy = self.distance(x_pre)
+            distance, dx, dy = self.distance(x_pre, i)
 
             H = np.r_[_id4.copy(), np.array([[dx, dy, 0, 0]])]
 
@@ -916,7 +937,7 @@ class KalmanTaxiway(ProcessXYFilterBase):
         x2_cor = np.array(self.tracked_variables["x2_cor"][::-1])
         p2_cor = np.array(self.tracked_variables["p2_cor"][::-1])
 
-        for i in range(1, df.shape[0]):
+        for i in range(0, df.shape[0]):
             s1 = np.linalg.inv(p1_cor[i])
             s2 = np.linalg.inv(p2_cor[i])
             self.ps = np.linalg.inv(s1 + s2)
@@ -925,6 +946,182 @@ class KalmanTaxiway(ProcessXYFilterBase):
         filtered = pd.DataFrame(
             self.tracked_variables["xs"],
             columns=["x", "y", "dx", "dy"],
+        )
+
+        return data.assign(**self.postprocess(filtered))
+
+
+class EKFTaxiway(ProcessXYFilterBase):
+    # Descriptors are convenient to store the evolution of the process
+    x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    p1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    p2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+
+    xs: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    shl: TrackVariable[Any] = TrackVariable()
+    closest_line: TrackVariable[Any] = TrackVariable()
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        # bruit de mesure
+        self.R = np.diag([9, 9, 25, 2, 0.25]) ** 2
+
+        # plus de bruit de modèle sur les dérivées qui sont pas recalées
+        self.Q = 0.5 * np.diag([0.25, 0.25, 2, 2])
+        self.Q += 0.5 * np.diag(self.Q.diagonal()[2:], k=2)
+        self.Q += 0.5 * np.diag(self.Q.diagonal()[2:], k=-2)
+
+    def distance(
+        self, prediction: npt.NDArray[np.float64], idx: int
+    ) -> tuple[float, float, float]:
+        raise NotImplementedError
+
+    def apply(self, data: pd.DataFrame) -> pd.DataFrame:
+        df = self.preprocess(data)[["x", "y", "v", "theta"]]
+
+        for cumul in self.tracked_variables.values():
+            cumul.clear()
+
+        # initial state
+        _id4 = np.eye(df.shape[1])
+        dt = 1
+
+        self.x_mes = df.iloc[0].values
+        self.x1_cor = df.iloc[0].values
+        self.p1_cor = _id4 * 1e5
+
+        # >>> First FORWARD  <<<
+
+        for i in range(1, df.shape[0]):
+            # measurement
+            self.x_mes = df.iloc[i].values
+
+            x1_cor = self.x1_cor
+            v, theta = x1_cor[2:] = np.where(
+                x1_cor[2:] == x1_cor[2:], x1_cor[2:], 0
+            )
+
+            # prediction
+            F = np.eye(4)
+            F[0, 2] = dt * np.cos(theta)
+            F[1, 2] = dt * np.sin(theta)
+
+            x_pre = F @ x1_cor
+
+            jF = np.eye(4)
+            jF[:2, 2:] = [
+                [dt * np.cos(theta), -v * dt * np.sin(theta)],
+                [dt * np.sin(theta), v * dt * np.cos(theta)],
+            ]
+
+            p_pre = jF @ self.p1_cor @ jF.T + self.Q
+
+            distance, dx, dy = self.distance(x_pre, i)
+
+            H = np.r_[_id4.copy(), np.array([[dx, dy, 0, 0]])]
+
+            # DEBUG symmetric matrices
+            assert np.abs(p_pre - p_pre.T).sum() < 1e-6
+            assert np.all(np.linalg.eigvals(p_pre) > 0)
+
+            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, x_pre)
+            idx = np.where(self.x_mes != self.x_mes)
+            H[idx, idx] = 0
+
+            # innovation
+            nu = np.r_[x_mes - x_pre, [-distance]]
+            S = H @ p_pre @ H.T + self.R
+
+            # Kalman gain
+            K = p_pre @ H.T @ np.linalg.inv(S)
+            # state correction
+            self.x1_cor = x_pre + K @ nu
+
+            # covariance correction
+            imkh = _id4 - K @ H
+            self.p1_cor = imkh @ p_pre @ imkh.T + K @ self.R @ K.T
+
+            # DEBUG symmetric matrices
+            assert np.abs(self.p1_cor - self.p1_cor.T).sum() < 1e-6
+            assert np.all(np.linalg.eigvals(self.p1_cor) > 0)
+
+        # >>> Now BACKWARD  <<<
+        self.x2_cor = self.x1_cor
+        self.p2_cor = 100 * self.p1_cor
+        dt = -dt
+
+        for i in range(df.shape[0] - 1, 0, -1):
+            # measurement
+            self.x_mes = df.iloc[i].values
+
+            x2_cor = self.x2_cor
+            v, theta = x2_cor[2:] = np.where(
+                x2_cor[2:] == x2_cor[2:], x2_cor[2:], 0
+            )
+
+            # prediction
+            F = np.eye(4)
+            F[0, 2] = dt * np.cos(theta)
+            F[1, 2] = dt * np.sin(theta)
+
+            x_pre = F @ self.x2_cor
+
+            jF = np.eye(4)
+            jF[:2, 2:] = [
+                [dt * np.cos(theta), -v * dt * np.sin(theta)],
+                [dt * np.sin(theta), v * dt * np.cos(theta)],
+            ]
+
+            p_pre = jF @ self.p2_cor @ jF.T + self.Q
+
+            distance, dx, dy = self.distance(x_pre, i)
+
+            H = np.r_[_id4.copy(), np.array([[dx, dy, 0, 0]])]
+
+            # DEBUG symmetric matrices
+            assert np.abs(p_pre - p_pre.T).sum() < 1e-6
+            assert np.all(np.linalg.eigvals(p_pre) > 0)
+
+            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, x_pre)
+            idx = np.where(self.x_mes != self.x_mes)
+            H[idx, idx] = 0
+
+            # innovation
+            nu = np.r_[x_mes - x_pre, [-distance]]
+            S = H @ p_pre @ H.T + self.R
+
+            # Kalman gain
+            K = p_pre @ H.T @ np.linalg.inv(S)
+
+            # state correction
+            self.x2_cor = x_pre + K @ nu
+
+            # covariance correction
+            imkh = _id4 - K @ H
+            self.p2_cor = imkh @ p_pre @ imkh.T + K @ self.R @ K.T
+
+            # DEBUG symmetric matrices
+            assert np.abs(self.p2_cor - self.p2_cor.T).sum() < 1e-6
+            assert np.all(np.linalg.eigvals(self.p2_cor) > 0)
+
+        # and the smoothing
+        x1_cor = np.array(self.tracked_variables["x1_cor"])
+        p1_cor = np.array(self.tracked_variables["p1_cor"])
+        x2_cor = np.array(self.tracked_variables["x2_cor"][::-1])
+        p2_cor = np.array(self.tracked_variables["p2_cor"][::-1])
+
+        for i in range(0, df.shape[0]):
+            s1 = np.linalg.inv(p1_cor[i])
+            s2 = np.linalg.inv(p2_cor[i])
+            self.ps = np.linalg.inv(s1 + s2)
+            self.xs = (self.ps @ (s1 @ x1_cor[i] + s2 @ x2_cor[i])).T
+
+        filtered = pd.DataFrame(
+            self.tracked_variables["xs"],
+            columns=["x", "y", "v", "theta"],
         )
 
         return data.assign(**self.postprocess(filtered))
