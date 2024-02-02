@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+
 from typing import Any
 
 from ... import config
 from ...core import Traffic
 from ._squawk7700 import Squawk7700Dataset
 from .default import Default, Entry
+
 
 datasets: dict[str, Entry] = dict(
     paris_toulouse_2017=dict(
