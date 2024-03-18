@@ -200,7 +200,7 @@ class Aircraft(DataFrameMixin):
         if filename.exists():
             self.data = pd.read_pickle(filename).fillna("")
 
-        f = session.get("https://junzisun.com/adb/download/aircraft_db.zip")
+        f = session.get("https://junzis.com/adb/download/aircraft_db.zip")
         with zipfile.ZipFile(io.BytesIO(f.content)) as zfile:
             with zfile.open("aircraft_db.csv", "r") as dbfile:
                 self.data = (
