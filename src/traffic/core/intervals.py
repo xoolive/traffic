@@ -38,7 +38,7 @@ class Interval:
 
     def overlap(self, other: Interval) -> bool:
         """Returns True if two intervals overlap."""
-        return self.start <= other.stop and self.stop >= other.start
+        return self.start < other.stop and self.stop > other.start
 
     def __radd__(self, other: Literal[0]) -> IntervalCollection:
         if other == 0:
@@ -94,14 +94,12 @@ class Interval:
         return NotImplemented
 
     @overload
-    def intersection(self, other: Interval) -> None | Interval:
-        ...
+    def intersection(self, other: Interval) -> None | Interval: ...
 
     @overload
     def intersection(
         self, other: IntervalCollection
-    ) -> None | IntervalCollection:
-        ...
+    ) -> None | IntervalCollection: ...
 
     def intersection(
         self, other: Interval | IntervalCollection

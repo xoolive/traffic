@@ -46,7 +46,6 @@
     "recommendations": [
       "ms-python.python",
       "ms-python.mypy-type-checker",
-      "ms-python.black-formatter",
       "charliermarsh.ruff",
       "valentjn.vscode-ltex",
       "ritwickdey.LiveServer"

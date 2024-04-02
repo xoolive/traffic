@@ -431,24 +431,19 @@ class Traffic(HBoxMixin, GeographyMixin):
         return None
 
     @overload
-    def __getitem__(self, key: int) -> None | Flight:
-        ...
+    def __getitem__(self, key: int) -> None | Flight: ...
 
     @overload
-    def __getitem__(self, key: str) -> None | Flight:
-        ...
+    def __getitem__(self, key: str) -> None | Flight: ...
 
     @overload
-    def __getitem__(self, key: slice) -> None | Traffic:
-        ...
+    def __getitem__(self, key: slice) -> None | Traffic: ...
 
     @overload
-    def __getitem__(self, key: IterStr) -> None | Traffic:
-        ...
+    def __getitem__(self, key: IterStr) -> None | Traffic: ...
 
     @overload
-    def __getitem__(self, key: Traffic) -> None | Traffic:
-        ...
+    def __getitem__(self, key: Traffic) -> None | Traffic: ...
 
     def __getitem__(
         self,
@@ -777,8 +772,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     @lazy_evaluation()
     def unwrap(  # type: ignore
         self, features: Union[None, str, List[str]] = None
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation(idx_name="idx")
     def assign_id(  # type: ignore
@@ -803,8 +797,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     def intersects(  # type: ignore
         self,
         shape: Union["Airspace", base.BaseGeometry],
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
     @lazy_evaluation()
     def simplify(  # type: ignore
@@ -812,8 +805,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         tolerance: float,
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def query_opensky(self):  # type: ignore
@@ -837,8 +829,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
         strict: bool = True,
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def feature_lt(  # type: ignore
@@ -846,20 +837,17 @@ class Traffic(HBoxMixin, GeographyMixin):
         feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
         strict: bool = True,
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def shorter_than(  # type: ignore
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def longer_than(  # type: ignore
         self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def max_split(  # type: ignore
@@ -867,8 +855,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
         key: str = "duration",
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def diff(self, features: Union[str, List[str]], **kwargs):  # type: ignore
@@ -877,8 +864,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     @lazy_evaluation()
     def apply_segments(  # type: ignore
         self, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def apply_time(self, freq="1T", merge=True, **kwargs):  # type: ignore
@@ -891,8 +877,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     @lazy_evaluation()
     def cumulative_distance(  # type: ignore
         self, compute_gs: bool = True, compute_track: bool = True, **kwargs
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def compute_wind(self):  # type: ignore
@@ -903,16 +888,14 @@ class Traffic(HBoxMixin, GeographyMixin):
         self,
         other: PointMixin,
         column_name: str = "bearing",
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def distance(  # type: ignore
         self,
         other: Union["Airspace", Polygon, PointMixin],
         column_name: str = "distance",
-    ):
-        ...
+    ): ...
 
     @lazy_evaluation()
     def landing_at(self, airport: str) -> bool:  # type: ignore
@@ -1062,8 +1045,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         )
 
     @lazy_evaluation()
-    def summary(self, attributes: list[str]) -> pd.DataFrame:
-        ...
+    def summary(self, attributes: list[str]) -> pd.DataFrame: ...
 
     def geoencode(self, *args: Any, **kwargs: Any) -> NoReturn:
         """

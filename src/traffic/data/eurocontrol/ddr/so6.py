@@ -581,14 +581,12 @@ class SO6(DataFrameMixin):
     identifier = Union[int, str]
 
     @overload
-    def __getitem__(self, index: identifier) -> SO6Flight:
-        ...
+    def __getitem__(self, index: identifier) -> SO6Flight: ...
 
     @overload
     def __getitem__(
         self, index: Union["SO6", Set["str"], Set[int]]
-    ) -> Optional["SO6"]:
-        ...
+    ) -> Optional["SO6"]: ...
 
     def __getitem__(
         self, index: Union[identifier, "SO6", Set["str"], Set[int]]

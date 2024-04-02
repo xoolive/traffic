@@ -522,12 +522,10 @@ class Flight(
         return keys
 
     @overload
-    def __getitem__(self, key: Interval) -> Flight:
-        ...
+    def __getitem__(self, key: Interval) -> Flight: ...
 
     @overload
-    def __getitem__(self, key: IntervalCollection) -> FlightIterator:
-        ...
+    def __getitem__(self, key: IntervalCollection) -> FlightIterator: ...
 
     def __getitem__(self, key: str | Interval | IntervalCollection) -> Any:
         """Indexation of flights.
@@ -1456,12 +1454,10 @@ class Flight(
             yield from after.sliding_windows(duration_, step_)
 
     @overload
-    def split(self, value: int, unit: str) -> FlightIterator:
-        ...
+    def split(self, value: int, unit: str) -> FlightIterator: ...
 
     @overload
-    def split(self, value: str, unit: None = None) -> FlightIterator:
-        ...
+    def split(self, value: str, unit: None = None) -> FlightIterator: ...
 
     @flight_iterator
     def split(
@@ -2141,22 +2137,19 @@ class Flight(
     @overload
     def distance(  # type: ignore
         self, other: None = None, column_name: str = "distance"
-    ) -> float:
-        ...
+    ) -> float: ...
 
     @overload
     def distance(
         self,
         other: Union["Airspace", Polygon, PointMixin],
         column_name: str = "distance",
-    ) -> Flight:
-        ...
+    ) -> Flight: ...
 
     @overload
     def distance(
         self, other: Flight, column_name: str = "distance"
-    ) -> Optional[pd.DataFrame]:
-        ...
+    ) -> Optional[pd.DataFrame]: ...
 
     @impunity(ignore_warnings=True)
     def distance(

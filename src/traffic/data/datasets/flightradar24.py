@@ -218,8 +218,7 @@ class FlightRadar24:
         filename: str | Path,
         trajectories: None = None,
         **kwargs: Any,
-    ) -> Flight:
-        ...
+    ) -> Flight: ...
 
     @overload
     @classmethod
@@ -228,8 +227,7 @@ class FlightRadar24:
         filename: str | Path,
         trajectories: str | Path,
         **kwargs: Any,
-    ) -> Traffic:
-        ...
+    ) -> Traffic: ...
 
     @classmethod
     def from_file(

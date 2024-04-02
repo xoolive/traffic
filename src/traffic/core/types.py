@@ -13,14 +13,12 @@ T = TypeVar("T")
 class ProgressbarType(Protocol):
     def __call__(
         self, iterable: Iterable[T], *args: Any, **kwargs: Any
-    ) -> Iterator[T]:
-        ...
+    ) -> Iterator[T]: ...
 
 
 class HasBounds(Protocol):
     @property
-    def bounds(self) -> tuple[float, float, float, float]:
-        ...
+    def bounds(self) -> tuple[float, float, float, float]: ...
 
 
 ## Types for physical units (impunity)

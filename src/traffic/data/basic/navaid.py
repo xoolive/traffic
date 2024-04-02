@@ -16,7 +16,6 @@ _log = logging.getLogger(__name__)
 
 
 class Navaids(GeoDBMixin):
-
     """
     `VOR <https://en.wikipedia.org/wiki/VHF_omnidirectional_range>`_, `DME
     <https://en.wikipedia.org/wiki/Distance_measuring_equipment>`_ and `NDB

@@ -39,7 +39,6 @@ _log = logging.getLogger(__name__)
 
 
 class DataFrameMixin(object):
-
     """DataFrameMixin aggregates a pandas DataFrame and provides the same
     representation methods.
 
@@ -350,7 +349,6 @@ class DataFrameMixin(object):
 
 
 class ShapelyMixin(object):
-
     """ShapelyMixin expects a shape attribute as a Geometry and provides methods
     consistent with GIS geometries.
 

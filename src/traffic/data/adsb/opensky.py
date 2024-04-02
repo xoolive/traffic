@@ -331,8 +331,7 @@ class OpenSky:
         limit: None | int = None,
         return_flight: Literal[False] = False,
         **kwargs: Any,
-    ) -> None | Traffic:
-        ...
+    ) -> None | Traffic: ...
 
     @overload
     def history(
@@ -357,8 +356,7 @@ class OpenSky:
         limit: None | int = None,
         return_flight: Literal[True],
         **kwargs: Any,
-    ) -> None | Flight:
-        ...
+    ) -> None | Flight: ...
 
     @copy_documentation(trino.Trino.history)
     def history(

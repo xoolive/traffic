@@ -14,8 +14,7 @@ from ... import cache_dir
 client = httpx.Client(follow_redirects=True)
 
 
-class JSON(TypedDict):
-    ...
+class JSON(TypedDict): ...
 
 
 class Link(TypedDict):

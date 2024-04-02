@@ -29,8 +29,7 @@ if TYPE_CHECKING:
 
 
 class Filter(Protocol):
-    def apply(self, data: pd.DataFrame) -> pd.DataFrame:
-        ...
+    def apply(self, data: pd.DataFrame) -> pd.DataFrame: ...
 
 
 class FilterBase(Filter):

@@ -283,16 +283,14 @@ class LazyTraffic:
 def lazy_evaluation(
     default: "Literal[None, False]" = False,
     idx_name: Optional[str] = None,
-) -> Callable[..., Callable[..., LazyTraffic]]:
-    ...
+) -> Callable[..., Callable[..., LazyTraffic]]: ...
 
 
 @overload
 def lazy_evaluation(
     default: "Literal[True]",
     idx_name: Optional[str] = None,
-) -> Callable[..., Callable[..., "Traffic"]]:
-    ...
+) -> Callable[..., Callable[..., "Traffic"]]: ...
 
 
 def lazy_evaluation(
