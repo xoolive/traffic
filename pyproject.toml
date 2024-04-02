@@ -50,7 +50,7 @@ Bluesky = "traffic.plugins.bluesky"
 CesiumJS = "traffic.plugins.cesiumjs"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
+python = ">=3.9,<4.0"
 impunity = ">=1.0.4"
 # impunity = { path = "../impunity", develop = true}
 pitot = ">=0.3.1"
@@ -70,6 +70,7 @@ metar = ">=1.8"
 click = ">=8.1"
 typing-extensions = ">=4.2"
 pyarrow = ">=11.0.0"
+# shapely = "!=2.0.3"
 # onnxruntime is usually late to release, although available on conda-forge
 onnxruntime = { version = ">=1.12", python = "<3.13" }
 # -- Optional dependencies --

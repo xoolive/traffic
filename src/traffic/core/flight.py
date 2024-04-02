@@ -1710,21 +1710,24 @@ class Flight(
                 .reset_index()
             )
 
+            data = data.infer_objects(copy=False)
+
             if how is None:
                 how = {}
 
             if isinstance(how, str):
-                how = {how: set(data.columns) - {"timestamp"}}
+                if how == "interpolate":
+                    interpolable = data.dtypes[data.dtypes != object].index
+                    other = data.dtypes[data.dtypes == object].index
+                    how = {how: set(interpolable) - {"timestamp"}}
+                    how["ffill"] = set(other)
+                else:
+                    how = {how: set(data.columns) - {"timestamp"}}
 
             for meth, columns in how.items():
                 if meth is not None:
                     idx = data.columns.get_indexer(columns)
                     value = getattr(data.iloc[:, idx], meth)()
-                    # final fillna() is necessary for non-interpolable dtypes
-                    value = value.fillna(method="pad")
-                    # FutureWarning: a value is trying to be set on a copy of a
-                    # slice from a DataFrame
-                    # data.iloc[:, idx] = value
                     data[data.columns[idx]] = value
 
         elif isinstance(rule, int):
