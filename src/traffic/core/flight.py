@@ -59,7 +59,7 @@ from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 if TYPE_CHECKING:
     import altair as alt
     from cartopy import crs
-    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from cartopy.mpl.geoaxes import GeoAxes
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
@@ -146,7 +146,7 @@ class Position(PointMixin, pd.core.series.Series):  # type: ignore
         from ..drawing.markers import aircraft as aircraft_marker
         from ..drawing.markers import rotate_marker
 
-        visualdict = dict(s=300)
+        visualdict: dict[str, Any] = dict(s=300)
         if hasattr(self, "track"):
             visualdict["marker"] = rotate_marker(aircraft_marker, self.track)
 
@@ -2025,7 +2025,7 @@ class Flight(
 
     def plot_wind(
         self,
-        ax: "GeoAxesSubplot",
+        ax: "GeoAxes",
         resolution: Union[int, str, Dict[str, float], None] = "5T",
         filtered: bool = False,
         **kwargs: Any,
@@ -2903,7 +2903,7 @@ class Flight(
         return m
 
     def plot(
-        self, ax: "GeoAxesSubplot", **kwargs: Any
+        self, ax: "GeoAxes", **kwargs: Any
     ) -> List["Artist"]:  # coverage: ignore
         """Plots the trajectory on a Matplotlib axis.
 

@@ -13,7 +13,7 @@ from .mixins import PointMixin, ShapelyMixin
 from .structure import Airport, Navaid, Route
 
 if TYPE_CHECKING:
-    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from cartopy.mpl.geoaxes import GeoAxes
     from matplotlib.artist import Artist
 
 
@@ -589,7 +589,7 @@ class FlightPlan(ShapelyMixin):
     # -- Visualisation --
     def plot(
         self,
-        ax: "GeoAxesSubplot",
+        ax: "GeoAxes",
         airports: bool = True,
         airports_kw: Optional[Dict[str, Any]] = None,
         labels: Union[None, bool, str] = None,
@@ -645,13 +645,17 @@ class FlightPlan(ShapelyMixin):
 
             ap = airport_db[self.origin]
             if ap is not None:
-                cumul.append(ap.point.plot(ax, **airports_style))
+                cumul.append(
+                    ap.point.plot(ax, **airports_style)  # type: ignore
+                )
         if airports and self.destination:
             from traffic.data import airports as airport_db
 
             ap = airport_db[self.destination]
             if ap is not None:
-                cumul.append(ap.point.plot(ax, **airports_style))
+                cumul.append(
+                    ap.point.plot(ax, **airports_style)  # type: ignore
+                )
 
         if labels:
             for point in self.all_points if labels == "all" else self.points:

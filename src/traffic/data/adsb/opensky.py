@@ -30,7 +30,7 @@ from .decode import RawData
 from .flarm import FlarmData
 
 if TYPE_CHECKING:
-    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from cartopy.mpl.geoaxes import GeoAxes
     from matplotlib.artist import Artist
 
 _log = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class Coverage(object):
 
     def plot(
         self,
-        ax: "GeoAxesSubplot",
+        ax: "GeoAxes",
         cmap: str = "inferno",
         s: int = 5,
         **kwargs: Any,
@@ -58,7 +58,7 @@ class Coverage(object):
         """Plotting function. All arguments are passed to ax.scatter"""
         from cartopy.crs import PlateCarree
 
-        return ax.scatter(
+        return ax.scatter(  # type: ignore
             self.df.longitude,
             self.df.latitude,
             s=s,
@@ -90,7 +90,7 @@ class SensorRange(ShapelyMixin):
             ]
             self.point.name = value[0]["serial"]
 
-    def plot(self, ax: "GeoAxesSubplot", **kwargs: Any) -> "Artist":
+    def plot(self, ax: "GeoAxes", **kwargs: Any) -> "Artist":
         """Plotting function. All arguments are passed to the geometry"""
         from cartopy.crs import PlateCarree
         from matplotlib.patches import Polygon as MplPolygon
@@ -101,9 +101,11 @@ class SensorRange(ShapelyMixin):
             kwargs["edgecolor"] = ax._get_lines.get_next_color()
 
         if "projection" in ax.__dict__:
-            return ax.add_geometries([self.shape], crs=PlateCarree(), **kwargs)
+            return ax.add_geometries(  # type: ignore
+                [self.shape], crs=PlateCarree(), **kwargs
+            )
         else:
-            return ax.add_patch(
+            return ax.add_patch(  # type: ignore
                 MplPolygon(list(self.shape.exterior.coords), **kwargs)
             )
 

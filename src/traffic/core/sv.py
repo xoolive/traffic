@@ -8,7 +8,7 @@ from .flight import Position
 from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
-    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from cartopy.mpl.geoaxes import GeoAxes
     from matplotlib.artist import Artist
 
 
@@ -46,12 +46,12 @@ class StateVectors(GeographyMixin):
         return LeafletMarkerCluster(markers=point_list)
 
     def plot(
-        self, ax: "GeoAxesSubplot", s: int = 10, **kwargs: Any
+        self, ax: "GeoAxes", s: int = 10, **kwargs: Any
     ) -> "Artist":  # coverage: ignore
         """Plotting function. All arguments are passed to ax.scatter"""
         from cartopy.crs import PlateCarree
 
-        return ax.scatter(
+        return ax.scatter(  # type: ignore
             self.data.longitude,
             self.data.latitude,
             s=s,

@@ -27,8 +27,8 @@ if TYPE_CHECKING:
     import altair as alt
     import xarray
     from cartopy import crs
+    from cartopy.mpl.geoaxes import GeoAxes
     from matplotlib.artist import Artist
-    from matplotlib.axes import Axes
 
 
 T = TypeVar("T", bound="DataFrameMixin")
@@ -884,7 +884,7 @@ class PointMixin:
 
     def plot(
         self,
-        ax: "Axes",
+        ax: "GeoAxes",
         text_kw: None | dict[str, Any] = None,
         shift: None | dict[str, Any] = None,
         **kwargs: Any,

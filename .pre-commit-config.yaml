@@ -38,6 +38,8 @@ repos:
           - types-paramiko
           - types-flask
           - types-waitress
+          - altair
+          - cartopy
           - impunity
           - pitot
           - pyModeS
