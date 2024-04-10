@@ -31,6 +31,7 @@ from typing import (
 )
 
 import rich.repr
+import rs1090
 from impunity import impunity
 from ipyleaflet import Map as LeafletMap
 from ipyleaflet import Polyline as LeafletPolyline
@@ -1265,7 +1266,7 @@ class Flight(
         Example usage:
 
         >>> flight.skip(minutes=10)
-        >>> flight.skip("1H")
+        >>> flight.skip("1h")
         >>> flight.skip(10)  # seconds by default
         """
         delta = to_timedelta(value, **kwargs)
@@ -1285,7 +1286,7 @@ class Flight(
         Example usage:
 
         >>> flight.first(minutes=10)
-        >>> flight.first("1H")
+        >>> flight.first("1h")
         >>> flight.first(10)  # seconds by default
         """
         delta = to_timedelta(value, **kwargs)
@@ -1308,7 +1309,7 @@ class Flight(
         Example usage:
 
         >>> flight.shorten(minutes=10)
-        >>> flight.shorten("1H")
+        >>> flight.shorten("1h")
         >>> flight.shorten(10)  # seconds by default
         """
         delta = to_timedelta(value, **kwargs)
@@ -1328,7 +1329,7 @@ class Flight(
         Example usage:
 
         >>> flight.last(minutes=10)
-        >>> flight.last("1H")
+        >>> flight.last("1h")
         >>> flight.last(10)  # seconds by default
         """
         delta = to_timedelta(value, **kwargs)
@@ -2672,7 +2673,6 @@ class Flight(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
         failure_mode: str = "info",
-        progressbar: Union[bool, tt.ProgressbarType] = False,
     ) -> Flight:
         """Extends data with extra columns from EHS messages.
 
@@ -2697,7 +2697,6 @@ class Flight(
         """
 
         from ..data import opensky
-        from ..data.adsb.decode import RawData
 
         if not isinstance(self.icao24, str):
             raise RuntimeError("Several icao24 for this flight")
@@ -2769,26 +2768,23 @@ class Flight(
             )
         )
 
-        identifier = (
-            self.flight_id if self.flight_id is not None else self.callsign
-        )
-        reference: None | str | tuple[float, float] = None
-        if isinstance(self.origin, str):
-            reference = self.origin
-        elif position := self.query("latitude.notnull()"):
-            p0 = position.at_ratio(0)
-            assert p0 is not None
-            reference = p0.latlon
-
-        t = RawData(referenced_df).decode(
-            reference=reference,
-            progressbar=progressbar,
-            progressbar_kw=dict(leave=False, desc=f"{identifier}:"),
+        decoded = rs1090.decode(
+            referenced_df.rawmsg,
+            referenced_df.timestamp.astype("int64") * 1e-9,
         )
 
-        extended = t[self.icao24] if t is not None else None
-        if extended is None:
+        if len(decoded) == 0:
             return failure()
+
+        df = pd.concat(
+            # 5000 is a good batch size for fast loading!
+            pd.DataFrame.from_records(d)
+            for d in rs1090.batched(decoded, 5000)
+        )
+        df = df.assign(
+            timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
+        )
+        extended = Flight(df)
 
         # fix for https://stackoverflow.com/q/53657210/1595335
         if "last_position" in self.data.columns:
@@ -2804,10 +2800,12 @@ class Flight(
 
         # sometimes weird callsigns are decoded and should be discarded
         # so it seems better to filter on callsign rather than on icao24
-        flight = aggregate[self.callsign]
+        flight = aggregate[self.icao24]
         if flight is None:
             return failure()
 
+        if self.callsign is not None:
+            flight = flight.assign(callsign=self.callsign)
         if self.number is not None:
             flight = flight.assign(number=self.number)
         if self.origin is not None:

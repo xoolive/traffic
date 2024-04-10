@@ -27,7 +27,7 @@ def get_flight(filename: str, directory: Path) -> Flight | Traffic:
         raise RuntimeError(f"File {filename}.json.gz not found in {directory}")
     icao24 = set(flight.data.icao24) if "icao24" in flight.data.columns else []
     if len(icao24) <= 1:
-        if Flight(flight.data).split("1H").sum() == 1:
+        if Flight(flight.data).split("1h").sum() == 1:
             # easier way to cast...
             flight = Flight(flight.data)
     # -- Dealing with time-like features --

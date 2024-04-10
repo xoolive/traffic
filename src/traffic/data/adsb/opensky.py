@@ -26,8 +26,8 @@ from ...core.mixins import PointMixin, ShapelyMixin
 from ...core.time import deltalike, timelike
 from ...core.types import HasBounds, ProgressbarType
 from ..basic.airports import Airport
+from ..flarm import FlarmData
 from .decode import RawData
-from .flarm import FlarmData
 
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxes

@@ -1,15 +1,23 @@
-import time
+from pathlib import Path
 
 import pytest
 from traffic.core import Flight
-from traffic.data import ModeS_Decoder
+from traffic.data.adsb.decode import RawData
 from traffic.data.samples import sample_dump1090, switzerland
 
-import pandas as pd
+fr24_folder = Path(__file__).parent / "fr24"
 
 
 def long_enough(flight: Flight) -> bool:
     return len(flight) > 100
+
+
+def test_simple() -> None:
+    f = Flight.from_fr24(fr24_folder / "34a8254b.json")
+    g = f.first("25 min").query_opensky()
+    assert g is not None
+    h = g.query_ehs()
+    assert h.data.shape[0] > g.data.shape[0]
 
 
 @pytest.mark.skipif(True, reason="only for local debug")
@@ -46,23 +54,10 @@ def test_decode() -> None:
 
 
 def test_dump1090_bin() -> None:
-    time_0 = pd.Timestamp("2020-02-12 10:07Z")
-    decoder = ModeS_Decoder.from_binary(
-        sample_dump1090, "LFBO", time_fmt="dump1090", time_0=time_0
+    time_0 = "2020-02-12 10:07Z"
+    t = RawData.from_dump1090_output(
+        sample_dump1090, "LFBO", reference_time=time_0
     )
-    t = decoder.traffic
 
     assert t is not None
-    assert len(t) != 0
-
-
-@pytest.mark.skipif(True, reason="only for local debug")
-def test_dump1090_stream() -> None:
-    decoder = ModeS_Decoder.from_dump1090("LFBO")
-    time.sleep(15)
-    decoder.stop()
-
-    t = decoder.traffic
-
-    assert t is not None
-    assert len(t) != 0
+    assert t.data.shape[0] != 0
