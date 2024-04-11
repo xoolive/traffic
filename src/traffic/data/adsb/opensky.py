@@ -17,6 +17,7 @@ from typing import (
 
 from pyopensky import impala, rest, schema, trino
 from pyopensky.api import OpenSkyDBAPI
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 import pandas as pd
 from shapely.geometry import Polygon
@@ -430,6 +431,7 @@ class OpenSky:
         cached: bool = True,
         compress: bool = False,
         limit: None | int = None,
+        extra_columns: tuple[InstrumentedAttribute[Any], ...] = (),
         **kwargs: Any,
     ) -> None | RawData:
         df = self.db_client.rawdata(
@@ -448,6 +450,7 @@ class OpenSky:
             cached=cached,
             compress=compress,
             limit=limit,
+            extra_columns = extra_columns,
             **kwargs,
         )
 
