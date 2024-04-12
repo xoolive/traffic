@@ -16,7 +16,8 @@ from typing import (
 )
 
 from pyopensky import impala, rest, schema, trino
-from pyopensky.api import OpenSkyDBAPI
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+from sqlalchemy.sql import ColumnExpressionArgument
 
 import pandas as pd
 from shapely.geometry import Polygon
@@ -24,10 +25,10 @@ from shapely.geometry import Polygon
 from ...core import Flight, StateVectors, Traffic
 from ...core.mixins import PointMixin, ShapelyMixin
 from ...core.time import deltalike, timelike
-from ...core.types import HasBounds, ProgressbarType
+from ...core.types import HasBounds
 from ..basic.airports import Airport
-from ..flarm import FlarmData
 from .decode import RawData
+from .flarm import FlarmData
 
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxes
@@ -201,14 +202,7 @@ class OpenSky:
 
     def __init__(self) -> None:
         self.rest_client = rest.REST()
-        self.impala_client = impala.Impala()
         self.trino_client = trino.Trino()
-
-        self.db_client: OpenSkyDBAPI = (
-            self.trino_client
-            if self.trino_client.token() is not None
-            else self.impala_client
-        )
 
     @copy_documentation(rest.REST.states)
     def api_states(
@@ -283,7 +277,7 @@ class OpenSky:
         self,
         start: timelike,
         stop: None | timelike = None,
-        *args: Any,  # more reasonable to be explicit about arguments
+        *args: ColumnExpressionArgument[bool],
         departure_airport: None | str | list[str] = None,
         arrival_airport: None | str | list[str] = None,
         airport: None | str | list[str] = None,
@@ -294,7 +288,7 @@ class OpenSky:
         limit: None | int = None,
         **kwargs: Any,
     ) -> None | pd.DataFrame:
-        return self.db_client.flightlist(
+        return self.trino_client.flightlist(
             start,
             stop,
             *args,
@@ -315,7 +309,7 @@ class OpenSky:
         self,
         start: timelike,
         stop: None | timelike = None,
-        *args: Any,
+        *args: ColumnExpressionArgument[bool],
         # date_delta: timedelta = timedelta(hours=1),
         callsign: None | str | list[str] = None,
         icao24: None | str | list[str] = None,
@@ -331,6 +325,7 @@ class OpenSky:
         cached: bool = True,
         compress: bool = False,
         limit: None | int = None,
+        selected_columns: tuple[InstrumentedAttribute[Any] | str, ...] = (),
         return_flight: Literal[False] = False,
         **kwargs: Any,
     ) -> None | Traffic: ...
@@ -340,7 +335,7 @@ class OpenSky:
         self,
         start: timelike,
         stop: None | timelike = None,
-        *args: Any,
+        *args: ColumnExpressionArgument[bool],
         # date_delta: timedelta = timedelta(hours=1),
         callsign: None | str | list[str] = None,
         icao24: None | str | list[str] = None,
@@ -356,6 +351,7 @@ class OpenSky:
         cached: bool = True,
         compress: bool = False,
         limit: None | int = None,
+        selected_columns: tuple[InstrumentedAttribute[Any] | str, ...] = (),
         return_flight: Literal[True],
         **kwargs: Any,
     ) -> None | Flight: ...
@@ -365,7 +361,7 @@ class OpenSky:
         self,
         start: timelike,
         stop: None | timelike = None,
-        *args: Any,
+        *args: ColumnExpressionArgument[bool],
         # date_delta: timedelta = timedelta(hours=1),
         callsign: None | str | list[str] = None,
         icao24: None | str | list[str] = None,
@@ -381,10 +377,11 @@ class OpenSky:
         cached: bool = True,
         compress: bool = False,
         limit: None | int = None,
+        selected_columns: tuple[InstrumentedAttribute[Any] | str, ...] = (),
         return_flight: bool = False,
         **kwargs: Any,
     ) -> None | Flight | Traffic:
-        df = self.db_client.history(
+        df = self.trino_client.history(
             start,
             stop,
             *args,
@@ -399,6 +396,7 @@ class OpenSky:
             cached=cached,
             compress=compress,
             limit=limit,
+            selected_columns=selected_columns,
             **kwargs,
         )
         if df is None:
@@ -417,7 +415,7 @@ class OpenSky:
         self,
         start: timelike,
         stop: None | timelike = None,
-        *args: Any,  # more reasonable to be explicit about arguments
+        *args: ColumnExpressionArgument[bool],
         icao24: None | str | list[str] = None,
         serials: None | int | Iterable[int] = None,
         bounds: None | HasBounds | tuple[float, float, float, float] = None,
@@ -430,9 +428,10 @@ class OpenSky:
         cached: bool = True,
         compress: bool = False,
         limit: None | int = None,
+        extra_columns: tuple[InstrumentedAttribute[Any], ...] = (),
         **kwargs: Any,
     ) -> None | RawData:
-        df = self.db_client.rawdata(
+        df = self.trino_client.rawdata(
             start,
             stop,
             *args,
@@ -448,6 +447,7 @@ class OpenSky:
             cached=cached,
             compress=compress,
             limit=limit,
+            extra_columns=extra_columns,
             **kwargs,
         )
 
@@ -461,7 +461,7 @@ class OpenSky:
         self,
         start: timelike,
         stop: None | timelike = None,
-        *args: Any,  # more reasonable to be explicit about arguments
+        *args: ColumnExpressionArgument[bool],
         icao24: None | str | list[str] = None,
         serials: None | int | Iterable[int] = None,
         bounds: None | HasBounds | tuple[float, float, float, float] = None,
@@ -474,19 +474,9 @@ class OpenSky:
         cached: bool = True,
         compress: bool = False,
         limit: None | int = None,
+        extra_columns: tuple[InstrumentedAttribute[Any], ...] = (),
         **kwargs: Any,
     ) -> None | RawData:
-        kwargs = {
-            **kwargs,
-            # this one is with impala
-            **(
-                dict(table_name="rollcall_replies_data4")
-                if isinstance(self.db_client, impala.Impala)
-                # this one is with Trino
-                else dict(Table=schema.RollcallRepliesData4)  # default anyway
-            ),
-        }
-
         return self.rawdata(
             start,
             stop,
@@ -503,6 +493,8 @@ class OpenSky:
             cached=cached,
             compress=compress,
             limit=limit,
+            Table=schema.RollcallRepliesData4,
+            extra_columns=extra_columns,
             **kwargs,
         )
 
@@ -511,15 +503,15 @@ class OpenSky:
         self,
         start: timelike,
         stop: None | timelike = None,
-        *args: Any,  # more reasonable to be explicit about arguments
+        *args: ColumnExpressionArgument[bool],
         sensor_name: None | str | list[str] = None,
         cached: bool = True,
         compress: bool = False,
         limit: None | int = None,
-        other_params: str = "",
-        progressbar: bool | ProgressbarType = True,
+        correct_only: bool = True,
+        extra_columns: tuple[InstrumentedAttribute[Any], ...] = (),
     ) -> None | FlarmData:
-        df = self.impala_client.flarm(
+        df = self.trino_client.flarm(
             start,
             stop,
             *args,
@@ -527,41 +519,11 @@ class OpenSky:
             cached=cached,
             compress=compress,
             limit=limit,
-            other_params=other_params,
-            progressbar=progressbar,
+            correct_only=correct_only,
+            extra_columns=extra_columns,
         )
         if df is None:
             return None
 
         else:
             return FlarmData(df)
-
-
-# below this line is only helpful references
-# ------------------------------------------
-# [hadoop-1:21000] > describe rollcall_replies_data4;
-# +----------------------+-------------------+---------+
-# | name                 | type              | comment |
-# +----------------------+-------------------+---------+
-# | sensors              | array<struct<     |         |
-# |                      |   serial:int,     |         |
-# |                      |   mintime:double, |         |
-# |                      |   maxtime:double  |         |
-# |                      | >>                |         |
-# | rawmsg               | string            |         |
-# | mintime              | double            |         |
-# | maxtime              | double            |         |
-# | msgcount             | bigint            |         |
-# | icao24               | string            |         |
-# | message              | string            |         |
-# | isid                 | boolean           |         |
-# | flightstatus         | tinyint           |         |
-# | downlinkrequest      | tinyint           |         |
-# | utilitymsg           | tinyint           |         |
-# | interrogatorid       | tinyint           |         |
-# | identifierdesignator | tinyint           |         |
-# | valuecode            | smallint          |         |
-# | altitude             | double            |         |
-# | identity             | string            |         |
-# | hour                 | int               |         |
-# +----------------------+-------------------+---------+

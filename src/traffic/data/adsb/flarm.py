@@ -6,8 +6,8 @@ from typing_extensions import Annotated
 
 import pandas as pd
 
-from ..core.mixins import DataFrameMixin
-from ..core.traffic import Traffic
+from ...core.mixins import DataFrameMixin
+from ...core.traffic import Traffic
 
 T = TypeVar("T", bound="FlarmData")
 

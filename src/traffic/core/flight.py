@@ -2614,29 +2614,6 @@ class Flight(
 
         return clipped_flight
 
-    # -- OpenSky specific methods --
-
-    def query_opensky_sensors(self, where_condition: str = "") -> pd.DataFrame:
-        # TODO Deprecate??
-        from ..data import opensky
-
-        return (
-            opensky.impala_client.request(
-                "select s.ITEM, count(*) from state_vectors_data4, "
-                "state_vectors_data4.serials s "
-                f"where icao24='{self.icao24}' and "
-                f"{where_condition} "
-                "{before_time}<=time and time < {after_time} and "
-                "{before_hour}<=hour and hour < {after_hour} "
-                "group by s.ITEM;",
-                self.start,
-                self.stop,
-                columns=["serial", "count"],
-            )
-            .groupby("serial")
-            .sum()
-        )
-
     def query_opensky(self, **kwargs: Any) -> Optional[Flight]:
         """Returns data from the same Flight as stored in OpenSky database.
 
