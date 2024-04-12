@@ -112,7 +112,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install -E full -E web  # TODO web necessary for the traffic cache command below
+          poetry install -E full
 
           # This should not be necessary... but sometimes it is
           # https://traffic-viz.github.io/troubleshooting/installation.html

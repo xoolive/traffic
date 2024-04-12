@@ -109,7 +109,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install -E full -E web
+          poetry install -E full
 
       - name: Style checking
         run: |
