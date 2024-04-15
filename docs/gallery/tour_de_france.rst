@@ -17,12 +17,12 @@ official map at the bottom of the page.
         return flight.distance() / flight.cumulative_distance(False, False).max("cumdist")
 
     preprocessed = (
-        tour_de_france.iterate_lazy(iterate_kw=dict(by="1H"))
+        tour_de_france.iterate_lazy(iterate_kw=dict(by="1h"))
         .assign_id()
-        .apply_time("5T", straight_ratio=straight_ratio)
+        .apply_time("5 min", straight_ratio=straight_ratio)
         .query("straight_ratio < .5")
         .max_split()
-        .longer_than("1H")
+        .longer_than("1h")
         .eval()
     )
 

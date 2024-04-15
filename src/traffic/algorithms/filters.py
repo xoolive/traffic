@@ -305,9 +305,9 @@ class FilterDerivative(FilterBase):
                 (deriv1 >= params["first"]), (deriv2 >= params["second"])
             )
             spike = spike.fillna(False, inplace=False)
-
-            spike_time = pd.Series(np.nan, index=data.index)
-            spike_time.loc[spike] = data[self.time_column].loc[spike]
+            spike_time = pd.Series(pd.Timestamp("NaT"), index=data.index)
+            spike_time = spike_time.dt.tz_localize("utc").copy()
+            spike_time.loc[spike] = data.loc[spike, self.time_column]
 
             if not spike_time.isnull().all():
                 spike_time_prev = spike_time.ffill()
@@ -318,7 +318,7 @@ class FilterDerivative(FilterBase):
                     spike_delta_prev.dt.total_seconds() <= window,
                     spike_delta_next.dt.total_seconds() <= window,
                 )
-                data.loc[(in_window), column] = np.nan
+                data.loc[in_window, column] = np.nan
 
         return data
 

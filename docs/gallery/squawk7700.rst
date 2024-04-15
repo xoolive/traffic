@@ -70,7 +70,7 @@ where the 7700 squawk code was activated.
 .. jupyter-execute::
 
     from ipywidgets import Layout
-    
+
     squawk7700["AFR1196_20180303"].map_leaflet(
         zoom=7,
         highlight=dict(red=lambda f: f.emergency()),
@@ -173,7 +173,7 @@ landing weight:
 
 .. jupyter-execute::
 
-    squawk7700["AFL2175_20190723"] | squawk7700["BAW119_20190703"] 
+    squawk7700["AFL2175_20190723"] | squawk7700["BAW119_20190703"]
 
 
 Landing attempts
@@ -187,7 +187,7 @@ detect these events:
 
 .. jupyter-execute::
 
-    squawk7700["AFR1145_20190820"].last("45T")
+    squawk7700["AFR1145_20190820"].last("45 min")
 
 .. jupyter-execute::
 
@@ -201,7 +201,7 @@ detect these events:
         highlight=dict(red=lambda f: f.landing_attempts()),
     )
 
-| Explanation about this particular situation is available:  
+| Explanation about this particular situation is available:
 | `Incident: France A319 near Luxembourg on Aug 20th 2019, hot brakes indication
   <https://avherald.com/h?article=4cbcbfb7>`_
 

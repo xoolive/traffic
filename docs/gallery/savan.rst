@@ -165,7 +165,7 @@ cover which bearing angle.
         .distance(vor)
         .bearing(vor)
         .query("20 < distance < 100")  # only keep legs within coverage
-        .longer_than("10T")
+        .longer_than("10 min")
         .eval()
         # focus roughly on Corsica, but we could go for the whole set of VORs
         for vor in vors_fr.query("latitude < 47 and longitude > 7")

@@ -187,7 +187,7 @@ class Generation:
         df = df.assign(flight_id=ids, callsign=ids, icao24=ids)
         # enriches DataFrame with timestamp columns.
         if "timedelta" in df.columns:
-            base_ts = pd.Timestamp.today(tz="UTC").round(freq="S")
+            base_ts = pd.Timestamp.today(tz="UTC").round(freq="s")
             df = df.assign(
                 timestamp=pd.to_timedelta(df.timedelta, unit="s") + base_ts
             )

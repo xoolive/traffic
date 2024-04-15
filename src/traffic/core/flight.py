@@ -1485,7 +1485,7 @@ class Flight(
 
     def max_split(
         self,
-        value: Union[int, str] = "10T",
+        value: Union[int, str] = "10 min",
         unit: Optional[str] = None,
         key: str = "duration",
     ) -> Optional[Flight]:
@@ -1522,7 +1522,7 @@ class Flight(
 
     def apply_time(
         self,
-        freq: str = "1T",
+        freq: str = "1 min",
         merge: bool = True,
         **kwargs: Any,
     ) -> Flight:
@@ -1537,7 +1537,7 @@ class Flight(
 
         For example:
 
-        >>> f.agg_time("10T", straight=lambda df: Flight(df).distance())
+        >>> f.agg_time("10 min", straight=lambda df: Flight(df).distance())
 
         returns a Flight with a new column straight with the great circle
         distance between points sampled every 10 minutes.
@@ -1573,7 +1573,7 @@ class Flight(
         return temp_flight.merge(agg_data, left_on="rounded", right_index=True)
 
     def agg_time(
-        self, freq: str = "1T", merge: bool = True, **kwargs: Any
+        self, freq: str = "1 min", merge: bool = True, **kwargs: Any
     ) -> Flight:
         """Aggregate features on time windows.
 
@@ -2027,7 +2027,7 @@ class Flight(
     def plot_wind(
         self,
         ax: "GeoAxes",
-        resolution: Union[int, str, Dict[str, float], None] = "5T",
+        resolution: Union[int, str, Dict[str, float], None] = "5 min",
         filtered: bool = False,
         **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
@@ -2184,7 +2184,7 @@ class Flight(
             - An Airspace is (currently) considered as its flattened
               representation
             - Computing a distance to a polygon is quite slow at the moment.
-              Consider a strict resampling (e.g. one point per minute, "1T")
+              Consider a strict resampling (e.g. one point per minute, "1 min")
               before calling the method.
 
         """

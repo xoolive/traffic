@@ -56,7 +56,7 @@ The example above is wind averaged between 25°W and 55°E and between 32°N and
         # median filter
         .filter(wind_u=53, wind_v=53)
         # resample one sample per minute
-        .resample("1T")
+        .resample("1 min")
         # do not use multiprocessing to avoid denial of service
         .eval(desc="preprocessing")
     )
