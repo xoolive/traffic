@@ -2,7 +2,7 @@
 name = "traffic"
 homepage = "https://github.com/xoolive/traffic/"
 documentation = "https://traffic-viz.github.io/"
-version = "0.0.0"
+version = "2.9.1.dev60"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"
@@ -38,7 +38,7 @@ include = [
 ]
 
 [tool.poetry-dynamic-versioning]
-enable = true
+enable = false
 bump = true
 metadata = false
 
@@ -65,15 +65,14 @@ ipywidgets = ">=7.6"
 ipyleaflet = ">=0.17"
 rs1090 = ">=0.2.0"
 # rs1090 = { path = "../rs1090/python", develop = true }
-openap = ">=1.1"
+openap = ">=1.5"
+# openap = { path = "../openap", develop = true }
 metar = ">=1.8"
 click = ">=8.1"
 typing-extensions = ">=4.2"
 pyarrow = ">=11.0.0"
 # onnxruntime is usually late to release, although available on conda-forge
 onnxruntime = { version = ">=1.12", python = "<3.13" }
-# waiting for scikit-fuzzy release for python 3.12
-scikit-fuzzy = { git = "https://github.com/scikit-fuzzy/scikit-fuzzy.git", rev = "d7551b6", python = ">=3.12" }
 # -- Optional dependencies --
 xarray = { version = ">=0.18.2", optional = true }
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
