@@ -2,7 +2,7 @@
 name = "traffic"
 homepage = "https://github.com/xoolive/traffic/"
 documentation = "https://traffic-viz.github.io/"
-version = "2.9.1.dev60"
+version = "0.0.0"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = ["Xavier Olive <git@xoolive.org>"]
 license = "MIT"
@@ -38,7 +38,7 @@ include = [
 ]
 
 [tool.poetry-dynamic-versioning]
-enable = false
+enable = true
 bump = true
 metadata = false
 
