@@ -76,6 +76,7 @@ class NMAirspaceParser(Airspaces):
             )
             .query("designator != component or geometry.notnull()")
             .assign(upper=lambda df: df.upper.replace(999, float("inf")))
+            .set_geometry("geometry")
         )
 
     def read_are(self, filename: Path) -> None:

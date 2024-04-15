@@ -35,6 +35,7 @@ class Eurofirs(Airspaces):
                     ),
                 )
                 .drop(columns=["UPPERUNIT", "LOWERUNIT", "EFFECTDATE", "ICAO"])
+                .set_geometry("geometry")
             )
 
 

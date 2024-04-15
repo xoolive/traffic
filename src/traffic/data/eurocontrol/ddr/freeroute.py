@@ -55,6 +55,7 @@ class NMFreeRouteParser(NMAirspaceParser):
         self.read_sls(sls_file)
 
         data = gpd.GeoDataFrame.from_records(self.elements_list)
+        data = data.set_geometry("geometry")
         if "name" not in data.columns:
             data = data.assign(name="")
         self.fra = self.data = data.assign(type="FRA")

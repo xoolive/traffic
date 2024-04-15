@@ -124,14 +124,18 @@ class Airspaces(DataFrameMixin):
             columns += ["upper", "lower"]
         name_table = self.data[["designator", "name"]].drop_duplicates()
 
-        return gpd.GeoDataFrame(
-            self.data.groupby(columns)
-            .agg(dict(geometry=unary_union))
-            .reset_index()
-            .merge(name_table)
-        ).assign(  # centroid is only accessible on a GeoDataFrame...
-            longitude=lambda df: df.centroid.x,
-            latitude=lambda df: df.centroid.y,
+        return (
+            gpd.GeoDataFrame(
+                self.data.groupby(columns)
+                .agg(dict(geometry=unary_union))
+                .reset_index()
+                .merge(name_table)
+            )
+            .assign(  # centroid is only accessible on a GeoDataFrame...
+                longitude=lambda df: df.centroid.x,
+                latitude=lambda df: df.centroid.y,
+            )
+            .set_geometry("geometry")
         )
 
 

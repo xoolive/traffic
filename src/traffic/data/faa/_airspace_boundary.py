@@ -40,6 +40,7 @@ class Airspace_Boundary(ADDS_FAA_OpenData, Airspaces):
                     lower=lambda df: df.lower.replace(-9998, 0),
                     upper=lambda df: df.upper.replace(-9998, float("inf")),
                 )
+                .set_geometry("geometry")
             )
 
     def back(self) -> Dict[str, Airspace]:
