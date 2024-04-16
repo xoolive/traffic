@@ -6,7 +6,7 @@ This Docker image provides a Jupyter environment running with the latest release
 
 ```sh
 # Build image
-docker build -f jupyter.Dockerfile -t traffic/jupyter:latest .
+docker buildx build -f jupyter.Dockerfile -t traffic/jupyter:latest .
 # Run container
 docker run -it -p 8888:8888 traffic/jupyter:latest
 ```
@@ -24,7 +24,7 @@ After the first execution, run `poetry install` at the root of the project and s
 
 ```sh
 # Build image
-docker build -f docker/poetry.Dockerfile -t traffic/poetry:latest .
+docker buildx build -f docker/poetry.Dockerfile -t traffic/poetry:latest .
 # Run container (default mode)
 docker run --name traffic/poetry -v $(pwd):/home/user/traffic -it traffic/poetry
 ```
