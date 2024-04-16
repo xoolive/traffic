@@ -5,11 +5,6 @@ The traffic library makes an intensive use of `pandas
 <https://pandas.pydata.org/>`_ DataFrames and of the `shapely
 <https://shapely.readthedocs.io/en/latest/>`_ GIS library.
 
-The library relies on `requests <http://docs.python-requests.org/en/master/>`_
-for calls to REST APIs. `paramiko <http://www.paramiko.org/>`_ implements the
-SSH protocol in Pure Python, giving access to SSH connection independently of
-the operating system.
-
 Static visualization tools are accessible with Matplotlib through the `cartes
 <https://github.com/xoolive/cartes>`_ library, which leverages access to more
 projections and to data from OpenStreetMap. More dynamic visualizations in
@@ -29,7 +24,7 @@ We recommend creating a fresh conda environment for a first installation:
     conda create -n traffic -c conda-forge python=3.10 traffic
     conda activate traffic
 
-Adjust the Python version you need (>=3.8) and append packages you need for
+Adjust the Python version you need (>=3.9) and append packages you need for
 working efficiently, such as Jupyter Lab, xarray, PyTorch or more.
 
 Then activate the environment each time you need to use the ``traffic`` library:
