@@ -11,6 +11,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Mapping,
     Sequence,
     Type,
     TypedDict,
@@ -913,8 +914,8 @@ class PointMixin:
     def plot(
         self,
         ax: "GeoAxes",
-        text_kw: None | dict[str, Any] = None,
-        shift: None | dict[str, Any] = None,
+        text_kw: None | Mapping[str, Any] = None,
+        shift: None | Mapping[str, Any] = None,
         **kwargs: Any,
     ) -> list["Artist"]:  # coverage: ignore
         if shift is None:

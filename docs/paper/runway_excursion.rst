@@ -436,8 +436,8 @@ still acceptable for a statistical analysis.
     import matplotlib.pyplot as plt
 
     from cartopy.crs import EuroPP
-    from traffic.drawing import rivers
     from traffic.data import airports
+    from traffic.visualize import rivers
 
     with plt.style.context('traffic'):
         fig, ax = plt.subplots(
@@ -570,7 +570,7 @@ appears they follow a specific pattern of late runway changes.
 
     from cartopy.crs import EuroPP
     from traffic.data import airports
-    from traffic.drawing import rivers
+    from traffic.visualize import rivers
 
     with plt.style.context('traffic'):
         fig, ax = plt.subplots(

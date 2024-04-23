@@ -18,6 +18,7 @@ from typing import (
     Iterator,
     List,
     Literal,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -140,12 +141,12 @@ class Position(PointMixin, pd.core.series.Series):  # type: ignore
     def plot(
         self,
         ax: "Axes",
-        text_kw: Optional[Dict[str, Any]] = None,
-        shift: Optional[Dict[str, Any]] = None,
+        text_kw: Optional[Mapping[str, Any]] = None,
+        shift: Optional[Mapping[str, Any]] = None,
         **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
-        from ..drawing.markers import aircraft as aircraft_marker
-        from ..drawing.markers import rotate_marker
+        from ..visualize.markers import aircraft as aircraft_marker
+        from ..visualize.markers import rotate_marker
 
         visualdict: dict[str, Any] = dict(s=300)
         if hasattr(self, "track"):
@@ -2805,9 +2806,10 @@ class Flight(
         >>> from ipyleaflet import Map
         >>> # Center the map near the landing airport
         >>> m = Map(center=flight.at().latlon, zoom=7)
-        >>> m.add(flight)  # this works as well with default options
+        >>> m.add(flight)
         >>> m.add(flight.leaflet(color='red'))
         >>> m
+
         """
         shape = self.shape
         if shape is None:

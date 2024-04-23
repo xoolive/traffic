@@ -619,7 +619,7 @@ class FlightPlan(ShapelyMixin):
 
         from cartopy.crs import PlateCarree
 
-        from ..drawing import markers
+        from ..visualize import markers
 
         cumul = []
         if "projection" in ax.__dict__ and "transform" not in kwargs:
@@ -645,13 +645,17 @@ class FlightPlan(ShapelyMixin):
 
             ap = airport_db[self.origin]
             if ap is not None:
-                cumul.append(ap.point.plot(ax, **airports_style))
+                cumul.append(
+                    ap.point.plot(ax, **airports_style)  # type: ignore
+                )
         if airports and self.destination:
             from traffic.data import airports as airport_db
 
             ap = airport_db[self.destination]
             if ap is not None:
-                cumul.append(ap.point.plot(ax, **airports_style))
+                cumul.append(
+                    ap.point.plot(ax, **airports_style)  # type: ignore
+                )
 
         if labels:
             for point in self.all_points if labels == "all" else self.points:

@@ -71,8 +71,8 @@ There are, for sure, few points requested with heading angles. Yet we can clearl
     from cartes.crs import Mercator
     from cartes.utils.features import countries, rivers
 
-    from traffic.drawing import countries, location
-    from traffic.drawing.markers import rotate_marker, aircraft
+    from traffic.visualize import countries, location
+    from traffic.visualize.markers import rotate_marker, aircraft
 
 
     with plt.style.context("traffic"):
@@ -165,4 +165,3 @@ There are, for sure, few points requested with heading angles. Yet we can clearl
         # Simplify the formatting for dates on the x-axis
         ax.xaxis.set_major_formatter(DateFormatter("%H:%M"))
         fig.autofmt_xdate(rotation=0, ha="center")
-    

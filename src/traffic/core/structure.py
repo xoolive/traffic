@@ -4,6 +4,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Tuple,
@@ -43,11 +44,11 @@ class AirportPoint(PointMixin):
     def plot(
         self,
         ax: "Axes",
-        text_kw: Optional[Dict[str, Any]] = None,
-        shift: Optional[Dict[str, Any]] = None,
+        text_kw: Optional[Mapping[str, Any]] = None,
+        shift: Optional[Mapping[str, Any]] = None,
         **kwargs: Any,
     ) -> List["Artist"]:  # coverage: ignore
-        from ..drawing.markers import atc_tower
+        from ..visualize.markers import atc_tower
 
         return super().plot(
             ax, text_kw, shift, **{**{"marker": atc_tower, "s": 400}, **kwargs}

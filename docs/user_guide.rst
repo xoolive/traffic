@@ -43,6 +43,7 @@ Data visualisation
 .. toctree::
    :maxdepth: 1
 
+   visualize/leaflet
    visualize/plotly
 
 Good practices

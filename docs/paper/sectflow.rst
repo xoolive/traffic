@@ -71,7 +71,7 @@ the following `github repository <https://github.com/lbasora/sectflow>`_
     from random import sample
 
     from traffic.data import airways, aixm_airspaces
-    from traffic.drawing.markers import rotate_marker, atc_tower, aircraft
+    from traffic.visualize.markers import rotate_marker, atc_tower, aircraft
 
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(1, figsize=(15, 10), subplot_kw=dict(projection=Lambert93()))

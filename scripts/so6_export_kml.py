@@ -4,7 +4,7 @@ from typing import Optional
 
 from tqdm import tqdm
 from traffic.data import SO6, nm_airspaces
-from traffic.drawing import kml
+from traffic.visualize import kml
 
 
 def so6_to_kml(
@@ -29,7 +29,9 @@ def so6_to_kml(
 
     with kml.export(output_file.as_posix()) as doc:
         if sector is not None:
-            doc.append(sector.export_kml(color="blue", alpha=0.3))
+            doc.append(
+                sector.export_kml(color="blue", alpha=0.3)  # type: ignore
+            )
 
         # iterate on so6 yield callsign, flight
         for callsign, flight in tqdm(so6):

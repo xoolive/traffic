@@ -30,7 +30,7 @@ The full dataset of trajectories can be displayed on a basic Switzerland map.
 
     from cartes.crs import CH1903
     from cartes.utils.features import countries
-    
+
     with plt.style.context("traffic"):
         ax = plt.axes(projection=CH1903())
         ax.add_feature(countries())
@@ -67,7 +67,7 @@ called on new data.
     from sklearn.cluster import DBSCAN
     from sklearn.preprocessing import StandardScaler
     from cartes.crs import CH1903
-    
+
     t_dbscan = t_unwrapped.clustering(
         nb_samples=15,
         projection=CH1903(),
@@ -91,7 +91,7 @@ them with the result of the DBSCAN algorithm.
 .. code:: python
 
     from sklearn.mixture import GaussianMixture
-    
+
     t_gmm = t_unwrapped.clustering(
         nb_samples=15,
         projection=CH1903(),
@@ -117,33 +117,33 @@ Many outliers appear in shaded grey in the first quartet.
     from itertools import islice, cycle
 
     from cartes.utils.features import countries
-    
+
     n_clusters = 1 + t_dbscan.data.cluster.max()
-    
+
     # -- dealing with colours --
-    
+
     color_cycle = cycle(
         "#a6cee3 #1f78b4 #b2df8a #33a02c #fb9a99 #e31a1c "
         "#fdbf6f #ff7f00 #cab2d6 #6a3d9a #ffff99 #b15928".split()
     )
     colors = list(islice(color_cycle, n_clusters))
     colors.append("#aaaaaa")  # color for outliers, if any
-    
+
     # -- dealing with the grid --
-    
+
     nb_cols = 3
     nb_lines = (1 + n_clusters) // nb_cols + (((1 + n_clusters) % nb_cols) > 0)
-    
+
     with plt.style.context("traffic"):
-    
+
         fig, ax = plt.subplots(
             nb_lines, nb_cols, figsize=(10, 15), subplot_kw=dict(projection=CH1903())
         )
-    
+
         for cluster in range(-1, n_clusters):
             ax_ = ax[(cluster + 1) // nb_cols][(cluster + 1) % nb_cols]
             ax_.add_feature(countries())
-    
+
             t_dbscan.query(f"cluster == {cluster}").plot(
                 ax_, color=colors[cluster], alpha=0.1 if cluster == -1 else 1
             )
@@ -160,20 +160,20 @@ differently.
 .. code:: python
 
     with plt.style.context("traffic"):
-    
+
         fig, ax = plt.subplots(
             nb_lines, nb_cols, figsize=(10, 15), subplot_kw=dict(projection=CH1903())
         )
-    
+
         for cluster in range(-1, n_clusters):
             ax_ = ax[(cluster + 1) // nb_cols][(cluster + 1) % nb_cols]
             ax_.add_feature(countries())
-    
+
             t_gmm.query(f"cluster == {cluster}").plot(
                 ax_, color=colors[cluster], alpha=0.1 if cluster == -1 else 1
             )
             ax_.set_global()
-            
+
 
 
 .. image:: _static/clustering_gmm.png
@@ -185,26 +185,26 @@ with the same parameters as the clustering.
 
 .. code:: python
 
-    
+
     from random import sample
-    
+
     from cartes.crs import CH1903
     from cartes.utils.features import countries, lakes
     from traffic.data import airports, airways, navaids
-    from traffic.drawing.markers import rotate_marker, atc_tower, aircraft
-    
+    from traffic.visualize.markers import rotate_marker, atc_tower, aircraft
+
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(1, figsize=(15, 10), subplot_kw=dict(projection=CH1903()))
         ax.add_feature(countries(facecolor="#dedef4", linewidth=2))
         ax.add_feature(lakes())
-    
+
         for cluster in range(n_clusters):
-    
+
             current_cluster = t_dbscan.query(f"cluster == {cluster}")
             centroid = current_cluster.centroid(15, projection=CH1903())
             centroid.plot(ax, color=colors[cluster], alpha=0.9, linewidth=3)
             centroid_mark = centroid.at_ratio(0.45)
-    
+
             centroid_mark.plot(
                 ax,
                 color=colors[cluster],
@@ -213,31 +213,31 @@ with the same parameters as the clustering.
                 text_kw=dict(s=""),  # no text associated
             )
             sample_size = min(20, len(current_cluster))
-    
+
             for flight_id in sample(current_cluster.flight_ids, sample_size):
                 current_cluster[flight_id].plot(
                     ax, color=colors[cluster], alpha=0.1, linewidth=2
                 )
-    
+
         swiss_airways = airways.extent("Switzerland")
         for (
             name
         ) in "UL613 UL856 UM729 UN491 UN850 UN851 UN853 UN869 UN871 UQ341 Z50".split():
             swiss_airways[name].plot(ax, color="#34013f")
-    
+
         for name in "BSL GVA ZRH".split():
             bbox = dict(
                 facecolor="lightgray", edgecolor="none", alpha=0.6, boxstyle="round"
             )
             airports[name].point.plot(ax, marker=atc_tower, s=500, zorder=5)
-    
+
         swiss_navaids = navaids.extent("Switzerland")
         for name in (
             "ABESI BENOT DEGES DITON ELMUR GERSA HOC MOLUS ODINA OLBEN "
             "ORSUD RESIA ROLSA ROMIR RONAG SOPER SUREP TRA".split()
         ):
             swiss_navaids[name].plot(ax, marker="^", color="#34013f")
-    
+
         ax.set_global()
 
 
@@ -249,5 +249,3 @@ The result may be compared to the Blick newspaper great visualisation by Simon H
 and Priska Wallimann `here
 <https://github.com/blickvisual/doData_quantum/blob/master/presentation/2018_Luftverkehr_fertig.pdf>`_.
 (`github repository <https://github.com/blickvisual/doData_quantum>`_)
-
-

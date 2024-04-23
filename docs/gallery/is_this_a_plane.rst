@@ -16,7 +16,7 @@ First let's get information about the flight I was on.
 .. code:: python
 
     from traffic.data import opensky
-    
+
     flight = opensky.history(
         "2018-11-15 06:00",  # UTC
         "2018-11-15 08:00",
@@ -41,9 +41,9 @@ came around.
 .. code:: python
 
     from datetime import timedelta
-    
+
     p = flight.at("2018-11-15 06:42")
-    
+
     around = opensky.history(
         p.name - timedelta(minutes=5),
         p.name + timedelta(minutes=5),
@@ -100,59 +100,59 @@ came around.
                 width:  10em;
                  height:  80%;
                 background:  linear-gradient(90deg, transparent 0%, transparent 0.0%, #5fba7d 0.0%, #5fba7d 1.8%, transparent 1.8%);
-            }</style>  
-    <table id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45" > 
-    <thead>    <tr> 
-            <th class="blank" ></th> 
-            <th class="blank level0" ></th> 
-            <th class="col_heading level0 col0" >count</th> 
-        </tr>    <tr> 
-            <th class="index_name level0" >icao24</th> 
-            <th class="index_name level1" >callsign</th> 
-            <th class="blank" ></th> 
-        </tr></thead> 
-    <tbody>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row0" class="row_heading level0 row0" >3944ec</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row0" class="row_heading level1 row0" >AFR1084</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row0_col0" class="data row0 col0" >496</td> 
-        </tr>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row1" class="row_heading level0 row1" >3c6608</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row1" class="row_heading level1 row1" >DLH07F</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row1_col0" class="data row1 col0" >430</td> 
-        </tr>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row2" class="row_heading level0 row2" >406440</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row2" class="row_heading level1 row2" >EZY201G</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row2_col0" class="data row2 col0" >238</td> 
-        </tr>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row3" class="row_heading level0 row3" >4ca816</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row3" class="row_heading level1 row3" >RYR27NB</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row3_col0" class="data row3 col0" >227</td> 
-        </tr>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row4" class="row_heading level0 row4" >406229</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row4" class="row_heading level1 row4" >EZY71XZ</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row4_col0" class="data row4 col0" >186</td> 
-        </tr>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row5" class="row_heading level0 row5" >495292</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row5" class="row_heading level1 row5" >TAP1245</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row5_col0" class="data row5 col0" >184</td> 
-        </tr>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row6" class="row_heading level0 row6" >4ca813</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row6" class="row_heading level1 row6" >RYR63TL</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row6_col0" class="data row6 col0" >181</td> 
-        </tr>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row7" class="row_heading level0 row7" >392ae4</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row7" class="row_heading level1 row7" >HOP11JK</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row7_col0" class="data row7 col0" >133</td> 
-        </tr>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row8" class="row_heading level0 row8" >461fa5</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row8" class="row_heading level1 row8" >FIN4YC</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row8_col0" class="data row8 col0" >45</td> 
-        </tr>    <tr> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row9" class="row_heading level0 row9" >4ca80f</th> 
-            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row9" class="row_heading level1 row9" >RYR49ME</th> 
-            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row9_col0" class="data row9 col0" >9</td> 
-        </tr></tbody> 
-    </table> 
+            }</style>
+    <table id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45" >
+    <thead>    <tr>
+            <th class="blank" ></th>
+            <th class="blank level0" ></th>
+            <th class="col_heading level0 col0" >count</th>
+        </tr>    <tr>
+            <th class="index_name level0" >icao24</th>
+            <th class="index_name level1" >callsign</th>
+            <th class="blank" ></th>
+        </tr></thead>
+    <tbody>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row0" class="row_heading level0 row0" >3944ec</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row0" class="row_heading level1 row0" >AFR1084</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row0_col0" class="data row0 col0" >496</td>
+        </tr>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row1" class="row_heading level0 row1" >3c6608</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row1" class="row_heading level1 row1" >DLH07F</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row1_col0" class="data row1 col0" >430</td>
+        </tr>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row2" class="row_heading level0 row2" >406440</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row2" class="row_heading level1 row2" >EZY201G</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row2_col0" class="data row2 col0" >238</td>
+        </tr>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row3" class="row_heading level0 row3" >4ca816</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row3" class="row_heading level1 row3" >RYR27NB</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row3_col0" class="data row3 col0" >227</td>
+        </tr>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row4" class="row_heading level0 row4" >406229</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row4" class="row_heading level1 row4" >EZY71XZ</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row4_col0" class="data row4 col0" >186</td>
+        </tr>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row5" class="row_heading level0 row5" >495292</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row5" class="row_heading level1 row5" >TAP1245</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row5_col0" class="data row5 col0" >184</td>
+        </tr>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row6" class="row_heading level0 row6" >4ca813</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row6" class="row_heading level1 row6" >RYR63TL</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row6_col0" class="data row6 col0" >181</td>
+        </tr>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row7" class="row_heading level0 row7" >392ae4</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row7" class="row_heading level1 row7" >HOP11JK</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row7_col0" class="data row7 col0" >133</td>
+        </tr>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row8" class="row_heading level0 row8" >461fa5</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row8" class="row_heading level1 row8" >FIN4YC</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row8_col0" class="data row8 col0" >45</td>
+        </tr>    <tr>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level0_row9" class="row_heading level0 row9" >4ca80f</th>
+            <th id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45level1_row9" class="row_heading level1 row9" >RYR49ME</th>
+            <td id="T_465825f8_eab9_11e8_8ffc_a45e60ccda45row9_col0" class="data row9 col0" >9</td>
+        </tr></tbody>
+    </table>
 
 
 
@@ -163,7 +163,7 @@ Tunis). Let's plot their lateral distance vs. time.
 
     %matplotlib inline
     import matplotlib.pyplot as plt
-    
+
     with plt.style.context('traffic'):
 
         fig, ax = plt.subplots(figsize=(10, 7))
@@ -188,11 +188,12 @@ altitude though.
 
 .. code:: python
 
-    
+
     from cartes.crs import Lambert93
     from cartes.osm import Nominatim
     from cartes.utils.features import countries
-    from traffic.drawing.markers import rotate_marker, aircraft
+
+    from traffic.visualize.markers import rotate_marker, aircraft
 
     with plt.style.context("traffic"):
 
