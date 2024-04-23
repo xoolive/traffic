@@ -645,17 +645,13 @@ class FlightPlan(ShapelyMixin):
 
             ap = airport_db[self.origin]
             if ap is not None:
-                cumul.append(
-                    ap.point.plot(ax, **airports_style)  # type: ignore
-                )
+                cumul.append(ap.point.plot(ax, **airports_style))
         if airports and self.destination:
             from traffic.data import airports as airport_db
 
             ap = airport_db[self.destination]
             if ap is not None:
-                cumul.append(
-                    ap.point.plot(ax, **airports_style)  # type: ignore
-                )
+                cumul.append(ap.point.plot(ax, **airports_style))
 
         if labels:
             for point in self.all_points if labels == "all" else self.points:

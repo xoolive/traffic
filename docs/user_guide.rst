@@ -37,6 +37,14 @@ Sources of data
    data_sources/eurocontrol
    data_sources/export
 
+Data visualisation
+------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   visualize/plotly
+
 Good practices
 --------------
 

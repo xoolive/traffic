@@ -9,7 +9,7 @@ from appdirs import user_cache_dir, user_config_dir
 
 import pandas as pd
 
-from . import drawing  # noqa: F401
+from . import visualize  # noqa: F401
 
 __version__ = version("traffic")
 __all__ = ["config_dir", "config_file", "cache_dir", "tqdm_style"]

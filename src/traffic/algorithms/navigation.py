@@ -295,7 +295,7 @@ class NavigationFeatures:
         self,
         airport: Union[None, str, "Airport"],
         angle_tolerance: float = 0.1,
-        min_duration: deltalike = "1T",
+        min_duration: deltalike = "1 min",
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
@@ -383,7 +383,7 @@ class NavigationFeatures:
         self,
         points: Union[str, "PointMixin", Iterable["PointMixin"], "FlightPlan"],
         angle_precision: int = 1,
-        time_precision: str = "2T",
+        time_precision: str = "2 min",
         min_time: str = "30s",
         min_distance: int = 80,
     ) -> Iterator["Flight"]:
@@ -623,7 +623,7 @@ class NavigationFeatures:
         if low_traj is None:
             return
 
-        for segment in low_traj.split("2T"):
+        for segment in low_traj.split("2 min"):
             candidates_set = []
             for name, polygon in runway_polygons.items():
                 if segment.intersects(polygon):
@@ -767,7 +767,7 @@ class NavigationFeatures:
             if climb is None:
                 return
 
-            after_climb = self.after(next(climb.split("10T")).stop)
+            after_climb = self.after(next(climb.split("10 min")).stop)
             if after_climb is None:
                 return
 
@@ -820,7 +820,7 @@ class NavigationFeatures:
 
         candidate = self.query("altitude < 8000")
         if candidate is not None:
-            for chunk in candidate.split("10T"):
+            for chunk in candidate.split("10 min"):
                 point = chunk.query("altitude == altitude.min()")
                 if point is None:
                     return
@@ -857,7 +857,7 @@ class NavigationFeatures:
         return (
             f_above.distance(airports[self.destination])  # type: ignore
             .diff("distance")
-            .agg_time("10T", distance_diff="mean")
+            .agg_time("10 min", distance_diff="mean")
             .query("distance_diff > 0")
         )
 
@@ -1002,9 +1002,9 @@ class NavigationFeatures:
     @flight_iterator
     def holding_pattern(
         self,
-        duration: str = "6T",
-        step: str = "2T",
-        threshold: str = "5T",
+        duration: str = "6 min",
+        step: str = "2 min",
+        threshold: str = "5 min",
         samples: int = 30,
         model_path: None | str | Path = None,
         vertical_rate: bool = False,
@@ -1194,7 +1194,7 @@ class NavigationFeatures:
 
         segment = None
         first_segment = None
-        for segment in moving.split("1T"):
+        for segment in moving.split("1 min"):
             if segment.longer_than(time_threshold) and first_segment is None:
                 first_segment = segment
         last_segment = segment
@@ -1261,8 +1261,8 @@ class NavigationFeatures:
 
         # trim the first few seconds to avoid annoying first spike
         direction_change = (
-            in_movement.first("5T")
-            .last("4T30s")
+            in_movement.first("5 min")
+            .last("4 min 30s")
             .cumulative_distance()
             .unwrap(["compute_track"])
             .filter(**filter_dict)  # type: ignore
@@ -1423,7 +1423,7 @@ class NavigationFeatures:
             return
         if airport_.shape is None:
             raise ValueError("No shape available for the given airport")
-        for low_segment in low_altitude.split("10T"):
+        for low_segment in low_altitude.split("10 min"):
             for airport_segment in low_segment.clip_iterate(
                 airport_.shape.buffer(5e-3)
             ):
@@ -1513,7 +1513,7 @@ class NavigationFeatures:
                 else:
                     prev_ref = previous_candidate.taxiway_max
                     delta = start - previous_candidate.stop
-                    if prev_ref == ref and delta < pd.Timedelta("1T"):
+                    if prev_ref == ref and delta < pd.Timedelta("1 min"):
                         previous_candidate = self.assign(taxiway=ref).between(
                             previous_candidate.start, stop
                         )
@@ -1534,9 +1534,11 @@ class NavigationFeatures:
         all_segments = (
             self.unwrap()
             .diff("track_unwrapped")
-            .agg_time("1T", vertical_rate="max", track_unwrapped_diff="median")
+            .agg_time(
+                "1 min", vertical_rate="max", track_unwrapped_diff="median"
+            )
             .abs(track_unwrapped_diff_median="track_unwrapped_diff_median")
             .query("vertical_rate_max > 2 and track_unwrapped_diff_median > 5")
         )
         if all_segments is not None:
-            yield from all_segments.split("1T")
+            yield from all_segments.split("1 min")

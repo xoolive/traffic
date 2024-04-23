@@ -1,12 +1,21 @@
 # ruff: noqa: E501
 from __future__ import annotations
 
+import json
 import logging
 import re
 from functools import lru_cache
 from numbers import Integral, Real
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Sequence, Type, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Sequence,
+    Type,
+    TypedDict,
+    TypeVar,
+)
 
 from ipyleaflet import Marker as LeafletMarker
 from ipywidgets import HTML
@@ -36,6 +45,11 @@ G = TypeVar("G", bound="GeoDBMixin")
 
 
 _log = logging.getLogger(__name__)
+
+
+class LatLonDict(TypedDict):
+    lat: float
+    lon: float
 
 
 class DataFrameMixin(object):
@@ -74,6 +88,7 @@ class DataFrameMixin(object):
         - .parquet.* dispatch to :func:`pandas.read_parquet`;
         - .feather.* dispatch to :func:`pandas.read_feather`;
         - .json.* dispatch to :func:`pandas.read_json`;
+        - .jsonl dispatch to a specific function (output of jet1090);
         - .csv.* dispatch to :func:`pandas.read_csv`;
         - .h5.* dispatch to :func:`pandas.read_hdf`.
 
@@ -94,6 +109,14 @@ class DataFrameMixin(object):
             return cls(pd.read_feather(path, **kwargs))
         if ".json" in path.suffixes:
             return cls(pd.read_json(path, **kwargs))
+        if path.suffix == ".jsonl":
+            df = pd.json_normalize(
+                json.loads(elt) for elt in path.read_text().split("\n")[:-1]
+            )
+            df = df.assign(
+                timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
+            )
+            return cls(df)
         if ".csv" in path.suffixes:
             return cls(pd.read_csv(path, **kwargs))
         if ".h5" == path.suffixes[-1]:  # coverage: ignore
@@ -860,6 +883,11 @@ class PointMixin:
     def latlon(self) -> tuple[float, float]:
         """A tuple for latitude and longitude, in degrees, in this order."""
         return (self.latitude, self.longitude)
+
+    @property
+    def latlon_dict(self) -> LatLonDict:
+        """A tuple for latitude and longitude, in degrees, in this order."""
+        return dict(lat=self.latitude, lon=self.longitude)
 
     def leaflet(self, **kwargs: Any) -> LeafletMarker:
         """Returns a Leaflet layer to be directly added to a Map.

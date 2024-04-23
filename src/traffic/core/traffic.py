@@ -46,6 +46,7 @@ from .mixins import DataFrameMixin, GeographyMixin, HBoxMixin, PointMixin
 from .sv import StateVectors
 
 if TYPE_CHECKING:
+    import plotly.graph_objects as go
     from cartopy import crs
     from cartopy.mpl.geoaxes import GeoAxesSubplot
     from matplotlib.artist import Artist
@@ -1108,6 +1109,24 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         return m
 
+    # -- Visualize with Plotly --
+
+    def line_geo(self, **kwargs: Any) -> "go.Figure":
+        raise ImportError("Install plotly or traffic with the plotly extension")
+
+    def line_mapbox(
+        self, mapbox_style: str = "carto-positron", **kwargs: Any
+    ) -> "go.Figure":
+        raise ImportError("Install plotly or traffic with the plotly extension")
+
+    def scatter_geo(self, **kwargs: Any) -> "go.Figure":
+        raise ImportError("Install plotly or traffic with the plotly extension")
+
+    def scatter_mapbox(
+        self, mapbox_style: str = "carto-positron", **kwargs: Any
+    ) -> "go.Figure":
+        raise ImportError("Install plotly or traffic with the plotly extension")
+
     def plot(
         self,
         ax: "GeoAxesSubplot",
@@ -1526,3 +1545,27 @@ class Traffic(HBoxMixin, GeographyMixin):
             *args,
             **kwargs,
         )
+
+
+def patch_plotly() -> None:
+    from ..visualize.plotly import (
+        Scattergeo,
+        Scattermapbox,
+        line_geo,
+        line_mapbox,
+        scatter_geo,
+        scatter_mapbox,
+    )
+
+    Traffic.line_mapbox = line_mapbox  # type: ignore
+    Traffic.scatter_mapbox = scatter_mapbox  # type: ignore
+    Traffic.Scattermapbox = Scattermapbox  # type: ignore
+    Traffic.line_geo = line_geo  # type: ignore
+    Traffic.scatter_geo = scatter_geo  # type: ignore
+    Traffic.Scattergeo = Scattergeo  # type: ignore
+
+
+try:
+    patch_plotly()
+except Exception:
+    pass

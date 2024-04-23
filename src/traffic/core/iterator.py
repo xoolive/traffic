@@ -19,8 +19,8 @@ class FlightIterator:
 
     Methods returning a FlightIterator include:
 
-    - ``Flight.split("10T")`` iterates over pieces of trajectories separated by
-      more than 10 minutes without data;
+    - ``Flight.split("10 min")`` iterates over pieces of trajectories separated
+      by more than 10 minutes without data;
     - ``Flight.go_around("LFBO")`` iterates over landing attempts on a given
       airport;
     - ``Flight.aligned_on_ils("LFBO")`` iterates over segments of trajectories

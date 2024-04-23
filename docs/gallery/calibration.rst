@@ -207,7 +207,7 @@ segments with a constant bearing and distance with respect to the selected VOR.
     )
 
     constant_distance = list(
-        segment for segment in ajaccio.query('distance_diff < .02').split('1T')
+        segment for segment in ajaccio.query('distance_diff < .02').split('1 min')
         if segment.longer_than('5 minutes')
     )
 

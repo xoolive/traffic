@@ -146,11 +146,11 @@ intersphinx_mapping = {
     "altair": ("https://altair-viz.github.io", None),
     "cartes": ("https://cartes-viz.github.io", None),
     "ipyleaflet": ("https://ipyleaflet.readthedocs.io/en/latest/", None),
+    "plotly": ("https://plotly.com/python-api-reference/", None),
 }
 
 
 def setup(app: Any) -> None:
-
     # <!-- Import Vega & Vega-Lite -->
     app.add_js_file("https://cdn.jsdelivr.net/npm/vega@5")
     app.add_js_file("https://cdn.jsdelivr.net/npm/vega-lite@4")

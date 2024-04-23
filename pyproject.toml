@@ -55,35 +55,54 @@ impunity = ">=1.0.4"
 # impunity = { path = "../impunity", develop = true}
 pitot = ">=0.3.1"
 # pitot = { path = "../pitot", develop = true }
-cartes = ">=0.7.4"
+cartes = ">=0.7.7"
 # cartes = { path = "../cartes", develop = true }
-pyopensky = ">=2.0"
+pyopensky = ">=2.6"
 # pyopensky = { path = "../pyopensky", develop = true }
 httpx = ">=0.26.0"
 requests = ">=2.27"  # TODO when we remove requests, remove the types- too
-ipywidgets = ">=7.6"
-ipyleaflet = ">=0.17"
 rs1090 = ">=0.2.0"
 # rs1090 = { path = "../rs1090/python", develop = true }
 openap = ">=1.5"
 # openap = { path = "../openap", develop = true }
 metar = ">=1.8"
-click = ">=8.1"
+pyarrow = ">=16.0"
 typing-extensions = ">=4.2"
-pyarrow = ">=11.0.0"
+
 # onnxruntime is usually late to release, although available on conda-forge
 onnxruntime = { version = ">=1.12", python = "<3.13" }
+
 # -- Optional dependencies --
 xarray = { version = ">=0.18.2", optional = true }
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
 scikit-learn = { version = ">=1.0", optional = true }
-textual = { version = ">=0.28", optional = true }
+
+# -- Visualization --
+altair = {version = "^5.3", optional = true}
+ipywidgets = {version = "^8.1", optional = true}
+ipyleaflet = {version = "^0.18", optional = true}
+lonboard = {version = "^0.8.0", optional = true}
+plotly = {version = "^5.21", optional = true}
+
+# -- Spark --
 pyspark = { version = ">=3.3.0", optional = true }
-pyb2b = { version = ">=0.1", optional = true }
-# pyb2b = { path = "../pyb2b", develop = true }
 
 [tool.poetry.extras]
-full = ["xarray", "libarchive", "scikit-learn", "textual", "pyspark", "pyb2b"]
+full = [
+  "xarray",
+  "libarchive",
+  "scikit-learn",
+  "pyspark",
+  "altair",
+  "ipyleaflet",
+  "ipywidgets",
+  "lonboard",
+  "plotly",
+]
+altair = ["altair"]
+plotly = ["plotly"]
+leaflet = ["ipyleaflet", "ipywidgets"]
+lonboard = ["lonboard"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = ">=2.13.0"

@@ -18,7 +18,6 @@ from typing import (
     Iterator,
     List,
     Literal,
-    NoReturn,
     Optional,
     Set,
     Tuple,
@@ -59,6 +58,7 @@ from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 
 if TYPE_CHECKING:
     import altair as alt
+    import plotly.graph_objects as go
     from cartopy import crs
     from cartopy.mpl.geoaxes import GeoAxes
     from matplotlib.artist import Artist
@@ -2983,11 +2983,23 @@ class Flight(
 
         return base.mark_line()  # type: ignore
 
-    def encode(self, **kwargs: Any) -> NoReturn:  # coverage: ignore
-        """
-        DEPRECATED: Use Flight.chart() method instead.
-        """
-        raise DeprecationWarning("Use Flight.chart() method instead")
+    # -- Visualize with Plotly --
+
+    def line_geo(self, **kwargs: Any) -> "go.Figure":
+        raise ImportError("Install plotly or traffic with the plotly extension")
+
+    def line_mapbox(
+        self, mapbox_style: str = "carto-positron", **kwargs: Any
+    ) -> "go.Figure":
+        raise ImportError("Install plotly or traffic with the plotly extension")
+
+    def scatter_geo(self, **kwargs: Any) -> "go.Figure":
+        raise ImportError("Install plotly or traffic with the plotly extension")
+
+    def scatter_mapbox(
+        self, mapbox_style: str = "carto-positron", **kwargs: Any
+    ) -> "go.Figure":
+        raise ImportError("Install plotly or traffic with the plotly extension")
 
     def plot_time(
         self,
@@ -3122,3 +3134,27 @@ class Flight(
             )
             .drop(columns=["Timestamp", "Position"])
         )
+
+
+def patch_plotly() -> None:
+    from ..visualize.plotly import (
+        Scattergeo,
+        Scattermapbox,
+        line_geo,
+        line_mapbox,
+        scatter_geo,
+        scatter_mapbox,
+    )
+
+    Flight.line_mapbox = line_mapbox  # type: ignore
+    Flight.scatter_mapbox = scatter_mapbox  # type: ignore
+    Flight.Scattermapbox = Scattermapbox  # type: ignore
+    Flight.line_geo = line_geo  # type: ignore
+    Flight.scatter_geo = scatter_geo  # type: ignore
+    Flight.Scattergeo = Scattergeo  # type: ignore
+
+
+try:
+    patch_plotly()
+except Exception:
+    pass
