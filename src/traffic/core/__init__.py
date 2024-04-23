@@ -46,7 +46,7 @@ from .lazy import LazyTraffic
 from .airspace import Airspace
 from .sv import StateVectors
 from .flightplan import FlightPlan
-from .leaflet import monkey_patch
+
 
 __all__ = [
     "Flight",
@@ -94,4 +94,9 @@ def faulty_flight(exc: Optional[TracebackType] = None) -> Dict[str, Any]:
     return dict()
 
 
-monkey_patch()  # leaflet
+try:
+    from ..visualize.leaflet import monkey_patch
+
+    monkey_patch()
+except Exception:
+    pass

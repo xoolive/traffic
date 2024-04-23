@@ -20,14 +20,11 @@ install Plotly manually:
     pip install plotly
     conda install -c conda-forge plotly
 
-Maps
-~~~~
-
 traffic provides the same interface as the :meth:`plotly.express` module on
 the :class:`~traffic.core.Flight` and :class:`~traffic.core.Traffic` classes.
 All kwargs arguments are passed directly to the corresponding method.
 
-- with :meth:`plotly.express.line_mapbox`:
+- with :func:`plotly.express.line_mapbox`:
 
   .. jupyter-execute::
 
@@ -35,7 +32,7 @@ All kwargs arguments are passed directly to the corresponding method.
 
     belevingsvlucht.line_mapbox(color="callsign")
 
-- with :meth:`plotly.express.scatter_mapbox`:
+- with :func:`plotly.express.scatter_mapbox`:
 
   .. jupyter-execute::
 
@@ -62,7 +59,7 @@ All kwargs arguments are passed directly to the corresponding method.
     )
 
 It is also possible to combine elements by constructing a
-:class:`plotly.graph_objects.Scattermapbox` object:
+:class:`~plotly.graph_objects.Scattermapbox` object:
 
 .. jupyter-execute::
 
@@ -99,8 +96,8 @@ It is also possible to combine elements by constructing a
       ),
   )
 
-Similar functions are available and bound with :meth:`plotly.express.line_geo`
-and :meth:`plotly.express.scatter_geo`:
+Similar functions are available and bound with :func:`plotly.express.line_geo`
+and :func:`plotly.express.scatter_geo`:
 
 .. jupyter-execute::
 

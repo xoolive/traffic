@@ -18,8 +18,6 @@ from typing import (
     TypeVar,
 )
 
-from ipyleaflet import Marker as LeafletMarker
-from ipywidgets import HTML
 from openap import aero
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console, ConsoleOptions, RenderResult
@@ -38,6 +36,7 @@ if TYPE_CHECKING:
     import xarray
     from cartopy import crs
     from cartopy.mpl.geoaxes import GeoAxes
+    from ipyleaflet import Marker as LeafletMarker
     from matplotlib.artist import Artist
 
 
@@ -890,26 +889,10 @@ class PointMixin:
         """A tuple for latitude and longitude, in degrees, in this order."""
         return dict(lat=self.latitude, lon=self.longitude)
 
-    def leaflet(self, **kwargs: Any) -> LeafletMarker:
-        """Returns a Leaflet layer to be directly added to a Map.
-
-        The elements passed as kwargs as passed as is to the Marker constructor.
-        """
-
-        default = dict()
-        if hasattr(self, "name"):
-            default["title"] = str(self.name)
-
-        kwargs = {**default, **kwargs}
-        marker = LeafletMarker(
-            location=(self.latitude, self.longitude), **kwargs
+    def leaflet(self, **kwargs: Any) -> "LeafletMarker":
+        raise ImportError(
+            "Install ipyleaflet or traffic with the leaflet extension"
         )
-
-        label = HTML()
-        label.value = repr(self)
-        marker.popup = label
-
-        return marker
 
     def plot(
         self,
@@ -1005,3 +988,15 @@ class HBoxMixin(object):  # coverage: ignore
             return _HBox(self, *other.elts)
         else:
             return _HBox(self, other)
+
+
+def patch_leaflet() -> None:
+    from ..visualize.leaflet import point_leaflet
+
+    PointMixin.leaflet = point_leaflet  # type: ignore
+
+
+try:
+    patch_leaflet()
+except Exception:
+    pass

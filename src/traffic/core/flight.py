@@ -33,9 +33,6 @@ from typing import (
 import rich.repr
 import rs1090
 from impunity import impunity
-from ipyleaflet import Map as LeafletMap
-from ipyleaflet import Polyline as LeafletPolyline
-from ipywidgets import HTML
 from pitot import geodesy as geo
 from rich.console import Console, ConsoleOptions, RenderResult
 
@@ -62,6 +59,8 @@ if TYPE_CHECKING:
     import plotly.graph_objects as go
     from cartopy import crs
     from cartopy.mpl.geoaxes import GeoAxes
+    from ipyleaflet import Map as LeafletMap
+    from ipyleaflet import Polyline as LeafletPolyline
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
@@ -299,6 +298,7 @@ class Flight(
           :meth:`geoencode`
 
         - visualisation with leaflet: :meth:`map_leaflet`
+        - visualisation with plotly: :meth:`line_mapbox` and others
         - visualisation with Matplotlib:
           :meth:`plot`,
           :meth:`plot_time`
@@ -2795,90 +2795,6 @@ class Flight(
 
     # -- Visualisation --
 
-    def leaflet(self, **kwargs: Any) -> Optional[LeafletPolyline]:
-        """Returns a Leaflet layer to be directly added to a Map.
-
-        The elements passed as kwargs as passed as is to the PolyLine
-        constructor.
-
-        Example usage:
-
-        >>> from ipyleaflet import Map
-        >>> # Center the map near the landing airport
-        >>> m = Map(center=flight.at().latlon, zoom=7)
-        >>> m.add(flight)
-        >>> m.add(flight.leaflet(color='red'))
-        >>> m
-
-        """
-        shape = self.shape
-        if shape is None:
-            return None
-
-        kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
-        return LeafletPolyline(
-            locations=list((lat, lon) for (lon, lat, *_) in shape.coords),
-            **kwargs,
-        )
-
-    def map_leaflet(
-        self,
-        *,
-        zoom: int = 7,
-        highlight: Optional[
-            Dict[
-                str,
-                Union[str, Flight, Callable[[Flight], Optional[Flight]]],
-            ]
-        ] = None,
-        airport: Union[None, str, Airport] = None,
-        **kwargs: Any,
-    ) -> Optional[LeafletMap]:
-        from ..data import airports
-
-        last_position = self.query("latitude == latitude").at()  # type: ignore
-        if last_position is None:
-            return None
-
-        _airport = airports[airport] if isinstance(airport, str) else airport
-
-        if "center" not in kwargs:
-            if _airport is not None:
-                kwargs["center"] = _airport.latlon
-            else:
-                kwargs["center"] = (
-                    self.data.latitude.mean(),
-                    self.data.longitude.mean(),
-                )
-
-        m = LeafletMap(zoom=zoom, **kwargs)
-
-        if _airport is not None:
-            m.add(_airport)
-
-        elt = m.add(self.leaflet())
-        elt.popup = HTML()
-        elt.popup.value = self._info_html()
-
-        if highlight is None:
-            highlight = dict()
-
-        for color, value in highlight.items():
-            if isinstance(value, str):
-                value = getattr(Flight, value, None)  # type: ignore
-                if value is None:
-                    continue
-            assert not isinstance(value, str)
-            f: Optional[Flight]
-            if isinstance(value, Flight):
-                f = value
-            else:
-                f = value(self)
-            if f is not None:
-                m.add(f, color=color)
-
-        return m
-
     def plot(
         self, ax: "GeoAxes", **kwargs: Any
     ) -> List["Artist"]:  # coverage: ignore
@@ -2984,6 +2900,30 @@ class Flight(
             ).encode(alt.Y("value:Q"), alt.Color("variable:N"))  # type: ignore
 
         return base.mark_line()  # type: ignore
+
+    # -- Visualize with Leaflet --
+
+    def leaflet(self, **kwargs: Any) -> "Optional[LeafletPolyline]":
+        raise ImportError(
+            "Install ipyleaflet or traffic with the leaflet extension"
+        )
+
+    def map_leaflet(
+        self,
+        *,
+        zoom: int = 7,
+        highlight: Optional[
+            Dict[
+                str,
+                Union[str, Flight, Callable[[Flight], Optional[Flight]]],
+            ]
+        ] = None,
+        airport: Union[None, str, Airport] = None,
+        **kwargs: Any,
+    ) -> "Optional[LeafletMap]":
+        raise ImportError(
+            "Install ipyleaflet or traffic with the leaflet extension"
+        )
 
     # -- Visualize with Plotly --
 
@@ -3158,5 +3098,18 @@ def patch_plotly() -> None:
 
 try:
     patch_plotly()
+except Exception:
+    pass
+
+
+def patch_leaflet() -> None:
+    from ..visualize.leaflet import flight_leaflet, map_leaflet
+
+    Flight.leaflet = flight_leaflet  # type: ignore
+    Flight.map_leaflet = map_leaflet  # type: ignore
+
+
+try:
+    patch_leaflet()
 except Exception:
     pass

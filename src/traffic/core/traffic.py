@@ -24,8 +24,6 @@ from typing import (
     overload,
 )
 
-from ipyleaflet import Map as LeafletMap
-from ipywidgets import HTML
 from rich.console import Console, ConsoleOptions, RenderResult
 
 import numpy as np
@@ -49,6 +47,7 @@ if TYPE_CHECKING:
     import plotly.graph_objects as go
     from cartopy import crs
     from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from ipyleaflet import Map as LeafletMap
     from matplotlib.artist import Artist
 
     from ..algorithms.clustering import ClusteringProtocol, TransformerProtocol
@@ -1056,6 +1055,8 @@ class Traffic(HBoxMixin, GeographyMixin):
         """
         raise NotImplementedError
 
+    # -- Visualize with Leaflet --
+
     def map_leaflet(
         self,
         *,
@@ -1066,48 +1067,9 @@ class Traffic(HBoxMixin, GeographyMixin):
         airport: Union[None, str, Airport] = None,
         **kwargs: Any,
     ) -> Optional[LeafletMap]:
-        from ..data import airports
-
-        _airport = airports[airport] if isinstance(airport, str) else airport
-
-        if "center" not in kwargs:
-            if _airport is not None:
-                kwargs["center"] = _airport.latlon
-            else:
-                kwargs["center"] = (
-                    self.data.latitude.mean(),
-                    self.data.longitude.mean(),
-                )
-
-        m = LeafletMap(zoom=zoom, **kwargs)
-
-        if _airport is not None:
-            m.add(_airport)
-
-        for flight in self:
-            if flight.query("latitude == latitude"):
-                elt = m.add(flight.leaflet())
-                elt.popup = HTML()
-                elt.popup.value = flight._info_html()
-
-            if highlight is None:
-                highlight = dict()
-
-            for color, value in highlight.items():
-                if isinstance(value, str):
-                    value = getattr(Flight, value, None)  # type: ignore
-                    if value is None:
-                        continue
-                assert not isinstance(value, str)
-                f: Optional[Flight]
-                if isinstance(value, Flight):
-                    f = value
-                else:
-                    f = value(flight)
-                if f is not None:
-                    m.add(f, color=color)
-
-        return m
+        raise ImportError(
+            "Install ipyleaflet or traffic with the leaflet extension"
+        )
 
     # -- Visualize with Plotly --
 
@@ -1567,5 +1529,17 @@ def patch_plotly() -> None:
 
 try:
     patch_plotly()
+except Exception:
+    pass
+
+
+def patch_leaflet() -> None:
+    from ..visualize.leaflet import traffic_leaflet
+
+    Traffic.map_leaflet = traffic_leaflet  # type: ignore
+
+
+try:
+    patch_leaflet()
 except Exception:
     pass
