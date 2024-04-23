@@ -1,7 +1,19 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
-from ipyleaflet import Map, Marker, Polyline
+from ipyleaflet import GeoData, Map, Marker, MarkerCluster, Polygon, Polyline
 from ipywidgets import HTML
+
+from shapely.geometry import LineString
 
 if TYPE_CHECKING:
     from ..core import Flight
@@ -37,7 +49,7 @@ def flight_leaflet(self: Any, **kwargs: Any) -> Optional[Polyline]:
     )
 
 
-def map_leaflet(
+def flight_map_leaflet(
     self: Any,
     *,
     zoom: int = 7,
@@ -97,7 +109,7 @@ def map_leaflet(
     return m
 
 
-def traffic_leaflet(
+def traffic_map_leaflet(
     self: Any,
     *,
     zoom: int = 7,
@@ -172,6 +184,117 @@ def point_leaflet(self: Any, **kwargs: Any) -> Marker:
     marker.popup = label
 
     return marker
+
+
+def statevector_leaflet(self: Any, **kwargs: Any) -> MarkerCluster:
+    """Returns a Leaflet layer to be directly added to a Map.
+
+    The elements passed as kwargs as passed as is to the Marker constructor.
+    """
+    point_list = list(p.leaflet(title=p.callsign, **kwargs) for p in self)
+    return MarkerCluster(markers=point_list)
+
+
+def flightplan_leaflet(self: Any, **kwargs: Any) -> Optional[Polyline]:
+    """Returns a Leaflet layer to be directly added to a Map.
+
+    The elements passed as kwargs as passed as is to the PolyLine
+    constructor.
+    """
+
+    shape = self.shape
+    if shape is None:
+        return None
+
+    coords: Union[List[List[Tuple[float, float]]], List[Tuple[float, float]]]
+    if isinstance(shape, LineString):
+        coords = list((lat, lon) for (lon, lat, *_) in shape.coords)
+    else:
+        # In case a FlightPlan could not resolve all parts
+        coords = list(
+            list((lat, lon) for (lon, lat, *_) in s.coords) for s in shape.geoms
+        )
+
+    kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
+    return Polyline(locations=coords, **kwargs)
+
+
+def airspace_leaflet(self: Any, **kwargs: Any) -> Polygon:
+    """Returns a Leaflet layer to be directly added to a Map.
+
+    The elements passed as kwargs as passed as is to the Polygon
+    constructor.
+    """
+
+    shape = self.flatten()
+
+    kwargs = {**dict(weight=3), **kwargs}
+    coords: List[Any] = []
+
+    def unfold(shape: Any) -> Iterator[Any]:  # actually Polygon
+        yield shape.exterior
+        yield from shape.interiors
+
+    if shape.geom_type == "Polygon":
+        coords = list(
+            list((lat, lon) for (lon, lat, *_) in x.coords)
+            for x in unfold(shape)
+        )
+    else:
+        coords = list(
+            list((lat, lon) for (lon, lat, *_) in x.coords)
+            for piece in shape.geoms
+            for x in unfold(piece)
+        )
+
+    return Polygon(locations=coords, **kwargs)
+
+
+def airspace_map_leaflet(
+    self: Any,
+    *,
+    zoom: int = 6,
+    **kwargs: Any,
+) -> Map:
+    if "center" not in kwargs:
+        (lon, lat), *_ = self.shape.centroid.coords
+        kwargs["center"] = (lat, lon)
+
+    m = Map(zoom=zoom, **kwargs)
+
+    elt = m.add(self)
+    elt.popup = HTML()
+    elt.popup.value = self.designator
+
+    return m
+
+
+def airport_leaflet(self: Any, **kwargs: Any) -> GeoData:
+    return GeoData(
+        geo_dataframe=self._openstreetmap().query('aeroway == "runway"').data,
+        style={**{"color": "#79706e", "weight": 6}, **kwargs},
+    )
+
+
+def airport_map_leaflet(self: Any, **kwargs: Any) -> Map:
+    m = Map(center=self.latlon, zoom=13)
+    m.add(self.leaflet(**kwargs))
+    return m
+
+
+def route_leaflet(self: Any, **kwargs: Any) -> Optional[Polyline]:
+    """Returns a Leaflet layer to be directly added to a Map.
+
+    The elements passed as kwargs as passed as is to the PolyLine
+    constructor.
+    """
+
+    if self.shape is None:
+        return None
+
+    coords = list((lat, lon) for (lon, lat, *_) in self.shape.coords)
+    kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
+    return Polyline(locations=coords, **kwargs)
 
 
 def map_add(_map: Map, elt: Any, **kwargs: Any) -> Any:

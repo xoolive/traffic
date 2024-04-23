@@ -3103,10 +3103,10 @@ except Exception:
 
 
 def patch_leaflet() -> None:
-    from ..visualize.leaflet import flight_leaflet, map_leaflet
+    from ..visualize.leaflet import flight_leaflet, flight_map_leaflet
 
     Flight.leaflet = flight_leaflet  # type: ignore
-    Flight.map_leaflet = map_leaflet  # type: ignore
+    Flight.map_leaflet = flight_map_leaflet  # type: ignore
 
 
 try:

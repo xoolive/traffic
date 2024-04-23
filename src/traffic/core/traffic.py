@@ -1534,9 +1534,9 @@ except Exception:
 
 
 def patch_leaflet() -> None:
-    from ..visualize.leaflet import traffic_leaflet
+    from ..visualize.leaflet import traffic_map_leaflet
 
-    Traffic.map_leaflet = traffic_leaflet  # type: ignore
+    Traffic.map_leaflet = traffic_map_leaflet  # type: ignore
 
 
 try:

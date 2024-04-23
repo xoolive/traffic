@@ -12,9 +12,6 @@ from typing import (
 )
 
 import rich.repr
-from ipyleaflet import GeoData as LeafletGeoData
-from ipyleaflet import Map
-from ipyleaflet import Polyline as LeafletPolyline
 
 from shapely.geometry import GeometryCollection, LineString
 from shapely.geometry.base import BaseGeometry
@@ -26,6 +23,9 @@ from .mixins import FormatMixin, HBoxMixin, PointMixin, ShapelyMixin
 if TYPE_CHECKING:
     import altair as alt
     from cartes.osm import Overpass
+    from ipyleaflet import GeoData as LeafletGeoData
+    from ipyleaflet import Map
+    from ipyleaflet import Polyline as LeafletPolyline
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
@@ -128,18 +128,15 @@ class Airport(
             nwr=[dict(aeroway=True, area="airport")],
         )
 
-    def leaflet(self, **kwargs: Any) -> LeafletGeoData:
-        return LeafletGeoData(
-            geo_dataframe=self._openstreetmap()
-            .query('aeroway == "runway"')
-            .data,
-            style={**{"color": "#79706e", "weight": 6}, **kwargs},
+    def leaflet(self, **kwargs: Any) -> "LeafletGeoData":
+        raise ImportError(
+            "Install ipyleaflet or traffic with the leaflet extension"
         )
 
-    def map_leaflet(self, **kwargs: Any) -> Map:
-        m = Map(center=self.latlon, zoom=13)
-        m.add(self.leaflet(**kwargs))
-        return m
+    def map_leaflet(self, **kwargs: Any) -> "Map":
+        raise ImportError(
+            "Install ipyleaflet or traffic with the leaflet extension"
+        )
 
     @property
     def __geo_interface__(self) -> Optional[Dict[str, Any]]:
@@ -352,19 +349,10 @@ class Route(HBoxMixin, ShapelyMixin):
     def shape(self) -> LineString:
         return LineString(list((x.longitude, x.latitude) for x in self.navaids))
 
-    def leaflet(self, **kwargs: Any) -> Optional[LeafletPolyline]:
-        """Returns a Leaflet layer to be directly added to a Map.
-
-        The elements passed as kwargs as passed as is to the PolyLine
-        constructor.
-        """
-
-        if self.shape is None:
-            return None
-
-        coords = list((lat, lon) for (lon, lat, *_) in self.shape.coords)
-        kwargs = {**dict(fill_opacity=0, weight=3), **kwargs}
-        return LeafletPolyline(locations=coords, **kwargs)
+    def leaflet(self, **kwargs: Any) -> "Optional[LeafletPolyline]":
+        raise ImportError(
+            "Install ipyleaflet or traffic with the leaflet extension"
+        )
 
     def _info_html(self) -> str:
         title = f"<h4><b>Route {self.name}</b></h4>"
@@ -410,3 +398,21 @@ class Route(HBoxMixin, ShapelyMixin):
             kwargs["transform"] = PlateCarree()
 
         ax.plot(*self.shape.xy, **kwargs)
+
+
+def patch_leaflet() -> None:
+    from ..visualize.leaflet import (
+        airport_leaflet,
+        airport_map_leaflet,
+        route_leaflet,
+    )
+
+    Airport.leaflet = airport_leaflet  # type: ignore
+    Airport.map_leaflet = airport_map_leaflet  # type: ignore
+    Route.leaflet = route_leaflet  # type: ignore
+
+
+try:
+    patch_leaflet()
+except Exception:
+    pass

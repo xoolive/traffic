@@ -19,8 +19,6 @@ from typing import (
 
 import geopandas as gpd
 import rich.repr
-from ipyleaflet import Map as LeafletMap
-from ipyleaflet import Polygon as LeafletPolygon
 
 import numpy as np
 import pyproj
@@ -33,6 +31,8 @@ from .mixins import DataFrameMixin, GeographyMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from ipyleaflet import Map as LeafletMap
+    from ipyleaflet import Polygon as LeafletPolygon
     from matplotlib.patches import Polygon as MplPolygon
 
     from shapely.geometry.base import BaseGeometry
@@ -513,3 +513,16 @@ setattr(Flight, "inside_bbox", inside_bbox)
 setattr(Traffic, "inside_bbox", lazy_evaluation(default=True)(inside_bbox))
 
 setattr(Flight, "intersects", _flight_intersects)
+
+
+def patch_leaflet() -> None:
+    from ..visualize.leaflet import airspace_leaflet, airspace_map_leaflet
+
+    Airspace.leaflet = airspace_leaflet  # type: ignore
+    Airspace.map_leaflet = airspace_map_leaflet  # type: ignore
+
+
+try:
+    patch_leaflet()
+except Exception:
+    pass

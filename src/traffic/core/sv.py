@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, Any, Iterator, Set
 
-from ipyleaflet import MarkerCluster as LeafletMarkerCluster
-
 import pandas as pd
 
 from .flight import Position
@@ -9,6 +7,7 @@ from .mixins import GeographyMixin
 
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxes
+    from ipyleaflet import MarkerCluster as LeafletMarkerCluster
     from matplotlib.artist import Artist
 
 
@@ -37,13 +36,10 @@ class StateVectors(GeographyMixin):
             # TODO work on a clean __repr__ for the Position
             yield Position(p)
 
-    def leaflet(sv: "StateVectors", **kwargs: Any) -> LeafletMarkerCluster:
-        """Returns a Leaflet layer to be directly added to a Map.
-
-        The elements passed as kwargs as passed as is to the Marker constructor.
-        """
-        point_list = list(p.leaflet(title=p.callsign, **kwargs) for p in sv)
-        return LeafletMarkerCluster(markers=point_list)
+    def leaflet(sv, **kwargs: Any) -> "LeafletMarkerCluster":
+        raise ImportError(
+            "Install ipyleaflet or traffic with the leaflet extension"
+        )
 
     def plot(
         self, ax: "GeoAxes", s: int = 10, **kwargs: Any
@@ -58,3 +54,15 @@ class StateVectors(GeographyMixin):
             transform=PlateCarree(),
             **kwargs,
         )
+
+
+def patch_leaflet() -> None:
+    from ..visualize.leaflet import statevector_leaflet
+
+    StateVectors.leaflet = statevector_leaflet  # type: ignore
+
+
+try:
+    patch_leaflet()
+except Exception:
+    pass
