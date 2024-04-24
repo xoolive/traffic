@@ -18,7 +18,6 @@ from typing import (
     TypeVar,
 )
 
-from openap import aero
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console, ConsoleOptions, RenderResult
 from rich.table import Table
@@ -667,6 +666,7 @@ class GeographyMixin(DataFrameMixin):
     def interpolate_grib(
         self: T, wind: "xarray.Dataset", features: list[str] = ["u", "v"]
     ) -> T:
+        from openap import aero
         from sklearn.linear_model import Ridge
         from sklearn.pipeline import make_pipeline
         from sklearn.preprocessing import PolynomialFeatures

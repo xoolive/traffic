@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 
 _traffic_style = """
 figure.figsize: 10, 7
@@ -45,9 +44,13 @@ config_dir = mpl.get_configdir()
 mpl_style_location = Path(f"{config_dir}/stylelib/traffic.mplstyle")
 if not mpl_style_location.parent.is_dir():  # coverage: ignore
     mpl_style_location.parent.mkdir(parents=True)
-mpl_style_location.write_text(_traffic_style)
 
-plt.style.reload_library()
+if not mpl_style_location.exists():
+    # keep the slow import here
+    import matplotlib.pyplot as plt
+
+    mpl_style_location.write_text(_traffic_style)
+    plt.style.reload_library()
 
 
 def __getattr__(name: str) -> Any:  # coverage: ignore

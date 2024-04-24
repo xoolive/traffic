@@ -7,6 +7,7 @@ from typing import (
     ClassVar,
     Dict,  # for python 3.8 and impunity
     Generic,
+    Optional,
     Protocol,
     Type,
     TypedDict,
@@ -15,7 +16,6 @@ from typing import (
 )
 
 from impunity import impunity
-from scipy import signal
 from typing_extensions import Annotated, NotRequired
 
 import numpy as np
@@ -182,7 +182,7 @@ class FilterAboveSigmaMedian(FilterBase):
         df: pd.DataFrame,
         feature: str,
         kernel_size: int,
-        filt: Callable[[pd.Series[float], int], Any] = signal.medfilt,
+        filt: Optional[Callable[[pd.Series[float], int], Any]] = None,
     ) -> pd.DataFrame:
         """Produces a mask for data to be discarded.
 
@@ -194,6 +194,11 @@ class FilterAboveSigmaMedian(FilterBase):
 
         Errors may raised if the kernel_size is too large
         """
+        if filt is None:
+            from scipy import signal
+
+            filt = signal.medfilt
+
         y = df[feature].astype(float)
         y_m = filt(y, kernel_size)
         sq_eps = (y - y_m) ** 2
