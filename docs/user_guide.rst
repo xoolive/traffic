@@ -43,6 +43,11 @@ Data visualisation
 .. toctree::
    :maxdepth: 1
 
+   visualize/projection
+
+.. toctree::
+   :maxdepth: 1
+
    visualize/leaflet
    visualize/plotly
 
@@ -52,11 +57,10 @@ Good practices
 .. toctree::
    :maxdepth: 1
 
-   user_guide/arithmetics
-   user_guide/projection
+   user_guide/own_data
    user_guide/processing
    user_guide/simplify
-   user_guide/own_data
+   user_guide/arithmetics
 
 Navigation events
 -----------------
@@ -83,16 +87,6 @@ Statistical analysis
    tutorial/generation
    tutorial/cpa
 
-Standalone applications
------------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   user_guide/plugins
-   user_guide/cli_tui
-   user_guide/docker
-
 Troubleshooting
 ---------------
 
@@ -100,5 +94,6 @@ Troubleshooting
    :maxdepth: 1
 
    troubleshooting/installation
+   troubleshooting/docker
    troubleshooting/network
    troubleshooting/data_access

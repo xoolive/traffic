@@ -22,7 +22,7 @@ France, ``GaussKruger()`` over Germany, ``Amersfoort()`` over the
 Netherlands, ``OSGB()`` over the British Islands, etc.
 
 The cartes library builds on top of `cartopy
-<https://scitools.org.uk/cartopy/docs/latest/>`_  and tries to provide as many 
+<https://scitools.org.uk/cartopy/docs/latest/>`_  and tries to provide as many
 reference projections as possible, to use with Matplotlib or Altair.
 
 .. note::
