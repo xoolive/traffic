@@ -149,12 +149,12 @@ class OpenAP:
 
         FF = []
         Fuel = []
-        for i, tas, alt, pa, dt in zip(count(1), TAS, altitude, path_angle, dt):
+        for i, tas, alt, pa, dti in zip(count(1), TAS, altitude, path_angle, dt):
             ff = fuelflow.enroute(
                 mass=mass[i - 1], tas=tas, alt=alt, path_angle=pa
             )
             if update_mass:
-                mass[i:] -= ff * dt if ff == ff else 0
+                mass[i:] -= ff * dti if ff == ff else 0
             FF.append(ff)
             Fuel.append(mass[0] - mass[i - 1])
 
