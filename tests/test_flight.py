@@ -5,9 +5,9 @@ from operator import itemgetter
 from pathlib import Path
 from typing import Any, Optional, cast
 
+import httpx
 import pytest
 from cartes.osm import Overpass
-from requests import RequestException
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import airports, eurofirs, navaids, runways
@@ -664,7 +664,9 @@ def test_agg_time_colnames() -> None:
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
 
 
-@pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
+@pytest.mark.xfail(
+    raises=httpx.TransportError, reason="Quotas on OpenStreetMap"
+)
 def test_parking_position() -> None:
     # These tests with calls to OpenStreetMap are a bit tricky and subject to
     # uncontrolled edits on OpenStreetMap.
@@ -712,7 +714,9 @@ def test_slow_taxi() -> None:
     assert flight.slow_taxi().next() is None
 
 
-@pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
+@pytest.mark.xfail(
+    raises=httpx.TransportError, reason="Quotas on OpenStreetMap"
+)
 def test_pushback() -> None:
     # These tests with calls to OpenStreetMap are a bit tricky and subject to
     # uncontrolled edits on OpenStreetMap.
@@ -736,7 +740,9 @@ def test_pushback() -> None:
     assert pushback.stop >= parking_position.stop
 
 
-@pytest.mark.xfail(raises=RequestException, reason="Quotas on OpenStreetMap")
+@pytest.mark.xfail(
+    raises=httpx.TransportError, reason="Quotas on OpenStreetMap"
+)
 def test_on_taxiway() -> None:
     # These tests with calls to OpenStreetMap are a bit tricky and subject to
     # uncontrolled edits on OpenStreetMap.

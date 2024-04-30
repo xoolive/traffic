@@ -5,7 +5,7 @@ import io
 from pathlib import Path
 from typing import Any, ClassVar
 
-import requests
+import httpx
 
 import pandas as pd
 
@@ -13,6 +13,7 @@ from ... import cache_expiration
 from ...core import tqdm
 from ...core.mixins import GeoDBMixin
 from ...core.structure import Airport
+from .. import client
 
 __all__ = ["Airport", "Airports"]
 
@@ -67,15 +68,12 @@ class Airports(GeoDBMixin):
         Download an up to date version of the airports database from
         `ourairports.com <https://ourairports.com/>`_
         """
-        from .. import session
 
-        f = session.get(
-            "https://ourairports.com/data/airports.csv", stream=True
-        )
+        f = client.get("https://ourairports.com/data/airports.csv")
         total = int(f.headers["Content-Length"])
         buffer = io.BytesIO()
         for chunk in tqdm(
-            f.iter_content(1024),
+            f.iter_bytes(chunk_size=1024),
             total=total // 1024 + 1 if total % 1024 > 0 else 0,
             desc="airports @ourairports.com",
         ):
@@ -84,7 +82,7 @@ class Airports(GeoDBMixin):
         buffer.seek(0)
         df = pd.read_csv(buffer)
 
-        f = session.get("https://ourairports.com/data/countries.csv")
+        f = client.get("https://ourairports.com/data/countries.csv")
         buffer = io.BytesIO(f.content)
         buffer.seek(0)
         countries = pd.read_csv(buffer)
@@ -118,9 +116,7 @@ class Airports(GeoDBMixin):
         self._data.to_parquet(self.cache_dir / "airports_ourairports.parquet")
 
     def download_fr24(self) -> None:  # coverage: ignore
-        from .. import session
-
-        c = session.get(
+        c = client.get(
             "https://www.flightradar24.com/_json/airports.php",
             headers={"user-agent": "Mozilla/5.0"},
         )
@@ -153,7 +149,7 @@ class Airports(GeoDBMixin):
         if delta > cache_expiration:
             try:
                 getattr(self, method_name)()
-            except requests.ConnectionError:
+            except httpx.TransportError:
                 pass
 
         self._data = pd.read_parquet(self.cache_dir / cache_file)

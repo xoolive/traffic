@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Union
 
-import requests
 from metar import Metar
 
 import pandas as pd
 
 from ...core.structure import Airport
 from ...core.time import timelike, to_datetime
+from .. import client
 
 list_ap = Union[List[str], List[Airport]]
 
@@ -76,7 +76,7 @@ class METAR:  # coverage: ignore
             f"tz=Etc%2FUTC&format=onlycomma&latlon=no&elev=no&"
             f"missing=M&trace=T&direct=no&report_type=3&report_type=4"
         )
-        c = requests.get(url)
+        c = client.get(url)
         c.raise_for_status()
         list_ = c.content.decode("utf-8").strip().split("\n")
         df_metar = pd.DataFrame.from_records(

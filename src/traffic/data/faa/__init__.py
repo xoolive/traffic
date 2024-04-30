@@ -4,11 +4,12 @@ import logging
 from pathlib import Path
 from typing import Any, Dict
 
-import requests
+import httpx
 
 import pandas as pd
 
 from ... import cache_dir, cache_expiration
+from .. import client
 
 __all__ = list(p.stem[1:] for p in Path(__file__).parent.glob("_[a-z]*py"))
 
@@ -27,12 +28,10 @@ class ADDS_FAA_OpenData:
         self.json_url = self.json_url.format(self.id_)
 
     def download_data(self) -> None:
-        from .. import session
-
         _log.warning(
             f"Downloading data from {self.website}. Please check terms of use."
         )
-        c = session.get(self.json_url)
+        c = client.get(self.json_url)
         c.raise_for_status()
         json_contents = c.json()
         with self.cache_file.open("w") as fh:
@@ -46,7 +45,7 @@ class ADDS_FAA_OpenData:
             if delta > cache_expiration:
                 try:
                     self.download_data()
-                except requests.ConnectionError:
+                except httpx.TransportError:
                     pass
         else:
             self.download_data()

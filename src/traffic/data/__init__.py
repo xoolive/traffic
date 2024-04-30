@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
-from requests import Session
+from httpx import Client
 
 from .. import cache_dir, config, config_file
 
@@ -42,7 +42,7 @@ __all__ = [
     "nm_navaids",
     "eurofirs",
     "opensky",
-    "session",
+    "client",
     "AllFT",
     "Navaids",
     "SO6",
@@ -62,7 +62,7 @@ nm_airways: "NMRoutes"
 nm_navaids: "NMNavaids"
 eurofirs: "Eurofirs"
 opensky: "OpenSky"
-session: Session
+client: Client
 
 
 aixm_path_str = config.get("global", "aixm_path", fallback="")
@@ -241,14 +241,8 @@ def __getattr__(name: str) -> Any:
         _cached_imports[name] = res
         return res
 
-    if name == "session":
-        from cartes.osm.requests import session as cartes_session
-
-        if len(proxy_values) > 0:
-            cartes_session.proxies.update(proxy_values)
-            cartes_session.trust_env = False
-
-        res = cartes_session
+    if name == "client":
+        res = Client(follow_redirects=True)
         _cached_imports[name] = res
         return res
 

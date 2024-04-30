@@ -60,7 +60,6 @@ cartes = ">=0.7.7"
 pyopensky = ">=2.6"
 # pyopensky = { path = "../pyopensky", develop = true }
 httpx = ">=0.26.0"
-requests = ">=2.27"  # TODO when we remove requests, remove the types- too
 rs1090 = ">=0.2.0"
 # rs1090 = { path = "../rs1090/python", develop = true }
 openap = ">=1.5"
@@ -119,8 +118,6 @@ codecov = ">=2.1.11"
 ipykernel = ">=6.25.0"
 # pandas-stubs = { version = ">=2.1.4" }
 types-pkg-resources = ">=0.1.3"
-types-requests = ">=2.25.0"
-requests = { extras = ["socks"], version = ">=2.27" }
 
 
 [build-system]

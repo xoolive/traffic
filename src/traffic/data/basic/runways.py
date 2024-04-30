@@ -15,7 +15,7 @@ from typing import (
 )
 from zipfile import ZipFile
 
-import requests
+import httpx
 from pitot.geodesy import bearing, destination
 
 import numpy as np
@@ -26,6 +26,7 @@ from shapely.ops import linemerge
 from ... import cache_expiration
 from ...core import tqdm
 from ...core.mixins import DataFrameMixin, HBoxMixin, PointMixin, ShapelyMixin
+from .. import client
 
 if TYPE_CHECKING:
     import altair as alt
@@ -193,7 +194,7 @@ class Runways(object):
         if delta > cache_expiration:
             try:
                 self.download_runways()
-            except requests.ConnectionError:
+            except httpx.TransportError:
                 pass
 
         with self._cache.open("rb") as fh:
@@ -216,15 +217,13 @@ class Runways(object):
         return RunwayAirport(runways=elt)
 
     def download_runways(self) -> None:  # coverage: ignore
-        from .. import session
-
         self._runways = dict()
 
-        f = session.get("https://ourairports.com/data/runways.csv", stream=True)
+        f = client.get("https://ourairports.com/data/runways.csv")
         total = int(f.headers["Content-Length"])
         buffer = BytesIO()
         for chunk in tqdm(
-            f.iter_content(1024),
+            f.iter_bytes(chunk_size=1024),
             total=total // 1024 + 1 if total % 1024 > 0 else 0,
             desc="runways @ourairports.com",
         ):
@@ -262,10 +261,8 @@ class Runways(object):
             pickle.dump(self._runways, fh)
 
     def download_bluesky(self) -> None:  # coverage: ignore
-        from .. import session
-
         self._runways = dict()
-        c = session.get(base_url + "/apt.zip")
+        c = client.get(base_url + "/apt.zip")
 
         with ZipFile(BytesIO(c.content)).open("apt.dat", "r") as fh:
             for line in fh.readlines():

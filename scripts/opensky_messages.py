@@ -1,10 +1,10 @@
 # %%
 import altair as alt
-import requests
+import httpx
 
 import pandas as pd
 
-c = requests.get("https://opensky-network.org/api/stats/facts?extended=true")
+c = httpx.get("https://opensky-network.org/api/stats/facts?extended=true")
 data = c.json()
 
 # %%

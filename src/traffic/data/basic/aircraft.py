@@ -16,6 +16,7 @@ import pandas as pd
 
 from ...core import tqdm
 from ...core.mixins import DataFrameMixin, FormatMixin
+from .. import client
 
 _log = logging.getLogger(__name__)
 
@@ -194,13 +195,11 @@ class Aircraft(DataFrameMixin):
                 self.columns_options[column] = dict(max_width=30)
 
     def download_junzis(self) -> None:  # coverage: ignore
-        from .. import session
-
         filename = self.cache_dir / "junzis_db.pkl"
         if filename.exists():
             self.data = pd.read_pickle(filename).fillna("")
 
-        f = session.get("https://junzis.com/adb/download/aircraft_db.zip")
+        f = client.get("https://junzis.com/adb/download/aircraft_db.zip")
         with zipfile.ZipFile(io.BytesIO(f.content)) as zfile:
             with zfile.open("aircraft_db.csv", "r") as dbfile:
                 self.data = (
@@ -227,17 +226,16 @@ class Aircraft(DataFrameMixin):
         Reference: https://opensky-network.org/aircraft-database
 
         """
-        from .. import session
 
         _log.warning("Downloading OpenSky aircraft database")
         file_url = (
             "https://opensky-network.org/datasets/metadata/aircraftDatabase.csv"
         )
-        f = session.get(file_url, stream=True)
+        f = client.get(file_url)
         total = int(f.headers["Content-Length"])
         buffer = io.BytesIO()
         for chunk in tqdm(
-            f.iter_content(1024),
+            f.iter_bytes(chunk_size=1024),
             total=total // 1024 + 1 if total % 1024 > 0 else 0,
             desc="download",
         ):

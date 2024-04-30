@@ -343,16 +343,16 @@ class FlightPlan(ShapelyMixin):
         )
 
     def skyvector(self) -> Dict[str, Any]:
-        from ..data import session
+        from ..data import client
 
-        c = session.get(
+        c = client.get(
             "https://skyvector.com/api/routes?dep={}&dst={}".format(
                 self.origin, self.destination
             )
         )
         c.raise_for_status()
 
-        c = session.get(
+        c = client.get(
             f"https://skyvector.com/api/fpl?cmd=route&route={self.repr}"
         )
         c.raise_for_status()
