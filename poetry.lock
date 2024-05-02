@@ -1634,18 +1634,19 @@ test = ["flaky", "ipyparallel", "pre-commit", "pytest (>=7.0)", "pytest-asyncio 
 
 [[package]]
 name = "ipyleaflet"
-version = "0.18.2"
+version = "0.19.0"
 description = "A Jupyter widget for dynamic Leaflet maps"
 optional = true
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "ipyleaflet-0.18.2-py3-none-any.whl", hash = "sha256:dc5bed1bad3ba3244fe97aac9d4ed8f8096ae3d5e6ac0c5fdfbe7f1d2a01d3f8"},
-    {file = "ipyleaflet-0.18.2.tar.gz", hash = "sha256:8f166529ec7784de08822b253b8cc593fa81af8a8f967d70cbc53e45a6d3755f"},
+    {file = "ipyleaflet-0.19.0-py3-none-any.whl", hash = "sha256:1d3073961073f126a6cdabac610785636dbad970fb0a7c8a8d3e82cb175fd257"},
+    {file = "ipyleaflet-0.19.0.tar.gz", hash = "sha256:92c600f1ed96b371572fb8fbd85a935bd026ae65db58f8449b9319977aa23508"},
 ]
 
 [package.dependencies]
 branca = ">=0.5.0"
 ipywidgets = ">=7.6.0,<9"
+jupyter-leaflet = ">=0.19,<0.20"
 traittypes = ">=0.2.1,<3"
 xyzservices = ">=2021.8.1"
 
@@ -1831,6 +1832,17 @@ traitlets = ">=5.3"
 [package.extras]
 docs = ["myst-parser", "pydata-sphinx-theme", "sphinx-autodoc-typehints", "sphinxcontrib-github-alt", "sphinxcontrib-spelling", "traitlets"]
 test = ["ipykernel", "pre-commit", "pytest (<8)", "pytest-cov", "pytest-timeout"]
+
+[[package]]
+name = "jupyter-leaflet"
+version = "0.19.0"
+description = "ipyleaflet extensions for JupyterLab and Jupyter Notebook"
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "jupyter_leaflet-0.19.0-py3-none-any.whl", hash = "sha256:8bb0d7986f3cf2ce05f4036df397caa637441876fccbaaeff2c0ba5a4dfa5939"},
+    {file = "jupyter_leaflet-0.19.0.tar.gz", hash = "sha256:3201c9c7dee782b2f64c86c508e106452e823ad65a127656191aa0f88c44454d"},
+]
 
 [[package]]
 name = "jupyter-sphinx"
@@ -5029,4 +5041,4 @@ plotly = ["plotly"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "10f21e2721dc9b1ee8a448df5a82f349d5852842c0950b56714eedb6199e9f53"
+content-hash = "03a4d3bf4e4eb2f6f0c4c3c840353a805bda6c4c45a0a437613bc3908c436149"
