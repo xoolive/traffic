@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union
 
 import rich.repr
 
@@ -280,7 +280,6 @@ def flight_iterator(
     def fun_wrapper(*args: Any, **kwargs: Any) -> FlightIterator:
         return FlightIterator(fun(*args, **kwargs))
 
-    fun_wrapper = cast(Callable[..., FlightIterator], fun_wrapper)
     fun_wrapper.__annotations__["return"] = FlightIterator
 
     return fun_wrapper
