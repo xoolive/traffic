@@ -65,7 +65,8 @@ class SCAT:
                     """
                 timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
                 flight_id = @flight_id
-                """
+                """,
+                    engine="python",
                 )
             )
 
@@ -76,7 +77,8 @@ class SCAT:
                     """
                 timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
                 flight_id = @flight_id
-                """
+                """,
+                    engine="python",
                 )
             )
 
@@ -94,7 +96,8 @@ class SCAT:
             callsign = @fpl_base['callsign']
             flight_id = @flight_id
             icao24 = "000000"
-            """
+            """,
+                    engine="python",
                 )
             )
             return Entry(Flight(df), flight_plan, clearance)
