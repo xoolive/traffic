@@ -51,6 +51,8 @@ class SCAT:
     traffic: Traffic
     flight_plans: pd.DataFrame
     clearances: pd.DataFrame
+    waypoints: pd.DataFrame
+    weather: pd.DataFrame
 
     def parse_zipinfo(self, zf: ZipFile, file_info: ZipInfo) -> Entry:
         with zf.open(file_info.filename, "r") as fh:
@@ -102,7 +104,53 @@ class SCAT:
             )
             return Entry(Flight(df), flight_plan, clearance)
 
-    def __init__(self, ident: str, nflights: None | int = None) -> None:
+    def parse_waypoints(self, zf: ZipFile, file_info: ZipInfo) -> None:
+        rename_columns = {
+            "lat": "latitude",
+            "lon": "longitude",
+        }
+        with zf.open(file_info.filename, "r") as fh:
+            content_bytes = fh.read()
+        centers = json.loads(content_bytes.decode())
+
+        waypoints = []
+        for center in centers:
+            points = pd.json_normalize(center["points"])
+            points["center"] = center["name"]
+            waypoints.append(points.rename(columns=rename_columns))
+        return pd.concat(waypoints).drop_duplicates(ignore_index=True)
+
+    def parse_weather(self, zf: ZipFile, file_info: ZipInfo) -> None:
+        rename_columns = {
+            "alt": "altitude",
+            "lat": "latitude",
+            "lon": "longitude",
+            "temp": "temperature",
+            "time": "timestamp",
+            "wind_dir": "wind_direction",
+            "wind_spd": "wind_speed",
+        }
+        with zf.open(file_info.filename, "r") as fh:
+            content_bytes = fh.read()
+        decoded = json.loads(content_bytes.decode())
+        return (
+            pd.json_normalize(decoded)
+            .rename(columns=rename_columns)
+            .eval(
+                """
+            timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
+            """,
+                engine="python",
+            )
+        )
+
+    def __init__(
+        self,
+        ident: str,
+        nflights: None | int = None,
+        include_waypoints: bool = False,
+        include_weather: bool = False,
+    ) -> None:
         mendeley = Mendeley("8yn985bwz5")
         filename = mendeley.get_data(ident)
 
@@ -111,14 +159,26 @@ class SCAT:
         flight_plans = []
 
         with ZipFile(filename, "r") as zf:
-            info_list = zf.infolist()
-            if nflights is not None:
-                info_list = info_list[:nflights]
+            all_files = zf.infolist()
+            total_flights = len(all_files) - 2
+            nflights = (
+                min(nflights, total_flights)
+                if nflights is not None
+                else total_flights
+            )
+            info_list = all_files[:nflights]
+            if include_waypoints:
+                info_list.append(all_files[-2])
+            if include_weather:
+                info_list.append(all_files[-1])
+
             for file_info in tqdm(info_list):
                 if "airspace" in file_info.filename:
+                    self.waypoints = self.parse_waypoints(zf, file_info)
                     continue
 
                 if "grib_meteo" in file_info.filename:
+                    self.weather = self.parse_weather(zf, file_info)
                     continue
 
                 entry = self.parse_zipinfo(zf, file_info)
