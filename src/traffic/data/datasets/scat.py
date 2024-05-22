@@ -58,52 +58,52 @@ class SCAT:
     def parse_zipinfo(self, zf: ZipFile, file_info: ZipInfo) -> Entry:
         with zf.open(file_info.filename, "r") as fh:
             content_bytes = fh.read()
-            decoded = json.loads(content_bytes.decode())
-            flight_id = str(decoded["id"])  # noqa: F841
+        decoded = json.loads(content_bytes.decode())
+        flight_id = str(decoded["id"])  # noqa: F841
 
-            flight_plan = (
-                pd.json_normalize(decoded["fpl"]["fpl_plan_update"])
-                .rename(columns=rename_columns)
-                .eval(
-                    """
-                timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
-                flight_id = @flight_id
-                """,
-                    engine="python",
-                )
-            )
-
-            clearance = (
-                pd.json_normalize(decoded["fpl"]["fpl_clearance"])
-                .rename(columns=rename_columns)
-                .eval(
-                    """
-                timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
-                flight_id = @flight_id
-                """,
-                    engine="python",
-                )
-            )
-
-            fpl_base, *_ = decoded["fpl"]["fpl_base"]
-            df = (
-                pd.json_normalize(decoded["plots"])
-                .rename(columns=rename_columns)
-                .eval(
-                    """
-            timestamp = @pd.to_datetime(time_of_track, utc=True, format="mixed")
-            altitude = 100 * flight_level
-            origin = @fpl_base['adep']
-            destination = @fpl_base['ades']
-            typecode = @fpl_base['aircraft_type']
-            callsign = @fpl_base['callsign']
+        flight_plan = (
+            pd.json_normalize(decoded["fpl"]["fpl_plan_update"])
+            .rename(columns=rename_columns)
+            .eval(
+                """
+            timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
             flight_id = @flight_id
-            icao24 = "000000"
             """,
-                    engine="python",
-                )
+                engine="python",
             )
-            return Entry(Flight(df), flight_plan, clearance)
+        )
+
+        clearance = (
+            pd.json_normalize(decoded["fpl"]["fpl_clearance"])
+            .rename(columns=rename_columns)
+            .eval(
+                """
+            timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
+            flight_id = @flight_id
+            """,
+                engine="python",
+            )
+        )
+
+        fpl_base, *_ = decoded["fpl"]["fpl_base"]
+        df = (
+            pd.json_normalize(decoded["plots"])
+            .rename(columns=rename_columns)
+            .eval(
+                """
+        timestamp = @pd.to_datetime(time_of_track, utc=True, format="mixed")
+        altitude = 100 * flight_level
+        origin = @fpl_base['adep']
+        destination = @fpl_base['ades']
+        typecode = @fpl_base['aircraft_type']
+        callsign = @fpl_base['callsign']
+        flight_id = @flight_id
+        icao24 = "000000"
+        """,
+                engine="python",
+            )
+        )
+        return Entry(Flight(df), flight_plan, clearance)
 
     def parse_waypoints(self, zf: ZipFile, file_info: ZipInfo) -> Navaids:
         rename_columns = {
