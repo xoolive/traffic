@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from ...core import Flight, Traffic, tqdm
+from ...data.basic.navaid import Navaids
 from .mendeley import Mendeley
 
 
@@ -51,7 +52,7 @@ class SCAT:
     traffic: Traffic
     flight_plans: pd.DataFrame
     clearances: pd.DataFrame
-    waypoints: pd.DataFrame
+    waypoints: Navaids
     weather: pd.DataFrame
 
     def parse_zipinfo(self, zf: ZipFile, file_info: ZipInfo) -> Entry:
@@ -104,7 +105,7 @@ class SCAT:
             )
             return Entry(Flight(df), flight_plan, clearance)
 
-    def parse_waypoints(self, zf: ZipFile, file_info: ZipInfo) -> None:
+    def parse_waypoints(self, zf: ZipFile, file_info: ZipInfo) -> Navaids:
         rename_columns = {
             "lat": "latitude",
             "lon": "longitude",
@@ -113,14 +114,21 @@ class SCAT:
             content_bytes = fh.read()
         centers = json.loads(content_bytes.decode())
 
-        waypoints = []
+        fixes = []
         for center in centers:
             points = pd.json_normalize(center["points"])
-            points["center"] = center["name"]
-            waypoints.append(points.rename(columns=rename_columns))
-        return pd.concat(waypoints).drop_duplicates(ignore_index=True)
+            points["type"] = "FIX"
+            points["altitude"] = None
+            points["frequency"] = None
+            points["magnetic_variation"] = None
+            points["description"] = f"Center: {center['name']}"
+            fixes.append(points.rename(columns=rename_columns))
+        df = pd.concat(fixes).drop_duplicates(ignore_index=True)
+        waypoints = Navaids(data=df)
+        waypoints.priority = -1  # prefer over default navaids
+        return waypoints
 
-    def parse_weather(self, zf: ZipFile, file_info: ZipInfo) -> None:
+    def parse_weather(self, zf: ZipFile, file_info: ZipInfo) -> pd.DataFrame:
         rename_columns = {
             "alt": "altitude",
             "lat": "latitude",
