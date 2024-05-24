@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from ...core import Flight, Traffic, tqdm
+from ...data.basic.navaid import Navaids
 from .mendeley import Mendeley
 
 
@@ -51,55 +52,113 @@ class SCAT:
     traffic: Traffic
     flight_plans: pd.DataFrame
     clearances: pd.DataFrame
+    waypoints: Navaids
+    weather: pd.DataFrame
 
     def parse_zipinfo(self, zf: ZipFile, file_info: ZipInfo) -> Entry:
         with zf.open(file_info.filename, "r") as fh:
             content_bytes = fh.read()
-            decoded = json.loads(content_bytes.decode())
-            flight_id = str(decoded["id"])  # noqa: F841
+        decoded = json.loads(content_bytes.decode())
+        flight_id = str(decoded["id"])  # noqa: F841
 
-            flight_plan = (
-                pd.json_normalize(decoded["fpl"]["fpl_plan_update"])
-                .rename(columns=rename_columns)
-                .eval(
-                    """
-                timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
-                flight_id = @flight_id
+        flight_plan = (
+            pd.json_normalize(decoded["fpl"]["fpl_plan_update"])
+            .rename(columns=rename_columns)
+            .eval(
                 """
-                )
-            )
-
-            clearance = (
-                pd.json_normalize(decoded["fpl"]["fpl_clearance"])
-                .rename(columns=rename_columns)
-                .eval(
-                    """
-                timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
-                flight_id = @flight_id
-                """
-                )
-            )
-
-            fpl_base, *_ = decoded["fpl"]["fpl_base"]
-            df = (
-                pd.json_normalize(decoded["plots"])
-                .rename(columns=rename_columns)
-                .eval(
-                    """
-            timestamp = @pd.to_datetime(time_of_track, utc=True, format="mixed")
-            altitude = 100 * flight_level
-            origin = @fpl_base['adep']
-            destination = @fpl_base['ades']
-            typecode = @fpl_base['aircraft_type']
-            callsign = @fpl_base['callsign']
+            timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
             flight_id = @flight_id
-            icao24 = "000000"
-            """
-                )
+            """,
+                engine="python",
             )
-            return Entry(Flight(df), flight_plan, clearance)
+        )
 
-    def __init__(self, ident: str, nflights: None | int = None) -> None:
+        clearance = (
+            pd.json_normalize(decoded["fpl"]["fpl_clearance"])
+            .rename(columns=rename_columns)
+            .eval(
+                """
+            timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
+            flight_id = @flight_id
+            """,
+                engine="python",
+            )
+        )
+
+        fpl_base, *_ = decoded["fpl"]["fpl_base"]
+        df = (
+            pd.json_normalize(decoded["plots"])
+            .rename(columns=rename_columns)
+            .eval(
+                """
+        timestamp = @pd.to_datetime(time_of_track, utc=True, format="mixed")
+        altitude = 100 * flight_level
+        origin = @fpl_base['adep']
+        destination = @fpl_base['ades']
+        typecode = @fpl_base['aircraft_type']
+        callsign = @fpl_base['callsign']
+        flight_id = @flight_id
+        icao24 = "000000"
+        """,
+                engine="python",
+            )
+        )
+        return Entry(Flight(df), flight_plan, clearance)
+
+    def parse_waypoints(self, zf: ZipFile, file_info: ZipInfo) -> Navaids:
+        rename_columns = {
+            "lat": "latitude",
+            "lon": "longitude",
+        }
+        with zf.open(file_info.filename, "r") as fh:
+            content_bytes = fh.read()
+        centers = json.loads(content_bytes.decode())
+
+        fixes = []
+        for center in centers:
+            points = pd.json_normalize(center["points"])
+            points["type"] = "FIX"
+            points["altitude"] = None
+            points["frequency"] = None
+            points["magnetic_variation"] = None
+            points["description"] = f"Center: {center['name']}"
+            fixes.append(points.rename(columns=rename_columns))
+        df = pd.concat(fixes).drop_duplicates(ignore_index=True)
+        waypoints = Navaids(data=df)
+        waypoints.priority = -1  # prefer over default navaids
+        return waypoints
+
+    def parse_weather(self, zf: ZipFile, file_info: ZipInfo) -> pd.DataFrame:
+        rename_columns = {
+            "alt": "altitude",
+            "lat": "latitude",
+            "lon": "longitude",
+            "temp": "temperature",
+            "time": "timestamp",
+            "wind_dir": "wind_direction",
+            "wind_spd": "wind_speed",
+        }
+        with zf.open(file_info.filename, "r") as fh:
+            content_bytes = fh.read()
+        decoded = json.loads(content_bytes.decode())
+        return (
+            pd.json_normalize(decoded)
+            .rename(columns=rename_columns)
+            .eval(
+                """
+            timestamp = @pd.to_datetime(timestamp, utc=True, format="mixed")
+            """,
+                engine="python",
+            )
+        )
+
+    def __init__(
+        self,
+        ident: str,
+        nflights: None | int = None,
+        include_waypoints: bool = False,
+        include_weather: bool = False,
+    ) -> None:
         mendeley = Mendeley("8yn985bwz5")
         filename = mendeley.get_data(ident)
 
@@ -108,14 +167,26 @@ class SCAT:
         flight_plans = []
 
         with ZipFile(filename, "r") as zf:
-            info_list = zf.infolist()
-            if nflights is not None:
-                info_list = info_list[:nflights]
+            all_files = zf.infolist()
+            total_flights = len(all_files) - 2
+            nflights = (
+                min(nflights, total_flights)
+                if nflights is not None
+                else total_flights
+            )
+            info_list = all_files[:nflights]
+            if include_waypoints:
+                info_list.append(all_files[-2])
+            if include_weather:
+                info_list.append(all_files[-1])
+
             for file_info in tqdm(info_list):
                 if "airspace" in file_info.filename:
+                    self.waypoints = self.parse_waypoints(zf, file_info)
                     continue
 
                 if "grib_meteo" in file_info.filename:
+                    self.weather = self.parse_weather(zf, file_info)
                     continue
 
                 entry = self.parse_zipinfo(zf, file_info)
