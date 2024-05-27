@@ -297,7 +297,12 @@ def route_leaflet(self: Any, **kwargs: Any) -> Optional[Polyline]:
     return Polyline(locations=coords, **kwargs)
 
 
-def map_add(_map: Map, elt: Any, **kwargs: Any) -> Any:
+def map_add(
+    _map: Map,
+    elt: Any,
+    with_points: bool = True,
+    **kwargs: Any,
+) -> Any:
     from ..core import (
         Airspace,
         Flight,
@@ -325,8 +330,9 @@ def map_add(_map: Map, elt: Any, **kwargs: Any) -> Any:
     if isinstance(elt, Route):
         layer = elt.leaflet(**kwargs)
         _old_add(_map, layer)
-        for point in elt.navaids:
-            map_add(_map, point, **kwargs)
+        if with_points:
+            for point in elt.navaids:
+                map_add(_map, point, **kwargs)
         return layer
     if isinstance(elt, FlightIterator):
         for segment in elt:
