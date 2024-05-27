@@ -524,7 +524,7 @@ def test_resample_how_argument() -> None:
     resampled_interpolate_quadratic = Flight(df).resample(
         "1s",
         how="interpolate",
-        interpolation_options={"method": "polynomial", "order": 2},
+        interpolate_kw={"method": "polynomial", "order": 2},
     )
     pd.testing.assert_frame_equal(
         resampled_interpolate_quadratic.data[["altitude", "fake"]],
