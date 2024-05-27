@@ -2,7 +2,7 @@
 
 from traffic.data import opensky
 
-cov_2023 = opensky.api_global_coverage("2023-01-01")
+cov_2023 = opensky.api_global_coverage("2024-05-01")
 cov_2018 = opensky.api_global_coverage("2018-01-01")
 
 # %%
@@ -61,7 +61,7 @@ with plt.style.context("traffic"):
     )
 
     ax[0].set_title("2018", x=0.05, y=0, fontsize=18)
-    ax[1].set_title("2023", x=0.05, y=0, fontsize=18)
+    ax[1].set_title("2024", x=0.05, y=0, fontsize=18)
 
     fig.savefig("opensky_coverage.png")
 # %%
