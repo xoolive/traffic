@@ -1658,6 +1658,7 @@ class Flight(
         self,
         rule: str | int = "1s",
         how: None | str | dict[str, Iterable[str]] = "interpolate",
+        interpolate_kw: dict[str, Any] = {},
         projection: None | str | pyproj.Proj | "crs.Projection" = None,
     ) -> Flight:
         """Resample the trajectory at a given frequency or for a target number
@@ -1679,6 +1680,18 @@ class Flight(
             - When the parameter is a dictionary with keys as methods (e.g.
               ``"interpolate"``, ``"ffill"``) and names of columns as values.
               Columns not included in any value are left as is.
+
+        :param interpolate_kw: (default: ``{}``)
+
+            - A dictionary with keyword arguments that will be passed to the
+              pandas :py:method:`pandas.Series.interpolate` method.
+
+              Example usage:
+              To specify a fifth-degree polynomial interpolation, you can
+              pass the following dictionary:
+
+              .. code-block:: python
+              interpolate_kw = {"method": "polynomial", "order": 5}
 
         :param projection: (default: ``None``)
 
@@ -1729,7 +1742,8 @@ class Flight(
             for meth, columns in how.items():
                 if meth is not None:
                     idx = data.columns.get_indexer(columns)
-                    value = getattr(data.iloc[:, idx], meth)()
+                    kwargs = interpolate_kw if meth == "interpolate" else {}
+                    value = getattr(data.iloc[:, idx], meth)(**kwargs)
                     data[data.columns[idx]] = value
 
         elif isinstance(rule, int):

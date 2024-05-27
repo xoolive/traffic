@@ -508,6 +508,36 @@ def test_resample_how_argument() -> None:
         check_dtype=False,
     )
 
+    altitude_interpolate_quadratic = [
+        30000.0,
+        28440.0,
+        27160.0,
+        26160.0,
+        25440.0,
+        25000.0,
+        24840.0,
+        24960.0,
+        25360.0,
+        26040.0,
+        27000.0,
+    ]
+    resampled_interpolate_quadratic = Flight(df).resample(
+        "1s",
+        how="interpolate",
+        interpolate_kw={"method": "polynomial", "order": 2},
+    )
+    pd.testing.assert_frame_equal(
+        resampled_interpolate_quadratic.data[["altitude", "fake"]],
+        pd.DataFrame(
+            {
+                "altitude": altitude_interpolate_quadratic,
+                "fake": fake_interpolate,
+            }
+        ),
+        check_dtype=False,
+        check_exact=False,  # accomodate for small rounding errors
+    )
+
     resampled_ffill = Flight(df).resample("1s", how="ffill")
     pd.testing.assert_frame_equal(
         resampled_ffill.data[["altitude", "fake"]],
