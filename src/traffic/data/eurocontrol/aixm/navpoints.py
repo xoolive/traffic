@@ -141,8 +141,15 @@ class AIXMNavaidParser(Navaids):
                 "aixm:timeSlice/aixm:DesignatedPointTimeSlice/aixm:type",
                 ns,
             )
+            name_ = point.find(
+                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/aixm:name",
+                ns,
+            )
 
             name = designator.text if designator is not None else None
+            if name is None and name_ is not None:
+                name = name_.text
+
             type_str = type_.text if type_ is not None else None
 
             coords = tuple(float(x) for x in floats.text.split())
