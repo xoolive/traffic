@@ -82,6 +82,7 @@ It is also possible to combine elements by constructing a
       belevingsvlucht.Scattermapbox(
           mode="lines",
           line=dict(color="#f58518", width=1),
+          showlegend=False,
       )
   )
 
@@ -95,6 +96,28 @@ It is also possible to combine elements by constructing a
           center=airports["EHLE"].latlon_dict,
       ),
   )
+
+Or by combining several traces:
+.. jupyter-execute::
+    from traffic.data import airports
+    from traffic.data.samples import quickstart
+
+    subset = quickstart[["TVF22LK", "EJU53MF", "TVF51HP", "TVF78YY", "VLG8030"]]
+    subset = subset.resample("10s").eval()
+    assert subset is not None
+
+
+    fig = subset.scatter_mapbox(
+        color="callsign",
+        hover_data="altitude",
+        animation_frame="timestamp",
+        center=airports["LFPO"].latlon_dict,
+    )
+    fig = fig.add_traces(subset.line_mapbox(
+            color="callsign",
+        ).data)
+    fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+    fig.show()
 
 Similar functions are available and bound with :func:`plotly.express.line_geo`
 and :func:`plotly.express.scatter_geo`:
