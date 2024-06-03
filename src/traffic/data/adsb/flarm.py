@@ -19,8 +19,8 @@ def receiver_position(
     delta_d: Annotated[float, "m"] = distance(  # in meters
         msg["latitude"],
         msg["longitude"],
-        msg["sensorLatitude"],
-        msg["sensorLongitude"],
+        msg["reference_lat"],
+        msg["reference_lon"],
     )
     return delta_d < threshold
 
@@ -39,7 +39,7 @@ class FlarmData(DataFrameMixin):
     def decode(self) -> Optional[Traffic]:
         decoded = rs1090.flarm(
             self.data.rawmessage.values,
-            self.data.timeatplane.value,
+            self.data.timeatserver.values,
             self.data.sensorlatitude,
             self.data.sensorlongitude,
         )
