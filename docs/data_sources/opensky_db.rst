@@ -93,6 +93,27 @@ Then you may send requests:
             callsign="AIB%",
         )
 
+- based on airport (with origin/destination ICAO id):
+
+    .. code:: python
+
+        # flights from and to Zurich airport
+        t_lszh = opensky.history(
+            start="2024-03-15 09:00",
+            stop="2024-03-15 11:00",
+            airport="LSZH",
+            selected_columns=(
+                # colums from StateVector4 (quoted or not)
+                StateVectorsData4.time,
+                'icao24', 'lat', 'lon', 'velocity', 'heading', 'vertrate',
+                'callsign', 'onground', 'alert', 'spi', 'squawk', 'baroaltitude',
+                'geoaltitude', 'lastposupdate', 'lastcontact', 'serials', 'hour',
+                # (some) columns from FlightsData4: always quoted!
+                # returned as columns 'estdepartureairport' and 'estarrivalairport'
+                'FlightsData4.estdepartureairport', 'FlightsData4.estarrivalairport'),
+        )
+
+
 - based on (own?) receiver's identifier:
 
     .. code:: python
