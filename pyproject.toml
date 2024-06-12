@@ -89,7 +89,7 @@ pyspark = { version = ">=3.3.0", optional = true }
 [tool.poetry.extras]
 full = [
   "xarray",
-  "libarchive",
+  # "libarchive",
   "scikit-learn",
   "pyspark",
   "altair",
