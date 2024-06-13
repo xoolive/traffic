@@ -142,7 +142,7 @@ jobs:
           # sed -i "/pkcs12_password =/ s,=$,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
 
           # Run the documentation
-          cd docs && poetry run make html
+          cd docs && CARTES_CACHE=./cache poetry run make html
 
       - name: Deploy pages
         uses: peaceiris/actions-gh-pages@v4
