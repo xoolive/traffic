@@ -98,7 +98,9 @@ It is also possible to combine elements by constructing a
   )
 
 Or by combining several traces:
+
 .. jupyter-execute::
+
     from traffic.data import airports
     from traffic.data.samples import quickstart
 
