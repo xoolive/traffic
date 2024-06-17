@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from ..core import Flight
 
 
+@impunity
 def compute_path_angle(
     vertical_rate: Annotated[npt.NDArray[np.float64], "m/s"],
     speed: Annotated[npt.NDArray[np.float64], "m/s"],
