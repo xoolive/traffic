@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_VERSION: "1.7.0"
+  POETRY_VERSION: "1.8.2"
 
 jobs:
   deploy:
@@ -144,4 +144,5 @@ jobs:
         if: ${{ github.event_name != 'pull_request_target' }}
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           env_vars: PYTHON_VERSION

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_VERSION: "1.7.0"
+  POETRY_VERSION: "1.8.2"
 
 jobs:
   deploy:
