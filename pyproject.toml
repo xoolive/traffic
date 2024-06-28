@@ -51,6 +51,7 @@ CesiumJS = "traffic.plugins.cesiumjs"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
+numpy = { version="1.26.4,<=2.0.0" }
 impunity = ">=1.0.4"
 # impunity = { path = "../impunity", develop = true}
 pitot = ">=0.3.1"

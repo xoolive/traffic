@@ -226,7 +226,6 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "opensky":
-        # from . import session
         from .adsb.opensky import OpenSky
 
         res = OpenSky()
