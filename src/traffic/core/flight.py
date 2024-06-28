@@ -1732,8 +1732,8 @@ class Flight(
 
             if isinstance(how, str):
                 if how == "interpolate":
-                    interpolable = data.dtypes[data.dtypes != object].index
-                    other = data.dtypes[data.dtypes == object].index
+                    interpolable = data.dtypes[data.dtypes != object].index  # noqa: E721
+                    other = data.dtypes[data.dtypes == object].index  # noqa: E721
                     how = {how: set(interpolable) - {"timestamp"}}
                     how["ffill"] = set(other)
                 else:
