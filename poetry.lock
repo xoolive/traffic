@@ -2617,13 +2617,13 @@ sympy = "*"
 
 [[package]]
 name = "openap"
-version = "1.5"
+version = "2.0"
 description = "Open Aircraft Performance Model (OpenAP) in Python"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "openap-1.5-py3-none-any.whl", hash = "sha256:58eb78541989de35dbb918f0dcc0e317edcfe2ad48f0f896e05479b9e879c22f"},
-    {file = "openap-1.5.tar.gz", hash = "sha256:5ce3f731993586915f86a0c05380f6de7fc1b5d843cdb15f13b43272397df047"},
+    {file = "openap-2.0-py3-none-any.whl", hash = "sha256:3a2ffd28d7f0f884ea49c0fcb8f6fb08a29dcc2c0bc8957787f5e7c9da28c4c7"},
+    {file = "openap-2.0.tar.gz", hash = "sha256:fea6801fe0e1cae9c68c81859e82e869050be9a310d499fb94f27a11993f418b"},
 ]
 
 [package.dependencies]
