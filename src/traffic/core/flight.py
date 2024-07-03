@@ -1693,6 +1693,7 @@ class Flight(
               .. code-block:: python
               interpolate_kw = {"method": "polynomial", "order": 5}
 
+
         :param projection: (default: ``None``)
 
             - By default, lat/lon are resampled with a linear interpolation;
@@ -2493,8 +2494,8 @@ class Flight(
 
         The method uses latitude and longitude, projects the trajectory to a
         conformal projection and applies the algorithm. If x and y features are
-        already present in the DataFrame (after a call to
-        :ref:`~traffic.core.flight.Flight.compute_xy()` for instance) then this
+        already present in the DataFrame (after a call to `compute_xy
+        <#traffic.core.Flight.compute_xy>`_ for instance) then this
         projection is taken into account.
 
         The tolerance parameter must be defined in meters.
@@ -2827,6 +2828,7 @@ class Flight(
             fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
             flight.plot(ax, alpha=.5)
 
+
         .. note::
 
             See also `geoencode() <#traffic.core.Flight.geoencode>`_ for the
@@ -2896,6 +2898,7 @@ class Flight(
                     alt.Y("value:Q", title="altitude (in ft)")
                 ),
             )
+
 
         .. note::
 

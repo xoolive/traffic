@@ -744,7 +744,7 @@ For reference, look at the subtle differences between the following processing:
                 if segment.ILS_max == "06":
                     return flight.after(segment.stop - pd.Timedelta("1 min"))
 
-        t3 = quickstart.iterate_lazy().pipe(last_minute_with_taxi).eval(max_workers=4)
+        t3 = quickstart.iterate_lazy().pipe(last_minute_with_taxi).eval()
 
         with plt.style.context('traffic'):
             fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
@@ -762,7 +762,7 @@ For reference, look at the subtle differences between the following processing:
                 if second := next(segments, None):
                     return flight.after(first.start - pd.Timedelta('90s'))
 
-        t4 = quickstart.iterate_lazy().pipe(more_than_one_alignment).eval(max_workers=4)
+        t4 = quickstart.iterate_lazy().pipe(more_than_one_alignment).eval()
 
         flight = t4[0]
         segments = flight.aligned_on_ils("LFPG")
