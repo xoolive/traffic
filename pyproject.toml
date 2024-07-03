@@ -51,7 +51,7 @@ CesiumJS = "traffic.plugins.cesiumjs"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-numpy = { version="1.26.4,<=2.0.0" }
+numpy = { version="1.26.4,<=2.0.0" }  # TODO switch to numpy 2.0
 impunity = ">=1.0.4"
 # impunity = { path = "../impunity", develop = true}
 pitot = ">=0.3.1"
@@ -61,9 +61,9 @@ cartes = ">=0.7.7"
 pyopensky = ">=2.6"
 # pyopensky = { path = "../pyopensky", develop = true }
 httpx = ">=0.26.0"
-rs1090 = ">=0.2.0"
+rs1090 = ">=0.2.5"
 # rs1090 = { path = "../rs1090/python", develop = true }
-openap = ">=1.5"
+openap = ">=2.0"
 # openap = { path = "../openap", develop = true }
 metar = ">=1.8"
 pyarrow = ">=16.0"

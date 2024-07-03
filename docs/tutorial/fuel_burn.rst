@@ -156,11 +156,6 @@ improves the estimation of the fuel flow.
 Impact of the wind
 ~~~~~~~~~~~~~~~~~~
 
-On previous examples, OpenAP tends to overestimate the quantity of fuel burnt,
-by 13% in this example. However, ignoring the strong headwind makes an
-important difference: for this particular flight, the model **underestimates**
-the total burnt fuel by 26%.
-
 .. jupyter-execute::
 
     resampled = f.resample("5s").drop(columns=["CAS"])

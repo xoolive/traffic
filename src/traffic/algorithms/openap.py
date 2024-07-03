@@ -5,23 +5,13 @@ from typing import TYPE_CHECKING, Union, cast
 
 from impunity import impunity
 from pitot import aero
-from typing_extensions import Annotated
 
 import numpy as np
-import numpy.typing as npt
 
 from ..core import types as tt
 
 if TYPE_CHECKING:
     from ..core import Flight
-
-
-@impunity
-def compute_path_angle(
-    vertical_rate: Annotated[npt.NDArray[np.float64], "m/s"],
-    speed: Annotated[npt.NDArray[np.float64], "m/s"],
-) -> tt.angle_array:
-    return np.degrees(np.arctan2(vertical_rate, speed))  # type: ignore
 
 
 class OpenAP:
@@ -146,16 +136,12 @@ class OpenAP:
         if TAS is None:
             TAS = self.data.groundspeed  # unit: knots
 
-        path_angle: tt.angle_array = compute_path_angle(vertical_rate, TAS)
-
         FF = []
         Fuel = []
-        for i, tas, alt, pa, dti in zip(
-            count(1), TAS, altitude, path_angle, dt
+        for i, tas, alt, vs, dti in zip(
+            count(1), TAS, altitude, vertical_rate, dt
         ):
-            ff = fuelflow.enroute(
-                mass=mass[i - 1], tas=tas, alt=alt, path_angle=pa
-            )
+            ff = fuelflow.enroute(mass=mass[i - 1], tas=tas, alt=alt, vs=vs)
             if update_mass:
                 mass[i:] -= ff * dti if ff == ff else 0
             FF.append(ff)
