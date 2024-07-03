@@ -154,7 +154,7 @@ class OpenAP:
             count(1), TAS, altitude, path_angle, dt
         ):
             ff = fuelflow.enroute(
-                mass=mass[i - 1], tas=tas, alt=alt, path_angle=pa
+                mass=mass[i - 1], tas=tas, alt=alt, vs=pa
             )
             if update_mass:
                 mass[i:] -= ff * dti if ff == ff else 0
