@@ -113,7 +113,7 @@ jobs:
 
       - name: Style checking
         run: |
-          poetry run ruff src tests
+          poetry run ruff check src tests
           poetry run ruff format --check src tests
 
       - name: Type checking
