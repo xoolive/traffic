@@ -1,9 +1,16 @@
 from datetime import timedelta
 
+import pytest
 from traffic.data import eurofirs
-from traffic.data.samples import sample_m3
+
+notfound = False
+try:
+    from traffic.data.samples import sample_m3
+except ModuleNotFoundError:
+    notfound = True
 
 
+@pytest.mark.skipif(notfound, reason="libarchive not available")
 def test_so6() -> None:
     assert len(sample_m3) == 11043
 
