@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from pyopensky import impala, rest, schema, trino
+from pyopensky import rest, schema, trino
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.sql import ColumnExpressionArgument
 
@@ -182,7 +182,7 @@ def format_history(
 
 
 class OpenSky:
-    """Wrapper to OpenSky REST API, Trino database and Impala Shell.
+    """Wrapper to OpenSky REST API and Trino database.
 
     An instance is automatically constructed when importing traffic.data with
     the name opensky. Credentials are fetched from the configuration file.
@@ -194,7 +194,7 @@ class OpenSky:
     The configuration file is located at `traffic.config_file`.
 
     All functions from the REST API are prefixed with `api_`. The other
-    functions wrap the access to the Impala shell.
+    functions wrap the access to the Trino database.
 
     REST API is documented here: https://opensky-network.org/apidoc/rest.html
 
@@ -498,7 +498,7 @@ class OpenSky:
             **kwargs,
         )
 
-    @copy_documentation(impala.Impala.flarm)
+    @copy_documentation(trino.Trino.flarm)
     def flarm(
         self,
         start: timelike,

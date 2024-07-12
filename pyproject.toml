@@ -58,7 +58,7 @@ pitot = ">=0.3.1"
 # pitot = { path = "../pitot", develop = true }
 cartes = ">=0.7.7"
 # cartes = { path = "../cartes", develop = true }
-pyopensky = ">=2.6"
+pyopensky = ">=2.8"
 # pyopensky = { path = "../pyopensky", develop = true }
 httpx = ">=0.26.0"
 rs1090 = ">=0.2.5"
