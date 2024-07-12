@@ -1456,14 +1456,27 @@ class Flight(
             yield from after.sliding_windows(duration_, step_)
 
     @overload
-    def split(self, value: int, unit: str) -> FlightIterator: ...
+    def split(
+        self,
+        value: int,
+        unit: str,
+        condition: None | Callable[["Flight", "Flight"], bool] = None,
+    ) -> FlightIterator: ...
 
     @overload
-    def split(self, value: str, unit: None = None) -> FlightIterator: ...
+    def split(
+        self,
+        value: str,
+        unit: None = None,
+        condition: None | Callable[["Flight", "Flight"], bool] = None,
+    ) -> FlightIterator: ...
 
     @flight_iterator
     def split(
-        self, value: Union[int, str] = 10, unit: Optional[str] = None
+        self,
+        value: Union[int, str] = 10,
+        unit: Optional[str] = None,
+        condition: None | Callable[["Flight", "Flight"], bool] = None,
     ) -> Iterator["Flight"]:
         """Iterates on legs of a Flight based on the distribution of timestamps.
 
@@ -1476,13 +1489,51 @@ class Flight(
           ``np.timedelta64``);
         - in the pandas style: ``Flight.split('10T')`` (see ``pd.Timedelta``)
 
+        If the `condition` parameter is set, the flight is split between two
+        segments only if `condition(f1, f2)` is verified.
+
+        Example:
+
+        .. code:: python
+
+            def no_split_below_5000ft(f1, f2):
+                first = f1.data.iloc[-1].altitude >= 5000
+                second = f2.data.iloc[0].altitude >= 5000
+                return first or second
+
+            # would yield many segments
+            belevingsvlucht.query('altitude > 2000').split('1 min')
+
+            # yields only one segment
+            belevingsvlucht.query('altitude > 2000').split(
+                '1 min', condition = no_split_below_5000ft
+            )
+
         """
         if isinstance(value, int) and unit is None:
             # default value is 10 m
             unit = "m"
 
-        for data in _split(self.data, value, unit):
-            yield self.__class__(data)
+        if condition is None:
+            for data in _split(self.data, value, unit):
+                yield self.__class__(data)
+
+        else:
+            previous = None
+            for data in _split(self.data, value, unit):
+                if previous is None:
+                    previous = self.__class__(data)
+                else:
+                    latest = self.__class__(data)
+                    if condition(previous, latest):
+                        yield previous
+                        previous = latest
+                    else:
+                        previous = self.__class__(
+                            pd.concat([previous.data, data])
+                        )
+            if previous is not None:
+                yield previous
 
     def max_split(
         self,

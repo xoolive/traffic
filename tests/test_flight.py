@@ -913,3 +913,34 @@ def test_label() -> None:
     ils = set(ils for ils in labelled.ILS_unique if ils is not None)
     assert ils == {"14", "28"}
     assert labelled.duration_min > pd.Timedelta("2 min 30 s")
+
+
+def test_split_condition() -> None:
+    def no_split_below_5000(f1: Flight, f2: Flight) -> bool:
+        return (  # type: ignore
+            f1.data.iloc[-1].altitude >= 5000
+            or f2.data.iloc[0].altitude >= 5000
+        )
+
+    f_max = (
+        belevingsvlucht.query("altitude > 2000")  # type: ignore
+        .split(
+            "1 min",
+            condition=no_split_below_5000,
+        )
+        .max()
+    )
+
+    assert f_max is not None
+    assert f_max.start - belevingsvlucht.start < pd.Timedelta("5 min")
+    assert belevingsvlucht.stop - f_max.stop < pd.Timedelta("10 min")
+
+
+def test_split_map() -> None:
+    result = (
+        belevingsvlucht.aligned_on_ils("EHLE")
+        .map(lambda f: f.resample("10s"))
+        .all()
+    )
+    assert result is not None
+    assert 140 <= len(result) <= 160

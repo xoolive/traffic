@@ -232,6 +232,24 @@ class FlightIterator:
         """
         return min(self, key=lambda x: getattr(x, key), default=None)
 
+    def map(
+        self, fun: Callable[["Flight"], Optional["Flight"]]
+    ) -> "FlightIterator":
+        """Applies a function on each segment of an Iterator.
+
+        For instance:
+
+        >>> flight.split("10min").map(lambda f: f.resample("2s")).all()
+
+        """
+
+        def aux(self: FlightIterator) -> Iterator["Flight"]:
+            for segment in self:
+                if (result := fun(segment)) is not None:
+                    yield result
+
+        return flight_iterator(aux)(self)
+
     def __call__(
         self,
         fun: Callable[..., "LazyTraffic"],
@@ -272,8 +290,6 @@ def flight_iterator(
         fun.__annotations__["return"] == Iterator["Flight"]
         or eval(fun.__annotations__["return"]) == Iterator["Flight"]
     ):
-        print(eval(fun.__annotations__["return"]))
-        print(Iterator["Flight"])
         raise TypeError(msg)
 
     @functools.wraps(fun, updated=("__dict__", "__annotations__"))
