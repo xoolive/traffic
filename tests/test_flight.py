@@ -934,3 +934,13 @@ def test_split_condition() -> None:
     assert f_max is not None
     assert f_max.start - belevingsvlucht.start < pd.Timedelta("5 min")
     assert belevingsvlucht.stop - f_max.stop < pd.Timedelta("10 min")
+
+
+def test_split_map() -> None:
+    result = (
+        belevingsvlucht.aligned_on_ils("EHLE")
+        .map(lambda f: f.resample("10s"))
+        .all()
+    )
+    assert result is not None
+    assert 140 <= len(result) <= 160
