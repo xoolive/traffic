@@ -1,4 +1,5 @@
 from cartes.crs import Lambert93  # type: ignore
+from traffic.algorithms.filters.ekf import EKF
 from traffic.algorithms.filters.ground import KalmanTaxiway
 from traffic.data.samples import full_flight_short
 
@@ -24,3 +25,17 @@ def test_snappy() -> None:
 
     assert 0 < g1.distance(h1).lateral.max() < 0.1
     assert 0 < g2.distance(h2).lateral.max() < 0.1
+
+
+def test_ekf() -> None:
+    f = (
+        full_flight_short.compute_xy(projection=Lambert93())
+        .query('bds in ["05", "09"]')  # type: ignore
+        .resample("1s")  # TODO the filter should work with partial measurements
+    )
+    assert f is not None
+    g = f.filter(EKF())
+    distance = g.distance(f)
+
+    # assert distance.lateral.max() <  # currently 0
+    assert distance.vertical.max() < 50
