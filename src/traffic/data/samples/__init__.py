@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import types
+from datetime import timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Union, cast
@@ -13,6 +14,7 @@ from ..eurocontrol.ddr.so6 import SO6
 _current_dir = Path(__file__).parent
 __all__ = [
     *sorted(f.stem[:-5] for f in _current_dir.glob("**/*.json.gz")),
+    *sorted(f.stem for f in _current_dir.glob("**/*.jsonl")),
     "sample_so6",
     "sample_dump1090",
 ]
@@ -20,11 +22,15 @@ __all__ = [
 
 @lru_cache()
 def get_flight(filename: str, directory: Path) -> Flight | Traffic:
-    flight: Union[None, Flight, Traffic] = Traffic.from_file(
-        directory / f"{filename}.json.gz", dtype={"icao24": str}
-    )
+    flight: Union[None, Flight, Traffic] = None
+    if (fh := directory / f"{filename}.json.gz").exists():
+        flight = Traffic.from_file(fh, dtype={"icao24": str})
+    if (fh := directory / f"{filename}.jsonl").exists():
+        flight = Traffic.from_file(fh, dtype={"icao24": str})
     if flight is None:
-        raise RuntimeError(f"File {filename}.json.gz not found in {directory}")
+        raise RuntimeError(
+            f"File {filename}.json[l,.gz] not found in {directory}"
+        )
     icao24 = set(flight.data.icao24) if "icao24" in flight.data.columns else []
     if len(icao24) <= 1:
         if Flight(flight.data).split("1h").sum() == 1:
@@ -41,9 +47,11 @@ def get_flight(filename: str, directory: Path) -> Flight | Traffic:
                 df.last_position * 1e6
             ).dt.tz_localize("utc")
         )
-    return flight.assign(
-        timestamp=lambda df: df.timestamp.dt.tz_localize("utc")
-    )
+    if flight.data.timestamp.dtype.tz != timezone.utc:
+        flight = flight.assign(
+            timestamp=lambda df: df.timestamp.dt.tz_localize("utc")
+        )
+    return flight
 
 
 def get_sample(
@@ -64,6 +72,7 @@ def assign_id(t: Union[Traffic, Flight], name: str) -> Union[Traffic, Flight]:
 airbus_tree: Flight
 belevingsvlucht: Flight
 elal747: Flight
+full_flight_short: Flight
 lfbo_tma: Airspace
 noisy: Flight
 quickstart: Traffic
@@ -82,7 +91,7 @@ def __getattr__(name: str) -> Any:
         return SO6.from_file(_current_dir / "so6" / "sample_m3.so6.7z")
     if name == "lfbo_tma":
         return Airspace.from_file(_current_dir / "airspaces" / "LFBOTMA.json")
-    filelist = list(_current_dir.glob(f"**/{name}.json.gz"))
+    filelist = list(_current_dir.glob(f"**/{name}.json*"))
     if len(filelist) == 0:
         msg = f"File {name}.json.gz not found in available samples"
         raise AttributeError(msg)
