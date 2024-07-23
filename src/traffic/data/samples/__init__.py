@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import types
-from datetime import timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Union, cast
@@ -47,7 +46,7 @@ def get_flight(filename: str, directory: Path) -> Flight | Traffic:
                 df.last_position * 1e6
             ).dt.tz_localize("utc")
         )
-    if flight.data.timestamp.dtype.tz != timezone.utc:
+    if not hasattr(flight.data.timestamp.dtype, "tz"):
         flight = flight.assign(
             timestamp=lambda df: df.timestamp.dt.tz_localize("utc")
         )
