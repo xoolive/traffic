@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 from __future__ import annotations
 
+import gzip
 import json
 import logging
 import re
@@ -116,6 +117,16 @@ class DataFrameMixin(object):
                 timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
             )
             return cls(df)
+        if ".jsonl" in path.suffixes and ".gz" in path.suffixes:
+            with gzip.open(path) as fh:
+                df = pd.json_normalize(
+                    json.loads(elt) for elt in fh.readlines()
+                )
+            df = df.assign(
+                timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
+            )
+            return cls(df)
+
         if ".csv" in path.suffixes:
             return cls(pd.read_csv(path, **kwargs))
         if ".h5" == path.suffixes[-1]:  # coverage: ignore

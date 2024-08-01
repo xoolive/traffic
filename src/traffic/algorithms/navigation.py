@@ -1113,7 +1113,7 @@ class NavigationFeatures:
     def on_parking_position(
         self,
         airport: Union[str, "Airport"],
-        buffer_size: float = 1e-4,  # degrees
+        buffer_size: float = 1e-5,  # degrees
         parking_positions: None | "Overpass" = None,
     ) -> Iterator["Flight"]:
         """

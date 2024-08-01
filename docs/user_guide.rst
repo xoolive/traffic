@@ -68,13 +68,13 @@ Navigation events
 .. toctree::
    :maxdepth: 1
 
-   tutorial/flight_phases
+   navigation/flight_phases
    airac_usage
-   tutorial/go_around
-   tutorial/runway_changes
-   tutorial/top_of_climb
-   tutorial/flight_plan
-   tutorial/fuel_burn
+   navigation/go_around
+   navigation/runway_changes
+   navigation/top_of_climb
+   navigation/flight_plan
+   navigation/fuel_burn
 
 Statistical analysis
 --------------------

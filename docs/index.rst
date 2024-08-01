@@ -26,6 +26,7 @@ Contents
 
    installation
    quickstart
+   tutorial
    user_guide
    gallery
    api_reference
