@@ -51,7 +51,6 @@ CesiumJS = "traffic.plugins.cesiumjs"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-numpy = { version="1.26.4,<=2.0.0" }  # TODO switch to numpy 2.0
 impunity = ">=1.0.4"
 # impunity = { path = "../impunity", develop = true}
 pitot = ">=0.3.1"
@@ -70,7 +69,8 @@ pyarrow = ">=16.0"
 typing-extensions = ">=4.2"
 
 # onnxruntime is usually late to release, although available on conda-forge
-onnxruntime = { version = ">=1.12", python = "<3.13" }
+# 1.18.1 is the first release to properly address numpy 2.0
+onnxruntime = { version = ">=1.18.1", python = "<3.13" }
 
 # -- Optional dependencies --
 xarray = { version = ">=0.18.2", optional = true }

@@ -7,6 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import ClassVar, Iterator
 
+import numpy as np
 import pandas as pd
 
 from ...core.mixins import GeoDBMixin
@@ -204,6 +205,9 @@ class Navaids(GeoDBMixin):
         if x.shape[0] == 0:
             return None
         dic = dict(x.iloc[0])
+        for key, value in dic.items():
+            if isinstance(value, np.float64):
+                dic[key] = float(value)
         if "altitude" not in dic:
             dic["altitude"] = None
             dic["frequency"] = None

@@ -584,7 +584,10 @@ class Flight(
         feature = "_".join(name_split)
         if feature not in self.data.columns:
             raise AttributeError(msg)
-        return getattr(self.data[feature], agg)()
+        value = getattr(self.data[feature], agg)()
+        if isinstance(value, np.float64):
+            value = float(value)
+        return value
 
     def pipe(
         self,
