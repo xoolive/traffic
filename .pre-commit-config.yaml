@@ -28,13 +28,11 @@ repos:
       - id: ruff-format
         args: [--check]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.1
+    rev: v1.11.1
     hooks:
       - id: mypy
         exclude: ^docs/conf.py
         additional_dependencies:
-          - types-pkg-resources
-          - types-requests
           - altair
           - cartopy
           - impunity

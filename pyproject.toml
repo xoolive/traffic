@@ -137,6 +137,7 @@ select = [
   "F",  # pyflakes
   "I",  # isort
   "NPY",  # numpy
+  "NPY201",  # numpy
   # "PD",  # pandas
   "DTZ", # flake8-datetimez
   "RUF"

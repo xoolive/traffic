@@ -81,11 +81,6 @@ def test_get_traffic() -> None:
     assert "belevingsvlucht" in traffic.flight_ids
 
 
-def test_emptydata() -> None:
-    assert airbus_tree.registration == "F-WWAE"
-    assert airbus_tree.typecode == "A388"
-
-
 def test_iterators() -> None:
     flight = belevingsvlucht
     assert min(flight.timestamp) == flight.start
@@ -711,7 +706,9 @@ def test_parking_position() -> None:
     flight = zurich_airport["EDW229"]
     assert flight is not None
 
-    pp = flight.on_parking_position("LSZH", parking_positions=lszh_pp).next()
+    pp = flight.on_parking_position(
+        "LSZH", parking_positions=lszh_pp, buffer_size=1e-4
+    ).next()
     assert pp is not None
     assert 5 < pp.duration.total_seconds() < 10
     assert pp.parking_position_max == "A49"

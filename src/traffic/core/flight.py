@@ -2206,7 +2206,7 @@ class Flight(
         )
 
     @overload
-    def distance(  # type: ignore
+    def distance(
         self, other: None = None, column_name: str = "distance"
     ) -> float: ...
 
