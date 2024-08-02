@@ -215,6 +215,19 @@ def consistency_solver(
             return mask
 
 
+def check_solution(dd, mask):
+    iold = None
+    for i, maski in enumerate(mask):
+        if not maski:
+            if iold is not None:
+                assert dd[i - iold, iold]
+            iold = i
+
+
+def meanangle(a1: npt.NDArray[Any], a2: npt.NDArray[Any]) -> npt.NDArray[Any]:
+    return diffangle(a1, a2) * 0.5 + a2
+
+
 class FilterConsistency(FilterBase):
     """
     Filters noisy values, keeping only values consistent with each other.
@@ -223,28 +236,14 @@ class FilterConsistency(FilterBase):
     :math:`i` and :math:`j` are consistent, an edge :math:`(i,j)` is added to
     the graph. The kept values is the longest path in this graph, resulting in a
     sequence of consistent values.  The consistencies checked vertically between
-    :math:`t_i<t_j` are:: :math:`|(alt_j-alt_i)-(t_j-t_i)* ROCD_i| <
-    clip((t_j-t_i)*dalt_dt,dalt_min,dalt_max)` and
-    :math:`|(alt_j-alt_i)-(t_j-t_i)* ROCD_j| <
-    clip((t_j-t_i)*dalt_dt,dalt_min,dalt_max)` where :math:`dalt_dt`,
-    :math:`dalt_min` and :math:`dalt_max` are thresholds that can be specified
+    :math:`t_i<t_j` are:: :math:`|(alt_j-alt_i)-(t_j-t_i)* (ROCD_i+ROCD_j)*0.5| < dalt_dt_error` where :math:`dalt_dt_error` is a threshold that can be specified
     by the user.
 
     The consistencies checked horizontally between :math:`t_i<t_j` are:
-    :math:`|track_i-atan2(lat_j-lat_i,lon_j-lon_i)| < (t_j-t_i)*dtrack_dt` and
-    :math:`|track_j-atan2(lat_j-lat_i,lon_j-lon_i)| < (t_j-t_i)*dtrack_dt` and
-    :math:`|dist(lat_j,lat_i,lon_j,lon_i)-groundspeed_i*(t_j-t_i)| <
-    clip((t_j-t_i)*groundspeed_i*ddist_dt_over_gspeed,0,ddist_max)` where
-    :math:`dtrack_dt`, :math:`ddist_dt_over_gspeed` and :math:`ddist_max`
-    are thresholds that can be specified by the user.
+    :math:`|(track_i+track_j)*0.5-atan2(lat_j-lat_i,lon_j-lon_i)| < (t_j-t_i)*dtrack_dt_error` and
+    :math:`|dist(lat_j,lat_i,lon_j,lon_i)-(groundspeed_i+groundspeed_j)*0.5*(t_j-t_i)| < dist(lat_j,lat_i,lon_j,lon_i) * relative_error_on_dist` where :math:`dtrack_dt_error` and :math:`relative_error_on_dist` are thresholds that can be specified by the user.
 
-    If :math:`horiz_and_verti_together=False` then two graphs are built, one
-    for the vertical variables and one for horizontal variables. Otherwise, only
-    one graph is built. Using two graphs is more precise but slower.  In order
-    to compute the longest path faster, a greedy algorithm is used. However, if
-    the ratio of kept points is inferior to :math:`exact_when_kept_below`
-    then an exact and slower computation is triggered. This computation uses the
-    Network library or the faster graph-tool library if available.
+    In order to compute the longest path faster, a greedy algorithm is used. However, if the ratio of kept points is inferior to :math:`exact_when_kept_below` then an exact and slower computation is triggered. This computation uses the Network library or the faster graph-tool library if available.
 
     This filter replaces unacceptable values with NaNs. Then, a strategy may be
     applied to fill the NaN values, by default a forward/backward fill. Other
@@ -254,95 +253,79 @@ class FilterConsistency(FilterBase):
     """
 
     default: ClassVar[dict[str, float | tuple[float, ...]]] = dict(
-        dtrack_dt=2,  # [degree/s]
-        dalt_dt=200,  # [feet/min]
-        dalt_min=50,  # [feet]
-        dalt_max=4000,  # [feet]
-        ddist_dt_over_gspeed=0.2,  # [-]
-        ddist_max=3,  # [NM]
+        dtrack_dt_error=0.3,  # [degree/s]
+        dalt_dt_error=100,  # [feet/min]
+        relative_error_on_dist=2 / 100,  # [-]
     )
 
     def __init__(
         self,
         horizon: int | None = 200,
-        horiz_and_verti_together: bool = False,
-        exact_when_kept_below: float = 0.5,
+        exact_when_kept_below: float = 0.8,
         **kwargs: float | tuple[float, ...],
     ) -> None:
-        self.horiz_and_verti_together = horiz_and_verti_together
         self.horizon = horizon
         self.thresholds = {**self.default, **kwargs}
         self.exact_when_kept_below = exact_when_kept_below
 
     def apply(self, data: pd.DataFrame) -> pd.DataFrame:
-        lat = data.latitude.values
-        lon = data.longitude.values
-        alt = data.altitude.values
-        rocd = data.vertical_rate.values
-        gspeed = data.groundspeed.values
+        lat = data.latitude.values.astype(np.float64)
+        lon = data.longitude.values.astype(np.float64)
+        alt = data.altitude.values.astype(np.float64)
+        rocd = data.vertical_rate.values.astype(np.float64)
+        gspeed = data.groundspeed.values.astype(np.float64)
         t = (
             (data.timestamp - data.timestamp.iloc[0])
             / pd.to_timedelta(1, unit="s")
-        ).values
+        ).values.astype(np.float64)
         assert t.min() >= 0
         n = lat.shape[0]
         horizon = n if self.horizon is None else min(self.horizon, n)
-
-        def lagh(v: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-            return lag(horizon, v)
-
-        dt = abs(lagh(t) - t) / 3600
+        dt = (lag(horizon, t) - t) / 3600.0
+        assert np.nanmin(dt) >= 0.0
         lat_rad = np.radians(lat)
         lon_rad = np.radians(lon)
-        lag_lat_rad = lagh(lat_rad)
-        # mask_nan = np.isnan(lag_lat_rad)
+        lag_lat_rad = lag(horizon, lat_rad)
+        lag_lon_rad = lag(horizon, lon_rad)
         dlat = lag_lat_rad - lat_rad
-        dlon = lagh(lon_rad) - lon_rad
+        dlon = lag(horizon, lon_rad) - lon_rad
         dx, dy = dxdy_from_dlat_dlon(lat_rad, lon_rad, dlat, dlon)
         track_rad = np.radians(data.track.values)
-        lag_track_rad = lagh(track_rad)
+        lag_track_rad = lag(horizon, track_rad)
         mytrack_rad = np.arctan2(-dx, -dy) + np.pi
-        thresh_track = np.radians(self.thresholds["dtrack_dt"]) * 3600 * dt
-        ddtrack_fwd = np.abs(diffangle(mytrack_rad, track_rad)) < thresh_track
-        ddtrack_bwd = (
-            np.abs(diffangle(mytrack_rad, lag_track_rad)) < thresh_track
+        # mytrack_rad[np.logical_and(dx==0,dy==0)]=np.nan
+        thresh_track = np.radians(self.thresholds["dtrack_dt_error"]) * (
+            3600 * dt
         )
-        ddtrack = np.logical_and(ddtrack_fwd, ddtrack_bwd)
-        dist = distance(lag_lat_rad, lagh(lon_rad), lat_rad, lon_rad)
-        absdist = abs(dist)
-        gdist_matrix = gspeed * dt
-        ddspeed = np.abs(gdist_matrix - absdist) < np.clip(
-            self.thresholds["ddist_dt_over_gspeed"] * gspeed * dt,
-            0,
-            self.thresholds["ddist_max"],
+        ddtrack = (
+            np.abs(diffangle(mytrack_rad, meanangle(track_rad, lag_track_rad)))
+            <= thresh_track
         )
-        ddhorizontal = np.logical_and(ddtrack, ddspeed)
+        dist = distance(lag_lat_rad, lag_lon_rad, lat_rad, lon_rad)
+        lag_gspeed = lag(horizon, gspeed)
+        computed_dist = (lag_gspeed + gspeed) * 0.5 * dt
+        ddspeed = (
+            np.abs(computed_dist - dist)
+            <= self.thresholds["relative_error_on_dist"] * dist
+        )
 
-        dalt = lagh(alt) - alt
-        thresh_alt = np.clip(
-            self.thresholds["dalt_dt"] * 60 * dt,
-            self.thresholds["dalt_min"],
-            self.thresholds["dalt_max"],
+        dalt = lag(horizon, alt) - alt
+        dt_min = 60 * dt
+        thresh_alt = self.thresholds["dalt_dt_error"] * dt_min
+        ddvertical = (
+            np.abs(dalt - (rocd + lag(horizon, rocd)) * 0.5 * dt_min)
+            <= thresh_alt
         )
-        ddvertical = np.logical_and(
-            np.abs(dalt - rocd * dt * 60) < thresh_alt,
-            np.abs(dalt - lagh(rocd) * dt * 60) < thresh_alt,
-        )
-        if self.horiz_and_verti_together:
-            mask_horiz = consistency_solver(
-                np.logical_and(ddhorizontal, ddvertical),
-                self.exact_when_kept_below,
-            )
-            mask_verti = mask_horiz
-        else:
-            mask_horiz = consistency_solver(
-                ddhorizontal, self.exact_when_kept_below
-            )
-            mask_verti = consistency_solver(
-                ddvertical, self.exact_when_kept_below
-            )
-        data.loc[
-            mask_horiz, ["track", "longitude", "latitude", "groundspeed"]
-        ] = np.nan
+
+        mask_speed = consistency_solver(ddspeed, self.exact_when_kept_below)
+        mask_track = consistency_solver(ddtrack, self.exact_when_kept_below)
+        mask_verti = consistency_solver(ddvertical, self.exact_when_kept_below)
+        # check_solution(ddspeed,mask_speed)
+        # check_solution(ddtrack,mask_track)
+        # check_solution(ddvertical,mask_verti)
+        mask_lat_lon = np.logical_or(mask_speed, mask_track)
+        data.loc[mask_lat_lon, ["longitude", "latitude"]] = np.nan
+        data.loc[mask_speed, ["groundspeed"]] = np.nan
+        data.loc[mask_track, ["track"]] = np.nan
         data.loc[mask_verti, ["altitude", "vertical_rate"]] = np.nan
         return data
