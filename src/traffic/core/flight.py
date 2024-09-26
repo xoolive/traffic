@@ -2792,7 +2792,8 @@ class Flight(
             return failure()
 
         timestamped_df = df.sort_values("mintime").assign(
-            timestamp=lambda df: df.mintime.dt.round("s")
+            # here the mintime is actually a float
+            timestamp=lambda df: pd.to_datetime(df.mintime, unit="s", utc=True)
         )
 
         referenced_df = (
