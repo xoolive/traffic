@@ -2,6 +2,7 @@ import tempfile
 from typing import Callable
 
 import pytest
+
 from traffic.core import Traffic
 from traffic.data.samples import zurich_airport
 

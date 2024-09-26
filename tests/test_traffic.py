@@ -1,8 +1,7 @@
+import pandas as pd
 from traffic.core import Flight
 from traffic.data import eurofirs
 from traffic.data.samples import switzerland
-
-import pandas as pd
 
 
 def test_properties() -> None:

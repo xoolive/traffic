@@ -1,5 +1,6 @@
 from typing import List, cast
 
+import pandas as pd
 from traffic.core.flightplan import (
     Airway,
     CoordinatePoint,
@@ -10,8 +11,6 @@ from traffic.core.flightplan import (
     _ElementaryBlock,
 )
 from traffic.data.basic.airways import Airways
-
-import pandas as pd
 
 
 class ExtraData(Airways):

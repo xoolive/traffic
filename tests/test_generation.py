@@ -1,12 +1,12 @@
 from typing import Any, Tuple, cast
 
 from cartopy.crs import EuroPP
-from traffic.core import Flight, Traffic
-from traffic.data.samples import collections, get_sample
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from traffic.core import Flight, Traffic
+from traffic.data.samples import collections, get_sample
 
 
 class NaiveGeneration:

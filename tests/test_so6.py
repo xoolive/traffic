@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+
 from traffic.data import eurofirs
 
 notfound = False

@@ -8,6 +8,10 @@ from typing import Any, Optional, cast
 import httpx
 import pytest
 from cartes.osm import Overpass
+
+import numpy as np
+import pandas as pd
+from pandas.testing import assert_frame_equal
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight, Traffic
 from traffic.data import airports, eurofirs, navaids, runways
@@ -20,10 +24,6 @@ from traffic.data.samples import (
     get_sample,
     zurich_airport,
 )
-
-import numpy as np
-import pandas as pd
-from pandas.testing import assert_frame_equal
 
 # This part only serves on travis when the downloaded file is corrupted
 # This shouldn't happen much as caching is now activated.
