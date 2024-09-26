@@ -2791,13 +2791,24 @@ class Flight(
         if df is None or df.shape[0] == 0:
             return failure()
 
-        timestamped_df = df.sort_values("mintime").assign(
-            # here the mintime is actually a float
-            timestamp=lambda df: pd.to_datetime(df.mintime, unit="s", utc=True)
+        timestamped_df = (
+            df.sort_values("mintime")
+            .assign(
+                timestamp=lambda df: pd.to_datetime(
+                    df.mintime, unit="s", utc=True
+                )
+            )
+            # TODO shouldn't be necessary after pyopensky 2.10
+            .convert_dtypes(dtype_backend="pyarrow")
         )
 
         referenced_df = (
-            timestamped_df.merge(self.data, on="timestamp", how="outer")
+            timestamped_df.merge(
+                # TODO shouldn't be necessary after pyopensky 2.10
+                self.data.convert_dtypes(dtype_backend="pyarrow"),
+                on="timestamp",
+                how="outer",
+            )
             .sort_values("timestamp")
             .rename(
                 columns=dict(
@@ -2831,7 +2842,7 @@ class Flight(
         )
         df = df.assign(
             timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
-        )
+        ).convert_dtypes(dtype_backend="pyarrow")
         extended = Flight(df)
 
         # fix for https://stackoverflow.com/q/53657210/1595335
