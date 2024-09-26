@@ -66,7 +66,7 @@ jobs:
           path: |
             ~/.local
             .venv
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          key: poetry-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1.4.1
@@ -86,7 +86,7 @@ jobs:
             ~/.cache/traffic/
             ~/.cache/opensky/
             ~/.cache/cartes/
-          key: traffic-${{ runner.os }}
+          key: traffic-${{ hashFiles('poetry.lock') }}
 
       - name: Cache folder for documentation
         uses: actions/cache@v4
@@ -94,7 +94,7 @@ jobs:
         with:
           path: |
             docs/_build/
-          key: docs-${{ runner.os }}
+          key: docs-${{ hashFiles('poetry.lock') }}
 
       - name: Ubuntu system dependencies
         run: |
@@ -136,6 +136,8 @@ jobs:
           poetry run traffic cache --fill
 
           export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
+
+          sed -i "/tqdm_tyle =/ s,auto,disable," $TRAFFIC_CONFIG
 
           sed -i "/nm_path =/ s,=$,= $PWD/traffic_data/airac_2111," $TRAFFIC_CONFIG
           # sed -i "/pkcs12_filename =/ s,=.*$,= $PWD/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG

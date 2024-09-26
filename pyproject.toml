@@ -34,7 +34,7 @@ include = [
   ".dat",
   "*.json.*",
   ".onnx",
-  "allft_fields.txt"
+  "allft_fields.txt",
 ]
 
 [tool.poetry-dynamic-versioning]
@@ -50,17 +50,17 @@ Bluesky = "traffic.plugins.bluesky"
 CesiumJS = "traffic.plugins.cesiumjs"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.10,<4.0"
 impunity = ">=1.0.4"
 # impunity = { path = "../impunity", develop = true}
 pitot = ">=0.3.1"
 # pitot = { path = "../pitot", develop = true }
 cartes = ">=0.7.7"
 # cartes = { path = "../cartes", develop = true }
-pyopensky = ">=2.8"
+pyopensky = ">=2.9"
 # pyopensky = { path = "../pyopensky", develop = true }
-httpx = ">=0.26.0"
-rs1090 = ">=0.2.5"
+httpx = ">=0.27.2"
+rs1090 = ">=0.3.0"
 # rs1090 = { path = "../rs1090/python", develop = true }
 openap = ">=2.0"
 # openap = { path = "../openap", develop = true }
@@ -70,23 +70,22 @@ typing-extensions = ">=4.2"
 
 # onnxruntime is usually late to release, although available on conda-forge
 # 1.18.1 is the first release to properly address numpy 2.0
-onnxruntime = { version = ">=1.18.1", python = "<3.13" }
+onnxruntime = { version = ">=1.19.2", python = "<3.13" }
 
 # -- Optional dependencies --
-xarray = { version = ">=0.18.2", optional = true }
-scikit-learn = { version = ">=1.0", optional = true }
+xarray = { version = ">=2024.9.0", optional = true }
+scikit-learn = { version = ">=1.5.2", optional = true }
 
 libarchive = { version = ">=0.4.7,<1.0.0", optional = true }
 
-# -- Visualization --
-altair = {version = "^5.3", optional = true}
-ipywidgets = {version = "^8.1", optional = true}
-ipyleaflet = {version = ">=0.18,<0.20", optional = true}
-lonboard = {version = ">=0.8,<0.10", optional = true}
-plotly = {version = "^5.21", optional = true}
+altair = { version = ">=5.4.1", optional = true }
+ipywidgets = { version = ">=8.1.5", optional = true }
+ipyleaflet = { version = ">=0.18,<0.20", optional = true }
+lonboard = { version = ">=0.8,<0.10", optional = true }
+plotly = { version = ">=5.24.1", optional = true }
 
 # -- Spark --
-pyspark = { version = ">=3.3.0", optional = true }
+pyspark = { version = ">=3.5.3", optional = true }
 
 [tool.poetry.extras]
 full = [
@@ -107,20 +106,20 @@ libarchive = ["libarchive"]
 spark = ["pyspark"]
 
 [tool.poetry.group.dev.dependencies]
-pre-commit = ">=2.13.0"
-mypy = ">=0.981"
-ruff = ">=0.0.247"
-Sphinx = ">=5.1"
-sphinx-rtd-theme = ">=0.5.2"
-jupyter_sphinx = ">=0.3.2"
-sphinx-autodoc-typehints = ">=1.17,!=1.21.4"
-pytest = ">=7.1"
-pytest-cov = ">=4.0"
-pytest-timeout = ">=2.1"
-codecov = ">=2.1.11"
-ipykernel = ">=6.25.0"
-# pandas-stubs = { version = ">=2.1.4" }
-types-pkg-resources = ">=0.1.3"
+pre-commit = "^3.8.0"
+mypy = "^1.11.2"
+ruff = "^0.6.8"
+Sphinx = "^7.4.7"
+sphinx-rtd-theme = "^2.0.0"         # requires Sphinx < 8
+jupyter_sphinx = "^0.5.3"
+sphinx-autodoc-typehints = "^2.2.3" # latest version requires Sphinx > 8
+pytest = "^8.3.3"
+pytest-cov = "^5.0.0"
+pytest-timeout = "^2.1"
+codecov = "^2.1.11"
+ipykernel = "^6.25.0"
+# pandas-stubs = { version = "^2.1.4" }
+types-pkg-resources = "^0.1.3"
 
 
 [build-system]
@@ -133,14 +132,15 @@ target-version = "py39"
 
 [tool.ruff.lint]
 select = [
-  "E", "W",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
-  "NPY",  # numpy
-  "NPY201",  # numpy
+  "E",
+  "W",      # pycodestyle
+  "F",      # pyflakes
+  "I",      # isort
+  "NPY",    # numpy
+  "NPY201", # numpy
   # "PD",  # pandas
   "DTZ", # flake8-datetimez
-  "RUF"
+  "RUF",
 ]
 
 [tool.ruff.lint.isort]
@@ -164,10 +164,11 @@ warn_unused_ignores = true
 [tool.pytest.ini_options]
 addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff"
 testpaths = [
-    "src/traffic/core/intervals.py",
-    "src/traffic/core/time.py",
-    "src/traffic/data/basic/",
-    "src/traffic/data/datasets/",
-    "tests"
+  "src/traffic/core/intervals.py",
+  "src/traffic/core/time.py",
+  "src/traffic/data/basic/",
+  "src/traffic/data/datasets/",
+  "tests",
 ]
 doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]
+# -- Visualization --
