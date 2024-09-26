@@ -2968,9 +2968,9 @@ class Flight(
         if len(features) > 0:
             base = base.transform_fold(
                 list(features), as_=["variable", "value"]
-            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))  # type: ignore
+            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))
 
-        return base.mark_line()  # type: ignore
+        return base.mark_line()
 
     # -- Visualize with Leaflet --
 

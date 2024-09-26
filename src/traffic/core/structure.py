@@ -184,7 +184,7 @@ class Airport(
     ) -> "alt.LayerChart":  # coverage: ignore
         import altair as alt
 
-        base = alt.Chart(self).mark_geoshape()
+        base = alt.Chart(self).mark_geoshape()  # type: ignore
         cumul = []
         if footprint:
             params: Dict[str, Dict[str, Any]] = dict(

@@ -664,7 +664,7 @@ class GeographyMixin(DataFrameMixin):
         """
         import altair as alt
 
-        return (  # type: ignore
+        return (
             alt.Chart(
                 self.data.query(
                     "latitude == latitude and longitude == longitude"
@@ -870,7 +870,7 @@ class GeoDBMixin(DataFrameMixin):
         """
         import altair as alt
 
-        return (  # type: ignore
+        return (
             alt.Chart(self.data)
             .mark_circle(**kwargs)
             .encode(
