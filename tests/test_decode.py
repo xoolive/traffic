@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+
 from traffic.core import Flight
 from traffic.data.adsb.decode import RawData
 from traffic.data.samples import sample_dump1090, switzerland

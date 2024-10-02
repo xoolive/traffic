@@ -1,7 +1,6 @@
+import pandas as pd
 from traffic.data.basic.navaid import Navaids
 from traffic.data.datasets.scat import SCAT
-
-import pandas as pd
 
 
 def test_scat() -> None:

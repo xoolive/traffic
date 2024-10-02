@@ -2821,6 +2821,7 @@ class Flight(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
         failure_mode: str = "info",
+        **kwargs: Any,
     ) -> Flight:
         """Extends data with extra columns from EHS messages.
 
@@ -2880,7 +2881,9 @@ class Flight(
         failure = failure_dict[failure_mode]
 
         if data is None:
-            ext = opensky.extended(self.start, self.stop, icao24=self.icao24)
+            ext = opensky.extended(
+                self.start, self.stop, icao24=self.icao24, **kwargs
+            )
             df = ext.data if ext is not None else None
         else:
             df = data if isinstance(data, pd.DataFrame) else data.data
@@ -2892,12 +2895,22 @@ class Flight(
         if df is None or df.shape[0] == 0:
             return failure()
 
-        timestamped_df = df.sort_values("mintime").assign(
-            timestamp=lambda df: df.mintime.dt.round("s")
+        timestamped_df = (
+            df.sort_values("mintime")
+            .assign(timestamp=lambda df: df.mintime)
+            # TODO shouldn't be necessary after pyopensky 2.10
+            .convert_dtypes(dtype_backend="pyarrow")
         )
 
         referenced_df = (
-            timestamped_df.merge(self.data, on="timestamp", how="outer")
+            timestamped_df.merge(
+                # TODO shouldn't be necessary after pyopensky 2.10
+                self.data.convert_dtypes(dtype_backend="pyarrow").assign(
+                    timestamp=lambda df: df.timestamp.astype("int64") * 1e-9
+                ),
+                on="timestamp",
+                how="outer",
+            )
             .sort_values("timestamp")
             .rename(
                 columns=dict(
@@ -2918,7 +2931,7 @@ class Flight(
 
         decoded = rs1090.decode(
             referenced_df.rawmsg,
-            referenced_df.timestamp.astype("int64") * 1e-9,
+            referenced_df.timestamp.astype("int64"),
         )
 
         if len(decoded) == 0:
@@ -2931,7 +2944,7 @@ class Flight(
         )
         df = df.assign(
             timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
-        )
+        ).convert_dtypes(dtype_backend="pyarrow")
         extended = Flight(df)
 
         # fix for https://stackoverflow.com/q/53657210/1595335
@@ -3069,9 +3082,9 @@ class Flight(
         if len(features) > 0:
             base = base.transform_fold(
                 list(features), as_=["variable", "value"]
-            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))  # type: ignore
+            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))
 
-        return base.mark_line()  # type: ignore
+        return base.mark_line()
 
     # -- Visualize with Leaflet --
 
