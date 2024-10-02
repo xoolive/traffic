@@ -84,3 +84,18 @@ def guess_airport(
             f" (distance={airport.distance})"
         )
     return airport
+
+
+def minimal_angular_difference(angle1: float, angle2: float) -> float:
+    """
+    Calculate the min diff between two angles, considering circularity.
+
+    Parameters:
+        angle1 (float): First angle in degrees.
+        angle2 (float): Second angle in degrees.
+
+    Returns:
+        float: Minimal angular difference in degrees.
+    """
+    diff = abs(angle1 - angle2) % 360
+    return min(diff, 360 - diff)
