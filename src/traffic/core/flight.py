@@ -2606,21 +2606,23 @@ class Flight(
 
         airport = airport if isinstance(airport, Airport) else airports[airport]
         alt_max = airport.altitude + threshold_alt
+        if airport.runways is None:
+            return None
+        runways = airport.runways.data
+        runways_names = runways.name
+
+        filtered_flight = self.distance(airport).query("distance < 5")
+        if filtered_flight is None or filtered_flight.data.empty:
+            return None
 
         query_str = (
             f"geoaltitude < {alt_max} and "
             f"vertical_rate > {min_vert_rate_ftmin} and "
             f"groundspeed > {min_groundspeed_kts}"
         )
-        filtered_flight = self.query(query_str)
-
+        filtered_flight = filtered_flight.query(query_str)
         if filtered_flight is None or filtered_flight.data.empty:
             return None
-
-        if airport.runways is None:
-            return None
-        runways = airport.runways.data
-        runways_names = runways.name
 
         # Check for parallel runways with suffixes L, R, or C
         has_parallel_runway = runways_names.str.contains(r"[LRC]").any()
