@@ -35,15 +35,15 @@ def import_submodules(package: Any, recursive: bool = True) -> Dict[str, Any]:
             results.update(import_submodules(full_name))
     try:
         # https://docs.python.org/3/library/importlib.metadata.html#entry-points
-        ep = entry_points(group="traffic.console")  # type: ignore
+        ep = entry_points(group="traffic.console")
     except TypeError:
         ep = {
             m.name: m  # type: ignore
             for m in entry_points().get("traffic.console", [])
         }
     for entry_point in ep:
-        handle = entry_point.load()  # type: ignore
-        results[entry_point.name] = handle  # type: ignore
+        handle = entry_point.load()
+        results[entry_point.name] = handle
     return results
 
 

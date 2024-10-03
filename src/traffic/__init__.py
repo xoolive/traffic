@@ -83,7 +83,7 @@ if "TRAFFIC_NOPLUGIN" not in os.environ.keys():  # coverage: ignore
     ep: Iterable[EntryPoint]
     try:
         # https://docs.python.org/3/library/importlib.metadata.html#entry-points
-        ep = entry_points(group="traffic.plugins")  # type: ignore
+        ep = entry_points(group="traffic.plugins")
     except TypeError:
         ep = entry_points().get("traffic.plugins", [])
     for entry_point in ep:

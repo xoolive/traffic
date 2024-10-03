@@ -1,6 +1,5 @@
-from traffic.core.intervals import Interval, IntervalCollection
-
 import pandas as pd
+from traffic.core.intervals import Interval, IntervalCollection
 
 dates = pd.date_range("2022-03-21 11:10", "2022-03-21 11:20", freq="1T")
 h0, h1, h2, h3, h4, h5, h6, h7, h8, *_ = dates

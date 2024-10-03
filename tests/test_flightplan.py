@@ -1,5 +1,7 @@
+from itertools import pairwise
 from typing import List, cast
 
+import pandas as pd
 from traffic.core.flightplan import (
     Airway,
     CoordinatePoint,
@@ -10,8 +12,6 @@ from traffic.core.flightplan import (
     _ElementaryBlock,
 )
 from traffic.data.basic.airways import Airways
-
-import pandas as pd
 
 
 class ExtraData(Airways):
@@ -181,7 +181,7 @@ def test_flightplan() -> None:
         assert any(isinstance(p, SpeedLevel) for p in elts)
         # we can parse everything
         assert all(p is not None for p in elts)
-        for cur_, next_ in zip(elts, elts[1:]):
+        for cur_, next_ in pairwise(elts):
             # never two consecutive airways
             assert not isinstance(cur_, Airway) or not isinstance(next_, Airway)
             # never two consecutive navaids (coordinate points are ok though)

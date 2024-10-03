@@ -1,8 +1,8 @@
 import pytest
-from traffic.data import aircraft
-from traffic.data.basic.aircraft import Aircraft
 
 import pandas as pd
+from traffic.data import aircraft
+from traffic.data.basic.aircraft import Aircraft
 
 aircraft.download_junzis()  # make tests based on Junzi's (light) database
 
