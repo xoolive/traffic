@@ -2584,6 +2584,7 @@ class Flight(
         airport: Union[str, Airport],
         threshold_alt: float = 1500,
         min_groundspeed_kts: float = 30,
+        min_vert_rate_ftmin: float = 200,
     ) -> Optional[str]:
         """
         Determines the taking-off runway of a flight based on its trajectory.
@@ -2591,7 +2592,8 @@ class Flight(
             flight (Flight): The flight data object containing flight information.
             airport: The IATA code of the airport. Defaults to "LSZH".
             threshold_alt (float): Altitude threshold above airport altitude.
-            min_groundspeed (float): Minimum groundspeed to consider.
+            min_groundspeed_kts (float): Minimum groundspeed to consider.
+            min_vert_rate_ftmin (float): Minimum vertical rate to consider.
 
         Returns:
             Optional[str]: The name of the closest runway, or None if not found.
@@ -2607,7 +2609,7 @@ class Flight(
 
         query_str = (
             f"geoaltitude < {alt_max} and "
-            f"vertical_rate > {200} and "
+            f"vertical_rate > {min_vert_rate_ftmin} and "
             f"groundspeed > {min_groundspeed_kts}"
         )
         filtered_flight = self.query(query_str)
@@ -2641,40 +2643,41 @@ class Flight(
                 rounded_bearings % 360
             )  # Ensure bearings stay within 0-359
 
-            # Find the bearing closest to the median track
+            # Find the bearing closest to the median track using minimal angular difference
             bearing_diff = rounded_bearings.apply(
                 lambda x: minimal_angular_difference(x, median_track)
             )
-            closest_bearing_idx = bearing_diff.idxmin()
-            closest_bearing = runway_bearings.iloc[closest_bearing_idx]
 
-            # Identify all runways that have this bearing
-            candidate_runways = runways[runways.bearing == closest_bearing]
+            # Identify all runways where bearing diff is less than 10 deg
+
+            candidate_runways = runways.loc[
+                bearing_diff[bearing_diff < 10].index
+            ]
             if candidate_runways.empty:
                 return None
 
             # Calculate distance from flight trajectory to each candidate runway
             try:
                 flight_ls = filtered_flight.linestring
-                candidate_runways = candidate_runways.copy()
-                candidate_runways["distance"] = (
-                    candidate_runways.geometry.apply(
-                        lambda runway_ls: runway_ls.distance(flight_ls)
-                    )
-                )
+                rways_ls = airport.runways.shape
+
+                closest = None
+                for rway in rways_ls.geoms:
+                    if closest is None:
+                        closest = rway
+                        continue
+                    if rway.distance(flight_ls) < closest.distance(flight_ls):
+                        closest = rway
+                if closest is None:
+                    return None
+                lon_1, _, lon_2, _ = closest.bounds
+                # find the candidate_runways latitude and longitude that is closest to the closest bounds
+                eps = 1 / 1000
+                closest_runway = candidate_runways.query(
+                    f"(abs(longitude-{lon_1})<{eps}) or (abs(longitude-{lon_2})<{eps})"
+                )["name"].iloc[0]
             except AttributeError as e:
-                raise ValueError(
-                    "Invalid geometry data for runways or flight trajectory."
-                ) from e
-
-            if candidate_runways["distance"].isnull().all():
                 return None
-
-            # Select the runway with the minimum distance
-            closest_runway_row = candidate_runways.loc[
-                candidate_runways["distance"].idxmin()
-            ]
-            closest_runway = closest_runway_row.name
         return closest_runway
 
     @flight_iterator
