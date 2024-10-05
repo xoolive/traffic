@@ -2584,7 +2584,7 @@ class Flight(
         airport: Union[str, Airport],
         threshold_alt: float = 1500,
         min_groundspeed_kts: float = 30,
-        min_vert_rate_ftmin: float = 200,
+        min_vert_rate_ftmin: float = 257,
     ) -> Optional[str]:
         """
         Determines the taking-off runway of a flight based on its trajectory.
@@ -2605,6 +2605,8 @@ class Flight(
         from traffic.data import airports
 
         airport = airport if isinstance(airport, Airport) else airports[airport]
+        if not self.takeoff_from(airport):
+            return None
         alt_max = airport.altitude + threshold_alt
         if airport.runways is None:
             return None
@@ -2621,7 +2623,11 @@ class Flight(
             f"groundspeed > {min_groundspeed_kts}"
         )
         filtered_flight = filtered_flight.query(query_str)
-        if filtered_flight is None or filtered_flight.data.empty:
+        if (
+            filtered_flight is None
+            or filtered_flight.data.empty
+            or len(filtered_flight.data) < 4
+        ):
             return None
 
         # Check for parallel runways with suffixes L, R, or C
