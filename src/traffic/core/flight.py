@@ -45,9 +45,7 @@ from shapely.ops import transform
 
 from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
-from ..algorithms.navigation import (
-    NavigationFeatures,
-)
+from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
 from ..core import types as tt
 from ..core.distance import minimal_angular_difference
