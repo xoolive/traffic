@@ -2585,16 +2585,18 @@ class Flight(
         threshold_alt: float = 1500,
         min_groundspeed_kts: float = 30,
         min_vert_rate_ftmin: float = 257,
+        max_bearing_deg: float = 10,
         max_dist_nm: float = 5,
     ) -> Optional[str]:
         """
         Determines the taking-off runway of a flight based on its trajectory.
         Parameters:
-            flight (Flight): The flight data object containing flight information.
-            airport: The IATA code of the airport. Defaults to "LSZH".
+            flight (Flight): The flight data object containing flight data.
+            airport: The ICAO code of the airport. Defaults to None.
             threshold_alt (float): Altitude threshold above airport altitude.
             min_groundspeed_kts (float): Minimum groundspeed to consider.
             min_vert_rate_ftmin (float): Minimum vertical rate to consider.
+            maximum_bearing_deg (float): Maximum bearing difference to consider.
             max_dist_nm (float): Maximum distance from the airport to consider.
 
         Returns:
@@ -2616,16 +2618,22 @@ class Flight(
         runways_names = runways.name
 
         filtered_flight = self.distance(airport).query(
-            "distance < @max_dist_nm"
+            f"distance < {max_dist_nm}"
         )
         if filtered_flight is None or filtered_flight.data.empty:
             return None
-
-        query_str = (
-            f"geoaltitude < {alt_max} and "
-            f"vertical_rate > {min_vert_rate_ftmin} and "
-            f"groundspeed > {min_groundspeed_kts}"
-        )
+        if "geoaltitude" in filtered_flight.data.columns:
+            query_str = (
+                f"geoaltitude < {alt_max} and "
+                f"vertical_rate > {min_vert_rate_ftmin} and "
+                f"groundspeed > {min_groundspeed_kts}"
+            )
+        else:
+            query_str = (
+                f"altitude < {alt_max} and "
+                f"vertical_rate > {min_vert_rate_ftmin} and "
+                f"groundspeed > {min_groundspeed_kts}"
+            )
         filtered_flight = filtered_flight.query(query_str)
         if (
             filtered_flight is None
@@ -2655,7 +2663,7 @@ class Flight(
                 rounded_bearings % 360
             )  # Ensure bearings stay within 0-359
 
-            # Find the bearing closest to the median track using minimal angular difference
+            # Find the bearing closest to the median track
             bearing_diff = rounded_bearings.apply(
                 lambda x: minimal_angular_difference(x, median_track)
             )
@@ -2663,7 +2671,7 @@ class Flight(
             # Identify all runways where bearing diff is less than 10 deg
 
             candidate_runways = runways.loc[
-                bearing_diff[bearing_diff < 10].index
+                bearing_diff[bearing_diff < max_bearing_deg].index
             ]
             if candidate_runways.empty:
                 return None
@@ -2683,7 +2691,7 @@ class Flight(
                 if closest is None:
                     return None
                 lon_1, _, lon_2, _ = closest.bounds
-                # find the candidate_runways latitude and longitude that is closest to the closest bounds
+                # candidate_runways = lat\lon that is closest to the closest bounds
                 eps = 1 / 1000
                 closest_runway = candidate_runways.query(
                     f"(abs(longitude-{lon_1})<{eps}) or (abs(longitude-{lon_2})<{eps})"
