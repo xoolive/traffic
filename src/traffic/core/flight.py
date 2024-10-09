@@ -2585,6 +2585,7 @@ class Flight(
         threshold_alt: float = 1500,
         min_groundspeed_kts: float = 30,
         min_vert_rate_ftmin: float = 257,
+        max_dist_nm: float = 5,
     ) -> Optional[str]:
         """
         Determines the taking-off runway of a flight based on its trajectory.
@@ -2594,6 +2595,7 @@ class Flight(
             threshold_alt (float): Altitude threshold above airport altitude.
             min_groundspeed_kts (float): Minimum groundspeed to consider.
             min_vert_rate_ftmin (float): Minimum vertical rate to consider.
+            max_dist_nm (float): Maximum distance from the airport to consider.
 
         Returns:
             Optional[str]: The name of the closest runway, or None if not found.
@@ -2613,7 +2615,9 @@ class Flight(
         runways = airport.runways.data
         runways_names = runways.name
 
-        filtered_flight = self.distance(airport).query("distance < 5")
+        filtered_flight = self.distance(airport).query(
+            "distance < @max_dist_nm"
+        )
         if filtered_flight is None or filtered_flight.data.empty:
             return None
 
