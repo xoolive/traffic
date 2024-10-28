@@ -24,7 +24,7 @@ __all__ = [
 _log = logging.getLogger(__name__)
 
 
-def to_datetime(time: timelike) -> datetime:
+def to_datetime(time: timelike) -> pd.Timestamp:
     """Facility to convert anything to a datetime.
 
     This function will soon be replaced by pd.to_datetime.
@@ -41,10 +41,10 @@ def to_datetime(time: timelike) -> datetime:
 
     if isinstance(time, str):
         time = pd.Timestamp(time, tz="utc")
-    if isinstance(time, pd.Timestamp):
-        time = time.to_pydatetime()
+    if isinstance(time, datetime):
+        time = pd.Timestamp(time)
     if isinstance(time, Real):
-        time = datetime.fromtimestamp(float(time), timezone.utc)
+        time = pd.Timestamp(float(time), tz="utc", unit="s")
     if time.tzinfo is None:  # coverage: ignore
         _log.warning(
             "This timestamp is tz-naive. Things may not work as expected. "
