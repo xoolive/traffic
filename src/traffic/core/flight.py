@@ -116,17 +116,17 @@ def _split(
     # This method helps splitting a flight into several.
     if data.shape[0] < 2:
         return
-    diff = data.timestamp.diff().values
+    diff = data.timestamp.diff()
     if unit is None:
         delta = pd.Timedelta(value).to_timedelta64()
     else:
         delta = np.timedelta64(value, unit)
     # There seems to be a change with numpy >= 1.18
     # max() now may return NaN, therefore the following fix
-    max_ = np.nanmax(diff)
+    max_ = diff.max()
     if max_ > delta:
         # np.nanargmax seems bugged with timestamps
-        argmax = np.where(diff == max_)[0][0]
+        argmax = diff.argmax()
         yield from _split(data.iloc[:argmax], value, unit)
         yield from _split(data.iloc[argmax:], value, unit)
     else:
@@ -1490,7 +1490,7 @@ class Flight(
 
         - in the NumPy style: ``Flight.split(10, 'm')`` (see
           ``np.timedelta64``);
-        - in the pandas style: ``Flight.split('10T')`` (see ``pd.Timedelta``)
+        - in the pandas style: ``Flight.split('10 min')`` (see ``pd.Timedelta``)
 
         If the `condition` parameter is set, the flight is split between two
         segments only if `condition(f1, f2)` is verified.
@@ -2720,6 +2720,7 @@ class Flight(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
         failure_mode: str = "info",
+        **kwargs: Any,
     ) -> Flight:
         """Extends data with extra columns from EHS messages.
 
@@ -2779,7 +2780,9 @@ class Flight(
         failure = failure_dict[failure_mode]
 
         if data is None:
-            ext = opensky.extended(self.start, self.stop, icao24=self.icao24)
+            ext = opensky.extended(
+                self.start, self.stop, icao24=self.icao24, **kwargs
+            )
             df = ext.data if ext is not None else None
         else:
             df = data if isinstance(data, pd.DataFrame) else data.data
@@ -2793,11 +2796,7 @@ class Flight(
 
         timestamped_df = (
             df.sort_values("mintime")
-            .assign(
-                timestamp=lambda df: pd.to_datetime(
-                    df.mintime, unit="s", utc=True
-                )
-            )
+            .assign(timestamp=lambda df: df.mintime)
             # TODO shouldn't be necessary after pyopensky 2.10
             .convert_dtypes(dtype_backend="pyarrow")
         )
@@ -2805,7 +2804,9 @@ class Flight(
         referenced_df = (
             timestamped_df.merge(
                 # TODO shouldn't be necessary after pyopensky 2.10
-                self.data.convert_dtypes(dtype_backend="pyarrow"),
+                self.data.convert_dtypes(dtype_backend="pyarrow").assign(
+                    timestamp=lambda df: df.timestamp.astype("int64") * 1e-9
+                ),
                 on="timestamp",
                 how="outer",
             )
@@ -2829,7 +2830,7 @@ class Flight(
 
         decoded = rs1090.decode(
             referenced_df.rawmsg,
-            referenced_df.timestamp.astype("int64") * 1e-9,
+            referenced_df.timestamp.astype("int64"),
         )
 
         if len(decoded) == 0:
