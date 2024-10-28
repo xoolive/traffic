@@ -32,8 +32,7 @@ class OpenAP:
 
         fp = FlightPhase()
         fp.set_trajectory(
-            (self.data.timestamp.values - np.datetime64("1970-01-01"))
-            / np.timedelta64(1, "s"),
+            (self.data.timestamp.astype(int) // 1_000_000_000).values,
             altitude,
             groundspeed,
             vertical_rate,
