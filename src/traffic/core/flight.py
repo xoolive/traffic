@@ -116,17 +116,17 @@ def _split(
     # This method helps splitting a flight into several.
     if data.shape[0] < 2:
         return
-    diff = data.timestamp.diff().values
+    diff = data.timestamp.diff()
     if unit is None:
         delta = pd.Timedelta(value).to_timedelta64()
     else:
         delta = np.timedelta64(value, unit)
     # There seems to be a change with numpy >= 1.18
     # max() now may return NaN, therefore the following fix
-    max_ = np.nanmax(diff)
+    max_ = diff.max()
     if max_ > delta:
         # np.nanargmax seems bugged with timestamps
-        argmax = np.where(diff == max_)[0][0]
+        argmax = diff.argmax()
         yield from _split(data.iloc[:argmax], value, unit)
         yield from _split(data.iloc[argmax:], value, unit)
     else:
@@ -1490,7 +1490,7 @@ class Flight(
 
         - in the NumPy style: ``Flight.split(10, 'm')`` (see
           ``np.timedelta64``);
-        - in the pandas style: ``Flight.split('10T')`` (see ``pd.Timedelta``)
+        - in the pandas style: ``Flight.split('10 min')`` (see ``pd.Timedelta``)
 
         If the `condition` parameter is set, the flight is split between two
         segments only if `condition(f1, f2)` is verified.

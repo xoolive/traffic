@@ -150,11 +150,6 @@ def format_history(
         if column_name in df.columns:
             df[column_name] = df[column_name].astype(float)
 
-    if "onground" in df.columns and df.onground.dtype != bool:
-        df.onground = df.onground == "true"
-        df.alert = df.alert == "true"
-        df.spi = df.spi == "true"
-
     # better (to me) formalism about columns
     df = df.rename(
         columns={
