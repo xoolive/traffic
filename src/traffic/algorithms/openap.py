@@ -32,7 +32,7 @@ class OpenAP:
 
         fp = FlightPhase()
         fp.set_trajectory(
-            (self.data.timestamp.astype(int) // 1_000_000_000).values,
+            self.data.timestamp.dt.as_unit("s").astype(int).values,
             altitude,
             groundspeed,
             vertical_rate,
@@ -124,16 +124,20 @@ class OpenAP:
         )
 
         TAS: tt.speed_array = self.data.get("TAS", None)
-        altitude: tt.altitude_array = self.data.altitude
-        vertical_rate: tt.vertical_rate_array = self.data.vertical_rate
+        altitude: tt.altitude_array = self.data.altitude.to_numpy()
+        vertical_rate: tt.vertical_rate_array = (
+            self.data.vertical_rate.to_numpy()
+        )
 
         if TAS is None:
             CAS: tt.speed_array = self.data.get("CAS", None)
             if CAS is not None:
-                TAS = aero.cas2tas(CAS, altitude)
+                TAS = aero.cas2tas(CAS.to_numpy(), altitude)
+        else:
+            TAS = TAS.to_numpy()  # type: ignore
 
         if TAS is None:
-            TAS = self.data.groundspeed  # unit: knots
+            TAS = self.data.groundspeed.to_numpy()  # unit: knots
 
         FF = []
         Fuel = []
@@ -175,15 +179,18 @@ class OpenAP:
 
         dt: tt.seconds_array = self.data.dt
         TAS: tt.speed_array = self.data.get("TAS", None)
-        altitude: tt.altitude_array = self.data.altitude
+        altitude: tt.altitude_array = self.data.altitude.to_numpy()
 
         if TAS is None:
             CAS: tt.speed_array = self.data.get("CAS", None)
             if CAS is not None:
+                CAS = CAS.to_numpy()
                 TAS = aero.cas2tas(CAS, altitude)
+        else:
+            TAS = TAS.to_numpy()  # type: ignore
 
         if TAS is None:
-            TAS = self.data.groundspeed
+            TAS = self.data.groundspeed.to_numpy()
 
         emission = openap.Emission(ac=actype, eng=engine, use_synonym=True)
 

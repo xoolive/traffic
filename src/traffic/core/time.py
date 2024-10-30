@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone  # noqa: F401
 from numbers import Real
 
 from pyopensky.time import (
@@ -25,9 +25,7 @@ _log = logging.getLogger(__name__)
 
 
 def to_datetime(time: timelike) -> pd.Timestamp:
-    """Facility to convert anything to a datetime.
-
-    This function will soon be replaced by pd.to_datetime.
+    """Facility to convert anything to a pd.Timestamp.
 
     >>> f"{to_datetime('2017-01-14')}"
     '2017-01-14 00:00:00+00:00'
@@ -53,4 +51,4 @@ def to_datetime(time: timelike) -> pd.Timestamp:
             "automatically, look at the tzinfo (resp. tz) argument of the "
             "datetime (resp. pd.Timestamp) constructor."
         )
-    return time  # type: ignore
+    return time

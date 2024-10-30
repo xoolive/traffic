@@ -1,8 +1,6 @@
 # ruff: noqa: E501
 from __future__ import annotations
 
-import gzip
-import json
 import logging
 import re
 from functools import lru_cache
@@ -14,14 +12,14 @@ from typing import (
     ClassVar,
     Mapping,
     Sequence,
-    Type,
     TypedDict,
-    TypeVar,
 )
 
+from py7zr import SevenZipFile
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console, ConsoleOptions, RenderResult
 from rich.table import Table
+from typing_extensions import Self
 
 import numpy as np
 import pandas as pd
@@ -40,8 +38,8 @@ if TYPE_CHECKING:
     from matplotlib.artist import Artist
 
 
-T = TypeVar("T", bound="DataFrameMixin")
-G = TypeVar("G", bound="GeoDBMixin")
+# T = TypeVar("T", bound="DataFrameMixin")
+# G = TypeVar("G", bound="GeoDBMixin")
 
 
 _log = logging.getLogger(__name__)
@@ -74,9 +72,7 @@ class DataFrameMixin(object):
         return int(self.data.memory_usage().sum())
 
     @classmethod
-    def from_file(
-        cls: Type[T], filename: str | Path, **kwargs: Any
-    ) -> None | T:
+    def from_file(cls, filename: str | Path, **kwargs: Any) -> Self:
         """Read data from various formats.
 
         This class method dispatches the loading of data in various format to
@@ -101,6 +97,16 @@ class DataFrameMixin(object):
         >>> t = Traffic.from_file(filename)
         """
         path = Path(filename)
+
+        if path.suffix == (".7z"):
+            with SevenZipFile(path) as archive:
+                if (files := archive.readall()) is None:
+                    raise FileNotFoundError(f"Empty archive {path}")
+                for name, io in files.items():
+                    if name.endswith(".jsonl"):
+                        return cls(pd.read_json(io, lines=True, **kwargs))
+                raise FileNotFoundError(f"Empty archive {path}")
+
         if ".pkl" in path.suffixes or ".pickle" in path.suffixes:
             return cls(pd.read_pickle(path, **kwargs))
         if ".parquet" in path.suffixes:
@@ -109,29 +115,14 @@ class DataFrameMixin(object):
             return cls(pd.read_feather(path, **kwargs))
         if ".json" in path.suffixes:
             return cls(pd.read_json(path, **kwargs))
-        if path.suffix == ".jsonl":
-            df = pd.json_normalize(
-                json.loads(elt) for elt in path.read_text().split("\n")[:-1]
-            )
-            df = df.assign(
-                timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
-            )
-            return cls(df)
-        if ".jsonl" in path.suffixes and ".gz" in path.suffixes:
-            with gzip.open(path) as fh:
-                df = pd.json_normalize(
-                    json.loads(elt) for elt in fh.readlines()
-                )
-            df = df.assign(
-                timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
-            )
-            return cls(df)
-
+        if ".jsonl" in path.suffixes:
+            return cls(pd.read_json(path, lines=True, **kwargs))
         if ".csv" in path.suffixes:
             return cls(pd.read_csv(path, **kwargs))
         if ".h5" == path.suffixes[-1]:  # coverage: ignore
             return cls(pd.read_hdf(path, **kwargs))
-        return None
+
+        raise FileNotFoundError(path)
 
     # --- Special methods ---
 
@@ -189,7 +180,7 @@ class DataFrameMixin(object):
 
     # --- Redirected to pandas.DataFrame ---
 
-    def assign(self: T, *args: Any, **kwargs: Any) -> T:
+    def assign(self, *args: Any, **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.assign` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -197,7 +188,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.assign(*args, **kwargs))
 
-    def convert_dtypes(self: T, *args: Any, **kwargs: Any) -> T:
+    def convert_dtypes(self, *args: Any, **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.convert_dtypes` method to
         the underlying pandas DataFrame and get the result back in the same
@@ -205,7 +196,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.convert_dtypes(*args, **kwargs))
 
-    def drop(self: T, *args: Any, **kwargs: Any) -> T:
+    def drop(self, *args: Any, **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.drop` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -213,7 +204,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.drop(*args, **kwargs))
 
-    def drop_duplicates(self: T, *args: Any, **kwargs: Any) -> T:
+    def drop_duplicates(self, *args: Any, **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.drop_duplicates` method to
         the underlying pandas DataFrame and get the result back in the same
@@ -221,7 +212,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.drop_duplicates(*args, **kwargs))
 
-    def fillna(self: T, *args: Any, **kwargs: Any) -> T:
+    def fillna(self, *args: Any, **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.fillna` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -238,7 +229,7 @@ class DataFrameMixin(object):
         """
         return self.data.groupby(*args, **kwargs)
 
-    def merge(self: T, *args: Any, **kwargs: Any) -> T:
+    def merge(self, *args: Any, **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.merge` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -246,7 +237,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.merge(*args, **kwargs))
 
-    def query(self: T, query_str: str, *args: Any, **kwargs: Any) -> None | T:
+    def query(self, query_str: str, *args: Any, **kwargs: Any) -> None | Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.query` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -257,7 +248,7 @@ class DataFrameMixin(object):
             return None
         return self.__class__(df)
 
-    def rename(self: T, *args: Any, **kwargs: Any) -> T:
+    def rename(self, *args: Any, **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.rename` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -265,7 +256,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.rename(*args, **kwargs))
 
-    def replace(self: T, *args: Any, **kwargs: Any) -> T:
+    def replace(self, *args: Any, **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.replace` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -273,7 +264,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.replace(*args, **kwargs))
 
-    def reset_index(self: T, *args: Any, **kwargs: Any) -> T:
+    def reset_index(self, *args: Any, **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.reset_index` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -281,7 +272,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.reset_index(*args, **kwargs))
 
-    def sort_values(self: T, by: str | Sequence[str], **kwargs: Any) -> T:
+    def sort_values(self, by: str | Sequence[str], **kwargs: Any) -> Self:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.sort_values` method to the
         underlying pandas DataFrame and get the result back in the same
@@ -516,7 +507,7 @@ class GeographyMixin(DataFrameMixin):
 
     __slots__ = ()
 
-    def projection(self: T, proj: str = "lcc") -> pyproj.Proj:
+    def projection(self, proj: str = "lcc") -> pyproj.Proj:
         return pyproj.Proj(
             proj=proj,
             ellps="WGS84",
@@ -527,8 +518,8 @@ class GeographyMixin(DataFrameMixin):
         )
 
     def compute_xy(
-        self: T, projection: None | pyproj.Proj | "crs.Projection" = None
-    ) -> T:
+        self, projection: None | pyproj.Proj | "crs.Projection" = None
+    ) -> Self:
         """Enrich the structure with new x and y columns computed through a
         projection of the latitude and longitude columns.
 
@@ -547,21 +538,21 @@ class GeographyMixin(DataFrameMixin):
             projection = pyproj.Proj(projection.proj4_init)
 
         if projection is None:
-            projection = self.projection(proj="lcc")  # type: ignore
+            projection = self.projection(proj="lcc")
 
         transformer = pyproj.Transformer.from_proj(
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
         x, y = transformer.transform(
-            self.data.longitude.values,
-            self.data.latitude.values,
+            self.data.longitude.to_numpy(),
+            self.data.latitude.to_numpy(),
         )
 
         return self.__class__(self.data.assign(x=x, y=y))
 
     def compute_latlon_from_xy(
-        self: T, projection: pyproj.Proj | crs.Projection
-    ) -> T:
+        self, projection: pyproj.Proj | crs.Projection
+    ) -> Self:
         """Enrich a DataFrame with new longitude and latitude columns computed
         from x and y columns.
 
@@ -583,8 +574,8 @@ class GeographyMixin(DataFrameMixin):
             projection, pyproj.Proj("epsg:4326"), always_xy=True
         )
         lon, lat = transformer.transform(
-            self.data.x.values,
-            self.data.y.values,
+            self.data.x.to_numpy(),
+            self.data.y.to_numpy(),
         )
 
         return self.assign(latitude=lat, longitude=lon)
@@ -666,29 +657,27 @@ class GeographyMixin(DataFrameMixin):
 
         return (
             alt.Chart(
-                self.data.query(
-                    "latitude == latitude and longitude == longitude"
-                )
+                self.data.query("latitude.notnull() and longitude.notnull()")
             )
             .encode(latitude="latitude", longitude="longitude")
             .mark_line(**kwargs)
         )
 
     def interpolate_grib(
-        self: T, wind: "xarray.Dataset", features: list[str] = ["u", "v"]
-    ) -> T:
+        self, wind: "xarray.Dataset", features: list[str] = ["u", "v"]
+    ) -> Self:
         from openap import aero
         from sklearn.linear_model import Ridge
         from sklearn.pipeline import make_pipeline
         from sklearn.preprocessing import PolynomialFeatures
 
-        projection: pyproj.Proj = self.projection("lcc")  # type: ignore
+        projection: pyproj.Proj = self.projection("lcc")
         transformer = pyproj.Transformer.from_proj(
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
 
         west, east = self.data.longitude.min(), self.data.longitude.max()
-        longitude_index = wind.longitude.values
+        longitude_index = wind.longitude.to_numpy()
         margin = np.diff(longitude_index).max()
         longitude_index = longitude_index[
             np.where(
@@ -698,7 +687,7 @@ class GeographyMixin(DataFrameMixin):
         ]
 
         south, north = self.data.latitude.min(), self.data.latitude.max()
-        latitude_index = wind.latitude.values
+        latitude_index = wind.latitude.to_numpy()
         margin = np.diff(latitude_index).max()
         latitude_index = latitude_index[
             np.where(
@@ -709,7 +698,7 @@ class GeographyMixin(DataFrameMixin):
 
         timestamp = self.data.timestamp.dt.tz_convert("utc")
         start, stop = timestamp.min(), timestamp.max()
-        time_index = wind.time.values
+        time_index = wind.time.to_numpy()
         margin = np.diff(time_index).max()
         time_index = time_index[
             np.where(
@@ -719,10 +708,10 @@ class GeographyMixin(DataFrameMixin):
         ]
 
         idx_max = 1 + np.sum(
-            aero.h_isa(wind.isobaricInhPa.values * 100)
+            aero.h_isa(wind.isobaricInhPa.to_numpy() * 100)
             < self.data.altitude.max() * aero.ft
         )
-        isobaric_index = wind.isobaricInhPa.values[:idx_max]
+        isobaric_index = wind.isobaricInhPa.to_numpy()[:idx_max]
 
         wind_df = (
             wind.sel(
@@ -737,8 +726,8 @@ class GeographyMixin(DataFrameMixin):
         )
 
         wind_x, wind_y = transformer.transform(
-            wind_df.longitude.values,
-            wind_df.latitude.values,
+            wind_df.longitude.to_numpy(),
+            wind_df.latitude.to_numpy(),
         )
         wind_xy = wind_df.assign(x=wind_x, y=wind_y)
 
@@ -752,10 +741,10 @@ class GeographyMixin(DataFrameMixin):
         ridges = model["ridge"].coef_
 
         x, y = transformer.transform(
-            self.data.longitude.values,
-            self.data.latitude.values,
+            self.data.longitude.to_numpy(),
+            self.data.latitude.to_numpy(),
         )
-        h = self.data.altitude.values * aero.ft
+        h = self.data.altitude.to_numpy() * aero.ft
 
         return self.assign(
             **dict(
@@ -778,10 +767,10 @@ class GeoDBMixin(DataFrameMixin):
     __slots__ = ()
 
     def extent(
-        self: G,
+        self,
         extent: str | ShapelyMixin | tuple[float, float, float, float],
         buffer: float = 0.5,
-    ) -> None | G:
+    ) -> None | Self:
         """
         Selects the subset of data inside the given extent.
 

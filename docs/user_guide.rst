@@ -69,9 +69,9 @@ Navigation events
    :maxdepth: 1
 
    navigation/flight_phases
-   airac_usage
    navigation/go_around
    navigation/runway_changes
+   navigation/holding_pattern
    navigation/top_of_climb
    navigation/flight_plan
    navigation/fuel_burn

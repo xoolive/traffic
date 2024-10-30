@@ -204,10 +204,8 @@ def closest_point_of_approach(
             if first_shape.intersects(second_shape):
                 yield first, second
 
-    t_xyt = (
-        traffic.airborne()
-        .compute_xy(projection)
-        .assign(round_t=lambda df: df.timestamp.dt.round(round_t))
+    t_xyt = traffic.compute_xy(projection).assign(
+        round_t=lambda df: df.timestamp.dt.round(round_t)
     )
 
     cumul = list()

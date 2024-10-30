@@ -64,7 +64,9 @@ def prepare_features(
             )
         resampled = resampled.compute_xy(projection)
 
-    return np.stack(list(f.data[features].values.ravel() for f in resampled))
+    return np.stack(
+        list(f.data[features].to_numpy().ravel() for f in resampled)
+    )
 
 
 class Clustering:

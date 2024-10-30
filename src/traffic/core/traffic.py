@@ -17,14 +17,13 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Type,
-    TypeVar,
     Union,
     cast,
     overload,
 )
 
 from rich.console import Console, ConsoleOptions, RenderResult
+from typing_extensions import Self
 
 import numpy as np
 import pandas as pd
@@ -57,7 +56,7 @@ if TYPE_CHECKING:
 
 
 # https://github.com/python/mypy/issues/2511
-TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
+# TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
 
 # The thing is that Iterable[str] causes issue sometimes...
 IterStr = Union[List[str], Set[str]]
@@ -120,12 +119,18 @@ class Traffic(HBoxMixin, GeographyMixin):
         return cls(pd.concat(cumul, sort=False))
 
     @classmethod
-    def from_file(
-        cls: Type[TrafficTypeVar], filename: Union[Path, str], **kwargs: Any
-    ) -> Optional[TrafficTypeVar]:
+    def from_file(cls, filename: Union[Path, str], **kwargs: Any) -> Self:
         tentative = super().from_file(filename, **kwargs)
 
         if tentative is not None:
+            tentative = tentative.convert_dtypes(dtype_backend="pyarrow")
+
+            for column in tentative.data.select_dtypes(include=["datetime"]):
+                if tentative.data[column].dtype.pyarrow_dtype.tz is None:
+                    tentative = tentative.assign(
+                        **{column: tentative.data[column].dt.tz_localize("UTC")}
+                    )
+
             rename_columns = {
                 "time": "timestamp",
                 "lat": "latitude",
@@ -431,24 +436,24 @@ class Traffic(HBoxMixin, GeographyMixin):
         return None
 
     @overload
-    def __getitem__(self, key: int) -> None | Flight: ...
+    def __getitem__(self, key: int) -> Flight: ...
 
     @overload
-    def __getitem__(self, key: str) -> None | Flight: ...
+    def __getitem__(self, key: str) -> Flight: ...
 
     @overload
-    def __getitem__(self, key: slice) -> None | Traffic: ...
+    def __getitem__(self, key: slice) -> Traffic: ...
 
     @overload
-    def __getitem__(self, key: IterStr) -> None | Traffic: ...
+    def __getitem__(self, key: IterStr) -> Traffic: ...
 
     @overload
-    def __getitem__(self, key: Traffic) -> None | Traffic: ...
+    def __getitem__(self, key: Traffic) -> Traffic: ...
 
     def __getitem__(
         self,
         key: int | slice | str | IterStr | pd.Series | pd.DataFrame | Traffic,
-    ) -> None | Flight | Traffic:
+    ) -> Flight | Traffic:
         """Indexation of collections.
 
         :param key:
@@ -482,27 +487,36 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         """
         if isinstance(key, pd.Series):
-            return self._getSeries(key)
+            flight = self._getSeries(key)
+            if flight is not None:
+                return flight
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if isinstance(key, pd.DataFrame):
-            return self.__class__.from_flights(
+            traffic = self.__class__.from_flights(
                 flight for flight in self.iterate(by=key)
             )
+            if traffic is not None:
+                return traffic
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if isinstance(key, int):
             for i, flight in enumerate(self.iterate()):
                 if i == key:
                     return flight
-            return None
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if isinstance(key, slice):
             max_size = key.stop if key.stop is not None else len(self)
             indices = list(range(max_size)[key])
-            return self.__class__.from_flights(
+            traffic = self.__class__.from_flights(
                 flight
                 for i, flight in enumerate(self.iterate())
                 if i in indices
             )
+            if traffic is not None:
+                return traffic
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if isinstance(key, Traffic):
             if (flight_ids := key.flight_ids) is not None:
@@ -532,20 +546,24 @@ class Traffic(HBoxMixin, GeographyMixin):
                             )
                         else:
                             cumul.append(flight)
-            if len(cumul) == 0:
-                return None
-            return Traffic.from_flights(cumul)
+            traffic = Traffic.from_flights(cumul)
+            if traffic is not None:
+                return traffic
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if not isinstance(key, str):  # List[str], Set[str], Iterable[str]
             _log.debug("Selecting flights from a list of identifiers")
             subset = repr(list(key))
             query_str = f"callsign in {subset} or icao24 in {subset}"
             if "flight_id" in self.data.columns:
-                return self.query(f"flight_id in {subset} or " + query_str)
+                traffic = self.query(f"flight_id in {subset} or " + query_str)
             elif "callsign" in self.data.columns:
-                return self.query(query_str)
+                traffic = self.query(query_str)
             else:
-                return self.query(f"icao24 in {subset}")
+                traffic = self.query(f"icao24 in {subset}")
+            if traffic is not None:
+                return traffic
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         query_str = f"callsign == '{key}' or icao24 == '{key}'"
         if "callsign" not in self.data.columns:
@@ -558,12 +576,12 @@ class Traffic(HBoxMixin, GeographyMixin):
         if df.shape[0] > 0:
             return Flight(df)
 
-        return None
+        raise KeyError(f"Key '{key}' not found")
 
     def _ipython_key_completions_(self) -> Optional[List[str]]:
         if self.flight_ids is not None:
             return self.flight_ids  # type: ignore
-        return list({*self.aircraft, *self.callsigns})
+        return list({*self.icao24, *self.callsigns})
 
     def sample(
         self,
@@ -730,53 +748,51 @@ class Traffic(HBoxMixin, GeographyMixin):
         )
 
     # -- Methods for lazy evaluation, delegated to Flight --
-    # 'type: ignore' annotations are fine here, since everything will be
-    # overridden by the decorator anyway
 
     @lazy_evaluation()
-    def filter_if(self, *args, **kwargs):  # type: ignore
+    def filter_if(self, /, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def pipe(self, *args, **kwargs):  # type: ignore
+    def pipe(self, /, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def has(self, *args, **kwargs):  # type: ignore
+    def has(self, /, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def all(self, *args, **kwargs):  # type: ignore
+    def all(self, /, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def next(self, *args, **kwargs):  # type: ignore
+    def next(self, /, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def final(self, *args, **kwargs):  # type: ignore
+    def final(self, /, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def resample(self, rule: Union[str, int] = "1s"):  # type: ignore
+    def resample(self, /, rule: Union[str, int] = "1s"):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def filter(self, *args, **kwargs):  # type: ignore
+    def filter(self, /, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def filter_position(self, cascades: int = 2):  # type: ignore
+    def filter_position(self, /, cascades: int = 2):  # type: ignore
         ...
 
     @lazy_evaluation()
     def unwrap(  # type: ignore
-        self, features: Union[None, str, List[str]] = None
+        self, /, features: Union[None, str, List[str]] = None
     ): ...
 
     @lazy_evaluation(idx_name="idx")
     def assign_id(  # type: ignore
-        self, name: str = "{self.callsign}_{idx:>03}", idx: int = 0
+        self, /, name: str = "{self.callsign}_{idx:>03}", idx: int = 0
     ):
         """Assigns a `flight_id` to trajectories present in the structure.
 
@@ -790,18 +806,20 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def clip(self, shape: Union["Airspace", base.BaseGeometry]):  # type: ignore
+    def clip(self, /, shape: Union["Airspace", base.BaseGeometry]):  # type: ignore
         ...
 
     @lazy_evaluation()
     def intersects(  # type: ignore
         self,
+        /,
         shape: Union["Airspace", base.BaseGeometry],
     ) -> bool: ...
 
     @lazy_evaluation()
     def simplify(  # type: ignore
         self,
+        /,
         tolerance: float,
         altitude: Optional[str] = None,
         z_factor: float = 3.048,
@@ -812,20 +830,21 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def query_ehs(self, data, failure_mode, propressbar):  # type: ignore
+    def query_ehs(self, /, data, failure_mode, propressbar):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def first(self, **kwargs):  # type: ignore
+    def first(self, /, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def last(self, **kwargs):  # type: ignore
+    def last(self, /, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
     def feature_gt(  # type: ignore
         self,
+        /,
         feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
         strict: bool = True,
@@ -834,6 +853,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     @lazy_evaluation()
     def feature_lt(  # type: ignore
         self,
+        /,
         feature: Union[str, Callable[["Flight"], Any]],
         value: Any,
         strict: bool = True,
@@ -841,42 +861,43 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @lazy_evaluation()
     def shorter_than(  # type: ignore
-        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+        self, /, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
     ): ...
 
     @lazy_evaluation()
     def longer_than(  # type: ignore
-        self, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
+        self, /, value: Union[str, timedelta, pd.Timedelta], strict: bool = True
     ): ...
 
     @lazy_evaluation()
     def max_split(  # type: ignore
         self,
+        /,
         value: Union[int, str] = "10T",
         unit: Optional[str] = None,
         key: str = "duration",
     ): ...
 
     @lazy_evaluation()
-    def diff(self, features: Union[str, List[str]], **kwargs):  # type: ignore
+    def diff(self, /, features: Union[str, List[str]], **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
     def apply_segments(  # type: ignore
-        self, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
+        self, /, fun: Callable[..., "LazyTraffic"], name: str, *args, **kwargs
     ): ...
 
     @lazy_evaluation()
-    def apply_time(self, freq="1T", merge=True, **kwargs):  # type: ignore
+    def apply_time(self, /, freq="1T", merge=True, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def agg_time(self, freq="1T", merge=True, **kwargs):  # type: ignore
+    def agg_time(self, /, freq="1T", merge=True, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
     def cumulative_distance(  # type: ignore
-        self, compute_gs: bool = True, compute_track: bool = True, **kwargs
+        self, /, compute_gs: bool = True, compute_track: bool = True, **kwargs
     ): ...
 
     @lazy_evaluation()
@@ -957,18 +978,18 @@ class Traffic(HBoxMixin, GeographyMixin):
         in the altitude column.
         """
         if "onground" in self.data.columns and self.data.onground.dtype == bool:
-            return self.query("not onground and altitude == altitude")
+            return self.query("not onground and altitude.notnull()")
         else:
-            return self.query("altitude == altitude")
+            return self.query("altitude.notnull()")
 
     @lazy_evaluation(default=True)
     def onground(self) -> Optional["Traffic"]:
         if "altitude" not in self.data.columns:
             return self
         if "onground" in self.data.columns and self.data.onground.dtype == bool:
-            return self.query("onground or altitude != altitude")
+            return self.query("onground or altitude.isnull()")
         else:
-            return self.query("altitude != altitude")
+            return self.query("altitude.isnull()")
 
     # --- Properties ---
 
@@ -987,16 +1008,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         """Return all the different callsigns in the DataFrame"""
         if "callsign" not in self.data.columns:
             return set()
-        sub = self.data.query("callsign == callsign")
+        sub = self.data.query("callsign.notnull()")
         if sub.shape[0] == 0:
             return set()
         return set(sub.callsign)
-
-    @property_cache
-    def aircraft(self) -> Set[str]:
-        """Return all the different icao24 aircraft ids in the DataFrame"""
-        _log.warning("Use .icao24", DeprecationWarning)
-        return set(self.data.icao24)
 
     @property_cache
     def icao24(self) -> Set[str]:
@@ -1271,10 +1286,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         )
 
         return ax.barbs(  # type: ignore
-            windfield.longitude.values,
-            windfield.latitude.values,
-            windfield.wind_u.values,
-            windfield.wind_v.values,
+            windfield.longitude.to_numpy(),
+            windfield.latitude.to_numpy(),
+            windfield.wind_u.to_numpy(),
+            windfield.wind_v.to_numpy(),
             **kwargs,
         )
 

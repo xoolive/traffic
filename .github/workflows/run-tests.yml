@@ -112,16 +112,14 @@ jobs:
       - name: Ubuntu system dependencies
         run: |
           sudo apt update
-          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data libarchive-dev
-          # Weird issue with libarchive-dev
-          sudo ln -s -f /usr/lib/x86_64-linux-gnu/libarchive.a /usr/lib/x86_64-linux-gnu/liblibarchive.a
+          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data
 
       - name: Dynamic versioning
         run: poetry self add "poetry-dynamic-versioning[plugin]" || true
 
       - name: Install dependencies
         run: |
-          poetry install -E full -E libarchive
+          poetry install -E full
 
       - name: Style checking
         run: |

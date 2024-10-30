@@ -368,7 +368,8 @@ class NavigationFeatures:
                 for chunk in tentative.split("20s"):
                     if (
                         chunk.longer_than(min_duration)
-                        and chunk.altitude_min < 5000
+                        and not pd.isna(altmin := chunk.altitude_min)
+                        and altmin < 5000
                     ):
                         chunks.append(
                             chunk.assign(
@@ -848,7 +849,7 @@ class NavigationFeatures:
 
         f_above: Optional["Flight"] = self.query("altitude > 15000")
         if (
-            self.destination != self.destination
+            pd.isna(self.destination)
             or airports[self.destination] is None  # type: ignore
             or f_above is None
         ):
@@ -1068,7 +1069,7 @@ class NavigationFeatures:
                 window = window.assign(flight_id=str(i))
                 resampled = window.resample(samples)
 
-                if resampled.data.eval("track != track").any():
+                if resampled.data.eval("track.isnull()").any():
                     continue
 
                 features = (
@@ -1077,9 +1078,7 @@ class NavigationFeatures:
                 ).values.reshape(1, -1)
 
                 if vertical_rate:
-                    if resampled.data.eval(
-                        "vertical_rate != vertical_rate"
-                    ).any():
+                    if resampled.data.eval("vertical_rate.notnull()").any():
                         continue
                     vertical_rates = (
                         resampled.data.vertical_rate.values.reshape(1, -1)
@@ -1431,7 +1430,7 @@ class NavigationFeatures:
                     onground = airport_segment.query("onground")
                 else:
                     onground = airport_segment.query(
-                        "altitude < 500 or altitude != altitude"
+                        "altitude < 500 or altitude.isnull()"
                     )
                 if onground is not None:
                     yield onground

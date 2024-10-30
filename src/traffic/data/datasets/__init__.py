@@ -7,6 +7,16 @@ from ...core import Traffic
 from ._squawk7700 import Squawk7700Dataset
 from .default import Default, Entry
 
+airspace_bordeaux_2017: Traffic
+landing_amsterdam_2019: Traffic
+landing_cdg_2019: Traffic
+landing_dublin_2019: Traffic
+landing_heathrow_2019: Traffic
+landing_londoncity_2019: Traffic
+landing_toulouse_2017: Traffic
+landing_zurich_2019: Traffic
+paris_toulouse_2017: Traffic
+
 datasets: dict[str, Entry] = dict(
     paris_toulouse_2017=dict(
         url="https://ndownloader.figshare.com/files/20291055",
@@ -55,7 +65,7 @@ datasets: dict[str, Entry] = dict(
     ),
 )
 
-squawk7700 = Squawk7700Dataset().traffic
+squawk7700: Traffic
 
 __all__ = [*list(datasets.keys()), "squawk7700"]
 
@@ -66,6 +76,9 @@ if "datasets" in config:
 def __getattr__(name: str) -> Any:
     if on_disk := config.get("datasets", name, fallback=None):
         return Traffic.from_file(on_disk)
+
+    if name == "squawk7700":
+        return Squawk7700Dataset().traffic
 
     if name not in datasets:
         raise AttributeError(f"No such dataset: {name}")

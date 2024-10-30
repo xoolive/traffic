@@ -400,6 +400,8 @@ colour based on the vertical rate average value.
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
 
         for flight in quickstart:
+            if pd.isna(flight.vertical_rate_mean):
+                continue
             if flight.vertical_rate_mean < -500:
                 flight.plot(ax, color="#4c78a8", alpha=0.5)  # blue
             elif flight.vertical_rate_mean > 1000:
@@ -426,6 +428,8 @@ intersects the shape of the airport.
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
 
         for flight in quickstart:
+            if pd.isna(flight.vertical_rate_mean):
+                continue
             if flight.vertical_rate_mean < -500:
                 if flight.last("5 min").intersects(airports["LFPO"]):
                     flight.plot(ax, color="#4c78a8", alpha=0.5)
@@ -547,7 +551,7 @@ an additional landmark:
     seine_river = (
         Nominatim.search("Seine river, France")
         .shape.intersection(
-            paris_area.unary_union.buffer(0.1)
+            paris_area.union_all().buffer(0.1)
         )
     )
 
@@ -638,7 +642,7 @@ There are several ways to collect trajectories:
       def select_landing(airport: "Airport"):
           for flight in quickstart:
               if low_alt := flight.query("altitude < 3000"):         # Flight -> None or Flight
-                  if low_alt.vertical_rate_mean < -500:              # Flight -> bool
+                  if not pd.isna(v_mean := low_alt.vertical_rate_mean) and v_mean < -500:  # Flight -> bool
                       if low_alt.intersects(airport):                # Flight -> bool
                           if low_alt.aligned_on_ils(airport).has():  # Flight -> bool
                               yield low_alt.last("10 min")           # Flight -> None or Flight

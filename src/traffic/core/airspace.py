@@ -437,6 +437,7 @@ T = TypeVar("T", bound="GeographyMixin")
 
 def inside_bbox(
     geography: T,
+    /,
     bounds: Union[
         ShapelyMixin, base.BaseGeometry, Tuple[float, float, float, float]
     ],

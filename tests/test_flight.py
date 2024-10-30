@@ -351,11 +351,11 @@ def test_landing_ils() -> None:
 def test_compute_navpoints() -> None:
     from traffic.data.samples import switzerland
 
-    df = cast(Flight, switzerland["BAW585E"]).compute_navpoints()
+    df = switzerland["BAW585E"].compute_navpoints()
     assert df is not None
     assert df.navaid.to_list() == ["RESIA", "LUL", "IXILU"]
 
-    df = cast(Flight, switzerland["EZY24DP"]).compute_navpoints()
+    df = switzerland["EZY24DP"].compute_navpoints()
     assert df is not None
     assert df.navaid.to_list() == ["RESIA", "ZH367", "LUL"]
 
@@ -385,12 +385,14 @@ def test_takeoff_goaround() -> None:
     go_arounds = landing_zurich_2019.has("go_around").eval(
         desc="go_around", max_workers=8
     )
+    assert go_arounds is not None
 
     for flight in go_arounds:
         for segment in flight.go_around():
             aligned = segment.aligned_on_ils("LSZH").next()
+            assert aligned is not None
             takeoff = (
-                segment.after(aligned.stop)
+                cast(Flight, segment.after(aligned.stop))
                 .takeoff_from_runway("LSZH", threshold_alt=5000)
                 .next()
             )

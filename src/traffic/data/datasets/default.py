@@ -4,7 +4,7 @@ from typing import TypedDict
 
 import httpx
 
-from ... import cache_dir
+from ... import cache_dir, tqdm_style
 from ...core import tqdm
 
 client = httpx.Client(follow_redirects=True)
@@ -35,20 +35,25 @@ class Default:
                         file_handle.write(content)
                         md5_hash.update(content)
                     else:
-                        with tqdm(  # type: ignore
-                            total=int(content_length),
-                            unit_scale=True,
-                            unit_divisor=1024,
-                            unit="B",
-                        ) as progress:
-                            n_bytes = response.num_bytes_downloaded
+                        if tqdm_style == "silent":
                             for chunk in response.iter_bytes():
                                 file_handle.write(chunk)
                                 md5_hash.update(chunk)
-                                progress.update(
-                                    response.num_bytes_downloaded - n_bytes
-                                )
+                        else:
+                            with tqdm(  # type: ignore
+                                total=int(content_length),
+                                unit_scale=True,
+                                unit_divisor=1024,
+                                unit="B",
+                            ) as progress:
                                 n_bytes = response.num_bytes_downloaded
+                                for chunk in response.iter_bytes():
+                                    file_handle.write(chunk)
+                                    md5_hash.update(chunk)
+                                    progress.update(
+                                        response.num_bytes_downloaded - n_bytes
+                                    )
+                                    n_bytes = response.num_bytes_downloaded
 
             if (digest := md5_hash.hexdigest()) != entry["md5sum"]:
                 filename.unlink()

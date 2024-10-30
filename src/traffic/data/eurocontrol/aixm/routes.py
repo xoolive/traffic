@@ -4,18 +4,16 @@ import logging
 import zipfile
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Iterator, Type, TypeVar
+from typing import Any, Iterator
 
 from lxml import etree
+from typing_extensions import Self
 
 import pandas as pd
 
 from ....core.structure import Navaid, Route
 from ... import aixm_navaids
 from ...basic.airways import Airways
-
-# https://github.com/python/mypy/issues/2511
-T = TypeVar("T", bound="AIXMRoutesParser")
 
 _log = logging.getLogger(__name__)
 
@@ -27,9 +25,7 @@ class AIXMRoutesParser(Airways):
     cache_dir: Path
 
     @classmethod
-    def from_file(
-        cls: Type[T], filename: str | Path, **kwargs: Any
-    ) -> None | T:
+    def from_file(cls, filename: str | Path, **kwargs: Any) -> Self:
         instance = cls(None)
         instance.filename = Path(filename)
         return instance
