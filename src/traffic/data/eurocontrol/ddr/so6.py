@@ -346,8 +346,8 @@ class SO6Flight(Flight):
         if time is None:
             raise NotImplementedError()
 
-        time = to_datetime(time)
-        timearray = np.array([time.timestamp()])
+        timestamp = to_datetime(time)
+        timearray = np.array([timestamp.timestamp()])
         res = self.interpolate(timearray)
 
         return Position(
@@ -367,23 +367,23 @@ class SO6Flight(Flight):
         """
         start = to_datetime(start)
         if isinstance(stop, timedelta):
-            stop = start + stop
+            stop_ts = start + stop
         else:
-            stop = to_datetime(stop)
+            stop_ts = to_datetime(stop)
 
         t = np.stack(list(self.timestamp))
         index = np.where((start < t) & (t < stop))
 
         new_data = np.stack(list(self.coords))[index]
         time1: List[datetime] = [start, *t[index]]
-        time2: List[datetime] = [*t[index], stop]
+        time2: List[datetime] = [*t[index], stop_ts]
 
         if start > t[0]:
             new_data = np.vstack([self.at(start), new_data])
         else:
             time1, time2 = time1[1:], time2[1:]
         if stop < t[-1]:
-            new_data = np.vstack([new_data, self.at(stop)])
+            new_data = np.vstack([new_data, self.at(stop_ts)])
         else:
             time1, time2 = time1[:-1], time2[:-1]
 
