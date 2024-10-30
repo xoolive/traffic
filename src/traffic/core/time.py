@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from numbers import Real
 
 from pyopensky.time import (
@@ -53,4 +53,4 @@ def to_datetime(time: timelike) -> pd.Timestamp:
             "automatically, look at the tzinfo (resp. tz) argument of the "
             "datetime (resp. pd.Timestamp) constructor."
         )
-    return time  # type: ignore
+    return time
