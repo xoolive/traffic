@@ -68,6 +68,7 @@ metar = ">=1.8"
 pyarrow = ">=16.0"
 typing-extensions = ">=4.2"
 py7zr = "^0.22.0"
+rich = "^13.9.3"
 
 # onnxruntime is usually late to release, although available on conda-forge
 # 1.18.1 is the first release to properly address numpy 2.0
