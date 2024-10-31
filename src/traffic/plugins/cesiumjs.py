@@ -10,7 +10,6 @@ import pandas as pd
 
 from ..core import Flight, Traffic
 from ..core.time import timelike, to_datetime
-from ..data import SO6
 
 _log = logging.getLogger(__name__)
 
@@ -92,7 +91,7 @@ def export_flight(flight: Flight) -> Iterator[Dict[str, Any]]:
 
 
 def to_czml(
-    traffic: Union[None, Traffic, SO6],
+    traffic: Union[None, Traffic],
     filename: Union[str, Path],
     minimum_time: Optional[timelike] = None,
 ) -> None:
@@ -142,4 +141,3 @@ def to_czml(
 
 def _onload() -> None:
     setattr(Traffic, "to_czml", to_czml)
-    setattr(SO6, "to_czml", to_czml)

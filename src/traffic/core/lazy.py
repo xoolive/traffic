@@ -403,7 +403,6 @@ feature is experimental.
         lazy_λf.__annotations__ = dict(  # make a copy!!
             getattr(Flight, f.__name__).__annotations__
         )
-        lazy_λf.__annotations__["self"] = LazyTraffic
         lazy_λf.__annotations__["return"] = LazyTraffic
 
         # Attach the method to LazyCollection for further chaining
@@ -466,14 +465,14 @@ for name, handle in inspect.getmembers(
     GeographyMixin, predicate=inspect.isfunction
 ):
     annots = handle.__annotations__
-    if name.startswith("_") or "self" not in annots or "return" not in annots:
+    if name.startswith("_") or "return" not in annots:
         continue
 
-    if (  # includes .query()
-        annots["return"] == annots["self"]
-        or annots["return"] == Optional[annots["self"]]  # noqa: F821
-        or annots["return"] == f"Optional[{annots['self']}]"
-        or annots["return"] == f"None | {annots['self']}"
+    # includes .query(), etc.
+    if (
+        annots["return"] == "Self"
+        or annots["return"] == "Optional[Self]"
+        or annots["return"] == "None | Self"
     ):
 
         def make_lambda(name: str) -> Callable[..., LazyTraffic]:
