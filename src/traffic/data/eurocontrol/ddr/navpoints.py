@@ -29,9 +29,7 @@ class NMNavaids(Navaids):
         raise RuntimeError(msg)
 
     @classmethod
-    def from_file(
-        cls, filename: Union[Path, str], **kwargs: Any
-    ) -> Self:
+    def from_file(cls, filename: Union[Path, str], **kwargs: Any) -> Self:
         if filename == "":
             return cls(None)
 
