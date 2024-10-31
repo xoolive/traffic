@@ -5,14 +5,6 @@ A :class:`~traffic.core.flightplan.FlightPlan` is a structure designed to parse
 flight plans in the ICAO format. Access to such field may be complicated for non
 operational fellows, who may have access to different sources of data.
 
-EUROCONTROL DDR SO6 files
--------------------------
-
-.. automodule:: traffic.data.eurocontrol.ddr.so6
-    :members: SO6, SO6Flight
-    :no-undoc-members:
-    :show-inheritance:
-
 EUROCONTROL B2B web services
 ----------------------------
 
