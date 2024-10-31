@@ -34,6 +34,7 @@ repos:
         exclude: ^docs/conf.py
         additional_dependencies:
           - altair
+          - cartes
           - cartopy
           - impunity
           - pitot

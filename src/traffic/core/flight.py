@@ -44,6 +44,7 @@ from shapely.ops import transform
 
 from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
+from ..algorithms.filters import aggressive
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
 from ..core import types as tt
@@ -1772,8 +1773,8 @@ class Flight(
 
             if isinstance(how, str):
                 if how == "interpolate":
-                    interpolable = data.dtypes[data.dtypes != object].index  # noqa: E721
-                    other = data.dtypes[data.dtypes == object].index  # noqa: E721
+                    interpolable = data.dtypes[data.dtypes != object].index  # noqa: E721, RUF100
+                    other = data.dtypes[data.dtypes == object].index  # noqa: E721, RUF100
                     how = {how: set(interpolable) - {"timestamp"}}
                     how["ffill"] = set(other)
                 else:
@@ -1845,8 +1846,8 @@ class Flight(
         filter_dict = dict(
             default=filters.FilterAboveSigmaMedian(**kwargs),
             aggressive=filters.FilterMedian()
-            | filters.FilterDerivative()
-            | filters.FilterClustering()
+            | aggressive.FilterDerivative()
+            | aggressive.FilterClustering()
             | filters.FilterMean(),
         )
 
