@@ -17,14 +17,13 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Type,
-    TypeVar,
     Union,
     cast,
     overload,
 )
 
 from rich.console import Console, ConsoleOptions, RenderResult
+from typing_extensions import Self
 
 import numpy as np
 import pandas as pd
@@ -57,7 +56,7 @@ if TYPE_CHECKING:
 
 
 # https://github.com/python/mypy/issues/2511
-TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
+# TrafficTypeVar = TypeVar("TrafficTypeVar", bound="Traffic")
 
 # The thing is that Iterable[str] causes issue sometimes...
 IterStr = Union[List[str], Set[str]]
@@ -120,9 +119,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         return cls(pd.concat(cumul, sort=False))
 
     @classmethod
-    def from_file(
-        cls: Type[TrafficTypeVar], filename: Union[Path, str], **kwargs: Any
-    ) -> Optional[TrafficTypeVar]:
+    def from_file(cls, filename: Union[Path, str], **kwargs: Any) -> Self:
         tentative = super().from_file(filename, **kwargs)
 
         if tentative is not None:
@@ -431,24 +428,24 @@ class Traffic(HBoxMixin, GeographyMixin):
         return None
 
     @overload
-    def __getitem__(self, key: int) -> None | Flight: ...
+    def __getitem__(self, key: int) -> Flight: ...
 
     @overload
-    def __getitem__(self, key: str) -> None | Flight: ...
+    def __getitem__(self, key: str) -> Flight: ...
 
     @overload
-    def __getitem__(self, key: slice) -> None | Traffic: ...
+    def __getitem__(self, key: slice) -> Traffic: ...
 
     @overload
-    def __getitem__(self, key: IterStr) -> None | Traffic: ...
+    def __getitem__(self, key: IterStr) -> Traffic: ...
 
     @overload
-    def __getitem__(self, key: Traffic) -> None | Traffic: ...
+    def __getitem__(self, key: Traffic) -> Traffic: ...
 
     def __getitem__(
         self,
         key: int | slice | str | IterStr | pd.Series | pd.DataFrame | Traffic,
-    ) -> None | Flight | Traffic:
+    ) -> Flight | Traffic:
         """Indexation of collections.
 
         :param key:
@@ -482,27 +479,36 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         """
         if isinstance(key, pd.Series):
-            return self._getSeries(key)
+            flight = self._getSeries(key)
+            if flight is not None:
+                return flight
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if isinstance(key, pd.DataFrame):
-            return self.__class__.from_flights(
+            traffic = self.__class__.from_flights(
                 flight for flight in self.iterate(by=key)
             )
+            if traffic is not None:
+                return traffic
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if isinstance(key, int):
             for i, flight in enumerate(self.iterate()):
                 if i == key:
                     return flight
-            return None
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if isinstance(key, slice):
             max_size = key.stop if key.stop is not None else len(self)
             indices = list(range(max_size)[key])
-            return self.__class__.from_flights(
+            traffic = self.__class__.from_flights(
                 flight
                 for i, flight in enumerate(self.iterate())
                 if i in indices
             )
+            if traffic is not None:
+                return traffic
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if isinstance(key, Traffic):
             if (flight_ids := key.flight_ids) is not None:
@@ -532,20 +538,24 @@ class Traffic(HBoxMixin, GeographyMixin):
                             )
                         else:
                             cumul.append(flight)
-            if len(cumul) == 0:
-                return None
-            return Traffic.from_flights(cumul)
+            traffic = Traffic.from_flights(cumul)
+            if traffic is not None:
+                return traffic
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         if not isinstance(key, str):  # List[str], Set[str], Iterable[str]
             _log.debug("Selecting flights from a list of identifiers")
             subset = repr(list(key))
             query_str = f"callsign in {subset} or icao24 in {subset}"
             if "flight_id" in self.data.columns:
-                return self.query(f"flight_id in {subset} or " + query_str)
+                traffic = self.query(f"flight_id in {subset} or " + query_str)
             elif "callsign" in self.data.columns:
-                return self.query(query_str)
+                traffic = self.query(query_str)
             else:
-                return self.query(f"icao24 in {subset}")
+                traffic = self.query(f"icao24 in {subset}")
+            if traffic is not None:
+                return traffic
+            raise KeyError(f"Indexing with {key} returns an empty result")
 
         query_str = f"callsign == '{key}' or icao24 == '{key}'"
         if "callsign" not in self.data.columns:
@@ -558,7 +568,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         if df.shape[0] > 0:
             return Flight(df)
 
-        return None
+        raise KeyError(f"Key '{key}' not found")
 
     def _ipython_key_completions_(self) -> Optional[List[str]]:
         if self.flight_ids is not None:

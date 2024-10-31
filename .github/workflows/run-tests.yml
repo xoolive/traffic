@@ -15,14 +15,26 @@ env:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest # ${{ matrix.os }}
+    name: python-${{ matrix.python-version }} on ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
-        # os: [ubuntu-latest, macos-latest, windows-latest]
-        # onnxruntime needed for 3.11
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        os:
+          - ubuntu-latest
+          # - windows-latest
+          # - macos-latest
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+
+      fail-fast: false
+
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -75,10 +87,10 @@ jobs:
           path: |
             ~/.local
             .venv
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          key: poetry-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
 
       - name: Install and configure Poetry
-        uses: snok/install-poetry@v1.4.0
+        uses: snok/install-poetry@v1.4.1
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
@@ -95,7 +107,7 @@ jobs:
             ~/.cache/traffic/
             ~/.cache/opensky/
             ~/.cache/cartes/
-          key: traffic-${{ runner.os }}
+          key: traffic-${{ hashFiles('poetry.lock') }}
 
       - name: Ubuntu system dependencies
         run: |
@@ -121,6 +133,7 @@ jobs:
           poetry run mypy src tests
 
       - name: Run tests
+        if: ${{ matrix.python-version == '3.12' || steps.cache-folder.outputs.cache-hit == 'true' }}
         env:
           LD_LIBRARY_PATH: /usr/local/lib
           TRAFFIC_NOPLUGIN: ""

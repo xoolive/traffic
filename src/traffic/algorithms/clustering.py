@@ -1,4 +1,12 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Protocol, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Optional,
+    Protocol,
+    TypeAlias,
+    Union,
+)
 
 import numpy as np
 import numpy.typing as npt
@@ -10,7 +18,7 @@ if TYPE_CHECKING:
 
     from ..core import Flight, Traffic
 
-Numeric = npt.NDArray[np.float64]
+Numeric: TypeAlias = npt.NDArray[np.float64]
 
 
 class TransformerProtocol(Protocol):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from functools import cached_property, lru_cache
+from itertools import pairwise
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -410,7 +411,7 @@ def unary_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
         simple_union = unary_union([p for p, *_ in polyalt])
         return [ExtrudedPolygon(simple_union, float("-inf"), float("inf"))]
     results: List[ExtrudedPolygon] = []
-    for low, up in zip(slices, slices[1:]):
+    for low, up in pairwise(slices):
         matched_poly = [
             p
             for (p, low_, up_) in polyalt

@@ -22,9 +22,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Type,
     TypedDict,
-    TypeVar,
     Union,
     cast,
     overload,
@@ -35,6 +33,7 @@ import rs1090
 from impunity import impunity
 from pitot import geodesy as geo
 from rich.console import Console, ConsoleOptions, RenderResult
+from typing_extensions import Self
 
 import numpy as np
 import pandas as pd
@@ -85,30 +84,15 @@ class Entry(TypedDict, total=False):
     name: str
 
 
-T = TypeVar("T", bound="Flight")
+def _tz_interpolate(
+    data: DatetimeTZBlock, *args: Any, **kwargs: Any
+) -> DatetimeTZBlock:
+    coerced = data.coerce_to_target_dtype("int64")
+    interpolated, *_ = coerced.interpolate(*args, **kwargs)
+    return interpolated
 
-if str(pd.__version__) < "1.3":
 
-    def _tz_interpolate(
-        data: DatetimeTZBlock, *args: Any, **kwargs: Any
-    ) -> DatetimeTZBlock:
-        return data.astype(int).interpolate(*args, **kwargs).astype(data.dtype)
-
-    DatetimeTZBlock.interpolate = _tz_interpolate
-
-else:
-    # - with version 1.3.0, interpolate returns a list
-    # - Windows require "int64" as "int" may be interpreted as "int32" and raise
-    #   an error (was not raised before 1.3.0)
-
-    def _tz_interpolate(
-        data: DatetimeTZBlock, *args: Any, **kwargs: Any
-    ) -> DatetimeTZBlock:
-        coerced = data.coerce_to_target_dtype("int64")
-        interpolated, *_ = coerced.interpolate(*args, **kwargs)
-        return interpolated
-
-    DatetimeTZBlock.interpolate = _tz_interpolate
+DatetimeTZBlock.interpolate = _tz_interpolate
 
 
 def _split(
@@ -117,17 +101,17 @@ def _split(
     # This method helps splitting a flight into several.
     if data.shape[0] < 2:
         return
-    diff = data.timestamp.diff().values
+    diff = data.timestamp.diff()
     if unit is None:
         delta = pd.Timedelta(value).to_timedelta64()
     else:
         delta = np.timedelta64(value, unit)
     # There seems to be a change with numpy >= 1.18
     # max() now may return NaN, therefore the following fix
-    max_ = np.nanmax(diff)
+    max_ = diff.max()
     if max_ > delta:
         # np.nanargmax seems bugged with timestamps
-        argmax = np.where(diff == max_)[0][0]
+        argmax = diff.argmax()
         yield from _split(data.iloc[:argmax], value, unit)
         yield from _split(data.iloc[argmax:], value, unit)
     else:
@@ -814,7 +798,7 @@ class Flight(
         segment = None
         for segment in fun(self):
             continue
-        return segment  # type: ignore
+        return segment
 
     # --- Iterators ---
 
@@ -1043,6 +1027,9 @@ class Flight(
         if field not in self.data.columns:
             return None
         tmp = self.data[field].unique()
+        tmp = list(elt for elt in tmp if elt == elt)
+        if len(tmp) == 0:
+            return None
         if len(tmp) == 1:
             return tmp[0]  # type: ignore
         if warn:
@@ -1058,8 +1045,6 @@ class Flight(
         with a route for a commercial aircraft.
         """
         callsign = self._get_unique("callsign")
-        if callsign != callsign:
-            raise ValueError("NaN appearing in callsign field")
         return callsign
 
     @property
@@ -1491,7 +1476,7 @@ class Flight(
 
         - in the NumPy style: ``Flight.split(10, 'm')`` (see
           ``np.timedelta64``);
-        - in the pandas style: ``Flight.split('10T')`` (see ``pd.Timedelta``)
+        - in the pandas style: ``Flight.split('10 min')`` (see ``pd.Timedelta``)
 
         If the `condition` parameter is set, the flight is split between two
         segments only if `condition(f1, f2)` is verified.
@@ -2721,6 +2706,7 @@ class Flight(
         self,
         data: Union[None, pd.DataFrame, "RawData"] = None,
         failure_mode: str = "info",
+        **kwargs: Any,
     ) -> Flight:
         """Extends data with extra columns from EHS messages.
 
@@ -2780,7 +2766,9 @@ class Flight(
         failure = failure_dict[failure_mode]
 
         if data is None:
-            ext = opensky.extended(self.start, self.stop, icao24=self.icao24)
+            ext = opensky.extended(
+                self.start, self.stop, icao24=self.icao24, **kwargs
+            )
             df = ext.data if ext is not None else None
         else:
             df = data if isinstance(data, pd.DataFrame) else data.data
@@ -2792,12 +2780,22 @@ class Flight(
         if df is None or df.shape[0] == 0:
             return failure()
 
-        timestamped_df = df.sort_values("mintime").assign(
-            timestamp=lambda df: df.mintime.dt.round("s")
+        timestamped_df = (
+            df.sort_values("mintime")
+            .assign(timestamp=lambda df: df.mintime)
+            # TODO shouldn't be necessary after pyopensky 2.10
+            .convert_dtypes(dtype_backend="pyarrow")
         )
 
         referenced_df = (
-            timestamped_df.merge(self.data, on="timestamp", how="outer")
+            timestamped_df.merge(
+                # TODO shouldn't be necessary after pyopensky 2.10
+                self.data.convert_dtypes(dtype_backend="pyarrow").assign(
+                    timestamp=lambda df: df.timestamp.astype("int64") * 1e-9
+                ),
+                on="timestamp",
+                how="outer",
+            )
             .sort_values("timestamp")
             .rename(
                 columns=dict(
@@ -2818,7 +2816,7 @@ class Flight(
 
         decoded = rs1090.decode(
             referenced_df.rawmsg,
-            referenced_df.timestamp.astype("int64") * 1e-9,
+            referenced_df.timestamp.astype("int64"),
         )
 
         if len(decoded) == 0:
@@ -2831,7 +2829,7 @@ class Flight(
         )
         df = df.assign(
             timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
-        )
+        ).convert_dtypes(dtype_backend="pyarrow")
         extended = Flight(df)
 
         # fix for https://stackoverflow.com/q/53657210/1595335
@@ -2969,9 +2967,9 @@ class Flight(
         if len(features) > 0:
             base = base.transform_fold(
                 list(features), as_=["variable", "value"]
-            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))  # type: ignore
+            ).encode(alt.Y("value:Q"), alt.Color("variable:N"))
 
-        return base.mark_line()  # type: ignore
+        return base.mark_line()
 
     # -- Visualize with Leaflet --
 
@@ -3088,9 +3086,7 @@ class Flight(
         return FlightRadar24.from_file(filename)
 
     @classmethod
-    def from_file(
-        cls: Type[T], filename: Union[Path, str], **kwargs: Any
-    ) -> Optional[T]:
+    def from_file(cls, filename: Union[Path, str], **kwargs: Any) -> Self:
         """Read data from various formats.
 
         This class method dispatches the loading of data in various format to
@@ -3114,8 +3110,6 @@ class Flight(
         """
 
         tentative = super().from_file(filename, **kwargs)
-        if tentative is None:
-            return None
 
         # Special treatment for flights to download from flightradar24
         cols_fr24 = {

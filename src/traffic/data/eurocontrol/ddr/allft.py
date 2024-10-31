@@ -9,22 +9,18 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Type,
-    TypeVar,
     Union,
     cast,
 )
 
+from py7zr import SevenZipFile
 from tqdm.rich import tqdm
+from typing_extensions import Self
 
 import pandas as pd
 
 from ....core import Flight
 from ....core.mixins import DataFrameMixin, _HBox
-from .so6 import _prepare_libarchive
-
-AllFTTypeVar = TypeVar("AllFTTypeVar", bound="AllFT")
-
 
 allft_fields = list(
     x
@@ -166,8 +162,8 @@ class AllFT(DataFrameMixin):
 
     @classmethod
     def from_allft(
-        cls: Type[AllFTTypeVar], filename: Union[str, Path, BytesIO]
-    ) -> AllFTTypeVar:
+        cls, filename: Union[str, Path, BytesIO]
+    ) -> Self:
         allft = (
             pd.read_csv(
                 filename,
@@ -208,18 +204,13 @@ class AllFT(DataFrameMixin):
 
     @classmethod
     def from_allft_7z(
-        cls: Type[AllFTTypeVar], filename: Union[str, Path]
-    ) -> AllFTTypeVar:
-        from libarchive.public import memory_reader
-
-        _prepare_libarchive()
-
-        with open(filename, "rb") as fh:
-            with memory_reader(fh.read()) as entries:
-                b = BytesIO()
-                for file in entries:
-                    for block in file.get_blocks():
-                        b.write(block)
+        cls, filename: Union[str, Path]
+    ) -> Self:
+        with SevenZipFile(filename, "rb") as fh:
+            b = BytesIO()
+            for file in fh.readall():
+                for block in file.get_blocks():
+                    b.write(block)
 
         cumul = list()
         max_, current, previous = b.tell(), 0, 0
@@ -274,19 +265,13 @@ class AllFT(DataFrameMixin):
 
     @classmethod
     def from_file(
-        cls: Type[AllFTTypeVar], filename: Union[Path, str], **kwargs: Any
-    ) -> Optional[AllFTTypeVar]:  # coverage: ignore
+        cls, filename: Union[Path, str], **kwargs: Any
+    ) -> Self:  # coverage: ignore
         """
         In addition to `usual formats
         <export.html#traffic.core.mixins.DataFrameMixin>`_, you can parse so6
         files as text files (.ALL_FT+ extension) or as 7-zipped text files
         (.ALL_FT+.7z extension).
-
-        .. warning::
-
-            You will need the `libarchive
-            <https://github.com/dsoprea/PyEasyArchive>`_ library to be able
-            to parse .ALL_FT+.7z files on the fly.
 
         """
         path = Path(filename)

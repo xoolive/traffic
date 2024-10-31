@@ -1,6 +1,7 @@
 import zipfile
 
 import pytest
+
 from traffic.data import airports, runways
 
 skip_runways = False
