@@ -3,16 +3,14 @@ from __future__ import annotations
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Union
 
 from lxml import etree
+from typing_extensions import Self
 
 import pandas as pd
 
 from ...basic.navaid import Navaids
-
-# https://github.com/python/mypy/issues/2511
-T = TypeVar("T", bound="AIXMNavaidParser")
 
 _log = logging.getLogger(__name__)
 
@@ -79,9 +77,7 @@ class AIXMNavaidParser(Navaids):
         return self._data
 
     @classmethod
-    def from_file(
-        cls: Type[T], filename: Union[Path, str], **kwargs: Any
-    ) -> Optional[T]:
+    def from_file(cls, filename: Union[Path, str], **kwargs: Any) -> Self:
         instance = cls(None)
         instance.filename = Path(filename)
         return instance

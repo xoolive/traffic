@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Any, Optional, Type, TypeVar, Union
+from typing import Any, Optional, Union
+
+from typing_extensions import Self
 
 import pandas as pd
 
 from ...basic.navaid import Navaids
-
-# https://github.com/python/mypy/issues/2511
-T = TypeVar("T", bound="NMNavaids")
 
 
 class NMNavaids(Navaids):
@@ -31,8 +30,8 @@ class NMNavaids(Navaids):
 
     @classmethod
     def from_file(
-        cls: Type[T], filename: Union[Path, str], **kwargs: Any
-    ) -> Optional[T]:
+        cls, filename: Union[Path, str], **kwargs: Any
+    ) -> Self:
         if filename == "":
             return cls(None)
 

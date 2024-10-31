@@ -22,9 +22,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Type,
     TypedDict,
-    TypeVar,
     Union,
     cast,
     overload,
@@ -35,6 +33,7 @@ import rs1090
 from impunity import impunity
 from pitot import geodesy as geo
 from rich.console import Console, ConsoleOptions, RenderResult
+from typing_extensions import Self
 
 import numpy as np
 import pandas as pd
@@ -84,30 +83,15 @@ class Entry(TypedDict, total=False):
     name: str
 
 
-T = TypeVar("T", bound="Flight")
+def _tz_interpolate(
+    data: DatetimeTZBlock, *args: Any, **kwargs: Any
+) -> DatetimeTZBlock:
+    coerced = data.coerce_to_target_dtype("int64")
+    interpolated, *_ = coerced.interpolate(*args, **kwargs)
+    return interpolated
 
-if str(pd.__version__) < "1.3":
 
-    def _tz_interpolate(
-        data: DatetimeTZBlock, *args: Any, **kwargs: Any
-    ) -> DatetimeTZBlock:
-        return data.astype(int).interpolate(*args, **kwargs).astype(data.dtype)
-
-    DatetimeTZBlock.interpolate = _tz_interpolate
-
-else:
-    # - with version 1.3.0, interpolate returns a list
-    # - Windows require "int64" as "int" may be interpreted as "int32" and raise
-    #   an error (was not raised before 1.3.0)
-
-    def _tz_interpolate(
-        data: DatetimeTZBlock, *args: Any, **kwargs: Any
-    ) -> DatetimeTZBlock:
-        coerced = data.coerce_to_target_dtype("int64")
-        interpolated, *_ = coerced.interpolate(*args, **kwargs)
-        return interpolated
-
-    DatetimeTZBlock.interpolate = _tz_interpolate
+DatetimeTZBlock.interpolate = _tz_interpolate
 
 
 def _split(
@@ -813,7 +797,7 @@ class Flight(
         segment = None
         for segment in fun(self):
             continue
-        return segment  # type: ignore
+        return segment
 
     # --- Iterators ---
 
@@ -1042,6 +1026,9 @@ class Flight(
         if field not in self.data.columns:
             return None
         tmp = self.data[field].unique()
+        tmp = list(elt for elt in tmp if elt == elt)
+        if len(tmp) == 0:
+            return None
         if len(tmp) == 1:
             return tmp[0]  # type: ignore
         if warn:
@@ -1057,8 +1044,6 @@ class Flight(
         with a route for a commercial aircraft.
         """
         callsign = self._get_unique("callsign")
-        if callsign != callsign:
-            raise ValueError("NaN appearing in callsign field")
         return callsign
 
     @property
@@ -3100,9 +3085,7 @@ class Flight(
         return FlightRadar24.from_file(filename)
 
     @classmethod
-    def from_file(
-        cls: Type[T], filename: Union[Path, str], **kwargs: Any
-    ) -> Optional[T]:
+    def from_file(cls, filename: Union[Path, str], **kwargs: Any) -> Self:
         """Read data from various formats.
 
         This class method dispatches the loading of data in various format to
@@ -3126,8 +3109,6 @@ class Flight(
         """
 
         tentative = super().from_file(filename, **kwargs)
-        if tentative is None:
-            return None
 
         # Special treatment for flights to download from flightradar24
         cols_fr24 = {

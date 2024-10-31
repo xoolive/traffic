@@ -9,22 +9,18 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    Type,
-    TypeVar,
     Union,
     cast,
 )
 
 from py7zr import SevenZipFile
 from tqdm.rich import tqdm
+from typing_extensions import Self
 
 import pandas as pd
 
 from ....core import Flight
 from ....core.mixins import DataFrameMixin, _HBox
-
-AllFTTypeVar = TypeVar("AllFTTypeVar", bound="AllFT")
-
 
 allft_fields = list(
     x
@@ -166,8 +162,8 @@ class AllFT(DataFrameMixin):
 
     @classmethod
     def from_allft(
-        cls: Type[AllFTTypeVar], filename: Union[str, Path, BytesIO]
-    ) -> AllFTTypeVar:
+        cls, filename: Union[str, Path, BytesIO]
+    ) -> Self:
         allft = (
             pd.read_csv(
                 filename,
@@ -208,8 +204,8 @@ class AllFT(DataFrameMixin):
 
     @classmethod
     def from_allft_7z(
-        cls: Type[AllFTTypeVar], filename: Union[str, Path]
-    ) -> AllFTTypeVar:
+        cls, filename: Union[str, Path]
+    ) -> Self:
         with SevenZipFile(filename, "rb") as fh:
             b = BytesIO()
             for file in fh.readall():
@@ -269,8 +265,8 @@ class AllFT(DataFrameMixin):
 
     @classmethod
     def from_file(
-        cls: Type[AllFTTypeVar], filename: Union[Path, str], **kwargs: Any
-    ) -> Optional[AllFTTypeVar]:  # coverage: ignore
+        cls, filename: Union[Path, str], **kwargs: Any
+    ) -> Self:  # coverage: ignore
         """
         In addition to `usual formats
         <export.html#traffic.core.mixins.DataFrameMixin>`_, you can parse so6
