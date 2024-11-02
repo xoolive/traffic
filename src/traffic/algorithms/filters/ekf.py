@@ -26,7 +26,7 @@ def extended_kalman_filter(
 ) -> pd.DataFrame:
     num_states = len(initial_state)
     states = np.repeat(
-        initial_state.values.reshape(1, -1), measurements.shape[0], axis=0
+        initial_state.to_numpy().reshape(1, -1), measurements.shape[0], axis=0
     )
     covariances = np.zeros((measurements.shape[0], num_states, num_states))
 

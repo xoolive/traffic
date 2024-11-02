@@ -62,7 +62,7 @@ class FilterMedian(FilterBase):
         for column, kernel in self.columns.items():
             if column not in data.columns:
                 continue
-            column_copy = data[column]
+            column_copy = data[column] = data[column].astype(float)
             data[column] = data[column].rolling(kernel, center=True).median()
             data.loc[data[column].isnull(), column] = column_copy
         return data
@@ -87,7 +87,7 @@ class FilterMean(FilterBase):
         for column, kernel in self.columns.items():
             if column not in data.columns:
                 continue
-            column_copy = data[column]
+            column_copy = data[column] = data[column].astype(float)
             data[column] = data[column].rolling(kernel, center=True).mean()
             data.loc[data[column].isnull(), column] = column_copy
         return data

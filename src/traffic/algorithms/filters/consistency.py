@@ -215,35 +215,47 @@ def consistency_solver(
             return mask
 
 
-def check_solution(dd, mask):
-    iold = None
-    for i, maski in enumerate(mask):
-        if not maski:
-            if iold is not None:
-                assert dd[i - iold, iold]
-            iold = i
+# def check_solution(dd, mask):
+#     iold = None
+#     for i, maski in enumerate(mask):
+#         if not maski:
+#             if iold is not None:
+#                 assert dd[i - iold, iold]
+#             iold = i
 
 
-def meanangle(a1: npt.NDArray[Any], a2: npt.NDArray[Any]) -> npt.NDArray[Any]:
+def meanangle(
+    a1: npt.NDArray[np.float64], a2: npt.NDArray[np.float64]
+) -> npt.NDArray[np.float64]:
     return diffangle(a1, a2) * 0.5 + a2
 
 
 class FilterConsistency(FilterBase):
     """
+
     Filters noisy values, keeping only values consistent with each other.
     Consistencies are checked between points :math:`i` and points :math:`j \\in
     [|i+1;i+horizon|]`. Using these consistencies, a graph is built: if
     :math:`i` and :math:`j` are consistent, an edge :math:`(i,j)` is added to
     the graph. The kept values is the longest path in this graph, resulting in a
     sequence of consistent values.  The consistencies checked vertically between
-    :math:`t_i<t_j` are:: :math:`|(alt_j-alt_i)-(t_j-t_i)* (ROCD_i+ROCD_j)*0.5| < dalt_dt_error` where :math:`dalt_dt_error` is a threshold that can be specified
-    by the user.
+    :math:`t_i<t_j` are:: :math:`|(alt_j-alt_i)-(t_j-t_i)* (ROCD_i+ROCD_j)*0.5|
+    < dalt_dt_error` where :math:`dalt_dt_error` is a threshold that can be
+    specified by the user.
 
     The consistencies checked horizontally between :math:`t_i<t_j` are:
-    :math:`|(track_i+track_j)*0.5-atan2(lat_j-lat_i,lon_j-lon_i)| < (t_j-t_i)*dtrack_dt_error` and
-    :math:`|dist(lat_j,lat_i,lon_j,lon_i)-(groundspeed_i+groundspeed_j)*0.5*(t_j-t_i)| < dist(lat_j,lat_i,lon_j,lon_i) * relative_error_on_dist` where :math:`dtrack_dt_error` and :math:`relative_error_on_dist` are thresholds that can be specified by the user.
+    :math:`|(track_i+track_j)*0.5-atan2(lat_j-lat_i,lon_j-lon_i)| <
+    (t_j-t_i)*dtrack_dt_error` and :math:`|dist(lat_j,lat_i,lon_j,lon_i) -
+    (groundspeed_i+groundspeed_j) * 0.5*(t_j-t_i)| <
+    dist(lat_j,lat_i,lon_j,lon_i) * relative_error_on_dist` where
+    :math:`dtrack_dt_error` and :math:`relative_error_on_dist` are thresholds
+    that can be specified by the user.
 
-    In order to compute the longest path faster, a greedy algorithm is used. However, if the ratio of kept points is inferior to :math:`exact_when_kept_below` then an exact and slower computation is triggered. This computation uses the Network library or the faster graph-tool library if available.
+    In order to compute the longest path faster, a greedy algorithm is used.
+    However, if the ratio of kept points is inferior to
+    :math:`exact_when_kept_below` then an exact and slower computation is
+    triggered. This computation uses the Network library or the faster
+    graph-tool library if available.
 
     This filter replaces unacceptable values with NaNs. Then, a strategy may be
     applied to fill the NaN values, by default a forward/backward fill. Other

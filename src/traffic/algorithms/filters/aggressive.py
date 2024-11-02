@@ -70,8 +70,10 @@ class FilterDerivative(FilterBase):
                 (deriv1 >= params["first"]), (deriv2 >= params["second"])
             )
             spike = spike.fillna(False, inplace=False)
-            spike_time = pd.Series(pd.Timestamp("NaT"), index=data.index)
-            spike_time = spike_time.dt.tz_localize("utc").copy()
+            spike_time = pd.Series(
+                pd.Timestamp("NaT"), index=data.index
+            ).convert_dtypes(dtype_backend="pyarrow")
+            spike_time = spike_time.dt.tz_localize("UTC").copy()
             spike_time.loc[spike] = data.loc[spike, self.time_column]
 
             if not spike_time.isnull().all():
@@ -156,7 +158,7 @@ class FilterClustering(FilterBase):
                         (paradiff > param["value_threshold"]),
                     )
                 )
-                data["group"] = bigdiff.eq(True).cumsum()
+                data["group"] = bigdiff.fillna(False).astype(int).cumsum()
                 groups = data[data[column].notna()]["group"].value_counts()
                 keepers = groups[groups > param["group_size"]].index.tolist()
                 data[column] = data[column].where(

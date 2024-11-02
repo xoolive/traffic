@@ -1,4 +1,5 @@
 from cartes.crs import Lambert93  # type: ignore
+
 from traffic.algorithms.filters.ekf import EKF
 from traffic.algorithms.filters.ground import KalmanTaxiway
 from traffic.data.samples import full_flight_short

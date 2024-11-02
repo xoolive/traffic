@@ -20,14 +20,14 @@ from .preprocessing import (
 
 class KalmanTaxiway(ProcessXYFilterBase):
     # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    x_pre: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    x1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    x2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x_mes: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    x_pre: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    x1_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    p1_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    x2_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    p2_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
 
-    xs: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    xs: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
     shl: TrackVariable[Any] = TrackVariable()
     closest_line: TrackVariable[Any] = TrackVariable()
 
@@ -90,7 +90,7 @@ class KalmanTaxiway(ProcessXYFilterBase):
         if False:  # self.closest is not None:
             idx = self.closest_line = self.closest[idx]
         else:
-            if np.any(self.x_mes[:2] != self.x_mes[:2]):
+            if self.x_mes[:2].isna().any():
                 distance_to_taxiway = self.taxiways.distance(point_pre)
             else:
                 distance_to_taxiway = self.taxiways.distance(point_mes)
