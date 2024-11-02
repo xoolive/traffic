@@ -18,11 +18,15 @@ __all__ = [
 
 @lru_cache()
 def get_flight(filename: str, directory: Path) -> Flight | Traffic:
-    flight: Union[None, Flight, Traffic] = Traffic.from_file(
-        directory / f"{filename}.json.gz", dtype={"icao24": str}
-    )
+    flight: Union[None, Flight, Traffic] = None
+    if (fh := directory / f"{filename}.json.gz").exists():
+        flight = Traffic.from_file(fh, dtype={"icao24": str})
+    if (fh := directory / f"{filename}.jsonl").exists():
+        flight = Traffic.from_file(fh, dtype={"icao24": str})
     if flight is None:
-        raise RuntimeError(f"File {filename}.json.gz not found in {directory}")
+        raise RuntimeError(
+            f"File {filename}.json[l,.gz] not found in {directory}"
+        )
     icao24 = set(flight.data.icao24) if "icao24" in flight.data.columns else []
     if len(icao24) <= 1:
         if Flight(flight.data).split("1h").sum() == 1:
@@ -60,6 +64,7 @@ def assign_id(t: Union[Traffic, Flight], name: str) -> Union[Traffic, Flight]:
 airbus_tree: Flight
 belevingsvlucht: Flight
 elal747: Flight
+full_flight_short: Flight
 lfbo_tma: Airspace
 noisy: Flight
 quickstart: Traffic
@@ -75,7 +80,7 @@ def __getattr__(name: str) -> Any:
         return Path(_current_dir / "dump1090" / "sample_dump1090.bin")
     if name == "lfbo_tma":
         return Airspace.from_file(_current_dir / "airspaces" / "LFBOTMA.json")
-    filelist = list(_current_dir.glob(f"**/{name}.json.gz"))
+    filelist = list(_current_dir.glob(f"**/{name}.json*"))
     if len(filelist) == 0:
         msg = f"File {name}.json.gz not found in available samples"
         raise AttributeError(msg)

@@ -44,6 +44,7 @@ from shapely.ops import transform
 
 from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
+from ..algorithms.filters import aggressive
 from ..algorithms.navigation import NavigationFeatures
 from ..algorithms.openap import OpenAP
 from ..core import types as tt
@@ -1848,8 +1849,8 @@ class Flight(
         filter_dict = dict(
             default=filters.FilterAboveSigmaMedian(**kwargs),
             aggressive=filters.FilterMedian()
-            | filters.FilterDerivative()
-            | filters.FilterClustering()
+            | aggressive.FilterDerivative()
+            | aggressive.FilterClustering()
             | filters.FilterMean(),
         )
 
