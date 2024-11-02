@@ -213,7 +213,15 @@ We can also estimate the total fuel consumed:
 
 .. jupyter-execute::
 
-    g.emission().fuel_max
+    g.between(takeoff_time, landing_time).emission().fuel_max
+
+.. warning::
+
+    Note that it is not reasonable to consider these models on the ground and that it can result to big discrepancies.
+
+    .. jupyter-execute::
+
+        g.emission().fuel_max
 
 .. hint::
 

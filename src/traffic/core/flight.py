@@ -103,9 +103,9 @@ def _split(
         return
     diff = data.timestamp.diff()
     if unit is None:
-        delta = pd.Timedelta(value).to_timedelta64()
+        delta = pd.Timedelta(value)
     else:
-        delta = np.timedelta64(value, unit)
+        delta = pd.Timedelta(np.timedelta64(value, unit))
     # There seems to be a change with numpy >= 1.18
     # max() now may return NaN, therefore the following fix
     max_ = diff.max()
@@ -726,7 +726,7 @@ class Flight(
                     value = value.format(i=i, segment=segment, self=self)
                 result.data.loc[mask, key] = value
 
-        return result.convert_dtypes(convert_string=False)
+        return result
 
     def all(
         self,
@@ -790,7 +790,7 @@ class Flight(
         >>> flight.final("runway_change")
         >>> flight.final(lambda f: f.aligned_on_ils("LFBO"))
         """
-        fun = (
+        fun: Callable[[Flight], Iterator[Flight]] = (
             getattr(self.__class__, method)
             if isinstance(method, str)
             else method
@@ -808,7 +808,7 @@ class Flight(
 
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
-        data = self.data.query("longitude == longitude")
+        data = self.data.query("longitude.notnull()")
         if "altitude" not in data.columns:
             data = data.assign(altitude=0)
         yield from zip(
@@ -819,7 +819,7 @@ class Flight(
         )
 
     def coords4d(self, delta_t: bool = False) -> Iterator[Entry]:
-        data = self.data.query("longitude == longitude")
+        data = self.data.query("longitude.notnull()")
         if delta_t:
             time = (data.timestamp - data.timestamp.min()).dt.total_seconds()
         else:
@@ -845,7 +845,7 @@ class Flight(
 
     @property
     def xy_time(self) -> Iterator[Tuple[float, float, float]]:
-        self_filtered = self.query("longitude == longitude")
+        self_filtered = self.query("longitude.notnull()")
         if self_filtered is None:
             return None
         iterator = iter(zip(self_filtered.coords, self_filtered.timestamp))
@@ -906,6 +906,8 @@ class Flight(
         if isinstance(feature, str):
             feature = attrgetter(feature)
         attribute = feature(self)
+        if pd.isna(attribute):
+            return False
         if strict:
             return attribute > value  # type: ignore
         return attribute >= value  # type: ignore
@@ -934,6 +936,8 @@ class Flight(
         if isinstance(feature, str):
             feature = attrgetter(feature)
         attribute = feature(self)
+        if pd.isna(attribute):
+            return False
         if strict:
             return attribute < value  # type: ignore
         return attribute <= value  # type: ignore
@@ -1027,7 +1031,7 @@ class Flight(
         if field not in self.data.columns:
             return None
         tmp = self.data[field].unique()
-        tmp = list(elt for elt in tmp if elt == elt)
+        tmp = list(elt for elt in tmp if not pd.isna(elt))
         if len(tmp) == 0:
             return None
         if len(tmp) == 1:
@@ -1639,7 +1643,7 @@ class Flight(
             data.columns = (
                 [
                     how(filter(None, map(str, levels)))
-                    for levels in data.columns.values
+                    for levels in data.columns.to_numpy()
                 ]
                 if isinstance(data.columns, pd.MultiIndex)
                 else data.columns
@@ -1679,13 +1683,14 @@ class Flight(
         if "last_position" in self.data.columns:
             data = (
                 data.assign(
-                    _mark=lambda df: df.last_position
-                    != df.shift(1).last_position
+                    _mark=lambda df: (
+                        df.last_position != df.shift(1).last_position
+                    ).astype(float)
                 )
                 .assign(
-                    latitude=lambda df: df.latitude * df._mark / df._mark,
-                    longitude=lambda df: df.longitude * df._mark / df._mark,
-                    altitude=lambda df: df.altitude * df._mark / df._mark,
+                    latitude=lambda df: df.latitude * (df._mark / df._mark),
+                    longitude=lambda df: df.longitude * (df._mark / df._mark),
+                    altitude=lambda df: df.altitude * (df._mark / df._mark),
                 )
                 # keeping last_position causes more problems (= Nan) than
                 # anything. Safer to just remove it for now. Like it or not!
@@ -1763,7 +1768,7 @@ class Flight(
                 .data.set_index("timestamp")
                 .resample(rule)
                 .first()
-                .reset_index()
+                .reset_index(names="timestamp")
             )
 
             data = data.infer_objects(copy=False)
@@ -1773,10 +1778,15 @@ class Flight(
 
             if isinstance(how, str):
                 if how == "interpolate":
-                    interpolable = data.dtypes[data.dtypes != object].index  # noqa: E721, RUF100
-                    other = data.dtypes[data.dtypes == object].index  # noqa: E721, RUF100
-                    how = {how: set(interpolable) - {"timestamp"}}
-                    how["ffill"] = set(other)
+                    interpolable = data.select_dtypes(["float", "int"])
+                    how = {
+                        "interpolate": set(interpolable),
+                        "ffill": set(
+                            data.select_dtypes(
+                                exclude=["float", "int", "bool", "datetime"]
+                            )
+                        ),
+                    }
                 else:
                     how = {how: set(data.columns) - {"timestamp"}}
 
@@ -1784,25 +1794,18 @@ class Flight(
                 if meth is not None:
                     idx = data.columns.get_indexer(columns)
                     kwargs = interpolate_kw if meth == "interpolate" else {}
-                    value = getattr(data.iloc[:, idx], meth)(**kwargs)
+                    value = getattr(data[list(columns)], meth)(**kwargs)
                     data[data.columns[idx]] = value
 
         elif isinstance(rule, int):
-            # ./site-packages/pandas/core/indexes/base.py:2820: FutureWarning:
-            # Converting timezone-aware DatetimeArray to timezone-naive ndarray
-            # with 'datetime64[ns]' dtype. In the future, this will return an
-            # ndarray with 'object' dtype where each element is a
-            # 'pandas.Timestamp' with the correct 'tz'.
-            # To accept the future behavior, pass 'dtype=object'.
-            # To keep the old behavior, pass 'dtype="datetime64[ns]"'.
+            # use pd.date_range to compute the best freq
+            new_index = pd.date_range(self.start, self.stop, periods=rule)
             data = (
                 self.handle_last_position()
                 .unwrap()  # avoid filled gaps in track and heading
-                .assign(tz_naive=lambda d: d.timestamp.dt.tz_localize(None))
-                .data.set_index("tz_naive")
-                .asfreq((self.stop - self.start) / (rule - 1), method="nearest")
-                .reset_index()
-                .drop(columns="tz_naive")
+                .data.set_index("timestamp")
+                .reindex(new_index, method="nearest")
+                .reset_index(names="timestamp")
             )
         else:
             raise TypeError("rule must be a str or an int")
@@ -1868,9 +1871,6 @@ class Flight(
 
         if strategy is not None:
             new_data = strategy(new_data)
-
-        if "onground" in new_data.columns:
-            new_data = new_data.assign(onground=new_data.onground.astype(bool))
 
         postprocess = self.__class__(new_data)
         if filter.projection is not None:
@@ -1980,9 +1980,9 @@ class Flight(
         if "altitude" not in self.data.columns:
             return self
         if "onground" in self.data.columns and self.data.onground.dtype == bool:
-            return self.query("onground or altitude != altitude")
+            return self.query("onground or altitude.isnull()")
         else:
-            return self.query("altitude != altitude")
+            return self.query("altitude.isnull()")
 
     def airborne(self) -> Optional[Flight]:
         """Returns the airborne part of the Flight.
@@ -1993,9 +1993,9 @@ class Flight(
         if "altitude" not in self.data.columns:
             return None
         if "onground" in self.data.columns and self.data.onground.dtype == bool:
-            return self.query("not onground and altitude == altitude")
+            return self.query("not onground and altitude.notnull()")
         else:
-            return self.query("altitude == altitude")
+            return self.query("altitude.notnull()")
 
     def unwrap(self, features: Union[None, str, List[str]] = None) -> Flight:
         """Unwraps angles in the DataFrame.
@@ -2168,10 +2168,10 @@ class Flight(
                     )
 
         return ax.barbs(  # type: ignore
-            data.longitude.values,
-            data.latitude.values,
-            data.wind_u.values,
-            data.wind_v.values,
+            data.longitude.to_numpy(),
+            data.latitude.to_numpy(),
+            data.wind_u.to_numpy(),
+            data.wind_v.to_numpy(),
             **kwargs,
         )
 
@@ -2185,8 +2185,8 @@ class Flight(
         return self.assign(
             **{
                 column_name: geo.bearing(
-                    self.data.latitude.values,
-                    self.data.longitude.values,
+                    self.data.latitude.to_numpy(),
+                    self.data.longitude.to_numpy(),
                     other.latitude * np.ones(size),
                     other.longitude * np.ones(size),
                 )
@@ -2246,8 +2246,11 @@ class Flight(
         """
 
         if other is None:
-            first = self.at_ratio(0)
-            last = self.at_ratio(1)
+            with_position = self.query("latitude.notnull()")
+            if with_position is None:
+                return 0
+            first = with_position.at_ratio(0)
+            last = with_position.at_ratio(1)
             if first is None or last is None:
                 return 0
             result: tt.distance = geo.distance(
@@ -2263,8 +2266,8 @@ class Flight(
         if isinstance(other, PointMixin):
             size = self.data.shape[0]
             distance_vec = geo.distance(
-                self.data.latitude.values,
-                self.data.longitude.values,
+                self.data.latitude.to_numpy(),
+                self.data.longitude.to_numpy(),
                 other.latitude * np.ones(size),
                 other.longitude * np.ones(size),
             )
@@ -2319,10 +2322,10 @@ class Flight(
         table = f1.data[cols].merge(f2.data[cols], on="timestamp")
 
         distance_vec = geo.distance(
-            table.latitude_x.values,
-            table.longitude_x.values,
-            table.latitude_y.values,
-            table.longitude_y.values,
+            table.latitude_x.to_numpy(),
+            table.longitude_x.to_numpy(),
+            table.latitude_y.to_numpy(),
+            table.longitude_y.to_numpy(),
         )
         return table.assign(
             lateral=distance_vec,
@@ -2473,10 +2476,10 @@ class Flight(
         delta_1 = delta.iloc[1:]
         distance_nm: tt.distance_array
         distance_nm = geo.distance(
-            (delta_1.latitude - delta_1.latitude_1).values,
-            (delta_1.longitude - delta_1.longitude_1).values,
-            delta_1.latitude.values,
-            delta_1.longitude.values,
+            (delta_1.latitude - delta_1.latitude_1).to_numpy(),
+            (delta_1.longitude - delta_1.longitude_1).to_numpy(),
+            delta_1.latitude.to_numpy(),
+            delta_1.longitude.to_numpy(),
         )
 
         res = cur_sorted.assign(
@@ -2492,10 +2495,10 @@ class Flight(
 
         if compute_track:
             track = geo.bearing(
-                (delta_1.latitude - delta_1.latitude_1).values,
-                (delta_1.longitude - delta_1.longitude_1).values,
-                delta_1.latitude.values,
-                delta_1.longitude.values,
+                (delta_1.latitude - delta_1.latitude_1).to_numpy(),
+                (delta_1.longitude - delta_1.longitude_1).to_numpy(),
+                delta_1.latitude.to_numpy(),
+                delta_1.longitude.to_numpy(),
             )
             track = np.where(track > 0, track, 360 + track)
             res = res.assign(
@@ -2780,19 +2783,14 @@ class Flight(
         if df is None or df.shape[0] == 0:
             return failure()
 
-        timestamped_df = (
-            df.sort_values("mintime")
-            .assign(timestamp=lambda df: df.mintime)
-            # TODO shouldn't be necessary after pyopensky 2.10
-            .convert_dtypes(dtype_backend="pyarrow")
+        timestamped_df = df.sort_values("mintime").assign(
+            timestamp=lambda df: df.mintime
         )
+        timestamp_s = self.data.timestamp.dt.as_unit("s").astype(int)
 
         referenced_df = (
             timestamped_df.merge(
-                # TODO shouldn't be necessary after pyopensky 2.10
-                self.data.convert_dtypes(dtype_backend="pyarrow").assign(
-                    timestamp=lambda df: df.timestamp.astype("int64") * 1e-9
-                ),
+                self.data.assign(timestamp=timestamp_s),
                 on="timestamp",
                 how="outer",
             )
@@ -2827,9 +2825,9 @@ class Flight(
             pd.DataFrame.from_records(d)
             for d in rs1090.batched(decoded, 5000)
         )
-        df = df.assign(
+        df = df.convert_dtypes(dtype_backend="pyarrow").assign(
             timestamp=pd.to_datetime(df.timestamp, unit="s", utc=True)
-        ).convert_dtypes(dtype_backend="pyarrow")
+        )
         extended = Flight(df)
 
         # fix for https://stackoverflow.com/q/53657210/1595335
@@ -3062,7 +3060,7 @@ class Flight(
                     secondary_y=column if column in secondary_y else "",
                 ),
             }
-            subtab = self.data.query(f"{column} == {column}")
+            subtab = self.data.query(f"{column}.notnull()")
 
             if localized:
                 (

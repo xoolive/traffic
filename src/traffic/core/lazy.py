@@ -14,10 +14,13 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Concatenate,
     Dict,
     List,
     Literal,
     Optional,
+    ParamSpec,
+    TypeVar,
     Union,
     cast,
     overload,
@@ -36,6 +39,17 @@ if TYPE_CHECKING:
     from .traffic import Traffic
 
 _log = logging.getLogger(__name__)
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+TrafficMethod = Callable[Concatenate["Traffic", P], R]
+
+# TODO PEP 563 (Postponed Evaluation of Annotations) from Python 3.11
+
+# This syntax from Python 3.12
+# type TrafficMethod[P] =
+#  Callable[Concatenate[Traffic, P], bool | None | Traffic]
 
 
 class FaultCatcher:
@@ -283,20 +297,25 @@ class LazyTraffic:
 def lazy_evaluation(
     default: "Literal[None, False]" = False,
     idx_name: Optional[str] = None,
-) -> Callable[..., Callable[..., LazyTraffic]]: ...
+) -> Callable[
+    [TrafficMethod[P, R]], Callable[Concatenate["Traffic", P], LazyTraffic]
+]: ...
 
 
 @overload
 def lazy_evaluation(
     default: "Literal[True]",
     idx_name: Optional[str] = None,
-) -> Callable[..., Callable[..., "Traffic"]]: ...
+) -> Callable[[TrafficMethod[P, R]], TrafficMethod[P, R]]: ...
 
 
 def lazy_evaluation(
     default: None | bool = False,
     idx_name: None | str = None,
-) -> Callable[..., Callable[..., "Traffic" | LazyTraffic]]:
+) -> Callable[
+    [TrafficMethod[P, R]],
+    Callable[Concatenate["Traffic", P], R | LazyTraffic],
+]:
     """A decorator to delegate methods to :class:`~traffic.core.Flight` in a
     lazy manner.
 
@@ -324,8 +343,8 @@ def lazy_evaluation(
     """
 
     def wrapper(
-        f: Callable[..., "Traffic"],
-    ) -> Callable[..., Union["Traffic", LazyTraffic]]:
+        f: TrafficMethod[P, R],
+    ) -> Callable[Concatenate["Traffic", P], R | LazyTraffic]:
         # Check parameters passed (esp. filter_if) are not lambda because those
         # are not serializable therefore **silently** fail when multiprocessed.
         msg = """
@@ -367,24 +386,22 @@ feature is experimental.
             return cast(str, astor.to_source(ast_lambda))
 
         def lazy_λf(
-            lazy: LazyTraffic,
-            *args: str | Callable[..., Union["Traffic", LazyTraffic]],
-            **kwargs: str | Callable[..., Union["Traffic", LazyTraffic]],
+            self: LazyTraffic, /, *args: P.args, **kwargs: P.kwargs
         ) -> LazyTraffic:
             if any(is_lambda(arg) for arg in args):
                 _log.warning(msg.format(method=f.__name__))
-                args = tuple(
-                    stringify_lambda(arg)
+                args = tuple(  # type: ignore
+                    stringify_lambda(arg)  # type: ignore
                     if not isinstance(arg, str) and is_lambda(arg)
                     else arg
                     for arg in args
                 )
             if any(is_lambda(arg) for arg in kwargs.values()):
                 _log.warning(msg.format(method=f.__name__))
-                kwargs = dict(
+                kwargs = dict(  # type: ignore
                     (
                         key,
-                        stringify_lambda(arg)
+                        stringify_lambda(arg)  # type: ignore
                         if not isinstance(arg, str) and is_lambda(arg)
                         else arg,
                     )
@@ -394,16 +411,15 @@ feature is experimental.
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
             return LazyTraffic(
-                lazy.wrapped_t,
-                [*lazy.stacked_ops, op_idx],
-                lazy.iterate_kw,
-                lazy.tqdm_kw,
+                self.wrapped_t,
+                [*self.stacked_ops, op_idx],
+                self.iterate_kw,
+                self.tqdm_kw,
             )
 
         lazy_λf.__annotations__ = dict(  # make a copy!!
             getattr(Flight, f.__name__).__annotations__
         )
-        lazy_λf.__annotations__["self"] = LazyTraffic
         lazy_λf.__annotations__["return"] = LazyTraffic
 
         # Attach the method to LazyCollection for further chaining
@@ -422,8 +438,9 @@ feature is experimental.
         # Take the method in Flight and create a LazyCollection
         def λf(
             wrapped_t: "Traffic",
-            *args: Callable[..., Union["Traffic", LazyTraffic]],
-            **kwargs: Callable[..., Union["Traffic", LazyTraffic]],
+            /,
+            *args: P.args,
+            **kwargs: P.kwargs,
         ) -> LazyTraffic:
             op_idx = LazyLambda(f.__name__, idx_name, *args, **kwargs)
 
@@ -466,34 +483,37 @@ for name, handle in inspect.getmembers(
     GeographyMixin, predicate=inspect.isfunction
 ):
     annots = handle.__annotations__
-    if name.startswith("_") or "self" not in annots or "return" not in annots:
+    if name.startswith("_") or "return" not in annots:
         continue
 
-    if (  # includes .query()
-        annots["return"] == annots["self"]
-        or annots["return"] == Optional[annots["self"]]  # noqa: F821
-        or annots["return"] == f"Optional[{annots['self']}]"
-        or annots["return"] == f"None | {annots['self']}"
+    # includes .query(), etc.
+    if (
+        annots["return"] == "Self"
+        or annots["return"] == "Optional[Self]"
+        or annots["return"] == "None | Self"
     ):
 
-        def make_lambda(name: str) -> Callable[..., LazyTraffic]:
+        def make_lambda(
+            handle: Callable[Concatenate[GeographyMixin, P], Any],
+        ) -> Callable[Concatenate[LazyTraffic, P], LazyTraffic]:
             def lazy_λf(
-                lazy: LazyTraffic,
-                *args: Callable[..., Union["Traffic", LazyTraffic]],
-                **kwargs: Callable[..., Union["Traffic", LazyTraffic]],
+                self: LazyTraffic, /, *args: P.args, **kwargs: P.kwargs
             ) -> LazyTraffic:
-                op_idx = LazyLambda(name, None, *args, **kwargs)
+                op_idx = LazyLambda(handle.__name__, None, *args, **kwargs)
                 return LazyTraffic(
-                    lazy.wrapped_t,
-                    [*lazy.stacked_ops, op_idx],
-                    lazy.iterate_kw,
-                    lazy.tqdm_kw,
+                    self.wrapped_t,
+                    [*self.stacked_ops, op_idx],
+                    self.iterate_kw,
+                    self.tqdm_kw,
                 )
 
+            lazy_λf.__name__ = handle.__name__
+            lazy_λf.__qualname__ = f"LazyTraffic.{handle.__name__}"
             lazy_λf.__doc__ = handle.__doc__
-            lazy_λf.__annotations__ = handle.__annotations__
+            lazy_λf.__annotations__ = handle.__annotations__.copy()
+            lazy_λf.__annotations__["return"] = "Self"
 
             return lazy_λf
 
         # Attach the method to LazyCollection for further chaining
-        setattr(LazyTraffic, name, make_lambda(name))
+        setattr(LazyTraffic, name, make_lambda(handle))

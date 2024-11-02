@@ -8,13 +8,10 @@ from typing import Any, Union, cast
 import pandas as pd
 
 from ...core import Airspace, Flight, Traffic
-from ..eurocontrol.ddr.so6 import SO6
 
 _current_dir = Path(__file__).parent
 __all__ = [
     *sorted(f.stem[:-5] for f in _current_dir.glob("**/*.json.gz")),
-    *sorted(f.stem for f in _current_dir.glob("**/*.jsonl")),
-    "sample_so6",
     "sample_dump1090",
 ]
 
@@ -46,10 +43,6 @@ def get_flight(filename: str, directory: Path) -> Flight | Traffic:
                 df.last_position * 1e6
             ).dt.tz_localize("utc")
         )
-    if not hasattr(flight.data.timestamp.dtype, "tz"):
-        flight = flight.assign(
-            timestamp=lambda df: df.timestamp.dt.tz_localize("utc")
-        )
     return flight
 
 
@@ -76,7 +69,6 @@ lfbo_tma: Airspace
 noisy: Flight
 quickstart: Traffic
 sample_dump1090: Path
-sample_m3: SO6
 switzerland: Traffic
 texas_longhorn: Flight
 zurich_airport: Traffic
@@ -86,8 +78,6 @@ zurich_airport: Traffic
 def __getattr__(name: str) -> Any:
     if name == "sample_dump1090":
         return Path(_current_dir / "dump1090" / "sample_dump1090.bin")
-    if name == "sample_m3":
-        return SO6.from_file(_current_dir / "so6" / "sample_m3.so6.7z")
     if name == "lfbo_tma":
         return Airspace.from_file(_current_dir / "airspaces" / "LFBOTMA.json")
     filelist = list(_current_dir.glob(f"**/{name}.json*"))

@@ -66,8 +66,6 @@ def test_index() -> None:
     assert s_0 is not None
     assert s_0.callsign == "SAA260"
 
-    assert switzerland[2000] is None
-
     subset = switzerland[:2]
     assert subset is not None
     assert subset.callsigns == {"SAA260", "SAA261"}

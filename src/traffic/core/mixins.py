@@ -544,8 +544,8 @@ class GeographyMixin(DataFrameMixin):
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
         x, y = transformer.transform(
-            self.data.longitude.values,
-            self.data.latitude.values,
+            self.data.longitude.to_numpy(),
+            self.data.latitude.to_numpy(),
         )
 
         return self.__class__(self.data.assign(x=x, y=y))
@@ -574,8 +574,8 @@ class GeographyMixin(DataFrameMixin):
             projection, pyproj.Proj("epsg:4326"), always_xy=True
         )
         lon, lat = transformer.transform(
-            self.data.x.values,
-            self.data.y.values,
+            self.data.x.to_numpy(),
+            self.data.y.to_numpy(),
         )
 
         return self.assign(latitude=lat, longitude=lon)
@@ -657,9 +657,7 @@ class GeographyMixin(DataFrameMixin):
 
         return (
             alt.Chart(
-                self.data.query(
-                    "latitude == latitude and longitude == longitude"
-                )
+                self.data.query("latitude.notnull() and longitude.notnull()")
             )
             .encode(latitude="latitude", longitude="longitude")
             .mark_line(**kwargs)
@@ -679,7 +677,7 @@ class GeographyMixin(DataFrameMixin):
         )
 
         west, east = self.data.longitude.min(), self.data.longitude.max()
-        longitude_index = wind.longitude.values
+        longitude_index = wind.longitude.to_numpy()
         margin = np.diff(longitude_index).max()
         longitude_index = longitude_index[
             np.where(
@@ -689,7 +687,7 @@ class GeographyMixin(DataFrameMixin):
         ]
 
         south, north = self.data.latitude.min(), self.data.latitude.max()
-        latitude_index = wind.latitude.values
+        latitude_index = wind.latitude.to_numpy()
         margin = np.diff(latitude_index).max()
         latitude_index = latitude_index[
             np.where(
@@ -700,7 +698,7 @@ class GeographyMixin(DataFrameMixin):
 
         timestamp = self.data.timestamp.dt.tz_convert("utc")
         start, stop = timestamp.min(), timestamp.max()
-        time_index = wind.time.values
+        time_index = wind.time.to_numpy()
         margin = np.diff(time_index).max()
         time_index = time_index[
             np.where(
@@ -710,10 +708,10 @@ class GeographyMixin(DataFrameMixin):
         ]
 
         idx_max = 1 + np.sum(
-            aero.h_isa(wind.isobaricInhPa.values * 100)
+            aero.h_isa(wind.isobaricInhPa.to_numpy() * 100)
             < self.data.altitude.max() * aero.ft
         )
-        isobaric_index = wind.isobaricInhPa.values[:idx_max]
+        isobaric_index = wind.isobaricInhPa.to_numpy()[:idx_max]
 
         wind_df = (
             wind.sel(
@@ -728,8 +726,8 @@ class GeographyMixin(DataFrameMixin):
         )
 
         wind_x, wind_y = transformer.transform(
-            wind_df.longitude.values,
-            wind_df.latitude.values,
+            wind_df.longitude.to_numpy(),
+            wind_df.latitude.to_numpy(),
         )
         wind_xy = wind_df.assign(x=wind_x, y=wind_y)
 
@@ -743,10 +741,10 @@ class GeographyMixin(DataFrameMixin):
         ridges = model["ridge"].coef_
 
         x, y = transformer.transform(
-            self.data.longitude.values,
-            self.data.latitude.values,
+            self.data.longitude.to_numpy(),
+            self.data.latitude.to_numpy(),
         )
-        h = self.data.altitude.values * aero.ft
+        h = self.data.altitude.to_numpy() * aero.ft
 
         return self.assign(
             **dict(

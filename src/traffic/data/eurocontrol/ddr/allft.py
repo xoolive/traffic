@@ -161,9 +161,7 @@ class AllFT(DataFrameMixin):
     __slots__ = ("data",)
 
     @classmethod
-    def from_allft(
-        cls, filename: Union[str, Path, BytesIO]
-    ) -> Self:
+    def from_allft(cls, filename: Union[str, Path, BytesIO]) -> Self:
         allft = (
             pd.read_csv(
                 filename,
@@ -203,9 +201,7 @@ class AllFT(DataFrameMixin):
         return cls(allft.sort_values("EOBT"))
 
     @classmethod
-    def from_allft_7z(
-        cls, filename: Union[str, Path]
-    ) -> Self:
+    def from_allft_7z(cls, filename: Union[str, Path]) -> Self:
         with SevenZipFile(filename, "rb") as fh:
             b = BytesIO()
             for file in fh.readall():

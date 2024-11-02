@@ -129,27 +129,6 @@ def format_history(
 
     """
 
-    if "lastcontact" in df.columns:
-        df = df.drop(["lastcontact"], axis=1)
-
-    if "lat" in df.columns and df.lat.dtype == object:
-        df = df[df.lat != "lat"]  # header is regularly repeated
-
-    # restore all types
-    for column_name in [
-        "lat",
-        "lon",
-        "velocity",
-        "heading",
-        "vertrate",
-        "baroaltitude",
-        "geoaltitude",
-        # "lastposupdate",
-        # "lastcontact",
-    ]:
-        if column_name in df.columns:
-            df[column_name] = df[column_name].astype(float)
-
     # better (to me) formalism about columns
     df = df.rename(
         columns={
