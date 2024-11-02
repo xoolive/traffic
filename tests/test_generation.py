@@ -36,9 +36,10 @@ def test_generation() -> None:
     def compute_timedelta(df: pd.DataFrame) -> pd.Series:
         return (df.timestamp - df.timestamp.min()).dt.total_seconds()
 
+    between = switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")
+    assert between is not None
     smaller = (
-        switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")
-        .assign_id()
+        between.assign_id()
         .resample(10)
         .compute_xy(projection=EuroPP())
         .assign(timedelta=compute_timedelta)

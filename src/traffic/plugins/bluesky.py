@@ -27,7 +27,7 @@ def to_bluesky(
     """Generates a Bluesky scenario file."""
 
     if minimum_time is not None:
-        traffic = traffic.after(minimum_time)
+        traffic = traffic.after(minimum_time)  # type: ignore
 
     if isinstance(filename, str):
         filename = Path(filename)

@@ -131,7 +131,9 @@ def test_chaining_with_lambda() -> None:
 
 def test_none() -> None:
     assert switzerland.query("altitude > 60000") is None
-    assert switzerland.after("2018-08-01").before("2018-08-01") is None
+    after = switzerland.after("2018-08-01")
+    assert after is not None
+    assert after.before("2018-08-01") is None
     assert switzerland.iterate_lazy().query("altitude > 60000").eval() is None
 
 

@@ -21,13 +21,11 @@ class StupidClustering:
 
 def test_clustering() -> None:
     switzerland = cast(Traffic, get_sample(collections, "switzerland"))
+    between = switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")
 
-    smaller = cast(
-        Traffic,
-        switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")
-        .assign_id()
-        .eval(max_workers=4),
-    )
+    assert between is not None
+
+    smaller = cast(Traffic, between.assign_id().eval(max_workers=4))
 
     t_clustering = smaller.clustering(
         nb_samples=15,

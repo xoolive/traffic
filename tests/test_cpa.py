@@ -9,11 +9,9 @@ from traffic.data.samples import collections, get_sample
 def test_cpa() -> None:
     switzerland = cast(Traffic, get_sample(collections, "switzerland"))
 
-    smaller = (
-        switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")
-        .assign_id()
-        .eval()
-    )
+    between = switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")
+    assert between is not None
+    smaller = between.assign_id().eval()
     assert smaller is not None
 
     cpa = smaller.closest_point_of_approach(
