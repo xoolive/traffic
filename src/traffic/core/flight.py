@@ -698,7 +698,7 @@ class Flight(
 
         result = self.assign(
             **dict(
-                (key, False if value is True else None)
+                (key, False if value is True else pd.NA)
                 for key, value in kwargs.items()
             )
         )

@@ -877,7 +877,7 @@ def test_DME_NSE_computation() -> None:
     assert_frame_equal(result_df[["NSE", "NSE_idx"]], expected, rtol=1e-3)
 
 
-@pytest.mark.skipif(version > (3, 12), reason="onnxruntime not ready for 3.12")
+# @pytest.mark.skipif(version > (3, 13), reason="onnxruntime not ready")
 def test_holding_pattern() -> None:
     holding_pattern = belevingsvlucht.holding_pattern().next()
     assert holding_pattern is not None
@@ -887,7 +887,7 @@ def test_holding_pattern() -> None:
     )
 
 
-@pytest.mark.skipif(version > (3, 12), reason="onnxruntime not ready for 3.12")
+# @pytest.mark.skipif(version > (3, 13), reason="onnxruntime not ready")
 def test_label() -> None:
     from traffic.data.datasets import landing_zurich_2019
 
@@ -909,9 +909,10 @@ def test_label() -> None:
     )
 
     assert labelled.index_max == 2
-    ils = set(ils for ils in labelled.ILS_unique if ils is not None)
+    ils = set(ils for ils in labelled.ILS_unique if not pd.isna(ils))
     assert ils == {"14", "28"}
-    assert labelled.duration_min > pd.Timedelta("2 min 30 s")
+    min_duration = labelled.data.duration.astype("timedelta64[s]").min()
+    assert min_duration > pd.Timedelta("2 min 30 s")
 
 
 def test_split_condition() -> None:

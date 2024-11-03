@@ -396,6 +396,8 @@ colour based on the vertical rate average value.
 
 .. jupyter-execute::
 
+    import pandas as pd
+
     with plt.style.context("traffic"):
         fig, ax = plt.subplots(subplot_kw=dict(projection=Lambert93()))
 

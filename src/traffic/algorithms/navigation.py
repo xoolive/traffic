@@ -1022,23 +1022,9 @@ class NavigationFeatures:
         trajectories landing at different European airports including London
         Heathrow.
 
-        .. warning::
-
-            The ``onnxruntime`` package is an optional dependency required for
-            this function to properly work. At the time being, it is not
-            available for pip with Python 3.10 but still available on
-            conda-forge servers.
-
         (new in version 2.8)
         """
-        try:
-            import onnxruntime as rt
-        except ImportError:
-            warnings.warn(
-                "Missing optional dependency: onnxruntime.\n"
-                "Retry after installing with pip or conda."
-            )
-            raise
+        import onnxruntime as rt
 
         # The following cast secures the typing
         self = cast("Flight", self)
