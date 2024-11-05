@@ -7,6 +7,5 @@ RUN useradd -ms /bin/bash user
 USER user
 WORKDIR /home/user/
 
-# Install poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="${PATH}:/home/user/.local/bin"
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh

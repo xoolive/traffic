@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag'
-        required: true 
+        description: "Release tag"
+        required: true
         type: string
 
 env:
   TRAFFIC_JUPYTER_URL: ghcr.io/xoolive/traffic/jupyter
-  TRAFFIC_POETRY_URL: ghcr.io/xoolive/traffic/poetry
+  TRAFFIC_UV_URL: ghcr.io/xoolive/traffic/uv
 
 jobs:
   build:
@@ -38,14 +38,14 @@ jobs:
           docker push ${{ env.TRAFFIC_JUPYTER_URL }}:${{ inputs.tag }}
           docker push ${{ env.TRAFFIC_JUPYTER_URL }}:latest
 
-      # poetry Docker image
-      - name: Build poetry docker image
-        run: docker build --file docker/poetry.Dockerfile --tag ${{ env.TRAFFIC_POETRY_URL }}:${{ inputs.tag }} --tag ${{ env.TRAFFIC_POETRY_URL }}:latest .
+      # uv Docker image
+      - name: Build uv docker image
+        run: docker build --file docker/uv.Dockerfile --tag ${{ env.TRAFFIC_UV_URL }}:${{ inputs.tag }} --tag ${{ env.TRAFFIC_UV_URL }}:latest .
 
-      - name: Test poetry docker image
-        run: docker run ${{ env.TRAFFIC_POETRY_URL }}:latest /bin/bash -c "pip install traffic; python -c \"import traffic; print(traffic.__version__)\""
+      - name: Test uv docker image
+        run: docker run ${{ env.TRAFFIC_UV_URL }}:latest /bin/bash -c "pip install traffic; python -c \"import traffic; print(traffic.__version__)\""
 
-      - name: Push poetry image
+      - name: Push uv image
         run: |
-          docker push ${{ env.TRAFFIC_POETRY_URL }}:${{ inputs.tag }}
-          docker push ${{ env.TRAFFIC_POETRY_URL }}:latest
+          docker push ${{ env.TRAFFIC_UV_URL }}:${{ inputs.tag }}
+          docker push ${{ env.TRAFFIC_UV_URL }}:latest

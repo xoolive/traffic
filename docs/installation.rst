@@ -76,20 +76,19 @@ the same exact versions of all dependency libraries.
 The following steps **are not mandatory**, but they will ensure a swift
 reviewing process:
 
-- install `poetry <https://python-poetry.org/>`_ on your workstation
-- install traffic with poetry:
+- install `uv <https://docs.astral.sh/uv/>`_ on your workstation
+- install traffic with uv:
 
   .. code:: bash
 
       git clone --depth 1 https://github.com/xoolive/traffic
       cd traffic/
-      poetry install -E all
+      uv sync --dev --all-extras  # or just select the extra you need
 
   Then, you may:
 
-  - prefix all your commands with ``poetry run``
-  - or run a shell with all environment variables properly set with ``poetry
-    shell``
+  - prefix all your commands with ``uv run``
+  - or activate the environment located in ``.venv``
 
 - install the `pre-commit <https://pre-commit.com/>`_ hooks so a minimum set of
   sanity checks can be performed and so you can fix issues before continuous
@@ -97,7 +96,7 @@ reviewing process:
 
   .. code:: bash
 
-      poetry run pre-commit install
+      uv run pre-commit install
 
 If you work with Visual Studio Code, you can use the Development container that
 already contains all the dependencies. Just pull/clone the latest version and
@@ -110,16 +109,10 @@ Just click *Reopen in Container* and VS Code will create and configure the
 container for you. You can now work in the container with a pre-defined
 development environment that contains all the dependencies you need.
 
-The provided image runs with `poetry <https://python-poetry.org/>`__ which will
+The provided image runs with `uv <https://docs.astral.sh/uv/>`__ which will
 set a proper environment with frozen version of dependencies, a desirable
 behaviour when you run tests in continuous integration.
 
-If your sit behind a proxy, the ``poetry install`` command which will run
-automatically when you first open the Docker container may fail: you may have
-to manually set your proxy environment variables in the container shell before
-running ``poetry install`` again in order to get the container ready.
-
 .. hint::
 
-    Read more about :ref:`Docker containers <How to use traffic in a Docker
-container?>` for traffic.
+    Read more about :ref:`Docker containers <How to use traffic in a Docker container?>` for traffic.

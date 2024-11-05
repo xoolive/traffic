@@ -27,10 +27,10 @@ Static visualization (images) exports are accessible via Matplotlib/Cartopy. Mor
 - If you are not familiar/comfortable with your Python environment, please install the latest `traffic` release in a new, fresh conda environment.
 
   ```sh
-  conda create -n traffic -c conda-forge python=3.10 traffic
+  conda create -n traffic -c conda-forge python=3.12 traffic
   ```
 
-- Adjust the Python version you need (>=3.9) and append packages you need for working efficiently, such as Jupyter Lab, xarray, PyTorch or more.
+- Adjust the Python version you need (>=3.10) and append packages you need for working efficiently, such as Jupyter Lab, xarray, PyTorch or more.
 - Then activate the environment every time you need to use the `traffic` library:
 
   ```sh

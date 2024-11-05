@@ -1,6 +1,6 @@
 {
   "name": "traffic development environment",
-  "image": "ghcr.io/xoolive/traffic/poetry:latest",
+  "image": "ghcr.io/xoolive/traffic/uv:latest",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -12,5 +12,5 @@
       ]
     }
   },
-  "postCreateCommand": "poetry install && poetry shell"
+  "postCreateCommand": "uv sync --dev --all-extras"
 }
