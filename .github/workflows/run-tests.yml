@@ -4,17 +4,50 @@ on:
   push:
     branches:
       - master
+  pull_request:
   pull_request_target:
   schedule:
     - cron: "42 7 * * 0" # Every Sunday morning when I am fast asleep :)
     # This is useful for keeping the cache fit and ready
   workflow_dispatch:
 
-env:
-  POETRY_VERSION: "1.8.2"
-
 jobs:
-  deploy:
+  linting:
+    name: linting/formatting
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Ubuntu system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data
+
+      - name: Install the project
+        run: |
+          uv sync --dev --all-extras
+
+      - name: Style checking
+        run: |
+          uv run ruff check src tests
+          uv run ruff format --check src tests
+
+      - name: Type checking
+        run: uv run mypy src tests
+
+  tests:
     name: python-${{ matrix.python-version }} on ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
@@ -41,16 +74,15 @@ jobs:
       - run: |
           git fetch --prune --unshallow --tags
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      # Update full Python version
-      - name: Full Python version
-        run: |
-          echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")"
-          echo "PYTHON_VERSION=$(python -c "import platform; print(platform.python_version())")" >> $GITHUB_ENV
 
       - name: Download extra data from private repository
         uses: actions/checkout@v4
@@ -80,25 +112,6 @@ jobs:
           unzip ENV_PostOPS_AIRAC_2111_04NOV2021_With_Airspace_Closure.zip -d airac_2111
         shell: bash
 
-      # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
-      - name: Cache Packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.local
-            .venv
-          key: poetry-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
-
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1.4.1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Display Python version
-        run: poetry run python -c "import sys; print(sys.version)"
-
       - name: Cache folder for traffic
         uses: actions/cache@v4
         id: cache-folder
@@ -107,28 +120,16 @@ jobs:
             ~/.cache/traffic/
             ~/.cache/opensky/
             ~/.cache/cartes/
-          key: traffic-${{ hashFiles('poetry.lock') }}
+          key: traffic-${{ hashFiles('uv.lock') }}
 
       - name: Ubuntu system dependencies
         run: |
           sudo apt update
           sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data
 
-      - name: Dynamic versioning
-        run: poetry self add "poetry-dynamic-versioning[plugin]" || true
-
-      - name: Install dependencies
+      - name: Install project
         run: |
-          poetry install -E full
-
-      - name: Style checking
-        run: |
-          poetry run ruff check src tests
-          poetry run ruff format --check src tests
-
-      - name: Type checking
-        run: |
-          poetry run mypy src tests
+          uv sync --dev --all-extras
 
       - name: Run tests
         if: ${{ matrix.python-version == '3.12' || steps.cache-folder.outputs.cache-hit == 'true' }}
@@ -137,9 +138,8 @@ jobs:
           TRAFFIC_NOPLUGIN: ""
           OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
           OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
-          # PKCS12_PASSWORD: ${{ secrets.PKCS12_PASSWORD }}
         run: |
-          export TRAFFIC_CONFIG=$(poetry run python -c "from traffic import config_file; print(config_file)")
+          export TRAFFIC_CONFIG=$(uv run python -c "from traffic import config_file; print(config_file)")
 
           sed -i "/nm_path =/ s,= $,= $PWD/traffic_data/airac_2111," $TRAFFIC_CONFIG
           # sed -i "/pkcs12_filename =/ s,= .*$,= $PWD/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
@@ -148,8 +148,8 @@ jobs:
           # Don't purge OpenSky cache files here :)
           sed -i "/purge = / d" $TRAFFIC_CONFIG
 
-          poetry run traffic cache --fill  # download files to have in cache first
-          poetry run pytest --cov --cov-report xml
+          uv run traffic cache --fill  # download files to have in cache first
+          uv run pytest --cov --cov-report xml
 
       - name: Upload coverage to Codecov
         if: ${{ github.event_name != 'pull_request_target' }}

@@ -3,11 +3,9 @@ name: publish
 
 on:
   release:
-    types: [published]
+    types:
+      - published
   workflow_dispatch:
-
-env:
-  POETRY_VERSION: "1.8.2"
 
 jobs:
   deploy:
@@ -15,25 +13,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1.4.1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-in-project: true
-
-      - name: Display Python version
-        run: poetry run python -c "import sys; print(sys.version)"
-
-      - name: Dynamic versioning
-        run: poetry self add "poetry-dynamic-versioning[plugin]" || true
-
       - name: Build packages
-        run: poetry build
+        run: |
+          uvx --with hatch-vcs hatchling build
 
       - name: Publish a Python distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
