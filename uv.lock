@@ -1871,11 +1871,11 @@ wheels = [
 
 [[package]]
 name = "narwhals"
-version = "1.13.1"
+version = "1.13.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/01/66/2173b6e240523b2725938326283119738f6abb20ffb3de476eed78b8a05a/narwhals-1.13.1.tar.gz", hash = "sha256:01aa4f5432abccd365686375eed677b597c0f62112ec27ccd0f14c3bf4f47c6a", size = 165856 }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/6f/d8d488a7e451dc95672112f6c3c03f82bb46f3f8a960667543611fe299f8/narwhals-1.13.2.tar.gz", hash = "sha256:e48958800688180c53a696dfc0fce864d5fb6e293925564f1b4a9a837ad3a19f", size = 165948 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/42/062aed19777c9010399b477cc3bfbd3f5ac6f1cb2d5f1fe5c3c7d3ae57ba/narwhals-1.13.1-py3-none-any.whl", hash = "sha256:7c860fd309d83b221c6257640da1c9c45ea187654c8c77d1daebb352adac86c7", size = 198489 },
+    { url = "https://files.pythonhosted.org/packages/78/33/a4f221cd10aeae23b119ab642f1c6f7801825bbc78ad79addc0b53d388ab/narwhals-1.13.2-py3-none-any.whl", hash = "sha256:d901ad3741ae39e87e9022cf605ec24a20c40812b6975814a04c031c3e4b55f7", size = 198584 },
 ]
 
 [[package]]
@@ -3719,7 +3719,7 @@ wheels = [
 
 [[package]]
 name = "traffic"
-version = "2.10.3.dev21+g72a10eb.d20241105"
+version = "2.10.3.dev22+gc530cb7"
 source = { editable = "." }
 dependencies = [
     { name = "cartes" },
