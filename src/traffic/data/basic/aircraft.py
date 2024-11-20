@@ -228,9 +228,7 @@ class Aircraft(DataFrameMixin):
         """
 
         _log.warning("Downloading OpenSky aircraft database")
-        file_url = (
-            "https://opensky-network.org/datasets/metadata/aircraftDatabase.csv"
-        )
+        file_url = "https://s3.opensky-network.org/data-samples/metadata/aircraftDatabase.csv"
         f = client.get(file_url)
         total = int(f.headers["Content-Length"])
         buffer = io.BytesIO()
