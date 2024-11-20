@@ -38,11 +38,10 @@ def get_flight(filename: str, directory: Path) -> Flight | Traffic:
             hour=lambda df: pd.to_datetime(df.hour * 1e9).dt.tz_localize("utc")
         )
     if "last_position" in flight.data.columns:
-        flight = flight.assign(
-            last_position=lambda df: pd.to_datetime(
-                df.last_position * 1e6
-            ).dt.tz_localize("utc")
-        )
+        last_pos = pd.to_datetime(flight.data.last_position.to_numpy() * 1e6)
+        if last_pos.tz is None:
+            last_pos = last_pos.tz_localize("utc")
+        flight = flight.assign(last_position=last_pos)
     return flight
 
 

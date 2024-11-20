@@ -7,11 +7,11 @@ traffic.algorithms.filters
 
     import altair as alt
     from traffic.core import Flight
-    from traffic.data.samples import noisy
+    from traffic.data.samples import noisy_landing
 
-    raw_data = noisy.assign(type="raw data")
-    default = noisy.filter("default").assign(type="default")
-    aggressive = noisy.filter("aggressive").assign(type="aggressive")
+    raw_data = noisy_landing.assign(type="raw data")
+    default = noisy_landing.filter("default").assign(type="default")
+    aggressive = noisy_landing.filter("aggressive").assign(type="aggressive")
 
     domain = ["raw data", "default", "aggressive"]
 

@@ -1,12 +1,8 @@
-from pathlib import Path
-
 import pytest
 
 from traffic.core import Flight
 from traffic.data.adsb.decode import RawData
-from traffic.data.samples import sample_dump1090, switzerland
-
-fr24_folder = Path(__file__).parent / "fr24"
+from traffic.data.samples import fr24, sample_dump1090, switzerland
 
 
 def long_enough(flight: Flight) -> bool:
@@ -14,7 +10,7 @@ def long_enough(flight: Flight) -> bool:
 
 
 def test_simple() -> None:
-    f = Flight.from_fr24(fr24_folder / "34a8254b.json")
+    f = fr24.flight("34a8254b")
     g = f.first("25 min").query_opensky()
     assert g is not None
     h = g.query_ehs()

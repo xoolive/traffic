@@ -88,12 +88,14 @@ class FlightRadar24:
     def from_json(cls, filename: str | Path) -> Flight:
         """Parses data as downloaded by FlightRadar24 website.
 
-        >>> Flight.from_fr24(fr24_folder / "3376ab31.json")
+        >>> from traffic.data.samples import fr24
+        >>> folder = Path(fr24.__file__).parent
+        >>> Flight.from_fr24(folder / "3376ab31.json")
         Flight('3376ab31', icao24='8467d8', callsign='JAL516')
         >>> _.duration
         Timedelta('0 days 01:24:28')
 
-        >>> Flight.from_fr24(fr24_folder / "2ce4f83f.json")
+        >>> Flight.from_fr24(folder / "2ce4f83f.json")
         Flight('2ce4f83f', icao24='ae503d', callsign='SPAR19')
         >>> _.Mach_max
         .8
