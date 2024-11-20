@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import operator
 import warnings
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -12,13 +12,13 @@ from . import FilterBase
 
 NM2METER = 1852
 
+ArrayBool: TypeAlias = npt.NDArray[np.bool_]
+ArrayF64: TypeAlias = npt.NDArray[np.float64]
+
 
 def distance(
-    lat1: npt.NDArray[np.float64],
-    lon1: npt.NDArray[np.float64],
-    lat2: npt.NDArray[np.float64],
-    lon2: npt.NDArray[np.float64],
-) -> npt.NDArray[np.float64]:
+    lat1: ArrayF64, lon1: ArrayF64, lat2: ArrayF64, lon2: ArrayF64
+) -> ArrayF64:
     r = 6371000
     phi1 = lat1
     phi2 = lat2
@@ -32,7 +32,7 @@ def distance(
     return res / NM2METER  # type: ignore
 
 
-def lag(horizon: int, v: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+def lag(horizon: int, v: ArrayF64) -> ArrayF64:
     res = np.empty((horizon, v.shape[0]))
     res.fill(np.nan)
     for i in range(horizon):
@@ -40,9 +40,7 @@ def lag(horizon: int, v: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     return res
 
 
-def diffangle(
-    a: npt.NDArray[np.float64], b: npt.NDArray[np.float64]
-) -> npt.NDArray[np.float64]:
+def diffangle(a: ArrayF64, b: ArrayF64) -> ArrayF64:
     d = a - b
     return d + 2 * np.pi * (  # type: ignore
         (d < -np.pi).astype(float) - (d >= np.pi).astype(float)
@@ -50,11 +48,8 @@ def diffangle(
 
 
 def dxdy_from_dlat_dlon(
-    lat_rad: npt.NDArray[np.float64],
-    lon_rad: npt.NDArray[np.float64],
-    dlat: npt.NDArray[np.float64],
-    dlon: npt.NDArray[np.float64],
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    lat_rad: ArrayF64, lon_rad: ArrayF64, dlat: ArrayF64, dlon: ArrayF64
+) -> tuple[ArrayF64, ArrayF64]:
     a = 6378137
     b = 6356752.314245
     e2 = 1 - (b / a) ** 2
@@ -66,15 +61,15 @@ def dxdy_from_dlat_dlon(
     return dx, dy
 
 
-def compute_gtgraph(dd: npt.NDArray[Any]) -> Any:
+def compute_gtgraph(dd: ArrayBool) -> tuple[dict[int, Any], Any, Any]:
     """compute the graph of points complying with the speed limits: i and j are
     adjacent if i can be reached by j within the speed limits"""
 
-    import graph_tool as gt
+    import graph_tool.all as gt
 
     n = dd.shape[1]
     # horizon = dd.shape[0]
-    g = gt.Graph(g=n, directed=True)  # ,g=dd.shape[0])
+    g = gt.Graph(g=n, directed=True)
     eprop_dist = g.new_edge_property("int")
     d = {i: v for i, v in enumerate(g.vertices())}
     edges = [(i, i + h) for h, i in zip(*np.nonzero(dd)) if h > 0]
@@ -83,10 +78,10 @@ def compute_gtgraph(dd: npt.NDArray[Any]) -> Any:
     return d, g, eprop_dist
 
 
-def get_gtlongest(dd: npt.NDArray[Any]) -> Any:
+def get_gtlongest(dd: ArrayBool) -> list[int]:
     """compute the longest path of points complying with the speed limits"""
     # import graph_tool as gt
-    import graph_tool as gt
+    import graph_tool.all as gt
 
     v, g, prop_dist = compute_gtgraph(dd)
     # n = g.num_vertices()
@@ -99,7 +94,7 @@ def get_gtlongest(dd: npt.NDArray[Any]) -> Any:
         if v != vstart:
             e = g.add_edge(vstart, v)
             prop_dist[e] = -1
-    longest_path, _ = gt.topology.shortest_path(
+    longest_path, _ = gt.shortest_path(
         g,
         source=vstart,
         target=vend,
@@ -107,11 +102,10 @@ def get_gtlongest(dd: npt.NDArray[Any]) -> Any:
         negative_weights=True,
         dag=True,
     )
-    longest_path = list(map(int, longest_path))
-    return longest_path
+    return [int(x) for x in longest_path]
 
 
-def get_nxlongest(dd: npt.NDArray[Any]) -> Any:
+def get_nxlongest(dd: ArrayBool) -> list[int]:
     import networkx as nx
 
     n = dd.shape[1]
@@ -126,13 +120,13 @@ def get_nxlongest(dd: npt.NDArray[Any]) -> Any:
         g.add_edge(-1, i, weight=-1)
     for i in range(-1, n):
         g.add_edge(i, n, weight=-1)
-    path = nx.shortest_path(
+    path: list[int] = nx.shortest_path(
         g, source=-1, target=n, weight="weight", method="bellman-ford"
     )
     return path
 
 
-def exact_solver(dd: npt.NDArray[Any]) -> npt.NDArray[np.bool_]:
+def exact_solver(dd: ArrayBool) -> ArrayBool:
     try:
         longest_path = get_gtlongest(dd)  # ,weights)
     except ImportError:
@@ -146,7 +140,7 @@ def exact_solver(dd: npt.NDArray[Any]) -> npt.NDArray[np.bool_]:
     return res
 
 
-def approx_solver(dd: npt.NDArray[Any]) -> npt.NDArray[np.bool_]:
+def approx_solver(dd: ArrayBool) -> ArrayBool:
     ddbwd = np.empty_like(dd)
     ddbwd.fill(False)
     for h in range(dd.shape[0]):
@@ -155,21 +149,26 @@ def approx_solver(dd: npt.NDArray[Any]) -> npt.NDArray[np.bool_]:
     res = np.full(dd.shape[1], True)
     out = 10 * res.shape[0]  # 30000
 
-    def selectpoints(iinit, dd, opadd, argmaxopadd):  # type: ignore
+    def check_in(posjumpmin: ArrayF64) -> ArrayBool:
+        return np.logical_and(
+            0 <= posjumpmin,
+            posjumpmin < res.shape[0],
+        )
+
+    def selectpoints(
+        iinit: int,
+        dd: ArrayBool,
+        opadd: Callable[[Any, int], int],
+        argmaxopadd: Callable[..., Any],
+    ) -> None:
         jumpmin = dd[1:].argmax(axis=0) + 1
         jumpmin[(~dd[1:,]).all(axis=0)] = out
-        ### computes heuristic
+        # computes heuristic
         succeed = np.zeros(res.shape, dtype=np.int64)
         nsteps = 10
         posjumpmin = np.arange(res.shape[0])
 
-        def check_in(posjumpmin: Any) -> npt.NDArray[np.bool_]:
-            return np.logical_and(  # type: ignore
-                0 <= posjumpmin,
-                posjumpmin < res.shape[0],
-            )
-
-        for k in range(nsteps):
+        for _k in range(nsteps):
             valid = check_in(posjumpmin)
             posjumpminvalid = posjumpmin[valid]
             posjumpmin[valid] = opadd(posjumpminvalid, jumpmin[posjumpminvalid])
@@ -178,7 +177,8 @@ def approx_solver(dd: npt.NDArray[Any]) -> npt.NDArray[np.bool_]:
             0, out - succeed[succeed != nsteps]
         )
 
-        #### end compute heuristic
+        # end compute heuristic
+
         def selectjump(
             i: int,
             cjump: npt.NDArray[np.int64],
@@ -197,36 +197,25 @@ def approx_solver(dd: npt.NDArray[Any]) -> npt.NDArray[np.bool_]:
 
     ss = np.sum(dd[1:], axis=0) + np.sum(ddbwd[1:], axis=0)
     iinit = ss.argmax()
-    selectpoints(iinit, dd, operator.add, np.argmin)  # type: ignore
-    selectpoints(iinit, ddbwd, operator.sub, np.argmax)  # type: ignore
+    selectpoints(iinit, dd, operator.add, np.argmin)
+    selectpoints(iinit, ddbwd, operator.sub, np.argmax)
     return res
 
 
 def consistency_solver(
-    dd: npt.NDArray[Any], exact_when_kept_below: float
-) -> npt.NDArray[np.bool_]:
-    if exact_when_kept_below == 1:
+    dd: ArrayBool, exact_when_kept_below: float, exact_backup: bool
+) -> ArrayBool:
+    if exact_backup and exact_when_kept_below == 1:
         return exact_solver(dd)
     else:
         mask = approx_solver(dd)
-        if 1 - np.mean(mask) < exact_when_kept_below:
+        if exact_backup and 1 - np.mean(mask) < exact_when_kept_below:
             return exact_solver(dd)
         else:
             return mask
 
 
-# def check_solution(dd, mask):
-#     iold = None
-#     for i, maski in enumerate(mask):
-#         if not maski:
-#             if iold is not None:
-#                 assert dd[i - iold, iold]
-#             iold = i
-
-
-def meanangle(
-    a1: npt.NDArray[np.float64], a2: npt.NDArray[np.float64]
-) -> npt.NDArray[np.float64]:
+def meanangle(a1: ArrayF64, a2: ArrayF64) -> ArrayF64:
     return diffangle(a1, a2) * 0.5 + a2
 
 
@@ -240,16 +229,16 @@ class FilterConsistency(FilterBase):
     the graph. The kept values is the longest path in this graph, resulting in a
     sequence of consistent values.  The consistencies checked vertically between
     :math:`t_i<t_j` are:: :math:`|(alt_j-alt_i)-(t_j-t_i)* (ROCD_i+ROCD_j)*0.5|
-    < dalt_dt_error` where :math:`dalt_dt_error` is a threshold that can be
-    specified by the user.
+    < dalt_dt_error*(t_j-t_i)` where :math:`dalt_dt_error` is a threshold that
+    can be specified by the user.
 
     The consistencies checked horizontally between :math:`t_i<t_j` are:
     :math:`|(track_i+track_j)*0.5-atan2(lat_j-lat_i,lon_j-lon_i)| <
     (t_j-t_i)*dtrack_dt_error` and :math:`|dist(lat_j,lat_i,lon_j,lon_i) -
-    (groundspeed_i+groundspeed_j) * 0.5*(t_j-t_i)| <
-    dist(lat_j,lat_i,lon_j,lon_i) * relative_error_on_dist` where
-    :math:`dtrack_dt_error` and :math:`relative_error_on_dist` are thresholds
-    that can be specified by the user.
+    (groundspeed_i+groundspeed_j)*0.5*(t_j-t_i)| < dist(lat_j,lat_i,lon_j,lon_i)
+    * relative_error_on_dist` where :math:`dtrack_dt_error` and
+    :math:`relative_error_on_dist` are thresholds that can be specified by the
+    user.
 
     In order to compute the longest path faster, a greedy algorithm is used.
     However, if the ratio of kept points is inferior to
@@ -265,34 +254,60 @@ class FilterConsistency(FilterBase):
     """
 
     default: ClassVar[dict[str, float | tuple[float, ...]]] = dict(
-        dtrack_dt_error=0.3,  # [degree/s]
-        dalt_dt_error=100,  # [feet/min]
-        relative_error_on_dist=2 / 100,  # [-]
+        dtrack_dt_error=0.5,  # [degree/s]
+        dtrack_dt_error_extra_turn=1.5,  # [degree/s]
+        max_dtrack_dt=6,  # [degree/s]
+        dalt_dt_error=500,  # [feet/min]
+        relative_error_on_dist=10 / 100,  # [-]
     )
 
     def __init__(
         self,
         horizon: int | None = 200,
-        exact_when_kept_below: float = 0.8,
+        backup_exact: bool = True,
+        backup_horizon: int | None = 2000,
+        exact_when_kept_below_verti: float = 0.7,
+        exact_when_kept_below_track: float = 0.5,
+        exact_when_kept_below_speed: float = 0.6,
         **kwargs: float | tuple[float, ...],
     ) -> None:
         self.horizon = horizon
+        self.backup_exact = backup_exact
+        self.backup_horizon = backup_horizon
         self.thresholds = {**self.default, **kwargs}
-        self.exact_when_kept_below = exact_when_kept_below
+        self.exact_when_kept_below_verti = exact_when_kept_below_verti
+        self.exact_when_kept_below_track = exact_when_kept_below_track
+        self.exact_when_kept_below_speed = exact_when_kept_below_speed
 
-    def apply(self, data: pd.DataFrame) -> pd.DataFrame:
+    def compute_dt(
+        self,
+        data: pd.DataFrame,
+        horizon: int,
+    ) -> ArrayF64:
+        t: ArrayF64 = (
+            (
+                (data.timestamp - data.timestamp.iloc[0])
+                / pd.to_timedelta(1, unit="s")
+            )
+            .to_numpy()
+            .astype(np.float64)
+        )
+        assert t.min() >= 0
+        assert (t[1:] > t[:-1]).all()
+        dt = (lag(horizon, t) - t) / 3600.0
+        assert np.nanmin(dt) >= 0.0
+        return dt
+
+    def compute_ddtrack(
+        self, data: pd.DataFrame, dt: ArrayF64, horizon: int
+    ) -> ArrayBool:
         lat = data.latitude.values.astype(np.float64)
         lon = data.longitude.values.astype(np.float64)
-        alt = data.altitude.values.astype(np.float64)
-        rocd = data.vertical_rate.values.astype(np.float64)
-        gspeed = data.groundspeed.values.astype(np.float64)
         t = (
             (data.timestamp - data.timestamp.iloc[0])
             / pd.to_timedelta(1, unit="s")
         ).values.astype(np.float64)
         assert t.min() >= 0
-        n = lat.shape[0]
-        horizon = n if self.horizon is None else min(self.horizon, n)
         dt = (lag(horizon, t) - t) / 3600.0
         assert np.nanmin(dt) >= 0.0
         lat_rad = np.radians(lat)
@@ -300,44 +315,121 @@ class FilterConsistency(FilterBase):
         lag_lat_rad = lag(horizon, lat_rad)
         lag_lon_rad = lag(horizon, lon_rad)
         dlat = lag_lat_rad - lat_rad
-        dlon = lag(horizon, lon_rad) - lon_rad
+        dlon = lag_lon_rad - lon_rad
         dx, dy = dxdy_from_dlat_dlon(lat_rad, lon_rad, dlat, dlon)
         track_rad = np.radians(data.track.values)
+        isupdated = np.ones(track_rad.shape, dtype=bool)
+        track_rad[np.logical_not(isupdated)] = np.nan
         lag_track_rad = lag(horizon, track_rad)
         mytrack_rad = np.arctan2(-dx, -dy) + np.pi
-        # mytrack_rad[np.logical_and(dx==0,dy==0)]=np.nan
-        thresh_track = np.radians(self.thresholds["dtrack_dt_error"]) * (
-            3600 * dt
-        )
-        ddtrack = (
+        isturn = track_rad != lag_track_rad[1]
+        thresh_track = np.radians(
+            self.thresholds["dtrack_dt_error"]
+            + self.thresholds["dtrack_dt_error_extra_turn"] * isturn
+        ) * (3600 * dt)
+        isalignementok: ArrayBool = (
             np.abs(diffangle(mytrack_rad, meanangle(track_rad, lag_track_rad)))
-            <= thresh_track
+            < thresh_track
         )
+        isdtrackdtok: ArrayBool = np.abs(
+            diffangle(track_rad, lag_track_rad)
+        ) < np.radians(self.thresholds["max_dtrack_dt"]) * (3600 * dt)
+        return np.logical_and(isalignementok, isdtrackdtok)
+
+    def compute_ddspeed(
+        self, data: pd.DataFrame, dt: ArrayF64, horizon: int
+    ) -> ArrayBool:
+        lat = data.latitude.to_numpy().astype(np.float64)
+        lon = data.longitude.to_numpy().astype(np.float64)
+        gspeed = data.groundspeed.to_numpy().astype(np.float64)
+        dt = self.compute_dt(data, horizon)
+        lat_rad = np.radians(lat)
+        lon_rad = np.radians(lon)
+        lag_lat_rad = lag(horizon, lat_rad)
+        lag_lon_rad = lag(horizon, lon_rad)
         dist = distance(lag_lat_rad, lag_lon_rad, lat_rad, lon_rad)
         lag_gspeed = lag(horizon, gspeed)
         computed_dist = (lag_gspeed + gspeed) * 0.5 * dt
-        ddspeed = (
+        ddspeed: ArrayBool = (
             np.abs(computed_dist - dist)
-            <= self.thresholds["relative_error_on_dist"] * dist
+            < self.thresholds["relative_error_on_dist"] * dist
         )
+        return ddspeed
 
+    def compute_ddverti(
+        self, data: pd.DataFrame, dt: ArrayF64, horizon: int
+    ) -> ArrayBool:
+        alt = data.altitude.to_numpy().astype(np.float64)
+        rocd = data.vertical_rate.to_numpy().astype(np.float64)
+        lat = data.latitude.to_numpy().astype(np.float64)
+        lon = data.longitude.to_numpy().astype(np.float64)
+        isupdated = np.ones(alt.shape, dtype=bool)
+        isupdated[1:] = np.logical_or(alt[1:] != alt[:-1], lat[1:] != lat[:-1])
+        isupdated[1:] = np.logical_or(isupdated[1:], lon[1:] != lon[:-1])
+        alt[np.logical_not(isupdated)] = np.nan
         dalt = lag(horizon, alt) - alt
         dt_min = 60 * dt
         thresh_alt = self.thresholds["dalt_dt_error"] * dt_min
-        ddvertical = (
+        ddvertical: ArrayBool = (
             np.abs(dalt - (rocd + lag(horizon, rocd)) * 0.5 * dt_min)
-            <= thresh_alt
+            < thresh_alt
+        )
+        return ddvertical
+
+    def solve(
+        self,
+        compute_dd: Callable[[pd.DataFrame, ArrayF64, int], ArrayBool],
+        data: pd.DataFrame,
+        exact_when_kept_below: float,
+        backup: bool = False,
+    ) -> ArrayBool:
+        n = data.shape[0]
+        inhorizon = self.backup_horizon if backup else self.horizon
+        horizon = n if inhorizon is None else min(inhorizon, n)
+        dt = self.compute_dt(data, horizon)
+        dd = compute_dd(data, dt, horizon)
+        if backup:
+            return consistency_solver(
+                dd, exact_when_kept_below, self.backup_exact
+            )
+        else:
+            mask = consistency_solver(
+                dd, exact_when_kept_below, self.backup_exact
+            )
+            if 1 - np.mean(mask) < exact_when_kept_below:
+                return self.solve(compute_dd, data, exact_when_kept_below, True)
+            else:
+                return mask
+
+    def apply(self, data: pd.DataFrame) -> pd.DataFrame:
+        n = data.shape[0]
+        if n == 1:
+            data["keep_verti"] = 1
+            data["keep_speed"] = 1
+            data["keep_track"] = 1
+            data["keep_lat_lon"] = 1
+            return data
+
+        mask_speed = self.solve(
+            self.compute_ddspeed, data, self.exact_when_kept_below_speed
+        )
+        mask_track = self.solve(
+            self.compute_ddtrack, data, self.exact_when_kept_below_track
+        )
+        mask_verti = self.solve(
+            self.compute_ddverti, data, self.exact_when_kept_below_verti
         )
 
-        mask_speed = consistency_solver(ddspeed, self.exact_when_kept_below)
-        mask_track = consistency_solver(ddtrack, self.exact_when_kept_below)
-        mask_verti = consistency_solver(ddvertical, self.exact_when_kept_below)
-        # check_solution(ddspeed,mask_speed)
-        # check_solution(ddtrack,mask_track)
-        # check_solution(ddvertical,mask_verti)
-        mask_lat_lon = np.logical_or(mask_speed, mask_track)
+        mask_lat_lon: ArrayBool = np.logical_or(mask_speed, mask_track)
+
         data.loc[mask_lat_lon, ["longitude", "latitude"]] = np.nan
         data.loc[mask_speed, ["groundspeed"]] = np.nan
         data.loc[mask_track, ["track"]] = np.nan
         data.loc[mask_verti, ["altitude", "vertical_rate"]] = np.nan
-        return data
+
+        return data.assign(
+            mask_verti=mask_verti,
+            mask_lat_lon=mask_lat_lon,
+            mask_speed=mask_speed,
+            mask_track=mask_track,
+        )

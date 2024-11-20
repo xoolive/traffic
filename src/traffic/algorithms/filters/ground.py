@@ -90,7 +90,7 @@ class KalmanTaxiway(ProcessXYFilterBase):
         if False:  # self.closest is not None:
             idx = self.closest_line = self.closest[idx]
         else:
-            if self.x_mes[:2].isna().any():
+            if (self.x_mes[:2] != self.x_mes[:2]).any():
                 distance_to_taxiway = self.taxiways.distance(point_pre)
             else:
                 distance_to_taxiway = self.taxiways.distance(point_mes)

@@ -17,7 +17,7 @@ class KalmanFilter6D(ProcessXYZFilterBase):
     p_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
     p_pre: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
 
-    def __init__(self, reject_sigma: int = 3) -> None:
+    def __init__(self, reject_sigma: float = 3) -> None:
         super().__init__()
         self.reject_sigma = reject_sigma
 
@@ -127,7 +127,7 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
 
     xs: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
 
-    def __init__(self, reject_sigma: int = 3) -> None:
+    def __init__(self, reject_sigma: float = 3) -> None:
         super().__init__()
         self.reject_sigma = reject_sigma
 
