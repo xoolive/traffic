@@ -39,7 +39,7 @@ Then activate the environment each time you need to use the ``traffic`` library:
 
 .. hint::
 
-    Consider using `mamba <https://github.com/mamba-org/mamba>`_ for a faster Conda experience.
+    Consider using `mamba <https://github.com/mamba-org/mamba>`_ or `pixi <https://pixi.sh/latest/>`_ for a faster Conda experience.
 
 Updating traffic
 ----------------

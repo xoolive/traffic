@@ -59,7 +59,7 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-# cartes = { path = "../cartes" }
+cartes = { path = "../cartes" }
 # impunity = { path = "../impunity" }
 # pitot = { path = "../pitot" }
 # pyopensky = { path = "../pyopensky" }
@@ -72,7 +72,7 @@ traffic = 'traffic.console:main'
 altair = ["altair>=5.4.1"]
 plotly = ["plotly>=5.24.1"]
 leaflet = ["ipyleaflet>=0.19.2", "ipywidgets>=8.1.5"]
-lonboard = ["lonboard>=0.10.3"]
+lonboard = ["lonboard>=0.10.3; python_version<'3.13'"]
 spark = ["pyspark>=3.5.3"]
 xarray = ["xarray>=2024.10.0"]
 learning = ["scikit-learn>=1.5.2"]
