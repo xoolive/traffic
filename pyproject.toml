@@ -59,7 +59,7 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-cartes = { path = "../cartes" }
+# cartes = { path = "../cartes" }
 # impunity = { path = "../impunity" }
 # pitot = { path = "../pitot" }
 # pyopensky = { path = "../pyopensky" }

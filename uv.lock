@@ -61,9 +61,9 @@ name = "anywidget"
 version = "0.9.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ipywidgets" },
-    { name = "psygnal" },
-    { name = "typing-extensions" },
+    { name = "ipywidgets", marker = "python_full_version < '3.13'" },
+    { name = "psygnal", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/87/79/647983b0cbddd797d9d79e09f89ee5912bb066af6bf456bd8acde66b1a39/anywidget-0.9.13.tar.gz", hash = "sha256:c655455bf51f82182eb23c5947d37cc41f0b1ffacaf7e2b763147a2332cb3f07", size = 9666998 }
 wheels = [
@@ -126,7 +126,7 @@ name = "arro3-compute"
 version = "0.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "arro3-core" },
+    { name = "arro3-core", marker = "python_full_version < '3.13'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e4/7c/53f55a8846b81c7ac803b75e8ba99111df729eb934c3d043e830b5fed0b5/arro3_compute-0.4.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:a40b0f110157a87fd472e6548b5a9f8a12211adab418d18602701e57f310b1f5", size = 2299289 },
@@ -219,7 +219,7 @@ name = "arro3-io"
 version = "0.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "arro3-core" },
+    { name = "arro3-core", marker = "python_full_version < '3.13'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f7/a0/be194e4b55960f4f2fa87b8bece49548b64bb7f5ebcf1c7e61f5cbdb3786/arro3_io-0.4.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:9b813524a097dd2f276cf15b0d709a358066fe940e222ee97f32b1b6be16306a", size = 4074385 },
@@ -426,7 +426,7 @@ wheels = [
 [[package]]
 name = "cartes"
 version = "0.8.2"
-source = { directory = "../cartes" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "altair" },
     { name = "appdirs" },
@@ -439,7 +439,6 @@ dependencies = [
     { name = "lxml" },
     { name = "matplotlib" },
     { name = "nest-asyncio" },
-    { name = "networkx" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pyproj" },
@@ -448,46 +447,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "uvicorn" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "altair", specifier = ">=5.4.1" },
-    { name = "appdirs", specifier = ">=1.4.4" },
-    { name = "beautifulsoup4", specifier = ">=4.12.3" },
-    { name = "cartopy", marker = "python_full_version < '3.10'", specifier = ">=0.23.0" },
-    { name = "cartopy", marker = "python_full_version >= '3.10'", specifier = ">=0.24.1" },
-    { name = "fastapi", specifier = ">=0.115.0" },
-    { name = "geopandas", specifier = ">=1.0.1" },
-    { name = "httpx", extras = ["http2"], specifier = ">=0.27.2" },
-    { name = "jsonschema", specifier = ">=4.23.0" },
-    { name = "lxml", specifier = ">=5.3.0" },
-    { name = "matplotlib", specifier = ">=3.9.2" },
-    { name = "nest-asyncio", specifier = ">=1.6.0" },
-    { name = "networkx", specifier = ">=3.2.1" },
-    { name = "numpy", marker = "python_full_version < '3.10'", specifier = ">=2.0.2" },
-    { name = "numpy", marker = "python_full_version >= '3.10'", specifier = ">=2.1.2" },
-    { name = "pandas", specifier = ">=2.2.3" },
-    { name = "pyproj", marker = "python_full_version < '3.10'", specifier = "<3.7.1" },
-    { name = "pyproj", marker = "python_full_version >= '3.10'", specifier = ">=3.7.0" },
-    { name = "scipy", marker = "python_full_version < '3.10'", specifier = ">=1.13.1" },
-    { name = "scipy", marker = "python_full_version >= '3.10'", specifier = ">=1.14.1" },
-    { name = "shapely", specifier = ">=2.0.6" },
-    { name = "tqdm", specifier = ">=4.66.5" },
-    { name = "uvicorn", specifier = ">=0.31.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "exceptiongroup", marker = "python_full_version < '3.11'", specifier = ">=1.2.2" },
-    { name = "jupyter-sphinx", specifier = ">=0.5.3" },
-    { name = "mypy", specifier = ">=1.11.2" },
-    { name = "pre-commit", specifier = ">=3.8.0" },
-    { name = "pytest", specifier = ">=8.3.3" },
-    { name = "pytest-cov", specifier = ">=5.0.0" },
-    { name = "ruff", specifier = ">=0.6.8" },
-    { name = "sphinx", marker = "python_full_version >= '3.12'", specifier = ">=7.4.7" },
-    { name = "sphinx-rtd-theme", marker = "python_full_version >= '3.12'", specifier = ">=2.0.0" },
-    { name = "vega-datasets", specifier = ">=0.9.0" },
+sdist = { url = "https://files.pythonhosted.org/packages/64/9d/29176e3859a41b9715108202ef8ffc4e7b2d771f9be7e859586c992fc9d5/cartes-0.8.2.tar.gz", hash = "sha256:404bf6f314a67fe0b163452e8122b863cc87e4ebc7e811087b40f8ccf4b216d7", size = 6318249 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d2/6f/44ad7a7a21a2d44f48fc73ee7d8e39a1ac6597c302800ecf8f7e9b1f4077/cartes-0.8.2-py3-none-any.whl", hash = "sha256:7fd69851625631586eb36dad42a2b4e78776cc5da4358e0fad73f53469bfd9c0", size = 43157 },
 ]
 
 [[package]]
@@ -1581,14 +1543,14 @@ name = "lonboard"
 version = "0.10.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "anywidget" },
-    { name = "arro3-compute" },
-    { name = "arro3-core" },
-    { name = "arro3-io" },
-    { name = "ipywidgets" },
-    { name = "numpy" },
-    { name = "pyproj" },
-    { name = "traitlets" },
+    { name = "anywidget", marker = "python_full_version < '3.13'" },
+    { name = "arro3-compute", marker = "python_full_version < '3.13'" },
+    { name = "arro3-core", marker = "python_full_version < '3.13'" },
+    { name = "arro3-io", marker = "python_full_version < '3.13'" },
+    { name = "ipywidgets", marker = "python_full_version < '3.13'" },
+    { name = "numpy", marker = "python_full_version < '3.13'" },
+    { name = "pyproj", marker = "python_full_version < '3.13'" },
+    { name = "traitlets", marker = "python_full_version < '3.13'" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ae/9b/8b1c61690c22e39f73df47e394f92d084eafd36e9915140b632e7f53561a/lonboard-0.10.3.tar.gz", hash = "sha256:0e0202279a83f05ba5dfffd6193e09d9f40b20dda3c89b3098de06b620abc1eb", size = 868459 }
@@ -1984,15 +1946,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/83/f8/51569ac65d696c8ecbee95938f89d4abf00f47d58d48f6fbabfe8f0baefe/nest_asyncio-1.6.0.tar.gz", hash = "sha256:6f172d5449aca15afd6c646851f4e31e02c598d553a667e38cafa997cfec55fe", size = 7418 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c", size = 5195 },
-]
-
-[[package]]
-name = "networkx"
-version = "3.4.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fd/1d/06475e1cd5264c0b870ea2cc6fdb3e37177c1e565c43f56ff17a10e3937f/networkx-3.4.2.tar.gz", hash = "sha256:307c3669428c5362aab27c8a1260aa8f47c4e91d3891f48be0141738d8d053e1", size = 2151368 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl", hash = "sha256:df5d4365b724cf81b8c6a7312509d0c22386097011ad1abe274afd5e9d3bbc5f", size = 1723263 },
 ]
 
 [[package]]
@@ -3771,7 +3724,7 @@ wheels = [
 
 [[package]]
 name = "traffic"
-version = "2.10.3.dev23+g78e9629.d20241119"
+version = "2.10.3.dev27+g39fa73e.d20241120"
 source = { editable = "." }
 dependencies = [
     { name = "cartes" },
@@ -3831,7 +3784,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "altair", marker = "extra == 'altair'", specifier = ">=5.4.1" },
-    { name = "cartes", directory = "../cartes" },
+    { name = "cartes", specifier = ">=0.8.2" },
     { name = "httpx", specifier = ">=0.27.2" },
     { name = "impunity", specifier = ">=1.0.4" },
     { name = "ipyleaflet", marker = "extra == 'leaflet'", specifier = ">=0.19.2" },
