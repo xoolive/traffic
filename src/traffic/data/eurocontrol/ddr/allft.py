@@ -265,7 +265,7 @@ class AllFT(DataFrameMixin):
     ) -> Self:  # coverage: ignore
         """
         In addition to `usual formats
-        <export.html#traffic.core.mixins.DataFrameMixin>`_, you can parse so6
+        <export.html#traffic.core.mixins.DataFrameMixin>`_, you can parse
         files as text files (.ALL_FT+ extension) or as 7-zipped text files
         (.ALL_FT+.7z extension).
 

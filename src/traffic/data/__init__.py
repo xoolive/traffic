@@ -21,7 +21,6 @@ if TYPE_CHECKING:
     from .eurocontrol.ddr.allft import AllFT
     from .eurocontrol.ddr.navpoints import NMNavaids
     from .eurocontrol.ddr.routes import NMRoutes
-    from .eurocontrol.ddr.so6 import SO6
     from .eurocontrol.eurofirs import Eurofirs
 
 # Parse configuration and input specific parameters in below classes
@@ -45,7 +44,6 @@ __all__ = [
     "client",
     "AllFT",
     "Navaids",
-    "SO6",
 ]
 
 aircraft: "Aircraft"
@@ -255,10 +253,5 @@ def __getattr__(name: str) -> Any:
         from .eurocontrol.ddr.allft import AllFT
 
         return AllFT
-
-    if name == "SO6":
-        from .eurocontrol.ddr.so6 import SO6
-
-        return SO6
 
     raise AttributeError(f"module {__name__} has no attribute {name}")
