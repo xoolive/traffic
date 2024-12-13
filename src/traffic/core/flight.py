@@ -2967,7 +2967,7 @@ class Flight(
                 list(features), as_=["variable", "value"]
             ).encode(alt.Y("value:Q"), alt.Color("variable:N"))
 
-        return base.mark_line()
+        return base.mark_line()  # type: ignore
 
     # -- Visualize with Leaflet --
 

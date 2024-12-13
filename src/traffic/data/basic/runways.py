@@ -151,7 +151,7 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
         if kwargs.get("mode", None) == "geometry":
             params = {**{"strokeWidth": 4, "stroke": "black"}, **kwargs}
             del params["mode"]
-            return super().geoencode().mark_geoshape(**params)
+            return super().geoencode().mark_geoshape(**params)  # type: ignore
         elif kwargs.get("mode", None) == "labels":
             params = {
                 **{"baseline": "middle", "dy": 20, "fontSize": 18},
@@ -162,9 +162,9 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
                 longitude="longitude:Q", latitude="latitude:Q", text="name:N"
             )
             rwy_layers = [
-                rwy_labels.transform_filter(
-                    alt.datum.name == name  # type: ignore
-                ).mark_text(angle=bearing, **params)
+                rwy_labels.transform_filter(alt.datum.name == name).mark_text(
+                    angle=bearing, **params
+                )
                 for (name, bearing) in zip(self.data.name, self.data.bearing)
             ]
 
