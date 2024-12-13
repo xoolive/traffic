@@ -31,8 +31,8 @@ def closest_point(
     dist_vect = geo.distance(
         data.latitude.values,
         data.longitude.values,
-        latitude * np.ones(len(data.latitude)),
-        longitude * np.ones(len(data.longitude)),
+        (latitude * np.ones(len(data.latitude))).astype(np.float64),
+        (longitude * np.ones(len(data.longitude))).astype(np.float64),
     )
     argmin = dist_vect.argmin()
     elt = data.iloc[argmin]

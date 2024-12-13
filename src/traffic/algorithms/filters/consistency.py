@@ -13,12 +13,13 @@ from . import FilterBase
 NM2METER = 1852
 
 ArrayBool: TypeAlias = npt.NDArray[np.bool_]
-ArrayF64: TypeAlias = npt.NDArray[np.float64]
+ArrayFloat: TypeAlias = npt.NDArray[np.floating]
+ArrayI64: TypeAlias = npt.NDArray[np.int64]
 
 
 def distance(
-    lat1: ArrayF64, lon1: ArrayF64, lat2: ArrayF64, lon2: ArrayF64
-) -> ArrayF64:
+    lat1: ArrayFloat, lon1: ArrayFloat, lat2: ArrayFloat, lon2: ArrayFloat
+) -> ArrayFloat:
     r = 6371000
     phi1 = lat1
     phi2 = lat2
@@ -32,7 +33,7 @@ def distance(
     return res / NM2METER  # type: ignore
 
 
-def lag(horizon: int, v: ArrayF64) -> ArrayF64:
+def lag(horizon: int, v: ArrayFloat) -> ArrayFloat:
     res = np.empty((horizon, v.shape[0]))
     res.fill(np.nan)
     for i in range(horizon):
@@ -40,7 +41,7 @@ def lag(horizon: int, v: ArrayF64) -> ArrayF64:
     return res
 
 
-def diffangle(a: ArrayF64, b: ArrayF64) -> ArrayF64:
+def diffangle(a: ArrayFloat, b: ArrayFloat) -> ArrayFloat:
     d = a - b
     return d + 2 * np.pi * (  # type: ignore
         (d < -np.pi).astype(float) - (d >= np.pi).astype(float)
@@ -48,8 +49,8 @@ def diffangle(a: ArrayF64, b: ArrayF64) -> ArrayF64:
 
 
 def dxdy_from_dlat_dlon(
-    lat_rad: ArrayF64, lon_rad: ArrayF64, dlat: ArrayF64, dlon: ArrayF64
-) -> tuple[ArrayF64, ArrayF64]:
+    lat_rad: ArrayFloat, lon_rad: ArrayFloat, dlat: ArrayFloat, dlon: ArrayFloat
+) -> tuple[ArrayFloat, ArrayFloat]:
     a = 6378137
     b = 6356752.314245
     e2 = 1 - (b / a) ** 2
@@ -149,7 +150,7 @@ def approx_solver(dd: ArrayBool) -> ArrayBool:
     res = np.full(dd.shape[1], True)
     out = 10 * res.shape[0]  # 30000
 
-    def check_in(posjumpmin: ArrayF64) -> ArrayBool:
+    def check_in(posjumpmin: ArrayI64) -> ArrayBool:
         return np.logical_and(
             0 <= posjumpmin,
             posjumpmin < res.shape[0],
@@ -215,7 +216,7 @@ def consistency_solver(
             return mask
 
 
-def meanangle(a1: ArrayF64, a2: ArrayF64) -> ArrayF64:
+def meanangle(a1: ArrayFloat, a2: ArrayFloat) -> ArrayFloat:
     return diffangle(a1, a2) * 0.5 + a2
 
 
@@ -283,8 +284,8 @@ class FilterConsistency(FilterBase):
         self,
         data: pd.DataFrame,
         horizon: int,
-    ) -> ArrayF64:
-        t: ArrayF64 = (
+    ) -> ArrayFloat:
+        t: ArrayFloat = (
             (
                 (data.timestamp - data.timestamp.iloc[0])
                 / pd.to_timedelta(1, unit="s")
@@ -299,7 +300,7 @@ class FilterConsistency(FilterBase):
         return dt
 
     def compute_ddtrack(
-        self, data: pd.DataFrame, dt: ArrayF64, horizon: int
+        self, data: pd.DataFrame, dt: ArrayFloat, horizon: int
     ) -> ArrayBool:
         lat = data.latitude.values.astype(np.float64)
         lon = data.longitude.values.astype(np.float64)
@@ -337,7 +338,7 @@ class FilterConsistency(FilterBase):
         return np.logical_and(isalignementok, isdtrackdtok)
 
     def compute_ddspeed(
-        self, data: pd.DataFrame, dt: ArrayF64, horizon: int
+        self, data: pd.DataFrame, dt: ArrayFloat, horizon: int
     ) -> ArrayBool:
         lat = data.latitude.to_numpy().astype(np.float64)
         lon = data.longitude.to_numpy().astype(np.float64)
@@ -357,7 +358,7 @@ class FilterConsistency(FilterBase):
         return ddspeed
 
     def compute_ddverti(
-        self, data: pd.DataFrame, dt: ArrayF64, horizon: int
+        self, data: pd.DataFrame, dt: ArrayFloat, horizon: int
     ) -> ArrayBool:
         alt = data.altitude.to_numpy().astype(np.float64)
         rocd = data.vertical_rate.to_numpy().astype(np.float64)
@@ -378,7 +379,7 @@ class FilterConsistency(FilterBase):
 
     def solve(
         self,
-        compute_dd: Callable[[pd.DataFrame, ArrayF64, int], ArrayBool],
+        compute_dd: Callable[[pd.DataFrame, ArrayFloat, int], ArrayBool],
         data: pd.DataFrame,
         exact_when_kept_below: float,
         backup: bool = False,

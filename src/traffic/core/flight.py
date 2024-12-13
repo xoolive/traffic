@@ -105,7 +105,7 @@ def _split(
     if unit is None:
         delta = pd.Timedelta(value)
     else:
-        delta = pd.Timedelta(np.timedelta64(value, unit))
+        delta = pd.Timedelta(np.timedelta64(value, unit))  # type: ignore
     # There seems to be a change with numpy >= 1.18
     # max() now may return NaN, therefore the following fix
     max_ = diff.max()
@@ -2187,8 +2187,8 @@ class Flight(
                 column_name: geo.bearing(
                     self.data.latitude.to_numpy(),
                     self.data.longitude.to_numpy(),
-                    other.latitude * np.ones(size),
-                    other.longitude * np.ones(size),
+                    (other.latitude * np.ones(size)).astype(np.float64),
+                    (other.longitude * np.ones(size)).astype(np.float64),
                 )
                 % 360
             }
@@ -2268,8 +2268,8 @@ class Flight(
             distance_vec = geo.distance(
                 self.data.latitude.to_numpy(),
                 self.data.longitude.to_numpy(),
-                other.latitude * np.ones(size),
-                other.longitude * np.ones(size),
+                (other.latitude * np.ones(size)).astype(np.float64),
+                (other.longitude * np.ones(size)).astype(np.float64),
             )
             return self.assign(**{column_name: distance_vec})
 
