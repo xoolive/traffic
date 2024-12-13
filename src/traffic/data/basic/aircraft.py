@@ -247,14 +247,14 @@ class Aircraft(DataFrameMixin):
             engine="c",
             keep_default_na=False,
         )
-        self.data.to_pickle(self.cache_dir / "opensky_db.pkl")
+        self.data.to_parquet(self.cache_dir / "opensky_db.parquet")
 
     @property
     def opensky_db(self) -> pd.DataFrame:
-        if not (self.cache_dir / "opensky_db.pkl").exists():
+        if not (self.cache_dir / "opensky_db.parquet").exists():
             self.download_opensky()
         _log.info("Loading OpenSky aircraft database")
-        return pd.read_pickle(self.cache_dir / "opensky_db.pkl")
+        return pd.read_parquet(self.cache_dir / "opensky_db.parquet")
 
     def __getitem__(self: T, name: str | list[str]) -> None | T:
         """Requests an aircraft by icao24 or registration (exact match)."""
