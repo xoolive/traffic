@@ -18,18 +18,18 @@ wheels = [
 
 [[package]]
 name = "altair"
-version = "5.4.1"
+version = "5.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jinja2" },
     { name = "jsonschema" },
     { name = "narwhals" },
     { name = "packaging" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.14'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ae/09/38904138a49f29e529b61b4f39954a6837f443d828c1bc57814be7bd4813/altair-5.4.1.tar.gz", hash = "sha256:0ce8c2e66546cb327e5f2d7572ec0e7c6feece816203215613962f0ec1d76a82", size = 636465 }
+sdist = { url = "https://files.pythonhosted.org/packages/16/b1/f2969c7bdb8ad8bbdda031687defdce2c19afba2aa2c8e1d2a17f78376d8/altair-5.5.0.tar.gz", hash = "sha256:d960ebe6178c56de3855a68c47b516be38640b73fb3b5111c2a9ca90546dd73d", size = 705305 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9b/52/4a86a4fa1cc2aae79137cc9510b7080c3e5aede2310d14fae5486feec7f7/altair-5.4.1-py3-none-any.whl", hash = "sha256:0fb130b8297a569d08991fb6fe763582e7569f8a04643bbd9212436e3be04aef", size = 658150 },
+    { url = "https://files.pythonhosted.org/packages/aa/f3/0b6ced594e51cc95d8c1fc1640d3623770d01e4969d29c0bd09945fafefa/altair-5.5.0-py3-none-any.whl", hash = "sha256:91a310b926508d560fe0148d02a194f38b824122641ef528113d029fcd129f8c", size = 731200 },
 ]
 
 [[package]]
@@ -425,7 +425,7 @@ wheels = [
 
 [[package]]
 name = "cartes"
-version = "0.8.2"
+version = "0.8.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "altair" },
@@ -439,6 +439,7 @@ dependencies = [
     { name = "lxml" },
     { name = "matplotlib" },
     { name = "nest-asyncio" },
+    { name = "networkx" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pyproj" },
@@ -447,9 +448,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/64/9d/29176e3859a41b9715108202ef8ffc4e7b2d771f9be7e859586c992fc9d5/cartes-0.8.2.tar.gz", hash = "sha256:404bf6f314a67fe0b163452e8122b863cc87e4ebc7e811087b40f8ccf4b216d7", size = 6318249 }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/2e/5f43d6929bc105c4e23f1e1b4eb1dc29f51194993027e0dbed96c19e0b1b/cartes-0.8.3.tar.gz", hash = "sha256:3ae35c612a215e85ae1b713330115e849d7826c97d24e0f06fd53767f553557f", size = 6318631 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/6f/44ad7a7a21a2d44f48fc73ee7d8e39a1ac6597c302800ecf8f7e9b1f4077/cartes-0.8.2-py3-none-any.whl", hash = "sha256:7fd69851625631586eb36dad42a2b4e78776cc5da4358e0fad73f53469bfd9c0", size = 43157 },
+    { url = "https://files.pythonhosted.org/packages/4c/7c/68efa2c35cfd5299d646fd9c5c4a5edc30006a034626c364ffe525190109/cartes-0.8.3-py3-none-any.whl", hash = "sha256:e810ef5f2be4befa492d0931184d3850c2e7819d899b0f2a6530b98af4dd057b", size = 43430 },
 ]
 
 [[package]]
@@ -1876,11 +1877,11 @@ wheels = [
 
 [[package]]
 name = "narwhals"
-version = "1.14.1"
+version = "1.18.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4b/1c/da74c6c96ffc7cdbb40b9b53efa8f97f2b257a430842d220acbcea60f2f4/narwhals-1.14.1.tar.gz", hash = "sha256:8262d77afec11960852e3f24d250e882575d9115ce7076df20b7c3bdce1281eb", size = 186792 }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/8d/e851d5a5c5838024e0ae0d7db83640fb70f3c6912de83032f3200e94c65a/narwhals-1.18.2.tar.gz", hash = "sha256:7f9c72e6811635c0344193d4ce06c9d9d9fb4af37db4b7d60a76b4c929654f35", size = 212494 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/86/38/63dcb45e12f6e5fcdb7b05d4c3b884502c50613b56c0e6fec78803cf14a7/narwhals-1.14.1-py3-none-any.whl", hash = "sha256:b737db277df174ca41b45950e50f48a738c88bd9b896398ffa8872e4e3930def", size = 220586 },
+    { url = "https://files.pythonhosted.org/packages/12/df/890820ca851d37d43a91e79988f2cad9c4e0c5e1fe5ff0d470a53710b347/narwhals-1.18.2-py3-none-any.whl", hash = "sha256:8f28812178bf67e4cbe46009e71aebbcdef78a52acd3d06a747f17189dba9d4a", size = 250164 },
 ]
 
 [[package]]
@@ -1946,6 +1947,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/83/f8/51569ac65d696c8ecbee95938f89d4abf00f47d58d48f6fbabfe8f0baefe/nest_asyncio-1.6.0.tar.gz", hash = "sha256:6f172d5449aca15afd6c646851f4e31e02c598d553a667e38cafa997cfec55fe", size = 7418 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a0/c4/c2971a3ba4c6103a3d10c4b0f24f461ddc027f0f09763220cf35ca1401b3/nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c", size = 5195 },
+]
+
+[[package]]
+name = "networkx"
+version = "3.4.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/1d/06475e1cd5264c0b870ea2cc6fdb3e37177c1e565c43f56ff17a10e3937f/networkx-3.4.2.tar.gz", hash = "sha256:307c3669428c5362aab27c8a1260aa8f47c4e91d3891f48be0141738d8d053e1", size = 2151368 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/54/dd730b32ea14ea797530a4479b2ed46a6fb250f682a9cfb997e968bf0261/networkx-3.4.2-py3-none-any.whl", hash = "sha256:df5d4365b724cf81b8c6a7312509d0c22386097011ad1abe274afd5e9d3bbc5f", size = 1723263 },
 ]
 
 [[package]]
@@ -3724,7 +3734,7 @@ wheels = [
 
 [[package]]
 name = "traffic"
-version = "2.10.3.dev27+g39fa73e.d20241120"
+version = "2.12.dev2+g0dcee79.d20241213"
 source = { editable = "." }
 dependencies = [
     { name = "cartes" },
@@ -3784,14 +3794,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "altair", marker = "extra == 'altair'", specifier = ">=5.4.1" },
-    { name = "cartes", specifier = ">=0.8.2" },
+    { name = "cartes", specifier = ">=0.8.3" },
     { name = "httpx", specifier = ">=0.27.2" },
     { name = "impunity", specifier = ">=1.0.4" },
     { name = "ipyleaflet", marker = "extra == 'leaflet'", specifier = ">=0.19.2" },
     { name = "ipywidgets", marker = "extra == 'leaflet'", specifier = ">=8.1.5" },
     { name = "lonboard", marker = "python_full_version < '3.13' and extra == 'lonboard'", specifier = ">=0.10.3" },
     { name = "metar", specifier = ">=1.11.0" },
-    { name = "onnxruntime", specifier = ">=1.20.0" },
+    { name = "onnxruntime", specifier = ">=1.19.2" },
     { name = "openap", specifier = ">=2.0" },
     { name = "pitot", specifier = ">=0.3.1" },
     { name = "plotly", marker = "extra == 'plotly'", specifier = ">=5.24.1" },

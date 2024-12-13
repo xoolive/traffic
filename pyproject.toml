@@ -28,11 +28,11 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "cartes>=0.8.2",
+  "cartes>=0.8.3",
   "httpx>=0.27.2",
   "impunity>=1.0.4",
   "metar>=1.11.0",
-  "onnxruntime>=1.20.0",
+  "onnxruntime>=1.19.2",
   "openap>=2.0",
   "pitot>=0.3.1",
   "py7zr>=0.22.0",
@@ -59,11 +59,11 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-# cartes = { path = "../cartes" }
-# impunity = { path = "../impunity" }
-# pitot = { path = "../pitot" }
-# pyopensky = { path = "../pyopensky" }
-# rs1090 = { path = "../rs1090/python" }
+# cartes = { path = "../cartes", editable = true }
+# impunity = { path = "../impunity", editable = true }
+# pitot = { path = "../pitot", editable = true }
+# pyopensky = { path = "../pyopensky", editable = true }
+# rs1090 = { path = "../rs1090/python", editable = true }
 
 [project.scripts]
 traffic = 'traffic.console:main'
