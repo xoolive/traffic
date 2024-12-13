@@ -26,24 +26,24 @@ if TYPE_CHECKING:
 # Parse configuration and input specific parameters in below classes
 
 __all__ = [
+    "AllFT",
+    "Navaids",
     "aircraft",
     "airports",
     "airways",
-    "navaids",
-    "runways",
     "aixm_airports",
     "aixm_airspaces",
     "aixm_airways",
     "aixm_navaids",
+    "client",
+    "eurofirs",
+    "navaids",
     "nm_airspaces",
     "nm_airways",
     "nm_freeroute",
     "nm_navaids",
-    "eurofirs",
     "opensky",
-    "client",
-    "AllFT",
-    "Navaids",
+    "runways",
 ]
 
 aircraft: "Aircraft"

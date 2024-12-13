@@ -18,7 +18,7 @@ def test_cpa() -> None:
         lateral_separation=10 * 1852,
         vertical_separation=2000,
         projection=CH1903p(),
-        round_t="10T",
+        round_t="10 min",
     )
 
     assert cpa is not None

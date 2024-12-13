@@ -106,14 +106,14 @@ def test_subtract() -> None:
     assert sum(1 for _ in flight.holding_pattern()) == 1
     hp = flight.next("holding_pattern")
     assert hp is not None
-    assert pd.Timedelta("9T") < hp.duration < pd.Timedelta("11T")
+    assert pd.Timedelta("9 min") < hp.duration < pd.Timedelta("11 min")
 
     without_hp = flight - hp
     assert sum(1 for _ in without_hp) == 2
     total_duration = sum(
         (segment.duration for segment in without_hp), hp.duration
     )
-    assert flight.duration - pd.Timedelta("1T") <= total_duration
+    assert flight.duration - pd.Timedelta("1 min") <= total_duration
     assert total_duration <= flight.duration
 
 
@@ -126,7 +126,7 @@ def test_time_methods() -> None:
     assert f"{first10.stop}" == "2018-05-30 15:31:37+00:00"
     assert f"{last10.start}" == "2018-05-30 20:12:57+00:00"
 
-    first10 = flight.first("10T")
+    first10 = flight.first("10 min")
     last10 = flight.last("10 minutes")
     assert first10 is not None
     assert last10 is not None
@@ -163,7 +163,7 @@ def test_time_methods() -> None:
 
     low = flight.query("altitude < 100")
     assert low is not None
-    shorter = low.split("10T").max()
+    shorter = low.split("10 min").max()
     assert shorter is not None
     assert shorter.duration < pd.Timedelta("6 minutes")
 
@@ -191,7 +191,7 @@ def test_bearing() -> None:
     assert (
         sum(
             1
-            for chunk in subset.split("1T")
+            for chunk in subset.split("1 min")
             if chunk.duration > pd.Timedelta("5 minutes")
         )
         == 7
@@ -608,7 +608,7 @@ def test_agg_time() -> None:
     assert agg.max("altitude_max") <= agg.max("altitude")
 
     app = flight.resample("30s").apply_time(
-        freq="30T",
+        freq="30 min",
         factor=lambda f: f.distance() / f.cumulative_distance().max("cumdist"),
     )
     assert app.min("factor") < 1 / 15
@@ -619,7 +619,7 @@ def test_forward() -> None:
 
     subset = flight.query("altitude < 300")
     assert subset is not None
-    takeoff = subset.split("10T").next()
+    takeoff = subset.split("10 min").next()
     assert takeoff is not None
     forward = takeoff.forward(minutes=1)
 
@@ -633,7 +633,7 @@ def test_forward() -> None:
 def test_cumulative_distance() -> None:
     # https://github.com/xoolive/traffic/issues/61
 
-    first = belevingsvlucht.first("30T")
+    first = belevingsvlucht.first("30 min")
     assert first is not None
     f1 = first.cumulative_distance()
     f2 = first.cumulative_distance(reverse=True)
@@ -676,18 +676,20 @@ def test_cumulative_distance() -> None:
 def test_agg_time_colnames() -> None:
     # https://github.com/xoolive/traffic/issues/66
 
-    cols = belevingsvlucht.agg_time("5T", altitude=("max", "mean")).data.columns
+    cols = belevingsvlucht.agg_time(
+        "5 min", altitude=("max", "mean")
+    ).data.columns
     assert list(cols)[-3:] == ["rounded", "altitude_max", "altitude_mean"]
 
     cols = belevingsvlucht.agg_time(
-        "5T", altitude=lambda x: x.sum()
+        "5 min", altitude=lambda x: x.sum()
     ).data.columns
     assert list(cols)[-3:] == ["altitude", "rounded", "altitude_<lambda>"]
 
     def shh(x: Any) -> Any:
         return x.sum()
 
-    cols = belevingsvlucht.agg_time("5T", altitude=shh).data.columns
+    cols = belevingsvlucht.agg_time("5 min", altitude=shh).data.columns
     assert list(cols)[-2:] == ["rounded", "altitude_shh"]
 
 

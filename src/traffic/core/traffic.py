@@ -873,7 +873,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     def max_split(  # type: ignore
         self,
         /,
-        value: Union[int, str] = "10T",
+        value: Union[int, str] = "10 min",
         unit: Optional[str] = None,
         key: str = "duration",
     ): ...
@@ -888,11 +888,11 @@ class Traffic(HBoxMixin, GeographyMixin):
     ): ...
 
     @lazy_evaluation()
-    def apply_time(self, /, freq="1T", merge=True, **kwargs):  # type: ignore
+    def apply_time(self, /, freq="1 min", merge=True, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def agg_time(self, /, freq="1T", merge=True, **kwargs):  # type: ignore
+    def agg_time(self, /, freq="1 min", merge=True, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()

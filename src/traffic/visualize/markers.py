@@ -2,7 +2,7 @@ from matplotlib.path import Path
 
 import numpy as np
 
-__all__ = ["rotate_marker", "atc_tower", "aircraft"]
+__all__ = ["aircraft", "atc_tower", "rotate_marker"]
 
 
 def rotate_marker(path: Path, degrees: float) -> Path:

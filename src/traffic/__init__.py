@@ -12,7 +12,7 @@ import pandas as pd
 from . import visualize  # noqa: F401
 
 __version__ = version("traffic")
-__all__ = ["config_dir", "config_file", "cache_dir", "tqdm_style"]
+__all__ = ["cache_dir", "config_dir", "config_file", "tqdm_style"]
 
 # Set up the library root logger
 _log = logging.getLogger(__name__)

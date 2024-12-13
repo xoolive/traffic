@@ -49,15 +49,15 @@ from .flightplan import FlightPlan
 
 
 __all__ = [
+    "Airspace",
     "Flight",
     "FlightIterator",
-    "Traffic",
-    "Airspace",
-    "StateVectors",
     "FlightPlan",
     "LazyTraffic",
-    "loglevel",
+    "StateVectors",
+    "Traffic",
     "faulty_flight",
+    "loglevel",
     "tqdm",
 ]
 
