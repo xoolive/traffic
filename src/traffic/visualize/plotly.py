@@ -37,7 +37,7 @@ def scatter_map(
         if (point := getattr(self, "point", None)) is not None:
             kwargs["center"] = point.latlon_dict
 
-    return px.scatter_mapbox(
+    return px.scatter_map(
         self.data,
         lat="latitude",
         lon="longitude",
