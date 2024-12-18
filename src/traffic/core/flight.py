@@ -283,7 +283,7 @@ class Flight(
           :meth:`geoencode`
 
         - visualisation with leaflet: :meth:`map_leaflet`
-        - visualisation with plotly: :meth:`line_mapbox` and others
+        - visualisation with plotly: :meth:`line_map` and others
         - visualisation with Matplotlib:
           :meth:`plot`,
           :meth:`plot_time`
@@ -2998,16 +2998,16 @@ class Flight(
     def line_geo(self, **kwargs: Any) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
-    def line_mapbox(
-        self, mapbox_style: str = "carto-positron", **kwargs: Any
+    def line_map(
+        self, map_style: str = "carto-positron", **kwargs: Any
     ) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
     def scatter_geo(self, **kwargs: Any) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
-    def scatter_mapbox(
-        self, mapbox_style: str = "carto-positron", **kwargs: Any
+    def scatter_map(
+        self, map_style: str = "carto-positron", **kwargs: Any
     ) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
@@ -3145,16 +3145,16 @@ class Flight(
 def patch_plotly() -> None:
     from ..visualize.plotly import (
         Scattergeo,
-        Scattermapbox,
+        Scattermap,
         line_geo,
-        line_mapbox,
+        line_map,
         scatter_geo,
-        scatter_mapbox,
+        scatter_map,
     )
 
-    Flight.line_mapbox = line_mapbox  # type: ignore
-    Flight.scatter_mapbox = scatter_mapbox  # type: ignore
-    Flight.Scattermapbox = Scattermapbox  # type: ignore
+    Flight.line_map = line_map  # type: ignore
+    Flight.scatter_map = scatter_map  # type: ignore
+    Flight.Scattermap = Scattermap  # type: ignore
     Flight.line_geo = line_geo  # type: ignore
     Flight.scatter_geo = scatter_geo  # type: ignore
     Flight.Scattergeo = Scattergeo  # type: ignore
