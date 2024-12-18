@@ -2999,7 +2999,11 @@ class Flight(
         raise ImportError("Install plotly or traffic with the plotly extension")
 
     def line_map(
+<<<<<<< HEAD
         self, map_style: str = "carto-positron", **kwargs: Any
+=======
+        self, mapbox_style: str = "carto-positron", **kwargs: Any
+>>>>>>> 3e6901d (Plotly switch from mapbox to maplibre)
     ) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
@@ -3007,7 +3011,11 @@ class Flight(
         raise ImportError("Install plotly or traffic with the plotly extension")
 
     def scatter_map(
+<<<<<<< HEAD
         self, map_style: str = "carto-positron", **kwargs: Any
+=======
+        self, mapbox_style: str = "carto-positron", **kwargs: Any
+>>>>>>> 3e6901d (Plotly switch from mapbox to maplibre)
     ) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
