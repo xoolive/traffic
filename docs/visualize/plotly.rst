@@ -59,7 +59,7 @@ All kwargs arguments are passed directly to the corresponding method.
     )
 
 It is also possible to combine elements by constructing a
-:class:`~plotly.graph_objects.Scattermapbox` object:
+:class:`~plotly.graph_objects.Scattermap` object:
 
 .. jupyter-execute::
 
@@ -79,7 +79,7 @@ It is also possible to combine elements by constructing a
   )
 
   fig.add_trace(
-      belevingsvlucht.Scattermapbox(
+      belevingsvlucht.Scattermap(
           mode="lines",
           line=dict(color="#f58518", width=1),
           showlegend=False,
@@ -90,7 +90,7 @@ It is also possible to combine elements by constructing a
       width=600,
       height=600,
       margin=dict(l=50, r=0, t=40, b=40),
-      mapbox=dict(
+      map=dict(
           style="carto-positron",
           zoom=7,
           center=airports["EHLE"].latlon_dict,
