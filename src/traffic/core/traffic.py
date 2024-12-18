@@ -1091,7 +1091,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     def line_geo(self, **kwargs: Any) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
-    def line_mapbox(
+    def line_map(
         self, mapbox_style: str = "carto-positron", **kwargs: Any
     ) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
@@ -1099,7 +1099,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     def scatter_geo(self, **kwargs: Any) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
-    def scatter_mapbox(
+    def scatter_map(
         self, mapbox_style: str = "carto-positron", **kwargs: Any
     ) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
@@ -1529,13 +1529,13 @@ def patch_plotly() -> None:
         Scattergeo,
         Scattermapbox,
         line_geo,
-        line_mapbox,
+        line_map,
         scatter_geo,
-        scatter_mapbox,
+        scatter_map,
     )
 
-    Traffic.line_mapbox = line_mapbox  # type: ignore
-    Traffic.scatter_mapbox = scatter_mapbox  # type: ignore
+    Traffic.line_map = line_map  # type: ignore
+    Traffic.scatter_map = scatter_map  # type: ignore
     Traffic.Scattermapbox = Scattermapbox  # type: ignore
     Traffic.line_geo = line_geo  # type: ignore
     Traffic.scatter_geo = scatter_geo  # type: ignore

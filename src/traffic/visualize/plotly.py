@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-def line_mapbox(
+def line_map(
     self: Any,
     mapbox_style: str = "carto-positron",
     **kwargs: Any,
@@ -17,7 +17,7 @@ def line_mapbox(
         if (point := getattr(self, "point", None)) is not None:
             kwargs["center"] = point.latlon_dict
 
-    return px.line_mapbox(
+    return px.line_map(
         self.data,
         lat="latitude",
         lon="longitude",
@@ -26,7 +26,7 @@ def line_mapbox(
     )
 
 
-def scatter_mapbox(
+def scatter_map(
     self: Any, mapbox_style: str = "carto-positron", **kwargs: Any
 ) -> go.Figure:
     """Create a scatter plot with Plotly.
