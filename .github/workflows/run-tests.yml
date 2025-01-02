@@ -90,12 +90,6 @@ jobs:
             ~/.cache/traffic/
           key: traffic-${{ hashFiles('uv.lock') }}
 
-      # - name: Ubuntu system dependencies
-      #   if: ${{ matrix.os == 'ubuntu-latest' }}
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data
-
       - name: Install project
         run: |
           uv sync --dev --all-extras
@@ -106,7 +100,7 @@ jobs:
           TRAFFIC_NM_PATH: ""
         run: |
           uv run traffic cache --fill  # download files to have in cache first
-          uv run pytest -m "slow and extra"
+          uv run pytest
 
   tests_full:
     name: (full) python-${{ matrix.python-version }} on ${{ matrix.os }}
@@ -119,8 +113,8 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          #- windows-latest
-          #- macos-latest
+          - windows-latest
+          - macos-latest
         python-version:
           - "3.10"
           - "3.11"
@@ -183,11 +177,6 @@ jobs:
           path: |
             ~/.cache/traffic/
           key: traffic-${{ hashFiles('uv.lock') }}
-
-      - name: Ubuntu system dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data
 
       - name: Install project
         run: |

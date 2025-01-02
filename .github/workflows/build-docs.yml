@@ -77,7 +77,7 @@ jobs:
       - name: Ubuntu system dependencies
         run: |
           sudo apt update
-          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data npm fonts-ubuntu
+          sudo apt install -y npm fonts-ubuntu
 
       - name: npm dependencies
         run: |
