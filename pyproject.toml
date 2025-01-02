@@ -1,7 +1,5 @@
 [project]
 name = "traffic"
-homepage = "https://github.com/xoolive/traffic/"
-documentation = "https://traffic-viz.github.io/"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = [{ name = "Xavier Olive", email = "git@xoolive.org" }]
 license = "MIT"
@@ -59,11 +57,17 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-# cartes = { path = "../cartes", editable = true }
+cartes = { path = "../cartes", editable = true }
 # impunity = { path = "../impunity", editable = true }
 # pitot = { path = "../pitot", editable = true }
 # pyopensky = { path = "../pyopensky", editable = true }
 # rs1090 = { path = "../rs1090/python", editable = true }
+
+[project.urls]
+Documentation = "https://traffic-viz.github.io/"
+Code = "https://github.com/xoolive/traffic/"
+Issues = "https://github.com/xoolive/traffic/issues/"
+Releases = "https://github.com/xoolive/traffic/releases/"
 
 [project.scripts]
 traffic = 'traffic.console:main'
@@ -91,12 +95,10 @@ target-version = "py310"
 [tool.ruff.lint]
 select = [
   "E",
-  "W",      # pycodestyle
-  "F",      # pyflakes
-  "I",      # isort
-  "NPY",    # numpy
-  "NPY201", # numpy
-  # "PD",  # pandas
+  "W",   # pycodestyle
+  "F",   # pyflakes
+  "I",   # isort
+  "NPY", # numpy
   "DTZ", # flake8-datetimez
   "RUF",
 ]
@@ -118,6 +120,8 @@ warn_no_return = true
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
+
+exclude = ["docs/_build"]
 
 
 [tool.pytest.ini_options]
