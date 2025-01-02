@@ -23,6 +23,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
 ]
 dependencies = [
@@ -57,7 +58,7 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-cartes = { path = "../cartes", editable = true }
+# cartes = { path = "../cartes", editable = true }
 # impunity = { path = "../impunity", editable = true }
 # pitot = { path = "../pitot", editable = true }
 # pyopensky = { path = "../pyopensky", editable = true }

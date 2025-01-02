@@ -510,8 +510,8 @@ wheels = [
 
 [[package]]
 name = "cartes"
-version = "0.8.4"
-source = { editable = "../cartes" }
+version = "0.8.3"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "altair" },
     { name = "appdirs" },
@@ -533,42 +533,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "uvicorn" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "altair", specifier = ">=5.4.1" },
-    { name = "appdirs", specifier = ">=1.4.4" },
-    { name = "beautifulsoup4", specifier = ">=4.12.3" },
-    { name = "cartopy", specifier = ">=0.24.0" },
-    { name = "fastapi", specifier = ">=0.115.0" },
-    { name = "geopandas", specifier = ">=1.0.1" },
-    { name = "httpx", extras = ["http2"], specifier = ">=0.27.2" },
-    { name = "jsonschema", specifier = ">=4.23.0" },
-    { name = "lxml", specifier = ">=5.3.0" },
-    { name = "matplotlib", specifier = ">=3.9.2" },
-    { name = "nest-asyncio", specifier = ">=1.6.0" },
-    { name = "networkx", specifier = ">=3.2.1" },
-    { name = "numpy", specifier = ">=2.1.2" },
-    { name = "pandas", specifier = ">=2.2.3" },
-    { name = "pyproj", specifier = ">=3.7.0" },
-    { name = "scipy", specifier = ">=1.14.1" },
-    { name = "shapely", specifier = ">=2.0.6" },
-    { name = "tqdm", specifier = ">=4.66.5" },
-    { name = "uvicorn", specifier = ">=0.31.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "exceptiongroup", marker = "python_full_version < '3.11'", specifier = ">=1.2.2" },
-    { name = "jupyter-sphinx", specifier = ">=0.5.3" },
-    { name = "mypy", specifier = ">=1.11.2" },
-    { name = "pre-commit", specifier = ">=3.8.0" },
-    { name = "pytest", specifier = ">=8.3.3" },
-    { name = "pytest-cov", specifier = ">=5.0.0" },
-    { name = "ruff", specifier = ">=0.6.8" },
-    { name = "sphinx", marker = "python_full_version >= '3.12'", specifier = ">=7.4.7" },
-    { name = "sphinx-rtd-theme", marker = "python_full_version >= '3.12'", specifier = ">=2.0.0" },
-    { name = "vega-datasets", specifier = ">=0.9.0" },
+sdist = { url = "https://files.pythonhosted.org/packages/a7/2e/5f43d6929bc105c4e23f1e1b4eb1dc29f51194993027e0dbed96c19e0b1b/cartes-0.8.3.tar.gz", hash = "sha256:3ae35c612a215e85ae1b713330115e849d7826c97d24e0f06fd53767f553557f", size = 6318631 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4c/7c/68efa2c35cfd5299d646fd9c5c4a5edc30006a034626c364ffe525190109/cartes-0.8.3-py3-none-any.whl", hash = "sha256:e810ef5f2be4befa492d0931184d3850c2e7819d899b0f2a6530b98af4dd057b", size = 43430 },
 ]
 
 [[package]]
@@ -3926,7 +3893,7 @@ wheels = [
 
 [[package]]
 name = "traffic"
-version = "2.11.2.dev5+g3acbe72.d20250102"
+version = "2.11.2.dev6+g0efee26.d20250102"
 source = { editable = "." }
 dependencies = [
     { name = "cartes" },
@@ -3986,7 +3953,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "altair", marker = "extra == 'altair'", specifier = ">=5.4.1" },
-    { name = "cartes", editable = "../cartes" },
+    { name = "cartes", specifier = ">=0.8.3" },
     { name = "httpx", specifier = ">=0.27.2" },
     { name = "impunity", specifier = ">=1.0.4" },
     { name = "ipyleaflet", marker = "extra == 'leaflet'", specifier = ">=0.19.2" },
