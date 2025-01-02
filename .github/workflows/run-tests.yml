@@ -90,10 +90,11 @@ jobs:
             ~/.cache/traffic/
           key: traffic-${{ hashFiles('uv.lock') }}
 
-      - name: Ubuntu system dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data
+      # - name: Ubuntu system dependencies
+      #   if: ${{ matrix.os == 'ubuntu-latest' }}
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data
 
       - name: Install project
         run: |
@@ -195,7 +196,7 @@ jobs:
       - name: Run tests
         env:
           LD_LIBRARY_PATH: /usr/local/lib
-          TRAFFIC_NM_PATH: /home/runner/work/traffic/traffic/traffic_data/airac_2111
+          TRAFFIC_NM_PATH: ${{ github.workspace }}/traffic_data/airac_2111
         run: |
           uv run traffic cache --fill  # download files to have in cache first
           uv run pytest --cov --cov-report xml -m ""

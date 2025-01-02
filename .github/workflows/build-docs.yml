@@ -93,7 +93,7 @@ jobs:
           CARTES_CACHE: ./cache
           OPENSKY_CACHE: ./cache
           OPENSKY_CACHE_NO_EXPIRE: 
-          TRAFFIC_NM_PATH: /home/runner/work/traffic/traffic/traffic_data/airac_2111
+          TRAFFIC_NM_PATH: ${{ github.workspace }}/traffic_data/airac_2111
           TRAFFIC_TQDM_STYLE: silent
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
