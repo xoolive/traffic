@@ -22,7 +22,7 @@ class AIXMRoutesParser(Airways):
     name: str = "aixm_airways"
     filename: Path
     priority: int = 2
-    cache_dir: Path
+    cache_path: Path
 
     @classmethod
     def from_file(cls, filename: str | Path, **kwargs: Any) -> Self:
@@ -75,7 +75,7 @@ class AIXMRoutesParser(Airways):
         if self._data is not None:
             return self._data
 
-        cache_file = self.cache_dir / (self.filename.stem + "_airways.parquet")
+        cache_file = self.cache_path / (self.filename.stem + "_airways.parquet")
         if not cache_file.exists():
             self._data = self.parse_data()
             if self._data is not None:

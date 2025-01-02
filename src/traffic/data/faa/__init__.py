@@ -8,7 +8,7 @@ import httpx
 
 import pandas as pd
 
-from ... import cache_dir, cache_expiration
+from ... import cache_expiration, cache_path
 from .. import client
 
 __all__ = list(p.stem[1:] for p in Path(__file__).parent.glob("_[a-z]*py"))
@@ -23,7 +23,7 @@ class ADDS_FAA_OpenData:
     json_url = "https://opendata.arcgis.com/datasets/{}.geojson"
 
     def __init__(self) -> None:
-        self.cache_file = cache_dir / self.filename
+        self.cache_file = cache_path / self.filename
         self.website = self.website.format(self.id_)
         self.json_url = self.json_url.format(self.id_)
 
@@ -42,7 +42,7 @@ class ADDS_FAA_OpenData:
             last_modification = (self.cache_file).lstat().st_mtime
             delta = pd.Timestamp("now") - pd.Timestamp(last_modification * 1e9)
 
-            if delta > cache_expiration:
+            if cache_expiration is not None and delta > cache_expiration:
                 try:
                     self.download_data()
                 except httpx.TransportError:

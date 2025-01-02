@@ -174,12 +174,12 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
 
 
 class Runways(object):
-    cache_dir: Optional[Path] = None
+    cache_path: Optional[Path] = None
 
     def __init__(self) -> None:
         self._runways: Optional[RunwaysType] = None
-        assert self.cache_dir is not None
-        self._cache = self.cache_dir / "runways_ourairports.pkl"
+        assert self.cache_path is not None
+        self._cache = self.cache_path / "runways_ourairports.pkl"
 
     @property
     def runways(self) -> RunwaysType:
@@ -191,7 +191,7 @@ class Runways(object):
 
         last_modification = self._cache.lstat().st_mtime
         delta = pd.Timestamp("now") - pd.Timestamp(last_modification * 1e9)
-        if delta > cache_expiration:
+        if cache_expiration is not None and delta > cache_expiration:
             try:
                 self.download_runways()
             except httpx.TransportError:

@@ -47,8 +47,8 @@ jobs:
       - name: Type checking
         run: uv run mypy src tests
 
-  tests:
-    name: python-${{ matrix.python-version }} on ${{ matrix.os }}
+  tests_fast:
+    name: (fast) python-${{ matrix.python-version }} on ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
 
@@ -56,8 +56,70 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          # - windows-latest
-          # - macos-latest
+          - windows-latest
+          - macos-latest
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+
+      fail-fast: false
+
+    env:
+      PYTHON_VERSION: ${{ matrix.python-version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache folder for traffic
+        uses: actions/cache@v4
+        id: cache-folder
+        with:
+          path: |
+            ~/.cache/traffic/
+          key: traffic-${{ hashFiles('uv.lock') }}
+
+      - name: Ubuntu system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data
+
+      - name: Install project
+        run: |
+          uv sync --dev --all-extras
+
+      - name: Run tests
+        env:
+          LD_LIBRARY_PATH: /usr/local/lib
+          TRAFFIC_NM_PATH: ""
+        run: |
+          uv run traffic cache --fill  # download files to have in cache first
+          uv run pytest -m "slow and extra"
+
+  tests_full:
+    name: (full) python-${{ matrix.python-version }} on ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+
+    if: ${{ github.event_name != 'pull_request_target' }}
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          #- windows-latest
+          #- macos-latest
         python-version:
           - "3.10"
           - "3.11"
@@ -119,8 +181,6 @@ jobs:
         with:
           path: |
             ~/.cache/traffic/
-            ~/.cache/opensky/
-            ~/.cache/cartes/
           key: traffic-${{ hashFiles('uv.lock') }}
 
       - name: Ubuntu system dependencies
@@ -133,24 +193,12 @@ jobs:
           uv sync --dev --all-extras
 
       - name: Run tests
-        if: ${{ matrix.python-version == '3.12' || steps.cache-folder.outputs.cache-hit == 'true' }}
         env:
           LD_LIBRARY_PATH: /usr/local/lib
-          TRAFFIC_NOPLUGIN: ""
-          OPENSKY_USERNAME: ${{ secrets.OPENSKY_USERNAME }}
-          OPENSKY_PASSWORD: ${{ secrets.OPENSKY_PASSWORD }}
+          TRAFFIC_NM_PATH: /home/runner/work/traffic/traffic/traffic_data/airac_2111
         run: |
-          export TRAFFIC_CONFIG=$(uv run python -c "from traffic import config_file; print(config_file)")
-
-          sed -i "/nm_path =/ s,= $,= $PWD/traffic_data/airac_2111," $TRAFFIC_CONFIG
-          # sed -i "/pkcs12_filename =/ s,= .*$,= $PWD/traffic_data/CC0000007011_501_openssl.p12," $TRAFFIC_CONFIG
-          # sed -i "/pkcs12_password =/ s,= $,= $PKCS12_PASSWORD," $TRAFFIC_CONFIG
-
-          # Don't purge OpenSky cache files here :)
-          sed -i "/purge = / d" $TRAFFIC_CONFIG
-
           uv run traffic cache --fill  # download files to have in cache first
-          uv run pytest --cov --cov-report xml
+          uv run pytest --cov --cov-report xml -m ""
 
       - name: Upload coverage to Codecov
         if: ${{ github.event_name != 'pull_request_target' }}

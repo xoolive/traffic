@@ -71,7 +71,7 @@ class Airways(GeoDBMixin):
 
     """
 
-    cache_dir: Path
+    cache_path: Path
     alternatives: dict[str, "Airways"] = dict()  # noqa: RUF012
     name: str = "default"
 
@@ -85,7 +85,7 @@ class Airways(GeoDBMixin):
         assert cache_file.exists()
         self._data = pd.read_csv(cache_file, sep=" ", header=None)
         self._data.columns = ["route", "id", "navaid", "latitude", "longitude"]
-        self._data.to_parquet(self.cache_dir / "traffic_airways.parquet")
+        self._data.to_parquet(self.cache_path / "traffic_airways.parquet")
 
     @property
     def available(self) -> bool:
@@ -96,12 +96,12 @@ class Airways(GeoDBMixin):
         if self._data is not None:
             return self._data
 
-        if not (self.cache_dir / "traffic_airways.parquet").exists():
+        if not (self.cache_path / "traffic_airways.parquet").exists():
             self.parse_data()
         else:
             _log.info("Loading airways database")
             self._data = pd.read_parquet(
-                self.cache_dir / "traffic_airways.parquet"
+                self.cache_path / "traffic_airways.parquet"
             )
 
         if self._data is not None:

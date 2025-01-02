@@ -36,7 +36,11 @@ tqdm_dict: Dict[str, ProgressbarType] = {
 }
 
 
-tqdm = tqdm_dict[tqdm_style]
+tqdm = (
+    tqdm_dict.get(tqdm_style, _tqdm_auto)
+    if tqdm_style is not None
+    else _tqdm_auto
+)
 
 # WARNING!! Don't change order of import in this file
 from .flight import Flight

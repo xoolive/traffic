@@ -1,6 +1,8 @@
 from itertools import pairwise
 from typing import List, cast
 
+import pytest
+
 import pandas as pd
 from traffic.core.flightplan import (
     Airway,
@@ -188,6 +190,7 @@ def test_flightplan() -> None:
             assert not isinstance(cur_, Point) or not isinstance(next_, Point)
 
 
+@pytest.mark.extra
 def test_points() -> None:
     one_fp = flightplans[0]
     main_points = {"TOU", "LACOU", "CNA", "MANAK", "REVTU", "ROXOG", "OCK"}

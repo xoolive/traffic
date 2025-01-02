@@ -19,6 +19,7 @@ from typing import (
 )
 
 import pitot.geodesy as geo
+from cartes.osm import Overpass
 from typing_extensions import NotRequired, TypedDict
 
 import numpy as np
@@ -1261,33 +1262,6 @@ class NavigationFeatures:
         return in_movement.before(  # type: ignore
             direction_change.start
         ).assign(parking_position=parking_position.parking_position_max)
-
-    def is_from_inertial(self, freq_threshold: float = 0.05) -> bool:
-        """
-        Returns True if ground trajectory data looks noisy.
-
-        .. warning::
-
-            This method is still experimental and tries to catch trajectories
-            based on the inertial system rather than the GPS. It catches zig-zag
-            patterns but fails to get trajectories driving between taxiways.
-
-        """
-        self = cast("Flight", self)
-
-        if "compute_track" not in self.data.columns:
-            self = self.cumulative_distance(compute_gs=False)
-
-        freq = (
-            self.diff("compute_track")
-            .compute_track_diff.round()
-            .value_counts(normalize=True)
-        )
-        if 90 not in freq.index or -90 not in freq.index:
-            return False
-        return (  # type: ignore
-            freq[90] > freq_threshold and freq[-90] > freq_threshold
-        )
 
     @flight_iterator
     def slow_taxi(

@@ -4,7 +4,7 @@ from typing import TypedDict
 
 import httpx
 
-from ... import cache_dir, tqdm_style
+from ... import cache_path, tqdm_style
 from ...core import tqdm
 
 client = httpx.Client(follow_redirects=True)
@@ -18,7 +18,7 @@ class Entry(TypedDict):
 
 class Default:
     def __init__(self) -> None:
-        cache = cache_dir / "datasets" / "default"
+        cache = cache_path / "datasets" / "default"
         if not cache.exists():
             cache.mkdir(parents=True)
 
@@ -40,7 +40,7 @@ class Default:
                                 file_handle.write(chunk)
                                 md5_hash.update(chunk)
                         else:
-                            with tqdm(  # type: ignore
+                            with tqdm(
                                 total=int(content_length),
                                 unit_scale=True,
                                 unit_divisor=1024,

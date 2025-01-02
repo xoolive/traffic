@@ -43,7 +43,7 @@ def get_coordinates(lr: Any, ns: dict[str, str]) -> Polygon:
 
 
 class AIXMAirspaceParser(Airspaces):
-    cache_dir: Path
+    cache_path: Path
 
     def __init__(
         self, data: None | GeoDataFrame, aixm_path: None | Path = None
@@ -56,7 +56,7 @@ class AIXMAirspaceParser(Airspaces):
                 raise RuntimeError(msg)
 
             # Read file in cache if present
-            airspace_file = self.cache_dir / f"{aixm_path.stem}_airspaces.pkl"
+            airspace_file = self.cache_path / f"{aixm_path.stem}_airspaces.pkl"
             if airspace_file.exists():
                 self.data = gpd.GeoDataFrame(pd.read_pickle(airspace_file))
                 return

@@ -37,6 +37,7 @@ dependencies = [
   "py7zr>=0.22.0",
   "pyarrow>=18.0.0",
   "pyopensky>=2.11",
+  "python-dotenv>=1.0.1",
   "rich>=13.9.4",
   "rs1090>=0.3.8",
   "typing-extensions>=4.12.2",
@@ -126,7 +127,13 @@ exclude = ["docs/_build"]
 
 
 [tool.pytest.ini_options]
-addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff"
+# add option --durations=10 to get an idea of slow tests
+addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff -m 'not slow and not extra'"
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "extra: marks tests as requiring private data (deselect with '-m \"not extra\"')",
+]
 testpaths = [
   "src/traffic/core/intervals.py",
   "src/traffic/core/time.py",
@@ -134,4 +141,3 @@ testpaths = [
   "src/traffic/data/datasets/",
   "tests",
 ]
-doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]

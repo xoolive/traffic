@@ -179,7 +179,7 @@ class Aircraft(DataFrameMixin):
 
     """
 
-    cache_dir: Path
+    cache_path: Path
     columns_options: ClassVar[dict[str, dict[str, Any]]] = dict(  # type: ignore
         icao24=dict(), registration=dict(), typecode=dict(), model=dict()
     )
@@ -195,7 +195,7 @@ class Aircraft(DataFrameMixin):
                 self.columns_options[column] = dict(max_width=30)
 
     def download_junzis(self) -> None:  # coverage: ignore
-        filename = self.cache_dir / "junzis_db.pkl"
+        filename = self.cache_path / "junzis_db.pkl"
         if filename.exists():
             self.data = pd.read_pickle(filename).fillna("")
 
@@ -218,7 +218,7 @@ class Aircraft(DataFrameMixin):
                         }
                     )
                 )
-                self.data.to_pickle(self.cache_dir / "junzis_db.pkl")
+                self.data.to_pickle(self.cache_path / "junzis_db.pkl")
 
     def download_opensky(self) -> None:  # coverage: ignore
         """Downloads the latest version of the OpenSky aircraft database.
@@ -247,14 +247,14 @@ class Aircraft(DataFrameMixin):
             engine="c",
             keep_default_na=False,
         )
-        self.data.to_parquet(self.cache_dir / "opensky_db.parquet")
+        self.data.to_parquet(self.cache_path / "opensky_db.parquet")
 
     @property
     def opensky_db(self) -> pd.DataFrame:
-        if not (self.cache_dir / "opensky_db.parquet").exists():
+        if not (self.cache_path / "opensky_db.parquet").exists():
             self.download_opensky()
         _log.info("Loading OpenSky aircraft database")
-        return pd.read_parquet(self.cache_dir / "opensky_db.parquet")
+        return pd.read_parquet(self.cache_path / "opensky_db.parquet")
 
     def __getitem__(self: T, name: str | list[str]) -> None | T:
         """Requests an aircraft by icao24 or registration (exact match)."""

@@ -46,7 +46,7 @@ class Navaids(GeoDBMixin):
 
     """
 
-    cache_dir: Path
+    cache_path: Path
     alternatives: ClassVar[dict[str, "Navaids"]] = dict()
     name: str = "default"
     priority: int = 0
@@ -176,19 +176,19 @@ class Navaids(GeoDBMixin):
             navaids, columns=NavaidTuple._fields
         )
 
-        self._data.to_parquet(self.cache_dir / "traffic_navaid.parquet")
+        self._data.to_parquet(self.cache_path / "traffic_navaid.parquet")
 
     @property
     def data(self) -> pd.DataFrame:
         if self._data is not None:
             return self._data
 
-        if not (self.cache_dir / "traffic_navaid.parquet").exists():
+        if not (self.cache_path / "traffic_navaid.parquet").exists():
             self.parse_data()
         else:
             _log.info("Loading navaid database")
             self._data = pd.read_parquet(
-                self.cache_dir / "traffic_navaid.parquet"
+                self.cache_path / "traffic_navaid.parquet"
             )
 
         if self._data is not None:

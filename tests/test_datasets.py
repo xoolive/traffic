@@ -1,3 +1,5 @@
+import pytest
+
 import pandas as pd
 from traffic.data.basic.navaid import Navaids
 from traffic.data.datasets.scat import SCAT
@@ -28,6 +30,7 @@ def test_scat_waypoints() -> None:
     # assert kerax.iloc[0]["longitude"] == 9.5819444
 
 
+@pytest.mark.slow
 def test_scat_weather() -> None:
     s = SCAT("scat20161015_20161021.zip", nflights=10, include_weather=True)
     assert isinstance(s.weather, pd.DataFrame)

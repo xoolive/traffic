@@ -9,7 +9,7 @@ from typing import TypedDict
 import httpx
 from tqdm.rich import tqdm
 
-from ... import cache_dir
+from ... import cache_path
 
 client = httpx.Client(follow_redirects=True)
 
@@ -51,7 +51,7 @@ class Zenodo:
     BASE_URL = "https://zenodo.org/api/records/{ident}/versions"
 
     def __init__(self, ident: str) -> None:
-        cache = cache_dir / "datasets" / "zenodo"
+        cache = cache_path / "datasets" / "zenodo"
         if not cache.exists():
             cache.mkdir(parents=True)
         if not (spec_file := (cache / ident).with_suffix(".json")).exists():

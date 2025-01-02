@@ -1,11 +1,13 @@
 from typing import cast
 
+import pytest
 from cartes.crs import CH1903p  # type: ignore
 
 from traffic.core import Traffic
 from traffic.data.samples import collections, get_sample
 
 
+@pytest.mark.slow
 def test_cpa() -> None:
     switzerland = cast(Traffic, get_sample(collections, "switzerland"))
 

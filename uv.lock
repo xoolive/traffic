@@ -2994,6 +2994,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-dotenv"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bc/57/e84d88dfe0aec03b7a2d4327012c1627ab5f03652216c63d49846d7a6c58/python-dotenv-1.0.1.tar.gz", hash = "sha256:e324ee90a023d808f1959c46bcbc04446a10ced277783dc6ee09987c37ec10ca", size = 39115 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/3e/b68c118422ec867fa7ab88444e1274aa40681c606d59ac27de5a5588f082/python_dotenv-1.0.1-py3-none-any.whl", hash = "sha256:f7b63ef50f1b690dddf550d03497b66d609393b40b564ed0d674909a68ebf16a", size = 19863 },
+]
+
+[[package]]
 name = "pytz"
 version = "2024.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3893,7 +3902,7 @@ wheels = [
 
 [[package]]
 name = "traffic"
-version = "2.11.2.dev6+g0efee26.d20250102"
+version = "2.11.2.dev7+g9f3457e.d20250102"
 source = { editable = "." }
 dependencies = [
     { name = "cartes" },
@@ -3906,6 +3915,7 @@ dependencies = [
     { name = "py7zr" },
     { name = "pyarrow" },
     { name = "pyopensky" },
+    { name = "python-dotenv" },
     { name = "rich" },
     { name = "rs1090" },
     { name = "typing-extensions" },
@@ -3968,6 +3978,7 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=18.0.0" },
     { name = "pyopensky", specifier = ">=2.11" },
     { name = "pyspark", marker = "extra == 'spark'", specifier = ">=3.5.3" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "rich", specifier = ">=13.9.4" },
     { name = "rs1090", specifier = ">=0.3.8" },
     { name = "scikit-learn", marker = "extra == 'learning'", specifier = ">=1.5.2" },
