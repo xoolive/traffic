@@ -122,11 +122,13 @@ class Airport(
         )
 
     def leaflet(self, **kwargs: Any) -> "LeafletGeoData":
+        # The code is monkey-patched in src/visualize/leaflet.py
         raise ImportError(
             "Install ipyleaflet or traffic with the leaflet extension"
         )
 
     def map_leaflet(self, **kwargs: Any) -> "Map":
+        # The code is monkey-patched in src/visualize/leaflet.py
         raise ImportError(
             "Install ipyleaflet or traffic with the leaflet extension"
         )
