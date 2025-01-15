@@ -197,9 +197,9 @@ class Generation:
                 return Traffic(df).compute_latlon_from_xy(projection)
                 # df = compute_latlon_from_xy(df, projection=projection)
             if set(["track", "groundspeed"]).issubset(set(self.features)):
-                assert (
-                    coordinates is not None
-                ), "coordinates attribute shouldn't be None"
+                assert coordinates is not None, (
+                    "coordinates attribute shouldn't be None"
+                )
                 # integrate lat/lon in df
                 df = compute_latlon_from_trackgs(
                     df, n_samples, n_obs, coordinates, forward=forward

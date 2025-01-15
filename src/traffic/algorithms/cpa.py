@@ -35,12 +35,12 @@ def combinations(
             continue
 
         clipped = t_.query(
-            f'x >= {flight.min("x")} - {lateral_separation} and '
-            f'x <= {flight.max("x")} + {lateral_separation} and '
-            f'y >= {flight.min("y")} - {lateral_separation} and '
-            f'y <= {flight.max("y")} + {lateral_separation} and '
-            f'altitude >= {flight.min("altitude")} - {vertical_separation} and '
-            f'altitude <= {flight.max("altitude")} + {vertical_separation} and '
+            f"x >= {flight.min('x')} - {lateral_separation} and "
+            f"x <= {flight.max('x')} + {lateral_separation} and "
+            f"y >= {flight.min('y')} - {lateral_separation} and "
+            f"y <= {flight.max('y')} + {lateral_separation} and "
+            f"altitude >= {flight.min('altitude')} - {vertical_separation} and "
+            f"altitude <= {flight.max('altitude')} + {vertical_separation} and "
             f'timestamp <= "{flight.stop}" and '
             f'timestamp >= "{flight.start}" '
         )

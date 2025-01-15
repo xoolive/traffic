@@ -313,7 +313,7 @@ class Navaid(NavaidTuple, PointMixin):
                 yield "description", self.description
             yield (
                 "frequency",
-                f"{self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}",
+                f"{self.frequency}{'kHz' if self.type == 'NDB' else 'MHz'}",
             )
 
     def __repr__(self) -> str:
@@ -326,7 +326,7 @@ class Navaid(NavaidTuple, PointMixin):
                 f"{self.name} ({self.type}): {self.latitude} {self.longitude}"
                 f" {self.altitude:.0f} "
                 f"{self.description if self.description is not None else ''}"
-                f" {self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}"
+                f" {self.frequency}{'kHz' if self.type == 'NDB' else 'MHz'}"
             )
 
 

@@ -1175,8 +1175,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         See how to make `flight density heatmaps </scenarios/heatmaps.html>`_
         """
         warnings.warn(
-            "agg_latlon will disappear in future versions. "
-            "Use agg_xy instead",
+            "agg_latlon will disappear in future versions. Use agg_xy instead",
             DeprecationWarning,
         )
 

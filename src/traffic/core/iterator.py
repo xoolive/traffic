@@ -284,7 +284,7 @@ def flight_iterator(
     msg = (
         "The @flight_iterator decorator can only be set on methods "
         ' annotated with an Iterator["Flight"] return type.'
-        f' Got {fun.__annotations__["return"]}'
+        f" Got {fun.__annotations__['return']}"
     )
     if not (
         fun.__annotations__["return"] == Iterator["Flight"]

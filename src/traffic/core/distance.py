@@ -80,7 +80,7 @@ def guess_airport(
 
     if warning_distance is not None and airport.distance > warning_distance:
         _log.warning(
-            f"Closest airport is more than {warning_distance*1e-3}km away "
+            f"Closest airport is more than {warning_distance * 1e-3}km away "
             f" (distance={airport.distance})"
         )
     return airport

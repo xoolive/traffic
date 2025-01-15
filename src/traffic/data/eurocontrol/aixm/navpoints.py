@@ -158,8 +158,7 @@ class AIXMNavaidParser(Navaids):
             }
 
             extension = point.find(
-                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/"
-                "aixm:extension",
+                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/aixm:extension",
                 ns,
             )
             if extension is not None:
@@ -231,8 +230,7 @@ class AIXMNavaidParser(Navaids):
             }
 
             extension = point.find(
-                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/"
-                "aixm:extension",
+                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/aixm:extension",
                 ns,
             )
             if extension is not None:
