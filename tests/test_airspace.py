@@ -14,8 +14,6 @@ else:
 def test_airspace() -> None:
     EBBU = eurofirs["EBBU"]
     EHAA = eurofirs["EHAA"]
-    assert EBBU is not None
-    assert EHAA is not None
 
     summed = EBBU + EHAA
     lon1, lon2, lat1, lat2 = summed.extent
@@ -41,5 +39,4 @@ def test_area() -> None:
 @pytest.mark.skipif(not nm_data, reason="No NM data available")
 def test_nm() -> None:
     maastricht = nm_airspaces["EDYYUTAX"]
-    assert maastricht is not None
     assert maastricht.area > 1e11

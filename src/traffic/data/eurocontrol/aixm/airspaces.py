@@ -82,12 +82,14 @@ class AIXMAirspaceParser(Airspaces):
             self.data = gpd.GeoDataFrame.from_records(self.parse_tree(tree, ns))
             self.data.to_pickle(airspace_file)
 
-    def __getitem__(self, name: str) -> None | Airspace:
+        self.data = self.data.set_geometry("geometry")
+
+    def __getitem__(self, name: str) -> Airspace:
         # in this case, running consolidate() on the whole dataset is not
         # reasonable, but it still works if we run it after the query
         subset = self.query(f'designator == "{name}"')
         if subset is None:
-            return None
+            raise AttributeError(f"Airspace {name} not found")
 
         return Airspace(
             elements=unary_union_with_alt(

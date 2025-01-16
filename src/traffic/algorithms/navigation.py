@@ -949,7 +949,7 @@ class NavigationFeatures:
             if navaids_extent is None:
                 _log.warn(msg)
                 return None
-            point_merge = navaids_extent.get(point_merge)  # type: ignore
+            point_merge = navaids_extent.get(point_merge)
             if point_merge is None:
                 _log.warn("Navaid for point_merge not found")
                 return None

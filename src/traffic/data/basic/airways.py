@@ -111,10 +111,10 @@ class Airways(GeoDBMixin):
 
         return self._data
 
-    def __getitem__(self, name: str) -> None | Route:
+    def __getitem__(self, name: str) -> Route:
         output = self.data.query("route == @name").sort_values("id")
         if output.shape[0] == 0:
-            return None
+            raise AttributeError(f"Route {name} not found")
         return Route(
             name,
             list(
@@ -132,7 +132,11 @@ class Airways(GeoDBMixin):
             ),
         )
 
-    def global_get(self, name: str) -> None | Route:
+    def global_get(self, name: str) -> Route:
+        _log.warning("Use .get() function instead", DeprecationWarning)
+        return self.get(name)
+
+    def get(self, name: str) -> Route:
         """Search for a route from all alternative data sources."""
         for _key, value in sorted(
             self.alternatives.items(),
@@ -142,7 +146,7 @@ class Airways(GeoDBMixin):
             alt = value[name]
             if alt is not None:
                 return alt
-        return None
+        raise AttributeError(f"Route {name} not found")
 
     def search(self, name: str) -> "Airways":
         """

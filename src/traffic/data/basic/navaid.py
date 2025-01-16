@@ -198,12 +198,12 @@ class Navaids(GeoDBMixin):
         return self._data
 
     @lru_cache()
-    def __getitem__(self, name: str) -> None | Navaid:
+    def __getitem__(self, name: str) -> Navaid:
         x = self.data.query(
             "description == @name.upper() or name == @name.upper()"
         )
         if x.shape[0] == 0:
-            return None
+            raise AttributeError(f"Point {name} not found")
         dic = dict(x.iloc[0])
         for key, value in dic.items():
             if isinstance(value, np.float64):
@@ -216,11 +216,11 @@ class Navaids(GeoDBMixin):
             del dic["id"]
         return Navaid(**dic)
 
-    def global_get(self, name: str) -> None | Navaid:
-        _log.warn("Use .get() function instead", DeprecationWarning)
+    def global_get(self, name: str) -> Navaid:
+        _log.warning("Use .get() function instead", DeprecationWarning)
         return self.get(name)
 
-    def get(self, name: str) -> None | Navaid:
+    def get(self, name: str) -> Navaid:
         """Search for a navaid from all alternative data sources.
 
         >>> from traffic.data import navaids
@@ -250,7 +250,7 @@ class Navaids(GeoDBMixin):
             alt = value[name]
             if alt is not None:
                 return alt
-        return None
+        raise AttributeError(f"Point {name} not found")
 
     def __iter__(self) -> Iterator[Navaid]:
         for _, x in self.data.iterrows():

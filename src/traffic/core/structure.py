@@ -155,7 +155,7 @@ class Airport(
         return p
 
     @property
-    def runways(self) -> Optional[RunwayAirport]:
+    def runways(self) -> RunwayAirport:
         """
         Get runway information associated with the airport.
 

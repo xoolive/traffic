@@ -201,19 +201,13 @@ class Runways(object):
             self._runways = pickle.load(fh)
             return self._runways
 
-    def __getitem__(
-        self, airport: Union["Airport", str]
-    ) -> Optional[RunwayAirport]:
+    def __getitem__(self, name: Union["Airport", str]) -> RunwayAirport:
         from .. import airports
 
-        airport_: Optional["Airport"] = (
-            airports[airport] if isinstance(airport, str) else airport
-        )
-        if airport_ is None:
-            return None
+        airport_ = airports[name] if isinstance(name, str) else name
         elt = self.runways.get(airport_.icao, None)
         if elt is None:
-            return None
+            raise AttributeError(f"Runway information not found for {name}")
         return RunwayAirport(runways=elt)
 
     def download_runways(self) -> None:  # coverage: ignore

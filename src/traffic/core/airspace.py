@@ -65,10 +65,10 @@ class Airspaces(DataFrameMixin):
         lower=dict(),
     )
 
-    def __getitem__(self, name: str) -> None | Airspace:
+    def __getitem__(self, name: str) -> Airspace:
         subset = self.consolidate().query(f'designator == "{name}"')
         if subset is None:
-            return None
+            raise AttributeError(f"Airspace {name} not found")
 
         return Airspace(
             elements=unary_union_with_alt(

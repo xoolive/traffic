@@ -31,10 +31,10 @@ class AIXMRoutesParser(Airways):
         return instance
 
     @lru_cache()
-    def __getitem__(self, name: str) -> None | Route:
+    def __getitem__(self, name: str) -> Route:
         output = self.data.query("name == @name")
         if output.shape[0] == 0:
-            return None
+            raise AttributeError(f"Route {name} not found")
 
         cumul = []
         for x, d in output.groupby("routeFormed"):

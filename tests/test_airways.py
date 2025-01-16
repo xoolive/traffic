@@ -4,8 +4,8 @@ from traffic.data import airways, eurofirs
 
 
 def test_basic() -> None:
-    foo = airways["FOO"]
-    assert foo is None
+    with pytest.raises(AttributeError):
+        _foo = airways["FOO"]
 
     l888 = airways["L888"]
     assert l888 is not None
@@ -25,22 +25,20 @@ def test_through_extent() -> None:
     air_ext = airways.extent(LSAS)
     assert air_ext is not None
     swiss_length = max(
-        air_ext[route].project_shape().length  # type: ignore
+        air_ext[route].project_shape().length
         for route in air_ext.search("DITON").data.route
     )
     full_length = max(
-        airways[route].project_shape().length  # type: ignore
+        airways[route].project_shape().length
         for route in airways.search("DITON").data.route
     )
     assert swiss_length < 1e6 < full_length
 
     LFBB = eurofirs["LFBB"]
-    assert LFBB is not None
     air_ext = airways.extent(LFBB)
     assert air_ext is not None
 
     short_un871 = air_ext["UN871"]
-    assert short_un871 is not None
     assert list(navaid.name for navaid in short_un871.navaids) == [
         "LARDA",
         "RONNY",
