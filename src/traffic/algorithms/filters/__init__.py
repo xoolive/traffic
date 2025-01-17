@@ -206,6 +206,9 @@ class FilterAboveSigmaMedian(FilterBase):
                 kernels = tuple(kernels)
 
             for size in kernels:
+                if size > data.shape[0]:
+                    continue
+
                 # Prepare each feature for the filtering
                 df = self.cascaded_filters(
                     data[["timestamp", column]], column, size
