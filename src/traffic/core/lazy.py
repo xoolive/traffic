@@ -255,6 +255,7 @@ class LazyTraffic:
                         total=len(tasks),
                         desc=desc,
                         leave=False,
+                        **self.tqdm_kw,
                     )
                 for future in tasks_completed:
                     cumul.append(future.result())
