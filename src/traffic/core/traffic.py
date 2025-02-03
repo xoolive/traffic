@@ -181,6 +181,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         cls,
         metadata: str | Path,
         trajectories: str | Path,
+        ems: None | str | Path,
     ) -> Traffic:
         """Parses data as usually provided by FlightRadar24.
 
@@ -192,11 +193,14 @@ class Traffic(HBoxMixin, GeographyMixin):
         :param trajectories: a zip file containing one file per flight with
             trajectory information.
 
+        :param ems: a zip file containing one file per flight with
+            extended Mode-S information.
+
         :return: a regular Traffic object.
         """
         from ..data.datasets.flightradar24 import FlightRadar24
 
-        return FlightRadar24.from_archive(metadata, trajectories)
+        return FlightRadar24.from_archive(metadata, trajectories, ems)
 
     # --- Special methods ---
     # operators + (union), & (intersection), - (difference), ^ (xor)
@@ -532,20 +536,31 @@ class Traffic(HBoxMixin, GeographyMixin):
                 other_df = other_stats.query("icao24 == @flight.icao24")
                 if other_df.shape[0] > 0:
                     other_interval = IntervalCollection(other_df)
-                    if any(
-                        Interval(flight.start, flight.stop).overlap(other)
-                        for other in other_interval
-                    ):
-                        if flight_ids:
-                            line = other_df.query(
-                                "start <= @flight.stop and "
-                                "stop >= @flight.start"
-                            )
-                            cumul.append(
-                                flight.assign(flight_id=line.iloc[0].flight_id)
-                            )
-                        else:
-                            cumul.append(flight)
+                    self_interval = Interval(flight.start, flight.stop)
+
+                    for other in other_interval:
+                        if self_interval.overlap(other):
+                            inter_interval = self_interval.intersection(other)
+                            if flight_ids:
+                                line = other_df.query(
+                                    "start <= @flight.stop and "
+                                    "stop >= @flight.start"
+                                )
+                                cumul.append(
+                                    flight.between(
+                                        inter_interval.start,
+                                        inter_interval.stop,
+                                        strict=False,
+                                    ).assign(flight_id=line.iloc[0].flight_id)
+                                )
+                            else:
+                                cumul.append(
+                                    flight.between(
+                                        inter_interval.start,
+                                        inter_interval.stop,
+                                        strict=False,
+                                    )
+                                )
             traffic = Traffic.from_flights(cumul)
             if traffic is not None:
                 return traffic
@@ -839,6 +854,10 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     @lazy_evaluation()
     def last(self, /, **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
+    def typecode_openap(self, /, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()

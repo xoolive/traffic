@@ -157,6 +157,7 @@ class FlightRadar24:
         cls,
         metadata: str | Path,
         trajectories: str | Path,
+        ems: None | str | Path,
         **kwargs: Any,
     ) -> Traffic:  # coverage: ignore
         """Parses data as usually provided by FlightRadar24.
@@ -169,24 +170,56 @@ class FlightRadar24:
         :param trajectories: a zip file containing one file per flight with
             trajectory information.
 
+        :param ems: a zip file containing one file per flight with
+            extended Mode-S information.
+
         :return: a regular Traffic object.
         """
         fr24_meta = pd.read_csv(metadata)
 
-        def extract_flights(filename: str | Path) -> Iterator[pd.DataFrame]:
-            with zipfile.ZipFile(filename) as zfh:
-                for fileinfo in tqdm(zfh.infolist()):
-                    with zfh.open(fileinfo) as fh:
-                        stem = fileinfo.filename.split(".")[0]
-                        flight_id = stem.split("_")[1]
-                        b = BytesIO(fh.read())
-                        b.seek(0)
-                        yield pd.read_csv(b).assign(flight_id=(flight_id))
+        def extract_flights(
+            trajectories_filename: str | Path,
+            ems_filename: None | str | Path,
+        ) -> Iterator[pd.DataFrame]:
+            with zipfile.ZipFile(trajectories_filename) as zfh_traj:
+                if ems_filename:
+                    with zipfile.ZipFile(ems_filename) as zfh_ems:
+                        for trajectory, ems in tqdm(
+                            zip(zfh_traj.infolist(), zfh_ems.infolist()),
+                            total=len(zfh_traj.infolist()),
+                        ):
+                            with zfh_traj.open(trajectory) as fh_traj:
+                                with zfh_ems.open(ems) as fh_ems:
+                                    stem = trajectory.filename.split(".")[0]
+                                    flight_id = stem.split("_")[1]
+                                    b = BytesIO(fh_traj.read())
+                                    b.seek(0)
+                                    df_traj = pd.read_csv(b)
+                                    c = BytesIO(fh_ems.read())
+                                    c.seek(0)
+                                    df_ems = (
+                                        pd.read_csv(c)
+                                        .rename(
+                                            columns={"timestamp": "snapshot_id"}
+                                        )
+                                        .drop(columns=["flight_id"])
+                                    )
+                                    yield df_traj.merge(
+                                        df_ems, on="snapshot_id", how="outer"
+                                    ).assign(flight_id=(flight_id))
+                else:
+                    for fileinfo in tqdm(zfh_traj.infolist()):
+                        with zfh_traj.open(fileinfo) as fh:
+                            stem = fileinfo.filename.split(".")[0]
+                            flight_id = stem.split("_")[1]
+                            b = BytesIO(fh.read())
+                            b.seek(0)
+                            yield pd.read_csv(b).assign(flight_id=(flight_id))
 
-        df = pd.concat(extract_flights(trajectories))
+        df = pd.concat(extract_flights(trajectories, ems))
 
         return Traffic(
-            df.rename(columns=dict(heading="track"))
+            df.rename(columns=dict(heading_x="track", heading="track"))
             .merge(
                 fr24_meta.rename(
                     columns=dict(

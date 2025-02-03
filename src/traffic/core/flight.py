@@ -37,6 +37,7 @@ from typing_extensions import Self
 
 import numpy as np
 import pandas as pd
+import openap
 import pyproj
 from pandas.core.internals import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
@@ -857,6 +858,15 @@ class Flight(
             yield (coords[0], coords[1], time.to_pydatetime().timestamp())
 
     # --- Properties (and alike) ---
+
+    def typecode_openap(self) -> bool:
+        typecode = self.typecode
+        if typecode:
+            return self.typecode.lower() in openap.prop.available_aircraft(
+                use_synonym=True
+            )
+        else:
+            return False
 
     def min(self, feature: str) -> Any:
         """Returns the minimum value of given feature.
