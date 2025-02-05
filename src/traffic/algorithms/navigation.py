@@ -307,8 +307,8 @@ class NavigationFeatures:
             ILS and flight trajectory.
         :param min_duration: minimum duration a flight has to spend on the ILS
             to be considered as aligned.
-        :param max_feet_above_airport: maximum height above airport ground level
-            to be considered as aligned.
+        :param max_feet_above_airport: maximum altitude AGL, relative to the
+            airport, that a flight can be to be considered as aligned.
 
         Example usage:
 
@@ -373,7 +373,8 @@ class NavigationFeatures:
                     if (
                         chunk.longer_than(min_duration)
                         and not pd.isna(altmin := chunk.altitude_min)
-                        and altmin < (_airport.altitude or 0) + max_feet_above_airport
+                        and altmin
+                        < (_airport.altitude or 0) + max_feet_above_airport
                     ):
                         chunks.append(
                             chunk.assign(
