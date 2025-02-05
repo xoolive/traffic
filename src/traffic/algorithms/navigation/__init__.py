@@ -297,6 +297,7 @@ class NavigationFeatures:
         airport: Union[None, str, "Airport"],
         angle_tolerance: float = 0.1,
         min_duration: deltalike = "1 min",
+        max_feet_above_airport: float = 5000,
     ) -> Iterator["Flight"]:
         """Iterates on all segments of trajectory aligned with the ILS of the
         given airport. The runway number is appended as a new ``ILS`` column.
@@ -305,6 +306,8 @@ class NavigationFeatures:
         :param angle_tolerance: maximum tolerance on bearing difference between
             ILS and flight trajectory.
         :param min_duration: minimum duration a flight has to spend on the ILS
+            to be considered as aligned.
+        :param max_feet_above_airport: maximum height above airport ground level
             to be considered as aligned.
 
         Example usage:
@@ -370,7 +373,7 @@ class NavigationFeatures:
                     if (
                         chunk.longer_than(min_duration)
                         and not pd.isna(altmin := chunk.altitude_min)
-                        and altmin < 5000
+                        and altmin < (_airport.altitude or 0) + max_feet_above_airport
                     ):
                         chunks.append(
                             chunk.assign(
