@@ -216,6 +216,52 @@ class Traffic(HBoxMixin, GeographyMixin):
             return self
         return self.__class__(pd.concat([self.data, other.data], sort=False))
 
+    @classmethod
+    def from_readsb(cls, filename: Union[Path, str]) -> Self:
+        trace_columns = [
+            "seconds_after_timestamp",
+            "latitude",
+            "longitude",
+            "altitude",
+            "groundspeed",
+            "track",
+            "flags",
+            "vrate",
+            "aircraft",
+            "type",
+            "geometric_altitude",
+            "geometric_vrate",
+            "ias",
+            "roll",
+        ]
+
+        readsb_data = pd.read_json(filename).rename(columns={"icao": "icao24"})
+        trace_data = pd.DataFrame.from_records(
+            readsb_data.trace, columns=trace_columns
+        )
+        aircraft_data = pd.json_normalize(trace_data.aircraft)
+
+        aircraft_data.rename(
+            columns={c: "aircraft_" + c for c in aircraft_data.columns}
+        )
+        readsb_data["position_time_utc"] = readsb_data[
+            "timestamp"
+        ] + trace_data["seconds_after_timestamp"].map(
+            lambda s: timedelta(seconds=s)
+        )
+        readsb_data = (
+            readsb_data.drop(columns=["timestamp", "trace"])
+            .join(trace_data.drop(columns=["seconds_after_timestamp"]))
+            .rename(columns={"position_time_utc": "timestamp"})
+            .join(
+                aircraft_data.rename(
+                    columns={c: "aircraft_" + c for c in aircraft_data.columns}
+                )
+            )
+        )
+
+        return cls(readsb_data)
+
     def __radd__(
         self, other: Union[Literal[0], Flight, "Traffic"]
     ) -> "Traffic":
