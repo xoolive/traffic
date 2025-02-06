@@ -67,11 +67,11 @@ full_flight_short: Flight
 lfbo_tma: Airspace
 noisy: Flight
 quickstart: Traffic
+readsb: Traffic
 sample_dump1090: Path
 switzerland: Traffic
 texas_longhorn: Flight
 zurich_airport: Traffic
-readsb: Traffic
 
 
 @lru_cache()

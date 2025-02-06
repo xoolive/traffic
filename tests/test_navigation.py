@@ -63,6 +63,7 @@ def test_landing_ils_high_elevation() -> None:
     )
     assert aligned is not None
     assert aligned.ILS_max == "26"
+    assert aligned.data.altitude.min() == 5575
 
 
 @pytest.mark.slow

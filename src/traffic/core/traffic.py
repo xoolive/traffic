@@ -198,26 +198,14 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         return FlightRadar24.from_archive(metadata, trajectories)
 
-    # --- Special methods ---
-    # operators + (union), & (intersection), - (difference), ^ (xor)
-
-    def __add__(self, other: Literal[0] | Flight | Traffic) -> Traffic:
-        """Concatenation operator.
-
-        :param other: is the other Flight or Traffic.
-
-        :return: The sum of two Traffic returns a Traffic collection.
-            Summing a Traffic with 0 returns the same Traffic, for compatibility
-            reasons with the sum() builtin.
-
-        """
-        # useful for compatibility with sum() function
-        if other == 0:
-            return self
-        return self.__class__(pd.concat([self.data, other.data], sort=False))
-
     @classmethod
     def from_readsb(cls, filename: Union[Path, str]) -> Self:
+        """Parses data in readsb `trace json
+        <https://github.com/wiedehopf/readsb/blob/dev/README-json.md#trace-jsons>`_ format
+
+        :param filename: a json file with ADSB traces
+        :return: a regular Traffic object.
+        """
         trace_columns = [
             "seconds_after_timestamp",
             "latitude",
@@ -261,6 +249,24 @@ class Traffic(HBoxMixin, GeographyMixin):
         )
 
         return cls(readsb_data)
+
+    # --- Special methods ---
+    # operators + (union), & (intersection), - (difference), ^ (xor)
+
+    def __add__(self, other: Literal[0] | Flight | Traffic) -> Traffic:
+        """Concatenation operator.
+
+        :param other: is the other Flight or Traffic.
+
+        :return: The sum of two Traffic returns a Traffic collection.
+            Summing a Traffic with 0 returns the same Traffic, for compatibility
+            reasons with the sum() builtin.
+
+        """
+        # useful for compatibility with sum() function
+        if other == 0:
+            return self
+        return self.__class__(pd.concat([self.data, other.data], sort=False))
 
     def __radd__(
         self, other: Union[Literal[0], Flight, "Traffic"]
