@@ -46,7 +46,7 @@ class Navaids(GeoDBMixin):
 
     """
 
-    cache_dir: Path
+    cache_path: Path
     alternatives: ClassVar[dict[str, "Navaids"]] = dict()
     name: str = "default"
     priority: int = 0
@@ -176,19 +176,19 @@ class Navaids(GeoDBMixin):
             navaids, columns=NavaidTuple._fields
         )
 
-        self._data.to_parquet(self.cache_dir / "traffic_navaid.parquet")
+        self._data.to_parquet(self.cache_path / "traffic_navaid.parquet")
 
     @property
     def data(self) -> pd.DataFrame:
         if self._data is not None:
             return self._data
 
-        if not (self.cache_dir / "traffic_navaid.parquet").exists():
+        if not (self.cache_path / "traffic_navaid.parquet").exists():
             self.parse_data()
         else:
             _log.info("Loading navaid database")
             self._data = pd.read_parquet(
-                self.cache_dir / "traffic_navaid.parquet"
+                self.cache_path / "traffic_navaid.parquet"
             )
 
         if self._data is not None:
@@ -198,12 +198,12 @@ class Navaids(GeoDBMixin):
         return self._data
 
     @lru_cache()
-    def __getitem__(self, name: str) -> None | Navaid:
+    def __getitem__(self, name: str) -> Navaid:
         x = self.data.query(
             "description == @name.upper() or name == @name.upper()"
         )
         if x.shape[0] == 0:
-            return None
+            raise AttributeError(f"Point {name} not found")
         dic = dict(x.iloc[0])
         for key, value in dic.items():
             if isinstance(value, np.float64):
@@ -216,11 +216,11 @@ class Navaids(GeoDBMixin):
             del dic["id"]
         return Navaid(**dic)
 
-    def global_get(self, name: str) -> None | Navaid:
-        _log.warn("Use .get() function instead", DeprecationWarning)
+    def global_get(self, name: str) -> Navaid:
+        _log.warning("Use .get() function instead", DeprecationWarning)
         return self.get(name)
 
-    def get(self, name: str) -> None | Navaid:
+    def get(self, name: str) -> Navaid:
         """Search for a navaid from all alternative data sources.
 
         >>> from traffic.data import navaids
@@ -250,7 +250,7 @@ class Navaids(GeoDBMixin):
             alt = value[name]
             if alt is not None:
                 return alt
-        return None
+        raise AttributeError(f"Point {name} not found")
 
     def __iter__(self) -> Iterator[Navaid]:
         for _, x in self.data.iterrows():

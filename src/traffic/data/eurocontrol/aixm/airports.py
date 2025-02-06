@@ -13,7 +13,7 @@ from ....core.mixins import DataFrameMixin
 
 
 class AIXMAirportParser(DataFrameMixin):
-    cache_dir: Path
+    cache_path: Path
 
     def __init__(
         self,
@@ -29,7 +29,7 @@ class AIXMAirportParser(DataFrameMixin):
                 raise RuntimeError(msg)
 
             # Read file in cache if present
-            airports_file = self.cache_dir / f"{aixm_path.stem}_airports.pkl"
+            airports_file = self.cache_path / f"{aixm_path.stem}_airports.pkl"
             if airports_file.exists():
                 self.data = gpd.GeoDataFrame(pd.read_pickle(airports_file))
                 return

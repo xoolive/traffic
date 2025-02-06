@@ -14,32 +14,33 @@ from typing import (
 import pandas as pd
 import pyproj
 
-from ..core import Flight, tqdm
 from ..core.mixins import DataFrameMixin
 
 if TYPE_CHECKING:
     from cartopy import crs
 
-    from ..core import Traffic
+    from ..core import Flight, Traffic
 
 _log = logging.getLogger(__name__)
 
 
 def combinations(
-    t: "Traffic", lateral_separation: float, vertical_separation: float
-) -> Iterator[Tuple[Flight, Flight]]:
+    t: "Traffic",
+    lateral_separation: float,
+    vertical_separation: float,
+) -> Iterator[Tuple["Flight", "Flight"]]:
     for flight in t:
         t_ = t.query(f'icao24 != "{flight.icao24}"')
         if t_ is None:
             continue
 
         clipped = t_.query(
-            f'x >= {flight.min("x")} - {lateral_separation} and '
-            f'x <= {flight.max("x")} + {lateral_separation} and '
-            f'y >= {flight.min("y")} - {lateral_separation} and '
-            f'y <= {flight.max("y")} + {lateral_separation} and '
-            f'altitude >= {flight.min("altitude")} - {vertical_separation} and '
-            f'altitude <= {flight.max("altitude")} + {vertical_separation} and '
+            f"x >= {flight.min('x')} - {lateral_separation} and "
+            f"x <= {flight.max('x')} + {lateral_separation} and "
+            f"y >= {flight.min('y')} - {lateral_separation} and "
+            f"y <= {flight.max('y')} + {lateral_separation} and "
+            f"altitude >= {flight.min('altitude')} - {vertical_separation} and "
+            f"altitude <= {flight.max('altitude')} + {vertical_separation} and "
             f'timestamp <= "{flight.stop}" and '
             f'timestamp >= "{flight.start}" '
         )
@@ -52,7 +53,9 @@ def combinations(
 
 class CPA(DataFrameMixin):
     def aggregate(
-        self, lateral_separation: float = 5, vertical_separation: float = 1000
+        self,
+        lateral_separation: float = 5,
+        vertical_separation: float = 1000,
     ) -> "CPA":
         return (
             self.assign(
@@ -172,7 +175,7 @@ def closest_point_of_approach(
     if isinstance(projection, crs.Projection):
         projection = pyproj.Proj(projection.proj4_init)
 
-    def yield_pairs(t_chunk: "Traffic") -> Iterator[Tuple[Flight, Flight]]:
+    def yield_pairs(t_chunk: "Traffic") -> Iterator[Tuple["Flight", "Flight"]]:
         """
         This function yields all pairs of possible candidates for a CPA
         calculation.
@@ -213,6 +216,8 @@ def closest_point_of_approach(
     # Multiprocessing is implemented on each timerange slot only.
     # TODO: it would probably be more efficient to multiprocess over each
     # t_chunk rather than multiprocess the distance computation.
+
+    from ..core import Flight, tqdm
 
     for _, t_chunk in tqdm(
         t_xyt.groupby("round_t"), total=len(set(t_xyt.data.round_t))

@@ -42,7 +42,7 @@ class Airports(GeoDBMixin):
 
     """
 
-    cache_dir: Path
+    cache_path: Path
     expiration_days: None | int
 
     src_dict: ClassVar[dict[str, tuple[str, str]]] = dict(
@@ -113,7 +113,7 @@ class Airports(GeoDBMixin):
             ]
         ]
 
-        self._data.to_parquet(self.cache_dir / "airports_ourairports.parquet")
+        self._data.to_parquet(self.cache_path / "airports_ourairports.parquet")
 
     def download_fr24(self) -> None:  # coverage: ignore
         c = client.get(
@@ -132,7 +132,7 @@ class Airports(GeoDBMixin):
                 }
             )
         )
-        self._data.to_parquet(self.cache_dir / "airports_fr24.parquet")
+        self._data.to_parquet(self.cache_path / "airports_fr24.parquet")
 
     @property
     def data(self) -> pd.DataFrame:
@@ -141,18 +141,18 @@ class Airports(GeoDBMixin):
 
         cache_file, method_name = self.src_dict[self._src]
 
-        if not (self.cache_dir / cache_file).exists():
+        if not (self.cache_path / cache_file).exists():
             getattr(self, method_name)()
 
-        last_modification = (self.cache_dir / cache_file).lstat().st_mtime
+        last_modification = (self.cache_path / cache_file).lstat().st_mtime
         delta = pd.Timestamp("now") - pd.Timestamp(last_modification * 1e9)
-        if delta > cache_expiration:
+        if cache_expiration is not None and delta > cache_expiration:
             try:
                 getattr(self, method_name)()
             except httpx.TransportError:
                 pass
 
-        self._data = pd.read_parquet(self.cache_dir / cache_file)
+        self._data = pd.read_parquet(self.cache_path / cache_file)
 
         return self._data
 

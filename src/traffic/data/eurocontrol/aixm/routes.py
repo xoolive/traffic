@@ -22,7 +22,7 @@ class AIXMRoutesParser(Airways):
     name: str = "aixm_airways"
     filename: Path
     priority: int = 2
-    cache_dir: Path
+    cache_path: Path
 
     @classmethod
     def from_file(cls, filename: str | Path, **kwargs: Any) -> Self:
@@ -31,10 +31,10 @@ class AIXMRoutesParser(Airways):
         return instance
 
     @lru_cache()
-    def __getitem__(self, name: str) -> None | Route:
+    def __getitem__(self, name: str) -> Route:
         output = self.data.query("name == @name")
         if output.shape[0] == 0:
-            return None
+            raise AttributeError(f"Route {name} not found")
 
         cumul = []
         for x, d in output.groupby("routeFormed"):
@@ -75,7 +75,7 @@ class AIXMRoutesParser(Airways):
         if self._data is not None:
             return self._data
 
-        cache_file = self.cache_dir / (self.filename.stem + "_airways.parquet")
+        cache_file = self.cache_path / (self.filename.stem + "_airways.parquet")
         if not cache_file.exists():
             self._data = self.parse_data()
             if self._data is not None:

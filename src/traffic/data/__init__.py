@@ -4,7 +4,14 @@ from typing import TYPE_CHECKING, Any, Dict
 
 from httpx import Client
 
-from .. import cache_dir, config, config_file
+from .. import (
+    aircraft_db_path,
+    aixm_path_str,
+    cache_path,
+    config,
+    config_file,
+    nm_path_str,
+)
 
 if TYPE_CHECKING:
     from .adsb.opensky import OpenSky
@@ -26,24 +33,24 @@ if TYPE_CHECKING:
 # Parse configuration and input specific parameters in below classes
 
 __all__ = [
+    "AllFT",
+    "Navaids",
     "aircraft",
     "airports",
     "airways",
-    "navaids",
-    "runways",
     "aixm_airports",
     "aixm_airspaces",
     "aixm_airways",
     "aixm_navaids",
+    "client",
+    "eurofirs",
+    "navaids",
     "nm_airspaces",
     "nm_airways",
     "nm_freeroute",
     "nm_navaids",
-    "eurofirs",
     "opensky",
-    "client",
-    "AllFT",
-    "Navaids",
+    "runways",
 ]
 
 aircraft: "Aircraft"
@@ -63,22 +70,6 @@ opensky: "OpenSky"
 client: Client
 
 
-aixm_path_str = config.get("global", "aixm_path", fallback="")
-nm_path_str = config.get("global", "nm_path", fallback="")
-
-# We keep "" for forcing to no proxy
-
-http_proxy = config.get("network", "http.proxy", fallback="<>")
-https_proxy = config.get("network", "https.proxy", fallback="<>")
-paramiko_proxy = config.get("network", "ssh.proxycommand", fallback="")
-
-proxy_values = dict(
-    (key, value)
-    for key, value in [("http", http_proxy), ("https", https_proxy)]
-    if value != "<>"
-)
-
-
 _cached_imports: Dict[str, Any] = dict()
 
 _log = logging.getLogger(__name__)
@@ -92,11 +83,10 @@ def __getattr__(name: str) -> Any:
     if name == "aircraft":
         from .basic.aircraft import Aircraft
 
-        Aircraft.cache_dir = cache_dir
+        Aircraft.cache_path = cache_path
 
-        filename = config.get("aircraft", "database", fallback="")
-        if filename != "":
-            res = Aircraft.from_file(filename)
+        if aircraft_db_path is not None and aircraft_db_path != "":
+            res = Aircraft.from_file(aircraft_db_path)
             rename_cols = dict(
                 (value, key)  # yes, reversed...
                 for key, value in config["aircraft"].items()
@@ -112,7 +102,7 @@ def __getattr__(name: str) -> Any:
     if name == "airports_fr24":
         from .basic.airports import Airports
 
-        Airports.cache_dir = cache_dir
+        Airports.cache_path = cache_path
         res = Airports()
         res._src = "fr24"
         _cached_imports[name] = res
@@ -121,7 +111,7 @@ def __getattr__(name: str) -> Any:
     if name == "airports":
         from .basic.airports import Airports
 
-        Airports.cache_dir = cache_dir
+        Airports.cache_path = cache_path
         res = Airports()
         _cached_imports[name] = res
         return res
@@ -129,7 +119,7 @@ def __getattr__(name: str) -> Any:
     if name == "airways":
         from .basic.airways import Airways
 
-        Airways.cache_dir = cache_dir
+        Airways.cache_path = cache_path
         res = Airways()
         _cached_imports[name] = res
         return res
@@ -142,7 +132,7 @@ def __getattr__(name: str) -> Any:
     if name == "navaids":
         from .basic.navaid import Navaids
 
-        Navaids.cache_dir = cache_dir
+        Navaids.cache_path = cache_path
         res = Navaids()
         _cached_imports[name] = res
         return res
@@ -150,23 +140,27 @@ def __getattr__(name: str) -> Any:
     if name == "aixm_navaids":  # coverage: ignore
         from .eurocontrol.aixm.navpoints import AIXMNavaidParser
 
-        AIXMNavaidParser.cache_dir = cache_dir
-        res = AIXMNavaidParser.from_file(Path(aixm_path_str))
+        AIXMNavaidParser.cache_path = cache_path
+        res = AIXMNavaidParser.from_file(
+            Path(aixm_path_str if aixm_path_str else "")
+        )
         _cached_imports[name] = res
         return res
 
     if name == "aixm_airways":  # coverage: ignore
         from .eurocontrol.aixm.routes import AIXMRoutesParser
 
-        AIXMRoutesParser.cache_dir = cache_dir
-        res = AIXMRoutesParser.from_file(Path(aixm_path_str))
+        AIXMRoutesParser.cache_path = cache_path
+        res = AIXMRoutesParser.from_file(
+            Path(aixm_path_str if aixm_path_str else "")
+        )
         _cached_imports[name] = res
         return res
 
     if name == "aixm_airports":  # coverage: ignore
         from .eurocontrol.aixm.airports import AIXMAirportParser
 
-        AIXMAirportParser.cache_dir = cache_dir
+        AIXMAirportParser.cache_path = cache_path
         res = AIXMAirportParser(
             data=None,
             aixm_path=Path(aixm_path_str)
@@ -179,7 +173,7 @@ def __getattr__(name: str) -> Any:
     if name == "aixm_airspaces":  # coverage: ignore
         from .eurocontrol.aixm.airspaces import AIXMAirspaceParser
 
-        AIXMAirspaceParser.cache_dir = cache_dir
+        AIXMAirspaceParser.cache_path = cache_path
         res = AIXMAirspaceParser(
             data=None,
             aixm_path=Path(aixm_path_str)
@@ -192,7 +186,7 @@ def __getattr__(name: str) -> Any:
     if name == "nm_airspaces":  # coverage: ignore
         from .eurocontrol.ddr.airspaces import NMAirspaceParser
 
-        if nm_path_str != "":  # coverage: ignore
+        if nm_path_str is not None:  # coverage: ignore
             NMAirspaceParser.nm_path = Path(nm_path_str)
         res = NMAirspaceParser(data=None, config_file=config_file)
         _cached_imports[name] = res
@@ -201,7 +195,7 @@ def __getattr__(name: str) -> Any:
     if name == "nm_freeroute":  # coverage: ignore
         from .eurocontrol.ddr.freeroute import NMFreeRouteParser
 
-        if nm_path_str != "":  # coverage: ignore
+        if nm_path_str is not None:  # coverage: ignore
             NMFreeRouteParser.nm_path = Path(nm_path_str)
         res = NMFreeRouteParser(data=None, config_file=config_file)
         _cached_imports[name] = res
@@ -210,14 +204,14 @@ def __getattr__(name: str) -> Any:
     if name == "nm_navaids":  # coverage: ignore
         from .eurocontrol.ddr.navpoints import NMNavaids
 
-        res = NMNavaids.from_file(nm_path_str)
+        res = NMNavaids.from_file(nm_path_str if nm_path_str else "")
         _cached_imports[name] = res
         return res
 
     if name == "nm_airways":
         from .eurocontrol.ddr.routes import NMRoutes
 
-        if nm_path_str != "":  # coverage: ignore
+        if nm_path_str is not None:  # coverage: ignore
             NMRoutes.nm_path = Path(nm_path_str)
         res = NMRoutes()
         _cached_imports[name] = res
@@ -233,13 +227,13 @@ def __getattr__(name: str) -> Any:
     if name == "runways":
         from .basic.runways import Runways
 
-        Runways.cache_dir = cache_dir
+        Runways.cache_path = cache_path
         res = Runways()
         _cached_imports[name] = res
         return res
 
     if name == "client":
-        res = Client(follow_redirects=True)
+        res = Client(follow_redirects=True, verify=False)
         _cached_imports[name] = res
         return res
 

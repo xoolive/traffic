@@ -36,7 +36,11 @@ tqdm_dict: Dict[str, ProgressbarType] = {
 }
 
 
-tqdm = tqdm_dict[tqdm_style]
+tqdm = (
+    tqdm_dict.get(tqdm_style, _tqdm_auto)
+    if tqdm_style is not None
+    else _tqdm_auto
+)
 
 # WARNING!! Don't change order of import in this file
 from .flight import Flight
@@ -49,15 +53,15 @@ from .flightplan import FlightPlan
 
 
 __all__ = [
+    "Airspace",
     "Flight",
     "FlightIterator",
-    "Traffic",
-    "Airspace",
-    "StateVectors",
     "FlightPlan",
     "LazyTraffic",
-    "loglevel",
+    "StateVectors",
+    "Traffic",
     "faulty_flight",
+    "loglevel",
     "tqdm",
 ]
 

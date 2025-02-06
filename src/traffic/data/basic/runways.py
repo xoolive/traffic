@@ -151,7 +151,7 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
         if kwargs.get("mode", None) == "geometry":
             params = {**{"strokeWidth": 4, "stroke": "black"}, **kwargs}
             del params["mode"]
-            return super().geoencode().mark_geoshape(**params)
+            return super().geoencode().mark_geoshape(**params)  # type: ignore
         elif kwargs.get("mode", None) == "labels":
             params = {
                 **{"baseline": "middle", "dy": 20, "fontSize": 18},
@@ -162,9 +162,9 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
                 longitude="longitude:Q", latitude="latitude:Q", text="name:N"
             )
             rwy_layers = [
-                rwy_labels.transform_filter(
-                    alt.datum.name == name  # type: ignore
-                ).mark_text(angle=bearing, **params)
+                rwy_labels.transform_filter(alt.datum.name == name).mark_text(
+                    angle=bearing, **params
+                )
                 for (name, bearing) in zip(self.data.name, self.data.bearing)
             ]
 
@@ -174,12 +174,12 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
 
 
 class Runways(object):
-    cache_dir: Optional[Path] = None
+    cache_path: Optional[Path] = None
 
     def __init__(self) -> None:
         self._runways: Optional[RunwaysType] = None
-        assert self.cache_dir is not None
-        self._cache = self.cache_dir / "runways_ourairports.pkl"
+        assert self.cache_path is not None
+        self._cache = self.cache_path / "runways_ourairports.pkl"
 
     @property
     def runways(self) -> RunwaysType:
@@ -191,7 +191,7 @@ class Runways(object):
 
         last_modification = self._cache.lstat().st_mtime
         delta = pd.Timestamp("now") - pd.Timestamp(last_modification * 1e9)
-        if delta > cache_expiration:
+        if cache_expiration is not None and delta > cache_expiration:
             try:
                 self.download_runways()
             except httpx.TransportError:
@@ -201,19 +201,13 @@ class Runways(object):
             self._runways = pickle.load(fh)
             return self._runways
 
-    def __getitem__(
-        self, airport: Union["Airport", str]
-    ) -> Optional[RunwayAirport]:
+    def __getitem__(self, name: Union["Airport", str]) -> RunwayAirport:
         from .. import airports
 
-        airport_: Optional["Airport"] = (
-            airports[airport] if isinstance(airport, str) else airport
-        )
-        if airport_ is None:
-            return None
+        airport_ = airports[name] if isinstance(name, str) else name
         elt = self.runways.get(airport_.icao, None)
         if elt is None:
-            return None
+            raise AttributeError(f"Runway information not found for {name}")
         return RunwayAirport(runways=elt)
 
     def download_runways(self) -> None:  # coverage: ignore

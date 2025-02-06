@@ -3,7 +3,6 @@ from traffic.data import eurofirs, navaids
 
 def test_getter() -> None:
     narak = navaids["NARAK"]
-    assert narak is not None
     assert narak.latlon == (44.29527778, 1.74888889)
     assert narak.lat == 44.29527778
     assert narak.lon == 1.74888889
@@ -12,14 +11,12 @@ def test_getter() -> None:
 
 def test_extent() -> None:
     gaithersburg = navaids["GAI"]
-    assert gaithersburg is not None
     assert gaithersburg.type == "NDB"
     LFBB = eurofirs["LFBB"]
     assert LFBB is not None
     nav_ext = navaids.extent(LFBB)
     assert nav_ext is not None
     gaillac = nav_ext["GAI"]
-    assert gaillac is not None
     assert gaillac.type == "VOR"
     assert gaillac.latlon == (43.95405556, 1.82416667)
 

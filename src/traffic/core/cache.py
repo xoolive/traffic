@@ -74,7 +74,7 @@ T = TypeVar("T", pd.DataFrame, "Traffic", "Flight")
 
 def cache_results(
     fun: None | Callable[..., T] = None,
-    cache_directory: Path = Path("."),
+    cache_path: Path = Path("."),
     loader: Callable[[Path], T] = pd.read_pickle,
     pd_varnames: bool = False,
 ) -> Callable[[Callable[..., T]], T | Callable[..., T]]:
@@ -87,7 +87,7 @@ def cache_results(
 
     :param fun: the function to decorate
 
-    :param cache_directory: (default: current directory)
+    :param cache_path: (default: current directory)
         where to store the results
 
     :param loader: (default: :meth:`pd.read_pickle`)
@@ -144,7 +144,7 @@ def cache_results(
                 else:
                     args_.append(f"{value}")
 
-            filepath = cache_directory / (
+            filepath = cache_path / (
                 fun.__name__ + "_" + "_".join(args_) + ".pkl"
             )
 

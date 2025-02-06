@@ -122,11 +122,13 @@ class Airport(
         )
 
     def leaflet(self, **kwargs: Any) -> "LeafletGeoData":
+        # The code is monkey-patched in src/visualize/leaflet.py
         raise ImportError(
             "Install ipyleaflet or traffic with the leaflet extension"
         )
 
     def map_leaflet(self, **kwargs: Any) -> "Map":
+        # The code is monkey-patched in src/visualize/leaflet.py
         raise ImportError(
             "Install ipyleaflet or traffic with the leaflet extension"
         )
@@ -153,7 +155,7 @@ class Airport(
         return p
 
     @property
-    def runways(self) -> Optional[RunwayAirport]:
+    def runways(self) -> RunwayAirport:
         """
         Get runway information associated with the airport.
 
@@ -311,7 +313,7 @@ class Navaid(NavaidTuple, PointMixin):
                 yield "description", self.description
             yield (
                 "frequency",
-                f"{self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}",
+                f"{self.frequency}{'kHz' if self.type == 'NDB' else 'MHz'}",
             )
 
     def __repr__(self) -> str:
@@ -324,7 +326,7 @@ class Navaid(NavaidTuple, PointMixin):
                 f"{self.name} ({self.type}): {self.latitude} {self.longitude}"
                 f" {self.altitude:.0f} "
                 f"{self.description if self.description is not None else ''}"
-                f" {self.frequency}{'kHz' if self.type=='NDB' else 'MHz'}"
+                f" {self.frequency}{'kHz' if self.type == 'NDB' else 'MHz'}"
             )
 
 

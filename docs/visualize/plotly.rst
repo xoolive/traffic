@@ -24,21 +24,21 @@ traffic provides the same interface as the :meth:`plotly.express` module on
 the :class:`~traffic.core.Flight` and :class:`~traffic.core.Traffic` classes.
 All kwargs arguments are passed directly to the corresponding method.
 
-- with :func:`plotly.express.line_mapbox`:
+- with :func:`plotly.express.line_map`:
 
   .. jupyter-execute::
 
     from traffic.data.samples import belevingsvlucht
 
-    belevingsvlucht.line_mapbox(color="callsign")
+    belevingsvlucht.line_map(color="callsign")
 
-- with :func:`plotly.express.scatter_mapbox`:
+- with :func:`plotly.express.scatter_map`:
 
   .. jupyter-execute::
 
     from traffic.data.samples import belevingsvlucht
 
-    fig = belevingsvlucht.scatter_mapbox(
+    fig = belevingsvlucht.scatter_map(
         color="altitude", width=600, height=600, zoom=6
     )
     fig.update_layout(margin=dict(l=50, r=0, t=40, b=40))
@@ -49,7 +49,7 @@ All kwargs arguments are passed directly to the corresponding method.
 
     from traffic.data.samples import belevingsvlucht
 
-    belevingsvlucht.resample("1 min").scatter_mapbox(
+    belevingsvlucht.resample("1 min").scatter_map(
         color="vertical_rate",
         range_color=[-4000, 4000],
         animation_frame="timestamp",
@@ -59,7 +59,7 @@ All kwargs arguments are passed directly to the corresponding method.
     )
 
 It is also possible to combine elements by constructing a
-:class:`~plotly.graph_objects.Scattermapbox` object:
+:class:`~plotly.graph_objects.Scattermap` object:
 
 .. jupyter-execute::
 
@@ -69,7 +69,7 @@ It is also possible to combine elements by constructing a
 
   # fig = go.Figure()  # if necessary, we can initiate a Figure and fill it later
 
-  fig = belevingsvlucht.resample("1 min").scatter_mapbox(
+  fig = belevingsvlucht.resample("1 min").scatter_map(
       color="vertical_rate",
       range_color=[-2000, 2000],
       animation_frame="timestamp",
@@ -79,7 +79,7 @@ It is also possible to combine elements by constructing a
   )
 
   fig.add_trace(
-      belevingsvlucht.Scattermapbox(
+      belevingsvlucht.Scattermap(
           mode="lines",
           line=dict(color="#f58518", width=1),
           showlegend=False,
@@ -90,7 +90,7 @@ It is also possible to combine elements by constructing a
       width=600,
       height=600,
       margin=dict(l=50, r=0, t=40, b=40),
-      mapbox=dict(
+      map=dict(
           style="carto-positron",
           zoom=7,
           center=airports["EHLE"].latlon_dict,
@@ -109,13 +109,13 @@ Or by combining several traces:
     assert subset is not None
 
 
-    fig = subset.scatter_mapbox(
+    fig = subset.scatter_map(
         color="callsign",
         hover_data="altitude",
         animation_frame="timestamp",
         center=airports["LFPO"].latlon_dict,
     )
-    fig = fig.add_traces(subset.line_mapbox(
+    fig = fig.add_traces(subset.line_map(
             color="callsign",
         ).data)
     fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))

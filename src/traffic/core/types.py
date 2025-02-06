@@ -24,7 +24,7 @@ class HasBounds(Protocol):
 ## Types for physical units (impunity)
 
 # sequence = Union[Sequence[float], npt.NDArray[np.float64]]
-array = npt.NDArray[np.float64]
+array = npt.NDArray[np.floating]
 
 angle = Annotated[float, "degree"]
 angle_array = Annotated[array, "degree"]

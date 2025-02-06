@@ -36,8 +36,8 @@ class AIXMNavaidParser(Navaids):
         if self._extensions is not None:
             return self._extensions
 
-        cache_file = self.cache_dir / (self.filename.stem + "_navpoints.pkl")
-        extension_file = self.cache_dir / (
+        cache_file = self.cache_path / (self.filename.stem + "_navpoints.pkl")
+        extension_file = self.cache_path / (
             self.filename.stem + "_navpoints_extensions.pkl"
         )
 
@@ -59,8 +59,8 @@ class AIXMNavaidParser(Navaids):
         if self._data is not None:
             return self._data
 
-        cache_file = self.cache_dir / (self.filename.stem + "_navpoints.pkl")
-        extension_file = self.cache_dir / (
+        cache_file = self.cache_path / (self.filename.stem + "_navpoints.pkl")
+        extension_file = self.cache_path / (
             self.filename.stem + "_navpoints_extensions.pkl"
         )
 
@@ -158,8 +158,7 @@ class AIXMNavaidParser(Navaids):
             }
 
             extension = point.find(
-                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/"
-                "aixm:extension",
+                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/aixm:extension",
                 ns,
             )
             if extension is not None:
@@ -231,8 +230,7 @@ class AIXMNavaidParser(Navaids):
             }
 
             extension = point.find(
-                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/"
-                "aixm:extension",
+                "aixm:timeSlice/aixm:DesignatedPointTimeSlice/aixm:extension",
                 ns,
             )
             if extension is not None:

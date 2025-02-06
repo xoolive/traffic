@@ -1,7 +1,5 @@
 [project]
 name = "traffic"
-homepage = "https://github.com/xoolive/traffic/"
-documentation = "https://traffic-viz.github.io/"
 description = "A toolbox for manipulating and analysing air traffic data"
 authors = [{ name = "Xavier Olive", email = "git@xoolive.org" }]
 license = "MIT"
@@ -25,21 +23,23 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
 ]
 dependencies = [
-  "cartes>=0.8.2",
+  "cartes>=0.8.4",
   "httpx>=0.27.2",
   "impunity>=1.0.4",
   "metar>=1.11.0",
-  "onnxruntime>=1.20.0",
+  "onnxruntime>=1.19.2",
   "openap>=2.0",
   "pitot>=0.3.1",
   "py7zr>=0.22.0",
   "pyarrow>=18.0.0",
   "pyopensky>=2.11",
+  "python-dotenv>=1.0.1",
   "rich>=13.9.4",
-  "rs1090>=0.3.8",
+  "rs1090>=0.4.4",
   "typing-extensions>=4.12.2",
 ]
 
@@ -59,11 +59,17 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-# cartes = { path = "../cartes" }
-# impunity = { path = "../impunity" }
-# pitot = { path = "../pitot" }
-# pyopensky = { path = "../pyopensky" }
-# rs1090 = { path = "../rs1090/python" }
+# cartes = { path = "../cartes", editable = true }
+# impunity = { path = "../impunity", editable = true }
+# pitot = { path = "../pitot", editable = true }
+# pyopensky = { path = "../pyopensky", editable = true }
+# rs1090 = { path = "../rs1090/python", editable = true }
+
+[project.urls]
+Documentation = "https://traffic-viz.github.io/"
+Code = "https://github.com/xoolive/traffic/"
+Issues = "https://github.com/xoolive/traffic/issues/"
+Releases = "https://github.com/xoolive/traffic/releases/"
 
 [project.scripts]
 traffic = 'traffic.console:main'
@@ -91,12 +97,10 @@ target-version = "py310"
 [tool.ruff.lint]
 select = [
   "E",
-  "W",      # pycodestyle
-  "F",      # pyflakes
-  "I",      # isort
-  "NPY",    # numpy
-  "NPY201", # numpy
-  # "PD",  # pandas
+  "W",   # pycodestyle
+  "F",   # pyflakes
+  "I",   # isort
+  "NPY", # numpy
   "DTZ", # flake8-datetimez
   "RUF",
 ]
@@ -119,9 +123,17 @@ warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
 
+exclude = ["docs/_build"]
+
 
 [tool.pytest.ini_options]
-addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff"
+# add option --durations=10 to get an idea of slow tests
+addopts = "--log-level=INFO --color=yes --doctest-modules --doctest-report ndiff -m 'not slow and not extra'"
+doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "extra: marks tests as requiring private data (deselect with '-m \"not extra\"')",
+]
 testpaths = [
   "src/traffic/core/intervals.py",
   "src/traffic/core/time.py",
@@ -129,4 +141,3 @@ testpaths = [
   "src/traffic/data/datasets/",
   "tests",
 ]
-doctest_optionflags = ["NORMALIZE_WHITESPACE", "ELLIPSIS", "NUMBER"]

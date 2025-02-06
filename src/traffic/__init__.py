@@ -1,10 +1,11 @@
 import configparser
 import logging
 import os
-from importlib.metadata import EntryPoint, entry_points, version
+from importlib.metadata import version
 from pathlib import Path
-from typing import Iterable
+from typing import TypedDict
 
+import dotenv
 from appdirs import user_cache_dir, user_config_dir
 
 import pandas as pd
@@ -12,14 +13,19 @@ import pandas as pd
 from . import visualize  # noqa: F401
 
 __version__ = version("traffic")
-__all__ = ["config_dir", "config_file", "cache_dir", "tqdm_style"]
+__all__ = ["cache_path", "config_dir", "config_file", "tqdm_style"]
 
 # Set up the library root logger
 _log = logging.getLogger(__name__)
 
+dotenv.load_dotenv()
+
 # -- Configuration management --
 
-config_dir = Path(user_config_dir("traffic"))
+if (xdg_config := os.environ.get("XDG_CONFIG_HOME")) is not None:
+    config_dir = Path(xdg_config) / "traffic"
+else:
+    config_dir = Path(user_config_dir("traffic"))
 config_file = config_dir / "traffic.conf"
 
 if not config_dir.exists():  # coverage: ignore
@@ -30,68 +36,94 @@ if not config_dir.exists():  # coverage: ignore
 config = configparser.ConfigParser()
 config.read(config_file.as_posix())
 
+
+class Resolution(TypedDict, total=False):
+    category: str
+    name: str
+    environment_variable: str
+    default: str
+
+
+NAME_RESOLUTION: dict[str, Resolution] = {
+    # Cache configuration
+    "cache_dir": dict(
+        environment_variable="TRAFFIC_CACHE_PATH",
+        category="cache",
+        name="path",
+    ),
+    "cache_expiration": dict(
+        environment_variable="TRAFFIC_CACHE_EXPIRATION",
+        category="cache",
+        name="expiration",
+    ),
+    "aixm_path_str": dict(
+        environment_variable="TRAFFIC_AIXM_PATH",
+        category="global",
+        name="aixm_path",
+    ),
+    "nm_path_str": dict(
+        environment_variable="TRAFFIC_NM_PATH",
+        category="global",
+        name="nm_path",
+    ),
+    # Should we get a tqdm progress bar
+    "tqdm_style": dict(
+        environment_variable="TRAFFIC_TQDM_STYLE",
+        category="global",
+        name="tqdm_style",
+        default="auto",
+    ),
+    "aircraft_db": dict(
+        environment_variable="TRAFFIC_AIRCRAFTDB",
+        category="aircraft",
+        name="database",
+    ),
+}
+
+
 # Check the config file for a cache directory. If not present
 # then use the system default cache path
 
-cache_dir = Path(user_cache_dir("traffic"))
 
-cache_dir_cfg = config.get("cache", "path", fallback="").strip()
-if cache_dir_cfg != "":  # coverage: ignore
-    cache_dir = Path(cache_dir_cfg)
+def get_config(
+    category: None | str = None,
+    name: None | str = None,
+    environment_variable: None | str = None,
+    default: None | str = None,
+) -> None | str:
+    if category is not None and name is not None:
+        if value := config.get(category, name, fallback=None):
+            return value
 
-cache_expiration_cfg = config.get("cache", "expiration", fallback="180 days")
-cache_expiration = pd.Timedelta(cache_expiration_cfg)
+    if environment_variable is not None:
+        return os.environ.get(environment_variable)
 
-cache_purge_cfg = config.get("cache", "purge", fallback="")
-cache_no_expire = bool(os.environ.get("TRAFFIC_CACHE_NO_EXPIRE"))
+    if default is not None:
+        return default
 
-if cache_purge_cfg != "" and not cache_no_expire:  # coverage: ignore
-    cache_purge = pd.Timedelta(cache_purge_cfg)
-    now = pd.Timestamp("now").timestamp()
+    return None
 
-    purgeable = list(
-        path
-        for path in cache_dir.glob("opensky/*")
-        if now - path.lstat().st_mtime > cache_purge.total_seconds()
-    )
 
-    if len(purgeable) > 0:
-        _log.warn(
-            f"Removing {len(purgeable)} cache files older than {cache_purge}"
-        )
-        for path in purgeable:
-            path.unlink()
+cache_dir = get_config(**NAME_RESOLUTION["cache_dir"])
+if cache_dir is None:
+    cache_dir = user_cache_dir("traffic")
+cache_path = Path(cache_dir)
+if not cache_path.exists():
+    cache_path.mkdir(parents=True)
 
-if not cache_dir.exists():
-    cache_dir.mkdir(parents=True)
+_cache_expiration_str = get_config(**NAME_RESOLUTION["cache_expiration"])
+cache_expiration = (
+    pd.Timedelta(_cache_expiration_str)
+    if _cache_expiration_str is not None
+    else None
+)
+_log.info(f"Selected cache_expiration: {cache_expiration}")
 
-# -- Tqdm Style Configuration --
-tqdm_style = config.get("global", "tqdm_style", fallback="auto")
+aircraft_db_path = get_config(**NAME_RESOLUTION["aircraft_db"])
+_log.info(f"Selected aircraft_db path: {aircraft_db_path}")
+aixm_path_str = get_config(**NAME_RESOLUTION["aixm_path_str"])
+_log.info(f"Selected aixm path: {aixm_path_str}")
+nm_path_str = get_config(**NAME_RESOLUTION["nm_path_str"])
+_log.info(f"Selected nm path: {nm_path_str}")
+tqdm_style = get_config(**NAME_RESOLUTION["tqdm_style"])
 _log.info(f"Selected tqdm style: {tqdm_style}")
-
-# -- Plugin management --
-
-_enabled_plugins_raw = config.get("plugins", "enabled_plugins", fallback="")
-_enabled_list = ",".join(_enabled_plugins_raw.split("\n")).split(",")
-
-_selected = set(s.replace("-", "").strip().lower() for s in _enabled_list)
-_selected -= {""}
-
-_log.info(f"Selected plugins: {_selected}")
-
-if "TRAFFIC_NOPLUGIN" not in os.environ.keys():  # coverage: ignore
-    ep: Iterable[EntryPoint]
-    try:
-        # https://docs.python.org/3/library/importlib.metadata.html#entry-points
-        ep = entry_points(group="traffic.plugins")
-    except TypeError:
-        ep = entry_points().get("traffic.plugins", [])
-    for entry_point in ep:
-        name = entry_point.name.replace("-", "").lower()
-        if name in _selected:
-            _log.info(f"Loading plugin: {name}")
-            handle = entry_point.load()
-            _log.info(f"Loaded plugin: {handle.__name__}")
-            load = getattr(handle, "_onload", None)
-            if load is not None:
-                load()

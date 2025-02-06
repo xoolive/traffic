@@ -1,3 +1,5 @@
+import pytest
+
 import pandas as pd
 from traffic.core import Flight
 from traffic.data import eurofirs
@@ -83,6 +85,7 @@ def high_altitude(flight: Flight) -> bool:
     return flight.altitude_min > 35000  # type: ignore
 
 
+@pytest.mark.slow
 def test_chaining() -> None:
     sw_filtered = (
         switzerland.between("2018-08-01", "2018-08-02")  # type: ignore
@@ -109,6 +112,7 @@ def test_chaining() -> None:
     assert handle.callsign == flight_id.split("_")[0]
 
 
+@pytest.mark.slow
 def test_chaining_with_lambda() -> None:
     sw_filtered = (
         switzerland.between("2018-08-01", "2018-08-02")  # type: ignore

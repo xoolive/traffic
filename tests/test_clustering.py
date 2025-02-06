@@ -1,5 +1,6 @@
 from typing import Any, cast
 
+import pytest
 from cartes.crs import CH1903p  # type: ignore
 
 from traffic.core import Traffic
@@ -19,6 +20,7 @@ class StupidClustering:
         pass
 
 
+@pytest.mark.slow
 def test_clustering() -> None:
     switzerland = cast(Traffic, get_sample(collections, "switzerland"))
     between = switzerland.between("2018-08-01 12:00", "2018-08-01 14:00")

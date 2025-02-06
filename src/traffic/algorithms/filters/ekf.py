@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, Callable
+from typing import Annotated, Any, Callable, TypeAlias
 
 from impunity import impunity
 from scipy import linalg
@@ -11,16 +11,16 @@ import pandas as pd
 
 from . import FilterBase
 
+ArrayFloat: TypeAlias = npt.NDArray[np.floating]
+
 
 def extended_kalman_filter(
     measurements: pd.DataFrame,
     initial_state: pd.Series,
-    initial_covariance: npt.NDArray[np.float64],
-    Q: npt.NDArray[np.float64],
-    R: npt.NDArray[np.float64],
-    jacobian_state_transition: Callable[
-        [pd.Series, float], npt.NDArray[np.float64]
-    ],
+    initial_covariance: ArrayFloat,
+    Q: ArrayFloat,
+    R: ArrayFloat,
+    jacobian_state_transition: Callable[[pd.Series, float], ArrayFloat],
     state_transition_function: Callable[[pd.Series, float], pd.Series],
     reject_sigma: float = 3,
 ) -> pd.DataFrame:
@@ -77,12 +77,10 @@ def extended_kalman_filter(
 
 def rts_smoother(
     states: pd.DataFrame,
-    covariances: npt.NDArray[np.float64],
-    Q: npt.NDArray[np.float64],
+    covariances: ArrayFloat,
+    Q: ArrayFloat,
     timestamps: pd.Series,
-    jacobian_state_transition: Callable[
-        [pd.Series, float], npt.NDArray[np.float64]
-    ],
+    jacobian_state_transition: Callable[[pd.Series, float], ArrayFloat],
     state_transition_function: Callable[[pd.Series, float], pd.Series],
 ) -> pd.DataFrame:
     num_time_steps = states.shape[0]
@@ -145,9 +143,7 @@ class ProcessXYZZFilterBase(FilterBase):
         ).set_index(df["timestamp"])
 
     @impunity
-    def postprocess(
-        self, df: pd.DataFrame
-    ) -> dict[str, npt.NDArray[np.float64]]:
+    def postprocess(self, df: pd.DataFrame) -> dict[str, ArrayFloat]:
         x: Annotated[Any, "m"] = df.x
         y: Annotated[Any, "m"] = df.y
         alt_baro: Annotated[Any, "m"] = df.alt_baro
@@ -197,9 +193,7 @@ class EKF(ProcessXYZZFilterBase):
         return state_pred
 
     @staticmethod
-    def jacobian_state_transition(
-        x: pd.Series, dt: float
-    ) -> npt.NDArray[np.float64]:
+    def jacobian_state_transition(x: pd.Series, dt: float) -> ArrayFloat:
         # Unpack the state vector
         # _, _, _, _, math_angle, velocity, _ = x
         _, _, _, math_angle, velocity, _ = x

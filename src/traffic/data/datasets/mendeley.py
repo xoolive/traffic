@@ -8,7 +8,7 @@ from typing import TypedDict
 import httpx
 from tqdm.rich import tqdm
 
-from ... import cache_dir
+from ... import cache_path
 
 client = httpx.Client(follow_redirects=True)
 
@@ -37,7 +37,7 @@ class Mendeley:
     BASE_URL = "https://data.mendeley.com/public-api/datasets/{ident}/files"
 
     def __init__(self, ident: str) -> None:
-        cache = cache_dir / "datasets" / "mendeley"
+        cache = cache_path / "datasets" / "mendeley"
         if not cache.exists():
             cache.mkdir(parents=True)
         if not (spec_file := (cache / ident).with_suffix(".json")).exists():

@@ -166,4 +166,6 @@ class NMAirspaceParser(Airspaces):
 
         new_data = pd.DataFrame(self.data).pipe(consolidate_rec)
 
-        return self.__class__(gpd.GeoDataFrame(new_data))
+        return self.__class__(
+            gpd.GeoDataFrame(new_data).set_geometry("geometry")
+        )

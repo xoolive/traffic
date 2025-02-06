@@ -139,7 +139,7 @@ class Airway(_ElementaryBlock):
         if not isinstance(self.elt[0], str):
             return None
 
-        return airways.global_get(self.elt[0])
+        return airways.get(self.elt[0])
 
     @classmethod
     def valid(cls, elt: str) -> bool:
@@ -181,7 +181,7 @@ class SID(Airway):
             return None
 
         if airport is not None:
-            return airways.global_get(self.elt[0] + airport)
+            return airways.get(self.elt[0] + airport)
 
         if nm_airways.available:
             possible = set(
@@ -210,7 +210,7 @@ class STAR(Airway):
             return None
 
         if airport is not None:
-            return airways.global_get(self.elt[0] + airport)
+            return airways.get(self.elt[0] + airport)
 
         if nm_airways.available:
             possible = set(

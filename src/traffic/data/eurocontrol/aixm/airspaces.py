@@ -43,7 +43,7 @@ def get_coordinates(lr: Any, ns: dict[str, str]) -> Polygon:
 
 
 class AIXMAirspaceParser(Airspaces):
-    cache_dir: Path
+    cache_path: Path
 
     def __init__(
         self, data: None | GeoDataFrame, aixm_path: None | Path = None
@@ -56,7 +56,7 @@ class AIXMAirspaceParser(Airspaces):
                 raise RuntimeError(msg)
 
             # Read file in cache if present
-            airspace_file = self.cache_dir / f"{aixm_path.stem}_airspaces.pkl"
+            airspace_file = self.cache_path / f"{aixm_path.stem}_airspaces.pkl"
             if airspace_file.exists():
                 self.data = gpd.GeoDataFrame(pd.read_pickle(airspace_file))
                 return
@@ -82,12 +82,14 @@ class AIXMAirspaceParser(Airspaces):
             self.data = gpd.GeoDataFrame.from_records(self.parse_tree(tree, ns))
             self.data.to_pickle(airspace_file)
 
-    def __getitem__(self, name: str) -> None | Airspace:
+        self.data = self.data.set_geometry("geometry")
+
+    def __getitem__(self, name: str) -> Airspace:
         # in this case, running consolidate() on the whole dataset is not
         # reasonable, but it still works if we run it after the query
         subset = self.query(f'designator == "{name}"')
         if subset is None:
-            return None
+            raise AttributeError(f"Airspace {name} not found")
 
         return Airspace(
             elements=unary_union_with_alt(

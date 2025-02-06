@@ -105,7 +105,7 @@ def _split(
     if unit is None:
         delta = pd.Timedelta(value)
     else:
-        delta = pd.Timedelta(np.timedelta64(value, unit))
+        delta = pd.Timedelta(np.timedelta64(value, unit))  # type: ignore
     # There seems to be a change with numpy >= 1.18
     # max() now may return NaN, therefore the following fix
     max_ = diff.max()
@@ -283,7 +283,7 @@ class Flight(
           :meth:`geoencode`
 
         - visualisation with leaflet: :meth:`map_leaflet`
-        - visualisation with plotly: :meth:`line_mapbox` and others
+        - visualisation with plotly: :meth:`line_map` and others
         - visualisation with Matplotlib:
           :meth:`plot`,
           :meth:`plot_time`
@@ -2187,8 +2187,8 @@ class Flight(
                 column_name: geo.bearing(
                     self.data.latitude.to_numpy(),
                     self.data.longitude.to_numpy(),
-                    other.latitude * np.ones(size),
-                    other.longitude * np.ones(size),
+                    (other.latitude * np.ones(size)).astype(np.float64),
+                    (other.longitude * np.ones(size)).astype(np.float64),
                 )
                 % 360
             }
@@ -2268,8 +2268,8 @@ class Flight(
             distance_vec = geo.distance(
                 self.data.latitude.to_numpy(),
                 self.data.longitude.to_numpy(),
-                other.latitude * np.ones(size),
-                other.longitude * np.ones(size),
+                (other.latitude * np.ones(size)).astype(np.float64),
+                (other.longitude * np.ones(size)).astype(np.float64),
             )
             return self.assign(**{column_name: distance_vec})
 
@@ -2776,8 +2776,7 @@ class Flight(
         else:
             df = data if isinstance(data, pd.DataFrame) else data.data
             df = df.query(
-                "icao24 == @self.icao24 and "
-                "@self.start < mintime < @self.stop"
+                "icao24 == @self.icao24 and @self.start < mintime < @self.stop"
             )
 
         if df is None or df.shape[0] == 0:
@@ -2967,7 +2966,7 @@ class Flight(
                 list(features), as_=["variable", "value"]
             ).encode(alt.Y("value:Q"), alt.Color("variable:N"))
 
-        return base.mark_line()
+        return base.mark_line()  # type: ignore
 
     # -- Visualize with Leaflet --
 
@@ -2998,16 +2997,16 @@ class Flight(
     def line_geo(self, **kwargs: Any) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
-    def line_mapbox(
-        self, mapbox_style: str = "carto-positron", **kwargs: Any
+    def line_map(
+        self, map_style: str = "carto-positron", **kwargs: Any
     ) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
     def scatter_geo(self, **kwargs: Any) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
-    def scatter_mapbox(
-        self, mapbox_style: str = "carto-positron", **kwargs: Any
+    def scatter_map(
+        self, map_style: str = "carto-positron", **kwargs: Any
     ) -> "go.Figure":
         raise ImportError("Install plotly or traffic with the plotly extension")
 
@@ -3145,16 +3144,16 @@ class Flight(
 def patch_plotly() -> None:
     from ..visualize.plotly import (
         Scattergeo,
-        Scattermapbox,
+        Scattermap,
         line_geo,
-        line_mapbox,
+        line_map,
         scatter_geo,
-        scatter_mapbox,
+        scatter_map,
     )
 
-    Flight.line_mapbox = line_mapbox  # type: ignore
-    Flight.scatter_mapbox = scatter_mapbox  # type: ignore
-    Flight.Scattermapbox = Scattermapbox  # type: ignore
+    Flight.line_map = line_map  # type: ignore
+    Flight.scatter_map = scatter_map  # type: ignore
+    Flight.Scattermap = Scattermap  # type: ignore
     Flight.line_geo = line_geo  # type: ignore
     Flight.scatter_geo = scatter_geo  # type: ignore
     Flight.Scattergeo = Scattergeo  # type: ignore

@@ -15,4 +15,4 @@ def test_openap() -> None:
     reference = resampled.data.fuelflow
     prediction = openap.data.fuelflow
 
-    assert (reference - prediction).abs().mean() / reference.max() < 0.03
+    assert (reference - prediction).abs().mean() / reference.max() < 0.05

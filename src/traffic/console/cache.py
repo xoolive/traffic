@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def main(args_list: List[str]) -> None:
-    from .. import cache_dir
+    from .. import cache_path
 
     parser = argparse.ArgumentParser(
         prog="traffic cache", description="traffic cache directory"
@@ -40,11 +40,11 @@ def main(args_list: List[str]) -> None:
     args = parser.parse_args(args_list)
 
     if args.list:
-        print(cache_dir)
+        print(cache_path)
 
     if args.open:
-        logger.info("Open cache directory {}".format(cache_dir))
-        dispatch_open(cache_dir)
+        logger.info("Open cache directory {}".format(cache_path))
+        dispatch_open(cache_path)
 
     if args.fill:
         from traffic.data import aircraft, airports, navaids

@@ -1,11 +1,13 @@
 from typing import cast
 
+import pytest
 from cartes.crs import CH1903p  # type: ignore
 
 from traffic.core import Traffic
 from traffic.data.samples import collections, get_sample
 
 
+@pytest.mark.slow
 def test_cpa() -> None:
     switzerland = cast(Traffic, get_sample(collections, "switzerland"))
 
@@ -18,7 +20,7 @@ def test_cpa() -> None:
         lateral_separation=10 * 1852,
         vertical_separation=2000,
         projection=CH1903p(),
-        round_t="10T",
+        round_t="10 min",
     )
 
     assert cpa is not None

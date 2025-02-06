@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TypeAlias
+
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -9,13 +11,15 @@ from .preprocessing import (
     TrackVariable,
 )
 
+ArrayF64: TypeAlias = npt.NDArray[np.floating]
+
 
 class KalmanFilter6D(ProcessXYZFilterBase):
     # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    x_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p_pre: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x_mes: TrackVariable[ArrayF64] = TrackVariable()
+    x_cor: TrackVariable[ArrayF64] = TrackVariable()
+    p_cor: TrackVariable[ArrayF64] = TrackVariable()
+    p_pre: TrackVariable[ArrayF64] = TrackVariable()
 
     def __init__(self, reject_sigma: float = 3) -> None:
         super().__init__()
@@ -119,13 +123,13 @@ class KalmanFilter6D(ProcessXYZFilterBase):
 
 class KalmanSmoother6D(ProcessXYZFilterBase):
     # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    x1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p1_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    x2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
-    p2_cor: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    x_mes: TrackVariable[ArrayF64] = TrackVariable()
+    x1_cor: TrackVariable[ArrayF64] = TrackVariable()
+    p1_cor: TrackVariable[ArrayF64] = TrackVariable()
+    x2_cor: TrackVariable[ArrayF64] = TrackVariable()
+    p2_cor: TrackVariable[ArrayF64] = TrackVariable()
 
-    xs: TrackVariable[npt.NDArray[np.float64]] = TrackVariable()
+    xs: TrackVariable[ArrayF64] = TrackVariable()
 
     def __init__(self, reject_sigma: float = 3) -> None:
         super().__init__()

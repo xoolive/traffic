@@ -31,8 +31,8 @@ def closest_point(
     dist_vect = geo.distance(
         data.latitude.values,
         data.longitude.values,
-        latitude * np.ones(len(data.latitude)),
-        longitude * np.ones(len(data.longitude)),
+        (latitude * np.ones(len(data.latitude))).astype(np.float64),
+        (longitude * np.ones(len(data.longitude))).astype(np.float64),
     )
     argmin = dist_vect.argmin()
     elt = data.iloc[argmin]
@@ -80,7 +80,7 @@ def guess_airport(
 
     if warning_distance is not None and airport.distance > warning_distance:
         _log.warning(
-            f"Closest airport is more than {warning_distance*1e-3}km away "
+            f"Closest airport is more than {warning_distance * 1e-3}km away "
             f" (distance={airport.distance})"
         )
     return airport
