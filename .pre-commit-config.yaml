@@ -12,6 +12,7 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
+        exclude: readsb
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.7.4
     hooks:
@@ -36,3 +37,4 @@ repos:
     rev: v3.1.0
     hooks:
       - id: prettier
+        exclude: readsb
