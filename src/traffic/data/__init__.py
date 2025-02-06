@@ -233,7 +233,7 @@ def __getattr__(name: str) -> Any:
         return res
 
     if name == "client":
-        res = Client(follow_redirects=True)
+        res = Client(follow_redirects=True, verify=False)
         _cached_imports[name] = res
         return res
 
