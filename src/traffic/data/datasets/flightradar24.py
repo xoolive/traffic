@@ -204,9 +204,20 @@ class FlightRadar24:
                                         )
                                         .drop(columns=["flight_id"])
                                     )
-                                    yield df_traj.merge(
-                                        df_ems, on="snapshot_id", how="outer"
-                                    ).assign(flight_id=(flight_id))
+                                    yield (
+                                        df_traj.merge(
+                                            df_ems,
+                                            on="snapshot_id",
+                                            how="outer",
+                                        )
+                                        .assign(flight_id=(flight_id))
+                                        .rename(
+                                            columns=dict(
+                                                heading_x="track",
+                                                heading_y="heading",
+                                            )
+                                        )
+                                    )
                 else:
                     for fileinfo in tqdm(zfh_traj.infolist()):
                         with zfh_traj.open(fileinfo) as fh:
@@ -214,13 +225,16 @@ class FlightRadar24:
                             flight_id = stem.split("_")[1]
                             b = BytesIO(fh.read())
                             b.seek(0)
-                            yield pd.read_csv(b).assign(flight_id=(flight_id))
+                            yield (
+                                pd.read_csv(b)
+                                .assign(flight_id=(flight_id))
+                                .rename(columns=dict(heading="track"))
+                            )
 
         df = pd.concat(extract_flights(trajectories, ems))
 
         return Traffic(
-            df.rename(columns=dict(heading_x="track", heading="track"))
-            .merge(
+            df.merge(
                 fr24_meta.rename(
                     columns=dict(
                         equip="typecode",
@@ -240,8 +254,7 @@ class FlightRadar24:
                     ),
                 ),
                 on="flight_id",
-            )
-            .eval(
+            ).eval(
                 "timestamp = @pd.to_datetime(snapshot_id, utc=True, unit='s')"
             )
         )

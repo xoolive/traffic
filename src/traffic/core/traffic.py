@@ -857,7 +857,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def typecode_openap(self, /, **kwargs):  # type: ignore
+    def typecode_isin_openap(self, /, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
