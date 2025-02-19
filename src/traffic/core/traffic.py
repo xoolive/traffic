@@ -583,24 +583,38 @@ class Traffic(HBoxMixin, GeographyMixin):
             return self.flight_ids  # type: ignore
         return list({*self.icao24, *self.callsigns})
 
+    @overload
+    def sample(self, size: int, seed: Optional[int]) -> Traffic: ...
+
+    @overload
+    def sample(self, size: None, seed: Optional[int]) -> Flight: ...
+
     def sample(
         self,
-        n: Optional[int] = None,
-    ) -> None | Traffic:
+        size: Optional[int] = None,
+        seed: Optional[int] = None,
+    ) -> Flight | Traffic:
         """Returns a random sample of traffic data.
 
-        :param self: An instance of the Traffic class.
-        :param n: An integer specifying the number of samples to take from the
-            dataset. Default is None, in which case a single value is returned.
+        If n is None, a single Flight is randomly selected;
+        Otherwise a Traffic with n randomly sampled flights is returned.
 
-        :return: A Traffic of n random sampled flights.
+        :param size: The number of samples to take from the dataset.
+                  Default is None, meaning one flight is returned.
+        :param seed: Seed for the random number generator.
         """
-        rng = np.random.default_rng()
-
-        sampled_ids: list[str] = list(
-            rng.choice(self.data.flight_id.unique(), size=n, replace=False)
-        )
-        return self[sampled_ids]
+        rng = np.random.default_rng(seed=seed)
+        unique_ids = self.data.flight_id.unique()
+        if size is None:
+            sampled_id: str = rng.choice(unique_ids)
+            flight = self[sampled_id]
+            assert flight is not None
+            return flight
+        else:
+            sampled_ids = list(rng.choice(unique_ids, size=size, replace=False))
+            t = self[sampled_ids]
+            assert t is not None
+            return t
 
     def iterate(
         self,
