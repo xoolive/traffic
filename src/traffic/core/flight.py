@@ -2090,7 +2090,10 @@ class Flight(
     ) -> Iterator["Flight"]:
         from ..algorithms.navigation import takeoff
 
-        method_dict = dict(default=takeoff.Default(*args, **kwargs))
+        method_dict = dict(
+            default=takeoff.Default(*args, **kwargs),
+            track_based=takeoff.TrackBasedRunwayDetection(*args, **kwargs),
+        )
         if isinstance(method, str):
             method = method_dict.get(method, takeoff.Default(*args, **kwargs))
 

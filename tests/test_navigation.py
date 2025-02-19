@@ -78,6 +78,31 @@ def test_takeoff() -> None:
         # If a landing is followed by a take-off, then it's on the same runway
         assert takeoff is None or aligned.max("ILS") == takeoff.max("runway")
 
+    # Flight SWR5220 - Should take off from runway 28 at LSZH
+    flight_swr5220 = zurich_airport["SWR5220"]
+    segment = flight_swr5220.takeoff("LSZH", method="track_based").next()
+    assert segment.runway_max == "28", (
+        f"SWR5220 should take off from runway 28, got {segment}"
+    )
+
+    # Flight VJT796 - Should return None since it's a landing at LSZH
+    flight_vjt796 = zurich_airport["VJT796"]
+    segment = flight_vjt796.takeoff("LSZH", method="track_based").next()
+    assert segment is None, f"VJT796 should return None, got {segment}"
+
+    # Flight ACA879 - Should take off from runway 16 at LSZH
+    flight_aca879 = zurich_airport["ACA879"]
+    segment = flight_aca879.takeoff("LSZH", method="track_based").next()
+    assert segment.runway_max == "16", (
+        f"ACA879 should take off from runway 16, got {segment}"
+    )
+
+    # Flight SWR5220 tested at LFPG - Should return None
+    segment = flight_swr5220.takeoff("LFPG", method="track_based").next()
+    assert segment is None, (
+        f"SWR5220 should return None for LFPG, got {segment}"
+    )
+
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
 @pytest.mark.slow
@@ -96,39 +121,6 @@ def test_takeoff_runway() -> None:
         takeoff = after.takeoff_from_runway("EHLE", threshold_alt=3000).next()
         # If a landing is followed by a take-off, then it's on the same runway
         assert takeoff is None or aligned.max("ILS") == takeoff.max("runway")
-
-
-def test_get_toff_runway_specific_cases() -> None:
-    # Airport ICAO codes
-    lszh = "LSZH"
-    lfpg = "LFPG"
-
-    # Flight SWR5220 - Should take off from runway 28 at LSZH
-    flight_swr5220 = zurich_airport["SWR5220"]
-    runway_swr5220 = flight_swr5220.get_toff_runway(lszh)
-    assert runway_swr5220 == "28", (
-        f"SWR5220 should take off from runway 28, got {runway_swr5220}"
-    )
-
-    # Flight VJT796 - Should return None since it's a landing at LSZH
-    flight_vjt796 = zurich_airport["VJT796"]
-    runway_vjt796 = flight_vjt796.get_toff_runway(lszh)
-    assert runway_vjt796 is None, (
-        f"VJT796 should return None, got {runway_vjt796}"
-    )
-
-    # Flight ACA879 - Should take off from runway 16 at LSZH
-    flight_aca879 = zurich_airport["ACA879"]
-    runway_aca879 = flight_aca879.get_toff_runway(lszh)
-    assert runway_aca879 == "16", (
-        f"ACA879 should take off from runway 16, got {runway_aca879}"
-    )
-
-    # Flight SWR5220 tested at LFPG - Should return None
-    runway_swr5220_lfpg = flight_swr5220.get_toff_runway(lfpg)
-    assert runway_swr5220_lfpg is None, (
-        f"SWR5220 should return None for LFPG, got {runway_swr5220_lfpg}"
-    )
 
 
 @pytest.mark.skipif(True, reason="only for local debug")
