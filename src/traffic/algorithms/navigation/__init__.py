@@ -307,7 +307,7 @@ class NavigationFeatures:
             ILS and flight trajectory.
         :param min_duration: minimum duration a flight has to spend on the ILS
             to be considered as aligned.
-        :param max_feet_above_airport: maximum altitude AGL, relative to the
+        :param max_ft_above_airport: maximum altitude AGL, relative to the
             airport, that a flight can be to be considered as aligned.
 
         Example usage:
