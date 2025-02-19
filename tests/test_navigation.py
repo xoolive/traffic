@@ -11,6 +11,7 @@ from traffic.data.samples import (
     airbus_tree,
     belevingsvlucht,
     elal747,
+    landing_denver,
     zurich_airport,
 )
 
@@ -53,6 +54,14 @@ def test_landing_ils() -> None:
     aligned = airbus_tree.aligned_on_ils("EDHI").next()
     assert aligned is not None
     assert aligned.max("ILS") == "23"
+
+
+@pytest.mark.skipif(skip_runways, reason="no runways")
+def test_landing_ils_high_elevation() -> None:
+    segment = landing_denver.aligned_on_ils("KDEN").next()
+    assert segment is not None
+    assert segment.ILS_max == "26"
+    assert segment.data.altitude.min() == 5575
 
 
 @pytest.mark.slow
