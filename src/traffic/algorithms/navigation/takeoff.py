@@ -29,13 +29,13 @@ class Default(Takeoff):
     def __init__(
         self,
         airport: Union[str, "Airport"],
-        max_feet_above_airport: int = 2000,
+        max_ft_above_airport: int = 2000,
         zone_length: int = 6000,
         little_base: int = 50,
         opening: float = 5,
     ):
         self.airport = airport
-        self.max_feet_above_airport = max_feet_above_airport
+        self.max_ft_above_airport = max_ft_above_airport
         self.zone_length = zone_length
         self.little_base = little_base
         self.opening = opening
@@ -58,7 +58,7 @@ class Default(Takeoff):
             return None
 
         nb_run = len(_airport.runways.data)
-        alt = _airport.altitude + self.max_feet_above_airport
+        alt = _airport.altitude + self.max_ft_above_airport
         base = (
             self.zone_length * np.tan(self.opening * np.pi / 180)
             + self.little_base
@@ -148,7 +148,7 @@ class TrackBasedRunwayDetection(Takeoff):
     Parameters:
         flight (Flight): The flight data object containing flight data.
         airport: The ICAO code of the airport. Defaults to None.
-        max_feet_above_airport (float): Altitude threshold above airport altitude.
+        max_ft_above_airport (float): Altitude threshold above airport altitude.
         min_groundspeed_kts (float): Minimum groundspeed to consider.
         min_vert_rate_ftmin (float): Minimum vertical rate to consider.
         maximum_bearing_deg (float): Maximum bearing difference to consider.
@@ -165,7 +165,7 @@ class TrackBasedRunwayDetection(Takeoff):
     def __init__(
         self,
         airport: Union[str, "Airport"],
-        max_feet_above_airport: float = 1500,
+        max_ft_above_airport: float = 1500,
         min_groundspeed_kts: float = 30,
         min_vert_rate_ftmin: float = 257,
         max_bearing_deg: float = 10,
@@ -176,7 +176,7 @@ class TrackBasedRunwayDetection(Takeoff):
         self.airport = (
             airports[airport] if isinstance(airport, str) else airport
         )
-        self.max_feet_above_airport = max_feet_above_airport
+        self.max_ft_above_airport = max_ft_above_airport
         self.min_groundspeed_kts = min_groundspeed_kts
         self.min_vert_rate_ftmin = min_vert_rate_ftmin
         self.max_bearing_deg = max_bearing_deg
@@ -185,7 +185,7 @@ class TrackBasedRunwayDetection(Takeoff):
     def apply(self, flight: "Flight") -> Iterator["Flight"]:
         # if not self.takeoff_from(self.airport):
         #     return None
-        alt_max = self.airport.altitude + self.max_feet_above_airport
+        alt_max = self.airport.altitude + self.max_ft_above_airport
         if self.airport.runways is None:
             return None
         runways = self.airport.runways.data
