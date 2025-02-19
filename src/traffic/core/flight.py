@@ -3102,6 +3102,60 @@ class Flight(
         return FlightRadar24.from_file(filename)
 
     @classmethod
+    def from_readsb(cls, filename: Union[Path, str]) -> Self:
+        """Parses data in readsb format.
+
+        Reference:
+        https://github.com/wiedehopf/readsb/blob/dev/README-json.md#trace-jsons
+
+        :param filename: a json file with ADSB traces
+        :return: a regular Flight object.
+        """
+
+        # TODO to be improved later, but good enough for the test for now
+        trace_columns = [
+            "seconds_after_timestamp",
+            "latitude",
+            "longitude",
+            "altitude",
+            "groundspeed",
+            "track",
+            "flags",
+            "vertical_rate",
+            "aircraft",
+            "type",
+            "geometric_altitude",
+            "geometric_vrate",
+            "ias",
+            "roll",
+        ]
+
+        readsb_data = pd.read_json(filename).rename(columns={"icao": "icao24"})
+        trace_data = pd.DataFrame.from_records(
+            readsb_data.trace, columns=trace_columns
+        )
+        aircraft_data = pd.json_normalize(trace_data.aircraft)
+
+        readsb_data = (
+            readsb_data.assign(
+                position_time_utc=readsb_data.timestamp
+                + trace_data["seconds_after_timestamp"].map(
+                    lambda s: timedelta(seconds=s)
+                )
+            )
+            .drop(columns=["timestamp", "trace"])
+            .join(trace_data.drop(columns=["seconds_after_timestamp"]))
+            .rename(columns={"position_time_utc": "timestamp"})
+            .join(
+                aircraft_data.rename(
+                    columns={c: "aircraft_" + c for c in aircraft_data.columns}
+                )
+            )
+        )
+
+        return cls(readsb_data)
+
+    @classmethod
     def from_file(cls, filename: Union[Path, str], **kwargs: Any) -> Self:
         """Read data from various formats.
 

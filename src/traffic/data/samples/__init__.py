@@ -67,6 +67,7 @@ full_flight_short: Flight
 lfbo_tma: Airspace
 noisy: Flight
 quickstart: Traffic
+landing_denver: Flight
 sample_dump1090: Path
 switzerland: Traffic
 texas_longhorn: Flight
@@ -79,6 +80,10 @@ def __getattr__(name: str) -> Any:
         return Path(_current_dir / "dump1090" / "sample_dump1090.bin")
     if name == "lfbo_tma":
         return Airspace.from_file(_current_dir / "airspaces" / "LFBOTMA.json")
+    if name == "landing_denver":
+        return Flight.from_readsb(
+            _current_dir / "readsb" / "trace_full_ac671b.json"
+        )
     filelist = list(_current_dir.glob(f"**/{name}.json*"))
     if len(filelist) == 0:
         msg = f"File {name}.json.gz not found in available samples"
