@@ -79,6 +79,7 @@ def test_takeoff() -> None:
     # Flight SWR5220 - Should take off from runway 28 at LSZH
     flight_swr5220 = zurich_airport["SWR5220"]
     segment = flight_swr5220.takeoff("LSZH", method="track_based").next()
+    assert segment is not None
     assert segment.runway_max == "28", (
         f"SWR5220 should take off from runway 28, got {segment}"
     )
@@ -91,6 +92,7 @@ def test_takeoff() -> None:
     # Flight ACA879 - Should take off from runway 16 at LSZH
     flight_aca879 = zurich_airport["ACA879"]
     segment = flight_aca879.takeoff("LSZH", method="track_based").next()
+    assert segment is not None
     assert segment.runway_max == "16", (
         f"ACA879 should take off from runway 16, got {segment}"
     )
