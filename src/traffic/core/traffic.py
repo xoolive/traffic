@@ -198,58 +198,6 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         return FlightRadar24.from_archive(metadata, trajectories)
 
-    @classmethod
-    def from_readsb(cls, filename: Union[Path, str]) -> Self:
-        """Parses data in readsb `trace json
-        <https://github.com/wiedehopf/readsb/blob/dev/README-json.md#trace-jsons>`_ format
-
-        :param filename: a json file with ADSB traces
-        :return: a regular Traffic object.
-        """
-        trace_columns = [
-            "seconds_after_timestamp",
-            "latitude",
-            "longitude",
-            "altitude",
-            "groundspeed",
-            "track",
-            "flags",
-            "vrate",
-            "aircraft",
-            "type",
-            "geometric_altitude",
-            "geometric_vrate",
-            "ias",
-            "roll",
-        ]
-
-        readsb_data = pd.read_json(filename).rename(columns={"icao": "icao24"})
-        trace_data = pd.DataFrame.from_records(
-            readsb_data.trace, columns=trace_columns
-        )
-        aircraft_data = pd.json_normalize(trace_data.aircraft)
-
-        aircraft_data.rename(
-            columns={c: "aircraft_" + c for c in aircraft_data.columns}
-        )
-        readsb_data["position_time_utc"] = readsb_data[
-            "timestamp"
-        ] + trace_data["seconds_after_timestamp"].map(
-            lambda s: timedelta(seconds=s)
-        )
-        readsb_data = (
-            readsb_data.drop(columns=["timestamp", "trace"])
-            .join(trace_data.drop(columns=["seconds_after_timestamp"]))
-            .rename(columns={"position_time_utc": "timestamp"})
-            .join(
-                aircraft_data.rename(
-                    columns={c: "aircraft_" + c for c in aircraft_data.columns}
-                )
-            )
-        )
-
-        return cls(readsb_data)
-
     # --- Special methods ---
     # operators + (union), & (intersection), - (difference), ^ (xor)
 
