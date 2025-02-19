@@ -68,6 +68,17 @@ def test_compute_navpoints() -> None:
     assert df.navaid.to_list() == ["RESIA", "ZH367", "LUL"]
 
 
+def test_takeoff() -> None:
+    for aligned in belevingsvlucht.aligned_on_ils("EHLE"):
+        after = belevingsvlucht.after(aligned.stop)
+        assert after is not None
+        takeoff = after.takeoff(
+            "default", airport="EHLE", threshold_alt=3000
+        ).next()
+        # If a landing is followed by a take-off, then it's on the same runway
+        assert takeoff is None or aligned.max("ILS") == takeoff.max("runway")
+
+
 @pytest.mark.skipif(skip_runways, reason="no runways")
 @pytest.mark.slow
 def test_takeoff_runway() -> None:

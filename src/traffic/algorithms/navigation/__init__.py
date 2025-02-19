@@ -26,18 +26,19 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, MultiLineString, Point, Polygon, base
 
-from ..core.distance import minimal_angular_difference
-from ..core.iterator import flight_iterator
-from ..core.time import deltalike, to_timedelta
+from ...core.distance import minimal_angular_difference
+from ...core.iterator import flight_iterator
+from ...core.time import deltalike, to_timedelta
+from . import takeoff
 
 if TYPE_CHECKING:
     from cartes.osm import Overpass
 
-    from ..core import Flight, FlightPlan
-    from ..core.mixins import PointMixin
-    from ..core.structure import Airport, Navaid
-    from ..data.basic.airports import Airports
-    from ..data.basic.navaid import Navaids
+    from ...core import Flight, FlightPlan
+    from ...core.mixins import PointMixin
+    from ...core.structure import Airport, Navaid
+    from ...data.basic.airports import Airports
+    from ...data.basic.navaid import Navaids
 
 
 _log = logging.getLogger(__name__)
@@ -107,7 +108,7 @@ class NavigationFeatures:
             "Lelystad Airport, 49.11m"
 
         """
-        from ..core.distance import closest_point as cp
+        from ...core.distance import closest_point as cp
 
         # The following cast secures the typing
         self = cast("Flight", self)
@@ -125,8 +126,8 @@ class NavigationFeatures:
     def takeoff_from(self, airport: Union[str, "Airport"]) -> bool:
         """Returns True if the flight takes off from the given airport."""
 
-        from ..core.structure import Airport
-        from ..data import airports
+        from ...core.structure import Airport
+        from ...data import airports
 
         return self.takeoff_airport() == (
             airport if isinstance(airport, Airport) else airports[airport]
@@ -155,7 +156,7 @@ class NavigationFeatures:
             EHAM/AMS: Amsterdam  Schiphol
         """
 
-        from ..core.distance import guess_airport
+        from ...core.distance import guess_airport
 
         # The following cast secures the typing
         self = cast("Flight", self)
@@ -166,8 +167,8 @@ class NavigationFeatures:
     def landing_at(self, airport: Union[str, "Airport"]) -> bool:
         """Returns True if the flight lands at the given airport."""
 
-        from ..core.structure import Airport
-        from ..data import airports
+        from ...core.structure import Airport
+        from ...data import airports
 
         return self.landing_airport() == (
             airport if isinstance(airport, Airport) else airports[airport]
@@ -196,7 +197,7 @@ class NavigationFeatures:
             EHAM/AMS: Amsterdam  Schiphol
         """
 
-        from ..core.distance import guess_airport
+        from ...core.distance import guess_airport
 
         # The following cast secures the typing
         self = cast("Flight", self)
@@ -219,7 +220,7 @@ class NavigationFeatures:
         2
         """
 
-        from ..data import airports
+        from ...data import airports
 
         # The following cast secures the typing
         self = cast("Flight", self)
@@ -334,7 +335,7 @@ class NavigationFeatures:
             ... )
         """
 
-        from ..data import airports
+        from ...data import airports
 
         # The following cast secures the typing
         self = cast("Flight", self)
@@ -398,8 +399,8 @@ class NavigationFeatures:
 
         """
 
-        from ..core import FlightPlan
-        from ..core.mixins import PointMixin
+        from ...core import FlightPlan
+        from ...core.mixins import PointMixin
 
         points_: Sequence[PointMixin]
 
@@ -407,7 +408,7 @@ class NavigationFeatures:
         self = cast("Flight", self)
 
         if isinstance(points, str):
-            from ..data import navaids
+            from ...data import navaids
 
             navaid = navaids[points]
             if navaid is None:
@@ -481,7 +482,7 @@ class NavigationFeatures:
         self = cast("Flight", self)
 
         if navaids is None:
-            from ..data import navaids as default_navaids
+            from ...data import navaids as default_navaids
 
             navaids = default_navaids
 
@@ -545,6 +546,16 @@ class NavigationFeatures:
         )
 
     @flight_iterator
+    def takeoff(
+        self, method: str | takeoff.Takeoff = "default", *args, **kwargs
+    ) -> Iterator["Flight"]:
+        method_dict = dict(default=takeoff.Default(*args, **kwargs))
+        if isinstance(method, str):
+            method = method_dict.get(method, takeoff.Default(*args, **kwargs))
+
+        yield from method.apply(self)
+
+    @flight_iterator
     def takeoff_from_runway(
         self,
         airport: Union[str, "Airport"],
@@ -561,7 +572,7 @@ class NavigationFeatures:
 
         """
 
-        from ..data import airports
+        from ...data import airports
 
         # Access completion on Flight objects
         self = cast("Flight", self).phases()
@@ -970,7 +981,7 @@ class NavigationFeatures:
         intended destination.
 
         """
-        from ..data import airports
+        from ...data import airports
 
         # The following cast secures the typing
         self = cast("Flight", self)
@@ -1243,7 +1254,7 @@ class NavigationFeatures:
             be double checked for landing trajectories.
 
         """
-        from ..data import airports
+        from ...data import airports
 
         # Access completion on Flight objects
         self = cast("Flight", self)
@@ -1341,7 +1352,7 @@ class NavigationFeatures:
 
         """
 
-        from ..data import airports
+        from ...data import airports
 
         # Access completion on Flight objects
         self = cast("Flight", self)
@@ -1534,8 +1545,8 @@ class NavigationFeatures:
         Iterates on segments of trajectory matching a single runway label.
         """
 
-        from ..core.structure import Airport
-        from ..data import airports
+        from ...core.structure import Airport
+        from ...data import airports
 
         self = cast("Flight", self)
         if isinstance(airport_or_taxiways, str):
