@@ -29,7 +29,6 @@ from shapely.geometry import LineString, MultiLineString, Point, Polygon, base
 from ...core.distance import minimal_angular_difference
 from ...core.iterator import flight_iterator
 from ...core.time import deltalike, to_timedelta
-from . import takeoff
 
 if TYPE_CHECKING:
     from cartes.osm import Overpass
@@ -544,16 +543,6 @@ class NavigationFeatures:
         return pd.concat(list(most_probable_navpoints(self))).merge(
             navaids_.data, left_on="navaid", right_on="name"
         )
-
-    @flight_iterator
-    def takeoff(
-        self, method: str | takeoff.Takeoff = "default", *args, **kwargs
-    ) -> Iterator["Flight"]:
-        method_dict = dict(default=takeoff.Default(*args, **kwargs))
-        if isinstance(method, str):
-            method = method_dict.get(method, takeoff.Default(*args, **kwargs))
-
-        yield from method.apply(self)
 
     @flight_iterator
     def takeoff_from_runway(

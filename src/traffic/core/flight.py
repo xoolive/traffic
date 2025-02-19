@@ -64,6 +64,7 @@ if TYPE_CHECKING:
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
+    from ..algorithms.navigation import takeoff
     from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
@@ -2079,6 +2080,21 @@ class Flight(
             wind_v=self.data.groundspeed * np.cos(np.radians(self.data.track))
             - self.data.TAS * np.cos(np.radians(self.data.heading)),
         )
+
+    @flight_iterator
+    def takeoff(
+        self,
+        *args: Any,
+        method: str | takeoff.Takeoff = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.navigation import takeoff
+
+        method_dict = dict(default=takeoff.Default(*args, **kwargs))
+        if isinstance(method, str):
+            method = method_dict.get(method, takeoff.Default(*args, **kwargs))
+
+        yield from method.apply(self)
 
     def plot_wind(
         self,
