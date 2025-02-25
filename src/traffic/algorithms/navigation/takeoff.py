@@ -13,11 +13,11 @@ if TYPE_CHECKING:
     from ...core.structure import Airport
 
 
-class Takeoff(Protocol):
+class TakeoffBase(Protocol):
     def apply(self, flight: "Flight") -> Iterator["Flight"]: ...
 
 
-class Default(Takeoff):
+class PolygonBasedRunwayDetection:
     """Identifies the take-off runway for trajectories.
 
     Iterates on all segments of trajectory matching a zone around a runway
@@ -34,31 +34,25 @@ class Default(Takeoff):
         little_base: int = 50,
         opening: float = 5,
     ):
-        self.airport = airport
+        from ...data import airports
+
         self.max_ft_above_airport = max_ft_above_airport
         self.zone_length = zone_length
         self.little_base = little_base
         self.opening = opening
 
-    def apply(self, flight: "Flight") -> Iterator["Flight"]:
-        from ...data import airports
-
-        flight = flight.phases()
-
-        _airport = (
-            airports[self.airport]
-            if isinstance(self.airport, str)
-            else self.airport
+        self.airport = (
+            airports[airport] if isinstance(airport, str) else airport
         )
         if (
-            _airport is None
-            or _airport.runways is None
-            or _airport.runways.shape.is_empty
+            self.airport is None
+            or self.airport.runways is None
+            or self.airport.runways.shape.is_empty
         ):
-            return None
+            raise RuntimeError("Airport or runway information missing")
 
-        nb_run = len(_airport.runways.data)
-        alt = _airport.altitude + self.max_ft_above_airport
+        nb_run = len(self.airport.runways.data)
+        self.alt = self.airport.altitude + self.max_ft_above_airport
         base = (
             self.zone_length * np.tan(self.opening * np.pi / 180)
             + self.little_base
@@ -66,47 +60,49 @@ class Default(Takeoff):
 
         # Create shapes around each runway
         list_p0 = geo.destination(
-            list(_airport.runways.data.latitude),
-            list(_airport.runways.data.longitude),
-            list(_airport.runways.data.bearing),
+            list(self.airport.runways.data.latitude),
+            list(self.airport.runways.data.longitude),
+            list(self.airport.runways.data.bearing),
             [self.zone_length for i in range(nb_run)],
         )
         list_p1 = geo.destination(
-            list(_airport.runways.data.latitude),
-            list(_airport.runways.data.longitude),
-            [x + 90 for x in list(_airport.runways.data.bearing)],
+            list(self.airport.runways.data.latitude),
+            list(self.airport.runways.data.longitude),
+            [x + 90 for x in list(self.airport.runways.data.bearing)],
             [self.little_base for i in range(nb_run)],
         )
         list_p2 = geo.destination(
-            list(_airport.runways.data.latitude),
-            list(_airport.runways.data.longitude),
-            [x - 90 for x in list(_airport.runways.data.bearing)],
+            list(self.airport.runways.data.latitude),
+            list(self.airport.runways.data.longitude),
+            [x - 90 for x in list(self.airport.runways.data.bearing)],
             [self.little_base for i in range(nb_run)],
         )
         list_p3 = geo.destination(
             list_p0[0],
             list_p0[1],
-            [x - 90 for x in list(_airport.runways.data.bearing)],
+            [x - 90 for x in list(self.airport.runways.data.bearing)],
             [base for i in range(nb_run)],
         )
         list_p4 = geo.destination(
             list_p0[0],
             list_p0[1],
-            [x + 90 for x in list(_airport.runways.data.bearing)],
+            [x + 90 for x in list(self.airport.runways.data.bearing)],
             [base for i in range(nb_run)],
         )
 
-        runway_polygons = {}
+        self.runway_polygons = {}
 
-        for i, name in enumerate(_airport.runways.data.name):
+        for i, name in enumerate(self.airport.runways.data.name):
             lat = [list_p1[0][i], list_p2[0][i], list_p3[0][i], list_p4[0][i]]
             lon = [list_p1[1][i], list_p2[1][i], list_p3[1][i], list_p4[1][i]]
 
             poly = Polygon(zip(lon, lat))
-            runway_polygons[name] = poly
+            self.runway_polygons[name] = poly
 
+    def apply(self, flight: "Flight") -> Iterator["Flight"]:
+        flight = flight.phases()
         low_traj = flight.query(
-            f"(phase == 'CLIMB' or phase == 'LEVEL') and altitude < {alt}"
+            f"(phase == 'CLIMB' or phase == 'LEVEL') and altitude < {self.alt}"
         )
 
         if low_traj is None:
@@ -114,7 +110,7 @@ class Default(Takeoff):
 
         for segment in low_traj.split("2 min"):
             candidates_set = []
-            for name, polygon in runway_polygons.items():
+            for name, polygon in self.runway_polygons.items():
                 if segment.intersects(polygon):
                     candidate = (
                         segment.cumulative_distance()
@@ -123,7 +119,9 @@ class Default(Takeoff):
                     )
                     if candidate is None or candidate.shape is None:
                         continue
-                    start_runway = candidate.aligned_on_runway(_airport).max()
+                    start_runway = candidate.aligned_on_runway(
+                        self.airport
+                    ).max()
 
                     if start_runway is not None:
                         candidate = candidate.after(start_runway.start)
@@ -141,7 +139,7 @@ class Default(Takeoff):
                 yield result
 
 
-class TrackBasedRunwayDetection(Takeoff):
+class TrackBasedRunwayDetection:
     """
     Determines the taking-off runway of a flight based on its trajectory.
 

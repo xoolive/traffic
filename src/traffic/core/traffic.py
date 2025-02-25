@@ -939,6 +939,14 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
+    def takeoff(self, *args, method="default", **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
+    def pushback(self, *args, method="default", **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
     def bearing(  # type: ignore
         self,
         other: PointMixin,
