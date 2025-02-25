@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeAlias
-
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 
 from .preprocessing import (
@@ -11,15 +8,13 @@ from .preprocessing import (
     TrackVariable,
 )
 
-ArrayF64: TypeAlias = npt.NDArray[np.floating]
-
 
 class KalmanFilter6D(ProcessXYZFilterBase):
     # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[ArrayF64] = TrackVariable()
-    x_cor: TrackVariable[ArrayF64] = TrackVariable()
-    p_cor: TrackVariable[ArrayF64] = TrackVariable()
-    p_pre: TrackVariable[ArrayF64] = TrackVariable()
+    x_mes: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    x_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    p_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    p_pre: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
 
     def __init__(self, reject_sigma: float = 3) -> None:
         super().__init__()
@@ -64,7 +59,7 @@ class KalmanFilter6D(ProcessXYZFilterBase):
             self.x_mes = df.iloc[i].values
             # replace NaN values with crazy values
             # they will be filtered out because out of the 3 \sigma enveloppe
-            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
+            x_mes = np.where(~np.isnan(self.x_mes), self.x_mes, 1e24)
 
             # prediction
             A = np.eye(6) + dt * np.eye(6, k=3)
@@ -123,13 +118,13 @@ class KalmanFilter6D(ProcessXYZFilterBase):
 
 class KalmanSmoother6D(ProcessXYZFilterBase):
     # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[ArrayF64] = TrackVariable()
-    x1_cor: TrackVariable[ArrayF64] = TrackVariable()
-    p1_cor: TrackVariable[ArrayF64] = TrackVariable()
-    x2_cor: TrackVariable[ArrayF64] = TrackVariable()
-    p2_cor: TrackVariable[ArrayF64] = TrackVariable()
+    x_mes: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    x1_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    p1_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    x2_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    p2_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
 
-    xs: TrackVariable[ArrayF64] = TrackVariable()
+    xs: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
 
     def __init__(self, reject_sigma: float = 3) -> None:
         super().__init__()
@@ -176,7 +171,7 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
 
             # replace NaN values with crazy values
             # they will be filtered out because out of the 3 \sigma enveloppe
-            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
+            x_mes = np.where(~np.isnan(self.x_mes), self.x_mes, 1e24)
 
             # prediction
             A = np.eye(6) + dt * np.eye(6, k=3)
@@ -234,7 +229,7 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
             self.x_mes = df.iloc[i].values
             # replace NaN values with crazy values
             # they will be filtered out because out of the 3 \sigma enveloppe
-            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, 1e24)
+            x_mes = np.where(~np.isnan(self.x_mes), self.x_mes, 1e24)
 
             # prediction
             A = np.eye(6) + dt * np.eye(6, k=3)

@@ -64,7 +64,7 @@ if TYPE_CHECKING:
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
-    from ..algorithms.navigation import takeoff
+    from ..algorithms.navigation import pushback, takeoff
     from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
@@ -2085,19 +2085,48 @@ class Flight(
     def takeoff(
         self,
         *args: Any,
-        method: str | takeoff.Takeoff = "default",
+        method: Literal["default", "polygon_based", "track_based"]
+        | takeoff.TakeoffBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
         from ..algorithms.navigation import takeoff
 
         method_dict = dict(
-            default=takeoff.Default(*args, **kwargs),
-            track_based=takeoff.TrackBasedRunwayDetection(*args, **kwargs),
+            default=takeoff.PolygonBasedRunwayDetection,
+            polygon_based=takeoff.PolygonBasedRunwayDetection,
+            track_based=takeoff.TrackBasedRunwayDetection,
         )
-        if isinstance(method, str):
-            method = method_dict.get(method, takeoff.Default(*args, **kwargs))
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
 
         yield from method.apply(self)
+
+    def pushback(
+        self,
+        *args: Any,
+        method: Literal["default", "parking_area", "parking_position"]
+        | pushback.PushbackBase = "default",
+        **kwargs: Any,
+    ) -> Optional["Flight"]:
+        from ..algorithms.navigation import pushback
+
+        method_dict = dict(
+            default=pushback.ParkingAreaBasedPushback,
+            parking_area=pushback.ParkingAreaBasedPushback,
+            parking_position=pushback.ParkingPositionBasedPushback,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.apply(self)
 
     def plot_wind(
         self,

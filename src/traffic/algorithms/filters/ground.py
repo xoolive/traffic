@@ -67,7 +67,7 @@ class KalmanTaxiway(ProcessXYFilterBase):
             airports[airport]
             ._openstreetmap()
             .query(
-                'aeroway=="taxiway" or aeroway == "runway" or '
+                'aeroway == "taxiway" or aeroway == "runway" or '
                 'aeroway == "parking_position" or aeroway == "apron" '
             )
             .assign(geom_type=lambda df: df.geom_type)
@@ -131,11 +131,11 @@ class KalmanTaxiway(ProcessXYFilterBase):
         for i in range(1, df.shape[0]):
             # measurement
             self.x_mes = df.iloc[i].values
-
+            self.x_mes = np.where(~np.isnan(self.x_mes), self.x_mes, self.x_pre)
             # prediction
             A = np.eye(4) + dt * np.eye(4, k=2)
             x1_cor = self.x1_cor
-            x1_cor[2:] = np.where(x1_cor[2:] == x1_cor[2:], x1_cor[2:], 0)
+            x1_cor[2:] = np.where(~np.isnan(x1_cor[2:]), x1_cor[2:], 0)
 
             x_pre = A @ x1_cor
             self.x_pre = x_pre
@@ -149,8 +149,8 @@ class KalmanTaxiway(ProcessXYFilterBase):
             assert np.abs(p_pre - p_pre.T).sum() < 1e-6
             assert np.all(np.linalg.eigvals(p_pre) > 0)
 
-            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, x_pre)
-            idx = np.where(self.x_mes != self.x_mes)
+            x_mes = np.where(~np.isnan(self.x_mes), self.x_mes, x_pre)
+            idx = np.where(np.isnan(self.x_mes))
             H[idx, idx] = 0
 
             # innovation
@@ -192,8 +192,8 @@ class KalmanTaxiway(ProcessXYFilterBase):
             assert np.abs(p_pre - p_pre.T).sum() < 1e-6
             assert np.all(np.linalg.eigvals(p_pre) > 0)
 
-            x_mes = np.where(self.x_mes == self.x_mes, self.x_mes, x_pre)
-            idx = np.where(self.x_mes != self.x_mes)
+            x_mes = np.where(~np.isnan(self.x_mes), self.x_mes, x_pre)
+            idx = np.where(np.isnan(self.x_mes))
             H[idx, idx] = 0
 
             # innovation

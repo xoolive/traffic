@@ -139,7 +139,6 @@ class FilterAboveSigmaMedian(FilterBase):
         compute_gs=(17, 53),
         compute_track=17,
         track=17,
-        onground=3,
     )
 
     def __init__(self, **kwargs: int | tuple[int, ...]) -> None:
