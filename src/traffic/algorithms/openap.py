@@ -49,11 +49,10 @@ class OpenAP:
     def typecode_isin_openap(self) -> bool:
         import openap
 
-        typecode = self.typecode
-        if typecode:
-            return self.typecode.lower() in openap.prop.available_aircraft(
-                use_synonym=True
-            )
+        self = cast("Flight", self)
+        available = openap.prop.available_aircraft(use_synonym=True)
+        if typecode := self.typecode:
+            return typecode.lower() in available
         else:
             return False
 

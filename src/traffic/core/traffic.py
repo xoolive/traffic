@@ -541,26 +541,27 @@ class Traffic(HBoxMixin, GeographyMixin):
                     for other in other_interval:
                         if self_interval.overlap(other):
                             inter_interval = self_interval.intersection(other)
+                            if inter_interval is None:
+                                continue
+                            subflight = flight.between(
+                                inter_interval.start,
+                                inter_interval.stop,
+                                strict=False,
+                            )
+                            if subflight is None:
+                                continue
                             if flight_ids:
                                 line = other_df.query(
                                     "start <= @flight.stop and "
                                     "stop >= @flight.start"
                                 )
                                 cumul.append(
-                                    flight.between(
-                                        inter_interval.start,
-                                        inter_interval.stop,
-                                        strict=False,
-                                    ).assign(flight_id=line.iloc[0].flight_id)
-                                )
-                            else:
-                                cumul.append(
-                                    flight.between(
-                                        inter_interval.start,
-                                        inter_interval.stop,
-                                        strict=False,
+                                    subflight.assign(
+                                        flight_id=line.iloc[0].flight_id
                                     )
                                 )
+                            else:
+                                cumul.append(subflight)
             traffic = Traffic.from_flights(cumul)
             if traffic is not None:
                 return traffic

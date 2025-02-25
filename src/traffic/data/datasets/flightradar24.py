@@ -282,6 +282,7 @@ class FlightRadar24:
         cls,
         filename: str | Path,
         trajectories: None | str | Path = None,
+        ems: None | str | Path = None,
         **kwargs: Any,
     ) -> Traffic | Flight:
         filename = Path(filename)
@@ -291,4 +292,4 @@ class FlightRadar24:
             if filename.suffix == ".json":
                 return cls.from_json(filename)
             raise ValueError("Unknown file type")
-        return cls.from_archive(filename, trajectories)
+        return cls.from_archive(filename, trajectories, ems)
