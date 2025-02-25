@@ -45,6 +45,17 @@ class OpenAP:
             .str.replace("LVL", "LEVEL")
         )
 
+    @impunity
+    def typecode_isin_openap(self) -> bool:
+        import openap
+
+        self = cast("Flight", self)
+        available = openap.prop.available_aircraft(use_synonym=True)
+        if typecode := self.typecode:
+            return typecode.lower() in available
+        else:
+            return False
+
     @impunity(ignore_warnings=True)
     def fuelflow(
         self,
