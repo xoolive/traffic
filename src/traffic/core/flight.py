@@ -64,6 +64,7 @@ if TYPE_CHECKING:
 
     from ..algorithms.ground import parking_position, pushback
     from ..algorithms.navigation import (
+        alignment,
         go_around,
         holding_pattern,
         landing,
@@ -2304,6 +2305,50 @@ class Flight(
         )
 
         return method.apply(self)
+
+    @flight_iterator
+    def aligned_on_navpoint(
+        self,
+        points: Union[str, "PointMixin", Iterable["PointMixin"]],
+        angle_precision: int = 1,
+        time_precision: str = "2 min",
+        min_time: str = "30s",
+        min_distance: int = 80,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.navigation.alignment import TrackBearingAlignment
+
+        warnings.warn(
+            "Deprecated aligned_on_navpoint method, use .aligned() instead",
+            DeprecationWarning,
+        )
+
+        method = TrackBearingAlignment(
+            points, angle_precision, time_precision, min_time, min_distance
+        )
+        yield from method.apply(self)
+
+    @flight_iterator
+    def aligned(
+        self,
+        *args: Any,
+        method: Literal["default", "track_bearing"]
+        | alignment.AlignmentBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.navigation import alignment
+
+        method_dict = dict(
+            default=alignment.TrackBearingAlignment,
+            track_bearing=alignment.TrackBearingAlignment,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
 
     # -- End of navigation and ground methods --
 

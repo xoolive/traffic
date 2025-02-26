@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-import logging
-import warnings
 from operator import attrgetter
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Iterable,
     Iterator,
     List,
     Optional,
-    Sequence,
     Union,
     cast,
 )
@@ -29,14 +25,11 @@ from ...core.time import deltalike, to_timedelta
 if TYPE_CHECKING:
     from cartes.osm import Overpass
 
-    from ...core import Flight, FlightPlan
+    from ...core import Flight
     from ...core.mixins import PointMixin
     from ...core.structure import Airport, Navaid
     from ...data.basic.airports import Airports
     from ...data.basic.navaid import Navaids
-
-
-_log = logging.getLogger(__name__)
 
 
 def mrr_diagonal(geom: base.BaseGeometry) -> float:
@@ -252,93 +245,6 @@ class NavigationFeatures:
                 segment = self.between(start, stop, strict=False)
                 if segment is not None:
                     yield segment
-
-    # >>>>> This function is to be deprecated
-
-    def on_runway(self, airport: Union[str, "Airport"]) -> Optional["Flight"]:
-        """Returns the longest segment of trajectory which perfectly matches
-        a runway at given airport.
-
-        .. code:: python
-
-            >>> landing = belevingsvlucht.last(minutes=30).on_runway("EHAM")
-            >>> landing.mean("altitude")
-            -26.0
-
-            >>> takeoff = belevingsvlucht.first(minutes=30).on_runway("EHAM")
-            >>> takeoff.mean("altitude")
-            437.27272727272725
-
-        """
-        msg = "Use .aligned_on_runway(airport).max() instead."
-        warnings.warn(msg, DeprecationWarning)
-
-        return max(
-            self.aligned_on_runway(airport),
-            key=attrgetter("duration"),
-            default=None,
-        )
-
-    # --- end ---
-    @flight_iterator
-    def aligned_on_navpoint(
-        self,
-        points: Union[str, "PointMixin", Iterable["PointMixin"], "FlightPlan"],
-        angle_precision: int = 1,
-        time_precision: str = "2 min",
-        min_time: str = "30s",
-        min_distance: int = 80,
-    ) -> Iterator["Flight"]:
-        """Iterates on segments of trajectories aligned with one of the given
-        navigational beacons passed in parameter.
-
-        The name of the navigational beacon is assigned in a new column
-        `navaid`.
-
-        """
-
-        from ...core import FlightPlan
-        from ...core.mixins import PointMixin
-
-        points_: Sequence[PointMixin]
-
-        # The following cast secures the typing
-        self = cast("Flight", self)
-
-        if isinstance(points, str):
-            from ...data import navaids
-
-            navaid = navaids[points]
-            if navaid is None:
-                _log.warning(f"Navaid {points} unknown")
-                points_ = []
-            else:
-                points_ = [navaid]
-        elif isinstance(points, PointMixin):
-            points_ = [points]
-        elif isinstance(points, FlightPlan):
-            points_ = points.all_points
-        else:
-            points_ = list(points)
-
-        for navpoint in points_:
-            tentative = (
-                self.distance(navpoint)
-                .bearing(navpoint)
-                .assign(
-                    shift=lambda df: df.distance
-                    * (np.radians(df.bearing - df.track).abs()),
-                    delta=lambda df: (df.bearing - df.track).abs(),
-                )
-                .query(f"delta < {angle_precision} and distance < 500")
-            )
-            if tentative is not None:
-                for chunk in tentative.split(time_precision):
-                    if (
-                        chunk.longer_than(min_time)
-                        and chunk.min("distance") < min_distance
-                    ):
-                        yield chunk.assign(navaid=navpoint.name)
 
     def compute_navpoints(
         self, navaids: Optional["Navaids"] = None, buffer: float = 0.1
