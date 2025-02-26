@@ -45,7 +45,6 @@ from shapely.ops import transform
 from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
 from ..algorithms.navigation import NavigationFeatures  # TODO remove
-from ..algorithms.openap import OpenAP
 from ..core import types as tt
 from ..core.structure import Airport
 from .intervals import Interval, IntervalCollection
@@ -72,6 +71,7 @@ if TYPE_CHECKING:
         point_merge,
         takeoff,
     )
+    from ..algorithms.performance import EstimatorBase
     from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
@@ -172,44 +172,6 @@ class MetaFlight(type):
                     flight, *args, **kwargs
                 )
 
-        # We should think about deprecating what comes below...
-        if name.startswith("aligned_on_"):
-            warnings.warn(
-                f"Deprecated {name} method, use .landing() instead",
-                DeprecationWarning,
-            )
-            return lambda flight: cls.aligned_on_ils(flight, name[11:])
-        if name.startswith("takeoff_runway_"):
-            warnings.warn(
-                f"Deprecated {name} method, use .takeoff() instead",
-                DeprecationWarning,
-            )
-            return lambda flight: cls.takeoff_from_runway(flight, name[15:])
-        if name.startswith("on_parking_"):
-            warnings.warn(
-                f"Deprecated {name} method, use .parking() instead",
-                DeprecationWarning,
-            )
-            return lambda flight: cls.on_parking_position(flight, name[11:])
-        if name.startswith("pushback_"):
-            warnings.warn(
-                f"Deprecated {name} method, use .pushback() instead",
-                DeprecationWarning,
-            )
-            return lambda flight: cls.pushback(flight, name[9:])
-        if name.startswith("landing_at_"):
-            warnings.warn(
-                f"Deprecated {name} method, use .landing() instead",
-                DeprecationWarning,
-            )
-            return lambda flight: cls.landing_at(flight, name[11:])
-        if name.startswith("takeoff_from_"):
-            warnings.warn(
-                f"Deprecated {name} method, use .takeoff() instead",
-                DeprecationWarning,
-            )
-            return lambda flight: cls.takeoff_from(flight, name[13:])
-
         raise AttributeError
 
 
@@ -219,7 +181,6 @@ class Flight(
     GeographyMixin,
     ShapelyMixin,
     NavigationFeatures,
-    OpenAP,
     metaclass=MetaFlight,
 ):
     """Flight is the most basic class associated to a trajectory.
@@ -284,38 +245,45 @@ class Flight(
           :meth:`inside_bbox`,
           :meth:`intersects`,
           :meth:`project_shape`,
-          :meth:`simplify`,
           :meth:`unwrap`
 
         - filtering and resampling methods:
           :meth:`filter`,
-          :meth:`forward`,
-          :meth:`resample`
+          :meth:`resample`,
+          :meth:`simplify`,
 
-        - TMA events:
+        - navigation related events:
+          :meth:`aligned_on_navpoint`,  # TODO
           :meth:`landing`,
           :meth:`takeoff`,
+          :meth:`holding_pattern`,
+          :meth:`point_merge`,
           :meth:`go_around`,
 
         - airborne events:
-          :meth:`aligned_on_navpoint`,
-          :meth:`compute_navpoints`,
-          :meth:`emergency`
+          :meth:`compute_navpoints`,  # TODO
+          :meth:`emergency`,
+          :meth:`forward`, # TODO
+          :meth:`phases`,
           :meth:`thermals`
 
         - ground trajectory methods:
           :meth:`aligned_on_runway`, # TODO
+          :meth:`moving`, # TODO
           :meth:`parking_position`,
           :meth:`pushback`,
-          :meth:`slow_taxi`, # TODO
-          :meth:`moving` # TODO
+          :meth:`slow_taxi` # TODO
 
         - visualisation with altair:
           :meth:`chart`,
           :meth:`geoencode`
 
-        - visualisation with leaflet: :meth:`map_leaflet`
-        - visualisation with plotly: :meth:`line_map` and others
+        - visualisation with leaflet:
+          :meth:`map_leaflet`
+
+        - visualisation with plotly:
+          :meth:`line_map` and others
+
         - visualisation with Matplotlib:
           :meth:`plot`,
           :meth:`plot_time`
@@ -2338,6 +2306,52 @@ class Flight(
         return method.apply(self)
 
     # -- End of navigation and ground methods --
+
+    # -- Performance estimation methods --
+
+    def fuelflow(
+        self,
+        *args: Any,
+        method: Literal["default", "openap"] | EstimatorBase = "default",
+        **kwargs: Any,
+    ) -> Flight:
+        from ..algorithms.performance import openap
+
+        method_dict = dict(
+            default=openap.FuelflowEstimation,
+            openap=openap.FuelflowEstimation,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.estimate(self)
+
+    def emission(
+        self,
+        *args: Any,
+        method: Literal["default", "openap"] | EstimatorBase = "default",
+        **kwargs: Any,
+    ) -> Flight:
+        from ..algorithms.performance import openap
+
+        method_dict = dict(
+            default=openap.PollutantEstimation,
+            openap=openap.PollutantEstimation,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.estimate(self)
+
+    # -- End of performance estimation methods --
 
     def plot_wind(
         self,

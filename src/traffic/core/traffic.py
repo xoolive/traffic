@@ -994,6 +994,14 @@ class Traffic(HBoxMixin, GeographyMixin):
     def phases(self, /, *args, method="default", **kwargs):  # type: ignore
         ...
 
+    @lazy_evaluation()
+    def fuelflow(self, /, *args, method="default", **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
+    def emission(self, /, *args, method="default", **kwargs):  # type: ignore
+        ...
+
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)
