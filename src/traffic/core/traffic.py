@@ -938,12 +938,34 @@ class Traffic(HBoxMixin, GeographyMixin):
     def compute_wind(self):  # type: ignore
         ...
 
+    # -- Navigation methods --
+
     @lazy_evaluation()
-    def takeoff(self, *args, method="default", **kwargs):  # type: ignore
+    def go_around(self, /, *args, method="default", **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
-    def pushback(self, *args, method="default", **kwargs):  # type: ignore
+    def holding_pattern(self, /, *args, method="default", **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
+    def landing(self, /, *args, method="default", **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
+    def takeoff(self, /, *args, method="default", **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
+    def parking_position(self, /, *args, method="default", **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
+    def point_merge(self, /, *args, method="default", **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
+    def pushback(self, /, *args, method="default", **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
@@ -969,7 +991,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def phases(self, twindow: int = 60):  # type: ignore
+    def phases(self, /, *args, method="default", **kwargs):  # type: ignore
         ...
 
     # -- Methods with a Traffic implementation, otherwise delegated to Flight

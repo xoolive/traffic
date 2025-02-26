@@ -217,3 +217,21 @@ class FilterAboveSigmaMedian(FilterBase):
                 data.loc[df.sq_eps > df.sigma, column] = None
 
         return data
+
+
+class FilterPosition(FilterBase):
+    # TODO improve this implementation based on agg_time or EKF
+    def __init__(self, cascades: int = 2) -> None:
+        self.cascades = cascades
+
+    def apply(self, flight: pd.DataFrame) -> pd.DataFrame:
+        from ...core import Flight
+
+        flight = Flight(flight)
+        for _ in range(self.cascades):
+            if flight is None:
+                return None
+            flight = flight.cumulative_distance().query(
+                "compute_gs < compute_gs.mean() + 3 * compute_gs.std()"
+            )
+        return flight.data

@@ -8,6 +8,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
 from ...core.flight import Flight
+from ...core.structure import Airport
 from ..filters import FilterMedian
 
 if TYPE_CHECKING:
@@ -15,12 +16,9 @@ if TYPE_CHECKING:
 
     from shapely.geometry import Polygon
 
-    from ...core.flight import Flight
-    from ...core.structure import Airport
-
 
 class PushbackBase(Protocol):
-    def apply(self, flight: "Flight") -> Optional["Flight"]: ...
+    def apply(self, flight: Flight) -> Optional[Flight]: ...
 
 
 _log = logging.getLogger(__name__)
@@ -44,7 +42,7 @@ class ParkingPositionBasedPushback:
 
     def __init__(
         self,
-        airport: Union[str, "Airport"],
+        airport: Union[str, Airport],
         filter_dict: dict[str, int] = dict(
             compute_track_unwrapped=21, compute_track=21, compute_gs=21
         ),
@@ -63,12 +61,12 @@ class ParkingPositionBasedPushback:
         self.track_threshold = track_threshold
         self.parking_positions = parking_positions
 
-    def apply(self, flight: "Flight") -> Optional["Flight"]:
-        within_airport: Optional["Flight"] = flight.inside_bbox(self.airport)
+    def apply(self, flight: Flight) -> Optional[Flight]:
+        within_airport: Optional[Flight] = flight.inside_bbox(self.airport)
         if within_airport is None:
             return None
 
-        parking_position = within_airport.on_parking_position(
+        parking_position = within_airport.parking_position(
             self.airport, parking_positions=self.parking_positions
         ).next()
         if parking_position is None:
@@ -110,51 +108,24 @@ class ParkingPositionBasedPushback:
 
 class ParkingAreaBasedPushback:
     """
-    Detects and calculates pushback and taxiing characteristics for a given aircraft trajectory during takeoff.
+    Returns the pushback part of the trajectory on ground.
 
-    This function determines whether an aircraft has performed a pushback before taxiing by checking if the
-    trajectory intersects defined stand areas. If pushback is detected, it calculates the start and duration of
-    pushback, the start time of taxiing, as well as taxi duration and distance. It also updates the trajectory
-    data with pushback and taxi attributes.
+    The method identifies the start of the movement, an intersection with a
+    document apron area and the moment the aircraft suddenly changes direction
+    the computed track angle.
 
-    Parameters:
-    -----------
-    traj : Trajectory
-        The aircraft trajectory object containing time series data of the aircraft's ground movement and status.
+    .. warning::
 
-    standAreas : list of Polygon
-        List of polygonal areas representing possible stand locations where aircraft might initiate pushback.
+        The method has poor performance when trajectory point on ground are
+        lacking. This is often the case for data recorded from locations far
+        from the airport.
 
-    airport_str : str, optional
-        String representing the airport code (default is 'LSZH') for location-specific data handling.
-
-    Returns:
-    --------
-    traj : Trajectory
-        Updated trajectory object with additional attributes:
-        - isPushback (bool): Whether the aircraft performed a pushback.
-        - startPushback (datetime): The start time of the pushback maneuver, if detected.
-        - startTaxi (datetime): The start time of the taxiing phase.
-        - pushbackDuration (timedelta): Duration of the pushback phase.
-        - taxiDuration (timedelta): Duration of the taxiing phase.
-        - taxiDistance (float): Total distance covered during taxiing in meters.
-
-    Notes:
-    ------
-    - The function is specifically designed for analyzing takeoff events.
-    - If the ground coverage is incomplete or trajectory segments are missing,
-      adjustments may be made to the pushback and taxi timings.
-    - The calculated `taxiDuration` and `taxiDistance` are only valid for takeoff movements
-      with available lineup times.
-
-    Example:
-    --------
-    traj = alternative_pushback_detection(traj, standAreas, airport_str='LSZH')
+    # TODO document parameters
     """
 
     def __init__(
         self,
-        airport: Union[str, "Airport"],
+        airport: str | Airport,
         stand_areas: Union[
             None, "Overpass", gpd.GeoDataFrame, list[Polygon]
         ] = None,

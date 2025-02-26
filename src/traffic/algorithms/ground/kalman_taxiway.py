@@ -12,7 +12,7 @@ from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
 
 from ...data import airports
-from .preprocessing import (
+from ..filters.preprocessing import (
     ProcessXYFilterBase,
     TrackVariable,
 )

@@ -1,7 +1,7 @@
 from cartes.crs import Lambert93  # type: ignore
 
 from traffic.algorithms.filters.ekf import EKF
-from traffic.algorithms.filters.ground import KalmanTaxiway
+from traffic.algorithms.ground.kalman_taxiway import KalmanTaxiway
 from traffic.data.samples import full_flight_short
 
 full_flight_short = full_flight_short.assign(callsign="AFR34ZG")

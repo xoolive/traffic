@@ -19,8 +19,8 @@ from shapely.geometry import LineString, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import split, transform
 
-from ..core import Flight
-from ..core.structure import Airport
+from ...core import Flight
+from ...core.structure import Airport
 
 projection = EuroPP()
 

@@ -1,5 +1,5 @@
 from operator import attrgetter
-from typing import TYPE_CHECKING, Iterator, Protocol, Union
+from typing import Iterator, Protocol
 
 import pitot.geodesy as geo
 
@@ -7,14 +7,12 @@ import numpy as np
 from shapely.geometry import Polygon
 
 from ...core.distance import minimal_angular_difference
-
-if TYPE_CHECKING:
-    from ...core.flight import Flight
-    from ...core.structure import Airport
+from ...core.flight import Flight
+from ...core.structure import Airport
 
 
 class TakeoffBase(Protocol):
-    def apply(self, flight: "Flight") -> Iterator["Flight"]: ...
+    def apply(self, flight: Flight) -> Iterator[Flight]: ...
 
 
 class PolygonBasedRunwayDetection:
@@ -28,8 +26,8 @@ class PolygonBasedRunwayDetection:
 
     def __init__(
         self,
-        airport: Union[str, "Airport"],
-        max_ft_above_airport: int = 2000,
+        airport: str | Airport,
+        max_ft_above_airport: float = 2000,
         zone_length: int = 6000,
         little_base: int = 50,
         opening: float = 5,
@@ -99,9 +97,8 @@ class PolygonBasedRunwayDetection:
             poly = Polygon(zip(lon, lat))
             self.runway_polygons[name] = poly
 
-    def apply(self, flight: "Flight") -> Iterator["Flight"]:
-        flight = flight.phases()
-        low_traj = flight.query(
+    def apply(self, flight: Flight) -> Iterator[Flight]:
+        low_traj = flight.phases().query(
             f"(phase == 'CLIMB' or phase == 'LEVEL') and altitude < {self.alt}"
         )
 
@@ -162,7 +159,7 @@ class TrackBasedRunwayDetection:
 
     def __init__(
         self,
-        airport: Union[str, "Airport"],
+        airport: str | Airport,
         max_ft_above_airport: float = 1500,
         min_groundspeed_kts: float = 30,
         min_vert_rate_ftmin: float = 257,

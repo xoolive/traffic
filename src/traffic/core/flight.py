@@ -38,14 +38,13 @@ from typing_extensions import Self
 import numpy as np
 import pandas as pd
 import pyproj
-from pandas.core.internals import DatetimeTZBlock
+from pandas.core.internals import DatetimeTZBlock  # TODO DeprecationWarning
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
 from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
-from ..algorithms.filters import aggressive
-from ..algorithms.navigation import NavigationFeatures
+from ..algorithms.navigation import NavigationFeatures  # TODO remove
 from ..algorithms.openap import OpenAP
 from ..core import types as tt
 from ..core.structure import Airport
@@ -64,7 +63,15 @@ if TYPE_CHECKING:
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
-    from ..algorithms.navigation import pushback, takeoff
+    from ..algorithms.ground import parking_position, pushback
+    from ..algorithms.navigation import (
+        go_around,
+        holding_pattern,
+        landing,
+        phases,
+        point_merge,
+        takeoff,
+    )
     from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
@@ -167,16 +174,40 @@ class MetaFlight(type):
 
         # We should think about deprecating what comes below...
         if name.startswith("aligned_on_"):
+            warnings.warn(
+                f"Deprecated {name} method, use .landing() instead",
+                DeprecationWarning,
+            )
             return lambda flight: cls.aligned_on_ils(flight, name[11:])
         if name.startswith("takeoff_runway_"):
+            warnings.warn(
+                f"Deprecated {name} method, use .takeoff() instead",
+                DeprecationWarning,
+            )
             return lambda flight: cls.takeoff_from_runway(flight, name[15:])
         if name.startswith("on_parking_"):
+            warnings.warn(
+                f"Deprecated {name} method, use .parking() instead",
+                DeprecationWarning,
+            )
             return lambda flight: cls.on_parking_position(flight, name[11:])
         if name.startswith("pushback_"):
+            warnings.warn(
+                f"Deprecated {name} method, use .pushback() instead",
+                DeprecationWarning,
+            )
             return lambda flight: cls.pushback(flight, name[9:])
         if name.startswith("landing_at_"):
+            warnings.warn(
+                f"Deprecated {name} method, use .landing() instead",
+                DeprecationWarning,
+            )
             return lambda flight: cls.landing_at(flight, name[11:])
         if name.startswith("takeoff_from_"):
+            warnings.warn(
+                f"Deprecated {name} method, use .takeoff() instead",
+                DeprecationWarning,
+            )
             return lambda flight: cls.takeoff_from(flight, name[13:])
 
         raise AttributeError
@@ -262,22 +293,22 @@ class Flight(
           :meth:`resample`
 
         - TMA events:
-          :meth:`takeoff_from_runway`,
-          :meth:`aligned_on_ils`,
+          :meth:`landing`,
+          :meth:`takeoff`,
           :meth:`go_around`,
-          :meth:`runway_change`
 
         - airborne events:
           :meth:`aligned_on_navpoint`,
           :meth:`compute_navpoints`,
           :meth:`emergency`
+          :meth:`thermals`
 
         - ground trajectory methods:
-          :meth:`aligned_on_runway`,
-          :meth:`on_parking_position`,
+          :meth:`aligned_on_runway`, # TODO
+          :meth:`parking_position`,
           :meth:`pushback`,
-          :meth:`slow_taxi`,
-          :meth:`moving`
+          :meth:`slow_taxi`, # TODO
+          :meth:`moving` # TODO
 
         - visualisation with altair:
           :meth:`chart`,
@@ -1847,6 +1878,8 @@ class Flight(
             - ``lambda x: x.interpolate()`` may be a smart strategy
 
         """
+        from ..algorithms.filters import aggressive
+
         filter_dict = dict(
             default=filters.FilterAboveSigmaMedian(**kwargs),
             aggressive=filters.FilterMedian()
@@ -1879,18 +1912,15 @@ class Flight(
         return postprocess
 
     def filter_position(self, cascades: int = 2) -> Optional[Flight]:
-        # TODO improve based on agg_time or EKF
-        flight: Optional[Flight] = self
-        for _ in range(cascades):
-            if flight is None:
-                return None
-            flight = flight.cumulative_distance().query(
-                "compute_gs < compute_gs.mean() + 3 * compute_gs.std()"
-            )
-        return flight
+        from ..algorithms.filters import FilterPosition
 
-    def comet(self, **kwargs: Any) -> Flight:
-        raise DeprecationWarning("Use Flight.forward() method instead")
+        warnings.warn(
+            "Deprecated filter_position method, "
+            "use .filter() with FilterPosition instead",
+            DeprecationWarning,
+        )
+
+        return self.filter(FilterPosition(cascades))
 
     @impunity(ignore_warnings=True)
     def forward(
@@ -2081,6 +2111,156 @@ class Flight(
             - self.data.TAS * np.cos(np.radians(self.data.heading)),
         )
 
+    def phases(
+        self,
+        *args: Any,
+        method: Literal["default", "openap"]
+        | phases.FlightPhasesBase = "default",
+        **kwargs: Any,
+    ) -> Flight:
+        from ..algorithms.navigation import phases
+
+        method_dict = dict(
+            default=phases.FlightPhasesOpenAP,
+            openap=phases.FlightPhasesOpenAP,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.apply(self)
+
+    # -- Navigation methods --
+
+    @flight_iterator
+    def aligned_on_ils(
+        self,
+        airport: Union[str, "Airport"],
+        angle_tolerance: float = 0.1,
+        min_duration: deltalike = "1 min",
+        max_ft_above_airport: float = 5000,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.navigation.landing import LandingAlignedOnILS
+
+        warnings.warn(
+            "Deprecated aligned_on_ils method, use .landing() instead",
+            DeprecationWarning,
+        )
+
+        method = LandingAlignedOnILS(
+            airport, angle_tolerance, min_duration, max_ft_above_airport
+        )
+        yield from method.apply(self)
+
+    @flight_iterator
+    def go_around(
+        self,
+        *args: None,
+        method: Literal["default"] | go_around.GoAroundBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.navigation import go_around
+
+        method_dict = dict(default=go_around.GoAroundDetection)
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
+    @flight_iterator
+    def holding_pattern(
+        self,
+        *args: Any,
+        method: Literal["default"]
+        | holding_pattern.HoldingPatternBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.navigation import holding_pattern
+
+        method_dict = dict(default=holding_pattern.MLHoldingDetection)
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
+    @flight_iterator
+    def landing(
+        self,
+        *args: Any,
+        method: Literal["default", "aligned_on_ils", "runway_change"]
+        | landing.LandingBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.navigation import landing
+
+        method_dict = dict(
+            default=landing.LandingAlignedOnILS,
+            aligned_on_ils=landing.LandingAlignedOnILS,
+            runway_change=landing.LandingWithRunwayChange,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
+    @flight_iterator
+    def point_merge(
+        self,
+        *args: Any,
+        method: Literal["default", "alignment"] | point_merge.PointMergeBase,
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.navigation import point_merge
+
+        method_dict = dict(
+            default=point_merge.PointMerge,
+            alignment=point_merge.PointMerge,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
+    @flight_iterator
+    def takeoff_from_runway(
+        self,
+        airport: Union[str, "Airport"],
+        max_ft_above_airport: float = 5000,
+        zone_length: int = 6000,
+        little_base: int = 50,
+        opening: float = 5,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.navigation.takeoff import PolygonBasedRunwayDetection
+
+        warnings.warn(
+            "Deprecated takeoff_from_runway method, use .takeoff() instead",
+            DeprecationWarning,
+        )
+
+        method = PolygonBasedRunwayDetection(
+            airport, max_ft_above_airport, zone_length, little_base, opening
+        )
+        yield from method.apply(self)
+
     @flight_iterator
     def takeoff(
         self,
@@ -2105,6 +2285,35 @@ class Flight(
 
         yield from method.apply(self)
 
+    @flight_iterator
+    def thermal(self) -> Iterator["Flight"]:
+        from ..algorithms.navigation.thermals import GliderThermal
+
+        yield from GliderThermal().apply(self)
+
+    @flight_iterator
+    def parking_position(
+        self,
+        *args: Any,
+        method: Literal["default", "geometry"]
+        | parking_position.ParkingPositionBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        from ..algorithms.ground import parking_position
+
+        method_dict = dict(
+            default=parking_position.ParkingPositionGeometricIntersection,
+            geometry=parking_position.ParkingPositionGeometricIntersection,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
     def pushback(
         self,
         *args: Any,
@@ -2112,7 +2321,7 @@ class Flight(
         | pushback.PushbackBase = "default",
         **kwargs: Any,
     ) -> Optional["Flight"]:
-        from ..algorithms.navigation import pushback
+        from ..algorithms.ground import pushback
 
         method_dict = dict(
             default=pushback.ParkingAreaBasedPushback,
@@ -2127,6 +2336,8 @@ class Flight(
         )
 
         return method.apply(self)
+
+    # -- End of navigation and ground methods --
 
     def plot_wind(
         self,
