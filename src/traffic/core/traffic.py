@@ -961,6 +961,10 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
+    def movement(self, /, *args, method="default", **kwargs):  # type: ignore
+        ...
+
+    @lazy_evaluation()
     def point_merge(self, /, *args, method="default", **kwargs):  # type: ignore
         ...
 

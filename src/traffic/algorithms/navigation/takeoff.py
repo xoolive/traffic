@@ -116,8 +116,8 @@ class PolygonBasedRunwayDetection:
                     )
                     if candidate is None or candidate.shape is None:
                         continue
-                    start_runway = candidate.aligned_on_runway(
-                        self.airport
+                    start_runway = candidate.aligned(
+                        self.airport, method="runway"
                     ).max()
 
                     if start_runway is not None:

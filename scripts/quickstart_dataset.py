@@ -21,7 +21,7 @@ t
 
 
 def trim_after_landing(f: Flight) -> None | Flight:
-    g = f.aligned_on_ils("LFPG").max("start")
+    g = f.landing("LFPG").max("start")
     if g is None:
         return None
     return f.before(g.stop, strict=False)
@@ -33,7 +33,7 @@ def d_max(f: Flight) -> bool:
 
 lfpg = (
     cast(Traffic, t.query('callsign not in ["FJAVN", "FGLVK"]'))
-    .has("aligned_on_LFPG")
+    .has("landing('LFPG)")
     .pipe(trim_after_landing)
     .distance(airports["LFPG"])
     .query("distance < 60")
@@ -45,7 +45,7 @@ lfpg = (
     )
 )
 lfpo = (
-    t.has("aligned_on_LFPO")
+    t.has("landing('LFPO)")
     .distance(airports["LFPO"])
     .query("distance < 60")
     .filter_if(d_max)
@@ -56,7 +56,7 @@ lfpo = (
     )
 )
 lfpb = (
-    t.has("aligned_on_LFPB")
+    t.has("landing('LFPB')")
     .distance(airports["LFPB"])
     .query("distance < 60")
     .filter_if(d_max)
@@ -67,7 +67,7 @@ lfpb = (
     )
 )
 lfob = (
-    t.has("aligned_on_LFOB")
+    t.has("landing('LFOB')")
     .distance(airports["LFOB"])
     .query("distance < 60")
     .filter_if(d_max)
@@ -78,7 +78,7 @@ lfob = (
     )
 )
 lfpv = (
-    t.has("aligned_on_LFPV")
+    t.has("landing('LFPV')")
     .distance(airports["LFPV"])
     .query("distance < 60")
     .filter_if(d_max)
@@ -95,7 +95,7 @@ landing = lfpg + lfpo + lfpb + lfob + lfpv
 
 
 def clip(f: Flight) -> None | Flight:
-    g = f.aligned_on_runway("LFPG").max("duration")
+    g = f.aligned("LFPG", method="runway").max("duration")
     if g is None:
         return f
     return f.after(g.stop)

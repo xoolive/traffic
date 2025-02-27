@@ -162,3 +162,43 @@ class LandingWithRunwayChange:
                 )
 
             first = second
+
+
+class LandingAttempts:
+    def landing_attempts(
+        self,
+        flight: Flight,
+        dataset: Optional["Airports"] = None,
+        **kwargs: Any,
+    ) -> Iterator[Flight]:
+        """Iterates on all landing attempts for current flight.
+
+        First, candidates airports are identified in the neighbourhood
+        of the segments of trajectory below 10,000 ft. By default, the
+        full airport database is considered but it is possible to restrict
+        it and pass a smaller database with the dataset parameter.
+
+        If no runway information is available for the given airport, no
+        trajectory segment will be provided.
+
+        .. warning::
+
+            This API is not stable yet. The interface may change in a near
+            future.
+
+        """
+
+        candidate = flight.query("altitude < 8000")
+        if candidate is not None:
+            for chunk in candidate.split("10 min"):
+                point = chunk.query("altitude == altitude.min()")
+                if point is None:
+                    return
+                if dataset is None:
+                    cd = point.landing_airport()
+                else:
+                    cd = point.landing_airport(dataset=dataset)
+                if cd.runways is not None:
+                    yield from chunk.assign(airport=cd.icao).aligned_on_ils(
+                        cd, **kwargs
+                    )

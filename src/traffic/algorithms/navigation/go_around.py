@@ -46,10 +46,7 @@ class GoAroundDetection:
 
     def apply(self, flight: Flight) -> Iterator[Flight]:
         if self.airport is None:
-            if self.dataset is None:
-                self.airport = flight.landing_airport()
-            else:
-                self.airport = flight.landing_airport(dataset=self.dataset)
+            self.airport = flight.infer_airport("landing", dataset=self.dataset)
 
         if self.airport is None:
             return None

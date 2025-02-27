@@ -44,7 +44,6 @@ from shapely.ops import transform
 
 from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
-from ..algorithms.navigation import NavigationFeatures  # TODO remove
 from ..core import types as tt
 from ..core.structure import Airport
 from .intervals import Interval, IntervalCollection
@@ -62,7 +61,8 @@ if TYPE_CHECKING:
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
-    from ..algorithms.ground import parking_position, pushback
+    from ..algorithms.ground import movement, parking_position, pushback
+    from ..algorithms.metadata import airports
     from ..algorithms.navigation import (
         alignment,
         go_around,
@@ -177,13 +177,7 @@ class MetaFlight(type):
 
 
 @rich.repr.auto()
-class Flight(
-    HBoxMixin,
-    GeographyMixin,
-    ShapelyMixin,
-    NavigationFeatures,
-    metaclass=MetaFlight,
-):
+class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     """Flight is the most basic class associated to a trajectory.
     Flights are the building block of all processing methods, built on top of
     pandas DataFrame. The minimum set of required features are:
@@ -254,7 +248,8 @@ class Flight(
           :meth:`simplify`,
 
         - navigation related events:
-          :meth:`aligned_on_navpoint`,  # TODO
+          :meth:`aligned_on_navpoint`,
+          :meth:`aligned`,
           :meth:`landing`,
           :meth:`takeoff`,
           :meth:`holding_pattern`,
@@ -264,16 +259,18 @@ class Flight(
         - airborne events:
           :meth:`compute_navpoints`,  # TODO
           :meth:`emergency`,
-          :meth:`forward`, # TODO
           :meth:`phases`,
           :meth:`thermals`
 
         - ground trajectory methods:
-          :meth:`aligned_on_runway`, # TODO
-          :meth:`moving`, # TODO
+          :meth:`aligned_on_runway`,
+          :meth:`moving`,
           :meth:`parking_position`,
           :meth:`pushback`,
-          :meth:`slow_taxi` # TODO
+
+        - prediction methods:
+          :meth:`forward` # TODO
+          :meth:`predict` # TODO
 
         - visualisation with altair:
           :meth:`chart`,
@@ -1881,6 +1878,9 @@ class Flight(
         return postprocess
 
     def filter_position(self, cascades: int = 2) -> Optional[Flight]:
+        """
+        DEPRECATED
+        """
         from ..algorithms.filters import FilterPosition
 
         warnings.warn(
@@ -1975,6 +1975,17 @@ class Flight(
                 msg = "Specify a name argument without the `callsign` property"
                 raise RuntimeError(msg)
         return self.assign(flight_id=name.format(self=self, idx=idx))
+
+    @flight_iterator
+    def emergency(self) -> Iterator["Flight"]:
+        """Iterates on emergency segments of trajectory.
+
+        An emergency is defined with a 7700 squawk code.
+        """
+        squawk7700 = self.query("squawk == '7700'")
+        if squawk7700 is None:
+            return
+        yield from squawk7700.split("10 min")
 
     def onground(self) -> Optional[Flight]:
         if "altitude" not in self.data.columns:
@@ -2102,6 +2113,47 @@ class Flight(
 
         return method.apply(self)
 
+    # -- Metadata inference methods --
+
+    def infer_airport(
+        self,
+        method: Literal["takeoff", "landing"] | airports.AirportInferenceBase,
+        **kwargs: Any,
+    ) -> Airport:
+        from ..algorithms.metadata import airports
+
+        method_dict = dict(
+            takeoff=airports.TakeoffAirportInference,
+            landing=airports.LandingAirportInference,
+        )
+
+        method = (
+            method_dict[method](**kwargs) if isinstance(method, str) else method
+        )
+        return method.infer(self)
+
+    def takeoff_from(self, airport: str | Airport) -> bool:
+        """Returns True if the flight takes off from the given airport."""
+
+        from ..data import airports
+
+        _airport = (
+            airport if isinstance(airport, Airport) else airports[airport]
+        )
+
+        return self.infer_airport("takeoff") == _airport
+
+    def landing_at(self, airport: str | Airport) -> bool:
+        """Returns True if the flight lands at the given airport."""
+
+        from ..data import airports
+
+        _airport = (
+            airport if isinstance(airport, Airport) else airports[airport]
+        )
+
+        return self.infer_airport("landing") == _airport
+
     # -- Navigation methods --
 
     @flight_iterator
@@ -2112,6 +2164,10 @@ class Flight(
         min_duration: deltalike = "1 min",
         max_ft_above_airport: float = 5000,
     ) -> Iterator["Flight"]:
+        """
+        DEPRECATED
+        """
+
         from ..algorithms.navigation.landing import LandingAlignedOnILS
 
         warnings.warn(
@@ -2218,6 +2274,10 @@ class Flight(
         little_base: int = 50,
         opening: float = 5,
     ) -> Iterator["Flight"]:
+        """
+        DEPRECATED
+        """
+
         from ..algorithms.navigation.takeoff import PolygonBasedRunwayDetection
 
         warnings.warn(
@@ -2283,6 +2343,28 @@ class Flight(
 
         yield from method.apply(self)
 
+    def movement(
+        self,
+        *args: Any,
+        method: Literal["default", "start_moving"]
+        | movement.MovementDetectionBase = "default",
+        **kwargs: Any,
+    ) -> Optional["Flight"]:
+        from ..algorithms.ground import movement
+
+        method_dict = dict(
+            default=movement.StartMoving,
+            start_moving=movement.StartMoving,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.apply(self)
+
     def pushback(
         self,
         *args: Any,
@@ -2315,31 +2397,52 @@ class Flight(
         min_time: str = "30s",
         min_distance: int = 80,
     ) -> Iterator["Flight"]:
-        from ..algorithms.navigation.alignment import TrackBearingAlignment
+        from ..algorithms.navigation.alignment import (
+            BeaconTrackBearingAlignment,
+        )
 
         warnings.warn(
             "Deprecated aligned_on_navpoint method, use .aligned() instead",
             DeprecationWarning,
         )
 
-        method = TrackBearingAlignment(
+        method = BeaconTrackBearingAlignment(
             points, angle_precision, time_precision, min_time, min_distance
         )
+        yield from method.apply(self)
+
+    @flight_iterator
+    def aligned_on_runway(self, airport: str | Airport) -> Iterator["Flight"]:
+        """
+        DEPRECATED
+        """
+
+        from ..algorithms.ground.geometry import RunwayAlignment
+
+        warnings.warn(
+            "Deprecated aligned_on_runway method, use .aligned() instead",
+            DeprecationWarning,
+        )
+
+        method = RunwayAlignment(airport=airport)
         yield from method.apply(self)
 
     @flight_iterator
     def aligned(
         self,
         *args: Any,
-        method: Literal["default", "track_bearing"]
+        method: Literal["default", "beacon", "ils", "runway"]
         | alignment.AlignmentBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
-        from ..algorithms.navigation import alignment
+        from ..algorithms.ground import geometry
+        from ..algorithms.navigation import alignment, landing
 
         method_dict = dict(
-            default=alignment.TrackBearingAlignment,
-            track_bearing=alignment.TrackBearingAlignment,
+            default=alignment.BeaconTrackBearingAlignment,
+            beacon=alignment.BeaconTrackBearingAlignment,
+            ils=landing.LandingAlignedOnILS,
+            runway=geometry.RunwayAlignment,
         )
 
         method = (
@@ -2648,6 +2751,41 @@ class Flight(
         return table.assign(
             lateral=distance_vec,
             vertical=(table.altitude_x - table.altitude_y).abs(),
+        )
+
+    def closest_point(self, points: List[PointMixin] | PointMixin) -> pd.Series:
+        """Selects the closest point of the trajectory with respect to
+        a point or list of points.
+
+        The pd.Series returned by the function is enriched with two fields:
+        distance (in meters) and point (containing the name of the closest
+        point to the trajectory)
+
+        Example usage:
+
+        .. code:: python
+
+            >>> item = belevingsvlucht.between(
+            ...     "2018-05-30 16:00", "2018-05-30 17:00"
+            ... ).closest_point(  # type: ignore
+            ...     [
+            ...         airports["EHLE"],  # type: ignore
+            ...         airports["EHAM"],  # type: ignore
+            ...         navaids["NARAK"],  # type: ignore
+            ...     ]
+            ... )
+            >>> f"{item.point}, {item.distance:.2f}m"
+            "Lelystad Airport, 49.11m"
+
+        """
+        from .distance import closest_point
+
+        if not isinstance(points, list):
+            points = [points]
+
+        return min(
+            (closest_point(self.data, point) for point in points),
+            key=attrgetter("distance"),
         )
 
     def compute_DME_NSE(

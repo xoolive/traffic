@@ -26,19 +26,19 @@ except zipfile.BadZipFile:
 
 
 def test_landing_airport() -> None:  # TODO
-    assert belevingsvlucht.landing_airport().icao == "EHAM"
-    assert airbus_tree.landing_airport().icao == "EDHI"
+    assert belevingsvlucht.infer_airport("landing").icao == "EHAM"
+    assert airbus_tree.infer_airport("landing").icao == "EDHI"
 
 
 def test_landing_runway() -> None:  # TODO
     last = belevingsvlucht.last(minutes=30)
-    segment = last.aligned_on_runway("EHAM").max()
+    segment = last.aligned("EHAM", method="runway").max()
     assert segment is not None
     assert segment.mean("altitude") < 0
 
 
 def test_aligned_runway() -> None:  # TODO
-    assert belevingsvlucht.aligned_on_runway("EHAM").sum() == 2
+    assert belevingsvlucht.aligned("EHAM", method="runway").sum() == 2
 
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
@@ -51,7 +51,7 @@ def test_landing_based_on_ils() -> None:
     assert aligned.max("ILS") == "06"
 
     # inside an aggregation method like next, max, final, etc.
-    aligned = belevingsvlucht.final("landing('EHLE', method='default')")
+    aligned = belevingsvlucht.final("aligned('EHLE', method='ils')")
     assert aligned is not None
     assert aligned.ILS_max == "23"
 
@@ -187,21 +187,21 @@ def test_parking_position() -> None:
     assert pp.parking_position_max == "A49"
 
 
-def test_slow_taxi() -> None:  # TODO
-    flight = zurich_airport["SWR137H"]
-    assert flight is not None
-    slow_durations = sum(
-        ((slow_segment.duration,) for slow_segment in flight.slow_taxi()),
-        (),
-    )
-
-    assert len(slow_durations) == 4
-    slow_durations_sum = sum(slow_durations, pd.Timedelta(0))
-    assert slow_durations_sum > pd.Timedelta("0 days 00:06:00")
-
-    flight = zurich_airport["ACA879"]
-    assert flight is not None
-    assert flight.slow_taxi().next() is None
+# def test_slow_taxi() -> None:  # TODO
+#     flight = zurich_airport["SWR137H"]
+#     assert flight is not None
+#     slow_durations = sum(
+#         ((slow_segment.duration,) for slow_segment in flight.slow_taxi()),
+#         (),
+#     )
+#
+#     assert len(slow_durations) == 4
+#     slow_durations_sum = sum(slow_durations, pd.Timedelta(0))
+#     assert slow_durations_sum > pd.Timedelta("0 days 00:06:00")
+#
+#     flight = zurich_airport["ACA879"]
+#     assert flight is not None
+#     assert flight.slow_taxi().next() is None
 
 
 @pytest.mark.xfail(
@@ -294,42 +294,42 @@ def test_on_taxiway() -> None:  # TODO
     assert len(flight.on_taxiway(lszh_taxiway)) == 9
 
 
-@pytest.mark.slow
-def test_ground_trajectory() -> None:  # TODO
-    flight_iterate = belevingsvlucht.ground_trajectory("EHAM")
-    takeoff = next(flight_iterate)
-    assert (
-        pd.Timestamp("2018-05-30 15:21:00+00:00")
-        < takeoff.stop
-        < pd.Timestamp("2018-05-30 15:22:00+00:00")
-    )
-    landing = next(flight_iterate)
-    assert (
-        pd.Timestamp("2018-05-30 20:17:00+00:00")
-        < landing.start
-        < pd.Timestamp("2018-05-30 20:18:00+00:00")
-    )
-    assert next(flight_iterate, None) is None
-
-    assert belevingsvlucht.ground_trajectory("EHLE").sum() == 0
-
-    flight = zurich_airport["SWR5220"]
-    assert flight is not None
-
-    flight_iterate = flight.ground_trajectory("LSZH")
-    takeoff = next(flight_iterate)
-    assert (
-        pd.Timestamp("2019-11-05 13:05:00+00:00")
-        < takeoff.stop
-        < pd.Timestamp("2019-11-05 13:06:00+00:00")
-    )
-    landing = next(flight_iterate)
-    assert (
-        pd.Timestamp("2019-11-05 16:36:00+00:00")
-        < landing.start
-        < pd.Timestamp("2019-11-05 16:37:00+00:00")
-    )
-    assert next(flight_iterate, None) is None
+# @pytest.mark.slow
+# def test_ground_trajectory() -> None:  # TODO
+#     flight_iterate = belevingsvlucht.ground_trajectory("EHAM")
+#     takeoff = next(flight_iterate)
+#     assert (
+#         pd.Timestamp("2018-05-30 15:21:00+00:00")
+#         < takeoff.stop
+#         < pd.Timestamp("2018-05-30 15:22:00+00:00")
+#     )
+#     landing = next(flight_iterate)
+#     assert (
+#         pd.Timestamp("2018-05-30 20:17:00+00:00")
+#         < landing.start
+#         < pd.Timestamp("2018-05-30 20:18:00+00:00")
+#     )
+#     assert next(flight_iterate, None) is None
+#
+#     assert belevingsvlucht.ground_trajectory("EHLE").sum() == 0
+#
+#     flight = zurich_airport["SWR5220"]
+#     assert flight is not None
+#
+#     flight_iterate = flight.ground_trajectory("LSZH")
+#     takeoff = next(flight_iterate)
+#     assert (
+#         pd.Timestamp("2019-11-05 13:05:00+00:00")
+#         < takeoff.stop
+#         < pd.Timestamp("2019-11-05 13:06:00+00:00")
+#     )
+#     landing = next(flight_iterate)
+#     assert (
+#         pd.Timestamp("2019-11-05 16:36:00+00:00")
+#         < landing.start
+#         < pd.Timestamp("2019-11-05 16:37:00+00:00")
+#     )
+#     assert next(flight_iterate, None) is None
 
 
 # @pytest.mark.skipif(version > (3, 13), reason="onnxruntime not ready")

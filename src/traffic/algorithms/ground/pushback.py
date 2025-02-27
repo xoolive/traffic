@@ -75,7 +75,7 @@ class ParkingPositionBasedPushback:
         after_parking = within_airport.after(parking_position.start)
         assert after_parking is not None
 
-        in_movement = after_parking.moving()
+        in_movement = after_parking.movement(method="start_moving")
 
         if in_movement is None:
             return None
