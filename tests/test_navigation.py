@@ -69,14 +69,14 @@ def test_landing_based_on_ils() -> None:
 
 
 @pytest.mark.slow
-def test_compute_navpoints() -> None:  # TODO
+def test_infer_flightplan() -> None:
     from traffic.data.samples import switzerland
 
-    df = switzerland["BAW585E"].compute_navpoints()
+    df = switzerland["BAW585E"].infer_flightplan()
     assert df is not None
     assert df.navaid.to_list() == ["RESIA", "LUL", "IXILU"]
 
-    df = switzerland["EZY24DP"].compute_navpoints()
+    df = switzerland["EZY24DP"].infer_flightplan()
     assert df is not None
     assert df.navaid.to_list() == ["RESIA", "ZH367", "LUL"]
 

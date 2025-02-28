@@ -62,7 +62,7 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
 
     from ..algorithms.ground import movement, parking_position, pushback
-    from ..algorithms.metadata import airports
+    from ..algorithms.metadata import airports, flightplan
     from ..algorithms.navigation import (
         alignment,
         go_around,
@@ -73,6 +73,7 @@ if TYPE_CHECKING:
         takeoff,
     )
     from ..algorithms.performance import EstimatorBase
+    from ..algorithms.prediction import PredictBase
     from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
@@ -257,7 +258,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
           :meth:`go_around`,
 
         - airborne events:
-          :meth:`compute_navpoints`,  # TODO
           :meth:`emergency`,
           :meth:`phases`,
           :meth:`thermals`
@@ -268,9 +268,12 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
           :meth:`parking_position`,
           :meth:`pushback`,
 
+        - metadata inference methods:
+          :meth:`infer_airport`,
+          :meth:`infer_flightplan`,
+
         - prediction methods:
-          :meth:`forward` # TODO
-          :meth:`predict` # TODO
+          :meth:`predict`
 
         - visualisation with altair:
           :meth:`chart`,
@@ -1891,72 +1894,47 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         return self.filter(FilterPosition(cascades))
 
-    @impunity(ignore_warnings=True)
+    def predict(
+        self,
+        *args: Any,
+        method: Literal["default", "straight", "flightplan"]
+        | PredictBase = "default",
+        **kwargs: Any,
+    ) -> Flight:
+        from ..algorithms.prediction.flightplan import FlightPlanPredict
+        from ..algorithms.prediction.straightline import StraightLinePredict
+
+        method_dict = dict(
+            default=StraightLinePredict,
+            straight=StraightLinePredict,
+            flightplan=FlightPlanPredict,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.predict(self)
+
     def forward(
-        self, delta: Union[None, str, pd.Timedelta] = None, **kwargs: Any
+        self,
+        forward: Union[None, str, pd.Timedelta] = None,
+        **kwargs: Any,
     ) -> "Flight":
-        """Projects the trajectory in a straight line.
-
-        The method uses the last position of a trajectory (method `at()
-        <#traffic.core.Flight.at>`_) and uses the ``track`` (in degrees),
-        ``groundspeed`` (in knots) and ``vertical_rate`` (in ft/min) values to
-        interpolate the trajectory in a straight line.
-
-        The elements passed as kwargs as passed as is to the datetime.timedelta
-        constructor.
-
-        Example usage:
-
-        .. code:: python
-
-            flight.forward(minutes=10)
-            flight.before("2018-12-24 23:55").forward(minutes=10)  # Merry XMas!
-
+        """
+        DEPRECATED
         """
 
-        last_line = self.at()
-        if last_line is None:
-            raise ValueError("Unknown data for this flight")
-        window = self.last(seconds=20)
-        if isinstance(delta, str):
-            delta = pd.Timedelta(delta)
-        if delta is None:
-            delta = timedelta(**kwargs)
+        from ..algorithms.prediction.straightline import StraightLinePredict
 
-        if window is None:
-            raise RuntimeError("Flight expect at least 20 seconds of data")
-
-        new_gs: tt.speed = window.data.groundspeed.mean()
-        new_vr: tt.vertical_rate = window.data.vertical_rate.mean()
-        duration: tt.seconds = delta.total_seconds()
-
-        new_lat, new_lon, _ = geo.destination(
-            last_line.latitude,
-            last_line.longitude,
-            last_line.track,
-            new_gs * duration,
+        warnings.warn(
+            "Deprecated forward method, use .predict() instead",
+            DeprecationWarning,
         )
 
-        last_alt: tt.altitude = last_line.altitude
-        new_alt: tt.altitude = last_alt + new_vr * duration
-
-        return Flight(
-            pd.DataFrame.from_records(
-                [
-                    last_line,
-                    pd.Series(
-                        {
-                            "timestamp": last_line.timestamp + delta,
-                            "latitude": new_lat,
-                            "longitude": new_lon,
-                            "altitude": new_alt,
-                            "groundspeed": new_gs,
-                            "vertical_rate": new_vr,
-                        }
-                    ),
-                ]
-            ).ffill()
-        )
+        return StraightLinePredict(forward, **kwargs).predict(self)
 
     # -- Air traffic management --
 
@@ -2157,6 +2135,26 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         )
 
         return self.infer_airport("landing") == _airport
+
+    def infer_flightplan(
+        self,
+        *args: Any,
+        method: Literal["default"] | flightplan.FlightPlanBase = "default",
+        **kwargs: Any,
+    ) -> None | pd.DataFrame:
+        from ..algorithms.metadata import flightplan
+
+        method_dict = dict(
+            default=flightplan.FlightPlanInference,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.infer(self)
 
     # -- Navigation methods --
 

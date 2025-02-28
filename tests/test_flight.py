@@ -482,14 +482,14 @@ def test_agg_time() -> None:
     assert app.min("factor") < 1 / 15
 
 
-def test_forward() -> None:
+def test_predict() -> None:
     flight = belevingsvlucht
 
     subset = flight.query("altitude < 300")
     assert subset is not None
     takeoff = subset.split("10 min").next()
     assert takeoff is not None
-    forward = takeoff.forward(minutes=1)
+    forward = takeoff.predict(minutes=1)
 
     t_point = takeoff.point
     c_point = forward.point
@@ -606,9 +606,7 @@ def test_split_condition() -> None:
 
 def test_split_map() -> None:
     result = (
-        belevingsvlucht.aligned_on_ils("EHLE")
-        .map(lambda f: f.resample("10s"))
-        .all()
+        belevingsvlucht.landing("EHLE").map(lambda f: f.resample("10s")).all()
     )
     assert result is not None
     assert 140 <= len(result) <= 160
