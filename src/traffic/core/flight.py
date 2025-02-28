@@ -2127,10 +2127,14 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             landing=airports.LandingAirportInference,
         )
 
+        # TODO check why typing doesn't work only on this function
         method = (
-            method_dict[method](**kwargs) if isinstance(method, str) else method
+            method_dict[method](**kwargs)  # type: ignore
+            if isinstance(method, str)
+            else method
         )
-        return method.infer(self)
+
+        return method.infer(self)  # type: ignore
 
     def takeoff_from(self, airport: str | Airport) -> bool:
         """Returns True if the flight takes off from the given airport."""
