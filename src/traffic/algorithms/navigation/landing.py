@@ -1,5 +1,5 @@
 from operator import attrgetter
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Protocol, Union
+from typing import TYPE_CHECKING, Any, Iterator, Optional
 
 import numpy as np
 import pandas as pd
@@ -10,10 +10,6 @@ from ...core.time import deltalike
 
 if TYPE_CHECKING:
     from ...data.basic.airports import Airports
-
-
-class LandingBase(Protocol):
-    def apply(self, flight: Flight) -> Iterator[Flight]: ...
 
 
 class LandingAlignedOnILS:
@@ -30,33 +26,50 @@ class LandingAlignedOnILS:
 
     Example usage:
 
-    .. code:: python
 
-        >>> aligned = belevingsvlucht.landing('EHAM').next()
-        >>> f"ILS {aligned.max('ILS')} until {aligned.stop:%H:%M}"
-        'ILS 06 until 20:17'
+    >>> from traffic.data.samples import belevingsvlucht
 
-    .. code:: python
+    The detected runway identifier is available in the ILS column:
 
-        >>> for aligned in belevingsvlucht.landing('EHLE'):
-        ...     print(aligned.start)
-        2018-05-30 16:50:44+00:00
-        2018-05-30 18:13:02+00:00
-        2018-05-30 16:00:55+00:00
-        2018-05-30 17:21:17+00:00
-        2018-05-30 19:05:22+00:00
-        2018-05-30 19:42:36+00:00
 
-        >>> from operator import attrgetter
-        >>> last_aligned = max(
-        ...     belevingsvlucht.landing("EHLE"),
-        ...     key=attrgetter('start')
-        ... )
+    >>> aligned = belevingsvlucht.landing('EHAM').next()
+    >>> f"ILS {aligned.max('ILS')}; landing time {aligned.stop:%H:%M}"
+    'ILS 06; landing time 20:17'
+
+    We can specify the method by default:
+
+
+    >>> for aligned in belevingsvlucht.landing('EHLE', method="default"):
+    ...     print(aligned.start)
+    2018-05-30 16:00:55+00:00
+    2018-05-30 16:50:44+00:00
+    2018-05-30 17:21:17+00:00
+    2018-05-30 18:13:02+00:00
+    2018-05-30 19:05:22+00:00
+    2018-05-30 19:42:36+00:00
+
+    >>> final = belevingsvlucht.final("landing('EHLE', method='default')")
+    >>> final.ILS_max  # equivalent to final.max("ILS")
+    '23'
+
+    Usual built-in functions works as on any kind of iterators, here we get the
+    flight segment with the latest start timestamp. (equivalent to the `final`
+    method used above)
+
+    >>> from operator import attrgetter
+    >>> last_aligned = max(
+    ...     belevingsvlucht.landing("EHLE"),
+    ...     key=attrgetter('start')
+    ... )
+    >>> last_aligned.start
+    Timestamp('2018-05-30 19:42:36+0000', tz='UTC')
+
+
     """
 
     def __init__(
         self,
-        airport: Union[str, Airport],
+        airport: str | Airport,
         angle_tolerance: float = 0.1,
         min_duration: deltalike = "1 min",
         max_ft_above_airport: float = 5000,
@@ -113,32 +126,58 @@ class LandingAlignedOnILS:
 
 
 class LandingWithRunwayChange:
-    def apply(
+    """Detects runway changes.
+
+    The method yields pieces of trajectories with exactly two runway alignments
+    on the same airport not separated by a climbing phase.
+
+    In each piece of yielded trajectory, the ``ILS`` column contains the name of
+    the runway targetted by the aircraft at each instant.
+
+    :param airport: Airport where the ILS is located
+    :param kwargs: are passed to the constructor of :class:`LandingAlignedOnILS`
+
+    We can reuse the trajectory from the :ref:`Getting started` page to
+    illustrate the usage of this method
+
+    >>> from traffic.data.samples import quickstart
+    >>> flight = quickstart['AFR17YC']
+    >>> flight.has("landing(airport='LFPG', method='runway_change')")
+    True
+
+    Since the trajectory has a runway change, we can print characteristics of
+    each segment:
+
+    >>> segments = flight.landing('LFPG', method="aligned_on_ils")
+    >>> first = next(segments)
+    >>> f"{first.start:%H:%M} {first.stop:%H:%M} aligned on {first.ILS_max}"
+    '13:34 13:36 aligned on 08R'
+    >>> second = next(segments)
+    >>> f"{second.start:%H:%M} {second.stop:%H:%M} aligned on {second.ILS_max}"
+    '13:36 13:39 aligned on 08L'
+    """
+
+    def __init__(
         self,
-        flight: Flight,
-        airport: None | str | Airport = None,
-        dataset: Optional["Airports"] = None,
+        airport: str | Airport,
         **kwargs: Any,
-    ) -> Iterator[Flight]:
-        """Detects runway changes.
+    ):
+        from ...data import airports
 
-        The method yields pieces of trajectories with exactly two runway
-        alignments on the same airport not separated by a climbing phase.
+        self.airport = (
+            airports[airport] if isinstance(airport, str) else airport
+        )
+        if (
+            self.airport is None
+            or self.airport.runways is None
+            or self.airport.runways.shape.is_empty
+        ):
+            raise RuntimeError("Airport or runway information missing")
 
-        In each piece of yielded trajectory, the `ILS` column contains the
-        name of the runway targetted by the aircraft at each instant.
-        """
+        self.aligned_on_ils = LandingAlignedOnILS(airport=airport, **kwargs)
 
-        if airport is None:
-            if dataset is None:
-                airport = flight.landing_airport()
-            else:
-                airport = flight.landing_airport(dataset=dataset)
-
-        if airport is None:
-            return None
-
-        aligned = iter(flight.aligned_on_ils(airport, **kwargs))
+    def apply(self, flight: Flight) -> Iterator[Flight]:
+        aligned = iter(flight.landing(method=self.aligned_on_ils))
         first = next(aligned, None)
         if first is None:
             return
@@ -156,9 +195,9 @@ class LandingWithRunwayChange:
                 ] = second.max("ILS")
 
                 yield candidate.assign(
-                    airport=airport
-                    if isinstance(airport, str)
-                    else airport.icao
+                    airport=self.airport
+                    if isinstance(self.airport, str)
+                    else self.airport.icao
                 )
 
             first = second

@@ -135,6 +135,8 @@ markers = [
   "extra: marks tests as requiring private data (deselect with '-m \"not extra\"')",
 ]
 testpaths = [
+  "src/traffic/algorithms/ground/",
+  "src/traffic/algorithms/navigation/",
   "src/traffic/core/intervals.py",
   "src/traffic/core/time.py",
   "src/traffic/data/basic/",

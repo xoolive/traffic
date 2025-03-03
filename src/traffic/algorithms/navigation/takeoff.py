@@ -1,5 +1,5 @@
 from operator import attrgetter
-from typing import Iterator, Protocol
+from typing import Iterator
 
 import pitot.geodesy as geo
 
@@ -9,10 +9,6 @@ from shapely.geometry import Polygon
 from ...core.distance import minimal_angular_difference
 from ...core.flight import Flight
 from ...core.structure import Airport
-
-
-class TakeoffBase(Protocol):
-    def apply(self, flight: Flight) -> Iterator[Flight]: ...
 
 
 class PolygonBasedRunwayDetection:

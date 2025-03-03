@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Iterator, Optional, Protocol
+from typing import TYPE_CHECKING, Iterator, Optional
 
 from ...core import Flight
 from ...core.structure import Airport
@@ -7,17 +7,13 @@ if TYPE_CHECKING:
     from cartes.osm import Overpass
 
 
-class ParkingPositionBase(Protocol):
-    def apply(self, flight: Flight) -> Iterator[Flight]: ...
-
-
 class ParkingPositionGeometricIntersection:
     """
     Generates possible parking positions at a given airport.
 
     Example usage:
 
-    >>> parking = flight.on_parking_position('LSZH').max()
+    parking = flight.on_parking_position('LSZH').max()
     # returns the most probable parking position in terms of duration
 
     .. warning::

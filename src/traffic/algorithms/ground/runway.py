@@ -19,8 +19,32 @@ class RunwayAlignment:
 
     Example usage:
 
-    >>> sum(1 for _ in belevingsvlucht.aligned_on_runway("EHAM"))
-    2
+    .. code:: python
+
+        >>> from traffic.data.samples import belevingsvlucht
+
+    Count the number of segments aligned with a runway:
+
+    .. code:: python
+
+        >>> sum(1 for _ in belevingsvlucht.aligned("EHAM", method="runway"))
+        2
+
+    Get timestamps associated with the first segment matching a runway:
+
+    .. code:: python
+
+        >>> segment = belevingsvlucht.next("aligned('EHAM', method='runway')")
+        >>> f"{segment.start:%H:%M %Z}, {segment.stop:%H:%M %Z}"
+        '20:17 UTC, 20:18 UTC'
+
+    Get the minimum altitude for the aircraft landing:
+
+    .. code:: python
+
+        >>> segment.mean('altitude')  # Schiphol below the sea level
+        -26.0
+
     """
 
     def __init__(self, airport: str | Airport):

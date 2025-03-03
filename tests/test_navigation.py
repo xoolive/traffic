@@ -30,17 +30,6 @@ def test_landing_airport() -> None:  # TODO
     assert airbus_tree.infer_airport("landing").icao == "EDHI"
 
 
-def test_landing_runway() -> None:  # TODO
-    last = belevingsvlucht.last(minutes=30)
-    segment = last.aligned("EHAM", method="runway").max()
-    assert segment is not None
-    assert segment.mean("altitude") < 0
-
-
-def test_aligned_runway() -> None:  # TODO
-    assert belevingsvlucht.aligned("EHAM", method="runway").sum() == 2
-
-
 @pytest.mark.skipif(skip_runways, reason="no runways")
 def test_landing_based_on_ils() -> None:
     from traffic.algorithms.navigation.landing import LandingAlignedOnILS
@@ -136,12 +125,6 @@ def test_takeoff_runway() -> None:
         segment = after.takeoff(method=takeoff).next()
         # If a landing is followed by a take-off, then it's on the same runway
         assert segment is None or aligned.max("ILS") == segment.max("runway")
-
-
-@pytest.mark.skipif(skip_runways, reason="no runways")
-def test_goaround() -> None:
-    assert belevingsvlucht.go_around().next() is None
-    assert belevingsvlucht.go_around("EHLE").sum() == 5
 
 
 @pytest.mark.slow

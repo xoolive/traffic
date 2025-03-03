@@ -1,6 +1,6 @@
 import logging
 from operator import attrgetter
-from typing import Any, Iterator, Protocol
+from typing import Any, Iterator
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -16,10 +16,6 @@ class PointMergeParams(TypedDict):
     secondary_point: NotRequired[None | str | PointMixin]
     distance_interval: NotRequired[tuple[float, float]]
     delta_threshold: NotRequired[float]
-
-
-class PointMergeBase(Protocol):
-    def apply(self, flight: Flight) -> Iterator[Flight]: ...
 
 
 class PointMerge:

@@ -61,16 +61,11 @@ if TYPE_CHECKING:
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
-    from ..algorithms.ground import movement, parking_position, pushback
     from ..algorithms.metadata import airports, flightplan
     from ..algorithms.navigation import (
-        alignment,
-        go_around,
-        holding_pattern,
-        landing,
-        phases,
-        point_merge,
-        takeoff,
+        ApplyBase,
+        ApplyIteratorBase,
+        ApplyOptionalBase,
     )
     from ..algorithms.performance import EstimatorBase
     from ..algorithms.prediction import PredictBase
@@ -1880,10 +1875,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             postprocess = postprocess.compute_latlon_from_xy(filter.projection)
         return postprocess
 
-    def filter_position(self, cascades: int = 2) -> Optional[Flight]:
-        """
-        DEPRECATED
-        """
+    def filter_position(
+        self, cascades: int = 2
+    ) -> Optional[Flight]:  # DEPRECATED
         from ..algorithms.filters import FilterPosition
 
         warnings.warn(
@@ -1922,11 +1916,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         self,
         forward: Union[None, str, pd.Timedelta] = None,
         **kwargs: Any,
-    ) -> "Flight":
-        """
-        DEPRECATED
-        """
-
+    ) -> "Flight":  # DEPRECATED
         from ..algorithms.prediction.straightline import StraightLinePredict
 
         warnings.warn(
@@ -2072,8 +2062,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     def phases(
         self,
         *args: Any,
-        method: Literal["default", "openap"]
-        | phases.FlightPhasesBase = "default",
+        method: Literal["default", "openap"] | ApplyBase = "default",
         **kwargs: Any,
     ) -> Flight:
         from ..algorithms.navigation import phases
@@ -2126,7 +2115,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         return self.infer_airport("takeoff") == _airport
 
     def landing_at(self, airport: str | Airport) -> bool:
-        """Returns True if the flight lands at the given airport."""
+        """Returns True if the flight lands at the given airport.
+
+        :param airport: Airport where the ILS is located
+        """
 
         from ..data import airports
 
@@ -2165,11 +2157,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         angle_tolerance: float = 0.1,
         min_duration: deltalike = "1 min",
         max_ft_above_airport: float = 5000,
-    ) -> Iterator["Flight"]:
-        """
-        DEPRECATED
-        """
-
+    ) -> Iterator["Flight"]:  # DEPRECATED
         from ..algorithms.navigation.landing import LandingAlignedOnILS
 
         warnings.warn(
@@ -2186,7 +2174,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     def go_around(
         self,
         *args: None,
-        method: Literal["default"] | go_around.GoAroundBase = "default",
+        method: Literal["default"] | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
         from ..algorithms.navigation import go_around
@@ -2205,8 +2193,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     def holding_pattern(
         self,
         *args: Any,
-        method: Literal["default"]
-        | holding_pattern.HoldingPatternBase = "default",
+        method: Literal["default"] | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
         from ..algorithms.navigation import holding_pattern
@@ -2226,9 +2213,56 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         self,
         *args: Any,
         method: Literal["default", "aligned_on_ils", "runway_change"]
-        | landing.LandingBase = "default",
+        | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
+        """Detects the landing phase in a trajectory.
+
+        :param method: is a keyword-only argument. By default, the method
+          detects segments on trajectory aligned with the ILS of a given
+          airport.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding landing detection class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``aligned_on_ils`` (default) uses
+          :class:`~traffic.algorithms.navigation.landing.LandingAlignedOnILS`
+          and detects segments on trajectory aligned with the ILS of a given
+          airport.
+
+        - ``runway_change`` uses
+          :class:`~traffic.algorithms.navigation.landing.LandingWithRunwayChange`
+          and detects a specific subset of situations where aircraft are aligned
+          on several runways during one landing phase.
+
+        Usage:
+
+        All the following calls are equivalent:
+
+        >>> flight.landing("EHAM")  # returns a flight iterator
+        >>> flight.landing("EHAM", method="default")
+        >>> flight.landing(airport="EHAM", method="default")
+        >>> flight.landing(method=LandingAlignedOnILS(airport="EHAM"))
+
+        As with other :class:`~traffic.core.FlightIterator`, we can:
+
+        - check whether an aircraft is landing at a given airport:
+
+          >>> flight.landing("EHAM").has()
+          >>> flight.has("landing('EHAM')")
+
+        - get the first landing attempt:
+
+          >>> flight.landing("EHAM").next()
+          >>> flight.next("landing('EHAM')")
+
+        More details in the specific documentation for each class.
+
+        """
         from ..algorithms.navigation import landing
 
         method_dict = dict(
@@ -2249,7 +2283,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     def point_merge(
         self,
         *args: Any,
-        method: Literal["default", "alignment"] | point_merge.PointMergeBase,
+        method: Literal["default", "alignment"] | ApplyIteratorBase,
         **kwargs: Any,
     ) -> Iterator["Flight"]:
         from ..algorithms.navigation import point_merge
@@ -2275,11 +2309,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         zone_length: int = 6000,
         little_base: int = 50,
         opening: float = 5,
-    ) -> Iterator["Flight"]:
-        """
-        DEPRECATED
-        """
-
+    ) -> Iterator["Flight"]:  # DEPRECATED
         from ..algorithms.navigation.takeoff import PolygonBasedRunwayDetection
 
         warnings.warn(
@@ -2297,7 +2327,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         self,
         *args: Any,
         method: Literal["default", "polygon_based", "track_based"]
-        | takeoff.TakeoffBase = "default",
+        | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
         from ..algorithms.navigation import takeoff
@@ -2326,8 +2356,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     def parking_position(
         self,
         *args: Any,
-        method: Literal["default", "geometry"]
-        | parking_position.ParkingPositionBase = "default",
+        method: Literal["default", "geometry"] | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
         from ..algorithms.ground import parking_position
@@ -2349,7 +2378,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         self,
         *args: Any,
         method: Literal["default", "start_moving"]
-        | movement.MovementDetectionBase = "default",
+        | ApplyOptionalBase = "default",
         **kwargs: Any,
     ) -> Optional["Flight"]:
         from ..algorithms.ground import movement
@@ -2371,7 +2400,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         self,
         *args: Any,
         method: Literal["default", "parking_area", "parking_position"]
-        | pushback.PushbackBase = "default",
+        | ApplyOptionalBase = "default",
         **kwargs: Any,
     ) -> Optional["Flight"]:
         from ..algorithms.ground import pushback
@@ -2398,7 +2427,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         time_precision: str = "2 min",
         min_time: str = "30s",
         min_distance: int = 80,
-    ) -> Iterator["Flight"]:
+    ) -> Iterator["Flight"]:  # DEPRECATED
         from ..algorithms.navigation.alignment import (
             BeaconTrackBearingAlignment,
         )
@@ -2414,12 +2443,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         yield from method.apply(self)
 
     @flight_iterator
-    def aligned_on_runway(self, airport: str | Airport) -> Iterator["Flight"]:
-        """
-        DEPRECATED
-        """
-
-        from ..algorithms.ground.geometry import RunwayAlignment
+    def aligned_on_runway(
+        self, airport: str | Airport
+    ) -> Iterator["Flight"]:  # DEPRECATED
+        from ..algorithms.ground.runway import RunwayAlignment
 
         warnings.warn(
             "Deprecated aligned_on_runway method, use .aligned() instead",
@@ -2434,17 +2461,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         self,
         *args: Any,
         method: Literal["default", "beacon", "ils", "runway"]
-        | alignment.AlignmentBase = "default",
+        | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
-        from ..algorithms.ground import geometry
+        from ..algorithms.ground import runway
         from ..algorithms.navigation import alignment, landing
 
         method_dict = dict(
             default=alignment.BeaconTrackBearingAlignment,
             beacon=alignment.BeaconTrackBearingAlignment,
             ils=landing.LandingAlignedOnILS,
-            runway=geometry.RunwayAlignment,
+            runway=runway.RunwayAlignment,
         )
 
         method = (

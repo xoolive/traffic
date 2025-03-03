@@ -1,13 +1,7 @@
-from typing import Protocol
-
 from impunity import impunity
 
 from ...core import Flight
 from ...core import types as tt
-
-
-class FlightPhasesBase(Protocol):
-    def apply(self, flight: Flight) -> Flight: ...
 
 
 class FlightPhasesOpenAP:

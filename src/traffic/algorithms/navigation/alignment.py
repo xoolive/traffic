@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable, Iterator, Protocol, Sequence
+from typing import Iterable, Iterator, Sequence
 
 import numpy as np
 
@@ -7,10 +7,6 @@ from ...core import Flight, FlightPlan
 from ...core.mixins import PointMixin
 
 _log = logging.getLogger(__name__)
-
-
-class AlignmentBase(Protocol):
-    def apply(self, flight: Flight) -> Iterator[Flight]: ...
 
 
 class BeaconTrackBearingAlignment:

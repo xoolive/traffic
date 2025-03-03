@@ -59,7 +59,7 @@ There are, for sure, few points requested with heading angles. Yet we can clearl
 .. code:: python
 
     # Select the first segment aligned on any ILS for RJBB
-    ils = flight.aligned_on_ils("RJBB").next()
+    ils = flight.landing("RJBB").next()
     # Select the most reasonable runway used for landing or take-off.
     rwy = flight.on_runway("RJBB")
 

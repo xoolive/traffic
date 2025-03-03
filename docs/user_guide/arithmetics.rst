@@ -22,7 +22,7 @@ For example, we can preview two trajectories on the same line:
 
     from traffic.data.samples import belevingsvlucht
 
-    belevingsvlucht | belevingsvlucht.next("aligned_on_ils('EHAM')")
+    belevingsvlucht | belevingsvlucht.next("landing('EHAM')")
 
 
 Concatenation with the + (plus) operator
@@ -86,7 +86,7 @@ trajectories not going through ODINA.
 
     from traffic.data.samples import switzerland
 
-    through_odina = switzerland.has('aligned_on_navpoint("ODINA")').eval()
+    through_odina = switzerland.has('aligned("ODINA")').eval()
     difference = switzerland - through_odina
 
 .. jupyter-execute::
@@ -192,7 +192,7 @@ that are present in both collections.
     ODINA = navaids['ODINA']
     m = result.map_leaflet(
         center=ODINA.latlon,
-        highlight=dict(red="aligned_on_navpoint('ODINA')")
+        highlight=dict(red="aligned('ODINA')")
     )
     m.add(ODINA)
     m

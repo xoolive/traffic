@@ -1,4 +1,4 @@
-from typing import Iterator, Protocol
+from typing import Iterator
 
 import pitot.geodesy as geo
 
@@ -8,10 +8,6 @@ from shapely.geometry.base import BaseGeometry
 from ...core import Flight
 from ...core.structure import Airport
 from ...core.time import deltalike, to_timedelta
-
-
-class MovementDetectionBase(Protocol):
-    def apply(self, flight: Flight) -> None | Flight: ...
 
 
 class StartMoving:

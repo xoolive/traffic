@@ -1,15 +1,11 @@
 from pathlib import Path
 from pkgutil import get_data
-from typing import Iterator, Protocol
+from typing import Iterator
 
 import numpy as np
 import pandas as pd
 
 from ....core.flight import Flight
-
-
-class HoldingPatternBase(Protocol):
-    def apply(self, flight: Flight) -> Iterator[Flight]: ...
 
 
 class MLHoldingDetection:

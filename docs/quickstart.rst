@@ -444,8 +444,8 @@ runway configuration during the time interval covered by the dataset. It would
 now probably become more comfortable if we could identify the runway used by
 aircraft for take off or landing.
 
-traffic provides :meth:`~traffic.core.Flight.aligned_on_ils` for landing and
-:meth:`~traffic.core.Flight.takeoff_from_runway` for take-off. Both methods
+traffic provides :meth:`~traffic.core.Flight.landing` for landing and
+:meth:`~traffic.core.Flight.takeoff` for take-off. Both methods
 return a :meth:`~traffic.core.FlightIterator`, so if we consider that all
 trajectories have only one landing attempt on that day, we need to apply
 :meth:`~traffic.core.FlightIterator.next` to get the first trajectory segment
@@ -459,7 +459,7 @@ matching, and extract relevant information (the runway information):
     information = list()
 
     for flight in tqdm(quickstart):
-        if landing := flight.aligned_on_ils("LFPO").next():
+        if landing := flight.landing("LFPO").next():
             information.append(
                 {
                     "callsign": flight.callsign,
@@ -469,7 +469,7 @@ matching, and extract relevant information (the runway information):
                     "ILS": landing.ILS_max,
                 }
             )
-        elif landing := flight.aligned_on_ils("LFPG").next():
+        elif landing := flight.landing("LFPG").next():
             information.append(
                 {
                     "callsign": flight.callsign,
@@ -479,7 +479,7 @@ matching, and extract relevant information (the runway information):
                     "ILS": landing.ILS_max,
                 }
             )
-        elif landing := flight.aligned_on_ils("LFPB").next():
+        elif landing := flight.landing("LFPB").next():
             information.append(
                 {
                     "callsign": flight.callsign,
@@ -529,10 +529,10 @@ traffic organizes in both configurations.
         fig, ax = plt.subplots(1, 2, subplot_kw=dict(projection=Lambert93()))
 
         for flight in quickstart:
-            if segment := flight.aligned_on_ils("LFPO").next():
+            if segment := flight.landing("LFPO").next():
                 index = int(flight.stop <= pd.Timestamp("2021-10-07 13:30Z"))
                 flight.plot(ax[index], color="#4c78a8", alpha=0.5)
-            elif segment := flight.takeoff_from_runway("LFPO").next():
+            elif segment := flight.takeoff("LFPO").next():
                 index = int(segment.start <= pd.Timestamp("2021-10-07 13:20Z"))
                 flight.plot(ax[index], color="#f58518", alpha=0.5)
 
@@ -569,7 +569,7 @@ an additional landmark:
             if phases.query('phase == "DESCENT"'):
                 # Determine on which ax to plot based on detected airport
                 for airport_index, airport in enumerate(airport_codes):
-                    if segment := flight.aligned_on_ils(airport).next():
+                    if segment := flight.landing(airport).next():
                         # Determine on which column to plot based on time
                         time_index = int(segment.stop <= pd.Timestamp("2021-10-07 13:20Z"))
                         flight.plot(
@@ -580,7 +580,7 @@ an additional landmark:
             elif phases.query('phase == "CLIMB"'):
                 # Determine on which ax to plot based on detected airport
                 for airport_index, airport in enumerate(airport_codes):
-                    if segment := flight.takeoff_from_runway(airport).next():
+                    if segment := flight.takeoff(airport).next():
                         # Determine on which column to plot based on time
                         time_index = int(segment.start <= pd.Timestamp("2021-10-07 13:20Z"))
                         flight.plot(
@@ -646,7 +646,7 @@ There are several ways to collect trajectories:
               if low_alt := flight.query("altitude < 3000"):         # Flight -> None or Flight
                   if not pd.isna(v_mean := low_alt.vertical_rate_mean) and v_mean < -500:  # Flight -> bool
                       if low_alt.intersects(airport):                # Flight -> bool
-                          if low_alt.aligned_on_ils(airport).has():  # Flight -> bool
+                          if low_alt.landing(airport).has():  # Flight -> bool
                               yield low_alt.last("10 min")           # Flight -> None or Flight
 
       # Traffic.from_flights is more robust than sum() as the function may yield some None values
@@ -686,7 +686,7 @@ The landing trajectory selection rewrites as:
         # Lazy iteration is triggered here by the .feature_lt method
         .feature_lt("vertical_rate_mean", -500)  # Flight -> None | Flight
         .intersects(airports["LFPO"])            # Flight -> bool
-        .has('aligned_on_ils("LFPO")')           # Flight -> bool
+        .has('landing("LFPO")')           # Flight -> bool
         .last("10 min")                          # Flight -> None | Flight
         # Now evaluation is triggered on 4 cores
         .eval(max_workers=4)  # the desc= argument creates a progress bar
@@ -694,7 +694,7 @@ The landing trajectory selection rewrites as:
 
 .. note::
 
-    The :meth:`~traffic.core.Flight.aligned_on_ils` call (without considerations
+    The :meth:`~traffic.core.Flight.landing` call (without considerations
     on the vertical rate and intersections) is actually enough for our needs
     here, but more methods were stacked for explanatory purposes.
 
@@ -707,7 +707,7 @@ For reference, look at the subtle differences between the following processing:
 
         t1 = (
             quickstart
-            .has("aligned_on_ils('LFPO')")
+            .has("landing('LFPO')")
             .last('10 min')
             .eval(max_workers=4)
         )
@@ -727,7 +727,7 @@ For reference, look at the subtle differences between the following processing:
 
         t2 = (
             quickstart
-            .next('aligned_on_ils("LFPO")')
+            .next('landing("LFPO")')
             .query("ILS == '06'")
             .last("1 min")
             .eval(max_workers=4)
@@ -746,7 +746,7 @@ For reference, look at the subtle differences between the following processing:
         import pandas as pd
 
         def last_minute_with_taxi(flight: "Flight") -> "None | Flight":
-            for segment in flight.aligned_on_ils("LFPO"):
+            for segment in flight.landing("LFPO"):
                 if segment.ILS_max == "06":
                     return flight.after(segment.stop - pd.Timedelta("1 min"))
 
@@ -763,7 +763,7 @@ For reference, look at the subtle differences between the following processing:
     .. jupyter-execute::
 
         def more_than_one_alignment(flight: "Flight") -> "None | Flight":
-            segments = flight.aligned_on_ils("LFPG")
+            segments = flight.landing("LFPG")
             if first := next(segments, None):
                 if second := next(segments, None):
                     return flight.after(first.start - pd.Timedelta('90s'))
@@ -771,7 +771,7 @@ For reference, look at the subtle differences between the following processing:
         t4 = quickstart.iterate_lazy().pipe(more_than_one_alignment).eval()
 
         flight = t4[0]
-        segments = flight.aligned_on_ils("LFPG")
+        segments = flight.landing("LFPG")
         first = next(segments)
         forward = first.first("70s").forward(minutes=4)
 

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Iterator, Optional, Protocol
+from typing import TYPE_CHECKING, Iterator, Optional
 
 from ...core import Flight
 from ...core.structure import Airport
@@ -6,10 +6,6 @@ from .landing import LandingAlignedOnILS
 
 if TYPE_CHECKING:
     from ...data.basic.airports import Airports
-
-
-class GoAroundBase(Protocol):
-    def apply(self, flight: "Flight") -> Iterator["Flight"]: ...
 
 
 class GoAroundDetection:
@@ -28,6 +24,27 @@ class GoAroundDetection:
 
     **See also:** :ref:`How to select go-arounds from a set of
     trajectories?`
+
+    Example usage:
+
+    .. code:: python
+
+        >>> from traffic.data.samples import belevingsvlucht
+
+    By default, go arounds will be detected at Amsterdam Schiphol airport (EHAM)
+
+    .. code:: python
+
+        >>> belevingsvlucht.go_around().next()
+        >>> amsterdam_goaround = GoAroundDetection(airport="EHAM")
+        >>> belevingsvlucht.go_around(method=amsterdam_goaround).next()
+
+    There were none; however we find 5 of them at Lelystad airport.
+
+    .. code:: python
+
+        >>> belevingsvlucht.go_around("EHLE").sum()
+        5
 
     """
 

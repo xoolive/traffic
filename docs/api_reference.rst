@@ -39,3 +39,4 @@ and stack them before triggering only one iteration.
    api_reference/traffic.core.time
    api_reference/traffic.core.traffic
    api_reference/traffic.algorithms.filters
+   api_reference/traffic.algorithms.navigation

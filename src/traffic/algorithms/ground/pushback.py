@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Protocol, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import geopandas as gpd
 
@@ -15,11 +15,6 @@ if TYPE_CHECKING:
     from cartes.osm import Overpass
 
     from shapely.geometry import Polygon
-
-
-class PushbackBase(Protocol):
-    def apply(self, flight: Flight) -> Optional[Flight]: ...
-
 
 _log = logging.getLogger(__name__)
 
