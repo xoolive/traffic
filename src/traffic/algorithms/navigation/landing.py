@@ -177,7 +177,7 @@ class LandingWithRunwayChange:
         self.aligned_on_ils = LandingAlignedOnILS(airport=airport, **kwargs)
 
     def apply(self, flight: Flight) -> Iterator[Flight]:
-        aligned = iter(flight.landing(method=self.aligned_on_ils))
+        aligned = iter(flight.landing(self.aligned_on_ils))
         first = next(aligned, None)
         if first is None:
             return
@@ -203,41 +203,56 @@ class LandingWithRunwayChange:
             first = second
 
 
-class LandingAttempts:
-    def landing_attempts(
+class LandingAnyAttempt:
+    """Iterates on landing attempts without specific airport information.
+
+    First, candidates airports are identified in the neighbourhood of the
+    segments of trajectory below a threshold altitude. By default, the full
+    airport database is considered but it is possible to restrict it and pass a
+    smaller database with the dataset parameter.
+
+    If no runway information is available for the given airport, no
+    trajectory segment will be provided.
+
+    :param dataset: a subset of airports used as candidate landing airports
+    :param alt_threshold: an altitude threshold helpful to select candidate
+      airports. It is important to pick a threshold significantly above the
+      altitude of the candidate airports.
+
+    >>> from traffic.data.datasets import squawk7700
+    >>> attempts = squawk7700["AFR1145_20190820"].landing(method="any")
+    >>> for i, attempt in enumerate(attempts):
+    ...     print(f"Step {i}: {attempt.airport_max} runway {attempt.ILS_max}")
+    Step 0: ELLX runway 24
+    Step 1: ELLX runway 24
+
+    """
+
+    def __init__(
         self,
-        flight: Flight,
         dataset: Optional["Airports"] = None,
+        alt_threshold: float = 8000,
         **kwargs: Any,
-    ) -> Iterator[Flight]:
-        """Iterates on all landing attempts for current flight.
+    ):
+        self.dataset = dataset
+        self.alt_threshold = alt_threshold
+        self.kwargs = kwargs
 
-        First, candidates airports are identified in the neighbourhood
-        of the segments of trajectory below 10,000 ft. By default, the
-        full airport database is considered but it is possible to restrict
-        it and pass a smaller database with the dataset parameter.
+    def apply(self, flight: Flight) -> Iterator[Flight]:
+        from ..metadata.airports import LandingAirportInference
 
-        If no runway information is available for the given airport, no
-        trajectory segment will be provided.
-
-        .. warning::
-
-            This API is not stable yet. The interface may change in a near
-            future.
-
-        """
-
-        candidate = flight.query("altitude < 8000")
+        candidate = flight.query(f"altitude < {self.alt_threshold}")
         if candidate is not None:
             for chunk in candidate.split("10 min"):
                 point = chunk.query("altitude == altitude.min()")
                 if point is None:
                     return
-                if dataset is None:
-                    cd = point.landing_airport()
-                else:
-                    cd = point.landing_airport(dataset=dataset)
-                if cd.runways is not None:
-                    yield from chunk.assign(airport=cd.icao).aligned_on_ils(
-                        cd, **kwargs
+                candidate_airport = point.infer_airport(
+                    method=LandingAirportInference(dataset=self.dataset)
+                )
+                if candidate_airport.runways is not None:
+                    chunk = chunk.assign(airport=candidate_airport.icao)
+                    method = LandingAlignedOnILS(
+                        airport=candidate_airport, **self.kwargs
                     )
+                    yield from chunk.landing(method=method)

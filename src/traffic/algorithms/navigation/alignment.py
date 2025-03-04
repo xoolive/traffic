@@ -16,6 +16,34 @@ class BeaconTrackBearingAlignment:
     The name of the navigational beacon is assigned in a new column
     `navaid`.
 
+    :param points: a set of point or identifiers constituting the flight plan.
+      A :class:`~traffic.core.FlightPlan` structure can also be provided.
+
+    :param angle_precision: in degrees. The difference between the track angle
+      and the bearing with respect to the point must be less than this
+      threshold.
+
+    :param time_precision: The maximum time interval during which the difference
+      between the angles can exceed the threshold.
+
+    :param min_time: Only segments with a duration of at least ``min_time``
+      will be yielded.
+
+    :param min_distance: The minimal distance to a given point must be above the
+      ``min_distance`` value to be returned.
+
+    Usage:
+
+    >>> from traffic.data import navaids
+    >>> from traffic.data.samples import elal747
+    >>> subset = elal747.skip("2h30min").first("2h30min")
+    >>> for segment in subset.aligned([navaids['KAVOS'], navaids['PEDER']]):
+    ...     print(f"aligned on {segment.navaid_max} for {segment.duration}")
+    aligned on KAVOS for 0 days 00:07:00
+    aligned on PEDER for 0 days 00:05:40
+
+    See also: :ref:`How to infer a flight plan from a trajectory?`
+
     """
 
     points: Sequence[PointMixin]

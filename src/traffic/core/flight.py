@@ -2212,7 +2212,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     def landing(
         self,
         *args: Any,
-        method: Literal["default", "aligned_on_ils", "runway_change"]
+        method: Literal["default", "aligned_on_ils", "any", "runway_change"]
         | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
@@ -2233,6 +2233,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
           :class:`~traffic.algorithms.navigation.landing.LandingAlignedOnILS`
           and detects segments on trajectory aligned with the ILS of a given
           airport.
+
+        - ``anywhere`` uses
+          :class:`~traffic.algorithms.navigation.landing.LandingAnyAttempt`
+          and detects the most plausible landing airport for all pieces of
+          trajectories below a threshold altitude.
 
         - ``runway_change`` uses
           :class:`~traffic.algorithms.navigation.landing.LandingWithRunwayChange`
@@ -2263,11 +2268,16 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         More details in the specific documentation for each class.
 
         """
-        from ..algorithms.navigation import landing
+        from ..algorithms.navigation import ApplyIteratorBase, landing
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=landing.LandingAlignedOnILS,
             aligned_on_ils=landing.LandingAlignedOnILS,
+            any=landing.LandingAnyAttempt,
             runway_change=landing.LandingWithRunwayChange,
         )
 
@@ -3467,7 +3477,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         highlight: Optional[
             Dict[
                 str,
-                Union[str, Flight, Callable[[Flight], Optional[Flight]]],
+                Union[
+                    str,
+                    Flight,
+                    Callable[[Flight], None | Flight | Iterable[Flight]],
+                ],
             ]
         ] = None,
         airport: Union[None, str, Airport] = None,

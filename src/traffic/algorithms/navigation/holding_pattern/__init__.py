@@ -21,6 +21,24 @@ class MLHoldingDetection:
     trajectories landing at different European airports including London
     Heathrow.
 
+    All the parameters below are closely intricated with a model. Default
+    parameters should not be changed if we stick with the provided model.
+
+    :param duration: the duration of each sliding window
+    :param step: the step for each sliding window
+    :param threshold: the minimum duration for each sliding window
+    :param samples: each sliding window is resampled to a fixed number of points
+    :param model_path: where the models are located, by default in the same
+      module directory
+    :param vertical_rate: a boolean set to True if the vertical rate should be
+      taken into account in the model.
+
+    >>> from traffic.data.samples import belevingsvlucht
+    >>> belevingsvlucht.has("holding_pattern")
+    True
+
+    See also: :ref:`How to detect holding patterns in aircraft trajectories?`
+
     (new in version 2.8)
     """
 

@@ -18,6 +18,10 @@ class PolygonBasedRunwayDetection:
     of the  given airport. The takeoff runway number is appended as a new
     ``runway`` column.
 
+    >>> from traffic.data.samples import belevingsvlucht
+    >>> takeoff = belevingsvlucht.next('takeoff("EHAM", method="default")')
+    >>> takeoff.duration
+    Timedelta('0 days 00:00:25')
     """
 
     def __init__(
@@ -134,23 +138,20 @@ class PolygonBasedRunwayDetection:
 
 class TrackBasedRunwayDetection:
     """
-    Determines the taking-off runway of a flight based on its trajectory.
+    Determines the taking-off runway of a flight based on its surface trajectory
 
-    Parameters:
-        flight (Flight): The flight data object containing flight data.
-        airport: The ICAO code of the airport. Defaults to None.
-        max_ft_above_airport (float): Altitude threshold above airport altitude.
-        min_groundspeed_kts (float): Minimum groundspeed to consider.
-        min_vert_rate_ftmin (float): Minimum vertical rate to consider.
-        maximum_bearing_deg (float): Maximum bearing difference to consider.
-        max_dist_nm (float): Maximum distance from the airport to consider.
+    :param airport: The airport from where the flight takes off.
+    :param max_ft_above_airport: maximum altitude AGL, relative to the
+      airport, that a flight can be to be considered as aligned.
+    :param min_groundspeed_kts: Minimum groundspeed to consider.
+    :param min_vert_rate_ftmin: Minimum vertical rate to consider.
+    :param maximum_bearing_deg: Maximum bearing difference to consider.
+    :param max_dist_nm: Maximum distance from the airport to consider.
 
-    Returns:
-        Optional[str]: The name of the closest runway, or None if not found.
+    >>> from traffic.data.samples import elal747
+    >>> takeoff = elal747.next('takeoff(method="track_based", airport="LIRF")')
+    >>> # takeoff.duration fails for now
 
-    Raises:
-        KeyError: If the airport code is not found in the airports data.
-        ValueError: If no rway available or data is empty after filtering.
     """
 
     def __init__(
@@ -261,7 +262,7 @@ class TrackBasedRunwayDetection:
                 eps = 1 / 1000
                 closest_runway = candidate_runways.query(
                     f"(abs(longitude-{lon_1})<{eps}) or "
-                    "(abs(longitude-{lon_2})<{eps})"
+                    f"(abs(longitude-{lon_2})<{eps})"
                 )["name"].iloc[0]
             except AttributeError:
                 return None
