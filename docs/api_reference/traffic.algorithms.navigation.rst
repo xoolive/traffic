@@ -48,3 +48,9 @@ Bonus: Thermals detection
 
 .. automodule:: traffic.algorithms.navigation.thermals
     :members:
+
+Protocols
+---------
+
+.. automodule:: traffic.algorithms.navigation
+    :members:

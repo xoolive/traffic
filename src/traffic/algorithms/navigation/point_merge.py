@@ -51,7 +51,11 @@ class PointMerge:
         runway. The algorithm will ensure all trajectories are aligned with
         the runway's ILS. (ignored if ``airport`` is ``None``)
 
+    Usage:
+    See :ref:`How to implement point-merge detection?`
+
     (new in version 2.8)
+
     """
 
     def __init__(

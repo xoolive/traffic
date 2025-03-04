@@ -18,6 +18,14 @@ class PolygonBasedRunwayDetection:
     of the  given airport. The takeoff runway number is appended as a new
     ``runway`` column.
 
+    :param airport: The airport from where the flight takes off.
+    :param max_ft_above_airport: maximum altitude AGL, relative to the
+      airport, that a flight can be to be considered as aligned.
+    :param zone_length: the length of the trapeze, aligned with the runway.
+    :param little_base: the smallest base of the trapeze, on the runway
+      threshold side.
+    :param opening: the angle (in degrees) of opening of the trapeze.
+
     >>> from traffic.data.samples import belevingsvlucht
     >>> takeoff = belevingsvlucht.next('takeoff("EHAM", method="default")')
     >>> takeoff.duration
@@ -149,8 +157,14 @@ class TrackBasedRunwayDetection:
     :param max_dist_nm: Maximum distance from the airport to consider.
 
     >>> from traffic.data.samples import elal747
-    >>> takeoff = elal747.takeoff(method="track_based", airport="LIRF")
-    >>> # takeoff.next().duration fails for now
+    >>> takeoff = elal747.takeoff(method="track_based", airport="LIRF").next()
+    >>> takeoff.duration, takeoff.runway_max
+    (Timedelta('0 days 00:00:40'), '25')
+
+    >>> from traffic.data.samples import belevingsvlucht
+    >>> takeoff = belevingsvlucht.next('takeoff("EHAM", method="default")')
+    >>> takeoff.duration
+    Timedelta('0 days 00:00:25')
 
     """
 
@@ -241,9 +255,11 @@ class TrackBasedRunwayDetection:
             ]
             if candidate_runways.empty:
                 return None
-
-            # Calculate distance from flight trajectory to each candidate runway
-            try:
+            elif len(candidate_runways) == 1:
+                closest_runway = candidate_runways.name.iloc[0]
+            else:
+                # Calculate distance from flight trajectory
+                # to each candidate runway
                 flight_ls = filtered_flight.linestring
                 rways_ls = self.airport.runways.shape
 
@@ -264,6 +280,4 @@ class TrackBasedRunwayDetection:
                     f"(abs(longitude-{lon_1})<{eps}) or "
                     f"(abs(longitude-{lon_2})<{eps})"
                 )["name"].iloc[0]
-            except AttributeError:
-                return None
         yield filtered_flight.assign(runway=closest_runway)

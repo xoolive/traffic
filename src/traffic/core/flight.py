@@ -244,7 +244,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
           :meth:`simplify`,
 
         - navigation related events:
-          :meth:`aligned_on_navpoint`,
           :meth:`aligned`,
           :meth:`landing`,
           :meth:`takeoff`,
@@ -258,10 +257,14 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
           :meth:`thermals`
 
         - ground trajectory methods:
-          :meth:`aligned_on_runway`,
+          :meth:`aligned`,
           :meth:`moving`,
           :meth:`parking_position`,
           :meth:`pushback`,
+
+        - performance estimation methods:
+          :meth:`fuelflow`
+          :meth:`emission`
 
         - metadata inference methods:
           :meth:`infer_airport`,
@@ -1569,9 +1572,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     ) -> Flight:
         """Apply features on time windows.
 
-        The following is performed:
+        The following is performed are performed in order.
 
-        - a new column `rounded` rounds the timestamp at the given rate;
+        - a new column ``rounded`` rounds the timestamp at the given rate;
         - the groupby/apply is operated with parameters passed in apply;
         - if merge is True, the new column in merged into the Flight,
           otherwise a pd.DataFrame is returned.
@@ -1580,7 +1583,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         >>> f.agg_time("10 min", straight=lambda df: Flight(df).distance())
 
-        returns a Flight with a new column straight with the great circle
+        returns a Flight with a new column ``straight`` with the great circle
         distance between points sampled every 10 minutes.
         """
 
@@ -1618,9 +1621,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     ) -> Flight:
         """Aggregate features on time windows.
 
-        The following is performed:
+        The following is performed are performed in order.
 
-        - a new column `rounded` rounds the timestamp at the given rate;
+        - a new column ``rounded`` rounds the timestamp at the given rate;
         - the groupby/agg is operated with parameters passed in kwargs;
         - if merge is True, the new column in merged into the Flight,
           otherwise a pd.DataFrame is returned.
@@ -2065,6 +2068,16 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method: Literal["default", "openap"] | ApplyBase = "default",
         **kwargs: Any,
     ) -> Flight:
+        """Label phases in flight trajectories.
+
+        An extra ``phase`` column is added to the DataFrame.
+
+        The only available (default) method is provided by OpenAP.
+
+        Usage:
+        See: :ref:`How to find flight phases on a trajectory?`
+
+        """
         from ..algorithms.navigation import phases
 
         method_dict = dict(
@@ -2151,23 +2164,66 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     # -- Navigation methods --
 
     @flight_iterator
-    def aligned_on_ils(
+    def aligned(
         self,
-        airport: Union[str, "Airport"],
-        angle_tolerance: float = 0.1,
-        min_duration: deltalike = "1 min",
-        max_ft_above_airport: float = 5000,
-    ) -> Iterator["Flight"]:  # DEPRECATED
-        from ..algorithms.navigation.landing import LandingAlignedOnILS
+        *args: Any,
+        method: Literal["default", "beacon", "ils", "runway"]
+        | ApplyIteratorBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        """Detects a geometric alignment with aeronautical infrastructure.
 
-        warnings.warn(
-            "Deprecated aligned_on_ils method, use .landing() instead",
-            DeprecationWarning,
+        :param method: By default, the method checks a geometric alignment with
+          a navigational beacon (navaid).
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding landing detection class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``beacon`` (default) uses
+          :class:`~traffic.algorithms.navigation.alignment.BeaconTrackBearingAlignment`
+          and compares the track angle of the aircraft with the bearing to
+          a given point.
+
+        - ``ils`` uses
+          :class:`~traffic.algorithms.navigation.landing.LandingAlignedOnILS`
+          and detects segments on trajectory aligned with the ILS of a given
+          airport.
+
+        - ``runway``  uses
+          :class:`~traffic.algorithms.ground.runway.RunwayAlignment`
+          and detects segments aligned with one of the documented runways.
+
+        Usage: Check the corresponding classes which are properly documented.
+
+        """
+        from ..algorithms.ground import runway
+        from ..algorithms.navigation import (
+            ApplyIteratorBase,
+            alignment,
+            landing,
         )
 
-        method = LandingAlignedOnILS(
-            airport, angle_tolerance, min_duration, max_ft_above_airport
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=alignment.BeaconTrackBearingAlignment,
+            beacon=alignment.BeaconTrackBearingAlignment,
+            ils=landing.LandingAlignedOnILS,
+            runway=runway.RunwayAlignment,
         )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
         yield from method.apply(self)
 
     @flight_iterator
@@ -2177,7 +2233,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method: Literal["default"] | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
-        from ..algorithms.navigation import go_around
+        """Detects go-around situations in a trajectory.
+
+        Usage:
+        See: :ref:`How to select go-arounds from a set of trajectories?`
+        """
+
+        from ..algorithms.navigation import ApplyIteratorBase, go_around
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(default=go_around.GoAroundDetection)
 
@@ -2196,7 +2262,16 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method: Literal["default"] | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
+        """Detects holding patterns in a trajectory.
+
+        Usage:
+        See :ref:`How to detect holding patterns in aircraft trajectories?`
+        """
         from ..algorithms.navigation import holding_pattern
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(default=holding_pattern.MLHoldingDetection)
 
@@ -2218,9 +2293,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     ) -> Iterator["Flight"]:
         """Detects the landing phase in a trajectory.
 
-        :param method: is a keyword-only argument. By default, the method
-          detects segments on trajectory aligned with the ILS of a given
-          airport.
+        :param method:  By default, the method detects segments on trajectory
+          aligned with the ILS of a given airport.
 
         If the method argument is passed as a string, then all args and kwargs
         argument of the landing method are passed to the constructor of the
@@ -2296,7 +2370,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method: Literal["default", "alignment"] | ApplyIteratorBase,
         **kwargs: Any,
     ) -> Iterator["Flight"]:
-        from ..algorithms.navigation import point_merge
+        """Detects point-merge structures in trajectories.
+
+        Usage:
+        See :ref:`How to implement point-merge detection?`
+
+        """
+        from ..algorithms.navigation import ApplyIteratorBase, point_merge
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=point_merge.PointMerge,
@@ -2312,27 +2396,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         yield from method.apply(self)
 
     @flight_iterator
-    def takeoff_from_runway(
-        self,
-        airport: Union[str, "Airport"],
-        max_ft_above_airport: float = 5000,
-        zone_length: int = 6000,
-        little_base: int = 50,
-        opening: float = 5,
-    ) -> Iterator["Flight"]:  # DEPRECATED
-        from ..algorithms.navigation.takeoff import PolygonBasedRunwayDetection
-
-        warnings.warn(
-            "Deprecated takeoff_from_runway method, use .takeoff() instead",
-            DeprecationWarning,
-        )
-
-        method = PolygonBasedRunwayDetection(
-            airport, max_ft_above_airport, zone_length, little_base, opening
-        )
-        yield from method.apply(self)
-
-    @flight_iterator
     def takeoff(
         self,
         *args: Any,
@@ -2340,7 +2403,47 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
-        from ..algorithms.navigation import takeoff
+        """Detects the takeoff phase in a trajectory.
+
+        :param method: By default, the method detects segments on trajectory
+          maximizing their intersection with a trapeze shape with a small base
+          at runway threshold.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding landing detection class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``polygon_based`` (default) uses
+          :class:`~traffic.algorithms.navigation.takeoff.PolygonBasedRunwayDetection`
+          and detects segments on trajectory maximizing their intersection with
+          a trapeze shape with a small base at runway threshold. This method
+          performs better when trajectory data point is scarce at surface level.
+
+        - ``track_based`` uses
+          :class:`~traffic.algorithms.navigation.takeoff.TrackBasedRunwayDetection`
+          and detects pieces of trajectory with a strong acceleration that is
+          colinear to a documented runway. This method performs better when
+          data is rich at surface level, with less false positive labelled with
+          the wrong runway.
+
+        Usage:
+
+        >>> flight.takeoff("EHAM")  # returns a flight iterator
+        >>> flight.takeoff("EHAM", method="default")
+        >>> flight.takeoff(airport="EHAM", method="default")
+        >>> flight.takeoff(PolygonBasedRunwayDetection(airport="EHAM"))
+
+        More details in the specific documentation for each class.
+
+        """
+        from ..algorithms.navigation import ApplyIteratorBase, takeoff
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=takeoff.PolygonBasedRunwayDetection,
@@ -2357,7 +2460,16 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         yield from method.apply(self)
 
     @flight_iterator
-    def thermal(self) -> Iterator["Flight"]:
+    def thermals(self) -> Iterator["Flight"]:
+        """Detects pieces of trajectory where gliders are in thermals.
+
+        The logic implemented detects trajectory ascending and turning at the
+        same time.
+
+        Usage:
+
+        >>> flight_iterator = flight.thermals()
+        """
         from ..algorithms.navigation.thermals import GliderThermal
 
         yield from GliderThermal().apply(self)
@@ -2430,6 +2542,47 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         return method.apply(self)
 
     @flight_iterator
+    def aligned_on_ils(
+        self,
+        airport: Union[str, "Airport"],
+        angle_tolerance: float = 0.1,
+        min_duration: deltalike = "1 min",
+        max_ft_above_airport: float = 5000,
+    ) -> Iterator["Flight"]:  # DEPRECATED
+        from ..algorithms.navigation.landing import LandingAlignedOnILS
+
+        warnings.warn(
+            "Deprecated aligned_on_ils method, use .landing() instead",
+            DeprecationWarning,
+        )
+
+        method = LandingAlignedOnILS(
+            airport, angle_tolerance, min_duration, max_ft_above_airport
+        )
+        yield from method.apply(self)
+
+    @flight_iterator
+    def takeoff_from_runway(
+        self,
+        airport: Union[str, "Airport"],
+        max_ft_above_airport: float = 5000,
+        zone_length: int = 6000,
+        little_base: int = 50,
+        opening: float = 5,
+    ) -> Iterator["Flight"]:  # DEPRECATED
+        from ..algorithms.navigation.takeoff import PolygonBasedRunwayDetection
+
+        warnings.warn(
+            "Deprecated takeoff_from_runway method, use .takeoff() instead",
+            DeprecationWarning,
+        )
+
+        method = PolygonBasedRunwayDetection(
+            airport, max_ft_above_airport, zone_length, little_base, opening
+        )
+        yield from method.apply(self)
+
+    @flight_iterator
     def aligned_on_navpoint(
         self,
         points: Union[str, "PointMixin", Iterable["PointMixin"]],
@@ -2464,32 +2617,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         )
 
         method = RunwayAlignment(airport=airport)
-        yield from method.apply(self)
-
-    @flight_iterator
-    def aligned(
-        self,
-        *args: Any,
-        method: Literal["default", "beacon", "ils", "runway"]
-        | ApplyIteratorBase = "default",
-        **kwargs: Any,
-    ) -> Iterator["Flight"]:
-        from ..algorithms.ground import runway
-        from ..algorithms.navigation import alignment, landing
-
-        method_dict = dict(
-            default=alignment.BeaconTrackBearingAlignment,
-            beacon=alignment.BeaconTrackBearingAlignment,
-            ils=landing.LandingAlignedOnILS,
-            runway=runway.RunwayAlignment,
-        )
-
-        method = (
-            method_dict[method](*args, **kwargs)
-            if isinstance(method, str)
-            else method
-        )
-
         yield from method.apply(self)
 
     # -- End of navigation and ground methods --

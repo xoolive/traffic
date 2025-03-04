@@ -7,8 +7,8 @@ from ...core import Flight
 
 @runtime_checkable
 class ApplyBase(Protocol):
-    """Classes following this protocol should implement an `apply` method
-    which returns a Flight.
+    """Classes following this protocol should implement an ``apply`` method
+    which returns a :class:`~traffic.core.Flight`.
     """
 
     def apply(self, flight: Flight) -> Flight: ...
@@ -16,8 +16,8 @@ class ApplyBase(Protocol):
 
 @runtime_checkable
 class ApplyIteratorBase(Protocol):
-    """Classes following this protocol should implement an `apply` method
-    which returns an iterator of Flight.
+    """Classes following this protocol should implement an ``apply`` method
+    which returns an iterator of :class:`~traffic.core.Flight`.
     """
 
     def apply(self, flight: Flight) -> Iterator[Flight]: ...
@@ -25,8 +25,8 @@ class ApplyIteratorBase(Protocol):
 
 @runtime_checkable
 class ApplyOptionalBase(Protocol):
-    """Classes following this protocol should implement an `apply` method
-    which returns None or a Flight.
+    """Classes following this protocol should implement an ``apply`` method
+    which returns ``None`` or a :class:`~traffic.core.Flight`.
     """
 
     def apply(self, flight: Flight) -> None | Flight: ...
