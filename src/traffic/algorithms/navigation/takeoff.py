@@ -149,8 +149,8 @@ class TrackBasedRunwayDetection:
     :param max_dist_nm: Maximum distance from the airport to consider.
 
     >>> from traffic.data.samples import elal747
-    >>> takeoff = elal747.next('takeoff(method="track_based", airport="LIRF")')
-    >>> # takeoff.duration fails for now
+    >>> takeoff = elal747.takeoff(method="track_based", airport="LIRF")
+    >>> # takeoff.next().duration fails for now
 
     """
 

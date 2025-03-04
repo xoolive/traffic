@@ -219,12 +219,16 @@ class LandingAnyAttempt:
       airports. It is important to pick a threshold significantly above the
       altitude of the candidate airports.
 
-    >>> from traffic.data.datasets import squawk7700
-    >>> attempts = squawk7700["AFR1145_20190820"].landing(method="any")
+    >>> from traffic.data.samples import belevingsvlucht
+    >>> attempts = belevingsvlucht.landing(method="any")
     >>> for i, attempt in enumerate(attempts):
     ...     print(f"Step {i}: {attempt.airport_max} runway {attempt.ILS_max}")
-    Step 0: ELLX runway 24
-    Step 1: ELLX runway 24
+    Step 0: EHLE runway 23
+    Step 1: EHLE runway 05
+    Step 2: EHLE runway 23
+    Step 3: EHLE runway 05
+    Step 4: EHLE runway 23
+    Step 5: EHAM runway 06
 
     """
 
