@@ -136,6 +136,7 @@ markers = [
 ]
 testpaths = [
   "src/traffic/algorithms/ground/",
+  "src/traffic/algorithms/metadata/",
   "src/traffic/algorithms/navigation/",
   "src/traffic/core/intervals.py",
   "src/traffic/core/time.py",

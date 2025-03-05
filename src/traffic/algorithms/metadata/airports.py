@@ -62,23 +62,22 @@ class TakeoffAirportInference:
     """Returns the most probable takeoff airport based on the first location
     in the trajectory.
 
-    .. code:: python
 
-        >>> belevingsvlucht.takeoff_airport()
-        EHAM/AMS: Amsterdam  Schiphol
+    >>> from traffic.data.samples import belevingsvlucht
+    >>> belevingsvlucht.infer_airport("takeoff")
+    Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', ...)
 
     When data is missing near the ground, it may be relevant
     to specify a subset of airports as a keyword parameter.
 
-    .. code:: python
+    >>> missing_data = belevingsvlucht.after("2018-05-30 15:30")
+    >>> missing_data.infer_airport("takeoff")
+    Airport(icao='NL-0114', name='Netherlands Traffic Center Heliport', ...)
 
-        >>> missing_data = belevingsvlucht.after("2018-05-30 15:30")
-        >>> missing_data.takeoff_airport()
-        NL-0015/nan: Universitair Medisch Centrum Utrecht Heliport
-
-        >>> large_airports = airports.query("type == 'large_airport'")
-        >>> missing_data.takeoff_airport(dataset=large_airports)
-        EHAM/AMS: Amsterdam  Schiphol
+    >>> from traffic.data import airports
+    >>> large_airports = airports.query("type == 'large_airport'")
+    >>> missing_data.infer_airport("takeoff", dataset=large_airports)
+    Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', ...)
     """
 
     def __init__(
@@ -102,23 +101,22 @@ class LandingAirportInference:
     """Returns the most probable landing airport based on the last location
     in the trajectory.
 
-    .. code:: python
-
-        >>> belevingsvlucht.landing_airport()
-        EHAM/AMS: Amsterdam  Schiphol
+    >>> from traffic.data.samples import belevingsvlucht
+    >>> belevingsvlucht.infer_airport("landing")
+    Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', ...)
 
     When data is missing near the ground, it may be relevant
     to specify a subset of airports as a keyword parameter.
 
-    .. code:: python
+    >>> missing_data = belevingsvlucht.before("2018-05-30 20:00")
+    >>> missing_data.infer_airport("landing")
+    Airport(icao='NL-0092', name='De Kreupel Helipad', ...)
 
-        >>> missing_data = belevingsvlucht.before("2018-05-30 20:00")
-        >>> missing_data.landing_airport()
-        NL-0024/nan: Middenmeer Aerodrome
+    >>> from traffic.data import airports
+    >>> large_airports = airports.query("type == 'large_airport'")
+    >>> missing_data.infer_airport("landing", dataset=large_airports)
+    Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', ...)
 
-        >>> large_airports = airports.query("type == 'large_airport'")
-        >>> missing_data.landing_airport(dataset=large_airports)
-        EHAM/AMS: Amsterdam  Schiphol
     """
 
     def __init__(

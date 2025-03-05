@@ -15,10 +15,27 @@ class FlightPlanBase(Protocol):
 
 class FlightPlanInference:
     """This functions recomputes the most probable alignments on navigational
-      points on the trajectory.
+    points on the trajectory.
 
-    By default, all navaids of the default database are considered, but limited
-    to a buffered bounding box around the trajectory.
+    :param navaid: By default, all navaids of the default database are
+       considered, but limited to a buffered bounding box around the trajectory.
+
+    >>> from traffic.data import navaids
+    >>> from traffic.data.samples import savan
+    >>> flight = savan["SAVAN01"]
+    >>> vor = navaids.query("type == 'VOR'")
+    >>> df = flight.infer_flightplan(vor)
+    >>> for _, line in df.iterrows():
+    ...     print(f"aligned on {line.navaid} ({line.type}) for {line.duration}")
+    aligned on CFA (VOR) for 0 days 00:21:19
+    aligned on POI (VOR) for 0 days 00:15:42
+    aligned on CAN (VOR) for 0 days 00:14:38
+    aligned on DPE (VOR) for 0 days 00:16:19
+    aligned on CHW (VOR) for 0 days 00:15:45
+    aligned on BRY (VOR) for 0 days 00:19:27
+
+    For more insights about this example:
+    :ref:`Calibration flights with SAVAN trajectories`
 
     Once computed, the following Altair snippet may be useful to display the
     trajectory as a succession of segments:
@@ -26,8 +43,6 @@ class FlightPlanInference:
     .. code:: python
 
         import altair as alt
-
-        df = flight.infer_flightplan()
 
         segments = (
             alt.Chart(df.drop(columns="duration")).encode(
@@ -71,7 +86,7 @@ class FlightPlanInference:
                     "shift_mean": segment.shift_mean,
                     "shift_meanp": segment.shift_mean + 0.02,
                 }
-                for segment in traj.aligned_on_navpoint(all_points)
+                for segment in traj.aligned(all_points)
             )
         ).sort_values("start")
 
