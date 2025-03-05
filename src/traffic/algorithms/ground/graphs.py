@@ -29,6 +29,8 @@ _log = logging.getLogger(__name__)
 
 
 class AirportGraph:
+    """Create a graph from an airport."""
+
     wgs84 = Proj("EPSG:4326")
 
     @classmethod

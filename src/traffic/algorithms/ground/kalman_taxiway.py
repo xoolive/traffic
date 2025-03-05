@@ -12,10 +12,7 @@ from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
 
 from ...data import airports
-from ..filters.preprocessing import (
-    ProcessXYFilterBase,
-    TrackVariable,
-)
+from ..filters.kalman import ProcessXYFilterBase, TrackVariable
 
 
 class KalmanTaxiway(ProcessXYFilterBase):

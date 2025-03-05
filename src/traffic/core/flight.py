@@ -1844,6 +1844,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             - Explicitely specify to `None` if NaN values should be left as is.
             - ``lambda x: x.interpolate()`` may be a smart strategy
 
+        More filters are available on the :ref:`traffic.algorithms.filters` page
+
         """
         from ..algorithms.filters import aggressive
 

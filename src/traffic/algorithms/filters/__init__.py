@@ -24,6 +24,8 @@ class Filter(Protocol):
 
 
 class FilterBase(Filter):
+    """Base class for filters, providing a | operator for composition."""
+
     tracked_variables: dict[str, list[Any]]
     projection: None | "crs.Projection" | pyproj.Proj = None
 
@@ -44,7 +46,13 @@ class FilterBase(Filter):
 
 
 class FilterMedian(FilterBase):
-    """Rolling median filter"""
+    """Rolling median filter.
+
+    :param kwargs: Each keyword argument is the name of a column, the value is
+      the size of the kernel. Default values are provided for altitudes,
+      vertical rate, ground speed and track angles.
+
+    """
 
     # default kernel values
     default: ClassVar[dict[str, int]] = dict(
@@ -69,7 +77,13 @@ class FilterMedian(FilterBase):
 
 
 class FilterMean(FilterBase):
-    """Rolling mean filter."""
+    """Rolling mean filter.
+
+    :param kwargs: Each keyword argument is the name of a column, the value is
+      the size of the kernel. Default values are provided for altitudes,
+      vertical rate, ground speed and track angles.
+
+    """
 
     # default kernel values
     default: ClassVar[dict[str, int]] = dict(
@@ -220,6 +234,11 @@ class FilterAboveSigmaMedian(FilterBase):
 
 
 class FilterPosition(FilterBase):
+    """Basic filter to be deprecated.
+
+    Based on the detection of big groundspeed jumps.
+    """
+
     # TODO improve this implementation based on agg_time or EKF
     def __init__(self, cascades: int = 2) -> None:
         self.cascades = cascades

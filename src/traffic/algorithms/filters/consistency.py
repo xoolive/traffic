@@ -63,8 +63,8 @@ def dxdy_from_dlat_dlon(
 
 
 def compute_gtgraph(dd: ArrayBool) -> tuple[dict[int, Any], Any, Any]:
-    """compute the graph of points complying with the speed limits: i and j are
-    adjacent if i can be reached by j within the speed limits"""
+    # compute the graph of points complying with the speed limits: i and j are
+    # adjacent if i can be reached by j within the speed limits
 
     import graph_tool.all as gt
 
@@ -80,7 +80,7 @@ def compute_gtgraph(dd: ArrayBool) -> tuple[dict[int, Any], Any, Any]:
 
 
 def get_gtlongest(dd: ArrayBool) -> list[int]:
-    """compute the longest path of points complying with the speed limits"""
+    # compute the longest path of points complying with the speed limits
     # import graph_tool as gt
     import graph_tool.all as gt
 
@@ -224,33 +224,48 @@ class FilterConsistency(FilterBase):
     """
 
     Filters noisy values, keeping only values consistent with each other.
+
+    :param horizon:
+    :param backup_exact:
+    :param backup_horizon:
+    :param exact_when_kept_below_verti:
+    :param exact_when_kept_below_track:
+    :param exact_when_kept_below_speed:
+
     Consistencies are checked between points :math:`i` and points :math:`j \\in
-    [|i+1;i+horizon|]`. Using these consistencies, a graph is built: if
+    [|i+1;i+\\mathrm{horizon}|]`.
+
+    Using these consistencies, a graph is built: if
     :math:`i` and :math:`j` are consistent, an edge :math:`(i,j)` is added to
     the graph. The kept values is the longest path in this graph, resulting in a
-    sequence of consistent values.  The consistencies checked vertically between
-    :math:`t_i<t_j` are:: :math:`|(alt_j-alt_i)-(t_j-t_i)* (ROCD_i+ROCD_j)*0.5|
-    < dalt_dt_error*(t_j-t_i)` where :math:`dalt_dt_error` is a threshold that
-    can be specified by the user.
+    sequence of consistent values.
+
+    (In the following, we name :math:`v` the ground speed, :math:`\\dot{z}` the
+    vertical rate, and :math:`\\theta` the track angle.)
+
+    The consistencies checked vertically between :math:`t_i<t_j` are:
+    :math:`|(alt_j-alt_i)-(t_j-t_i) (\\dot{z}_i+\\dot{z}_j)/2| <`
+    ``dalt_dt_error``:math:`(t_j-t_i)` where ``dalt_dt_error`` is a threshold
+    that can be specified by the user.
 
     The consistencies checked horizontally between :math:`t_i<t_j` are:
-    :math:`|(track_i+track_j)*0.5-atan2(lat_j-lat_i,lon_j-lon_i)| <
-    (t_j-t_i)*dtrack_dt_error` and :math:`|dist(lat_j,lat_i,lon_j,lon_i) -
-    (groundspeed_i+groundspeed_j)*0.5*(t_j-t_i)| < dist(lat_j,lat_i,lon_j,lon_i)
-    * relative_error_on_dist` where :math:`dtrack_dt_error` and
-    :math:`relative_error_on_dist` are thresholds that can be specified by the
-    user.
+
+    - :math:`|(\\theta_i+\\theta_j)/2-atan2(lat_j-lat_i,lon_j-lon_i)| <
+      (t_j-t_i)` ``dtrack_dt_error`` and
+    - :math:`|dist(lat_j,lat_i,lon_j,lon_i) - (v_i+v_j)/2*(t_j-t_i)| <
+      dist(lat_j,lat_i,lon_j,lon_i)` ``relative_error_on_dist`` thresholds
+      that can be specified by the user.
 
     In order to compute the longest path faster, a greedy algorithm is used.
     However, if the ratio of kept points is inferior to
-    :math:`exact_when_kept_below` then an exact and slower computation is
-    triggered. This computation uses the Network library or the faster
+    ``exact_when_kept_below`` then an exact and slower computation is
+    triggered. This computation uses the NetworkX library or the faster
     graph-tool library if available.
 
     This filter replaces unacceptable values with NaNs. Then, a strategy may be
     applied to fill the NaN values, by default a forward/backward fill. Other
-    strategies may be passed, for instance do nothing: None; or interpolate:
-    lambda x: x.interpolate(limit_area='inside')
+    strategies may be passed, for instance do nothing: ``None``; or interpolate:
+    ``lambda x: x.interpolate(limit_area='inside')``
 
     """
 
