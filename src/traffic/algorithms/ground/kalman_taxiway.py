@@ -16,6 +16,13 @@ from ..filters.kalman import ProcessXYFilterBase, TrackVariable
 
 
 class KalmanTaxiway(ProcessXYFilterBase):
+    """A Kalman filter that adds a contraint to snap a trajectory
+    to documented taxiways of an airport.
+
+    :param airport: The airport ICAO code to be considered.
+    :param projection: A local projection used to compute x and y.
+    """
+
     # Descriptors are convenient to store the evolution of the process
     x_mes: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
     x_pre: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()

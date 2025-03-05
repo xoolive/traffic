@@ -23,7 +23,7 @@ class RunwayAlignment:
 
         >>> from traffic.data.samples import belevingsvlucht
 
-    Count the number of segments aligned with a runway:
+    Count the number of segments aligned with a runway (take-off or landing):
 
     .. code:: python
 

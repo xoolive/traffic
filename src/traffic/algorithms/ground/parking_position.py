@@ -11,10 +11,27 @@ class ParkingPositionGeometricIntersection:
     """
     Generates possible parking positions at a given airport.
 
+    :param airport: Airport where the ILS is located
+    :param buffer_size: Parking positions are LineString objects to be buffered.
+      We pass a distance in degrees.
+    :param parking_positions: The parking positions can be passed as an
+      :class:`~cartes.osm.Overpass` instance.
+
+    The algorithm looks at the intersection between the trajectory and a
+    buffered version of the parking positions.
+
+    As a noisy trajectory may intersect several parking positions, it is
+    recommended to use the `max()` method to select the trajectory segment with
+    the longest duration.
+
     Example usage:
 
-    parking = flight.on_parking_position('LSZH').max()
-    # returns the most probable parking position in terms of duration
+    >>> from traffic.data.samples import elal747
+    >>> parking = elal747.parking_position('LIRF').max()
+    >>> parking.duration
+    Timedelta('0 days 00:05:20')
+    >>> parking.parking_position_max
+    '702'
 
     .. warning::
 

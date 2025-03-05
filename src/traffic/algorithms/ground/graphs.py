@@ -247,11 +247,12 @@ class AirportGraph:
     def fix_airport_graph(self) -> Self:
         """Builds an airport graph based on available information.
 
-        Steps:
-
         - merge duplicate nodes
         - for each edge, detect every node that is geographically on the segment
           (linestring) and split the edge into two.
+
+        The resulting graph should be (at least very close to) a single
+        connected component graph.
         """
         airport_graph = self.merge_duplicate_nodes()
         for u, v, k in list(airport_graph.graph.edges):

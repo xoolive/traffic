@@ -27,6 +27,18 @@ class ParkingPositionBasedPushback:
     and the moment the aircraft suddenly changes direction the computed
     track angle.
 
+    :param airport: Airport where the ILS is located
+    :param filter_dict:
+    :param track_threshold:
+    :param parking_positions: The parking positions can be passed as an
+      :class:`~cartes.osm.Overpass` instance.
+
+    >>> from traffic.data.samples import zurich_airport
+    >>> flight = zurich_airport["AEE5ZH"]
+    >>> pushback = flight.pushback('LSZH', method="parking_position")
+    >>> pushback.duration
+    Timedelta('0 days 00:01:45')
+
     .. warning::
 
         The method has poor performance when trajectory point on ground are
@@ -109,13 +121,23 @@ class ParkingAreaBasedPushback:
     document apron area and the moment the aircraft suddenly changes direction
     the computed track angle.
 
+    :param airport: Airport where the ILS is located
+    :param stand_areas: The parking positions can be passed as an
+      :class:`~cartes.osm.Overpass` instance or a list of Polygon.
+
+
+    >>> from traffic.data.samples import zurich_airport
+    >>> flight = zurich_airport["AEE5ZH"]
+    >>> pushback = flight.pushback('LSZH', method="parking_area")
+    >>> pushback.duration
+    Timedelta('0 days 00:04:26')
+
     .. warning::
 
         The method has poor performance when trajectory point on ground are
         lacking. This is often the case for data recorded from locations far
         from the airport.
 
-    # TODO document parameters
     """
 
     def __init__(
