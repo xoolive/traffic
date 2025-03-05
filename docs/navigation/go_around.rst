@@ -7,13 +7,10 @@ initiate an overshoot and *go around* for another attempt to land at the same
 airport---possibly on a different runway. The change in thrust and go around in
 trajectory may occur before or after the runway threshold.
 
-The traffic library provides a function to detect go-arounds in trajectories:
-
-.. automethod:: traffic.core.Flight.go_around
-    :noindex:
-
-The function returns a :class:`~traffic.core.FlightIterator` as there may be
-several go-arounds (i.e. more than two attempts to land) at a given airport.
+The traffic library provides a function to detect go-arounds in trajectories
+(:meth:`~traffic.core.Flight.go_around`). The function returns a
+:class:`~traffic.core.FlightIterator` as there may be several go-arounds (i.e.
+more than two attempts to land) at a given airport.
 
 Let's illustrate how the library works with this dataset of trajectories landing
 at Zurich airport over two months in 2019.

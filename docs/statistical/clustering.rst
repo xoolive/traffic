@@ -37,8 +37,7 @@ The full dataset of trajectories can be displayed on a basic Switzerland map.
         switzerland.plot(ax, alpha=0.1)
 
 
-
-.. image:: _static/clustering_switzerland.png
+.. image:: ../_static/clustering_switzerland.png
    :align: center
 
 It is often relevant to use the track angle when doing clustering on
@@ -151,7 +150,7 @@ Many outliers appear in shaded grey in the first quartet.
 
 
 
-.. image:: _static/clustering_dbscan.png
+.. image:: ../_static/clustering_dbscan.png
    :align: center
 
 Gaussian Mixtures do not yield any outlier. The following clustering is balanced
@@ -176,7 +175,7 @@ differently.
 
 
 
-.. image:: _static/clustering_gmm.png
+.. image:: ../_static/clustering_gmm.png
    :align: center
 
 The following map demonstrates how to use the `Traffic.centroid()
@@ -242,7 +241,7 @@ with the same parameters as the clustering.
 
 
 
-.. image:: _static/clustering_output.png
+.. image:: ../_static/clustering_output.png
    :align: center
 
 The result may be compared to the Blick newspaper great visualisation by Simon Huwiler

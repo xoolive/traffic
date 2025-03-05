@@ -72,6 +72,7 @@ Navigation events
    navigation/go_around
    navigation/runway_changes
    navigation/holding_pattern
+   navigation/point_merge
    navigation/top_of_climb
    navigation/flight_plan
    navigation/fuel_burn
@@ -82,10 +83,10 @@ Statistical analysis
 .. toctree::
    :maxdepth: 1
 
-   tutorial/occupancy
-   clustering
-   tutorial/generation
-   tutorial/cpa
+   statistical/occupancy
+   statistical/clustering
+   statistical/generation
+   statistical/cpa
 
 Troubleshooting
 ---------------

@@ -129,6 +129,15 @@ class FuelflowEstimation:
 
 
 class PollutantEstimation:
+    """Estimates the fuel flow with OpenAP.
+
+    The estimation method is based on the :class:FuelflowEstimation which is
+    also called on the same instance.
+
+    :return: the same instance with new columns for various pollutants,
+      including H20, HC, CO, CO2, NOx and SOx are added to the data frame.
+    """
+
     def __init__(
         self,
         initial_mass: None | float = None,

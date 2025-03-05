@@ -1006,6 +1006,10 @@ class Traffic(HBoxMixin, GeographyMixin):
     def emission(self, /, *args, method="default", **kwargs):  # type: ignore
         ...
 
+    @lazy_evaluation()
+    def predict(self, /, *args, method="default", **kwargs):  # type: ignore
+        ...
+
     # -- Methods with a Traffic implementation, otherwise delegated to Flight
 
     @lazy_evaluation(default=True)

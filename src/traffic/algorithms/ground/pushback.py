@@ -24,7 +24,7 @@ class ParkingPositionBasedPushback:
     Returns the pushback part of the trajectory on ground.
 
     The method identifies the start of the movement, the parking_position
-    and the moment the aircraft suddenly changes direction the computed
+    and the moment the aircraft suddenly changes direction in the computed
     track angle.
 
     :param airport: Airport where the ILS is located
@@ -118,8 +118,8 @@ class ParkingAreaBasedPushback:
     Returns the pushback part of the trajectory on ground.
 
     The method identifies the start of the movement, an intersection with a
-    document apron area and the moment the aircraft suddenly changes direction
-    the computed track angle.
+    documented apron area and the moment the aircraft suddenly changes direction
+    in the computed track angle.
 
     :param airport: Airport where the ILS is located
     :param stand_areas: The parking positions can be passed as an

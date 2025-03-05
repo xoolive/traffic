@@ -13,21 +13,13 @@ from ...core.flight import Flight
 class StraightLinePredict:
     """Projects the trajectory in a straight line.
 
-    The method uses the last position of a trajectory (method `at()
-    <#traffic.core.Flight.at>`_) and uses the ``track`` (in degrees),
+    The method uses the last position of a trajectory (method
+    :meth:`~traffic.core.Flight.at`) and uses the ``track`` (in degrees),
     ``groundspeed`` (in knots) and ``vertical_rate`` (in ft/min) values to
     interpolate the trajectory in a straight line.
 
     The elements passed as kwargs as passed as is to the datetime.timedelta
     constructor.
-
-    Example usage:
-
-    .. code:: python
-
-        flight.predict(minutes=10)
-        flight.before("2018-12-24 23:55").predict(minutes=10)  # Merry XMas!
-
     """
 
     def __init__(

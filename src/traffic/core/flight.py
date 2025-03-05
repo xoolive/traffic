@@ -249,7 +249,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
           :meth:`takeoff`,
           :meth:`holding_pattern`,
           :meth:`point_merge`,
-          :meth:`go_around`,
+          :meth:`go_around`
 
         - airborne events:
           :meth:`emergency`,
@@ -258,12 +258,12 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         - ground trajectory methods:
           :meth:`aligned`,
-          :meth:`moving`,
+          :meth:`movement`,
           :meth:`parking_position`,
-          :meth:`pushback`,
+          :meth:`pushback`
 
         - performance estimation methods:
-          :meth:`fuelflow`
+          :meth:`fuelflow`,
           :meth:`emission`
 
         - metadata inference methods:
@@ -1394,8 +1394,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         - If no time is passed (default), the last know position is returned.
         - If no position is available at the given timestamp, None is returned.
-          If you expect a position at any price, consider `Flight.resample
-          <#traffic.core.Flight.resample>`_
+          If you expect a position at any price, consider :meth:`resample`
 
         """
 
@@ -1728,14 +1727,15 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         :param interpolate_kw: (default: ``{}``)
 
             - A dictionary with keyword arguments that will be passed to the
-              pandas :py:method:`pandas.Series.interpolate` method.
+              pandas interpolate method.
 
               Example usage:
               To specify a fifth-degree polynomial interpolation, you can
               pass the following dictionary:
 
               .. code-block:: python
-              interpolate_kw = {"method": "polynomial", "order": 5}
+
+                interpolate_kw = {"method": "polynomial", "order": 5}
 
 
         :param projection: (default: ``None``)
@@ -1823,7 +1823,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
     def filter(
         self,
-        filter: str | filters.FilterBase = "default",
+        filter: Literal["default", "aggressive"]
+        | filters.FilterBase = "default",
         strategy: None
         | Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x.bfill().ffill(),
         **kwargs: int | tuple[int],
@@ -1836,7 +1837,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             or any filter implementing the
             :class:`~traffic.algorithms.filters.Filter` protocol.
             Use "aggressive" for an experimental filter by @krumjan
-
 
         :param strategy: (default: backward fill followed by forward fill)
             is applied after the filter to deal with resulting NaN values.
@@ -1900,8 +1900,37 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         | PredictBase = "default",
         **kwargs: Any,
     ) -> Flight:
+        """Predicts the future trajectory based on the past data points.
+
+        :param method: By default, the method propagates the trajectory in a
+          straight line.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding prediction class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``straight`` (default) uses
+          :class:`~traffic.algorithms.prediction.straightline.StraightLinePredict`
+
+        - ``flightplan`` uses
+          :class:`~traffic.algorithms.prediction.flightplan.FlightPlanPredict`
+
+        Example usage:
+
+        >>> flight.predict(minutes=10, method="straight")
+        >>> flight.before("2018-12-24 23:55").predict(minutes=10)  # Merry XMas!
+
+        """
+        from ..algorithms.prediction import PredictBase
         from ..algorithms.prediction.flightplan import FlightPlanPredict
         from ..algorithms.prediction.straightline import StraightLinePredict
+
+        if len(args) and isinstance(args[0], PredictBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=StraightLinePredict,
@@ -2047,9 +2076,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         .. note::
 
-            Check the `query_ehs() <#traffic.core.Flight.query_ehs>`_ method to
-            find a way to enrich your flight with such features. Note that this
-            data is not necessarily available depending on the location.
+            Check the :meth:`query_ehs` method to find a way to enrich your
+            flight with such features. Note that this data is not necessarily
+            available depending on the location.
+
         """
 
         if any(w not in self.data.columns for w in ["heading", "TAS"]):
@@ -2072,7 +2102,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     ) -> Flight:
         """Label phases in flight trajectories.
 
-        An extra ``phase`` column is added to the DataFrame.
+        An extra ``"phase"`` column is added to the DataFrame.
 
         The only available (default) method is provided by OpenAP.
 
@@ -2102,6 +2132,24 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method: Literal["takeoff", "landing"] | airports.AirportInferenceBase,
         **kwargs: Any,
     ) -> Airport:
+        """Infers the takeoff or landing airport from the trajectory data.
+
+        :param method: selects the detection method
+
+        - ``"landing"`` uses
+          :class:`~traffic.algorithms.metadata.airports.LandingAirportInference`
+
+        - ``"takeoff"`` uses
+          :class:`~traffic.algorithms.metadata.airports.TakeoffAirportInference`
+
+        Usage:
+
+        >>> flight.infer_airport("takeoff")
+        >>> flight.infer_airport("landing")
+
+        Check the documentation of the classes for more options.
+
+        """
         from ..algorithms.metadata import airports
 
         method_dict = dict(
@@ -2149,7 +2197,22 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method: Literal["default"] | flightplan.FlightPlanBase = "default",
         **kwargs: Any,
     ) -> None | pd.DataFrame:
+        """Infers a possible flight-plan from the trajectory data.
+
+        :param method: selects the detection method
+
+        The only available (default) method is
+        :class:`~traffic.algorithms.metadata.flightplan.FlightPlanInference`.
+        Check the documentation there for more details.
+
+        Check the documentation of the class for more options.
+
+        """
         from ..algorithms.metadata import flightplan
+
+        if len(args) and isinstance(args[0], flightplan.FlightPlanBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=flightplan.FlightPlanInference,
@@ -2185,17 +2248,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         The following table summarizes the available methods and their
         corresponding classes:
 
-        - ``beacon`` (default) uses
+        - ``"beacon"`` (default) uses
           :class:`~traffic.algorithms.navigation.alignment.BeaconTrackBearingAlignment`
           and compares the track angle of the aircraft with the bearing to
           a given point.
 
-        - ``ils`` uses
+        - ``"ils"`` uses
           :class:`~traffic.algorithms.navigation.landing.LandingAlignedOnILS`
           and detects segments on trajectory aligned with the ILS of a given
           airport.
 
-        - ``runway``  uses
+        - ``"runway"``  uses
           :class:`~traffic.algorithms.ground.runway.RunwayAlignment`
           and detects segments aligned with one of the documented runways.
 
@@ -2305,17 +2368,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         The following table summarizes the available methods and their
         corresponding classes:
 
-        - ``aligned_on_ils`` (default) uses
+        - ``"aligned_on_ils"`` (default) uses
           :class:`~traffic.algorithms.navigation.landing.LandingAlignedOnILS`
           and detects segments on trajectory aligned with the ILS of a given
           airport.
 
-        - ``anywhere`` uses
+        - ``"anywhere"`` uses
           :class:`~traffic.algorithms.navigation.landing.LandingAnyAttempt`
           and detects the most plausible landing airport for all pieces of
           trajectories below a threshold altitude.
 
-        - ``runway_change`` uses
+        - ``"runway_change"`` uses
           :class:`~traffic.algorithms.navigation.landing.LandingWithRunwayChange`
           and detects a specific subset of situations where aircraft are aligned
           on several runways during one landing phase.
@@ -2418,13 +2481,13 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         The following table summarizes the available methods and their
         corresponding classes:
 
-        - ``polygon_based`` (default) uses
+        - ``"polygon_based"`` (default) uses
           :class:`~traffic.algorithms.navigation.takeoff.PolygonBasedRunwayDetection`
           and detects segments on trajectory maximizing their intersection with
           a trapeze shape with a small base at runway threshold. This method
           performs better when trajectory data point is scarce at surface level.
 
-        - ``track_based`` uses
+        - ``"track_based"`` uses
           :class:`~traffic.algorithms.navigation.takeoff.TrackBasedRunwayDetection`
           and detects pieces of trajectory with a strong acceleration that is
           colinear to a documented runway. This method performs better when
@@ -2483,7 +2546,21 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method: Literal["default", "geometry"] | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
+        """Detects pieces of trajectory matching documented parking positions.
+
+        The only available (default) method,
+        :class:`~traffic.algorithms.ground.parking_position.ParkingPositionGeometricIntersection`,
+        looks at the intersection between the trajectory and a buffered version
+        of the parking positions.
+
+        Check the documentation of the corresponding class for more details.
+        """
         from ..algorithms.ground import parking_position
+        from ..algorithms.navigation import ApplyIteratorBase
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=parking_position.ParkingPositionGeometricIntersection,
@@ -2505,7 +2582,20 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         | ApplyOptionalBase = "default",
         **kwargs: Any,
     ) -> Optional["Flight"]:
+        """Detects when the aircraft starts moving on the surface.
+
+        The only available (default) method is
+        :class:`~traffic.algorithms.ground.movement.StartMoving`. Check the
+        documentation there for more details.
+
+        :return: the trajectory trimmed from the non-moving part.
+        """
         from ..algorithms.ground import movement
+        from ..algorithms.navigation import ApplyOptionalBase
+
+        if len(args) and isinstance(args[0], ApplyOptionalBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=movement.StartMoving,
@@ -2527,7 +2617,42 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         | ApplyOptionalBase = "default",
         **kwargs: Any,
     ) -> Optional["Flight"]:
+        """Detects the push-back phase of the trajectory.
+
+        :param method: By default, the method identifies the start of the
+          movement, the parking_position and the moment the aircraft suddenly
+          changes direction the computed track angle.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding landing detection class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``"parking_area"`` (default) uses
+          :class:`~traffic.algorithms.ground.pushback.ParkingAreaBasedPushback`
+          and identifies the start of the movement, an intersection with a
+          documented apron area and the moment the aircraft suddenly changes
+          direction in the computed track angle
+
+        - ``"parking_position"`` (default) uses
+          :class:`~traffic.algorithms.ground.pushback.ParkingPositionBasedPushback`
+          and identifies the start of the movement, the parking_position
+          and the moment the aircraft suddenly changes direction in the computed
+          track angle.
+
+        Usage:
+
+        >>> flight.pushback(airport="LSZH", method="default")
+
+        """
         from ..algorithms.ground import pushback
+        from ..algorithms.navigation import ApplyOptionalBase
+
+        if len(args) and isinstance(args[0], ApplyOptionalBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=pushback.ParkingAreaBasedPushback,
@@ -2631,7 +2756,22 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method: Literal["default", "openap"] | EstimatorBase = "default",
         **kwargs: Any,
     ) -> Flight:
-        from ..algorithms.performance import openap
+        """Estimate the mass and fuel flow of the aircraft based on its
+        trajectory.
+
+        :param method: At the moment, only the OpenAP implementation is
+          available, and is the default implementation.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding fuel flow class.
+
+        """
+        from ..algorithms.performance import EstimatorBase, openap
+
+        if len(args) and isinstance(args[0], EstimatorBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=openap.FuelflowEstimation,
@@ -2652,7 +2792,22 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method: Literal["default", "openap"] | EstimatorBase = "default",
         **kwargs: Any,
     ) -> Flight:
+        """Estimate the pollutants emitted by the aircraft based on its
+        trajectory.
+
+        :param method: At the moment, only the OpenAP implementation is
+          available, and is the default implementation.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding fuel flow class.
+
+        """
         from ..algorithms.performance import openap
+
+        if len(args) and isinstance(args[0], EstimatorBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
             default=openap.PollutantEstimation,
@@ -2679,16 +2834,14 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         """Plots the wind field seen by the aircraft on a Matplotlib axis.
 
         The Flight supports Cartopy axis as well with automatic projection. If
-        no projection is provided, a default `PlateCarree
-        <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree>`_
+        no projection is provided, a default :meth:`~cartopy.crs.PlateCarree`
         is applied.
 
         The `resolution` argument may be:
 
             - None for a raw plot;
-            - an integer or a string to pass to a `Flight.resample()
-              <#traffic.core.Flight.resample>`__ method as a preprocessing
-              before plotting;
+            - an integer or a string to pass to a :meth:`resample` method as a
+              preprocessing before plotting;
             - or a dictionary, e.g dict(latitude=4, longitude=4), if you
               want a grid with a resolution of 4 points per latitude and
               longitude degree.
@@ -3161,9 +3314,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         The method uses latitude and longitude, projects the trajectory to a
         conformal projection and applies the algorithm. If x and y features are
-        already present in the DataFrame (after a call to `compute_xy
-        <#traffic.core.Flight.compute_xy>`_ for instance) then this
-        projection is taken into account.
+        already present in the DataFrame (after a call to :meth:`compute_xy`
+        for instance) then this projection is taken into account.
 
         The tolerance parameter must be defined in meters.
 
@@ -3310,10 +3462,6 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Returns None if no data is found.
 
-        .. note::
-
-            Read more about access to the OpenSky Network database `here
-            <opensky_impala.html>`_
         """
 
         from ..data import opensky
@@ -3345,16 +3493,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             Making a lot of small requests can be very inefficient and may look
             like a denial of service. If you get the raw messages using a
             different channel, you can provide the resulting dataframe as a
-            parameter. See the page about `OpenSky Impala access
-            <opensky_impala.html>`_
+            parameter.
 
         The data parameter expect three columns: ``icao24``, ``rawmsg`` and
         ``mintime``, in conformance with the OpenSky API.
 
-        .. note::
-
-            Read more about access to the OpenSky Network database `here
-            <opensky_impala.html>`_
         """
 
         from ..data import opensky
@@ -3505,8 +3648,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         .. note::
 
-            See also `geoencode() <#traffic.core.Flight.geoencode>`_ for the
-            altair equivalent.
+            See also :meth:`geoencode` for the altair equivalent.
 
         """
 
@@ -3576,8 +3718,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         .. note::
 
-            See also `plot_time() <#traffic.core.Flight.plot_time>`_ for the
-            Matplotlib equivalent.
+            See also :meth:`plot_time` for the Matplotlib equivalent.
 
         """
         import altair as alt
@@ -3667,8 +3808,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         .. note::
 
-            See also `chart() <#traffic.core.Flight.chart>`_ for the altair
-            equivalent.
+            See also :meth:`chart` for the altair equivalent.
 
         """
         if isinstance(y, str):

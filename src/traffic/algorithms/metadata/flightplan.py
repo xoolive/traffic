@@ -1,4 +1,11 @@
-from typing import TYPE_CHECKING, Iterator, Optional, Protocol, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Iterator,
+    Optional,
+    Protocol,
+    Sequence,
+    runtime_checkable,
+)
 
 import pandas as pd
 
@@ -9,6 +16,7 @@ if TYPE_CHECKING:
     from ...data.basic.navaid import Navaids
 
 
+@runtime_checkable
 class FlightPlanBase(Protocol):
     def infer(self, flight: Flight) -> None | pd.DataFrame: ...
 
@@ -19,6 +27,9 @@ class FlightPlanInference:
 
     :param navaid: By default, all navaids of the default database are
        considered, but limited to a buffered bounding box around the trajectory.
+
+       It should be good practice to limit the size of the navaid dataset: the
+       smaller the data, the faster the computation will be.
 
     >>> from traffic.data import navaids
     >>> from traffic.data.samples import savan

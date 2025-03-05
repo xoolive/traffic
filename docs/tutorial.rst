@@ -228,12 +228,3 @@ We can also estimate the total fuel consumed:
     For any column in the pandas DataFrame wrapped by a Flight structure,
     traffic provides attributes to aggregate all values in the column.
     ``g.fuel_max`` is equivalent to ``g.data.fuel.max()``.
-
-
-Advanced topics
----------------
-
-.. toctree::
-
-    gallery/savan
-    navigation/go_around
