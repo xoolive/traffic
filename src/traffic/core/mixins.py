@@ -874,6 +874,8 @@ class GeoDBMixin(DataFrameMixin):
 
 
 class PointMixin:
+    """A structure with a latitude and a longitude attribute."""
+
     latitude: tt.angle
     longitude: tt.angle
     altitude: tt.altitude

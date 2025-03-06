@@ -21,6 +21,16 @@ class FilterDerivative(FilterBase):
     of the parameters. If the value of the derivatives is above the defined
     threshold values, the datapoint is removed
 
+    :param time_column: the name of the time column (default: "timestamp")
+
+    :param kwargs: each keyword argument has the name of a feature.
+        the value must be a dictionary with the following keys:
+        - first: threshold value for the first derivative
+        - second: threshold value for the second derivative
+        - kernel: the kernel size in seconds
+
+    If two spikes are detected within the width of the kernel, all data points
+    in between are also removed.
     """
 
     # default parameter values
@@ -33,22 +43,11 @@ class FilterDerivative(FilterBase):
     )
 
     def __init__(
-        self, time_column: str = "timestamp", **kwargs: DerivativeParams
+        self,
+        time_column: str = "timestamp",
+        **kwargs: DerivativeParams,
     ) -> None:
-        """
-
-        :param time_column: the name of the time column (default: "timestamp")
-
-        :param kwargs: each keyword argument has the name of a feature.
-            the value must be a dictionary with the following keys:
-            - first: threshold value for the first derivative
-            - second: threshold value for the second derivative
-            - kernel: the kernel size in seconds
-
-        If two spikes are detected within the width of the kernel, all
-        datapoints inbetween are also removed.
-
-        """
+        """ """
         self.columns = {**self.default, **kwargs}
         self.time_column = time_column
 
@@ -103,6 +102,16 @@ class FilterClustering(FilterBase):
     and parameter value. If the cluster is larger than the defined group size
     the datapoints are kept, otherwise they are removed.
 
+    :param time_column: the name of the time column (default: "timestamp")
+
+    :param kwargs: each keyword argument has the name of a feature.
+        the value must be a dictionary with the following keys:
+        - group_size: minimum size of the cluster to be kept
+        - value_threshold: within the value threshold, the samples fall in
+          the same cluster
+        - time_threshold: within the time threshold, the samples fall in
+          the same cluster
+
     """
 
     default: ClassVar[dict[str, ClusteringParams]] = dict(
@@ -118,17 +127,6 @@ class FilterClustering(FilterBase):
     def __init__(
         self, time_column: str = "timestamp", **kwargs: ClusteringParams
     ) -> None:
-        """
-        :param time_column: the name of the time column (default: "timestamp")
-
-        :param kwargs: each keyword argument has the name of a feature.
-            the value must be a dictionary with the following keys:
-            - group_size: minimum size of the cluster to be kept
-            - value_threshold: within the value threshold, the samples fall in
-              the same cluster
-            - time_threshold: within the time threshold, the samples fall in
-              the same cluster
-        """
         self.columns = {**self.default, **kwargs}
         self.time_column = time_column
 

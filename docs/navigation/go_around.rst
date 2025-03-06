@@ -7,13 +7,10 @@ initiate an overshoot and *go around* for another attempt to land at the same
 airport---possibly on a different runway. The change in thrust and go around in
 trajectory may occur before or after the runway threshold.
 
-The traffic library provides a function to detect go-arounds in trajectories:
-
-.. automethod:: traffic.core.Flight.go_around
-    :noindex:
-
-The function returns a :class:`~traffic.core.FlightIterator` as there may be
-several go-arounds (i.e. more than two attempts to land) at a given airport.
+The traffic library provides a function to detect go-arounds in trajectories
+(:meth:`~traffic.core.Flight.go_around`). The function returns a
+:class:`~traffic.core.FlightIterator` as there may be several go-arounds (i.e.
+more than two attempts to land) at a given airport.
 
 Let's illustrate how the library works with this dataset of trajectories landing
 at Zurich airport over two months in 2019.
@@ -32,7 +29,7 @@ at Zurich airport over two months in 2019.
         break  # only reachable from nested break
 
 Internally, in order to detect a go around, the library looks at two landing
-attempts with :meth:`~traffic.core.Flight.aligned_on_ils`, and ensures there is
+attempts with :meth:`~traffic.core.Flight.landing`, and ensures there is
 a :ref:`climbing phase <How to find flight phases on a trajectory?>`,
 characterising the overshoot, between the two attempts.
 
@@ -133,7 +130,7 @@ necessarily on the same runway, as exemplified below:
             if flight.go_around().sum() > 1:
                 airports["LSZH"].plot(ax[idx], footprint=False, runways=True)
                 flight.plot(ax[idx], color="#bab0ac")
-                for segment in flight.aligned_on_ils("LSZH"):
+                for segment in flight.landing("LSZH"):
                     res, *_ = segment.plot(
                         ax[idx],
                         lw=1.5,
@@ -176,7 +173,7 @@ a runway configuration change:
 
     data = (
         landing_zurich_2019.between("2019-10-15 10:10", "2019-10-15 10:50")
-        .all("aligned_on_LSZH", flight_id="{self.callsign}_{i}")
+        .all("landing('LSZH')", flight_id="{self.callsign}_{i}")
         .summary(["callsign", "ILS_max", "start", "stop"])
         .eval()
         .rename(columns=dict(start="final approach", stop="landing"))

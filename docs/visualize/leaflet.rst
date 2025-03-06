@@ -48,8 +48,8 @@ It is also possible to add routes, points, flight plans etc. with the ``.add`` m
     m = belevingsvlucht.map_leaflet(
         zoom=8,
         highlight={
-            "red": 'aligned_on_ils("EHAM")',
-            "#bd0026": lambda flight: flight.aligned_on_ils("EHLE"),
+            "red": 'landing("EHAM")',
+            "#bd0026": lambda flight: flight.landing("EHLE"),
             "#feb24c": "holding_pattern",
         }
     )

@@ -38,15 +38,12 @@ from typing_extensions import Self
 import numpy as np
 import pandas as pd
 import pyproj
-from pandas.core.internals import DatetimeTZBlock
+from pandas.core.internals import DatetimeTZBlock  # TODO DeprecationWarning
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
 from ..algorithms import filters
 from ..algorithms.douglas_peucker import douglas_peucker
-from ..algorithms.filters import aggressive
-from ..algorithms.navigation import NavigationFeatures
-from ..algorithms.openap import OpenAP
 from ..core import types as tt
 from ..core.structure import Airport
 from .intervals import Interval, IntervalCollection
@@ -64,7 +61,14 @@ if TYPE_CHECKING:
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
 
-    from ..algorithms.navigation import takeoff
+    from ..algorithms.metadata import airports, flightplan
+    from ..algorithms.navigation import (
+        ApplyBase,
+        ApplyIteratorBase,
+        ApplyOptionalBase,
+    )
+    from ..algorithms.performance import EstimatorBase
+    from ..algorithms.prediction import PredictBase
     from ..data.adsb.decode import RawData
     from ..data.basic.aircraft import Tail
     from ..data.basic.navaid import Navaids
@@ -165,32 +169,11 @@ class MetaFlight(type):
                     flight, *args, **kwargs
                 )
 
-        # We should think about deprecating what comes below...
-        if name.startswith("aligned_on_"):
-            return lambda flight: cls.aligned_on_ils(flight, name[11:])
-        if name.startswith("takeoff_runway_"):
-            return lambda flight: cls.takeoff_from_runway(flight, name[15:])
-        if name.startswith("on_parking_"):
-            return lambda flight: cls.on_parking_position(flight, name[11:])
-        if name.startswith("pushback_"):
-            return lambda flight: cls.pushback(flight, name[9:])
-        if name.startswith("landing_at_"):
-            return lambda flight: cls.landing_at(flight, name[11:])
-        if name.startswith("takeoff_from_"):
-            return lambda flight: cls.takeoff_from(flight, name[13:])
-
         raise AttributeError
 
 
 @rich.repr.auto()
-class Flight(
-    HBoxMixin,
-    GeographyMixin,
-    ShapelyMixin,
-    NavigationFeatures,
-    OpenAP,
-    metaclass=MetaFlight,
-):
+class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     """Flight is the most basic class associated to a trajectory.
     Flights are the building block of all processing methods, built on top of
     pandas DataFrame. The minimum set of required features are:
@@ -253,38 +236,53 @@ class Flight(
           :meth:`inside_bbox`,
           :meth:`intersects`,
           :meth:`project_shape`,
-          :meth:`simplify`,
           :meth:`unwrap`
 
         - filtering and resampling methods:
           :meth:`filter`,
-          :meth:`forward`,
-          :meth:`resample`
+          :meth:`resample`,
+          :meth:`simplify`,
 
-        - TMA events:
-          :meth:`takeoff_from_runway`,
-          :meth:`aligned_on_ils`,
-          :meth:`go_around`,
-          :meth:`runway_change`
+        - navigation related events:
+          :meth:`aligned`,
+          :meth:`landing`,
+          :meth:`takeoff`,
+          :meth:`holding_pattern`,
+          :meth:`point_merge`,
+          :meth:`go_around`
 
         - airborne events:
-          :meth:`aligned_on_navpoint`,
-          :meth:`compute_navpoints`,
-          :meth:`emergency`
+          :meth:`emergency`,
+          :meth:`phases`,
+          :meth:`thermals`
 
         - ground trajectory methods:
-          :meth:`aligned_on_runway`,
-          :meth:`on_parking_position`,
-          :meth:`pushback`,
-          :meth:`slow_taxi`,
-          :meth:`moving`
+          :meth:`aligned`,
+          :meth:`movement`,
+          :meth:`parking_position`,
+          :meth:`pushback`
+
+        - performance estimation methods:
+          :meth:`fuelflow`,
+          :meth:`emission`
+
+        - metadata inference methods:
+          :meth:`infer_airport`,
+          :meth:`infer_flightplan`,
+
+        - prediction methods:
+          :meth:`predict`
 
         - visualisation with altair:
           :meth:`chart`,
           :meth:`geoencode`
 
-        - visualisation with leaflet: :meth:`map_leaflet`
-        - visualisation with plotly: :meth:`line_map` and others
+        - visualisation with leaflet:
+          :meth:`map_leaflet`
+
+        - visualisation with plotly:
+          :meth:`line_map` and others
+
         - visualisation with Matplotlib:
           :meth:`plot`,
           :meth:`plot_time`
@@ -1396,8 +1394,7 @@ class Flight(
 
         - If no time is passed (default), the last know position is returned.
         - If no position is available at the given timestamp, None is returned.
-          If you expect a position at any price, consider `Flight.resample
-          <#traffic.core.Flight.resample>`_
+          If you expect a position at any price, consider :meth:`resample`
 
         """
 
@@ -1574,9 +1571,9 @@ class Flight(
     ) -> Flight:
         """Apply features on time windows.
 
-        The following is performed:
+        The following is performed are performed in order.
 
-        - a new column `rounded` rounds the timestamp at the given rate;
+        - a new column ``rounded`` rounds the timestamp at the given rate;
         - the groupby/apply is operated with parameters passed in apply;
         - if merge is True, the new column in merged into the Flight,
           otherwise a pd.DataFrame is returned.
@@ -1585,7 +1582,7 @@ class Flight(
 
         >>> f.agg_time("10 min", straight=lambda df: Flight(df).distance())
 
-        returns a Flight with a new column straight with the great circle
+        returns a Flight with a new column ``straight`` with the great circle
         distance between points sampled every 10 minutes.
         """
 
@@ -1623,9 +1620,9 @@ class Flight(
     ) -> Flight:
         """Aggregate features on time windows.
 
-        The following is performed:
+        The following is performed are performed in order.
 
-        - a new column `rounded` rounds the timestamp at the given rate;
+        - a new column ``rounded`` rounds the timestamp at the given rate;
         - the groupby/agg is operated with parameters passed in kwargs;
         - if merge is True, the new column in merged into the Flight,
           otherwise a pd.DataFrame is returned.
@@ -1730,14 +1727,15 @@ class Flight(
         :param interpolate_kw: (default: ``{}``)
 
             - A dictionary with keyword arguments that will be passed to the
-              pandas :py:method:`pandas.Series.interpolate` method.
+              pandas interpolate method.
 
               Example usage:
               To specify a fifth-degree polynomial interpolation, you can
               pass the following dictionary:
 
               .. code-block:: python
-              interpolate_kw = {"method": "polynomial", "order": 5}
+
+                interpolate_kw = {"method": "polynomial", "order": 5}
 
 
         :param projection: (default: ``None``)
@@ -1825,7 +1823,8 @@ class Flight(
 
     def filter(
         self,
-        filter: str | filters.FilterBase = "default",
+        filter: Literal["default", "aggressive"]
+        | filters.FilterBase = "default",
         strategy: None
         | Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x.bfill().ffill(),
         **kwargs: int | tuple[int],
@@ -1839,14 +1838,17 @@ class Flight(
             :class:`~traffic.algorithms.filters.Filter` protocol.
             Use "aggressive" for an experimental filter by @krumjan
 
-
         :param strategy: (default: backward fill followed by forward fill)
             is applied after the filter to deal with resulting NaN values.
 
             - Explicitely specify to `None` if NaN values should be left as is.
             - ``lambda x: x.interpolate()`` may be a smart strategy
 
+        More filters are available on the :ref:`traffic.algorithms.filters` page
+
         """
+        from ..algorithms.filters import aggressive
+
         filter_dict = dict(
             default=filters.FilterAboveSigmaMedian(**kwargs),
             aggressive=filters.FilterMedian()
@@ -1878,86 +1880,85 @@ class Flight(
             postprocess = postprocess.compute_latlon_from_xy(filter.projection)
         return postprocess
 
-    def filter_position(self, cascades: int = 2) -> Optional[Flight]:
-        # TODO improve based on agg_time or EKF
-        flight: Optional[Flight] = self
-        for _ in range(cascades):
-            if flight is None:
-                return None
-            flight = flight.cumulative_distance().query(
-                "compute_gs < compute_gs.mean() + 3 * compute_gs.std()"
-            )
-        return flight
+    def filter_position(
+        self, cascades: int = 2
+    ) -> Optional[Flight]:  # DEPRECATED
+        from ..algorithms.filters import FilterPosition
 
-    def comet(self, **kwargs: Any) -> Flight:
-        raise DeprecationWarning("Use Flight.forward() method instead")
+        warnings.warn(
+            "Deprecated filter_position method, "
+            "use .filter() with FilterPosition instead",
+            DeprecationWarning,
+        )
 
-    @impunity(ignore_warnings=True)
-    def forward(
-        self, delta: Union[None, str, pd.Timedelta] = None, **kwargs: Any
-    ) -> "Flight":
-        """Projects the trajectory in a straight line.
+        return self.filter(FilterPosition(cascades))
 
-        The method uses the last position of a trajectory (method `at()
-        <#traffic.core.Flight.at>`_) and uses the ``track`` (in degrees),
-        ``groundspeed`` (in knots) and ``vertical_rate`` (in ft/min) values to
-        interpolate the trajectory in a straight line.
+    def predict(
+        self,
+        *args: Any,
+        method: Literal["default", "straight", "flightplan"]
+        | PredictBase = "default",
+        **kwargs: Any,
+    ) -> Flight:
+        """Predicts the future trajectory based on the past data points.
 
-        The elements passed as kwargs as passed as is to the datetime.timedelta
-        constructor.
+        :param method: By default, the method propagates the trajectory in a
+          straight line.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding prediction class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``straight`` (default) uses
+          :class:`~traffic.algorithms.prediction.straightline.StraightLinePredict`
+
+        - ``flightplan`` uses
+          :class:`~traffic.algorithms.prediction.flightplan.FlightPlanPredict`
 
         Example usage:
 
-        .. code:: python
-
-            flight.forward(minutes=10)
-            flight.before("2018-12-24 23:55").forward(minutes=10)  # Merry XMas!
+        >>> flight.predict(minutes=10, method="straight")
+        >>> flight.before("2018-12-24 23:55").predict(minutes=10)  # Merry XMas!
 
         """
+        from ..algorithms.prediction import PredictBase
+        from ..algorithms.prediction.flightplan import FlightPlanPredict
+        from ..algorithms.prediction.straightline import StraightLinePredict
 
-        last_line = self.at()
-        if last_line is None:
-            raise ValueError("Unknown data for this flight")
-        window = self.last(seconds=20)
-        if isinstance(delta, str):
-            delta = pd.Timedelta(delta)
-        if delta is None:
-            delta = timedelta(**kwargs)
+        if len(args) and isinstance(args[0], PredictBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
-        if window is None:
-            raise RuntimeError("Flight expect at least 20 seconds of data")
-
-        new_gs: tt.speed = window.data.groundspeed.mean()
-        new_vr: tt.vertical_rate = window.data.vertical_rate.mean()
-        duration: tt.seconds = delta.total_seconds()
-
-        new_lat, new_lon, _ = geo.destination(
-            last_line.latitude,
-            last_line.longitude,
-            last_line.track,
-            new_gs * duration,
+        method_dict = dict(
+            default=StraightLinePredict,
+            straight=StraightLinePredict,
+            flightplan=FlightPlanPredict,
         )
 
-        last_alt: tt.altitude = last_line.altitude
-        new_alt: tt.altitude = last_alt + new_vr * duration
-
-        return Flight(
-            pd.DataFrame.from_records(
-                [
-                    last_line,
-                    pd.Series(
-                        {
-                            "timestamp": last_line.timestamp + delta,
-                            "latitude": new_lat,
-                            "longitude": new_lon,
-                            "altitude": new_alt,
-                            "groundspeed": new_gs,
-                            "vertical_rate": new_vr,
-                        }
-                    ),
-                ]
-            ).ffill()
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
         )
+
+        return method.predict(self)
+
+    def forward(
+        self,
+        forward: Union[None, str, pd.Timedelta] = None,
+        **kwargs: Any,
+    ) -> "Flight":  # DEPRECATED
+        from ..algorithms.prediction.straightline import StraightLinePredict
+
+        warnings.warn(
+            "Deprecated forward method, use .predict() instead",
+            DeprecationWarning,
+        )
+
+        return StraightLinePredict(forward, **kwargs).predict(self)
 
     # -- Air traffic management --
 
@@ -1976,6 +1977,17 @@ class Flight(
                 msg = "Specify a name argument without the `callsign` property"
                 raise RuntimeError(msg)
         return self.assign(flight_id=name.format(self=self, idx=idx))
+
+    @flight_iterator
+    def emergency(self) -> Iterator["Flight"]:
+        """Iterates on emergency segments of trajectory.
+
+        An emergency is defined with a 7700 squawk code.
+        """
+        squawk7700 = self.query("squawk == '7700'")
+        if squawk7700 is None:
+            return
+        yield from squawk7700.split("10 min")
 
     def onground(self) -> Optional[Flight]:
         if "altitude" not in self.data.columns:
@@ -2064,9 +2076,10 @@ class Flight(
 
         .. note::
 
-            Check the `query_ehs() <#traffic.core.Flight.query_ehs>`_ method to
-            find a way to enrich your flight with such features. Note that this
-            data is not necessarily available depending on the location.
+            Check the :meth:`query_ehs` method to find a way to enrich your
+            flight with such features. Note that this data is not necessarily
+            available depending on the location.
+
         """
 
         if any(w not in self.data.columns for w in ["heading", "TAS"]):
@@ -2081,23 +2094,735 @@ class Flight(
             - self.data.TAS * np.cos(np.radians(self.data.heading)),
         )
 
+    def phases(
+        self,
+        *args: Any,
+        method: Literal["default", "openap"] | ApplyBase = "default",
+        **kwargs: Any,
+    ) -> Flight:
+        """Label phases in flight trajectories.
+
+        An extra ``"phase"`` column is added to the DataFrame.
+
+        The only available (default) method is provided by OpenAP.
+
+        Usage:
+        See: :ref:`How to find flight phases on a trajectory?`
+
+        """
+        from ..algorithms.navigation import phases
+
+        method_dict = dict(
+            default=phases.FlightPhasesOpenAP,
+            openap=phases.FlightPhasesOpenAP,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.apply(self)
+
+    # -- Metadata inference methods --
+
+    def infer_airport(
+        self,
+        method: Literal["takeoff", "landing"] | airports.AirportInferenceBase,
+        **kwargs: Any,
+    ) -> Airport:
+        """Infers the takeoff or landing airport from the trajectory data.
+
+        :param method: selects the detection method
+
+        - ``"landing"`` uses
+          :class:`~traffic.algorithms.metadata.airports.LandingAirportInference`
+
+        - ``"takeoff"`` uses
+          :class:`~traffic.algorithms.metadata.airports.TakeoffAirportInference`
+
+        Usage:
+
+        >>> flight.infer_airport("takeoff")
+        >>> flight.infer_airport("landing")
+
+        Check the documentation of the classes for more options.
+
+        """
+        from ..algorithms.metadata import airports
+
+        method_dict = dict(
+            takeoff=airports.TakeoffAirportInference,
+            landing=airports.LandingAirportInference,
+        )
+
+        # TODO check why typing doesn't work only on this function
+        method = (
+            method_dict[method](**kwargs)  # type: ignore
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.infer(self)  # type: ignore
+
+    def takeoff_from(self, airport: str | Airport) -> bool:
+        """Returns True if the flight takes off from the given airport."""
+
+        from ..data import airports
+
+        _airport = (
+            airport if isinstance(airport, Airport) else airports[airport]
+        )
+
+        return self.infer_airport("takeoff") == _airport
+
+    def landing_at(self, airport: str | Airport) -> bool:
+        """Returns True if the flight lands at the given airport.
+
+        :param airport: Airport where the ILS is located
+        """
+
+        from ..data import airports
+
+        _airport = (
+            airport if isinstance(airport, Airport) else airports[airport]
+        )
+
+        return self.infer_airport("landing") == _airport
+
+    def infer_flightplan(
+        self,
+        *args: Any,
+        method: Literal["default"] | flightplan.FlightPlanBase = "default",
+        **kwargs: Any,
+    ) -> None | pd.DataFrame:
+        """Infers a possible flight-plan from the trajectory data.
+
+        :param method: selects the detection method
+
+        The only available (default) method is
+        :class:`~traffic.algorithms.metadata.flightplan.FlightPlanInference`.
+        Check the documentation there for more details.
+
+        Check the documentation of the class for more options.
+
+        """
+        from ..algorithms.metadata import flightplan
+
+        if len(args) and isinstance(args[0], flightplan.FlightPlanBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=flightplan.FlightPlanInference,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.infer(self)
+
+    # -- Navigation methods --
+
+    @flight_iterator
+    def aligned(
+        self,
+        *args: Any,
+        method: Literal["default", "beacon", "ils", "runway"]
+        | ApplyIteratorBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        """Detects a geometric alignment with aeronautical infrastructure.
+
+        :param method: By default, the method checks a geometric alignment with
+          a navigational beacon (navaid).
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding landing detection class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``"beacon"`` (default) uses
+          :class:`~traffic.algorithms.navigation.alignment.BeaconTrackBearingAlignment`
+          and compares the track angle of the aircraft with the bearing to
+          a given point.
+
+        - ``"ils"`` uses
+          :class:`~traffic.algorithms.navigation.landing.LandingAlignedOnILS`
+          and detects segments on trajectory aligned with the ILS of a given
+          airport.
+
+        - ``"runway"``  uses
+          :class:`~traffic.algorithms.ground.runway.RunwayAlignment`
+          and detects segments aligned with one of the documented runways.
+
+        Usage: Check the corresponding classes which are properly documented.
+
+        """
+        from ..algorithms.ground import runway
+        from ..algorithms.navigation import (
+            ApplyIteratorBase,
+            alignment,
+            landing,
+        )
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=alignment.BeaconTrackBearingAlignment,
+            beacon=alignment.BeaconTrackBearingAlignment,
+            ils=landing.LandingAlignedOnILS,
+            runway=runway.RunwayAlignment,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
+    @flight_iterator
+    def go_around(
+        self,
+        *args: None,
+        method: Literal["default"] | ApplyIteratorBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        """Detects go-around situations in a trajectory.
+
+        Usage:
+        See: :ref:`How to select go-arounds from a set of trajectories?`
+        """
+
+        from ..algorithms.navigation import ApplyIteratorBase, go_around
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(default=go_around.GoAroundDetection)
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
+    @flight_iterator
+    def holding_pattern(
+        self,
+        *args: Any,
+        method: Literal["default"] | ApplyIteratorBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        """Detects holding patterns in a trajectory.
+
+        Usage:
+        See :ref:`How to detect holding patterns in aircraft trajectories?`
+        """
+        from ..algorithms.navigation import holding_pattern
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(default=holding_pattern.MLHoldingDetection)
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
+    @flight_iterator
+    def landing(
+        self,
+        *args: Any,
+        method: Literal["default", "aligned_on_ils", "any", "runway_change"]
+        | ApplyIteratorBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        """Detects the landing phase in a trajectory.
+
+        :param method:  By default, the method detects segments on trajectory
+          aligned with the ILS of a given airport.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding landing detection class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``"aligned_on_ils"`` (default) uses
+          :class:`~traffic.algorithms.navigation.landing.LandingAlignedOnILS`
+          and detects segments on trajectory aligned with the ILS of a given
+          airport.
+
+        - ``"anywhere"`` uses
+          :class:`~traffic.algorithms.navigation.landing.LandingAnyAttempt`
+          and detects the most plausible landing airport for all pieces of
+          trajectories below a threshold altitude.
+
+        - ``"runway_change"`` uses
+          :class:`~traffic.algorithms.navigation.landing.LandingWithRunwayChange`
+          and detects a specific subset of situations where aircraft are aligned
+          on several runways during one landing phase.
+
+        Usage:
+
+        All the following calls are equivalent:
+
+        >>> flight.landing("EHAM")  # returns a flight iterator
+        >>> flight.landing("EHAM", method="default")
+        >>> flight.landing(airport="EHAM", method="default")
+        >>> flight.landing(method=LandingAlignedOnILS(airport="EHAM"))
+
+        As with other :class:`~traffic.core.FlightIterator`, we can:
+
+        - check whether an aircraft is landing at a given airport:
+
+          >>> flight.landing("EHAM").has()
+          >>> flight.has("landing('EHAM')")
+
+        - get the first landing attempt:
+
+          >>> flight.landing("EHAM").next()
+          >>> flight.next("landing('EHAM')")
+
+        More details in the specific documentation for each class.
+
+        """
+        from ..algorithms.navigation import ApplyIteratorBase, landing
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=landing.LandingAlignedOnILS,
+            aligned_on_ils=landing.LandingAlignedOnILS,
+            any=landing.LandingAnyAttempt,
+            runway_change=landing.LandingWithRunwayChange,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
+    @flight_iterator
+    def point_merge(
+        self,
+        *args: Any,
+        method: Literal["default", "alignment"] | ApplyIteratorBase,
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        """Detects point-merge structures in trajectories.
+
+        Usage:
+        See :ref:`How to implement point-merge detection?`
+
+        """
+        from ..algorithms.navigation import ApplyIteratorBase, point_merge
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=point_merge.PointMerge,
+            alignment=point_merge.PointMerge,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
     @flight_iterator
     def takeoff(
         self,
         *args: Any,
-        method: str | takeoff.Takeoff = "default",
+        method: Literal["default", "polygon_based", "track_based"]
+        | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
-        from ..algorithms.navigation import takeoff
+        """Detects the takeoff phase in a trajectory.
+
+        :param method: By default, the method detects segments on trajectory
+          maximizing their intersection with a trapeze shape with a small base
+          at runway threshold.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding landing detection class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``"polygon_based"`` (default) uses
+          :class:`~traffic.algorithms.navigation.takeoff.PolygonBasedRunwayDetection`
+          and detects segments on trajectory maximizing their intersection with
+          a trapeze shape with a small base at runway threshold. This method
+          performs better when trajectory data point is scarce at surface level.
+
+        - ``"track_based"`` uses
+          :class:`~traffic.algorithms.navigation.takeoff.TrackBasedRunwayDetection`
+          and detects pieces of trajectory with a strong acceleration that is
+          colinear to a documented runway. This method performs better when
+          data is rich at surface level, with less false positive labelled with
+          the wrong runway.
+
+        Usage:
+
+        >>> flight.takeoff("EHAM")  # returns a flight iterator
+        >>> flight.takeoff("EHAM", method="default")
+        >>> flight.takeoff(airport="EHAM", method="default")
+        >>> flight.takeoff(PolygonBasedRunwayDetection(airport="EHAM"))
+
+        More details in the specific documentation for each class.
+
+        """
+        from ..algorithms.navigation import ApplyIteratorBase, takeoff
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
 
         method_dict = dict(
-            default=takeoff.Default(*args, **kwargs),
-            track_based=takeoff.TrackBasedRunwayDetection(*args, **kwargs),
+            default=takeoff.PolygonBasedRunwayDetection,
+            polygon_based=takeoff.PolygonBasedRunwayDetection,
+            track_based=takeoff.TrackBasedRunwayDetection,
         )
-        if isinstance(method, str):
-            method = method_dict.get(method, takeoff.Default(*args, **kwargs))
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
 
         yield from method.apply(self)
+
+    @flight_iterator
+    def thermals(self) -> Iterator["Flight"]:
+        """Detects pieces of trajectory where gliders are in thermals.
+
+        The logic implemented detects trajectory ascending and turning at the
+        same time.
+
+        Usage:
+
+        >>> flight_iterator = flight.thermals()
+        """
+        from ..algorithms.navigation.thermals import GliderThermal
+
+        yield from GliderThermal().apply(self)
+
+    @flight_iterator
+    def parking_position(
+        self,
+        *args: Any,
+        method: Literal["default", "geometry"] | ApplyIteratorBase = "default",
+        **kwargs: Any,
+    ) -> Iterator["Flight"]:
+        """Detects pieces of trajectory matching documented parking positions.
+
+        The only available (default) method,
+        :class:`~traffic.algorithms.ground.parking_position.ParkingPositionGeometricIntersection`,
+        looks at the intersection between the trajectory and a buffered version
+        of the parking positions.
+
+        Check the documentation of the corresponding class for more details.
+        """
+        from ..algorithms.ground import parking_position
+        from ..algorithms.navigation import ApplyIteratorBase
+
+        if len(args) and isinstance(args[0], ApplyIteratorBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=parking_position.ParkingPositionGeometricIntersection,
+            geometry=parking_position.ParkingPositionGeometricIntersection,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        yield from method.apply(self)
+
+    def movement(
+        self,
+        *args: Any,
+        method: Literal["default", "start_moving"]
+        | ApplyOptionalBase = "default",
+        **kwargs: Any,
+    ) -> Optional["Flight"]:
+        """Detects when the aircraft starts moving on the surface.
+
+        The only available (default) method is
+        :class:`~traffic.algorithms.ground.movement.StartMoving`. Check the
+        documentation there for more details.
+
+        :return: the trajectory trimmed from the non-moving part.
+        """
+        from ..algorithms.ground import movement
+        from ..algorithms.navigation import ApplyOptionalBase
+
+        if len(args) and isinstance(args[0], ApplyOptionalBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=movement.StartMoving,
+            start_moving=movement.StartMoving,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.apply(self)
+
+    def pushback(
+        self,
+        *args: Any,
+        method: Literal["default", "parking_area", "parking_position"]
+        | ApplyOptionalBase = "default",
+        **kwargs: Any,
+    ) -> Optional["Flight"]:
+        """Detects the push-back phase of the trajectory.
+
+        :param method: By default, the method identifies the start of the
+          movement, the parking_position and the moment the aircraft suddenly
+          changes direction the computed track angle.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding landing detection class.
+
+        The following table summarizes the available methods and their
+        corresponding classes:
+
+        - ``"parking_area"`` (default) uses
+          :class:`~traffic.algorithms.ground.pushback.ParkingAreaBasedPushback`
+          and identifies the start of the movement, an intersection with a
+          documented apron area and the moment the aircraft suddenly changes
+          direction in the computed track angle
+
+        - ``"parking_position"`` (default) uses
+          :class:`~traffic.algorithms.ground.pushback.ParkingPositionBasedPushback`
+          and identifies the start of the movement, the parking_position
+          and the moment the aircraft suddenly changes direction in the computed
+          track angle.
+
+        Usage:
+
+        >>> flight.pushback(airport="LSZH", method="default")
+
+        """
+        from ..algorithms.ground import pushback
+        from ..algorithms.navigation import ApplyOptionalBase
+
+        if len(args) and isinstance(args[0], ApplyOptionalBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=pushback.ParkingAreaBasedPushback,
+            parking_area=pushback.ParkingAreaBasedPushback,
+            parking_position=pushback.ParkingPositionBasedPushback,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.apply(self)
+
+    @flight_iterator
+    def aligned_on_ils(
+        self,
+        airport: Union[str, "Airport"],
+        angle_tolerance: float = 0.1,
+        min_duration: deltalike = "1 min",
+        max_ft_above_airport: float = 5000,
+    ) -> Iterator["Flight"]:  # DEPRECATED
+        from ..algorithms.navigation.landing import LandingAlignedOnILS
+
+        warnings.warn(
+            "Deprecated aligned_on_ils method, use .landing() instead",
+            DeprecationWarning,
+        )
+
+        method = LandingAlignedOnILS(
+            airport, angle_tolerance, min_duration, max_ft_above_airport
+        )
+        yield from method.apply(self)
+
+    @flight_iterator
+    def takeoff_from_runway(
+        self,
+        airport: Union[str, "Airport"],
+        max_ft_above_airport: float = 5000,
+        zone_length: int = 6000,
+        little_base: int = 50,
+        opening: float = 5,
+    ) -> Iterator["Flight"]:  # DEPRECATED
+        from ..algorithms.navigation.takeoff import PolygonBasedRunwayDetection
+
+        warnings.warn(
+            "Deprecated takeoff_from_runway method, use .takeoff() instead",
+            DeprecationWarning,
+        )
+
+        method = PolygonBasedRunwayDetection(
+            airport, max_ft_above_airport, zone_length, little_base, opening
+        )
+        yield from method.apply(self)
+
+    @flight_iterator
+    def aligned_on_navpoint(
+        self,
+        points: Union[str, "PointMixin", Iterable["PointMixin"]],
+        angle_precision: int = 1,
+        time_precision: str = "2 min",
+        min_time: str = "30s",
+        min_distance: int = 80,
+    ) -> Iterator["Flight"]:  # DEPRECATED
+        from ..algorithms.navigation.alignment import (
+            BeaconTrackBearingAlignment,
+        )
+
+        warnings.warn(
+            "Deprecated aligned_on_navpoint method, use .aligned() instead",
+            DeprecationWarning,
+        )
+
+        method = BeaconTrackBearingAlignment(
+            points, angle_precision, time_precision, min_time, min_distance
+        )
+        yield from method.apply(self)
+
+    @flight_iterator
+    def aligned_on_runway(
+        self, airport: str | Airport
+    ) -> Iterator["Flight"]:  # DEPRECATED
+        from ..algorithms.ground.runway import RunwayAlignment
+
+        warnings.warn(
+            "Deprecated aligned_on_runway method, use .aligned() instead",
+            DeprecationWarning,
+        )
+
+        method = RunwayAlignment(airport=airport)
+        yield from method.apply(self)
+
+    # -- End of navigation and ground methods --
+
+    # -- Performance estimation methods --
+
+    def fuelflow(
+        self,
+        *args: Any,
+        method: Literal["default", "openap"] | EstimatorBase = "default",
+        **kwargs: Any,
+    ) -> Flight:
+        """Estimate the mass and fuel flow of the aircraft based on its
+        trajectory.
+
+        :param method: At the moment, only the OpenAP implementation is
+          available, and is the default implementation.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding fuel flow class.
+
+        """
+        from ..algorithms.performance import EstimatorBase, openap
+
+        if len(args) and isinstance(args[0], EstimatorBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=openap.FuelflowEstimation,
+            openap=openap.FuelflowEstimation,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.estimate(self)
+
+    def emission(
+        self,
+        *args: Any,
+        method: Literal["default", "openap"] | EstimatorBase = "default",
+        **kwargs: Any,
+    ) -> Flight:
+        """Estimate the pollutants emitted by the aircraft based on its
+        trajectory.
+
+        :param method: At the moment, only the OpenAP implementation is
+          available, and is the default implementation.
+
+        If the method argument is passed as a string, then all args and kwargs
+        argument of the landing method are passed to the constructor of the
+        corresponding fuel flow class.
+
+        """
+        from ..algorithms.performance import openap
+
+        if len(args) and isinstance(args[0], EstimatorBase):
+            method = args[0]
+            args = tuple(*args[1:])
+
+        method_dict = dict(
+            default=openap.PollutantEstimation,
+            openap=openap.PollutantEstimation,
+        )
+
+        method = (
+            method_dict[method](*args, **kwargs)
+            if isinstance(method, str)
+            else method
+        )
+
+        return method.estimate(self)
+
+    # -- End of performance estimation methods --
 
     def plot_wind(
         self,
@@ -2109,16 +2834,14 @@ class Flight(
         """Plots the wind field seen by the aircraft on a Matplotlib axis.
 
         The Flight supports Cartopy axis as well with automatic projection. If
-        no projection is provided, a default `PlateCarree
-        <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree>`_
+        no projection is provided, a default :meth:`~cartopy.crs.PlateCarree`
         is applied.
 
         The `resolution` argument may be:
 
             - None for a raw plot;
-            - an integer or a string to pass to a `Flight.resample()
-              <#traffic.core.Flight.resample>`__ method as a preprocessing
-              before plotting;
+            - an integer or a string to pass to a :meth:`resample` method as a
+              preprocessing before plotting;
             - or a dictionary, e.g dict(latitude=4, longitude=4), if you
               want a grid with a resolution of 4 points per latitude and
               longitude degree.
@@ -2351,6 +3074,41 @@ class Flight(
             vertical=(table.altitude_x - table.altitude_y).abs(),
         )
 
+    def closest_point(self, points: List[PointMixin] | PointMixin) -> pd.Series:
+        """Selects the closest point of the trajectory with respect to
+        a point or list of points.
+
+        The pd.Series returned by the function is enriched with two fields:
+        distance (in meters) and point (containing the name of the closest
+        point to the trajectory)
+
+        Example usage:
+
+        .. code:: python
+
+            >>> item = belevingsvlucht.between(
+            ...     "2018-05-30 16:00", "2018-05-30 17:00"
+            ... ).closest_point(  # type: ignore
+            ...     [
+            ...         airports["EHLE"],  # type: ignore
+            ...         airports["EHAM"],  # type: ignore
+            ...         navaids["NARAK"],  # type: ignore
+            ...     ]
+            ... )
+            >>> f"{item.point}, {item.distance:.2f}m"
+            "Lelystad Airport, 49.11m"
+
+        """
+        from .distance import closest_point
+
+        if not isinstance(points, list):
+            points = [points]
+
+        return min(
+            (closest_point(self.data, point) for point in points),
+            key=attrgetter("distance"),
+        )
+
     def compute_DME_NSE(
         self,
         dme: "Navaids" | Tuple["Navaid", "Navaid"],
@@ -2556,9 +3314,8 @@ class Flight(
 
         The method uses latitude and longitude, projects the trajectory to a
         conformal projection and applies the algorithm. If x and y features are
-        already present in the DataFrame (after a call to `compute_xy
-        <#traffic.core.Flight.compute_xy>`_ for instance) then this
-        projection is taken into account.
+        already present in the DataFrame (after a call to :meth:`compute_xy`
+        for instance) then this projection is taken into account.
 
         The tolerance parameter must be defined in meters.
 
@@ -2705,10 +3462,6 @@ class Flight(
 
         Returns None if no data is found.
 
-        .. note::
-
-            Read more about access to the OpenSky Network database `here
-            <opensky_impala.html>`_
         """
 
         from ..data import opensky
@@ -2740,16 +3493,11 @@ class Flight(
             Making a lot of small requests can be very inefficient and may look
             like a denial of service. If you get the raw messages using a
             different channel, you can provide the resulting dataframe as a
-            parameter. See the page about `OpenSky Impala access
-            <opensky_impala.html>`_
+            parameter.
 
         The data parameter expect three columns: ``icao24``, ``rawmsg`` and
         ``mintime``, in conformance with the OpenSky API.
 
-        .. note::
-
-            Read more about access to the OpenSky Network database `here
-            <opensky_impala.html>`_
         """
 
         from ..data import opensky
@@ -2900,8 +3648,7 @@ class Flight(
 
         .. note::
 
-            See also `geoencode() <#traffic.core.Flight.geoencode>`_ for the
-            altair equivalent.
+            See also :meth:`geoencode` for the altair equivalent.
 
         """
 
@@ -2971,8 +3718,7 @@ class Flight(
 
         .. note::
 
-            See also `plot_time() <#traffic.core.Flight.plot_time>`_ for the
-            Matplotlib equivalent.
+            See also :meth:`plot_time` for the Matplotlib equivalent.
 
         """
         import altair as alt
@@ -3001,7 +3747,11 @@ class Flight(
         highlight: Optional[
             Dict[
                 str,
-                Union[str, Flight, Callable[[Flight], Optional[Flight]]],
+                Union[
+                    str,
+                    Flight,
+                    Callable[[Flight], None | Flight | Iterable[Flight]],
+                ],
             ]
         ] = None,
         airport: Union[None, str, Airport] = None,
@@ -3058,8 +3808,7 @@ class Flight(
 
         .. note::
 
-            See also `chart() <#traffic.core.Flight.chart>`_ for the altair
-            equivalent.
+            See also :meth:`chart` for the altair equivalent.
 
         """
         if isinstance(y, str):

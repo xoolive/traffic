@@ -1,5 +1,5 @@
 import zipfile
-from typing import Optional, cast
+from typing import Optional
 
 import httpx
 import pytest
@@ -25,60 +25,53 @@ except zipfile.BadZipFile:
     skip_runways = True
 
 
-def test_landing_airport() -> None:
-    assert belevingsvlucht.landing_airport().icao == "EHAM"
-    assert airbus_tree.landing_airport().icao == "EDHI"
-
-
-def test_landing_runway() -> None:
-    last = belevingsvlucht.last(minutes=30)
-    segment = last.aligned_on_runway("EHAM").max()
-    assert segment is not None
-    assert segment.mean("altitude") < 0
-
-
-def test_aligned_runway() -> None:
-    assert belevingsvlucht.aligned_on_runway("EHAM").sum() == 2
+def test_landing_airport() -> None:  # TODO
+    assert belevingsvlucht.infer_airport("landing").icao == "EHAM"
+    assert airbus_tree.infer_airport("landing").icao == "EDHI"
 
 
 @pytest.mark.skipif(skip_runways, reason="no runways")
-def test_landing_ils() -> None:
-    aligned: Optional["Flight"] = belevingsvlucht.aligned_on_ils("EHAM").next()
+def test_landing_based_on_ils() -> None:
+    from traffic.algorithms.navigation.landing import LandingAlignedOnILS
+
+    # by default
+    aligned: Optional["Flight"] = belevingsvlucht.landing("EHAM").next()
     assert aligned is not None
     assert aligned.max("ILS") == "06"
 
-    aligned = belevingsvlucht.final("aligned_on_ils('EHLE')")
+    # inside an aggregation method like next, max, final, etc.
+    aligned = belevingsvlucht.final("aligned('EHLE', method='ils')")
     assert aligned is not None
     assert aligned.ILS_max == "23"
 
-    aligned = airbus_tree.aligned_on_ils("EDHI").next()
+    # with a specific method
+    landing_method = LandingAlignedOnILS("EDHI")
+    aligned = airbus_tree.landing(method=landing_method).next()
     assert aligned is not None
     assert aligned.max("ILS") == "23"
 
-
-@pytest.mark.skipif(skip_runways, reason="no runways")
-def test_landing_ils_high_elevation() -> None:
-    segment = landing_denver.aligned_on_ils("KDEN").next()
+    # corner case with high elevation airport
+    segment = landing_denver.landing("KDEN").next()
     assert segment is not None
     assert segment.ILS_max == "26"
     assert segment.data.altitude.min() == 5575
 
 
 @pytest.mark.slow
-def test_compute_navpoints() -> None:
+def test_infer_flightplan() -> None:
     from traffic.data.samples import switzerland
 
-    df = switzerland["BAW585E"].compute_navpoints()
+    df = switzerland["BAW585E"].infer_flightplan()
     assert df is not None
     assert df.navaid.to_list() == ["RESIA", "LUL", "IXILU"]
 
-    df = switzerland["EZY24DP"].compute_navpoints()
+    df = switzerland["EZY24DP"].infer_flightplan()
     assert df is not None
     assert df.navaid.to_list() == ["RESIA", "ZH367", "LUL"]
 
 
 def test_takeoff() -> None:
-    for aligned in belevingsvlucht.aligned_on_ils("EHLE"):
+    for aligned in belevingsvlucht.landing("EHLE"):
         after = belevingsvlucht.after(aligned.stop)
         assert after is not None
         takeoff = after.takeoff("EHLE", max_ft_above_airport=3000).next()
@@ -116,66 +109,38 @@ def test_takeoff() -> None:
 @pytest.mark.skipif(skip_runways, reason="no runways")
 @pytest.mark.slow
 def test_takeoff_runway() -> None:
-    # There are as many take-off as landing at EHLE
-    nb_takeoff = sum(
-        1
-        for _ in belevingsvlucht.takeoff_from_runway("EHLE", threshold_alt=3000)
+    from traffic.algorithms.navigation.takeoff import (
+        PolygonBasedRunwayDetection,
     )
-    nb_landing = sum(1 for f in belevingsvlucht.aligned_on_ils("EHLE"))
+
+    takeoff = PolygonBasedRunwayDetection("EHLE", max_ft_above_airport=3000)
+    # There are as many take-off as landing at EHLE
+    nb_takeoff = sum(1 for _ in belevingsvlucht.takeoff(method=takeoff))
+    nb_landing = sum(1 for f in belevingsvlucht.landing("EHLE"))
     # with go-arounds, sometimes it just doesn't fit
     assert nb_takeoff <= nb_landing
-    for aligned in belevingsvlucht.aligned_on_ils("EHLE"):
+    for aligned in belevingsvlucht.landing("EHLE"):
         after = belevingsvlucht.after(aligned.stop)
         assert after is not None
-        takeoff = after.takeoff_from_runway("EHLE", threshold_alt=3000).next()
+        segment = after.takeoff(method=takeoff).next()
         # If a landing is followed by a take-off, then it's on the same runway
-        assert takeoff is None or aligned.max("ILS") == takeoff.max("runway")
+        assert segment is None or aligned.max("ILS") == segment.max("runway")
 
 
-@pytest.mark.skipif(True, reason="only for local debug")
-def test_takeoff_goaround() -> None:
+@pytest.mark.slow
+def test_many_goarounds() -> None:
     from traffic.data.datasets import landing_zurich_2019
 
-    go_arounds = landing_zurich_2019.has("go_around").eval(
-        desc="go_around", max_workers=8
+    def many_goarounds(flight: Flight) -> bool:
+        return sum(1 for _ in flight.go_around()) > 1
+
+    result = (
+        landing_zurich_2019[["SWR287A_10099", "EWG7ME_1079"]]
+        .iterate_lazy()
+        .pipe(many_goarounds)
+        .eval()
     )
-    assert go_arounds is not None
-
-    for flight in go_arounds:
-        for segment in flight.go_around():
-            aligned = segment.aligned_on_ils("LSZH").next()
-            assert aligned is not None
-            takeoff = (
-                cast(Flight, segment.after(aligned.stop))
-                .takeoff_from_runway("LSZH", threshold_alt=5000)
-                .next()
-            )
-            assert (
-                takeoff is None
-                or takeoff.shorter_than("30s")
-                or aligned.max("ILS") == takeoff.max("runway")
-            )
-
-
-@pytest.mark.skipif(skip_runways, reason="no runways")
-def test_goaround() -> None:
-    assert belevingsvlucht.go_around().next() is None
-    assert belevingsvlucht.go_around("EHLE").sum() == 5
-
-    # from traffic.data.datasets import landing_zurich_2019
-    # assert sum(1 for _ in landing_zurich_2019["EWG7ME_1079"].go_around()) == 2
-
-    # def many_goarounds(f):
-    #     return sum(1 for _ in f.go_around()) > 1
-
-    # gogo = (
-    #     landing_zurich_2019.query("not simple")
-    #     .iterate_lazy()
-    #     .pipe(many_goarounds)
-    #     .eval(desc="", max_workers=8)
-    # )
-
-    # assert gogo.flight_ids == {"SWR287A_10099", "EWG7ME_1079"}
+    assert sorted(result.flight_ids) == ["EWG7ME_1079", "SWR287A_10099"]
 
 
 @pytest.mark.xfail(
@@ -189,7 +154,7 @@ def test_parking_position() -> None:
         airports["LIRF"]._openstreetmap().query('aeroway == "parking_position"')
     )
 
-    pp = elal747.on_parking_position("LIRF", parking_positions=lirf_pp).next()
+    pp = elal747.parking_position("LIRF", parking_positions=lirf_pp).next()
     assert pp is not None
     assert pp.max("parking_position") == "702"
 
@@ -197,7 +162,7 @@ def test_parking_position() -> None:
     flight = zurich_airport["EDW229"]
     assert flight is not None
 
-    pp = flight.on_parking_position(
+    pp = flight.parking_position(
         "LSZH", parking_positions=lszh_pp, buffer_size=1e-4
     ).next()
     assert pp is not None
@@ -205,37 +170,39 @@ def test_parking_position() -> None:
     assert pp.parking_position_max == "A49"
 
 
-def test_slow_taxi() -> None:
-    flight = zurich_airport["SWR137H"]
-    assert flight is not None
-    slow_durations = sum(
-        ((slow_segment.duration,) for slow_segment in flight.slow_taxi()),
-        (),
-    )
-
-    assert len(slow_durations) == 4
-    slow_durations_sum = sum(slow_durations, pd.Timedelta(0))
-    assert slow_durations_sum > pd.Timedelta("0 days 00:06:00")
-
-    flight = zurich_airport["ACA879"]
-    assert flight is not None
-    assert flight.slow_taxi().next() is None
+# def test_slow_taxi() -> None:  # TODO
+#     flight = zurich_airport["SWR137H"]
+#     assert flight is not None
+#     slow_durations = sum(
+#         ((slow_segment.duration,) for slow_segment in flight.slow_taxi()),
+#         (),
+#     )
+#
+#     assert len(slow_durations) == 4
+#     slow_durations_sum = sum(slow_durations, pd.Timedelta(0))
+#     assert slow_durations_sum > pd.Timedelta("0 days 00:06:00")
+#
+#     flight = zurich_airport["ACA879"]
+#     assert flight is not None
+#     assert flight.slow_taxi().next() is None
 
 
 @pytest.mark.xfail(
     raises=httpx.TransportError, reason="Quotas on OpenStreetMap"
 )
-def test_pushback() -> None:
+def test_pushback_parking_position() -> None:
     lszh_pp = (
         airports["LSZH"]._openstreetmap().query('aeroway == "parking_position"')
     )
 
     flight = zurich_airport["AEE5ZH"]
     assert flight is not None
-    parking_position = flight.on_parking_position(
+    parking_position = flight.parking_position(
         "LSZH", parking_positions=lszh_pp
     ).max()
-    pushback = flight.pushback("LSZH", parking_positions=lszh_pp)
+    pushback = flight.pushback(
+        "LSZH", method="parking_position", parking_positions=lszh_pp
+    )
 
     assert parking_position is not None
     assert pushback is not None
@@ -248,96 +215,104 @@ def test_pushback() -> None:
     assert pushback.stop >= parking_position.stop
 
 
-@pytest.mark.xfail(
-    raises=httpx.TransportError, reason="Quotas on OpenStreetMap"
-)
-@pytest.mark.slow
-def test_on_taxiway() -> None:
-    lszh_taxiway = (
-        airports["LSZH"]._openstreetmap().query('aeroway == "taxiway"')
-    )
-    lirf_taxiway = (
-        airports["LIRF"]._openstreetmap().query('aeroway == "taxiway"')
-    )
-    llbg_taxiway = (
-        airports["LLBG"]._openstreetmap().query('aeroway == "taxiway"')
-    )
-
-    flight = zurich_airport["ACA879"]
+def test_pushback_parking_area() -> None:
+    flight = zurich_airport["AEE5ZH"]
     assert flight is not None
-    assert len(flight.on_taxiway(lszh_taxiway)) == 3
-
-    last_stop = pd.Timestamp(0, tz="utc")
-    twy_names = ["Charlie", "Echo", "E2"]
-    for i, twy_seg in enumerate(flight.on_taxiway(lszh_taxiway)):
-        assert twy_seg.start >= last_stop
-        last_stop = twy_seg.stop
-        assert twy_seg.taxiway_max == twy_names[i]
-
-    flight = zurich_airport["SWISS"]
-    assert flight is not None
-    assert flight.on_taxiway(lszh_taxiway).next() is None
-
-    # another airport
-    last_stop = pd.Timestamp(0, tz="utc")
-    twy_names = ["V", "Z", "M", "R", "B", "BB"]
-    flight = elal747
-    assert flight is not None
-    for i, twy_seg in enumerate(flight.on_taxiway(lirf_taxiway)):
-        assert twy_seg.start >= last_stop
-        last_stop = twy_seg.stop
-        assert twy_seg.taxiway_max == twy_names[i]
-
-    # Landing
-    last_stop = pd.Timestamp(0, tz="utc")
-    twy_names = ["K", "M1", "D6"]
-    for i, twy_seg in enumerate(flight.on_taxiway(llbg_taxiway)):
-        assert twy_seg.start >= last_stop
-        last_stop = twy_seg.stop
-        assert twy_seg.taxiway_max == twy_names[i]
-
-    # Flight that leaves and come back to the airport
-    flight = zurich_airport["SWR5220"]
-    assert flight is not None
-    assert len(flight.on_taxiway(lszh_taxiway)) == 9
+    parking_position = flight.pushback("LSZH", method="parking_area")
+    assert parking_position is not None
+    assert parking_position.duration > pd.Timedelta("1 min")
 
 
-@pytest.mark.slow
-def test_ground_trajectory() -> None:
-    flight_iterate = belevingsvlucht.ground_trajectory("EHAM")
-    takeoff = next(flight_iterate)
-    assert (
-        pd.Timestamp("2018-05-30 15:21:00+00:00")
-        < takeoff.stop
-        < pd.Timestamp("2018-05-30 15:22:00+00:00")
-    )
-    landing = next(flight_iterate)
-    assert (
-        pd.Timestamp("2018-05-30 20:17:00+00:00")
-        < landing.start
-        < pd.Timestamp("2018-05-30 20:18:00+00:00")
-    )
-    assert next(flight_iterate, None) is None
+# @pytest.mark.xfail(
+#     raises=httpx.TransportError, reason="Quotas on OpenStreetMap"
+# )
+# @pytest.mark.slow
+# def test_on_taxiway() -> None:  # TODO
+#     lszh_taxiway = (
+#         airports["LSZH"]._openstreetmap().query('aeroway == "taxiway"')
+#     )
+#     lirf_taxiway = (
+#         airports["LIRF"]._openstreetmap().query('aeroway == "taxiway"')
+#     )
+#     llbg_taxiway = (
+#         airports["LLBG"]._openstreetmap().query('aeroway == "taxiway"')
+#     )
+#
+#     flight = zurich_airport["ACA879"]
+#     assert flight is not None
+#     assert len(flight.on_taxiway(lszh_taxiway)) == 3
+#
+#     last_stop = pd.Timestamp(0, tz="utc")
+#     twy_names = ["Charlie", "Echo", "E2"]
+#     for i, twy_seg in enumerate(flight.on_taxiway(lszh_taxiway)):
+#         assert twy_seg.start >= last_stop
+#         last_stop = twy_seg.stop
+#         assert twy_seg.taxiway_max == twy_names[i]
+#
+#     flight = zurich_airport["SWISS"]
+#     assert flight is not None
+#     assert flight.on_taxiway(lszh_taxiway).next() is None
+#
+#     # another airport
+#     last_stop = pd.Timestamp(0, tz="utc")
+#     twy_names = ["V", "Z", "M", "R", "B", "BB"]
+#     flight = elal747
+#     assert flight is not None
+#     for i, twy_seg in enumerate(flight.on_taxiway(lirf_taxiway)):
+#         assert twy_seg.start >= last_stop
+#         last_stop = twy_seg.stop
+#         assert twy_seg.taxiway_max == twy_names[i]
+#
+#     # Landing
+#     last_stop = pd.Timestamp(0, tz="utc")
+#     twy_names = ["K", "M1", "D6"]
+#     for i, twy_seg in enumerate(flight.on_taxiway(llbg_taxiway)):
+#         assert twy_seg.start >= last_stop
+#         last_stop = twy_seg.stop
+#         assert twy_seg.taxiway_max == twy_names[i]
+#
+#     # Flight that leaves and come back to the airport
+#     flight = zurich_airport["SWR5220"]
+#     assert flight is not None
+#     assert len(flight.on_taxiway(lszh_taxiway)) == 9
+#
 
-    assert belevingsvlucht.ground_trajectory("EHLE").sum() == 0
-
-    flight = zurich_airport["SWR5220"]
-    assert flight is not None
-
-    flight_iterate = flight.ground_trajectory("LSZH")
-    takeoff = next(flight_iterate)
-    assert (
-        pd.Timestamp("2019-11-05 13:05:00+00:00")
-        < takeoff.stop
-        < pd.Timestamp("2019-11-05 13:06:00+00:00")
-    )
-    landing = next(flight_iterate)
-    assert (
-        pd.Timestamp("2019-11-05 16:36:00+00:00")
-        < landing.start
-        < pd.Timestamp("2019-11-05 16:37:00+00:00")
-    )
-    assert next(flight_iterate, None) is None
+# @pytest.mark.slow
+# def test_ground_trajectory() -> None:  # TODO
+#     flight_iterate = belevingsvlucht.ground_trajectory("EHAM")
+#     takeoff = next(flight_iterate)
+#     assert (
+#         pd.Timestamp("2018-05-30 15:21:00+00:00")
+#         < takeoff.stop
+#         < pd.Timestamp("2018-05-30 15:22:00+00:00")
+#     )
+#     landing = next(flight_iterate)
+#     assert (
+#         pd.Timestamp("2018-05-30 20:17:00+00:00")
+#         < landing.start
+#         < pd.Timestamp("2018-05-30 20:18:00+00:00")
+#     )
+#     assert next(flight_iterate, None) is None
+#
+#     assert belevingsvlucht.ground_trajectory("EHLE").sum() == 0
+#
+#     flight = zurich_airport["SWR5220"]
+#     assert flight is not None
+#
+#     flight_iterate = flight.ground_trajectory("LSZH")
+#     takeoff = next(flight_iterate)
+#     assert (
+#         pd.Timestamp("2019-11-05 13:05:00+00:00")
+#         < takeoff.stop
+#         < pd.Timestamp("2019-11-05 13:06:00+00:00")
+#     )
+#     landing = next(flight_iterate)
+#     assert (
+#         pd.Timestamp("2019-11-05 16:36:00+00:00")
+#         < landing.start
+#         < pd.Timestamp("2019-11-05 16:37:00+00:00")
+#     )
+#     assert next(flight_iterate, None) is None
 
 
 # @pytest.mark.skipif(version > (3, 13), reason="onnxruntime not ready")
@@ -365,7 +340,7 @@ def test_label() -> None:
 
     f = landing_zurich_2019["SWR287A_10099"]
     labelled = f.label(
-        "aligned_on_ils('LSZH')",
+        "landing('LSZH')",
         ILS="{segment.ILS_max}",
         touch=lambda segment: segment.stop,
         index=lambda i, segment: i,

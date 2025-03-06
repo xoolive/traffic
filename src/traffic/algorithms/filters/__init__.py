@@ -24,6 +24,8 @@ class Filter(Protocol):
 
 
 class FilterBase(Filter):
+    """Base class for filters, providing a | operator for composition."""
+
     tracked_variables: dict[str, list[Any]]
     projection: None | "crs.Projection" | pyproj.Proj = None
 
@@ -44,7 +46,13 @@ class FilterBase(Filter):
 
 
 class FilterMedian(FilterBase):
-    """Rolling median filter"""
+    """Rolling median filter.
+
+    :param kwargs: Each keyword argument is the name of a column, the value is
+      the size of the kernel. Default values are provided for altitudes,
+      vertical rate, ground speed and track angles.
+
+    """
 
     # default kernel values
     default: ClassVar[dict[str, int]] = dict(
@@ -69,7 +77,13 @@ class FilterMedian(FilterBase):
 
 
 class FilterMean(FilterBase):
-    """Rolling mean filter."""
+    """Rolling mean filter.
+
+    :param kwargs: Each keyword argument is the name of a column, the value is
+      the size of the kernel. Default values are provided for altitudes,
+      vertical rate, ground speed and track angles.
+
+    """
 
     # default kernel values
     default: ClassVar[dict[str, int]] = dict(
@@ -139,7 +153,6 @@ class FilterAboveSigmaMedian(FilterBase):
         compute_gs=(17, 53),
         compute_track=17,
         track=17,
-        onground=3,
     )
 
     def __init__(self, **kwargs: int | tuple[int, ...]) -> None:
@@ -218,3 +231,26 @@ class FilterAboveSigmaMedian(FilterBase):
                 data.loc[df.sq_eps > df.sigma, column] = None
 
         return data
+
+
+class FilterPosition(FilterBase):
+    """Basic filter to be deprecated.
+
+    Based on the detection of big groundspeed jumps.
+    """
+
+    # TODO improve this implementation based on agg_time or EKF
+    def __init__(self, cascades: int = 2) -> None:
+        self.cascades = cascades
+
+    def apply(self, flight: pd.DataFrame) -> pd.DataFrame:
+        from ...core import Flight
+
+        flight = Flight(flight)
+        for _ in range(self.cascades):
+            if flight is None:
+                return None
+            flight = flight.cumulative_distance().query(
+                "compute_gs < compute_gs.mean() + 3 * compute_gs.std()"
+            )
+        return flight.data

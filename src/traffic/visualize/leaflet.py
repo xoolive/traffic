@@ -62,6 +62,22 @@ def flight_map_leaflet(
     airport: Union[None, str, "Airport"] = None,
     **kwargs: Any,
 ) -> Optional[Map]:
+    """Returns an ipyleaflet Map with a trajectory inside.
+
+    :param airport: centers the map on the airport and highlights the
+      runways
+
+    :param highlight: is a dictionary mapping a color (the key) to a
+      piece of the trajectory; the selection can be made with a Flight,
+      a function returning a Flight, a function returning a FlightIterator
+      or a string describing the function (e.g. ``"holding_pattern"`` or
+      ``"landing('EHAM')"``)
+
+    :param zoom: initializes the zoom level.
+
+    See also: :ref:`Visualize trajectories with Leaflet`
+
+    """
     from ..core import Flight
     from ..data import airports
 

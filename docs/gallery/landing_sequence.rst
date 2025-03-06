@@ -152,7 +152,7 @@ See how the configuration changed after two aircraft failed their landing.
 
     data = (
         landing_zurich_2019.between("2019-10-15 10:10", "2019-10-15 10:50")
-        .all("aligned_on_LSZH")
+        .all("landing('LSZH')")
         .assign(go=lambda df: df.index_.max())
         .drop(columns=["flight_id"])
         .summary(["callsign", "ILS_max", "start", "stop", 'go_max'])

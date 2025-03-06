@@ -91,3 +91,15 @@ API reference
 .. automodule:: traffic.algorithms.filters
     :members:
     :show-inheritance:
+
+.. automodule:: traffic.algorithms.filters.aggressive
+    :members:
+    :show-inheritance:
+
+.. automodule:: traffic.algorithms.filters.consistency
+    :members:
+    :show-inheritance:
+
+.. automodule:: traffic.algorithms.filters.kalman
+    :members:
+    :show-inheritance:

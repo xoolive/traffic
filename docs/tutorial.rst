@@ -94,7 +94,7 @@ further use for our analysis.
 
     airports['LFBO'].parking_position
 
-Next, the method :meth:`~traffic.core.Flight.on_parking_position` selects all
+Next, the method :meth:`~traffic.core.Flight.parking_position` selects all
 segments that intersect any parking positions on the airport. Since a trajectory
 can intersect a geometry several times, the resulting structure is a
 :class:`~traffic.core.FlightIterator`. If we want a :class:`~traffic.core.Flight`,
@@ -102,13 +102,13 @@ we need to select one of the segments in the iterator:
 
 .. jupyter-execute::
 
-    g.first('10 min').on_parking_position('LFBO')
+    g.first('10 min').parking_position('LFBO')
 
 
 .. jupyter-execute::
 
     # Meaning: the longest option in duration
-    g.first('10 min').on_parking_position('LFBO').max('duration')
+    g.first('10 min').parking_position('LFBO').max('duration')
 
 
 This method is used in the implementation of the
@@ -144,11 +144,11 @@ horse racetrack shape and is not labelled as is:
 Convenient methods include the detection of landing runways (ILS means
 “Instrument Landing System”, i.e., the system that guides aircraft on autopilot
 to align perfectly with a runway). Check the documentation for the
-:meth:`~traffic.core.Flight.aligned_on_ils` method.
+:meth:`~traffic.core.Flight.landing` method.
 
 .. jupyter-execute::
 
-    g.aligned_on_ils('EGLL')
+    g.landing('EGLL')
 
 The :meth:`~traffic.core.FlightIterator.next()` method selects the first segment
 in the list. We can then detect the actual landing time, or more precisely, use
@@ -156,13 +156,13 @@ the time at runway threshold as a proxy for the actual landing time.
 
 .. jupyter-execute::
 
-    g.aligned_on_ils('EGLL').next().stop
+    g.landing('EGLL').next().stop
 
 This can also be rewritten for legibility as:
 
 .. jupyter-execute::
 
-    g.next("aligned_on_ils('EGLL')").stop
+    g.next("landing('EGLL')").stop
 
 The tentative holding pattern here in London Heathrow Airport is labelled as OCK
 (stands for “Ockham”, colocated with the OCK VOR). VOR and other navaids are
@@ -176,8 +176,8 @@ listed in part in the ``data`` part of the library.
     m = g.last('30 min').map_leaflet(
         zoom=10,
         highlight={
-            "red": 'aligned_on_ils("EGLL")',
-            "#f58518": 'aligned_on_navpoint("OCK")',
+            "red": 'landing("EGLL")',
+            "#f58518": 'aligned("OCK")',
         },
     )
     m.add(navaids['OCK'])
@@ -201,8 +201,8 @@ We can also estimate the fuel flow (and plot with Matplotlib):
     fig, ax = plt.subplots(2, 1, sharex=True)
     g.plot_time(ax[0], y='altitude')
 
-    takeoff_time = g.next("takeoff_from_runway('LFBO')").stop
-    landing_time = g.next("aligned_on_ils('EGLL')").stop
+    takeoff_time = g.next("takeoff('LFBO')").stop
+    landing_time = g.next("landing('EGLL')").stop
     g.between(takeoff_time, landing_time).emission().plot_time(ax[1], y='fuelflow')
 
     for ax_ in ax:
@@ -228,12 +228,3 @@ We can also estimate the total fuel consumed:
     For any column in the pandas DataFrame wrapped by a Flight structure,
     traffic provides attributes to aggregate all values in the column.
     ``g.fuel_max`` is equivalent to ``g.data.fuel.max()``.
-
-
-Advanced topics
----------------
-
-.. toctree::
-
-    gallery/savan
-    navigation/go_around

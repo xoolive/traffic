@@ -73,7 +73,7 @@ where the 7700 squawk code was activated.
 
     squawk7700["AFR1196_20180303"].map_leaflet(
         zoom=7,
-        highlight=dict(red=lambda f: f.emergency()),
+        highlight=dict(red=lambda f: f.query("squawk == '7700'").split()),
         layout=Layout(height="500px", max_width="800px"),
     )
 
@@ -181,9 +181,6 @@ Landing attempts
 
 Also, sometimes emergency situations are associated to several landing attempts,
 at the same or at different airports.
-:meth:`~traffic.core.Flight.aligned_on_ils` and
-:meth:`~traffic.core.Flight.landing_attempts` are two methods available to
-detect these events:
 
 .. jupyter-execute::
 
@@ -191,14 +188,14 @@ detect these events:
 
 .. jupyter-execute::
 
-    squawk7700["AFR1145_20190820"].landing_attempts()
+    squawk7700["AFR1145_20190820"].landing(method="any")
 
 .. jupyter-execute::
 
     squawk7700["AFR1145_20190820"].map_leaflet(
         zoom=9,
         airport="ELLX",
-        highlight=dict(red=lambda f: f.landing_attempts()),
+        highlight=dict(red='landing(method="any")'),
     )
 
 | Explanation about this particular situation is available:

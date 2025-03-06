@@ -19,8 +19,8 @@ from shapely.geometry import LineString, Point
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import split, transform
 
-from ..core import Flight
-from ..core.structure import Airport
+from ...core import Flight
+from ...core.structure import Airport
 
 projection = EuroPP()
 
@@ -29,6 +29,8 @@ _log = logging.getLogger(__name__)
 
 
 class AirportGraph:
+    """Create a graph from an airport."""
+
     wgs84 = Proj("EPSG:4326")
 
     @classmethod
@@ -245,11 +247,12 @@ class AirportGraph:
     def fix_airport_graph(self) -> Self:
         """Builds an airport graph based on available information.
 
-        Steps:
-
         - merge duplicate nodes
         - for each edge, detect every node that is geographically on the segment
           (linestring) and split the edge into two.
+
+        The resulting graph should be (at least very close to) a single
+        connected component graph.
         """
         airport_graph = self.merge_duplicate_nodes()
         for u, v, k in list(airport_graph.graph.edges):

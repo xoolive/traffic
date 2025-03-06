@@ -36,11 +36,8 @@ fuel flow with OpenAP and compare the result with real data.
 User interface
 --------------
 
-The most direct use of the API, is with the :meth:`~traffic.core.Flight.fuelflow`
-method:
-
-.. automethod:: traffic.core.Flight.fuelflow
-
+The most direct use of the API, is with the
+:meth:`~traffic.core.Flight.fuelflow` method:
 
 In this dataset:
 
