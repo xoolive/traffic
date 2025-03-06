@@ -66,6 +66,7 @@ elal747: Flight
 full_flight_short: Flight
 lfbo_tma: Airspace
 noisy: Flight
+noisy_landing: Flight
 quickstart: Traffic
 landing_denver: Flight
 sample_dump1090: Path

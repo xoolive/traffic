@@ -13,7 +13,7 @@ traffic.algorithms.filters
     default = noisy_landing.filter("default").assign(type="default")
     aggressive = noisy_landing.filter("aggressive").assign(type="aggressive")
 
-    domain = ["raw data", "default", "aggressive"]
+    domain = ["raw data", "default", "aggressive", "Kalman filter", "Kalman smoother"]
 
     features = [
         "altitude (in ft)",
@@ -71,6 +71,10 @@ traffic comes with some pre-implemented filters to be passed to the
   trajectories extracted from the OpenSky database (with their most common
   glitches)
 
+.. code:: python
+
+    noisy_landing.filter()
+
 .. jupyter-execute::
     :hide-code:
 
@@ -79,11 +83,55 @@ traffic comes with some pre-implemented filters to be passed to the
 - ``"aggressive"`` is a composition of several filters which may result in
   smoother trajectories.
 
+.. code:: python
+
+    noisy_landing.filter("aggressive")
+
 .. jupyter-execute::
     :hide-code:
 
     chart(aggressive)
 
+- :class:`~traffic.algorithms.filters.kalman.KalmanFilter6D` is a Kalman filter
+  applied to the 6D state vector (latitude, longitude, altitude, track angle,
+  groundspeed, vertical rate)
+
+.. code:: python
+
+    from traffic.algorithms.filters.kalman import KalmanFilter6D
+
+    # The Kalman filter needs first a projection in x, y
+    from cartes.crs import EuroPP
+
+    noisy_landing.compute_xy(EuroPP()).filter(KalmanFilter6D())
+
+.. jupyter-execute::
+    :hide-code:
+
+    from traffic.algorithms.filters.kalman import KalmanFilter6D
+
+    noisy_landing_xy = noisy_landing.compute_xy()
+    kalman = noisy_landing_xy.filter(KalmanFilter6D()).assign(type="Kalman filter")
+    chart(kalman)
+
+- :class:`~traffic.algorithms.filters.kalman.KalmanSmoother6D` is a Kalman
+  smoother (a two-pass filter averaging the covariance of the errors on both
+  sides) applied to the 6D state vector (latitude, longitude, altitude, track
+  angle, groundspeed, vertical rate)
+
+.. code:: python
+
+    from traffic.algorithms.filters.kalman import KalmanSmoother6D
+
+    noisy_landing.compute_xy(EuroPP()).filter(KalmanSmoother6D())
+
+.. jupyter-execute::
+    :hide-code:
+
+    from traffic.algorithms.filters.kalman import KalmanSmoother6D
+
+    smoother = noisy_landing_xy.filter(KalmanSmoother6D()).assign(type="Kalman smoother")
+    chart(smoother)
 
 API reference
 -------------

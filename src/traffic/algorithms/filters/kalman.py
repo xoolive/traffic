@@ -440,7 +440,7 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
         x2_cor = np.array(self.tracked_variables["x2_cor"][::-1])
         p2_cor = np.array(self.tracked_variables["p2_cor"][::-1])
 
-        for i in range(1, df.shape[0]):
+        for i in range(df.shape[0]):
             s1 = np.linalg.inv(p1_cor[i])
             s2 = np.linalg.inv(p2_cor[i])
             self.ps = np.linalg.inv(s1 + s2)
