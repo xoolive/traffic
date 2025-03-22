@@ -53,7 +53,117 @@ class Threshold(ThresholdTuple, PointMixin):
 RunwaysType = Dict[str, List[Tuple[Threshold, Threshold]]]
 
 
-class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
+class Runway(HBoxMixin, ShapelyMixin, DataFrameMixin):
+    def __init__(self, tuple_runway: tuple[Threshold, Threshold]):
+        self.tuple_runway = tuple_runway
+
+    @property
+    def data(self) -> pd.DataFrame:
+        return pd.DataFrame.from_records(
+            self.tuple_runway,
+            columns=["latitude", "longitude", "bearing", "name"],
+        )
+
+    def geojson(self) -> Dict[str, Any]:
+        return {
+            "type": "LineString",
+            "coordinates": tuple(
+                (thrs.longitude, thrs.latitude) for thrs in self.tuple_runway
+            ),
+        }
+
+    @property
+    def shape(self) -> base.BaseGeometry:
+        return shape(self.geojson())
+
+    def plot(
+        self,
+        ax: "GeoAxesSubplot",
+        *args: Any,
+        runways: bool = True,
+        labels: bool = False,
+        shift: int = 300,
+        text_kw: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:  # coverage: ignore
+        from cartopy.crs import PlateCarree
+
+        if runways is True:
+            params = {
+                "edgecolor": "#0e1111",
+                "crs": PlateCarree(),
+                "linewidth": 3,
+                **kwargs,
+            }
+            ax.add_geometries([self.shape], **params)
+
+        if labels is True:
+            if text_kw is None:
+                text_kw = dict()
+
+            text_kw = {
+                **dict(
+                    transform=PlateCarree(),
+                    fontsize=18,
+                    horizontalalignment="center",
+                    verticalalignment="center",
+                    rotation_mode="anchor",
+                ),
+                **text_kw,
+            }
+
+            for thr in self.tuple_runway:
+                # Placement of labels
+                lat, lon, _ = destination(
+                    thr.latitude, thr.longitude, thr.bearing + 180, shift
+                )
+
+                # Compute the rotation of labels
+                lat2, lon2, _ = destination(lat, lon, thr.bearing + 180, 1000)
+                x1, y1 = ax.projection.transform_point(
+                    thr.longitude, thr.latitude, PlateCarree()
+                )
+                x2, y2 = ax.projection.transform_point(
+                    lon2, lat2, PlateCarree()
+                )
+                rotation = 90 + np.degrees(np.arctan2(y2 - y1, x2 - x1))
+
+                ax.text(lon, lat, thr.name, rotation=rotation, **text_kw)
+
+    def geoencode(self, **kwargs: Any) -> "alt.Chart":  # coverage: ignore
+        import altair as alt
+
+        if kwargs.get("mode", None) == "geometry":
+            params = {**{"strokeWidth": 4, "stroke": "black"}, **kwargs}
+            del params["mode"]
+            return super().geoencode().mark_geoshape(**params)  # type: ignore
+        elif kwargs.get("mode", None) == "labels":
+            params = {
+                **{"baseline": "middle", "dy": 20, "fontSize": 18},
+                **kwargs,
+            }
+            del params["mode"]
+            rwy_labels = alt.Chart(self.data).encode(
+                longitude="longitude:Q", latitude="latitude:Q", text="name:N"
+            )
+            rwy_layers = [
+                rwy_labels.transform_filter(alt.datum.name == name).mark_text(
+                    angle=bearing, **params
+                )
+                for (name, bearing) in zip(self.data.name, self.data.bearing)
+            ]
+
+            return alt.layer(*rwy_layers)  # type: ignore
+        elif kwargs.get("mode", None) is None:
+            return alt.layer(  # type: ignore
+                self.geoencode(mode="geometry", **kwargs),
+                self.geoencode(mode="labels", **kwargs),
+            )
+
+        raise ValueError("mode must be 'geometry' or 'labels'")
+
+
+class RunwaysAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
     def __init__(
         self,
         data: Optional[pd.DataFrame] = None,
@@ -61,6 +171,15 @@ class RunwayAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
     ) -> None:
         self._data: Optional[pd.DataFrame] = data
         self._runways = runways
+
+    def __getitem__(self, runway_id: str) -> Runway:
+        elt = next(
+            (t for t in self._runways if any(x.name == runway_id for x in t)),
+            None,
+        )
+        if elt:
+            return Runway(elt)
+        raise ValueError(f"Runway {runway_id} not found")
 
     @property
     def data(self) -> pd.DataFrame:
@@ -201,14 +320,14 @@ class Runways(object):
             self._runways = pickle.load(fh)
             return self._runways
 
-    def __getitem__(self, name: Union["Airport", str]) -> RunwayAirport:
+    def __getitem__(self, name: Union["Airport", str]) -> RunwaysAirport:
         from .. import airports
 
         airport_ = airports[name] if isinstance(name, str) else name
         elt = self.runways.get(airport_.icao, None)
         if elt is None:
             raise AttributeError(f"Runway information not found for {name}")
-        return RunwayAirport(runways=elt)
+        return RunwaysAirport(runways=elt)
 
     def download_runways(self) -> None:  # coverage: ignore
         self._runways = dict()

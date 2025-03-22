@@ -38,7 +38,7 @@ from typing_extensions import Self
 import numpy as np
 import pandas as pd
 import pyproj
-from pandas.core.internals import DatetimeTZBlock  # TODO DeprecationWarning
+from pandas.core.internals.blocks import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
