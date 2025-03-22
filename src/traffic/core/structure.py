@@ -17,7 +17,7 @@ from shapely.geometry import GeometryCollection, LineString
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from ..data.basic.runways import RunwayAirport
+from ..data.basic.runways import RunwaysAirport
 from .mixins import FormatMixin, HBoxMixin, PointMixin, ShapelyMixin
 
 if TYPE_CHECKING:
@@ -155,7 +155,7 @@ class Airport(
         return p
 
     @property
-    def runways(self) -> RunwayAirport:
+    def runways(self) -> RunwaysAirport:
         """
         Get runway information associated with the airport.
 
