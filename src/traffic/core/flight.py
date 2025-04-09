@@ -3543,7 +3543,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         else:
             df = data if isinstance(data, pd.DataFrame) else data.data
             df = df.query(
-                "icao24 == @self.icao24 and @self.start < mintime < @self.stop"
+                "icao24 == @self.icao24 and "
+                "@self.start.timestamp() < mintime < @self.stop.timestamp()"
             )
 
         if df is None or df.shape[0] == 0:
