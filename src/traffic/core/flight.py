@@ -3782,8 +3782,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
     def plot_time(
         self,
-        ax: Union[None, "Axes"] = None,
         y: Union[str, List[str]],
+        ax: Union[None, "Axes"] = None,
         secondary_y: Union[None, str, List[str]] = None,
         **kwargs: Any,
     ) -> None:  # coverage: ignore
