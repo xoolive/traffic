@@ -3782,8 +3782,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
     def plot_time(
         self,
-        ax: "Axes",
         y: Union[str, List[str]],
+        ax: Union[None, "Axes"] = None,
         secondary_y: Union[None, str, List[str]] = None,
         **kwargs: Any,
     ) -> None:  # coverage: ignore
@@ -3812,6 +3812,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             See also :meth:`chart` for the altair equivalent.
 
         """
+        if ax is None:
+            import matplotlib.pyplot as plt
+            ax = plt.gca()
         if isinstance(y, str):
             y = [y]
         if isinstance(secondary_y, str):
