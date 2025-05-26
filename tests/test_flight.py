@@ -16,6 +16,7 @@ from traffic.data import (  # noqa: F401
     aixm_navaids,
     eurofirs,
     navaids,
+    opensky,
 )
 from traffic.data.samples import (
     airbus_tree,
@@ -57,7 +58,8 @@ def test_dtype() -> None:
     # See PR 324
 
     assert any(
-        dtype == np.float64 for dtype in belevingsvlucht.resample("1s").data.dtypes
+        dtype == np.float64
+        for dtype in belevingsvlucht.resample("1s").data.dtypes
     )
 
 
@@ -91,7 +93,9 @@ def test_subtract() -> None:
 
     without_hp = flight - hp
     assert sum(1 for _ in without_hp) == 2
-    total_duration = sum((segment.duration for segment in without_hp), hp.duration)
+    total_duration = sum(
+        (segment.duration for segment in without_hp), hp.duration
+    )
     assert flight.duration - pd.Timedelta("1 min") <= total_duration
     assert total_duration <= flight.duration
 
@@ -371,7 +375,9 @@ def test_resample_how_argument() -> None:
     resampled_interpolate = Flight(df).resample("1s", how="interpolate")
     pd.testing.assert_frame_equal(
         resampled_interpolate.data[["altitude", "fake"]],
-        pd.DataFrame({"altitude": altitude_interpolate, "fake": fake_interpolate}),
+        pd.DataFrame(
+            {"altitude": altitude_interpolate, "fake": fake_interpolate}
+        ),
         check_dtype=False,
     )
 
@@ -501,43 +507,14 @@ def test_predict() -> None:
 
 
 def test_predict_flightplan() -> None:
-    start = pd.Timestamp('2022-02-02 16:00:23+0000', tz='UTC')
-    records = [{'timestamp': pd.Timestamp('2022-02-02 15:49:38+0000', tz='UTC'),
-    'longitude': 4.3391306807355186,
-    'latitude': 45.54601119736493,
-    'altitude': 37000.0,
-    'groundspeed': 420.0,
-    'track': 233.13010235415598,
-    'callsign': 'RYR2RG',
-    'flight_id': 'AA34446180',
-    'icao24': '4d2271'},
-    {'timestamp': pd.Timestamp('2022-02-02 15:58:59+0000', tz='UTC'),
-    'longitude': 3.112596784319196,
-    'latitude': 44.88519287109375,
-    'altitude': 37000.0,
-    'groundspeed': 422.0,
-    'track': 232.80409859194393,
-    'callsign': 'RYR2RG',
-    'flight_id': 'AA34446180',
-    'icao24': '4d2271'},
-    {'timestamp': pd.Timestamp('2022-02-02 16:00:17+0000', tz='UTC'),
-    'longitude': 2.9341343470982144,
-    'latitude': 44.8040771484375,
-    'altitude': 37000.0,
-    'groundspeed': 418.0,
-    'track': 238.89523691212833,
-    'callsign': 'RYR2RG',
-    'flight_id': 'AA34446180',
-    'icao24': '4d2271'},
-    {'timestamp': pd.Timestamp('2022-02-02 16:02:53+0000', tz='UTC'),
-    'longitude': 2.558675626429116,
-    'latitude': 44.671760171146715,
-    'altitude': 37000.0,
-    'groundspeed': 413.0,
-    'track': 243.86899945506138,
-    'callsign': 'RYR2RG',
-    'flight_id': 'AA34446180',
-    'icao24': '4d2271'}]
+    start = pd.Timestamp("2022-02-02 16:00:23Z")
+    flight = opensky.history(
+        "2022-02-02 15:45:00",
+        "2022-02-02 16:05:00",
+        icao24="4d2271",
+        return_flight=True,
+    )
+    assert flight is not None
     # fp = FlightPlan("N0410F300 UMTEX1A UMTEX Y100 TRA/N0435F370 Z69 OLBEN
     # N869 NEMOS DCT NINTU UN869 REPSI DCT LERGA DCT MINSO DCT NARAK DCT AGN
     # DCT MAQAB DCT TIVLI UN869 BLN")
@@ -570,8 +547,7 @@ def test_predict_flightplan() -> None:
         _Point(39.0, -3.221, "ANZAN"),
         _Point(38.15, -3.625, "BLN"),
     ]
-    flight = Flight(pd.DataFrame.from_records(records)).resample("1s")
-    predicted = flight.predict(method = 'flightplan', fp=fp, start=start)
+    predicted = flight.predict(method="flightplan", fp=fp, start=start)
     assert predicted is not None
     assert len(predicted.data) > 0
     assert predicted.stop is not None
@@ -630,10 +606,14 @@ def test_cumulative_distance() -> None:
 def test_agg_time_colnames() -> None:
     # https://github.com/xoolive/traffic/issues/66
 
-    cols = belevingsvlucht.agg_time("5 min", altitude=("max", "mean")).data.columns
+    cols = belevingsvlucht.agg_time(
+        "5 min", altitude=("max", "mean")
+    ).data.columns
     assert list(cols)[-3:] == ["rounded", "altitude_max", "altitude_mean"]
 
-    cols = belevingsvlucht.agg_time("5 min", altitude=lambda x: x.sum()).data.columns
+    cols = belevingsvlucht.agg_time(
+        "5 min", altitude=lambda x: x.sum()
+    ).data.columns
     assert list(cols)[-3:] == ["altitude", "rounded", "altitude_<lambda>"]
 
     def shh(x: Any) -> Any:
@@ -668,7 +648,8 @@ def test_DME_NSE_computation() -> None:
 def test_split_condition() -> None:
     def no_split_below_5000(f1: Flight, f2: Flight) -> bool:
         return (  # type: ignore
-            f1.data.iloc[-1].altitude >= 5000 or f2.data.iloc[0].altitude >= 5000
+            f1.data.iloc[-1].altitude >= 5000
+            or f2.data.iloc[0].altitude >= 5000
         )
 
     f_max = (
@@ -686,6 +667,8 @@ def test_split_condition() -> None:
 
 
 def test_split_map() -> None:
-    result = belevingsvlucht.landing("EHLE").map(lambda f: f.resample("10s")).all()
+    result = (
+        belevingsvlucht.landing("EHLE").map(lambda f: f.resample("10s")).all()
+    )
     assert result is not None
     assert 140 <= len(result) <= 160

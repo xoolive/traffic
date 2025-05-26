@@ -31,7 +31,7 @@ class FlightPlanPredict:
 
     def __init__(
         self,
-        fp: FlightPlan|List[_Point],
+        fp: FlightPlan | List[_Point],
         start: Union[str, pd.Timestamp],
         horizon_minutes: int = 15,
         angle_precision: int = 2,
