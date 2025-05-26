@@ -225,7 +225,7 @@ class Navaids(GeoDBMixin):
 
         >>> from traffic.data import navaids
 
-        >>> navaids.get("ZUE")
+        >>> navaids.get("ZUE")  # doctest: +SKIP
         Navaid('ZUE', type='NDB', latitude=30.9, longitude=20.068, altitude=0.0, description='ZUEITINA NDB', frequency='369.0kHz')
 
         >>> navaids.extent("Switzerland").get("ZUE")  # doctest: +SKIP

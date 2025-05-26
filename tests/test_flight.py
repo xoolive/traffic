@@ -9,7 +9,15 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight
-from traffic.data import airports, eurofirs, navaids
+from traffic.core.flightplan import _Point
+from traffic.data import (  # noqa: F401
+    airports,
+    aixm_airways,
+    aixm_navaids,
+    eurofirs,
+    navaids,
+    opensky,
+)
 from traffic.data.samples import (
     airbus_tree,
     belevingsvlucht,
@@ -496,6 +504,60 @@ def test_predict() -> None:
     assert t_point is not None
     assert c_point is not None
     assert t_point.altitude + 2000 < c_point.altitude
+
+
+def test_predict_flightplan() -> None:
+    start = pd.Timestamp("2022-02-02 16:00:23Z")
+    flight = opensky.history(
+        "2022-02-02 15:45:00",
+        "2022-02-02 16:05:00",
+        icao24="4d2271",
+        return_flight=True,
+    )
+    assert flight is not None
+    # fp = FlightPlan("N0410F300 UMTEX1A UMTEX Y100 TRA/N0435F370 Z69 OLBEN
+    # N869 NEMOS DCT NINTU UN869 REPSI DCT LERGA DCT MINSO DCT NARAK DCT AGN
+    # DCT MAQAB DCT TIVLI UN869 BLN")
+    fp = [
+        _Point(47.84, 9.624, "UMTEX"),
+        _Point(47.69, 8.437, "TRA"),
+        _Point(47.3, 7.629, "OLBEN"),
+        _Point(47.16, 7.371, "LUTIX"),
+        _Point(47.06, 7.173, "BENOT"),
+        _Point(46.91, 6.907, "NEMOS"),
+        _Point(46.15, 5.553, "NINTU"),
+        _Point(45.71, 4.649, "MEBAK"),
+        _Point(45.52, 4.275, "REPSI"),
+        _Point(45.26, 3.75, "LERGA"),
+        _Point(44.85, 2.929, "MINSO"),
+        _Point(44.3, 1.749, "NARAK"),
+        _Point(43.89, 0.8728, "AGN"),
+        _Point(43.41, 0.2897, "MAQAB"),
+        _Point(42.8, -0.4367, "TIVLI"),
+        _Point(42.37, -0.6672, "XOMBO"),
+        _Point(42.02, -0.8472, "ELSAP"),
+        _Point(41.66, -1.031, "ZAR"),
+        _Point(41.27, -1.384, "EXEMU"),
+        _Point(41.19, -1.455, "PISUS"),
+        _Point(40.78, -1.828, "EDIMU"),
+        _Point(40.51, -2.064, "ADUXO"),
+        _Point(40.41, -2.158, "NUSGO"),
+        _Point(39.67, -2.796, "OBIBO"),
+        _Point(39.4, -3.028, "NASOS"),
+        _Point(39.0, -3.221, "ANZAN"),
+        _Point(38.15, -3.625, "BLN"),
+    ]
+    predicted = flight.predict(method="flightplan", fp=fp, start=start)
+    assert predicted is not None
+    assert len(predicted.data) > 0
+    assert predicted.stop is not None
+    pred_point = predicted.at_ratio(0)
+    real_point = flight.at(start)
+    assert pred_point is not None
+    assert real_point is not None
+    assert pred_point.timestamp == real_point.name
+    assert abs(pred_point.latitude - real_point.latitude) < 1e-4
+    assert abs(pred_point.longitude - real_point.longitude) < 1e-4
 
 
 def test_cumulative_distance() -> None:
