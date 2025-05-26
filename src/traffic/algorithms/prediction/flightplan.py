@@ -94,8 +94,8 @@ class FlightPlanPredict:
             navaids = self.fp.all_points
         else:
             navaids = self.fp
-        g = window.aligned_on_navpoint(
-            self.fp,
+        g = window.aligned(
+            points=self.fp,
             angle_precision=self.angle_precision,
             min_distance=self.min_distance,
         ).final()
