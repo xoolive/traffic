@@ -128,7 +128,7 @@ There are, for sure, few points requested with heading angles. Yet we can clearl
 
         fig, ax = plt.subplots(figsize=(10, 7))
 
-        flight.plot_time(ax, ["track", "heading"], marker=".")
+        flight.plot_time(ax=ax, ["track", "heading"], marker=".")
 
         # Annotate the different phases of landing
         ax.plot([ils.start, ils.stop], [210, 210], color="#0b1111", linewidth=3, marker="d")

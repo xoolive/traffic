@@ -199,11 +199,11 @@ We can also estimate the fuel flow (and plot with Matplotlib):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(2, 1, sharex=True)
-    g.plot_time(ax[0], y='altitude')
+    g.plot_time(ax=ax[0], y='altitude')
 
     takeoff_time = g.next("takeoff('LFBO')").stop
     landing_time = g.next("landing('EGLL')").stop
-    g.between(takeoff_time, landing_time).emission().plot_time(ax[1], y='fuelflow')
+    g.between(takeoff_time, landing_time).emission().plot_time(ax=ax[1], y='fuelflow')
 
     for ax_ in ax:
         ax_.spines['right'].set_visible(False)
