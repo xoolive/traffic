@@ -3782,8 +3782,8 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
     def plot_time(
         self,
-        ax: "Axes",
         y: Union[str, List[str]],
+        ax: Union[None, "Axes"] = None,
         secondary_y: Union[None, str, List[str]] = None,
         **kwargs: Any,
     ) -> None:  # coverage: ignore
@@ -3818,6 +3818,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             secondary_y = [secondary_y]
         if secondary_y is None:
             secondary_y = []
+
+        if ax is None:
+            import matplotlib.pyplot as plt
+
+            ax = plt.gca()
 
         localized = self.data.timestamp.dt.tz is not None
         for column in y:
