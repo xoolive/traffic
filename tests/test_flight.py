@@ -10,14 +10,7 @@ from pandas.testing import assert_frame_equal
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight
 from traffic.core.flightplan import _Point
-from traffic.data import (  # noqa: F401
-    airports,
-    aixm_airways,
-    aixm_navaids,
-    eurofirs,
-    navaids,
-    opensky,
-)
+from traffic.data import airports, eurofirs, navaids, opensky
 from traffic.data.samples import (
     airbus_tree,
     belevingsvlucht,
