@@ -195,9 +195,9 @@ class OpenSky:
         df = self.rest_client.tracks(icao24, time).pipe(format_history)
         return Flight(df)
 
-    @copy_documentation(rest.REST.routes)
-    def api_routes(self, callsign: str) -> tuple[str, str]:
-        return self.rest_client.routes(callsign)
+    # @copy_documentation(rest.REST.routes)
+    # def api_routes(self, callsign: str) -> tuple[str, str]:
+    #     return self.rest_client.routes(callsign)
 
     @copy_documentation(rest.REST.aircraft)
     def api_aircraft(
