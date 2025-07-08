@@ -159,8 +159,8 @@ class AirportGraph:
             elif distance_on_line < current_position:
                 # splitter is between two vertices
                 return [
-                    LineString(coords[: i + 1] + [splitter.coords[0]]),
-                    LineString([splitter.coords[0]] + coords[i + 1 :]),
+                    LineString([*coords[: i + 1], splitter.coords[0]]),
+                    LineString([splitter.coords[0], *coords[i + 1 :]]),
                 ]
         return [line]
 

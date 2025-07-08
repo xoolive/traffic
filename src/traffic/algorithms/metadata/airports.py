@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Protocol
 
 from ...core import Flight
 from ...core.distance import closest_point
-from ...core.mixins import PointMixin
+from ...core.mixins import PointLike
 from ...core.structure import Airport
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ class AirportInferenceBase(Protocol):
 
 
 def guess_airport(
-    point: None | PointMixin = None,
+    point: None | PointLike = None,
     *,
     latitude: None | float = None,
     longitude: None | float = None,
@@ -29,7 +29,6 @@ def guess_airport(
 
         dataset = airports
 
-    # TODO define a protocol instead of PointMixin
     if point is not None:
         longitude = point.longitude
         latitude = point.latitude

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
@@ -5,7 +6,6 @@ from typing import (
     Dict,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Tuple,
     Union,
@@ -30,16 +30,6 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
 
 
-class AirportNamedTuple(NamedTuple):
-    altitude: float
-    country: str
-    iata: str
-    icao: str
-    latitude: float
-    longitude: float
-    name: str
-
-
 class AirportPoint(PointMixin):
     def plot(
         self,
@@ -56,9 +46,19 @@ class AirportPoint(PointMixin):
 
 
 @rich.repr.auto()
-class Airport(
-    FormatMixin, HBoxMixin, AirportNamedTuple, PointMixin, ShapelyMixin
-):
+@dataclass
+class Airport(FormatMixin, HBoxMixin, PointMixin, ShapelyMixin):
+    altitude: float
+    country: str
+    iata: str
+    icao: str
+    latitude: float
+    longitude: float
+    name: str
+
+    def __hash__(self) -> int:
+        return hash(self.icao)
+
     def __rich_repr__(self) -> rich.repr.Result:
         yield "icao", self.icao
         if self.iata:
@@ -112,6 +112,8 @@ class Airport(
                 )
             )
 
+    # The cache only works if the dataclass is frozen
+    # Implementing a __hash__ method is the other option
     @lru_cache()
     def _openstreetmap(self) -> "Overpass":  # coverage: ignore
         from cartes.osm import Overpass
@@ -274,7 +276,9 @@ class Airport(
             )
 
 
-class NavaidTuple(NamedTuple):
+@rich.repr.auto()
+@dataclass
+class Navaid(PointMixin):
     name: str
     type: str
     latitude: float
@@ -284,15 +288,6 @@ class NavaidTuple(NamedTuple):
     magnetic_variation: Optional[float]
     description: Optional[str]
 
-    def __getstate__(self) -> Any:
-        return self.__dict__
-
-    def __setstate__(self, d: Any) -> Any:
-        self.__dict__.update(d)
-
-
-@rich.repr.auto()
-class Navaid(NavaidTuple, PointMixin):
     def __getattr__(self, name: str) -> float:
         if name == "lat":
             return self.latitude

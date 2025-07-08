@@ -77,7 +77,7 @@ class KalmanTaxiway(ProcessXYFilterBase):
             .assign(geom_type=lambda df: df.geom_type)
             .query('geom_type == "LineString"')
             .data.set_crs(epsg=4326)
-            .to_crs(self.projection.proj4_init)
+            .to_crs(self.projection.proj4_init)  # type: ignore
         )
         self.closest = closest
         if closest is not None:

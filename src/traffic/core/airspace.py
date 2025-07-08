@@ -28,7 +28,7 @@ from shapely.ops import orient, transform, unary_union
 
 from . import Flight, Traffic
 from .lazy import lazy_evaluation
-from .mixins import DataFrameMixin, GeographyMixin, PointMixin, ShapelyMixin
+from .mixins import DataFrameMixin, GeographyMixin, PointBase, ShapelyMixin
 
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxesSubplot
@@ -318,9 +318,14 @@ class Airspace(ShapelyMixin):
             ax.add_patch(MplPolygon(list(flat.exterior.coords), **kwargs))
 
     @property
-    def point(self) -> PointMixin:
-        p = PointMixin()
-        p.longitude, p.latitude = next(iter(self.centroid.coords))
+    def point(self) -> PointBase:
+        longitude, latitude = next(iter(self.centroid.coords))
+        p = PointBase(
+            latitude,
+            longitude,
+            altitude=float("nan"),
+            name=f"{latitude, longitude}",
+        )
         return p
 
     def decompose(self, extr_p: ExtrudedPolygon) -> Iterator[Polygon]:

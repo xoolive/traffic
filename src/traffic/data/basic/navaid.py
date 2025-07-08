@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from ...core.mixins import GeoDBMixin
-from ...core.structure import Navaid, NavaidTuple
+from ...core.structure import Navaid
 
 _log = logging.getLogger(__name__)
 
@@ -172,8 +172,20 @@ class Navaids(GeoDBMixin):
                 )
             )
 
-        self._data = pd.DataFrame.from_records(
-            navaids, columns=NavaidTuple._fields
+        self._data = pd.DataFrame(
+            [
+                {
+                    "name": navaid.name,
+                    "type": navaid.type,
+                    "latitude": navaid.latitude,
+                    "longitude": navaid.longitude,
+                    "altitude": navaid.altitude,
+                    "frequency": navaid.frequency,
+                    "magnetic_variation": navaid.magnetic_variation,
+                    "description": navaid.description,
+                }
+                for navaid in navaids
+            ]
         )
 
         self._data.to_parquet(self.cache_path / "traffic_navaid.parquet")
@@ -212,8 +224,7 @@ class Navaids(GeoDBMixin):
             dic["altitude"] = None
             dic["frequency"] = None
             dic["magnetic_variation"] = None
-        if "id" in dic:
-            del dic["id"]
+        dic.pop("id", None)
         return Navaid(**dic)
 
     def global_get(self, name: str) -> Navaid:

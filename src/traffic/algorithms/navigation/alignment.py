@@ -4,7 +4,7 @@ from typing import Iterable, Iterator, Sequence
 import numpy as np
 
 from ...core import Flight, FlightPlan
-from ...core.mixins import PointMixin
+from ...core.mixins import PointLike
 
 _log = logging.getLogger(__name__)
 
@@ -46,11 +46,11 @@ class BeaconTrackBearingAlignment:
 
     """
 
-    points: Sequence[PointMixin]
+    points: Sequence[PointLike]
 
     def __init__(
         self,
-        points: str | PointMixin | Iterable[PointMixin] | FlightPlan,
+        points: str | PointLike | Iterable[PointLike] | FlightPlan,
         angle_precision: int = 1,
         time_precision: str = "2 min",
         min_time: str = "30s",
@@ -70,7 +70,7 @@ class BeaconTrackBearingAlignment:
                 self.points = []
             else:
                 self.points = [navaid]
-        elif isinstance(points, PointMixin):
+        elif isinstance(points, PointLike):
             self.points = [points]
         elif isinstance(points, FlightPlan):
             self.points = points.all_points

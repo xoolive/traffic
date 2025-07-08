@@ -26,8 +26,7 @@ def opensky_data(
                 # ask OpenStreetMap
                 kwargs["bounds"] = Nominatim.search(bounds)
 
-    if "verbose" in kwargs:
-        del kwargs["verbose"]
+    kwargs.pop("verbose", None)
 
     data = opensky.history(start, stop, **kwargs)
     assert data is not None

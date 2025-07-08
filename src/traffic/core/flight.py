@@ -48,7 +48,13 @@ from ..core import types as tt
 from ..core.structure import Airport
 from .intervals import Interval, IntervalCollection
 from .iterator import FlightIterator, flight_iterator
-from .mixins import GeographyMixin, HBoxMixin, PointMixin, ShapelyMixin
+from .mixins import (
+    GeographyMixin,
+    HBoxMixin,
+    PointLike,
+    PointMixin,
+    ShapelyMixin,
+)
 from .time import deltalike, time_or_delta, timelike, to_datetime, to_timedelta
 
 if TYPE_CHECKING:
@@ -1596,7 +1602,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         for label, fun in kwargs.items():
             agg_data = (
-                agg_data.merge(  # type: ignore
+                agg_data.merge(
                     temp_flight.groupby("rounded")
                     .apply(lambda df: fun(self.__class__(df)))
                     .rename(label),
@@ -2712,7 +2718,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     @flight_iterator
     def aligned_on_navpoint(
         self,
-        points: Union[str, "PointMixin", Iterable["PointMixin"]],
+        points: Union[str, "PointLike", Iterable["PointLike"]],
         angle_precision: int = 1,
         time_precision: str = "2 min",
         min_time: str = "30s",
@@ -2919,9 +2925,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
     # -- Distances --
 
-    def bearing(
-        self, other: PointMixin, column_name: str = "bearing"
-    ) -> Flight:
+    def bearing(self, other: PointLike, column_name: str = "bearing") -> Flight:
         # temporary, should implement full stuff
         size = self.data.shape[0]
         return self.assign(
@@ -2944,7 +2948,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     @overload
     def distance(
         self,
-        other: Union["Airspace", Polygon, PointMixin],
+        other: Union["Airspace", Polygon, PointLike],
         column_name: str = "distance",
     ) -> Flight: ...
 
@@ -2956,7 +2960,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     @impunity(ignore_warnings=True)
     def distance(
         self,
-        other: Union[None, "Flight", "Airspace", Polygon, PointMixin] = None,
+        other: Union[None, "Flight", "Airspace", Polygon, PointLike] = None,
         column_name: str = "distance",
     ) -> Union[None, float, "Flight", pd.DataFrame]:
         """Computes the distance from a Flight to another entity.
@@ -3005,7 +3009,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         distance_vec: tt.distance_array
 
-        if isinstance(other, PointMixin):
+        if isinstance(other, PointLike):
             size = self.data.shape[0]
             distance_vec = geo.distance(
                 self.data.latitude.to_numpy(),
@@ -3050,6 +3054,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
                 }
             )
 
+        assert isinstance(other, Flight)
         start = max(self.start, other.start)
         stop = min(self.stop, other.stop)
         f1, f2 = (self.between(start, stop), other.between(start, stop))
@@ -3074,7 +3079,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             vertical=(table.altitude_x - table.altitude_y).abs(),
         )
 
-    def closest_point(self, points: List[PointMixin] | PointMixin) -> pd.Series:
+    def closest_point(self, points: List[PointLike] | PointLike) -> pd.Series:
         """Selects the closest point of the trajectory with respect to
         a point or list of points.
 
@@ -3406,7 +3411,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             elif prev_t2 is None:
                 prev_t1, prev_t2 = t1, t2
             else:
-                prev_t1, prev_t2 = min(prev_t1, t1), max(prev_t2, t2)
+                prev_t1, prev_t2 = min(prev_t1, t1), max(prev_t2, t2)  # type: ignore
 
         if prev_t2 is not None:
             between = self.between(prev_t1, prev_t2, strict=strict)

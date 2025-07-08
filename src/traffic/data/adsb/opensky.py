@@ -23,7 +23,7 @@ import pandas as pd
 from shapely.geometry import Polygon
 
 from ...core import Flight, StateVectors, Traffic
-from ...core.mixins import PointMixin, ShapelyMixin
+from ...core.mixins import PointBase, ShapelyMixin
 from ...core.time import deltalike, timelike
 from ...core.types import HasBounds
 from ..basic.airports import Airport
@@ -84,12 +84,9 @@ class SensorRange(ShapelyMixin):
             self.shape = Polygon(
                 [(lon, lat) for (_deg, lat, lon) in value[0]["ranges"]]
             )
-            self.point = PointMixin()
-
-            self.point.latitude, self.point.longitude = value[0][
-                "sensorPosition"
-            ]
-            self.point.name = value[0]["serial"]
+            self.point = PointBase(
+                *value[0]["sensorPosition"], float("nan"), value[0]["serial"]
+            )
 
     def plot(self, ax: "GeoAxes", **kwargs: Any) -> "Artist":
         """Plotting function. All arguments are passed to the geometry"""

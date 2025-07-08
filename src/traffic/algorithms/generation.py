@@ -157,7 +157,7 @@ class Generation:
         X = np.stack(list(f.data[self.features].values.ravel() for f in t))
         if self.scaler is not None:
             X = self.scaler.fit_transform(X)
-        return X  # type: ignore
+        return X
 
     def build_traffic(
         self,
