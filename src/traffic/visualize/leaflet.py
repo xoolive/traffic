@@ -326,7 +326,7 @@ def map_add(
         FlightPlan,
         StateVectors,
     )
-    from ..core.mixins import PointMixin
+    from ..core.mixins import PointLike
     from ..core.structure import Airport, Route
 
     if any(
@@ -336,7 +336,7 @@ def map_add(
             Airspace,
             Flight,
             FlightPlan,
-            PointMixin,
+            PointLike,
             StateVectors,
         )
     ):

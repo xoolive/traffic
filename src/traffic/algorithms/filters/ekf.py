@@ -329,7 +329,7 @@ class EKF(ProcessXYZZFilterBase):
             initial_state=x0,
             initial_covariance=P,
             Q=Q,
-            R=R,  # type: ignore
+            R=R,
             jacobian_state_transition=EKF.jacobian_state_transition,
             state_transition_function=EKF.state_transition_function,
             reject_sigma=self.reject_sigma,

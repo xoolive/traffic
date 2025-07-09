@@ -39,7 +39,7 @@ from ..core.time import time_or_delta, timelike, to_datetime
 from .flight import Flight
 from .intervals import Interval, IntervalCollection
 from .lazy import LazyTraffic, lazy_evaluation
-from .mixins import DataFrameMixin, GeographyMixin, HBoxMixin, PointMixin
+from .mixins import DataFrameMixin, GeographyMixin, HBoxMixin, PointLike
 from .sv import StateVectors
 
 if TYPE_CHECKING:
@@ -975,14 +975,14 @@ class Traffic(HBoxMixin, GeographyMixin):
     @lazy_evaluation()
     def bearing(  # type: ignore
         self,
-        other: PointMixin,
+        other: PointLike,
         column_name: str = "bearing",
     ): ...
 
     @lazy_evaluation()
     def distance(  # type: ignore
         self,
-        other: Union["Airspace", Polygon, PointMixin],
+        other: Union["Airspace", Polygon, PointLike],
         column_name: str = "distance",
     ): ...
 

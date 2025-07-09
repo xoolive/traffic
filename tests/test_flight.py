@@ -9,7 +9,7 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 from traffic.algorithms.douglas_peucker import douglas_peucker
 from traffic.core import Flight
-from traffic.core.flightplan import _Point
+from traffic.core.mixins import PointBase
 from traffic.data import airports, eurofirs, navaids, opensky
 from traffic.data.samples import (
     airbus_tree,
@@ -512,33 +512,33 @@ def test_predict_flightplan() -> None:
     # N869 NEMOS DCT NINTU UN869 REPSI DCT LERGA DCT MINSO DCT NARAK DCT AGN
     # DCT MAQAB DCT TIVLI UN869 BLN")
     fp = [
-        _Point(47.84, 9.624, "UMTEX"),
-        _Point(47.69, 8.437, "TRA"),
-        _Point(47.3, 7.629, "OLBEN"),
-        _Point(47.16, 7.371, "LUTIX"),
-        _Point(47.06, 7.173, "BENOT"),
-        _Point(46.91, 6.907, "NEMOS"),
-        _Point(46.15, 5.553, "NINTU"),
-        _Point(45.71, 4.649, "MEBAK"),
-        _Point(45.52, 4.275, "REPSI"),
-        _Point(45.26, 3.75, "LERGA"),
-        _Point(44.85, 2.929, "MINSO"),
-        _Point(44.3, 1.749, "NARAK"),
-        _Point(43.89, 0.8728, "AGN"),
-        _Point(43.41, 0.2897, "MAQAB"),
-        _Point(42.8, -0.4367, "TIVLI"),
-        _Point(42.37, -0.6672, "XOMBO"),
-        _Point(42.02, -0.8472, "ELSAP"),
-        _Point(41.66, -1.031, "ZAR"),
-        _Point(41.27, -1.384, "EXEMU"),
-        _Point(41.19, -1.455, "PISUS"),
-        _Point(40.78, -1.828, "EDIMU"),
-        _Point(40.51, -2.064, "ADUXO"),
-        _Point(40.41, -2.158, "NUSGO"),
-        _Point(39.67, -2.796, "OBIBO"),
-        _Point(39.4, -3.028, "NASOS"),
-        _Point(39.0, -3.221, "ANZAN"),
-        _Point(38.15, -3.625, "BLN"),
+        PointBase(47.84, 9.624, float("nan"), "UMTEX"),
+        PointBase(47.69, 8.437, float("nan"), "TRA"),
+        PointBase(47.3, 7.629, float("nan"), "OLBEN"),
+        PointBase(47.16, 7.371, float("nan"), "LUTIX"),
+        PointBase(47.06, 7.173, float("nan"), "BENOT"),
+        PointBase(46.91, 6.907, float("nan"), "NEMOS"),
+        PointBase(46.15, 5.553, float("nan"), "NINTU"),
+        PointBase(45.71, 4.649, float("nan"), "MEBAK"),
+        PointBase(45.52, 4.275, float("nan"), "REPSI"),
+        PointBase(45.26, 3.75, float("nan"), "LERGA"),
+        PointBase(44.85, 2.929, float("nan"), "MINSO"),
+        PointBase(44.3, 1.749, float("nan"), "NARAK"),
+        PointBase(43.89, 0.8728, float("nan"), "AGN"),
+        PointBase(43.41, 0.2897, float("nan"), "MAQAB"),
+        PointBase(42.8, -0.4367, float("nan"), "TIVLI"),
+        PointBase(42.37, -0.6672, float("nan"), "XOMBO"),
+        PointBase(42.02, -0.8472, float("nan"), "ELSAP"),
+        PointBase(41.66, -1.031, float("nan"), "ZAR"),
+        PointBase(41.27, -1.384, float("nan"), "EXEMU"),
+        PointBase(41.19, -1.455, float("nan"), "PISUS"),
+        PointBase(40.78, -1.828, float("nan"), "EDIMU"),
+        PointBase(40.51, -2.064, float("nan"), "ADUXO"),
+        PointBase(40.41, -2.158, float("nan"), "NUSGO"),
+        PointBase(39.67, -2.796, float("nan"), "OBIBO"),
+        PointBase(39.4, -3.028, float("nan"), "NASOS"),
+        PointBase(39.0, -3.221, float("nan"), "ANZAN"),
+        PointBase(38.15, -3.625, float("nan"), "BLN"),
     ]
     predicted = flight.predict(method="flightplan", fp=fp, start=start)
     assert predicted is not None

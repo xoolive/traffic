@@ -7,14 +7,14 @@ import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
-    from .mixins import PointMixin
+    from .mixins import PointLike
 
 _log = logging.getLogger(__name__)
 
 
 def closest_point(
     data: pd.DataFrame,
-    point: Optional["PointMixin"] = None,
+    point: Optional["PointLike"] = None,
     *,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,

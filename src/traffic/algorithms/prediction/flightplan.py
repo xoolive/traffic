@@ -1,12 +1,27 @@
+from dataclasses import dataclass
 from datetime import timedelta
-from typing import Dict, List, Union, cast
+from typing import Dict, List, Sequence, Union, cast
 
 from pitot.geodesy import distance
 
 import pandas as pd
 
+from ...core import types as tt
 from ...core.flight import Flight, Position
-from ...core.flightplan import FlightPlan, _Point
+from ...core.flightplan import FlightPlan
+from ...core.mixins import PointLike, PointMixin
+
+
+@dataclass
+class Point(PointMixin):
+    """A base class for objects with latitude and longitude attributes."""
+
+    latitude: tt.angle
+    longitude: tt.angle
+    name: str = ""
+
+    def __repr__(self) -> str:
+        return f"{self.name} ({self.latitude:.4}, {self.longitude:.4})"
 
 
 class FlightPlanPredict:
@@ -31,7 +46,7 @@ class FlightPlanPredict:
 
     def __init__(
         self,
-        fp: FlightPlan | List[_Point],
+        fp: FlightPlan | List[PointLike],
         start: Union[str, pd.Timestamp],
         horizon_minutes: int = 15,
         angle_precision: int = 2,
@@ -90,6 +105,7 @@ class FlightPlanPredict:
         data_points["longitude"].append(start_pos.longitude)
         data_points["timestamp"].append(start_pos.timestamp)
         data_points["groundspeed"].append(gs / 0.514444)
+        navaids: Sequence[PointLike]
         if isinstance(self.fp, FlightPlan):
             navaids = self.fp.all_points
         else:
@@ -103,12 +119,12 @@ class FlightPlanPredict:
         start_nav = next(
             (point for point in navaids if point.name == start_nav_name), None
         )
-        start_index = navaids.index(cast(_Point, start_nav))
+        start_index = navaids.index(start_nav)  # type: ignore
         rest_navaids = navaids[start_index:]
 
-        point_depart = _Point(
-            lat=start_pos.latitude,
-            lon=start_pos.longitude,
+        point_depart: PointLike = Point(
+            latitude=start_pos.latitude,
+            longitude=start_pos.longitude,
             name=start_nav_name,
         )
         new_timestamp = pd.Timestamp(self.start)

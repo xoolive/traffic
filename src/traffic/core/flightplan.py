@@ -7,24 +7,13 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 from shapely.geometry import LineString
 from shapely.ops import linemerge
 
-from .mixins import PointMixin, ShapelyMixin
+from .mixins import PointBase, ShapelyMixin
 from .structure import Airport, Navaid, Route
 
 if TYPE_CHECKING:
     from cartopy.mpl.geoaxes import GeoAxes
     from ipyleaflet import Polyline as LeafletPolyline
     from matplotlib.artist import Artist
-
-
-class _Point(PointMixin):
-    def __init__(self, lat: float, lon: float, name: str):
-        super().__init__()
-        self.latitude = lat
-        self.longitude = lon
-        self.name = name
-
-    def __repr__(self) -> str:
-        return f"{self.name} ({self.latitude:.4}, {self.longitude:.4})"
 
 
 class _ElementaryBlock:
@@ -535,33 +524,33 @@ class FlightPlan(ShapelyMixin):
 
         return cumul
 
-    def _points(self, all_points: bool = False) -> Dict[str, _Point]:
+    def _points(self, all_points: bool = False) -> Dict[str, PointBase]:
         cumul = dict()
 
         for elt in self._parse():
             if elt is not None:
                 first, *args, last = elt.navaids
-                cumul[first.name] = _Point(
-                    first.latitude, first.longitude, first.name
+                cumul[first.name] = PointBase(
+                    first.latitude, first.longitude, float("nan"), first.name
                 )
 
                 if all_points:
                     for elt in args:
-                        cumul[elt.name] = _Point(
-                            elt.latitude, elt.longitude, elt.name
+                        cumul[elt.name] = PointBase(
+                            elt.latitude, elt.longitude, float("nan"), elt.name
                         )
-                cumul[last.name] = _Point(
-                    last.latitude, last.longitude, last.name
+                cumul[last.name] = PointBase(
+                    last.latitude, last.longitude, float("nan"), last.name
                 )
 
         return cumul
 
     @property
-    def points(self) -> List[_Point]:
+    def points(self) -> List[PointBase]:
         return list(self._points().values())
 
     @property
-    def all_points(self) -> List[_Point]:
+    def all_points(self) -> List[PointBase]:
         return list(self._points(all_points=True).values())
 
     # -- Visualisation --

@@ -122,7 +122,7 @@ class MLHoldingDetection:
                     elif start < stop:
                         stop = window.stop
                     else:
-                        yield flight.between(start, stop)
+                        yield flight.between(start, stop)  # type: ignore
                         start, stop = window.start, window.stop
 
         if start is not None:

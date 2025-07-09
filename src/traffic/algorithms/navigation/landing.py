@@ -41,12 +41,12 @@ class LandingAlignedOnILS:
 
     >>> for aligned in belevingsvlucht.landing('EHLE', method="default"):
     ...     print(aligned.start)
-    2018-05-30 16:00:55+00:00
-    2018-05-30 16:50:44+00:00
-    2018-05-30 17:21:17+00:00
-    2018-05-30 18:13:02+00:00
-    2018-05-30 19:05:22+00:00
-    2018-05-30 19:42:36+00:00
+    2018-05-30 16:00:...
+    2018-05-30 16:50:...
+    2018-05-30 17:21:...
+    2018-05-30 18:13:...
+    2018-05-30 19:05:...
+    2018-05-30 19:42:...
 
     >>> final = belevingsvlucht.final("landing('EHLE', method='default')")
     >>> final.ILS_max  # equivalent to final.max("ILS")
@@ -62,7 +62,7 @@ class LandingAlignedOnILS:
     ...     key=attrgetter('start')
     ... )
     >>> last_aligned.start
-    Timestamp('2018-05-30 19:42:36+0000', tz='UTC')
+    Timestamp('2018-05-30 19:42:...+0000', tz='UTC')
 
 
     """

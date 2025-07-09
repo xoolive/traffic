@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import dataclass
 from functools import lru_cache
 from numbers import Integral, Real
 from pathlib import Path
@@ -11,8 +12,10 @@ from typing import (
     Any,
     ClassVar,
     Mapping,
+    Protocol,
     Sequence,
     TypedDict,
+    runtime_checkable,
 )
 
 from py7zr import SevenZipFile
@@ -873,6 +876,16 @@ class GeoDBMixin(DataFrameMixin):
         )
 
 
+@runtime_checkable
+class PointLike(Protocol):
+    """A protocol for objects that have latitude and longitude attributes."""
+
+    latitude: tt.angle
+    longitude: tt.angle
+    altitude: tt.altitude
+    name: str
+
+
 class PointMixin:
     """A structure with a latitude and a longitude attribute."""
 
@@ -939,6 +952,19 @@ class PointMixin:
             cumul.append(ax.text(self.longitude, self.latitude, **text_kw))
 
         return cumul
+
+
+@dataclass
+class PointBase(PointMixin):
+    """A base class for objects with latitude and longitude attributes."""
+
+    latitude: tt.angle
+    longitude: tt.angle
+    altitude: tt.altitude
+    name: str = ""
+
+    def __repr__(self) -> str:
+        return f"{self.name} ({self.latitude:.4}, {self.longitude:.4})"
 
 
 class FormatMixin(object):  # coverage: ignore

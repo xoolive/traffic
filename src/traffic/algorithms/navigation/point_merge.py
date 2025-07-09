@@ -5,15 +5,15 @@ from typing import Any, Iterator
 from typing_extensions import NotRequired, TypedDict
 
 from ...core import Flight
-from ...core.mixins import PointMixin
+from ...core.mixins import PointLike
 from ...core.structure import Airport
 
 _log = logging.getLogger(__name__)
 
 
 class PointMergeParams(TypedDict):
-    point_merge: str | PointMixin
-    secondary_point: NotRequired[None | str | PointMixin]
+    point_merge: str | PointLike
+    secondary_point: NotRequired[None | str | PointLike]
     distance_interval: NotRequired[tuple[float, float]]
     delta_threshold: NotRequired[float]
 
@@ -60,8 +60,8 @@ class PointMerge:
 
     def __init__(
         self,
-        point_merge: str | PointMixin | list[PointMergeParams],
-        secondary_point: None | str | PointMixin = None,
+        point_merge: str | PointLike | list[PointMergeParams],
+        secondary_point: None | str | PointLike = None,
         distance_interval: None | tuple[float, float] = None,
         delta_threshold: float = 5e-2,
         airport: None | str | Airport = None,

@@ -73,7 +73,7 @@ def douglas_peucker(
     z_factor: float = 3.048,
     lat: Union[None, str, pd.Series] = None,
     lon: Union[None, str, pd.Series] = None,
-) -> np.ndarray:  # type: ignore
+) -> np.ndarray:
     """Ramer-Douglas-Peucker algorithm for 2D/3D trajectories.
 
     Simplify a trajectory by keeping the points further away from the straight

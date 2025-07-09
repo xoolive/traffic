@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import pickle
+from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from typing import (
@@ -8,12 +8,10 @@ from typing import (
     Any,
     Dict,
     List,
-    NamedTuple,
     Optional,
     Tuple,
     Union,
 )
-from zipfile import ZipFile
 
 import httpx
 from pitot.geodesy import bearing, destination
@@ -38,19 +36,17 @@ __github_url = "https://raw.githubusercontent.com/"
 base_url = __github_url + "ProfHoekstra/bluesky/master/data/navdata"
 
 
-class ThresholdTuple(NamedTuple):
+@dataclass
+class Threshold(PointMixin):
     latitude: float
     longitude: float
     bearing: float
     name: str
+    # necessary for being a PointLike (but not used)
+    altitude: float = float("nan")
 
-
-class Threshold(ThresholdTuple, PointMixin):
     def __repr__(self) -> str:
         return f"Runway {self.name}: {self.latlon}"
-
-
-RunwaysType = Dict[str, List[Tuple[Threshold, Threshold]]]
 
 
 class Runway(HBoxMixin, ShapelyMixin, DataFrameMixin):
@@ -184,7 +180,8 @@ class RunwaysAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
     @property
     def data(self) -> pd.DataFrame:
         return pd.DataFrame.from_records(
-            self.list, columns=["latitude", "longitude", "bearing", "name"]
+            [vars(thr) for thr in self.list],
+            columns=["latitude", "longitude", "bearing", "name"],
         )
 
     @property
@@ -296,12 +293,12 @@ class Runways(object):
     cache_path: Optional[Path] = None
 
     def __init__(self) -> None:
-        self._runways: Optional[RunwaysType] = None
+        self._runways: Optional[pd.DataFrame] = None
         assert self.cache_path is not None
-        self._cache = self.cache_path / "runways_ourairports.pkl"
+        self._cache = self.cache_path / "runways_ourairports.parquet"
 
     @property
-    def runways(self) -> RunwaysType:
+    def runways(self) -> pd.DataFrame:
         if self._runways is not None:
             return self._runways
 
@@ -316,18 +313,41 @@ class Runways(object):
             except httpx.TransportError:
                 pass
 
-        with self._cache.open("rb") as fh:
-            self._runways = pickle.load(fh)
-            return self._runways
+        self._runways = pd.read_parquet(self._cache)
+        return self._runways
 
     def __getitem__(self, name: Union["Airport", str]) -> RunwaysAirport:
         from .. import airports
 
         airport_ = airports[name] if isinstance(name, str) else name
-        elt = self.runways.get(airport_.icao, None)
-        if elt is None:
+        icao = airport_.icao
+
+        _df = self.runways.query(f"airport_ident =='{icao}'")
+        cur: List[Tuple[Threshold, Threshold]] = list()
+        for _, line in _df.iterrows():
+            lat0 = line.le_latitude_deg
+            lon0 = line.le_longitude_deg
+            name0 = line.le_ident
+            lat1 = line.he_latitude_deg
+            lon1 = line.he_longitude_deg
+            name1 = line.he_ident
+
+            if lat0 != lat0 or lat1 != lat1:
+                # some faulty records here...
+                continue
+
+            brng0 = bearing(lat0, lon0, lat1, lon1)
+            brng1 = bearing(lat1, lon1, lat0, lon0)
+            brng0 = brng0 if brng0 > 0 else 360 + brng0
+            brng1 = brng1 if brng1 > 0 else 360 + brng1
+
+            thr0 = Threshold(lat0, lon0, brng0, name0)
+            thr1 = Threshold(lat1, lon1, brng1, name1)
+            cur.append((thr0, thr1))
+
+        if cur is None:
             raise AttributeError(f"Runway information not found for {name}")
-        return RunwaysAirport(runways=elt)
+        return RunwaysAirport(runways=cur)
 
     def download_runways(self) -> None:  # coverage: ignore
         self._runways = dict()
@@ -344,88 +364,4 @@ class Runways(object):
 
         buffer.seek(0)
         df = pd.read_csv(buffer)
-
-        for name, _df in df.groupby("airport_ident"):
-            cur: List[Tuple[Threshold, Threshold]] = list()
-            self._runways[name] = cur
-
-            for _, line in _df.iterrows():
-                lat0 = line.le_latitude_deg
-                lon0 = line.le_longitude_deg
-                name0 = line.le_ident
-                lat1 = line.he_latitude_deg
-                lon1 = line.he_longitude_deg
-                name1 = line.he_ident
-
-                if lat0 != lat0 or lat1 != lat1:
-                    # some faulty records here...
-                    continue
-
-                brng0 = bearing(lat0, lon0, lat1, lon1)
-                brng1 = bearing(lat1, lon1, lat0, lon0)
-                brng0 = brng0 if brng0 > 0 else 360 + brng0
-                brng1 = brng1 if brng1 > 0 else 360 + brng1
-
-                thr0 = Threshold(lat0, lon0, brng0, name0)
-                thr1 = Threshold(lat1, lon1, brng1, name1)
-                cur.append((thr0, thr1))
-
-        with self._cache.open("wb") as fh:
-            pickle.dump(self._runways, fh)
-
-    def download_bluesky(self) -> None:  # coverage: ignore
-        self._runways = dict()
-        c = client.get(base_url + "/apt.zip")
-
-        with ZipFile(BytesIO(c.content)).open("apt.dat", "r") as fh:
-            for line in fh.readlines():
-                elems = (
-                    line.decode(encoding="ascii", errors="ignore")
-                    .strip()
-                    .split()
-                )
-                if len(elems) == 0:
-                    continue
-
-                # 1: AIRPORT
-                if elems[0] == "1":
-                    # Add airport to runway threshold database
-                    cur: List[Tuple[Threshold, Threshold]] = list()
-                    self._runways[elems[4]] = cur
-
-                if elems[0] == "100":
-                    # Only asphalt and concrete runways
-                    if int(elems[2]) > 2:
-                        continue
-
-                    lat0 = float(elems[9])
-                    lon0 = float(elems[10])
-                    # offset0 = float(elems[11])
-
-                    lat1 = float(elems[18])
-                    lon1 = float(elems[19])
-                    # offset1 = float(elems[20])
-
-                    # threshold information:
-                    #       ICAO code airport,
-                    #       Runway identifier,
-                    #       latitude, longitude, bearing
-                    # vertices: gives vertices of the box around the threshold
-
-                    # opposite runways are on the same line.
-                    #       RWY1: 8-11, RWY2: 17-20
-                    # Hence, there are two thresholds per line
-                    # thr0: First lat0 and lon0, then lat1 and lat1, offset=[11]
-                    # thr1: First lat1 and lat1, then lat0 and lon0, offset=[20]
-
-                    brng0 = bearing(lat0, lon0, lat1, lon1)
-                    brng1 = bearing(lat1, lon1, lat0, lon0)
-                    brng0 = brng0 if brng0 > 0 else 360 + brng0
-                    brng1 = brng1 if brng1 > 0 else 360 + brng1
-
-                    thr0 = Threshold(lat0, lon0, brng0, elems[8])
-                    thr1 = Threshold(lat1, lon1, brng1, elems[17])
-                    cur.append((thr0, thr1))
-
-        with self._cache.open("wb") as fh:
-            pickle.dump(self._runways, fh)
+        df.to_parquet(self._cache)

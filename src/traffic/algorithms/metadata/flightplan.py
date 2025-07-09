@@ -10,7 +10,7 @@ from typing import (
 import pandas as pd
 
 from ...core.flight import Flight
-from ...core.mixins import PointMixin
+from ...core.mixins import PointLike
 
 if TYPE_CHECKING:
     from ...data.basic.navaid import Navaids
@@ -84,7 +84,7 @@ class FlightPlanInference:
         self.buffer = buffer
 
     def all_aligned_segments(
-        self, traj: "Flight", all_points: Sequence[PointMixin]
+        self, traj: "Flight", all_points: Sequence[PointLike]
     ) -> pd.DataFrame:
         return pd.DataFrame.from_records(
             list(
@@ -122,7 +122,7 @@ class FlightPlanInference:
         )
 
     def most_probable_navpoints(
-        self, traj: "Flight", all_points: Sequence[PointMixin]
+        self, traj: "Flight", all_points: Sequence[PointLike]
     ) -> Iterator[pd.DataFrame]:
         table = self.all_aligned_segments(traj, all_points)
         for block in self.groupby_intervals(table):
