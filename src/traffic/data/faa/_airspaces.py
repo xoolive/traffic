@@ -9,7 +9,7 @@ from shapely.geometry import shape
 from shapely.ops import orient
 
 from ...core.airspace import Airspace, Airspaces, ExtrudedPolygon
-from . import ADDS_FAA_OpenData
+from ._adds_faa_opendata import ADDS_FAA_OpenData
 
 _log = logging.getLogger(__name__)
 
