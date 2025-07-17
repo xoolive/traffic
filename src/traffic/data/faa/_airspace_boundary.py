@@ -14,10 +14,7 @@ from . import ADDS_FAA_OpenData
 _log = logging.getLogger(__name__)
 
 
-class Airspace_Boundary(ADDS_FAA_OpenData, Airspaces):
-    id_ = "67885972e4e940b2aa6d74024901c561_0"
-    filename = "faa_airspace_boundary.json"
-
+class FAA_Airspace(ADDS_FAA_OpenData, Airspaces):
     def __init__(self, data: gpd.GeoDataFrame | None = None) -> None:
         super().__init__()
         self.data = data
@@ -78,3 +75,28 @@ class Airspace_Boundary(ADDS_FAA_OpenData, Airspaces):
                 airspaces[name] = airspace
 
         return airspaces
+
+
+class Airspace_Boundary(FAA_Airspace):
+    id_ = "67885972e4e940b2aa6d74024901c561_0"
+    filename = "faa_airspace_boundary.json"
+
+
+class Class_Airspace(FAA_Airspace):
+    id_ = "c6a62360338e408cb1512366ad61559e_0"
+    filename = "faa_class_airspace.json"
+
+
+class Special_Use_Airspace(FAA_Airspace):
+    id_ = "dd0d1b726e504137ab3c41b21835d05b_0"
+    filename = "faa_special_use_airspace.json"
+
+
+class Route_Airspace(FAA_Airspace):
+    id_ = "8bf861bb9b414f4ea9f0ff2ca0f1a851_0"
+    filename = "faa_route_airspace.json"
+
+
+class Prohibited_Airspace(FAA_Airspace):
+    id_ = "354ee0c77484461198ebf728a2fca50c_0"
+    filename = "faa_prohibited_airspace.json"
