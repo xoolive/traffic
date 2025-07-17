@@ -1,4 +1,3 @@
-import importlib
 from typing import Any
 
 from ._airspaces import (
@@ -24,9 +23,11 @@ __all__ = [
 ]
 
 
+# this is here for compatibility with the <=2.12.0 API to allow for stuff like
+# `from traffic.data.faa import class_airspace`
 def __getattr__(name: str) -> Any:
-    if name in __all__:
-        mod = importlib.import_module("._" + name, package="traffic.data.faa")
-        return getattr(mod, name.title())()
+    for cls in __all__:
+        if cls.lower() == name.lower():
+            return globals()[cls]()
 
     raise AttributeError()
