@@ -123,6 +123,14 @@ class Airport(FormatMixin, HBoxMixin, PointMixin, ShapelyMixin):
             nwr=[dict(aeroway=True, area="airport")],
         )
 
+    def __getstate__(self) -> object:
+        state = self.__dict__.copy()
+        state.pop("_openstreetmap", None)
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self.__dict__.update(state)
+
     def leaflet(self, **kwargs: Any) -> "LeafletGeoData":
         # The code is monkey-patched in src/visualize/leaflet.py
         raise ImportError(
