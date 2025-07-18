@@ -1,3 +1,5 @@
+import pickle
+
 import pytest
 
 import pandas as pd
@@ -206,3 +208,10 @@ def test_sub() -> None:
     diff = sw_id - diff
     assert diff is not None
     assert diff.icao24 == {"500142"}
+
+
+def test_pickling() -> None:
+    original = switzerland
+    p = pickle.dumps(original)
+    restored = pickle.loads(p)
+    assert restored is not None

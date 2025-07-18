@@ -1,3 +1,5 @@
+import pickle
+
 import pytest
 
 import pandas as pd
@@ -58,3 +60,10 @@ def test_country() -> None:
     a = Aircraft(pd.DataFrame(act)).get(reg)
     assert a is not None
     assert a["country"] == "Democratic Republic of the Congo"
+
+
+def test_pickling() -> None:
+    original = aircraft["PH-BHA"]
+    p = pickle.dumps(original)
+    restored = pickle.loads(p)
+    assert restored is not None

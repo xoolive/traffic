@@ -1,3 +1,5 @@
+import pickle
+
 import pytest
 
 from traffic.core import Airspace
@@ -40,3 +42,10 @@ def test_area() -> None:
 def test_nm() -> None:
     maastricht = nm_airspaces["EDYYUTAX"]
     assert maastricht.area > 1e11
+
+
+def test_pickling() -> None:
+    original = eurofirs["EHAA"]
+    p = pickle.dumps(original)
+    restored = pickle.loads(p)
+    assert restored is not None

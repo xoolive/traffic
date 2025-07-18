@@ -1,3 +1,4 @@
+import pickle
 import zipfile
 
 import pytest
@@ -69,3 +70,10 @@ def test_runway_bearing() -> None:
                 delta = 360 - delta
             # It can be as big as 25 degrees with parallel runways!
             assert delta < 25, f"Error with airport {apt_name} {runway.name}"
+
+
+def test_pickling() -> None:
+    original = airports["CDG"]
+    p = pickle.dumps(original)
+    restored = pickle.loads(p)
+    assert restored is not None
