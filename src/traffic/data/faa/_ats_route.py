@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from . import ADDS_FAA_OpenData
+from ._adds_faa_opendata import ADDS_FAA_OpenData
 
 
 class Ats_Route(ADDS_FAA_OpenData):
