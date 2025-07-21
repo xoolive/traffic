@@ -123,6 +123,9 @@ class Airport(FormatMixin, HBoxMixin, PointMixin, ShapelyMixin):
             nwr=[dict(aeroway=True, area="airport")],
         )
 
+    # Because of the lru_cache mechanism, pickling of Aircraft structures
+    # may fail, which can be critical when execution is distributed on
+    # many cores (ref PR #498)
     def __getstate__(self) -> object:
         state = self.__dict__.copy()
         state.pop("_openstreetmap", None)
