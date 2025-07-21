@@ -1,3 +1,5 @@
+import pickle
+
 import pytest
 
 from traffic.data import airways, eurofirs
@@ -60,3 +62,10 @@ def test_through_extent() -> None:
         short_un871["ERROR", "LARDA"]
     with pytest.raises(ValueError):
         short_un871["LARDA", "ERROR"]
+
+
+def test_pickling() -> None:
+    original = airways["L888"]
+    p = pickle.dumps(original)
+    restored = pickle.loads(p)
+    assert restored is not None

@@ -1,3 +1,5 @@
+import pickle
+
 from traffic.data import eurofirs, navaids
 
 
@@ -30,3 +32,10 @@ def test_iter() -> None:
     nav_ext = navaids.extent(extent)
     assert nav_ext is not None
     assert sum(1 for n in nav_ext if n.name == "GAI") == 1
+
+
+def test_pickling() -> None:
+    original = navaids["GAI"]
+    p = pickle.dumps(original)
+    restored = pickle.loads(p)
+    assert restored is not None

@@ -1,3 +1,4 @@
+import pickle
 import sys
 from operator import itemgetter
 from typing import Any, cast
@@ -665,3 +666,10 @@ def test_split_map() -> None:
     )
     assert result is not None
     assert 140 <= len(result) <= 160
+
+
+def test_pickling() -> None:
+    original = belevingsvlucht
+    p = pickle.dumps(original)
+    restored = pickle.loads(p)
+    assert restored is not None
