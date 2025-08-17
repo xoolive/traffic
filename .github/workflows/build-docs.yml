@@ -15,7 +15,7 @@ jobs:
   documentation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - run: |
           git fetch --prune --unshallow --tags
@@ -31,7 +31,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Download extra data from private repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: xoolive/traffic_data
           token: ${{ secrets.PRIVATE_TOKEN }}
