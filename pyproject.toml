@@ -85,11 +85,14 @@ xarray = ["xarray>=2024.10.0"]
 learning = ["scikit-learn>=1.5.2"]
 
 [build-system]
-requires = ["hatchling", "hatch_vcs"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-source = "vcs"
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
 
 [tool.ruff]
 line-length = 80

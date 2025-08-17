@@ -1,7 +1,7 @@
 import configparser
+import importlib.metadata
 import logging
 import os
-from importlib.metadata import version
 from pathlib import Path
 from typing import TypedDict
 
@@ -12,7 +12,11 @@ import pandas as pd
 
 from . import visualize  # noqa: F401
 
-__version__ = version("traffic")
+try:
+    __version__ = importlib.metadata.version(__name__)
+except importlib.metadata.PackageNotFoundError:
+    __version__ = "0.0.0"  # Fallback for development mode
+
 __all__ = ["cache_path", "config_dir", "config_file", "tqdm_style"]
 
 # Set up the library root logger
