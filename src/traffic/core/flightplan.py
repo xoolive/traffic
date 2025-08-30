@@ -122,11 +122,11 @@ class SpeedLevel(_ElementaryBlock):
 class Airway(_ElementaryBlock):
     pattern = r"\w{2,7}$"
 
-    def get(self) -> Optional[Route]:  # type: ignore
+    def get(self) -> Route:  # type: ignore
         from traffic.data import airways
 
         if not isinstance(self.elt[0], str):
-            return None
+            raise ValueError("Invalid airway")
 
         return airways.get(self.elt[0])
 
@@ -377,23 +377,22 @@ class FlightPlan(ShapelyMixin):
                 elif isinstance(e, STAR):
                     cumul.append(e.get(self.destination))
                 else:
-                    handle = e.get()
-                    if handle is None:
-                        warnings.warn(f"Missing information about {elts[i]}")
-                        continue
-
-                    previous, next_ = elts[i - 1], elts[i + 1]
-                    if previous is None or next_ is None:
-                        warnings.warn(f"Missing information around {elts[i]}")
-                        continue
-
                     try:
+                        handle = e.get()
+
+                        previous, next_ = elts[i - 1], elts[i + 1]
+                        if previous is None or next_ is None:
+                            raise ValueError(
+                                f"Missing information around {elts[i]}"
+                            )
+
                         cumul.append(handle[previous.name, next_.name])
                     except Exception as ex:
                         warnings.warn(
-                            f"Missing information around {elts[i]}: {ex}"
+                            f"Missing information around {elts[i]}: {ex}, "
+                            "Replace with DCT"
                         )
-                        continue
+                        e = Direct("DCT")
 
             if isinstance(e, DirectPoint):
                 from traffic.data import navaids
@@ -465,56 +464,31 @@ class FlightPlan(ShapelyMixin):
                 previous = elts[i - 1]
                 next_ = None if i + 1 >= len(elts) else elts[i + 1]
 
+                if isinstance(previous, SpeedLevel):
+                    warnings.warn(
+                        "Skipping invalid DCT after initial speed level"
+                    )
+                    continue
+
                 if previous is None or next_ is None:
                     warnings.warn(f"Missing information around {elts[i]}")
                     continue
 
+                reference = None
                 if len(cumul) > 0 and cumul[-1] is not None:
                     # avoid obvious duplicates
                     elt1, *_, elt2 = cumul[-1].shape.coords
-                    lon1, lat1, *_ = elt1
                     lon2, lat2, *_ = elt2
-                    lon1, lon2 = min(lon1, lon2), max(lon1, lon2)
-                    lat1, lat2 = min(lat1, lat2), max(lat1, lat2)
-                    buf = 10  # conservative
-                    # this one may return None
-                    # (probably no, but mypy is whining)
-                    n = navaids.extent(
-                        (
-                            lon1 - buf,
-                            lon2 + buf,
-                            lat1 - buf,
-                            lat2 + buf,
-                        )
-                    )
+                    reference = (lat2, lon2)
                 elif self.destination is not None and self.origin is not None:
                     from traffic.data import airports
 
                     origin = airports[self.origin]
-                    destination = airports[self.destination]
-                    assert origin is not None and destination is not None
+                    assert origin is not None
+                    reference = origin.latlon
 
-                    lat1, lon1 = origin.latlon
-                    lat2, lon2 = destination.latlon
-
-                    lat1, lat2 = min(lat1, lat2), max(lat1, lat2)
-                    lon1, lon2 = min(lon1, lon2), max(lon1, lon2)
-                    buf = 2
-                    n = navaids.extent(
-                        (
-                            lon1 - buf,
-                            lon2 + buf,
-                            lat1 - buf,
-                            lat2 + buf,
-                        )
-                    )
-                else:
-                    n = None
-
-                if n is None:
-                    n = navaids
-
-                p1, p2 = n.get(previous.name), n.get(next_.name)
+                p1 = navaids.get(previous.name, reference)
+                p2 = navaids.get(next_.name, reference)
                 if p1 is None or p2 is None:
                     warnings.warn(
                         f"Could not find {previous.name} or {next_.name}"

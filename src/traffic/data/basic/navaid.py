@@ -210,12 +210,23 @@ class Navaids(GeoDBMixin):
         return self._data
 
     @lru_cache()
-    def __getitem__(self, name: str) -> Navaid:
+    def __getitem__(self, key: str | tuple[str, tuple[float, float]]) -> Navaid:
+        if isinstance(key, tuple):
+            name, reference = key
+        else:
+            name = key
+            reference = None
         x = self.data.query(
             "description == @name.upper() or name == @name.upper()"
         )
         if x.shape[0] == 0:
             raise AttributeError(f"Point {name} not found")
+        if x.shape[0] > 1 and reference is not None:
+            x["distance"] = np.sqrt(
+                (x.latitude - reference[0]) ** 2
+                + (x.longitude - reference[1]) ** 2
+            )
+            x = x.sort_values("distance").head(1).drop(columns=["distance"])
         dic = dict(x.iloc[0])
         for key, value in dic.items():
             if isinstance(value, np.float64):
@@ -231,7 +242,9 @@ class Navaids(GeoDBMixin):
         _log.warning("Use .get() function instead", DeprecationWarning)
         return self.get(name)
 
-    def get(self, name: str) -> Navaid:
+    def get(
+        self, name: str, reference: None | tuple[float, float] = None
+    ) -> Navaid:
         """Search for a navaid from all alternative data sources.
 
         >>> from traffic.data import navaids
@@ -258,7 +271,10 @@ class Navaids(GeoDBMixin):
                 if value_ext is None:
                     continue
                 value = value_ext
-            alt = value[name]
+            if reference is not None:
+                alt = value[name, reference]
+            else:
+                alt = value[name]
             if alt is not None:
                 return alt
         raise AttributeError(f"Point {name} not found")

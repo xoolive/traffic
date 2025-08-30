@@ -223,3 +223,41 @@ def test_points() -> None:
     if all_points != points:
         # weird stuff on travis only...
         print(all_points, points)
+
+
+@pytest.mark.skip(reason="Fix for situation with AIXM2508")
+def test_initial_dct() -> None:
+    from traffic.data import aixm_airways, aixm_navaids  # noqa: F401
+
+    fp = FlightPlan(
+        "M079F350 DCT OSKUM DCT RATSU/N0462F350 DCT BARKU/N0460F350 DCT EVTAR N96 ROKAN M982 TOPPA DCT SUTAL DCT GTQ DCT OBORN/N0472F310 DCT DEVDI DCT BASGO Z424 RIXUV RIXUV3E"  # noqa: E501
+    )
+    # elts = fp.decompose()
+    points = fp.all_points
+    assert any(p.name == "OSKUM" for p in points)
+
+
+@pytest.mark.skip(reason="Fix for situation with AIXM2508")
+def test_missing_point() -> None:
+    from traffic.data import aixm_airways, aixm_navaids  # noqa: F401
+
+    fp = FlightPlan(
+        "N0462F320 IXIDA1N IXIDA DCT TOSDI N745 ZMR N873 RONSI/N0462F340 N873 DELOG DCT DIDIG/N0461F360 DCT ARDOD UN873 ADUTO/N0450F350 DCT VICOT DCT MIKNA N851 PELUP Z226 NILUG"  # noqa: E501
+    )
+    # elts = fp.decompose()
+    points = fp.all_points
+    assert any(p.name == "MIKNA" for p in points)
+
+
+@pytest.mark.skip(reason="Fix for situation with AIXM2508")
+def test_missing_airway() -> None:
+    import warnings
+
+    from traffic.data import aixm_airways, aixm_navaids  # noqa: F401
+
+    fp = FlightPlan(
+        "N0503F400 NURMO6Q NURMO UN874 VEKIN UN873 ADUTO N873 VICOT/N0501F410 DCT BLUFA DCT ALASA DCT KOKAT/K0954F410 N746 ARGIP T821 NAREK/K0934F450 B946 LAGNI G719 TARSA R809 PTG G490 BRT B478 KTN A91 AGINO A810 TELOK/K0933S1370 A345 HLD B451 KETOV/K0928S1250 B451 BISUN/K0909F450 B451 IGROD/N0488F450 Y301 REALU/N0493F430 Y305 FINGA Y12 MBE Y121 SWING"  # noqa: E501
+    )
+    points = fp.all_points
+    warnings.warn(", ".join(point.name for point in points))
+    assert any(p.name == "KOKAT" for p in points)
