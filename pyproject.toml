@@ -43,8 +43,8 @@ dependencies = [
   "typing-extensions>=4.12.2",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
   "codecov>=2.1.13",
   "mypy>=1.13.0",
   "pre-commit>=4.0.1",
