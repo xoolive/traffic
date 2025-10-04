@@ -86,6 +86,7 @@ jobs:
     name: (fast) python-${{ matrix.python-version }} on ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
+    needs: cache_traffic
 
     strategy:
       matrix:
@@ -140,6 +141,7 @@ jobs:
     name: (full) python-${{ matrix.python-version }} on ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}
+    needs: cache_traffic
 
     if: ${{ github.event_name != 'pull_request_target' }}
 
