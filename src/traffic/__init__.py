@@ -111,7 +111,7 @@ def get_config(
 cache_dir = get_config(**NAME_RESOLUTION["cache_dir"])
 if cache_dir is None:
     cache_dir = user_cache_dir("traffic")
-cache_path = Path(cache_dir)
+cache_path = Path(cache_dir).expanduser()
 if not cache_path.exists():
     cache_path.mkdir(parents=True)
 
