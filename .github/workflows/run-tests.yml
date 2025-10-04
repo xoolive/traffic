@@ -47,6 +47,41 @@ jobs:
       - name: Type checking
         run: uv run mypy src tests
 
+  cache_traffic:
+    name: Setup traffic cache
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      cache-hit: ${{ steps.cache-folder.outputs.cache-hit }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.12
+
+      - name: Cache folder for traffic
+        uses: actions/cache@v4
+        id: cache-folder
+        with:
+          path: |
+            ~/.cache/traffic/
+          key: traffic-${{ hashFiles('uv.lock') }}
+
+      - name: Install project and fill cache
+        if: steps.cache-folder.outputs.cache-hit != 'true'
+        run: |
+          uv sync --dev --all-extras
+          uv run traffic cache --fill
+
   tests_fast:
     name: (fast) python-${{ matrix.python-version }} on ${{ matrix.os }}
 
@@ -99,7 +134,6 @@ jobs:
           LD_LIBRARY_PATH: /usr/local/lib
           TRAFFIC_NM_PATH: ""
         run: |
-          uv run traffic cache --fill  # download files to have in cache first
           uv run pytest
 
   tests_full:
@@ -187,7 +221,6 @@ jobs:
           LD_LIBRARY_PATH: /usr/local/lib
           TRAFFIC_NM_PATH: ${{ github.workspace }}/traffic_data/airac_2111
         run: |
-          uv run traffic cache --fill  # download files to have in cache first
           uv run pytest --cov --cov-report xml -m ""
 
       - name: Upload coverage to Codecov

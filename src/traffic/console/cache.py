@@ -48,8 +48,16 @@ def main(args_list: List[str]) -> None:
 
     if args.fill:
         from traffic.data import aircraft, airports, navaids
+        from traffic.data.datasets import landing_zurich_2019
+        from traffic.data.datasets.scat import SCAT
 
         p = airports["EHAM"]
         n = navaids["NARAK"]
         a = aircraft["F-HNAV"]
         assert p is not None and n is not None and a is not None
+
+        s = SCAT("scat20161015_20161021.zip", nflights=10)
+        assert s is not None
+
+        f = landing_zurich_2019[0]
+        assert f is not None
