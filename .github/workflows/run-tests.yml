@@ -30,11 +30,6 @@ jobs:
         with:
           python-version: 3.12
 
-      - name: Ubuntu system dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y libgdal-dev libgeos-dev libproj-dev proj-bin proj-data
-
       - name: Install the project
         run: |
           uv sync --dev --all-extras
@@ -48,7 +43,7 @@ jobs:
         run: uv run mypy src tests
 
   cache_traffic:
-    name: Setup traffic cache
+    name: setup traffic cache
 
     runs-on: ubuntu-latest
 
@@ -133,6 +128,7 @@ jobs:
       - name: Run tests
         env:
           LD_LIBRARY_PATH: /usr/local/lib
+          TRAFFIC_CACHE_PATH: ~/.cache/traffic/
           TRAFFIC_NM_PATH: ""
         run: |
           uv run pytest
@@ -221,6 +217,7 @@ jobs:
       - name: Run tests
         env:
           LD_LIBRARY_PATH: /usr/local/lib
+          TRAFFIC_CACHE_PATH: ~/.cache/traffic/
           TRAFFIC_NM_PATH: ${{ github.workspace }}/traffic_data/airac_2111
         run: |
           uv run pytest --cov --cov-report xml -m ""
