@@ -128,7 +128,7 @@ jobs:
       - name: Run tests
         env:
           LD_LIBRARY_PATH: /usr/local/lib
-          TRAFFIC_CACHE_PATH: ~/.cache/traffic/
+          TRAFFIC_CACHE_PATH: ${{ runner.os == 'Windows' && '$env:USERPROFILE/.cache/traffic/' || '$HOME/.cache/traffic/' }}
           TRAFFIC_NM_PATH: ""
         run: |
           uv run pytest
@@ -217,7 +217,7 @@ jobs:
       - name: Run tests
         env:
           LD_LIBRARY_PATH: /usr/local/lib
-          TRAFFIC_CACHE_PATH: ~/.cache/traffic/
+          TRAFFIC_CACHE_PATH: ${{ runner.os == 'Windows' && '$env:USERPROFILE/.cache/traffic/' || '$HOME/.cache/traffic/' }}
           TRAFFIC_NM_PATH: ${{ github.workspace }}/traffic_data/airac_2111
         run: |
           uv run pytest --cov --cov-report xml -m ""
