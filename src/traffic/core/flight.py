@@ -3408,10 +3408,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
                 if between is not None:
                     yield between
                 prev_t1, prev_t2 = t1, t2
-            elif prev_t2 is None:
+            elif prev_t2 is None or prev_t1 is None:
                 prev_t1, prev_t2 = t1, t2
             else:
-                prev_t1, prev_t2 = min(prev_t1, t1), max(prev_t2, t2)  # type: ignore
+                prev_t1, prev_t2 = min(prev_t1, t1), max(prev_t2, t2)
 
         if prev_t2 is not None:
             between = self.between(prev_t1, prev_t2, strict=strict)

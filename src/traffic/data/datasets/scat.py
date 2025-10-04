@@ -85,7 +85,7 @@ class SCAT:
             )
         )
 
-        fpl_base, *_ = decoded["fpl"]["fpl_base"]
+        fpl_base, *_ = decoded["fpl"]["fpl_base"]  # noqa: RUF059
         df = (
             pd.json_normalize(decoded["plots"])
             .rename(columns=rename_columns)

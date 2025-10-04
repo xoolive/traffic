@@ -769,7 +769,6 @@ class GeographyMixin(DataFrameMixin):
 
 class GeoDBMixin(DataFrameMixin):
     _extent: None | tuple[float, float, float, float] = None
-    __slots__ = ()
 
     def extent(
         self,

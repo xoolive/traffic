@@ -467,8 +467,6 @@ def inside_bbox(
     elif hasattr(bounds, "shape"):
         bounds = bounds.shape.bounds
 
-    west, south, east, north = bounds
-
     query = "{0} <= longitude <= {2} and {1} <= latitude <= {3}"
     query = query.format(*bounds)
 
