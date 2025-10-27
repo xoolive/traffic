@@ -513,13 +513,19 @@ class GeographyMixin(DataFrameMixin):
     __slots__ = ()
 
     def projection(self, proj: str = "lcc") -> pyproj.Proj:
+        lon_unwrap = np.degrees(np.unwrap(np.radians(self.data.longitude.dropna())))
+        lon0 = lon_unwrap.mean()
+        lon1 = lon_unwrap.min()
+        lon2 = lon_unwrap.max()
         return pyproj.Proj(
-            proj=proj,
-            ellps="WGS84",
-            lat_1=self.data.latitude.min(),
-            lat_2=self.data.latitude.max(),
-            lat_0=self.data.latitude.mean(),
-            lon_0=self.data.longitude.mean(),
+            proj=proj, 
+            ellps="WGS84", 
+            lat_0=self.data.latitude.mean(), 
+            lat_1=self.data.latitude.min(), 
+            lat_2=self.data.latitude.max(), 
+            lon_0=lon0, 
+            lon_1=lon1, 
+            lon_2=lon2
         )
 
     def compute_xy(
