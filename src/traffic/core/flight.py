@@ -1756,19 +1756,21 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         """
         if projection is not None:
             if isinstance(projection, str):
-                lon_unwrap = np.degrees(np.unwrap(np.radians(self.data.longitude.dropna())))
+                lon_unwrap = np.degrees(
+                    np.unwrap(np.radians(self.data.longitude.dropna()))
+                )
                 lon0 = lon_unwrap.mean()
                 lon1 = lon_unwrap.min()
                 lon2 = lon_unwrap.max()
                 projection = pyproj.Proj(
-                    proj=projection, 
-                    ellps="WGS84", 
-                    lat_0=self.data.latitude.mean(), 
-                    lat_1=self.data.latitude.min(), 
-                    lat_2=self.data.latitude.max(), 
-                    lon_0=lon0, 
-                    lon_1=lon1, 
-                    lon_2=lon2
+                    proj=projection,
+                    ellps="WGS84",
+                    lat_0=self.data.latitude.mean(),
+                    lat_1=self.data.latitude.min(),
+                    lat_2=self.data.latitude.max(),
+                    lon_0=lon0,
+                    lon_1=lon1,
+                    lon_2=lon2,
                 )
             self = self.compute_xy(projection=projection)
 
