@@ -1,0 +1,25 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Olive
+  given-names: Xavier
+  orcid: "https://orcid.org/0000-0002-2335-5774"
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Olive
+    given-names: Xavier
+    orcid: "https://orcid.org/0000-0002-2335-5774"
+  date-published: 2019-07-05
+  doi: 10.21105/joss.01518
+  issn: 2475-9066
+  issue: 39
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 1518
+  title: traffic, a toolbox for processing and analysing air traffic data
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.01518"
+  volume: 4
+title: traffic, a toolbox for processing and analysing air traffic data
