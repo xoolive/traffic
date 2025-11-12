@@ -9,10 +9,10 @@ from typing import (
     Any,
     Dict,
     Iterator,
-    List,
     Literal,
     NamedTuple,
     Optional,
+    SupportsIndex,
     Tuple,
     TypeVar,
     Union,
@@ -50,7 +50,7 @@ class AirspaceInfo(NamedTuple):
     type: Optional[str]
 
 
-AirspaceList = List[ExtrudedPolygon]
+AirspaceList = list[ExtrudedPolygon]
 
 
 A = TypeVar("A", bound="Airspaces")
@@ -144,12 +144,14 @@ class Airspace(ShapelyMixin):
     def __init__(
         self,
         name: str,
-        elements: List[ExtrudedPolygon],
+        elements: ExtrudedPolygon | AirspaceList,
         type_: Optional[str] = None,
         designator: Optional[str] = None,
         properties: Optional[Dict[str, Any]] = None,
     ) -> None:
-        self.elements: List[ExtrudedPolygon] = elements
+        if isinstance(elements, ExtrudedPolygon):
+            elements = [elements]
+        self.elements: AirspaceList = elements
         self.designator: Optional[str] = designator
         self.name: str = name
         self.type: Optional[str] = type_
@@ -175,7 +177,7 @@ class Airspace(ShapelyMixin):
         shape = self.flatten()
 
         kwargs = {**dict(weight=3), **kwargs}
-        coords: List[Any] = []
+        coords: list[Any] = []
 
         def unfold(shape: Polygon) -> Iterator[Any]:
             yield shape.exterior
@@ -215,8 +217,10 @@ class Airspace(ShapelyMixin):
 
         return m
 
-    def __getitem__(self, *args: int) -> ExtrudedPolygon:
-        return self.elements.__getitem__(*args)
+    def __getitem__(
+        self, idx: slice | SupportsIndex
+    ) -> ExtrudedPolygon | AirspaceList:
+        return self.elements.__getitem__(idx)
 
     def __add__(self, other: Union[Literal[0], "Airspace"]) -> "Airspace":
         if other == 0:
@@ -415,7 +419,7 @@ def unary_union_with_alt(polyalt: AirspaceList) -> AirspaceList:
     if len(slices) == 1 and slices[0] is None:
         simple_union = unary_union([p for p, *_ in polyalt])
         return [ExtrudedPolygon(simple_union, float("-inf"), float("inf"))]
-    results: List[ExtrudedPolygon] = []
+    results: AirspaceList = []
     for low, up in pairwise(slices):
         matched_poly = [
             p
