@@ -804,7 +804,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...
 
     @lazy_evaluation()
-    def resample(self, /, rule: Union[str, int] = "1s"):  # type: ignore
+    def resample(self, /, *args, **kwargs):  # type: ignore
         ...
 
     @lazy_evaluation()
