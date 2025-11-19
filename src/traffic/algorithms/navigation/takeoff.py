@@ -289,15 +289,15 @@ class TrackBasedRunwayDetection:
                 # Adjusted to make the method more robust; query + iloc[0] very
                 # rarely caused an out-of-bounds IndexError.
 
-                closest_runway = candidate_runways.query(
+                candidates = candidate_runways.query(
                     f"(abs(longitude-{lon_1})<{eps}) or "
                     f"(abs(longitude-{lon_2})<{eps})"
-                )["name"]
+                )
 
-                if closest_runway.empty:
+                if candidates.empty:
                     return None
 
-                closest_runway = closest_runway.iloc[0]
+                closest_runway = candidates.iloc[0].name
 
         # If adv_filtering is activated, check for landing/GA pattern
         if self.adv_filtering:
