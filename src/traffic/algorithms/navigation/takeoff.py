@@ -4,6 +4,7 @@ from typing import Iterator
 import pitot.geodesy as geo
 
 import numpy as np
+import pandas as pd
 from shapely.geometry import Polygon
 
 from ...core.distance import minimal_angular_difference
@@ -155,6 +156,9 @@ class TrackBasedRunwayDetection:
     :param min_vert_rate_ftmin: Minimum vertical rate to consider.
     :param maximum_bearing_deg: Maximum bearing difference to consider.
     :param max_dist_nm: Maximum distance from the airport to consider.
+    :param adv_filtering: Advanced filtering to remove landings and go-arounds.
+    :param adv_alt_th: Minimum altitude to consider a flight as a
+      landing/go-around candidate.
 
     >>> from traffic.data.samples import elal747
     >>> takeoff = elal747.takeoff(method="track_based", airport="LIRF").next()
@@ -176,6 +180,8 @@ class TrackBasedRunwayDetection:
         min_vert_rate_ftmin: float = 257,
         max_bearing_deg: float = 10,
         max_dist_nm: float = 5,
+        adv_filtering: bool = False,
+        adv_alt_th: float = 500,
     ):
         from traffic.data import airports
 
@@ -187,11 +193,14 @@ class TrackBasedRunwayDetection:
         self.min_vert_rate_ftmin = min_vert_rate_ftmin
         self.max_bearing_deg = max_bearing_deg
         self.max_dist_nm = max_dist_nm
+        self.adv_filtering = adv_filtering
+        self.adv_alt_th = adv_alt_th
 
     def apply(self, flight: "Flight") -> Iterator["Flight"]:
         # if not self.takeoff_from(self.airport):
         #     return None
         alt_max = self.airport.altitude + self.max_ft_above_airport
+
         if self.airport.runways is None:
             return None
         runways = self.airport.runways.data
@@ -276,8 +285,57 @@ class TrackBasedRunwayDetection:
                 # candidate_runways =
                 # lat/lon that is closest to the closest bounds
                 eps = 1 / 1000
+
+                # Adjusted to make the method more robust; query + iloc[0] very
+                # rarely caused an out-of-bounds IndexError.
+
                 closest_runway = candidate_runways.query(
                     f"(abs(longitude-{lon_1})<{eps}) or "
                     f"(abs(longitude-{lon_2})<{eps})"
-                )["name"].iloc[0]
+                )["name"]
+
+                if closest_runway.empty:
+                    return None
+
+                closest_runway = closest_runway.iloc[0]
+
+        # If adv_filtering is activated, check for landing/GA pattern
+        if self.adv_filtering:
+            # Define time window 60s to 30s before start time of takeoff
+            # candidate
+            start_time = filtered_flight.start
+            if not start_time:
+                return None
+            ts = start_time - pd.Timedelta("60s")
+            es = start_time - pd.Timedelta("30s")
+
+            query_str_ga = "timestamp < @es and timestamp > @ts"
+
+            approach_snippet = flight.query(
+                query_str_ga, local_dict={"ts": ts, "es": es}
+            )
+            # Check if the snippet is not empty.
+            if not (approach_snippet is None or approach_snippet.data.empty):
+                # Calculate median altitude of snippet.
+                median_alt = approach_snippet.data["geoaltitude"].median()
+
+                if median_alt is not None and pd.notna(median_alt):
+                    # Define altitude max for lanidng/GA
+                    adv_minimum_alt = self.airport.altitude + self.adv_alt_th
+
+                    # If median altitude is above threshold, flight is a
+                    # candidate for landing/ GA.
+                    if median_alt > adv_minimum_alt:
+                        # Use median groundspeed as an additional filter for
+                        # noisy data (high altitude + gs > 250 kts).
+                        median_gsp = approach_snippet.data[
+                            "groundspeed"
+                        ].median()
+                        if median_gsp is not None and pd.notna(median_gsp):
+                            # If median groundspeed is < 250 kts or != 0,
+                            # classify it as landing/GA.
+                            if median_gsp <= 250:
+                                if median_gsp != 0:
+                                    return None
+
         yield filtered_flight.assign(runway=closest_runway)
