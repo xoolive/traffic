@@ -12,7 +12,7 @@ authors = [{ name = "Xavier Olive", email = "git@xoolive.org" }]
 tangram_landing = "tangram_landing:plugin"
 
 [tool.uv.sources]
-tangram_core = { path = "../../../tangram/packages/tangram_core", editable = true }
+# tangram_core = { path = "../../../tangram/packages/tangram_core", editable = true }
 traffic = { path = "../..", editable = true }
 
 [tool.hatch.build.targets.sdist]
