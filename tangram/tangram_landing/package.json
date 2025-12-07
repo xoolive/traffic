@@ -1,0 +1,13 @@
+{
+  "name": "@open-aviation/tangram-landing",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "main": "src/tangram_landing/index.ts",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@open-aviation/tangram-core": "^0.2.0"
+  }
+}

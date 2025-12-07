@@ -220,7 +220,7 @@ class LandingAnyAttempt:
       altitude of the candidate airports.
 
     >>> from traffic.data.samples import belevingsvlucht
-    >>> attempts = belevingsvlucht.landing(method="any")
+    >>> attempts = belevingsvlucht.landing(method="anywhere")
     >>> for i, attempt in enumerate(attempts):
     ...     print(f"Step {i}: {attempt.airport_max} runway {attempt.ILS_max}")
     Step 0: EHLE runway 23

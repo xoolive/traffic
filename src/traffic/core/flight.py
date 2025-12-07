@@ -2366,7 +2366,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     def landing(
         self,
         *args: Any,
-        method: Literal["default", "aligned_on_ils", "any", "runway_change"]
+        method: Literal[
+            "default", "aligned_on_ils", "anywhere", "runway_change"
+        ]
         | ApplyIteratorBase = "default",
         **kwargs: Any,
     ) -> Iterator["Flight"]:
@@ -2430,7 +2432,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         method_dict = dict(
             default=landing.LandingAlignedOnILS,
             aligned_on_ils=landing.LandingAlignedOnILS,
-            any=landing.LandingAnyAttempt,
+            anywhere=landing.LandingAnyAttempt,
             runway_change=landing.LandingWithRunwayChange,
         )
 
