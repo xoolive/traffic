@@ -188,14 +188,14 @@ at the same or at different airports.
 
 .. jupyter-execute::
 
-    squawk7700["AFR1145_20190820"].landing(method="any")
+    squawk7700["AFR1145_20190820"].landing(method="anywhere")
 
 .. jupyter-execute::
 
     squawk7700["AFR1145_20190820"].map_leaflet(
         zoom=9,
         airport="ELLX",
-        highlight=dict(red='landing(method="any")'),
+        highlight=dict(red='landing(method="anywhere")'),
     )
 
 | Explanation about this particular situation is available:
