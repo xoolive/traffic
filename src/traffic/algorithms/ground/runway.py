@@ -38,11 +38,11 @@ class RunwayAlignment:
     ----------
     airport : str | Airport
         ICAO/IATA code or airport instance providing runway geometry.
-    width_m : float, default 60.0
+    rwy_width_m : float, default 60.0
         Full runway width in meters used to build rectangular footprints.
     min_points : int, default 3
         Minimum consecutive trajectory points inside the runway polygon.
-    min_duration : timedelta | str, default "8s"
+    min_duration : timedelta | str, default "5s"
         Minimum segment duration after point filtering.
     overlap_tolerance : timedelta | str, default "1s"
         Maximum gap when merging overlapping/adjacent runs per runway.
@@ -57,7 +57,7 @@ class RunwayAlignment:
         self,
         airport: str | Airport,
         *,
-        width_m: float = 60.0,
+        rwy_width_m: float = 60.0,
         min_points: int = 3,
         min_duration: pd.Timedelta | str = "5s",
         overlap_tolerance: pd.Timedelta | str = "1s",
@@ -67,7 +67,7 @@ class RunwayAlignment:
         self.airport = (
             airports[airport] if isinstance(airport, str) else airport
         )
-        self.width_m = width_m
+        self.rwy_width_m = rwy_width_m
         self.min_points = min_points
         self.min_duration = pd.to_timedelta(min_duration)
         self.overlap_tolerance = pd.to_timedelta(overlap_tolerance)
@@ -78,7 +78,7 @@ class RunwayAlignment:
         ):
             raise RuntimeError("Airport or runway information missing")
 
-    def _runway_polygon(self, thr0, thr1, width_m: float) -> Polygon:
+    def _runway_polygon(self, thr0, thr1, rwy_width_m: float) -> Polygon:
         line = LineString(
             [(thr0.longitude, thr0.latitude), (thr1.longitude, thr1.latitude)]
         )
@@ -103,15 +103,13 @@ class RunwayAlignment:
             length_m = line_local.length
 
             rect_local = box(
-                -length_m / 2, -width_m / 2, length_m / 2, width_m / 2
+                -length_m / 2, -rwy_width_m / 2, length_m / 2, rwy_width_m / 2
             )
             rect_rotated = rotate(
                 rect_local, angle, origin=(0, 0), use_radians=False
             )
             center = line_local.interpolate(0.5, normalized=True)
-            rect_shifted = translate(
-                rect_rotated, xoff=center.x, yoff=center.y
-            )
+            rect_shifted = translate(rect_rotated, xoff=center.x, yoff=center.y)
             polygon = transform(to_wgs84.transform, rect_shifted)
 
         return polygon if polygon.is_valid else make_valid(polygon)
@@ -148,7 +146,7 @@ class RunwayAlignment:
         found_segments: list[tuple[pd.Timestamp, pd.Timestamp, str]] = []
 
         for thr0, thr1 in getattr(self.airport.runways, "_runways", []):
-            rwy_polygon = self._runway_polygon(thr0, thr1, self.width_m)
+            rwy_polygon = self._runway_polygon(thr0, thr1, self.rwy_width_m)
             if rwy_polygon.is_empty:
                 continue
 
