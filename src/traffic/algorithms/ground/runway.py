@@ -1,58 +1,77 @@
+import math
 from typing import TYPE_CHECKING, Iterator, Union
 
 import pitot.geodesy as geo
 
 import numpy as np
 import pandas as pd
-from shapely import LineString, MultiLineString, Point
+import pyproj
+from shapely import LineString, MultiLineString, Point, Polygon
+from shapely.affinity import rotate, translate
+from shapely.geometry import box
+from shapely.ops import transform
+from shapely.prepared import prep
+from shapely.validation import make_valid
 
 from ...core import Flight
 from ...core.structure import Airport
+from ...data.basic.runways import Threshold
 
 if TYPE_CHECKING:
     from cartes.osm import Overpass
 
 
 class RunwayAlignment:
-    """Iterates on all segments of trajectory matching a runway of the
-    given airport.
+    """Find trajectory segments aligned with airport runways.
 
-    Example usage:
+    Methodology (mirrors :meth:`Flight.aligned_on_runway` from the other
+    project):
+    - Build a flat-ended rectangle for each runway centerline using its true
+      length and the provided full width (meters).
+    - Test each trajectory point for inclusion in the runway polygon
+      (prepared geometry for speed).
+    - Keep contiguous runs with at least ``min_points``; then drop runs shorter
+      than ``min_duration``.
+    - Merge overlapping/adjacent runs per runway within ``overlap_tolerance``.
+    - Yield flight segments annotated with ``rwy`` (e.g., ``"04/22"``).
 
-    .. code:: python
+    Parameters
+    ----------
+    airport : str | Airport
+        ICAO/IATA code or airport instance providing runway geometry.
+    rwy_width_m : float, default 60.0
+        Full runway width in meters used to build rectangular footprints.
+    min_points : int, default 3
+        Minimum consecutive trajectory points inside the runway polygon.
+    min_duration : timedelta | str, default "5s"
+        Minimum segment duration after point filtering.
+    overlap_tolerance : timedelta | str, default "1s"
+        Maximum gap when merging overlapping/adjacent runs per runway.
 
-        >>> from traffic.data.samples import belevingsvlucht
-
-    Count the number of segments aligned with a runway (take-off or landing):
-
-    .. code:: python
-
-        >>> sum(1 for _ in belevingsvlucht.aligned("EHAM", method="runway"))
-        2
-
-    Get timestamps associated with the first segment matching a runway:
-
-    .. code:: python
-
-        >>> segment = belevingsvlucht.next("aligned('EHAM', method='runway')")
-        >>> f"{segment.start:%H:%M %Z}, {segment.stop:%H:%M %Z}"
-        '20:17 UTC, 20:18 UTC'
-
-    Get the minimum altitude for the aircraft landing:
-
-    .. code:: python
-
-        >>> segment.mean('altitude')  # Schiphol below the sea level
-        -26.0
-
+    Notes
+    -----
+    Both the point-count and duration thresholds must be satisfied for a
+    segment to be yielded.
     """
 
-    def __init__(self, airport: str | Airport):
+    def __init__(
+        self,
+        airport: str | Airport,
+        *,
+        rwy_width_m: float = 60.0,
+        min_points: int = 3,
+        min_duration: pd.Timedelta | str = "5s",
+        overlap_tolerance: pd.Timedelta | str = "1s",
+    ):
         from ...data import airports
 
         self.airport = (
             airports[airport] if isinstance(airport, str) else airport
         )
+        self.rwy_width_m = rwy_width_m
+        self.min_points = min_points
+        self.min_duration = pd.to_timedelta(min_duration)
+        self.overlap_tolerance = pd.to_timedelta(overlap_tolerance)
         if (
             self.airport is None
             or self.airport.runways is None
@@ -60,38 +79,136 @@ class RunwayAlignment:
         ):
             raise RuntimeError("Airport or runway information missing")
 
-    def apply(self, flight: Flight) -> Iterator[Flight]:
-        if isinstance(self.airport.runways.shape, LineString):
-            candidate_shapes = [
-                LineString(list(flight.xy_time)).intersection(
-                    self.airport.runways.shape.buffer(5e-4)
-                )
-            ]
-        else:
-            candidate_shapes = [
-                LineString(list(flight.xy_time)).intersection(
-                    on_runway.buffer(5e-4)
-                )
-                for on_runway in self.airport.runways.shape.geoms
-            ]
+    def _runway_polygon(
+        self, thr0: Threshold, thr1: Threshold, rwy_width_m: float
+    ) -> Polygon:
+        line = LineString(
+            [(thr0.longitude, thr0.latitude), (thr1.longitude, thr1.latitude)]
+        )
+        centroid = line.centroid
+        proj_local = pyproj.Proj(
+            proj="aeqd", lat_0=centroid.y, lon_0=centroid.x
+        )
+        to_local = pyproj.Transformer.from_proj(
+            pyproj.Proj("epsg:4326"), proj_local, always_xy=True
+        )
+        to_wgs84 = pyproj.Transformer.from_proj(
+            proj_local, pyproj.Proj("epsg:4326"), always_xy=True
+        )
 
-        for intersection in candidate_shapes:
-            if intersection.is_empty:
+        line_local = transform(to_local.transform, line)
+        if line_local.length == 0:
+            polygon = line
+        else:
+            x0, y0 = line_local.coords[0]
+            x1, y1 = line_local.coords[-1]
+            angle = math.degrees(math.atan2(y1 - y0, x1 - x0))
+            length_m = line_local.length
+
+            rect_local = box(
+                -length_m / 2, -rwy_width_m / 2, length_m / 2, rwy_width_m / 2
+            )
+            rect_rotated = rotate(
+                rect_local, angle, origin=(0, 0), use_radians=False
+            )
+            center = line_local.interpolate(0.5, normalized=True)
+            rect_shifted = translate(rect_rotated, xoff=center.x, yoff=center.y)
+            polygon = transform(to_wgs84.transform, rect_shifted)
+
+        return polygon if polygon.is_valid else make_valid(polygon)
+
+    def _contiguous_runs(self, mask: np.ndarray) -> list[tuple[int, int]]:
+        indices = np.flatnonzero(mask)
+        if indices.size == 0:
+            return []
+        runs: list[tuple[int, int]] = []
+        start, prev = indices[0], indices[0]
+        for current in indices[1:]:
+            if current == prev + 1:
+                prev = current
                 continue
-            if isinstance(intersection, LineString):
-                (*_, start), *_, (*_, stop) = intersection.coords
-                segment = flight.between(start, stop, strict=False)
-                if segment is not None:
-                    yield segment
-            if isinstance(intersection, MultiLineString):
-                (*_, start), *_, (*_, stop) = intersection.geoms[0].coords
-                for chunk in intersection.geoms:
-                    (*_, start_bak), *_, (*_, stop) = chunk.coords
-                    if stop - start > 40:  # crossing runways and back
-                        start = start_bak
-                segment = flight.between(start, stop, strict=False)
-                if segment is not None:
-                    yield segment
+            runs.append((start, prev))
+            start = prev = current
+        runs.append((start, prev))
+        return runs
+
+    def apply(self, flight: Flight) -> Iterator[Flight]:
+        """Yield flight segments aligned with any runway of the configured
+        airport."""
+        data = (
+            flight.data.query("longitude.notnull() and latitude.notnull()")
+            .sort_values("timestamp")
+            .reset_index(drop=True)
+        )
+        if data.shape[0] == 0:
+            return None
+
+        coords = data[["longitude", "latitude"]].to_numpy()
+        timestamps = data["timestamp"]
+
+        found_segments: list[tuple[pd.Timestamp, pd.Timestamp, str]] = []
+
+        for thr0, thr1 in getattr(self.airport.runways, "_runways", []):
+            rwy_polygon = self._runway_polygon(thr0, thr1, self.rwy_width_m)
+            if rwy_polygon.is_empty:
+                continue
+
+            rwy_name = f"{thr0.name}/{thr1.name}"
+            prepared = prep(rwy_polygon)
+            mask = np.fromiter(
+                (prepared.intersects(Point(lon, lat)) for lon, lat in coords),
+                dtype=bool,
+                count=len(coords),
+            )
+
+            for start_idx, stop_idx in self._contiguous_runs(mask):
+                if stop_idx - start_idx + 1 < self.min_points:
+                    continue
+                start_ts = timestamps.iloc[start_idx]
+                stop_ts = timestamps.iloc[stop_idx]
+                found_segments.append((start_ts, stop_ts, rwy_name))
+
+        if len(found_segments) == 0:
+            return None
+
+        tolerance = self.overlap_tolerance
+        min_duration = self.min_duration
+        per_rwy: dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]] = {}
+
+        for start_ts, stop_ts, rwy_name in found_segments:
+            if stop_ts - start_ts < min_duration:
+                continue
+            per_rwy.setdefault(rwy_name, []).append((start_ts, stop_ts))
+
+        ordered_segments: list[tuple[pd.Timestamp, pd.Timestamp, str]] = []
+
+        for rwy_name, runs in per_rwy.items():
+            cleaned: list[tuple[pd.Timestamp, pd.Timestamp]] = []
+            for start_ts, stop_ts in sorted(runs, key=lambda elt: elt[0]):
+                if not cleaned:
+                    cleaned.append((start_ts, stop_ts))
+                    continue
+
+                prev_start, prev_stop = cleaned[-1]
+                if start_ts <= prev_stop + tolerance:
+                    prev_dur = prev_stop - prev_start
+                    cur_dur = stop_ts - start_ts
+                    if cur_dur > prev_dur:
+                        cleaned[-1] = (start_ts, stop_ts)
+                    continue
+
+                cleaned.append((start_ts, stop_ts))
+
+            for start_ts, stop_ts in cleaned:
+                ordered_segments.append((start_ts, stop_ts, rwy_name))
+
+        for start_ts, stop_ts, rwy_name in sorted(
+            ordered_segments, key=lambda elt: elt[0]
+        ):
+            segment = flight.between(start_ts, stop_ts, strict=False)
+            if segment is None:
+                continue
+            yield segment.assign(rwy=rwy_name)
 
 
 class Deprecated:  # TODO
