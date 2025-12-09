@@ -15,6 +15,7 @@ from shapely.validation import make_valid
 
 from ...core import Flight
 from ...core.structure import Airport
+from ...data.basic.runways import Threshold
 
 if TYPE_CHECKING:
     from cartes.osm import Overpass
@@ -78,7 +79,9 @@ class RunwayAlignment:
         ):
             raise RuntimeError("Airport or runway information missing")
 
-    def _runway_polygon(self, thr0, thr1, rwy_width_m: float) -> Polygon:
+    def _runway_polygon(
+        self, thr0: Threshold, thr1: Threshold, rwy_width_m: float
+    ) -> Polygon:
         line = LineString(
             [(thr0.longitude, thr0.latitude), (thr1.longitude, thr1.latitude)]
         )
