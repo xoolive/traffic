@@ -1,0 +1,6 @@
+fmt:
+  uv run ruff check tangram_* --fix || true
+  uv run ruff format tangram_* || true
+  pnpm i || true
+  pnpm fmt || true
+  pnpm lint || true

@@ -1,2 +1,7 @@
 packages:
   - "tangram_*"
+
+# to use a local version of tangram-core instead, uncomment this.
+# before committing, remember to re-comment and run `pnpm i`!
+# overrides:
+#   "@open-aviation/tangram-core": "link:../../tangram/packages/tangram_core"

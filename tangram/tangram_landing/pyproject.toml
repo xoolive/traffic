@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tangram_landing"
-version = "0.2.0"
-dependencies = ["tangram_core>=0.2.0", "traffic"]
+version = "0.2.1"
+dependencies = ["tangram_core>=0.2.1", "traffic"]
 authors = [{ name = "Xavier Olive", email = "git@xoolive.org" }]
 
 [project.entry-points."tangram_core.plugins"]
@@ -17,7 +17,8 @@ traffic = { path = "../..", editable = true }
 
 [tool.hatch.build.targets.sdist]
 ignore-vcs = true
-include = ["dist-frontend/*", "src/*"]
+include = ["dist-frontend/*", "src/*", "package.json"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "dist-frontend" = "tangram_landing/dist-frontend"
+"package.json" = "tangram_landing/package.json"
