@@ -4,7 +4,7 @@
   "scripts": {
     "build": "pnpm --filter \"./tangram_*\" build",
     "lint": "eslint --fix",
-    "fmt": "prettier --write --cache \"packages/**/*.{js,ts,mjs,vue}\""
+    "fmt": "prettier --write --cache \"tangram_*/**/*.{js,ts,mjs,vue}\""
   },
   "devDependencies": {
     "@vue/eslint-config-prettier": "^10.2.0",
@@ -14,7 +14,6 @@
     "jiti": "^2.6.1",
     "prettier": "^3.7.4",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6",
-    "@vitejs/plugin-vue": "^6.0.2"
+    "vite": "^7.2.7"
   }
 }
