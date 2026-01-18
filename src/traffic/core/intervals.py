@@ -222,7 +222,9 @@ class IntervalCollection(DataFrameMixin):
 
     def total_duration(self) -> pd.Timedelta:
         """Returns the sum of durations of all intervals."""
-        return self.consolidate().data.eval("(stop - start).sum()")
+        return self.consolidate().data.eval(
+            "(stop - start).sum()", engine="python"
+        )
 
     def __radd__(self, other: Literal[0] | Interval) -> IntervalCollection:
         if other == 0:
