@@ -8,12 +8,12 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@open-aviation/tangram-core": "^0.2.1"
+    "@open-aviation/tangram-core": "^0.3.0"
   },
   "devDependencies": {
-    "@deck.gl/core": "^9.2.5",
-    "@deck.gl/extensions": "^9.2.5",
-    "@deck.gl/layers": "^9.2.5",
-    "vue": "^3.5.25"
+    "@deck.gl/core": "^9.2.6",
+    "@deck.gl/extensions": "^9.2.6",
+    "@deck.gl/layers": "^9.2.6",
+    "vue": "^3.5.27"
   }
 }
