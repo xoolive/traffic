@@ -32,7 +32,6 @@ method = LandingAnyAttempt(dataset=airport_subset)
 @router.post("/airport")
 def align_airport(payload: Payload) -> JSONResponse:
     """Align airports using tangram_align algorithms."""
-    # Placeholder implementation
     log.info("Aligning airports for aircraft")
     flight = Flight(
         pd.DataFrame.from_records(payload.aircraft).assign(
