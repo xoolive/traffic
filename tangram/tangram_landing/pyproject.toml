@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tangram_landing"
-version = "0.3.0"
-dependencies = ["tangram_core>=0.3.0", "traffic"]
+version = "0.4.1"
+dependencies = ["tangram_core>=0.4.1", "traffic"]
 authors = [{ name = "Xavier Olive", email = "git@xoolive.org" }]
 
 [project.entry-points."tangram_core.plugins"]
