@@ -90,7 +90,9 @@ class MLHoldingDetection:
                 window = window.assign(flight_id=str(i))
                 resampled = window.resample(self.samples)
 
-                if resampled.data.eval("track.isnull()").any():
+                if resampled.data.eval(
+                    "track.isnull()", engine="python"
+                ).any():
                     continue
 
                 features = (
@@ -99,7 +101,9 @@ class MLHoldingDetection:
                 ).values.reshape(1, -1)
 
                 if self.vertical_rate:
-                    if resampled.data.eval("vertical_rate.notnull()").any():
+                    if resampled.data.eval(
+                        "vertical_rate.notnull()", engine="python"
+                    ).any():
                         continue
                     vertical_rates = (
                         resampled.data.vertical_rate.values.reshape(1, -1)
