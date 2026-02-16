@@ -5,6 +5,7 @@ import logging
 import re
 from dataclasses import dataclass
 from functools import lru_cache
+from io import BytesIO
 from numbers import Integral, Real
 from pathlib import Path
 from typing import (
@@ -19,6 +20,7 @@ from typing import (
 )
 
 from py7zr import SevenZipFile
+from py7zr.io import NullIO, Py7zIO, WriterFactory
 from rich.box import SIMPLE_HEAVY
 from rich.console import Console, ConsoleOptions, RenderResult
 from rich.table import Table
@@ -46,6 +48,45 @@ if TYPE_CHECKING:
 
 
 _log = logging.getLogger(__name__)
+
+
+class JSONLStream(Py7zIO):
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+        self.buffer = BytesIO()
+
+    def write(self, s: bytes | bytearray) -> int:
+        return self.buffer.write(s)
+
+    def read(self, size: int | None = None) -> bytes:
+        return b""  # not needed
+
+    def seek(self, offset: int, whence: int = 0) -> int:
+        return self.buffer.seek(offset, whence)
+
+    def flush(self) -> None:
+        pass
+
+    def size(self) -> int:
+        return self.buffer.tell()
+
+    def get_buffer(self) -> BytesIO:
+        self.buffer.seek(0)
+        return self.buffer
+
+
+class JSONLStreamFactory(WriterFactory):
+    def __init__(self) -> None:
+        self.streams: dict[str, JSONLStream] = {}
+
+    def create(self, filename: str) -> Py7zIO:
+        if not filename.endswith(".jsonl"):
+            return NullIO()  # discard non-jsonl files safely
+
+        stream = JSONLStream(filename)
+        self.streams[filename] = stream
+
+        return stream
 
 
 class LatLonDict(TypedDict):
@@ -99,16 +140,24 @@ class DataFrameMixin(object):
         >>> from traffic.core import Traffic
         >>> t = Traffic.from_file(filename)
         """
-        path = Path(filename)
+        path = Path(filename).expanduser()
 
         if path.suffix == (".7z"):
-            with SevenZipFile(path) as archive:
-                if (files := archive.readall()) is None:
-                    raise FileNotFoundError(f"Empty archive {path}")
-                for name, io in files.items():
-                    if name.endswith(".jsonl"):
-                        return cls(pd.read_json(io, lines=True, **kwargs))
+            factory = JSONLStreamFactory()
+
+            with SevenZipFile(path, "r") as archive:
+                archive.extractall(factory=factory)
+
+            frames = []
+            for _name, stream in factory.streams.items():
+                buf = stream.get_buffer()
+                df = pd.read_json(buf, lines=True, **kwargs)
+                frames.append(df)
+
+            if not frames:
                 raise FileNotFoundError(f"Empty archive {path}")
+
+            return cls(pd.concat(frames, ignore_index=True))
 
         if ".pkl" in path.suffixes or ".pickle" in path.suffixes:
             return cls(pd.read_pickle(path, **kwargs))

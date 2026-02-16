@@ -31,6 +31,7 @@ repos:
           - impunity
           - pitot
           - pyopensky
+          - py7zr
           - pytest
           - rs1090
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -38,8 +39,12 @@ repos:
     hooks:
       - id: prettier
         exclude: readsb
-  - repo: https://github.com/allganize/ty-pre-commit
-    # Ty version.
-    rev: v0.0.17
+  - repo: local
     hooks:
       - id: ty-check
+        name: ty check
+        description: Type check with ty.
+        entry: uv run ty check
+        language: system
+        pass_filenames: false
+        require_serial: true
