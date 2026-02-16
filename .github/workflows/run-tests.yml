@@ -94,6 +94,11 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
+          # `trino` (v0.336.0) depends on `orjson` (v3.11.5)
+          # which does not support Python 3.14t
+          # https://github.com/ijl/orjson/issues/591#issuecomment-3160351169
+          # - "3.14t"
 
       fail-fast: false
 
@@ -152,6 +157,11 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
+          # `trino` (v0.336.0) depends on `orjson` (v3.11.5)
+          # which does not support Python 3.14t
+          # https://github.com/ijl/orjson/issues/591#issuecomment-3160351169
+          # - "3.14t"
 
       fail-fast: false
 
