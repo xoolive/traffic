@@ -38,3 +38,8 @@ repos:
     hooks:
       - id: prettier
         exclude: readsb
+  - repo: https://github.com/allganize/ty-pre-commit
+    # Ty version.
+    rev: v0.0.17
+    hooks:
+      - id: ty-check
