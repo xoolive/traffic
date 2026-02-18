@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 # %%
 
 from traffic.data import opensky
@@ -26,8 +27,8 @@ sensors = pd.DataFrame.from_records(c.json()).assign(
 
 # %%
 import matplotlib.pyplot as plt
-from cartopy.crs import PlateCarree, Robinson
 from cartes.utils.features import countries
+from cartopy.crs import PlateCarree, Robinson
 
 with plt.style.context("traffic"):
     fig, ax = plt.subplots(
