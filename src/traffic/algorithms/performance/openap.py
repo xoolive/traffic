@@ -53,6 +53,7 @@ class FuelflowEstimation:
     @impunity(ignore_warnings=True)
     def estimate(self, flight: Flight) -> Flight:
         import openap
+        from openap import prop
 
         typecode = (
             self.typecode if self.typecode is not None else flight.typecode
@@ -61,11 +62,11 @@ class FuelflowEstimation:
         if typecode is None:
             return flight
 
-        available_aircraft = openap.prop.available_aircraft(use_synonym=True)
+        available_aircraft = prop.available_aircraft(use_synonym=True)
         if typecode.lower() not in available_aircraft:
             return flight
 
-        ac = openap.prop.aircraft(typecode)
+        ac = prop.aircraft(typecode)
 
         update_mass = True
 
@@ -151,6 +152,7 @@ class PollutantEstimation:
     @impunity
     def estimate(self, flight: Flight) -> Flight:
         import openap
+        from openap import prop
 
         typecode = (
             self.typecode if self.typecode is not None else flight.typecode
@@ -159,7 +161,7 @@ class PollutantEstimation:
         if typecode is None:
             return flight
 
-        available_aircraft = openap.prop.available_aircraft(use_synonym=True)
+        available_aircraft = prop.available_aircraft(use_synonym=True)
         if typecode.lower() not in available_aircraft:
             return flight
 

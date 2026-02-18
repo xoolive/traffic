@@ -27,9 +27,10 @@ class NMAirspaceParser(Airspaces):
         data: pd.DataFrame | None,
         config_file: Path | None = None,
     ) -> None:
-        super().__init__(data, config_file)
+        init_data = data if data is not None else pd.DataFrame()
+        super().__init__(init_data, config_file)
 
-        if self.data is not None:
+        if data is not None:
             return
 
         self.config_file = config_file

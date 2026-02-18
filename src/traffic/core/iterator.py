@@ -195,8 +195,11 @@ class FlightIterator:
         if flight_id is None:
             t = Traffic.from_flights(flight for i, flight in enumerate(self))
         else:
+            template = str(flight_id)
             t = Traffic.from_flights(
-                flight.assign(flight_id=flight_id.format(self=flight, i=i))
+                flight.assign(
+                    flight_id=template.format_map({"self": flight, "i": i})
+                )
                 for i, flight in enumerate(self)
             )
 

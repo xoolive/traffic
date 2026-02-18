@@ -11,6 +11,7 @@ from typing import (
     Tuple,
     Union,
     cast,
+    overload,
 )
 
 from py7zr import SevenZipFile
@@ -52,7 +53,7 @@ def parse_coordinates(elt: str) -> Tuple[float, float]:
     return lat, lon
 
 
-class FlightInfo(DataFrameMixin):
+class FlightInfo:
     def __init__(self, data: pd.Series):
         self.data = data
 
@@ -307,29 +308,37 @@ class AllFT(DataFrameMixin):
         }
 
     def __len__(self) -> int:
-        return cast(int, self.data.shape[0])
+        return int(self.data.shape[0])
 
+    @overload
+    def __getitem__(self, key: str) -> Union[None, "AllFT", FlightInfo]: ...
+
+    @overload
     def __getitem__(
-        self, item: Union[str, Iterable[str]]
-    ) -> Union[None, "AllFT", FlightInfo]:
+        self, key: Iterable[str]
+    ) -> Union[None, "AllFT", FlightInfo]: ...
+
+    def __getitem__(self, key: Any) -> Any:
         res: Optional["AllFT"] = self
-        if isinstance(item, str):
-            if item in self.data.ifpsId.values:
-                res = self.query(f'ifpsId == "{item}"')
+        if isinstance(key, str):
+            if key in self.data.ifpsId.values:
+                res = self.query(f'ifpsId == "{key}"')
                 return FlightInfo(res.data.iloc[0]) if res is not None else None
-            if item in self.data.icao24.values:
-                return self.query(f'icao24 == "{item}"')
-            if item in self.data.callsign.values:
-                return self.query(f'callsign == "{item}"')
+            if key in self.data.icao24.values:
+                return self.query(f'icao24 == "{key}"')
+            if key in self.data.callsign.values:
+                return self.query(f'callsign == "{key}"')
             return None
-        if isinstance(item, Iterable):
-            origin, destination = item
+        if isinstance(key, Iterable):
+            origin, destination = key
             if res is not None and origin is not None:
                 res = res.query(f'origin == "{origin}"')
             if res is not None and destination is not None:
                 res = res.query(f'destination == "{destination}"')
             return res
-        return None
+        raise NotImplementedError(
+            "Only string and tuple of strings are supported as keys."
+        )
 
     def __iter__(self) -> Iterator[FlightInfo]:
         for _, elt in self.data.iterrows():

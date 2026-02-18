@@ -1,5 +1,6 @@
+from datetime import timedelta
 from operator import attrgetter
-from typing import TYPE_CHECKING, Any, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Iterator, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -99,8 +100,10 @@ class LandingAlignedOnILS:
                 flight.bearing(threshold)
                 .distance(threshold)
                 .assign(
-                    b_diff=lambda df: df.distance
-                    * np.radians(df.bearing - threshold.bearing).abs()
+                    b_diff=lambda df: (
+                        df.distance
+                        * np.radians(df.bearing - threshold.bearing).abs()
+                    )
                 )
                 .query(
                     f"b_diff < {self.angle_tolerance} and "
@@ -109,8 +112,14 @@ class LandingAlignedOnILS:
             )
             if tentative is not None:
                 for chunk in tentative.split("20s"):
+                    # TODO improve this and remove the need for the cast
                     if (
-                        chunk.longer_than(self.min_duration)
+                        chunk.longer_than(
+                            cast(
+                                str | timedelta | pd.Timedelta,
+                                self.min_duration,
+                            )
+                        )
                         and not pd.isna(altmin := chunk.altitude_min)
                         and altmin
                         < (self.airport.altitude or 0)

@@ -7,6 +7,4 @@ airports.query(
     'and icao != "ZHZH"'  # misleading identifier for this Canadian airport
 ).sort_values(  # type: ignore
     "icao"
-).to_csv(
-    "airports.csv", index=False
-)
+).to_csv("airports.csv", index=False)

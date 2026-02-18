@@ -17,7 +17,6 @@ _log = logging.getLogger(__name__)
 class FAA_Airspace(ADDS_FAA_OpenData, Airspaces):
     def __init__(self, data: gpd.GeoDataFrame | None = None) -> None:
         super().__init__()
-        self.data = data
         if data is None:
             self.data = (
                 gpd.GeoDataFrame.from_features(self.json_contents())
@@ -39,6 +38,8 @@ class FAA_Airspace(ADDS_FAA_OpenData, Airspaces):
                 )
                 .set_geometry("geometry")
             )
+        else:
+            self.data = data
 
     def back(self) -> Dict[str, Airspace]:
         features = [elt for elt in self.json_contents()["features"]]

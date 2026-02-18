@@ -24,7 +24,6 @@ from typing import (
     Tuple,
     TypedDict,
     Union,
-    cast,
     overload,
 )
 
@@ -38,7 +37,6 @@ from typing_extensions import Self
 import numpy as np
 import pandas as pd
 import pyproj
-from pandas.core.internals.blocks import DatetimeTZBlock
 from shapely.geometry import LineString, MultiPoint, Point, Polygon, base
 from shapely.ops import transform
 
@@ -95,17 +93,6 @@ class Entry(TypedDict, total=False):
     name: str
 
 
-def _tz_interpolate(
-    data: DatetimeTZBlock, *args: Any, **kwargs: Any
-) -> DatetimeTZBlock:
-    coerced = data.coerce_to_target_dtype("int64")
-    interpolated, *_ = coerced.interpolate(*args, **kwargs)
-    return interpolated
-
-
-DatetimeTZBlock.interpolate = _tz_interpolate
-
-
 def _split(
     data: pd.DataFrame, value: Union[str, int], unit: Optional[str]
 ) -> Iterator[pd.DataFrame]:
@@ -135,7 +122,7 @@ default_angle_features = ["track", "heading"]
 class Position(PointMixin, pd.core.series.Series):  # type: ignore
     def plot(
         self,
-        ax: "Axes",
+        ax: "GeoAxes",
         text_kw: Optional[Mapping[str, Any]] = None,
         shift: Optional[Mapping[str, Any]] = None,
         **kwargs: Any,
@@ -168,7 +155,7 @@ class MetaFlight(type):
                 func_name = node.func.id  # type: ignore
                 args = [ast.literal_eval(arg) for arg in node.args]
                 kwargs = dict(
-                    (keyword.arg, ast.literal_eval(keyword.value))
+                    (str(keyword.arg), ast.literal_eval(keyword.value))
                     for keyword in node.keywords
                 )
                 return lambda flight: getattr(Flight, func_name)(
@@ -519,7 +506,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     @overload
     def __getitem__(self, key: IntervalCollection) -> FlightIterator: ...
 
-    def __getitem__(self, key: str | Interval | IntervalCollection) -> Any:
+    @overload
+    def __getitem__(self, key: Any) -> Any: ...
+
+    def __getitem__(self, key: Any) -> Any:
         """Indexation of flights.
 
         :param key: the key parameter passed in the brackets
@@ -757,8 +747,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
                 flight.assign(index_=i) for i, flight in enumerate(fun(self))
             )
         else:
+            template = str(flight_id)
             t = sum(
-                flight.assign(flight_id=flight_id.format(self=flight, i=i))
+                flight.assign(
+                    flight_id=template.format_map({"self": flight, "i": i})
+                )
                 for i, flight in enumerate(fun(self))
             )
         if t == 0:
@@ -1357,7 +1350,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         return self.between(time, self.stop, strict)
 
     def between(
-        self, start: timelike, stop: time_or_delta, strict: bool = True
+        self,
+        start: None | timelike,
+        stop: None | time_or_delta,
+        strict: bool = True,
     ) -> Optional[Flight]:
         """Returns the part of the trajectory flown between start and stop.
 
@@ -1369,23 +1365,33 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         # Corner cases when start or stop are None or NaT
         if start is None or start != start:
+            if isinstance(stop, timedelta):
+                return self.before(self.stop + stop, strict=strict)
+            if stop is None or stop != stop:
+                return self
             return self.before(stop, strict=strict)
 
         if stop is None or stop != stop:
             return self.after(start, strict=strict)
 
-        start = to_datetime(start)
+        start_ts = to_datetime(start)
         if isinstance(stop, timedelta):
-            stop = start + stop
+            stop_ts = start_ts + stop
         else:
-            stop = to_datetime(stop)
+            stop_ts = to_datetime(stop)
 
-        # full call is necessary to keep @start and @stop as local variables
-        # return self.query('@start < timestamp < @stop')  => not valid
+        if start_ts.tzinfo is None:
+            start_ts = start_ts.tz_localize("UTC")
+        if stop_ts.tzinfo is None:
+            stop_ts = stop_ts.tz_localize("UTC")
+
+        timestamps = pd.to_datetime(self.data["timestamp"], utc=True)
         if strict:
-            df = self.data.query("@start < timestamp < @stop")
+            mask = (timestamps > start_ts) & (timestamps < stop_ts)
         else:
-            df = self.data.query("@start <= timestamp <= @stop")
+            mask = (timestamps >= start_ts) & (timestamps <= stop_ts)
+
+        df = self.data.loc[mask]
 
         if df.shape[0] == 0:
             return None
@@ -1839,8 +1845,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         self,
         filter: Literal["default", "aggressive"]
         | filters.FilterBase = "default",
-        strategy: None
-        | Callable[[pd.DataFrame], pd.DataFrame] = lambda x: x.bfill().ffill(),
+        strategy: None | Callable[[pd.DataFrame], pd.DataFrame] = lambda x: (
+            x.bfill().ffill()
+        ),
         **kwargs: int | tuple[int],
     ) -> Flight:
         """Filters a trajectory with predefined methods.
@@ -1990,7 +1997,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             else:
                 msg = "Specify a name argument without the `callsign` property"
                 raise RuntimeError(msg)
-        return self.assign(flight_id=name.format(self=self, idx=idx))
+        template = str(name)
+        return self.assign(
+            flight_id=template.format_map({"self": self, "idx": idx})
+        )
 
     @flight_iterator
     def emergency(self) -> Iterator["Flight"]:
@@ -2071,10 +2081,12 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             )
 
         return self.assign(
-            tas_x=lambda df: df.groundspeed * np.sin(np.radians(df.track))
-            - df.wind_u,
-            tas_y=lambda df: df.groundspeed * np.cos(np.radians(df.track))
-            - df.wind_v,
+            tas_x=lambda df: (
+                df.groundspeed * np.sin(np.radians(df.track)) - df.wind_u
+            ),
+            tas_y=lambda df: (
+                df.groundspeed * np.cos(np.radians(df.track)) - df.wind_v
+            ),
             TAS=lambda df: np.abs(df.tas_x + 1j * df.tas_y),
             heading_rad=lambda df: np.angle(df.tas_x + 1j * df.tas_y),
             heading=lambda df: (90 - np.degrees(df.heading_rad)) % 360,
@@ -2646,7 +2658,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         The following table summarizes the available methods and their
         corresponding classes:
 
-        - ``"parking_area"`` (default) uses
+        - ``"parking_area"`` uses
           :class:`~traffic.algorithms.ground.pushback.ParkingAreaBasedPushback`
           and identifies the start of the movement, an intersection with a
           documented apron area and the moment the aircraft suddenly changes
@@ -2671,7 +2683,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             args = tuple(*args[1:])
 
         method_dict = dict(
-            default=pushback.ParkingAreaBasedPushback,
+            default=pushback.ParkingPositionBasedPushback,
             parking_area=pushback.ParkingAreaBasedPushback,
             parking_position=pushback.ParkingPositionBasedPushback,
         )
@@ -3116,11 +3128,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         """
         from .distance import closest_point
 
-        if not isinstance(points, list):
-            points = [points]
+        point_list = list(points) if isinstance(points, list) else [points]
 
         return min(
-            (closest_point(self.data, point) for point in points),
+            (closest_point(self.data, point) for point in point_list),
             key=attrgetter("distance"),
         )
 
@@ -3217,15 +3228,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
                 sigma_dme_1_air=lambda df: sigma_air(df, "d1"),
                 sigma_dme_2_air=lambda df: sigma_air(df, "d2"),
                 NSE=lambda df: (
-                    2
-                    * np.sqrt(
-                        df.sigma_dme_1_air**2
-                        + df.sigma_dme_2_air**2
-                        + sigma_dme_1_sis**2
-                        + sigma_dme_2_sis**2
+                    (
+                        2
+                        * np.sqrt(
+                            df.sigma_dme_1_air**2
+                            + df.sigma_dme_2_air**2
+                            + sigma_dme_1_sis**2
+                            + sigma_dme_2_sis**2
+                        )
                     )
-                )
-                / np.sin(np.deg2rad(df.angle)),
+                    / np.sin(np.deg2rad(df.angle))
+                ),
             )
             .drop(columns=extra_cols)
             .rename(columns=dict(NSE=column_name))
@@ -3481,16 +3494,33 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         from ..data import opensky
 
-        query_params = {
-            "start": self.start,
-            "stop": self.stop,
-            "icao24": self.icao24,
-            "return_flight": True,
+        if self.start is None:
+            return None
+
+        icao24: None | str | list[str]
+        if isinstance(self.icao24, set):
+            icao24 = sorted(self.icao24)
+        elif isinstance(self.icao24, str):
+            icao24 = self.icao24
+        else:
+            icao24 = None
+
+        callsign: None | str | list[str]
+        if isinstance(self.callsign, set):
+            callsign = sorted(self.callsign)
+        elif isinstance(self.callsign, str):
+            callsign = self.callsign
+        else:
+            callsign = None
+
+        return opensky.history(
+            start=self.start,
+            stop=self.stop,
+            icao24=icao24,
+            callsign=callsign,
+            return_flight=True,
             **kwargs,
-        }
-        if self.callsign is not None:
-            query_params["callsign"] = self.callsign
-        return cast(Optional[Flight], opensky.history(**query_params))
+        )
 
     def query_ehs(
         self,
@@ -3904,7 +3934,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         trace_data = pd.DataFrame.from_records(
             readsb_data.trace, columns=trace_columns
         )
-        aircraft_data = pd.json_normalize(trace_data.aircraft)
+        aircraft_records = trace_data.aircraft.map(
+            lambda value: value if isinstance(value, dict) else dict()
+        )
+        aircraft_data = pd.json_normalize(aircraft_records)
 
         readsb_data = (
             readsb_data.assign(

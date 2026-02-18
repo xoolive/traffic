@@ -80,12 +80,14 @@ class Airways(GeoDBMixin):
         if self.available:
             Airways.alternatives[self.name] = self
 
-    def parse_data(self) -> None:  # coverage: ignore
+    def parse_data(self) -> pd.DataFrame:  # coverage: ignore
         cache_file = Path(__file__).parent.parent / "navdata" / "earth_awy.dat"
         assert cache_file.exists()
         self._data = pd.read_csv(cache_file, sep=" ", header=None)
         self._data.columns = ["route", "id", "navaid", "latitude", "longitude"]
         self._data.to_parquet(self.cache_path / "traffic_airways.parquet")
+        assert self._data is not None
+        return self._data
 
     @property
     def available(self) -> bool:
@@ -109,14 +111,15 @@ class Airways(GeoDBMixin):
                 columns=dict(lat="latitude", lon="longitude")
             )
 
+        assert self._data is not None
         return self._data
 
-    def __getitem__(self, name: str) -> Route:
-        output = self.data.query("route == @name").sort_values("id")
+    def __getitem__(self, key: str) -> Route:
+        output = self.data.query("route == @key").sort_values("id")
         if output.shape[0] == 0:
-            raise AttributeError(f"Route {name} not found")
+            raise AttributeError(f"Route {key} not found")
         return Route(
-            name,
+            key,
             list(
                 Navaid(
                     x["navaid"],

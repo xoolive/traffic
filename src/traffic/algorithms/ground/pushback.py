@@ -179,30 +179,158 @@ class ParkingAreaBasedPushback:
             return None
 
         median_filter = FilterMedian(compute_track_unwrapped=21, compute_gs=21)
-        moving_it = (
-            moving.unwrap(["compute_track"])
-            .filter(filter=median_filter, strategy=None)
-            .split("1 min")
+        moving_filtered = moving.unwrap(["compute_track"]).filter(
+            filter=median_filter, strategy=None
         )
 
-        # that's a first candidate for the pushback leg
+        # Try gap-based splitting first (works for ADS-B with gaps)
+        moving_it = moving_filtered.split("1 min")
         first = moving_it.next()
-        assert first is not None
+
+        # If no gaps found, try pattern-based detection (for SAMAX)
+        if first is None:
+            _log.debug("no gaps - trying pattern-based detection")
+            # For continuous data, inspect full filtered trajectory
+            # and find stopped periods before speed filtering.
+
+            # Recompute without the speed filter to find stopped periods
+            full_filtered = (
+                flight.cumulative_distance()
+                .filter(compute_gs=3)
+                .unwrap(["compute_track"])
+                .filter(filter=median_filter, strategy=None)
+            )
+
+            if full_filtered is None:
+                return None
+
+            data = full_filtered.data.copy()
+            stopped = data["compute_gs"] < 0.5
+
+            # Find transitions: moving → stopped → moving
+            # We want to find where stopped periods END (resuming movement)
+            stopped_to_moving = (stopped.shift(1, fill_value=False)) & (
+                ~stopped
+            )
+            transition_indices = data[stopped_to_moving].index
+
+            if len(transition_indices) < 2:
+                _log.debug(
+                    "need at least 2 transitions (pushback start + taxi start)"
+                )
+                return None
+
+            # Pattern:
+            # stopped (parked) -> moving (pushback) ->
+            # stopped (tug disconnect) -> moving (taxi)
+            # First transition: start of pushback
+            # Second transition: start of taxi (end of pushback)
+            pushback_start_time = data.loc[transition_indices[0], "timestamp"]
+            taxi_start_time = data.loc[transition_indices[1], "timestamp"]
+
+            # First segment: from pushback start to taxi start (the pushback)
+            first_segment = full_filtered.between(
+                pushback_start_time, taxi_start_time
+            )
+            if first_segment is None:
+                _log.debug("no first segment")
+                return None
+
+            first = first_segment.query("compute_gs > 1")
+
+            if first is None or first.duration.total_seconds() < 10:
+                _log.debug("first segment too short")
+                return None
+
+            # Second segment: after transition (the taxi)
+            after_taxi = full_filtered.after(taxi_start_time)
+            if after_taxi is None:
+                _log.debug("no movement after stop")
+                return None
+
+            second = after_taxi.query("compute_gs > 1")
+
+            if second is None:
+                _log.debug("no movement after stop")
+                return None
+        else:
+            # Gap-based splitting worked - use it
+            assert first is not None
+
+            # This is the piece of trajectory after pushback
+            second = moving_it.next()
+            # TODO check that we are still on the airport here...
+            if second is None:
+                _log.debug("no second")
+                return None
+
+        median_filter = FilterMedian(compute_track_unwrapped=21, compute_gs=21)
+        moving_filtered = moving.unwrap(["compute_track"]).filter(
+            filter=median_filter, strategy=None
+        )
+
+        # Try gap-based splitting first (works for ADS-B with gaps)
+        moving_it = moving_filtered.split("1 min")
+        first = moving_it.next()
+
+        # If no gaps found, try pattern-based detection (for SAMAX)
+        if first is None:
+            _log.debug("no gaps - trying pattern-based detection")
+            # Find stopped periods as segment boundaries
+            # Pushback pattern:
+            # moving -> stopped (tug disconnect) -> moving (taxi)
+
+            data = moving_filtered.data.copy()
+            stopped = data["compute_gs"] < 0.5
+
+            # Find transitions from stopped to moving
+            transitions = (~stopped.shift(1, fill_value=False)) & stopped
+            transition_indices = data[transitions].index
+
+            if len(transition_indices) == 0:
+                _log.debug("no stopped periods found")
+                return None
+
+            # First segment: from start to first stopped period
+            first_stop_time = data.loc[transition_indices[0], "timestamp"]
+            first = moving_filtered.before(first_stop_time)
+
+            if first is None or first.duration.total_seconds() < 10:
+                _log.debug("first segment too short")
+                return None
+
+            # Second segment: after stopped period
+            # Find when movement resumes after stop
+            stop_end_idx = transition_indices[0]
+            for idx in data.loc[stop_end_idx:].index:
+                if data.loc[idx, "compute_gs"] >= 0.5:
+                    second = moving_filtered.after(data.loc[idx, "timestamp"])
+                    break
+            else:
+                _log.debug("no movement after stop")
+                return None
+        else:
+            # Gap-based splitting worked - use it
+            assert first is not None
+
+            # This is the piece of trajectory after pushback
+            second = moving_it.next()
+            # TODO check that we are still on the airport here...
+            if second is None:
+                _log.debug("no second")
+                return None
 
         # Check that the first movement intersects one of the stand areas
         if not first.intersects(self.stand_areas):
             _log.debug("not intersecting")
             return None
 
-        # This is the piece of trajectory after pushback
-        second = moving_it.next()
-        # TODO check that we are still on the airport here...
+        # We skip here few seconds so that movement is clearly initiated
+        # before we capture the track angle
         if second is None:
             _log.debug("no second")
             return None
 
-        # We skip here few seconds so that movement is clearly initiated
-        # before we capture the track angle
         second_skip = second.skip("5s")
         if second_skip is None:
             _log.debug("no second skip")

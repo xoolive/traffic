@@ -1,17 +1,17 @@
-# ruff: noqa: E402
 from __future__ import annotations
 
 # %%
+from importlib import import_module
 from pathlib import Path
 from typing import Any
 
 import geopandas as gpd
-from traffic.data import aixm_airspaces
 
 import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon, mapping, shape
 from shapely.ops import transform, unary_union
+from traffic.data import aixm_airspaces
 
 # %%
 
@@ -38,9 +38,9 @@ aixm_airspaces.data.loc[
 ] = ["CANARIAS UIR", "UIR", "GCCC"]
 
 for name in ["VCCF", "UTSD", "UTTR", "UHPP"]:
-    aixm_airspaces.data.loc[
-        aixm_airspaces.data.designator == name, "upper"
-    ] = np.inf
+    aixm_airspaces.data.loc[aixm_airspaces.data.designator == name, "upper"] = (
+        np.inf
+    )
 
 # %%
 
@@ -152,7 +152,6 @@ def format_name(line: pd.Series) -> str:
 gdf = gdf.assign(name=[format_name(line) for _, line in gdf.iterrows()])
 
 # %%
-import topojson as tp
-
+tp = import_module("topojson")
 t = tp.Topology(gdf)
 Path("worldfirs.json").write_text(t.to_json().replace("Infinity", "null"))

@@ -2,7 +2,7 @@ from typing import Iterator
 
 import pitot.geodesy as geo
 
-from shapely import LineString, Point
+from shapely import LineString, MultiPoint, Point
 from shapely.geometry.base import BaseGeometry
 
 from ...core import Flight
@@ -152,7 +152,7 @@ class Deprecated:  # TODO
             # threshold
             if (
                 len(segment_geoms) > 1
-                and mrr_diagonal(segment_geoms) < max_diameter
+                and mrr_diagonal(MultiPoint(segment_geoms)) < max_diameter
             ):
                 is_stopped = True
             else:

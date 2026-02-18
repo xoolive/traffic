@@ -12,10 +12,13 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Literal,
     Mapping,
     Protocol,
     Sequence,
+    SupportsFloat,
     TypedDict,
+    cast,
     runtime_checkable,
 )
 
@@ -81,7 +84,8 @@ class JSONLStreamFactory(WriterFactory):
 
     def create(self, filename: str) -> Py7zIO:
         if not filename.endswith(".jsonl"):
-            return NullIO()  # discard non-jsonl files safely
+            # discard non-jsonl files safely
+            return NullIO()  # type: ignore
 
         stream = JSONLStream(filename)
         self.streams[filename] = stream
@@ -160,7 +164,10 @@ class DataFrameMixin(object):
             return cls(pd.concat(frames, ignore_index=True))
 
         if ".pkl" in path.suffixes or ".pickle" in path.suffixes:
-            return cls(pd.read_pickle(path, **kwargs))
+            pickled = pd.read_pickle(path, **kwargs)
+            if isinstance(pickled, pd.Series):
+                return cls(pickled.to_frame())
+            return cls(pickled)
         if ".parquet" in path.suffixes:
             return cls(pd.read_parquet(path, **kwargs))
         if ".feather" in path.suffixes:  # coverage: ignore
@@ -185,10 +192,10 @@ class DataFrameMixin(object):
     #    return repr(self.data)
 
     def __len__(self) -> int:
-        return self.data.shape[0]  # type: ignore
+        return int(self.data.shape[0])
 
-    def __getitem__(self, index: Any) -> Any:
-        return self.data.iloc[index]
+    def __getitem__(self, key: Any) -> Any:
+        return self.data.iloc[key]
 
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
@@ -272,9 +279,7 @@ class DataFrameMixin(object):
         """
         return self.__class__(self.data.fillna(*args, **kwargs))
 
-    def groupby(
-        self, *args: Any, **kwargs: Any
-    ) -> pd.core.groupby.generic.DataFrameGroupBy:
+    def groupby(self, *args: Any, **kwargs: Any) -> Any:
         """
         Applies the Pandas :meth:`~pandas.DataFrame.groupby` method to the
         underlying pandas DataFrame.
@@ -516,7 +521,7 @@ class ShapelyMixin(object):
 
     def project_shape(
         self, projection: None | pyproj.Proj | "crs.Projection" = None
-    ) -> base.BaseGeometry:
+    ) -> None | base.BaseGeometry:
         """Returns a projected representation of the shape.
 
         :param projection: By default (None), an equivalent projection is
@@ -889,20 +894,44 @@ class GeoDBMixin(DataFrameMixin):
         """
         from cartes.osm import Nominatim
 
-        _extent = (0.0, 0.0, 0.0, 0.0)
+        extent_tuple: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0)
 
         if isinstance(extent, str):
             loc = Nominatim.search(extent)
             if loc is not None:
-                _extent = loc.extent
+                west, east, south, north = loc.extent
+                extent_tuple = (
+                    float(west),
+                    float(east),
+                    float(south),
+                    float(north),
+                )
         if isinstance(extent, ShapelyMixin):
-            _extent = extent.extent
+            west, east, south, north = extent.extent
+            extent_tuple = (
+                float(west),
+                float(east),
+                float(south),
+                float(north),
+            )
         if isinstance(extent, Nominatim):
-            _extent = extent.extent
+            west, east, south, north = extent.extent
+            extent_tuple = (
+                float(west),
+                float(east),
+                float(south),
+                float(north),
+            )
         if isinstance(extent, (tuple, list)):
-            _extent = extent
+            west, east, south, north = extent
+            extent_tuple = (
+                float(cast(SupportsFloat, west)),
+                float(cast(SupportsFloat, east)),
+                float(cast(SupportsFloat, south)),
+                float(cast(SupportsFloat, north)),
+            )
 
-        west, east, south, north = _extent
+        west, east, south, north = extent_tuple
 
         output = self.query(
             f"{south - buffer} <= latitude <= {north + buffer} and "
@@ -910,7 +939,7 @@ class GeoDBMixin(DataFrameMixin):
         )
 
         if output is not None:
-            output._extent = _extent
+            output._extent = extent_tuple
 
         return output
 
@@ -983,13 +1012,23 @@ class PointMixin:
             # since we may modify it, let's make a copy
             text_kw = {**text_kw}
 
+        from cartopy.crs import PlateCarree
+
         if "projection" in ax.__dict__ and "transform" not in kwargs:
-            from cartopy.crs import PlateCarree
             from matplotlib.transforms import offset_copy
 
             kwargs["transform"] = PlateCarree()
             geodetic_transform = PlateCarree()._as_mpl_transform(ax)
-            text_kw["transform"] = offset_copy(geodetic_transform, **shift)
+            text_kw["transform"] = offset_copy(
+                geodetic_transform,
+                fig=cast(Any, shift.get("fig", None)),
+                x=float(cast(float | int, shift.get("x", 0))),
+                y=float(cast(float | int, shift.get("y", 0))),
+                units=cast(
+                    Literal["inches", "points", "dots"],
+                    shift.get("units", "dots"),
+                ),
+            )
 
         if "color" not in kwargs:
             kwargs["color"] = "black"

@@ -1,8 +1,8 @@
 from itertools import count
 
 import matplotlib.pyplot as plt
-from cartes.crs import Mercator
 from cartes.osm import Overpass
+from cartopy.crs import Mercator
 
 
 def main() -> None:

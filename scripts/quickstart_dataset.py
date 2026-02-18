@@ -28,7 +28,7 @@ def trim_after_landing(f: Flight) -> None | Flight:
 
 
 def d_max(f: Flight) -> bool:
-    return f.distance_max >= 59  # type: ignore
+    return bool(f.distance_max >= 59)
 
 
 lfpg = (

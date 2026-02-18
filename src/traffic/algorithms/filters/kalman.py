@@ -160,10 +160,10 @@ class KalmanFilter6D(ProcessXYZFilterBase):
     """
 
     # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    x_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    p_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    p_pre: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    x_mes: TrackVariable[Any] = TrackVariable()
+    x_cor: TrackVariable[Any] = TrackVariable()
+    p_cor: TrackVariable[Any] = TrackVariable()
+    p_pre: TrackVariable[Any] = TrackVariable()
 
     def __init__(self, reject_sigma: float = 3) -> None:
         super().__init__()
@@ -272,13 +272,13 @@ class KalmanSmoother6D(ProcessXYZFilterBase):
     """
 
     # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    x1_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    p1_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    x2_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    p2_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    x_mes: TrackVariable[Any] = TrackVariable()
+    x1_cor: TrackVariable[Any] = TrackVariable()
+    p1_cor: TrackVariable[Any] = TrackVariable()
+    x2_cor: TrackVariable[Any] = TrackVariable()
+    p2_cor: TrackVariable[Any] = TrackVariable()
 
-    xs: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    xs: TrackVariable[Any] = TrackVariable()
 
     def __init__(self, reject_sigma: float = 3) -> None:
         super().__init__()

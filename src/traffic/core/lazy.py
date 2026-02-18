@@ -116,9 +116,9 @@ def apply(
     """
     return functools.reduce(
         (
-            lambda next_step, fun: fun(idx, next_step)
-            if next_step is not None
-            else None
+            lambda next_step, fun: (
+                fun(idx, next_step) if next_step is not None else None
+            )
         ),
         stacked_ops,
         flight,
@@ -165,7 +165,7 @@ class LazyTraffic:
         max_workers: int = 1,
         desc: None | str = None,
         cache_file: str | Path | None = None,
-    ) -> None | "Traffic":
+    ) -> None | "Traffic" | pd.DataFrame:
         """
 
         The result can only be accessed after a call to ``eval()``.
@@ -211,6 +211,8 @@ class LazyTraffic:
         if cache_file is not None and Path(cache_file).exists():
             return self.wrapped_t.__class__.from_file(cache_file)
 
+        cumul: list[Any] = []
+
         if max_workers < 2 or FaultCatcher.flag is True:
             iterator = self.wrapped_t.iterate(**self.iterate_kw)
             # not the same iterator to not exhaust it
@@ -224,7 +226,6 @@ class LazyTraffic:
 
             if FaultCatcher.flag is True:
                 try:
-                    cumul = list()
                     for idx, flight in enumerate(iterator):
                         cumul.append(apply(self.stacked_ops, idx, flight))
                 except Exception as e:
@@ -232,12 +233,9 @@ class LazyTraffic:
                     raise e
 
             else:
-                cumul = list(
-                    apply(self.stacked_ops, idx, flight)
-                    for idx, flight in enumerate(iterator)
-                )
+                for idx, flight in enumerate(iterator):
+                    cumul.append(apply(self.stacked_ops, idx, flight))
         else:
-            cumul = []
             with ProcessPoolExecutor(max_workers=max_workers) as executor:
                 iterator = self.wrapped_t.iterate(**self.iterate_kw)
                 if len(self.tqdm_kw):
@@ -261,18 +259,25 @@ class LazyTraffic:
                     cumul.append(future.result())
 
         # return Traffic.from_flights
-        if len(cumul) == 0 or all(elt is None for elt in cumul):
+        non_null = [elt for elt in cumul if elt is not None]
+
+        if len(non_null) == 0:
             result = None
-        elif any(isinstance(elt, Flight) for elt in cumul):
+        elif all(isinstance(elt, Flight) for elt in non_null):
             result = self.wrapped_t.__class__.from_flights(
-                [flight for flight in cumul if flight is not None]
+                cast(list[Flight], non_null)
             )
-        elif any(isinstance(elt, dict) for elt in cumul):
+        elif all(isinstance(elt, dict) for elt in non_null):
             result = pd.DataFrame.from_records(
-                [elt for elt in cumul if elt is not None]
+                cast(list[dict[str, Any]], non_null)
             )
+        elif all(isinstance(elt, pd.DataFrame) for elt in non_null):
+            result = pd.concat(non_null)
+        elif all(isinstance(elt, pd.Series) for elt in non_null):
+            result = pd.DataFrame(non_null)
         else:
-            result = pd.concat(cumul)
+            msg = "Unsupported lazy eval result type"
+            raise TypeError(msg)
 
         if cache_file is not None and result is not None:
             if Path(cache_file).suffix == ".parquet":

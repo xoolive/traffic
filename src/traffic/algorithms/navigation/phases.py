@@ -45,9 +45,11 @@ class FlightPhasesOpenAP:
             vertical_rate,
         )
         return flight.assign(phase=fp.phaselabel(twindow=self.twindow)).assign(
-            phase=lambda df: df.phase.str.replace("GND", "GROUND")
-            .str.replace("CL", "CLIMB")
-            .str.replace("DE", "DESCENT")
-            .str.replace("CR", "CRUISE")
-            .str.replace("LVL", "LEVEL")
+            phase=lambda df: (
+                df.phase.str.replace("GND", "GROUND")
+                .str.replace("CL", "CLIMB")
+                .str.replace("DE", "DESCENT")
+                .str.replace("CR", "CRUISE")
+                .str.replace("LVL", "LEVEL")
+            )
         )

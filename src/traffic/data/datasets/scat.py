@@ -200,8 +200,9 @@ class SCAT:
         t = Traffic.from_flights(flights)
         assert t is not None
         self.traffic = t.assign(
-            track=lambda df: (90 - np.angle(df.vx + 1j * df.vy, deg=True))
-            % 360,
+            track=lambda df: (
+                (90 - np.angle(df.vx + 1j * df.vy, deg=True)) % 360
+            ),
             groundspeed=lambda df: np.abs(df.vx + 1j * df.vy) / 0.514444,
         ).drop(
             columns=[

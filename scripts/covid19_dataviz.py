@@ -1,15 +1,17 @@
 # %%
 from __future__ import annotations
 
+import operator
 import sys
+from functools import reduce
 from pathlib import Path
 from typing import List
 
 import altair as alt
 from tqdm.rich import tqdm
-from traffic.data import airports
 
 import pandas as pd
+from traffic.data import airports
 
 alt.renderers.set_embed_options(actions=False)
 
@@ -28,7 +30,7 @@ airlines_subset = [
     # Cargo
     ["FDX", "UPS", "GTI", "CLX", "GEC"],
 ]
-airlines_flat: list[str] = sum(airlines_subset, [])
+airlines_flat: list[str] = reduce(operator.iadd, airlines_subset, [])
 
 airports_subset = [
     # Europe
@@ -40,7 +42,7 @@ airports_subset = [
     # Americas
     ["CYYZ", "KSFO", "KLAX", "KATL", "KJFK", "SBGR"],
 ]
-airports_flat: list[str] = sum(airports_subset, [])
+airports_flat: list[str] = reduce(operator.iadd, airports_subset, [])
 
 # %%
 
@@ -73,7 +75,7 @@ data = pd.concat(
         .groupby("day")
         .agg(dict(callsign="count"))
         .rename(columns=dict(callsign=airline))
-        for airline in sum(airlines_subset, [])
+        for airline in reduce(operator.iadd, airlines_subset, [])
     ),
     axis=1,
 ).fillna(0)
@@ -102,7 +104,7 @@ def airline_chart(
         type="single", nearest=True, on="mouseover", fields=["airline"]
     )
 
-    points = (
+    points: alt.Chart = (
         chart.mark_point()
         .encode(
             x="day",
@@ -114,7 +116,7 @@ def airline_chart(
         .add_selection(highlight)
     )
 
-    lines = chart.mark_line().encode(
+    lines: alt.Chart = chart.mark_line().encode(
         x="day",
         y="rate",
         color="airline",
@@ -156,7 +158,7 @@ data = pd.concat(
         .groupby("day")
         .agg(dict(callsign="count"))
         .rename(columns=dict(callsign=airport))
-        for airport in sum(airports_subset, [])
+        for airport in reduce(operator.iadd, airports_subset, [])
     ),
     axis=1,
 ).fillna(0)
@@ -183,7 +185,7 @@ def airport_chart(source: alt.Chart, subset: List[str], name: str) -> alt.Chart:
         type="single", nearest=True, on="mouseover", fields=["airport"]
     )
 
-    points = (
+    points: alt.Chart = (
         chart.mark_point()
         .encode(
             x="day",
@@ -195,7 +197,7 @@ def airport_chart(source: alt.Chart, subset: List[str], name: str) -> alt.Chart:
         .add_selection(highlight)
     )
 
-    lines = (
+    lines: alt.Chart = (
         chart.mark_line()
         .encode(
             x="day",

@@ -11,6 +11,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    overload,
 )
 
 import httpx
@@ -28,7 +29,6 @@ from .. import client
 
 if TYPE_CHECKING:
     import altair as alt
-    from cartopy.mpl.geoaxes import GeoAxesSubplot
 
     from ...core.structure import Airport
 
@@ -74,7 +74,7 @@ class Runway(HBoxMixin, ShapelyMixin, DataFrameMixin):
 
     def plot(
         self,
-        ax: "GeoAxesSubplot",
+        ax: Any,
         *args: Any,
         runways: bool = True,
         labels: bool = False,
@@ -168,7 +168,16 @@ class RunwaysAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
         self._data: Optional[pd.DataFrame] = data
         self._runways = runways
 
-    def __getitem__(self, runway_id: str) -> Runway:
+    @overload
+    def __getitem__(self, key: str) -> Runway: ...
+    @overload
+    def __getitem__(self, key: Any) -> Any: ...
+
+    def __getitem__(self, key: Any) -> Any:
+        if not isinstance(key, str):
+            return super().__getitem__(key)
+
+        runway_id = key
         elt = next(
             (t for t in self._runways if any(x.name == runway_id for x in t)),
             None,
@@ -209,7 +218,7 @@ class RunwaysAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
 
     def plot(
         self,
-        ax: "GeoAxesSubplot",
+        ax: Any,
         *args: Any,
         runways: bool = True,
         labels: bool = False,
@@ -350,7 +359,7 @@ class Runways(object):
         return RunwaysAirport(runways=cur)
 
     def download_runways(self) -> None:  # coverage: ignore
-        self._runways = dict()
+        self._runways = pd.DataFrame()
 
         f = client.get("https://ourairports.com/data/runways.csv")
         total = int(f.headers["Content-Length"])

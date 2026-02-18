@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    cast,
 )
 
 import rich.repr
@@ -23,8 +24,9 @@ from .mixins import FormatMixin, HBoxMixin, PointMixin, ShapelyMixin
 if TYPE_CHECKING:
     import altair as alt
     from cartes.osm import Overpass
-    from ipyleaflet import GeoData as LeafletGeoData
+    from cartopy.mpl.geoaxes import GeoAxes
     from ipyleaflet import Map
+    from ipyleaflet import Marker as LeafletMarker
     from ipyleaflet import Polyline as LeafletPolyline
     from matplotlib.artist import Artist
     from matplotlib.axes import Axes
@@ -33,7 +35,7 @@ if TYPE_CHECKING:
 class AirportPoint(PointMixin):
     def plot(
         self,
-        ax: "Axes",
+        ax: "GeoAxes",
         text_kw: Optional[Mapping[str, Any]] = None,
         shift: Optional[Mapping[str, Any]] = None,
         **kwargs: Any,
@@ -134,7 +136,7 @@ class Airport(FormatMixin, HBoxMixin, PointMixin, ShapelyMixin):
     def __setstate__(self, state: dict[str, Any]) -> None:
         self.__dict__.update(state)
 
-    def leaflet(self, **kwargs: Any) -> "LeafletGeoData":
+    def leaflet(self, **kwargs: Any) -> "LeafletMarker":
         # The code is monkey-patched in src/visualize/leaflet.py
         raise ImportError(
             "Install ipyleaflet or traffic with the leaflet extension"
@@ -199,7 +201,7 @@ class Airport(FormatMixin, HBoxMixin, PointMixin, ShapelyMixin):
     ) -> "alt.LayerChart":  # coverage: ignore
         import altair as alt
 
-        base = alt.Chart(self).mark_geoshape()  # type: ignore
+        base = alt.Chart(self).mark_geoshape()
         cumul = []
         if footprint:
             params: Dict[str, Dict[str, Any]] = dict(
@@ -272,8 +274,9 @@ class Airport(FormatMixin, HBoxMixin, PointMixin, ShapelyMixin):
             if isinstance(runways, dict):
                 footprint["runway"] = runways
 
+        # TODO improve this and remove the need for the cast
         if isinstance(footprint, dict):
-            self._openstreetmap().plot(ax, **footprint)
+            cast(Any, self._openstreetmap()).plot(ax, **footprint)
 
         if self.runways is None:
             return

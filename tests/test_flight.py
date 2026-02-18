@@ -181,7 +181,9 @@ def test_geometry() -> None:
 
     assert flight.distance() < 5  # returns to origin
 
-    xy_length = flight.project_shape().length / 1852  # in nm
+    flight_shape = flight.project_shape()
+    assert flight_shape is not None
+    xy_length = flight_shape.length / 1852  # in nm
     last_pos = flight.cumulative_distance().at()
     assert last_pos is not None
     cumdist = last_pos.cumdist
@@ -189,7 +191,9 @@ def test_geometry() -> None:
 
     simplified = flight.simplify(1e3)
     assert len(simplified) < len(flight)
-    xy_length_s = simplified.project_shape().length / 1852
+    simplified_shape = simplified.project_shape()
+    assert simplified_shape is not None
+    xy_length_s = simplified_shape.length / 1852
     assert xy_length_s < xy_length
 
     simplified_3d = flight.simplify(1e3, altitude="altitude")

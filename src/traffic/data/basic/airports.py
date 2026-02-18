@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, overload
 
 import httpx
 
@@ -156,7 +156,12 @@ class Airports(GeoDBMixin):
 
         return self._data
 
-    def __getitem__(self, name: str) -> Airport:
+    @overload
+    def __getitem__(self, key: str) -> Airport: ...
+    @overload
+    def __getitem__(self, key: Any) -> Any: ...
+
+    def __getitem__(self, key: Any) -> Any:
         """
         Any airport can be accessed by the bracket notation.
 
@@ -166,9 +171,12 @@ class Airports(GeoDBMixin):
         >>> airports["EHAM"]
         Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', country='Netherlands', latitude=52.308601, longitude=4.76389, altitude=-11)
         """
-        if isinstance(name, int):
-            p = self.data.iloc[name]
+        if isinstance(key, int):
+            p = self.data.iloc[key]
+        elif not isinstance(key, str):
+            return super().__getitem__(key)
         else:
+            name = key
             x = self.data.query(
                 "iata == @name.upper() or icao == @name.upper()"
             )

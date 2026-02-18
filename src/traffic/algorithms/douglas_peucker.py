@@ -65,7 +65,7 @@ def _douglas_peucker_rec_3d(
 
 def douglas_peucker(
     *,
-    df: pd.DataFrame = None,
+    df: pd.DataFrame | None = None,
     tolerance: float,
     x: Union[str, pd.Series] = "x",
     y: Union[str, pd.Series] = "y",
@@ -110,6 +110,10 @@ def douglas_peucker(
     if tolerance < 0:
         raise ValueError("tolerance must be a positive float")
 
+    x_arr: npt.NDArray[Any]
+    y_arr: npt.NDArray[Any]
+    z_arr: npt.NDArray[Any] | None = None
+
     if df is not None and isinstance(lat, str) and isinstance(lon, str):
         lat, lon = df[lat], df[lon]
     if isinstance(lat, str) or isinstance(lon, str):
@@ -127,21 +131,23 @@ def douglas_peucker(
         transformer = pyproj.Transformer.from_proj(
             pyproj.Proj("epsg:4326"), projection, always_xy=True
         )
-        x, y = transformer.transform(lon.values, lat.values)
+        x_t, y_t = transformer.transform(lon.values, lat.values)
+        x_arr = np.array(x_t)
+        y_arr = np.array(y_t)
     else:
         if df is not None:
             x, y = df[x].values, df[y].values
-        x, y = np.array(x), np.array(y)
+        x_arr, y_arr = np.array(x), np.array(y)
 
     if z is not None:
         if df is not None:
             z = df[z].values
-        z = z_factor * np.array(z)
+        z_arr = z_factor * np.array(z)
 
-    mask: npt.NDArray[Any] = np.ones(len(x), dtype=bool)
-    if z is None:
-        _douglas_peucker_rec(x, y, mask, tolerance)
+    mask: npt.NDArray[Any] = np.ones(len(x_arr), dtype=bool)
+    if z_arr is None:
+        _douglas_peucker_rec(x_arr, y_arr, mask, tolerance)
     else:
-        _douglas_peucker_rec_3d(x, y, z, mask, tolerance)
+        _douglas_peucker_rec_3d(x_arr, y_arr, z_arr, mask, tolerance)
 
     return mask

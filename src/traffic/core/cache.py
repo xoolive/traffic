@@ -75,7 +75,7 @@ T = TypeVar("T", pd.DataFrame, "Traffic", "Flight")
 def cache_results(
     fun: None | Callable[..., T] = None,
     cache_path: Path = Path("."),
-    loader: Callable[[Path], T] = pd.read_pickle,
+    loader: None | Callable[[Path], T] = None,
     pd_varnames: bool = False,
 ) -> Callable[[Callable[..., T]], T | Callable[..., T]]:
     """
@@ -100,7 +100,6 @@ def cache_results(
 
     def cached_values(fun: Callable[..., T]) -> Callable[..., T]:
         def newfun(*args: Any, **kwargs: Any) -> T:
-            global callers_local_vars
             sig = signature(fun)
 
             if sig.return_annotation is not pd.DataFrame:
@@ -150,10 +149,12 @@ def cache_results(
 
             if filepath.exists():
                 print(f"Reading cached data from {filepath}")
+                if loader is None:
+                    return pd.read_pickle(filepath)  # type: ignore
                 return loader(filepath)
 
             res = fun(*args, **kwargs)
-            res.to_pickle(filepath)
+            res.to_pickle(filepath)  # ty: ignore[invalid-argument-type]
             return res
 
         return newfun

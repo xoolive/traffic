@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import logging
 import zipfile
+from importlib import import_module
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
-from lxml import etree
 from typing_extensions import Self
 
 import pandas as pd
 
 from ...basic.navaid import Navaids
+
+etree = import_module("lxml.etree")
 
 _log = logging.getLogger(__name__)
 
@@ -50,9 +52,12 @@ class AIXMNavaidParser(Navaids):
         else:
             _log.info("Loading aixm points database")
 
-            self._extensions = pd.read_pickle(extension_file)
+            ext = pd.read_pickle(extension_file)
+            self._extensions = (
+                ext.to_frame() if isinstance(ext, pd.Series) else ext
+            )
 
-        return self._extensions
+        return cast(pd.DataFrame, self._extensions)
 
     @property
     def data(self) -> pd.DataFrame:
@@ -72,9 +77,12 @@ class AIXMNavaidParser(Navaids):
                 self._extensions.to_pickle(extension_file)
         else:
             _log.info("Loading aixm points database")
-            self._data = pd.read_pickle(cache_file)
+            loaded = pd.read_pickle(cache_file)
+            self._data = (
+                loaded.to_frame() if isinstance(loaded, pd.Series) else loaded
+            )
 
-        return self._data
+        return cast(pd.DataFrame, self._data)
 
     @classmethod
     def from_file(cls, filename: Union[Path, str], **kwargs: Any) -> Self:

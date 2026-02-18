@@ -83,8 +83,9 @@ class BeaconTrackBearingAlignment:
                 flight.distance(navpoint)
                 .bearing(navpoint)
                 .assign(
-                    shift=lambda df: df.distance
-                    * (np.radians(df.bearing - df.track).abs()),
+                    shift=lambda df: (
+                        df.distance * (np.radians(df.bearing - df.track).abs())
+                    ),
                     delta=lambda df: (df.bearing - df.track).abs(),
                 )
                 .query(f"delta < {self.angle_precision} and distance < 500")

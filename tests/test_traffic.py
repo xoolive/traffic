@@ -1,4 +1,5 @@
 import pickle
+from typing import Any, cast
 
 import pytest
 
@@ -28,7 +29,7 @@ def test_properties() -> None:
     assert handle.callsign == "THY7WR"
 
     def min_altitude(flight: Flight) -> float:
-        return flight.altitude_min  # type: ignore
+        return float(flight.altitude_min)
 
     selected = max(switzerland, key=min_altitude)
     assert selected.flight_id is None
@@ -84,14 +85,18 @@ def test_aircraft() -> None:
 
 
 def high_altitude(flight: Flight) -> bool:
-    return flight.altitude_min > 35000  # type: ignore
+    return float(flight.altitude_min) > 35000
 
 
 @pytest.mark.slow
 def test_chaining() -> None:
+    subset = switzerland.between("2018-08-01", "2018-08-02")
+    assert subset is not None
+    # TODO improve that typing, it's not great that we have to cast to Any
+    # to be able to chain the methods
+    subset_any = cast(Any, subset)
     sw_filtered = (
-        switzerland.between("2018-08-01", "2018-08-02")  # type: ignore
-        .inside_bbox(eurofirs["LSAS"])
+        subset_any.inside_bbox(eurofirs["LSAS"])
         .assign_id()
         .pipe(high_altitude)
         .resample("10s")
@@ -116,9 +121,13 @@ def test_chaining() -> None:
 
 @pytest.mark.slow
 def test_chaining_with_lambda() -> None:
+    subset = switzerland.between("2018-08-01", "2018-08-02")
+    assert subset is not None
+    # TODO improve that typing, it's not great that we have to cast to Any
+    # to be able to chain the methods
+    subset_any = cast(Any, subset)
     sw_filtered = (
-        switzerland.between("2018-08-01", "2018-08-02")  # type: ignore
-        .inside_bbox(eurofirs["LSAS"])
+        subset_any.inside_bbox(eurofirs["LSAS"])
         .assign_id()
         .pipe(lambda flight: flight.altitude_min > 35000)
         .resample("10s")

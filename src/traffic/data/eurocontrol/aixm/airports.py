@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import zipfile
+from importlib import import_module
 from pathlib import Path
 from typing import Any, Iterator
 
 import geopandas as gpd
-from lxml import etree
 
 import pandas as pd
 
@@ -20,7 +20,7 @@ class AIXMAirportParser(DataFrameMixin):
         data: None | pd.DataFrame,
         aixm_path: None | Path,
     ) -> None:
-        self.data = data
+        self.data = pd.DataFrame() if data is None else data
         self.aixm_path = aixm_path
 
         if data is None:
@@ -56,7 +56,7 @@ class AIXMAirportParser(DataFrameMixin):
             self.data.to_pickle(airports_file)
 
     def parse_tree(
-        self, tree: etree.ElementTree, ns: dict[str, str]
+        self, tree: Any, ns: dict[str, str]
     ) -> Iterator[dict[str, Any]]:
         for elt in tree.findall("adrmsg:hasMember/aixm:AirportHeliport", ns):
             identifier = elt.find("gml:identifier", ns)
@@ -97,3 +97,6 @@ class AIXMAirportParser(DataFrameMixin):
                 city=cityElt.text if cityElt is not None else None,
                 type=typeElt.text if typeElt is not None else None,
             )
+
+
+etree = import_module("lxml.etree")

@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import TypedDict
 
 import httpx
+from tqdm.auto import tqdm as tqdm_auto
 
 from ... import cache_path, tqdm_style
-from ...core import tqdm
 
 client = httpx.Client(follow_redirects=True)
 
@@ -40,7 +40,7 @@ class Default:
                                 file_handle.write(chunk)
                                 md5_hash.update(chunk)
                         else:
-                            with tqdm(
+                            with tqdm_auto(
                                 total=int(content_length),
                                 unit_scale=True,
                                 unit_divisor=1024,

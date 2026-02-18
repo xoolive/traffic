@@ -2,7 +2,7 @@ import json
 import logging
 from collections import defaultdict
 from itertools import pairwise
-from typing import Any, Iterator, TypeVar
+from typing import Any, Iterator, TypeVar, cast
 
 import geopandas as gpd
 import networkx as nx
@@ -71,15 +71,18 @@ class AirportGraph:
         return list(len(p) for p in nx.connected_components(self.graph))
 
     def filter_connected_components(self) -> None:
-        nodes = max(nx.connected_components(self.graph), key=len)
+        components = [set(comp) for comp in nx.connected_components(self.graph)]
+        nodes = max(components, key=len)
         self.node_map = [
-            node for node, _data in self.graph.nodes(data=True) if node in nodes
+            node
+            for node, _data in self.graph.nodes(data=True)
+            if cast(Any, node) in cast(Any, nodes)
         ]
         self.node_kdtree = KDTree(
             [
                 self.project.transform(*data["pos"])
                 for node, data in self.graph.nodes(data=True)
-                if node in nodes
+                if cast(Any, node) in cast(Any, nodes)
             ]
         )
 
@@ -366,8 +369,10 @@ class AirportGraph:
                 lat, lon = data["pos"]
                 marker = Marker(location=(lon, lat))
                 marker.popup = HTML()
-                marker.popup.value = f"Node {node}"
+                cast(Any, marker.popup).value = f"Node {node}"
                 return marker
+
+        raise ValueError(f"Unknown node id: {id}")
 
     def marker_edge(self, data: dict[str, Any], **kwargs: Any) -> Polyline:
         """Visualisation function to include edges on a Leaflet widget."""
@@ -377,5 +382,5 @@ class AirportGraph:
         polyline.popup = HTML()
         copy_data = data.copy()
         del copy_data["geometry"]
-        polyline.popup.value = json.dumps(copy_data)
+        cast(Any, polyline.popup).value = json.dumps(copy_data)
         return polyline

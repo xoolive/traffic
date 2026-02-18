@@ -2,6 +2,7 @@ import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Iterator,
     Optional,
@@ -81,7 +82,10 @@ class CPA(DataFrameMixin):
     def flight_ids(self) -> Set[str]:
         return {*set(self.data.flight_id_x), *set(self.data.flight_id_y)}
 
-    def __getitem__(self, index: str) -> "CPA":
+    def __getitem__(self, key: Any) -> Any:
+        if not isinstance(key, str):
+            return super().__getitem__(key)
+
         df = self.data
 
         rename_cols = {
@@ -103,10 +107,8 @@ class CPA(DataFrameMixin):
 
             res = pd.concat(
                 [
-                    df.query("flight_id_y == @index"),
-                    df.query("flight_id_x == @index").rename(
-                        columns=rename_cols
-                    ),
+                    df.query("flight_id_y == @key"),
+                    df.query("flight_id_x == @key").rename(columns=rename_cols),
                 ],
                 sort=False,
             )
@@ -116,8 +118,8 @@ class CPA(DataFrameMixin):
 
         res = pd.concat(
             [
-                df.query("icao24_y == @index"),
-                df.query("icao24_x == @index").rename(columns=rename_cols),
+                df.query("icao24_y == @key"),
+                df.query("icao24_x == @key").rename(columns=rename_cols),
             ],
             sort=False,
         )
@@ -169,7 +171,7 @@ def closest_point_of_approach(
     from cartopy import crs
 
     if projection is None:
-        _log.warn("Defaulting to projection EuroPP()")
+        _log.warning("Defaulting to projection EuroPP()")
         projection = crs.EuroPP()
 
     if isinstance(projection, crs.Projection):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import operator
 import warnings
+from importlib import import_module
 from typing import Any, Callable, ClassVar, TypeAlias
 
 import numpy as np
@@ -66,7 +67,7 @@ def compute_gtgraph(dd: ArrayBool) -> tuple[dict[int, Any], Any, Any]:
     # compute the graph of points complying with the speed limits: i and j are
     # adjacent if i can be reached by j within the speed limits
 
-    import graph_tool.all as gt
+    gt = import_module("graph_tool.all")
 
     n = dd.shape[1]
     # horizon = dd.shape[0]
@@ -82,7 +83,7 @@ def compute_gtgraph(dd: ArrayBool) -> tuple[dict[int, Any], Any, Any]:
 def get_gtlongest(dd: ArrayBool) -> list[int]:
     # compute the longest path of points complying with the speed limits
     # import graph_tool as gt
-    import graph_tool.all as gt
+    gt = import_module("graph_tool.all")
 
     v, g, prop_dist = compute_gtgraph(dd)
     # n = g.num_vertices()

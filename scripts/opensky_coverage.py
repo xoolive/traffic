@@ -26,7 +26,7 @@ sensors = pd.DataFrame.from_records(c.json()).assign(
 
 # %%
 import matplotlib.pyplot as plt
-from cartes.crs import PlateCarree, Robinson  # type: ignore
+from cartopy.crs import PlateCarree, Robinson
 from cartes.utils.features import countries
 
 with plt.style.context("traffic"):

@@ -148,3 +148,16 @@ testpaths = [
   "src/traffic/data/datasets/",
   "tests",
 ]
+
+[[tool.ty.overrides]]
+include = ["src/", "tests/"]
+rules = { "unused-type-ignore-comment" = "ignore", "empty-body" = "ignore", "unresolved-attribute" = "ignore" }
+
+[[tool.ty.overrides]]
+include = ["tangram/", "src/traffic/data/eurocontrol/aixm/routes.py"]
+rules = { "unresolved-import" = "ignore" }
+
+[[tool.ty.overrides]]
+# Monkey-patching
+include = ["src/traffic/visualize/leaflet.py"]
+rules = { "invalid-assignment" =  "ignore", "unknown-argument" = "ignore" }

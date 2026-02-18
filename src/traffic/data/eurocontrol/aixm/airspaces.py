@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import re
 import zipfile
+from importlib import import_module
 from pathlib import Path
 from typing import Any, Iterable, List, Tuple, TypeVar
 
 import geopandas as gpd
 from geopandas.geodataframe import GeoDataFrame
-from lxml import etree
 
 import pandas as pd
 from shapely.geometry import Polygon
@@ -48,7 +48,7 @@ class AIXMAirspaceParser(Airspaces):
     def __init__(
         self, data: None | GeoDataFrame, aixm_path: None | Path = None
     ) -> None:
-        self.data = data
+        self.data = GeoDataFrame() if data is None else data
 
         if data is None:
             if aixm_path is None or not aixm_path.exists():
@@ -84,7 +84,11 @@ class AIXMAirspaceParser(Airspaces):
 
         self.data = self.data.set_geometry("geometry")
 
-    def __getitem__(self, name: str) -> Airspace:
+    def __getitem__(self, key: Any) -> Any:
+        if not isinstance(key, str):
+            return super().__getitem__(key)
+
+        name = key
         # in this case, running consolidate() on the whole dataset is not
         # reasonable, but it still works if we run it after the query
         subset = self.query(f'designator == "{name}"')
@@ -179,10 +183,10 @@ class AIXMAirspaceParser(Airspaces):
         if name_table is not None:
             result = result.merge(name_table)
 
-        return self.__class__(result)
+        return self.__class__(GeoDataFrame(result))
 
     def parse_tree(
-        self, tree: etree.ElementTree, ns: dict[str, str]
+        self, tree: Any, ns: dict[str, str]
     ) -> Iterable[dict[str, Any]]:
         for airspace in tqdm(
             tree.findall("adrmsg:hasMember/aixm:Airspace", ns),
@@ -264,3 +268,6 @@ class AIXMAirspaceParser(Airspaces):
                             "identifier": identifier.text,
                             "component": key,
                         }
+
+
+etree = import_module("lxml.etree")

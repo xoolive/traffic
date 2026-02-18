@@ -23,7 +23,7 @@ def extended_kalman_filter(
     jacobian_state_transition: Callable[[pd.Series, float], ArrayFloat],
     state_transition_function: Callable[[pd.Series, float], pd.Series],
     reject_sigma: float = 3,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, ArrayFloat]:
     num_states = len(initial_state)
     states = np.repeat(
         initial_state.to_numpy().reshape(1, -1), measurements.shape[0], axis=0
@@ -32,7 +32,7 @@ def extended_kalman_filter(
 
     x = initial_state
     P = initial_covariance
-    timestamps = measurements.index.to_series()
+    timestamps = pd.Series(measurements.index)
 
     for i in range(1, len(timestamps)):
         dt = (timestamps[i] - timestamps[i - 1]).total_seconds()
@@ -55,7 +55,11 @@ def extended_kalman_filter(
 
         # Component-wise standard deviation check (gating)
         for j in range(num_states):
-            if abs(nu[j]) > abs(reject_sigma * std_devs[j]):
+            nu_val = nu.iloc[j]
+            std_val = std_devs[j]
+            if pd.isna(nu_val) or pd.isna(std_val):
+                continue
+            if abs(float(nu_val)) > abs(reject_sigma * float(std_val)):
                 measurement.iloc[j] = x.iloc[j]  # Replace faulty measurement
                 H[j, j] = 0  # Ignore this component in the update
 
@@ -79,7 +83,7 @@ def rts_smoother(
     states: pd.DataFrame,
     covariances: ArrayFloat,
     Q: ArrayFloat,
-    timestamps: pd.Series,
+    timestamps: pd.Index | pd.Series,
     jacobian_state_transition: Callable[[pd.Series, float], ArrayFloat],
     state_transition_function: Callable[[pd.Series, float], pd.Series],
 ) -> pd.DataFrame:
@@ -87,8 +91,16 @@ def rts_smoother(
     smoothed_states = states.copy()
     smoothed_covariances = covariances.copy()
 
+    ts_series = (
+        timestamps
+        if isinstance(timestamps, pd.Series)
+        else pd.Series(timestamps)
+    )
+
     for i in range(num_time_steps - 2, -1, -1):
-        dt = (timestamps[i + 1] - timestamps[i]).total_seconds()
+        t_next = ts_series.iloc[i + 1]
+        t_cur = ts_series.iloc[i]
+        dt = (t_next - t_cur).total_seconds()
 
         F = jacobian_state_transition(states.iloc[i], dt)
 
@@ -236,7 +248,7 @@ class EKF(ProcessXYZZFilterBase):
         self.smooth = smooth
 
     def apply(self, data: pd.DataFrame) -> pd.DataFrame:
-        measurements = self.preprocess(data)
+        measurements = self.preprocess(data).ffill().bfill()
 
         # initial state
         x0 = measurements.iloc[0]  # Initial state

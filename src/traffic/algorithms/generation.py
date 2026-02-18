@@ -194,6 +194,8 @@ class Generation:
         # if relevant, enriches DataFrame with latitude and longitude columns.
         if not set(["latitude", "longitude"]).issubset(set(self.features)):
             if set(["x", "y"]).issubset(self.features):
+                if projection is None:
+                    return Traffic(df)
                 return Traffic(df).compute_latlon_from_xy(projection)
                 # df = compute_latlon_from_xy(df, projection=projection)
             if set(["track", "groundspeed"]).issubset(set(self.features)):

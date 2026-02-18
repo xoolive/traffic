@@ -16,6 +16,8 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    cast,
+    overload,
 )
 
 import geopandas as gpd
@@ -31,7 +33,6 @@ from .lazy import lazy_evaluation
 from .mixins import DataFrameMixin, GeographyMixin, PointBase, ShapelyMixin
 
 if TYPE_CHECKING:
-    from cartopy.mpl.geoaxes import GeoAxesSubplot
     from ipyleaflet import Map as LeafletMap
     from ipyleaflet import Polygon as LeafletPolygon
     from matplotlib.patches import Polygon as MplPolygon
@@ -65,7 +66,16 @@ class Airspaces(DataFrameMixin):
         lower=dict(),
     )
 
-    def __getitem__(self, name: str) -> Airspace:
+    @overload
+    def __getitem__(self, key: Any) -> Any: ...
+    @overload
+    def __getitem__(self, key: str) -> Airspace: ...
+
+    def __getitem__(self, key: Any) -> Any:
+        if not isinstance(key, str):
+            return super().__getitem__(key)
+
+        name = key
         subset = self.consolidate().query(f'designator == "{name}"')
         if subset is None:
             raise AttributeError(f"Airspace {name} not found")
@@ -213,7 +223,9 @@ class Airspace(ShapelyMixin):
 
         elt = m.add(self)
         elt.popup = HTML()
-        elt.popup.value = self.designator
+        # TODO this should be easy to remove once we have a better typing
+        # for the leaflet layer
+        cast(Any, elt.popup).value = self.designator
 
         return m
 
@@ -286,9 +298,7 @@ class Airspace(ShapelyMixin):
         yield "name", self.name
         yield "elements", len(self.elements)
 
-    def annotate(
-        self, ax: "GeoAxesSubplot", **kwargs: Any
-    ) -> None:  # coverage: ignore
+    def annotate(self, ax: Any, **kwargs: Any) -> None:  # coverage: ignore
         from cartopy.crs import PlateCarree
 
         if "projection" in ax.__dict__:
@@ -298,9 +308,7 @@ class Airspace(ShapelyMixin):
         ((x, y),) = np.array(self.centroid.coords)
         ax.text(x, y, **kwargs)
 
-    def plot(
-        self, ax: "GeoAxesSubplot", **kwargs: Any
-    ) -> None:  # coverage: ignore
+    def plot(self, ax: Any, **kwargs: Any) -> None:  # coverage: ignore
         flat = self.flatten()
         if isinstance(flat, base.BaseMultipartGeometry):
             for poly in flat.geoms:

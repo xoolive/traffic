@@ -207,6 +207,7 @@ class Navaids(GeoDBMixin):
             self._data = self._data.rename(
                 columns=dict(alt="altitude", lat="latitude", lon="longitude")
             )
+        assert self._data is not None
         return self._data
 
     @lru_cache()

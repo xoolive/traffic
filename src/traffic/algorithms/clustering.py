@@ -6,6 +6,7 @@ from typing import (
     Protocol,
     TypeAlias,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -148,11 +149,12 @@ class Clustering:
 
         self.clustering.fit(self.X)
 
-        labels: Numeric = (
-            self.clustering.labels_
+        labels_obj = (
+            getattr(self.clustering, "labels_")
             if hasattr(self.clustering, "labels_")
             else self.clustering.predict(self.X)
         )
+        labels: Numeric = cast(Numeric, labels_obj)
 
         clusters = pd.DataFrame.from_records(
             [

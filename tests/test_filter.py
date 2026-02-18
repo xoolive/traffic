@@ -34,11 +34,12 @@ def test_snappy() -> None:
     reason="TODO fix bug on Windows",
 )
 def test_ekf() -> None:
-    f = (
-        full_flight_short.compute_xy(projection=Lambert93())
-        .query('bds in ["05", "09"]')  # type: ignore
-        .resample("1s")  # TODO the filter should work with partial measurements
+    subset = full_flight_short.compute_xy(projection=Lambert93()).query(
+        'bds in ["05", "09"]'
     )
+    assert subset is not None
+    # TODO the filter should work with partial measurements
+    f = subset.resample("1s")
     assert f is not None
     g = f.filter(EKF())
     distance = g.distance(f)

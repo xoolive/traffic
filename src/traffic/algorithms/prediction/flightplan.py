@@ -84,6 +84,8 @@ class FlightPlanPredict:
         Raises:
             AssertionError: If the flight or window data is invalid.
         """
+        start_ts = pd.Timestamp(self.start)
+
         data_points: Dict[str, List[Union[float, str, pd.Timestamp]]] = {
             "latitude": [],
             "longitude": [],
@@ -91,7 +93,7 @@ class FlightPlanPredict:
             "groundspeed": [],
         }
 
-        before_start = flight.before(self.start, strict=False)
+        before_start = flight.before(start_ts, strict=False)
         if before_start is None:
             raise RuntimeError("Flight should start before the start date")
 
@@ -127,7 +129,7 @@ class FlightPlanPredict:
             longitude=start_pos.longitude,
             name=start_nav_name,
         )
-        new_timestamp = pd.Timestamp(self.start)
+        new_timestamp = start_ts
 
         for navaid in rest_navaids:
             dmin = distance(
@@ -145,7 +147,7 @@ class FlightPlanPredict:
             data_points["timestamp"].append(new_timestamp)
             data_points["groundspeed"].append(gs / 0.514444)
 
-            tdiff_minutes = (new_timestamp - self.start).total_seconds() / 60
+            tdiff_minutes = (new_timestamp - start_ts).total_seconds() / 60
             if (
                 tdiff_minutes > self.horizon_minutes
                 and len(data_points["timestamp"]) > 1
@@ -163,7 +165,7 @@ class FlightPlanPredict:
 
         if self.resample is not None:
             ret = ret.resample(self.resample).first(
-                self.horizon_minutes * 60 + 1
+                f"{self.horizon_minutes * 60 + 1} seconds"
             )
 
         ret = ret.cumulative_distance(compute_track=True).rename(

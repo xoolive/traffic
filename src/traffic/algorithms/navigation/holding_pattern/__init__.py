@@ -1,6 +1,6 @@
 from pathlib import Path
 from pkgutil import get_data
-from typing import Iterator
+from typing import Any, Iterator, cast
 
 import numpy as np
 import pandas as pd
@@ -59,15 +59,23 @@ class MLHoldingDetection:
         self.samples = samples
         self.vertical_rate = vertical_rate
 
-        providers = rt.get_available_providers()
+        providers = cast(Any, rt).get_available_providers()
 
         if model_path is None:
             pkg = "traffic.algorithms.navigation.holding_pattern"
             data = get_data(pkg, "scaler.onnx")
-            self.scaler_sess = rt.InferenceSession(data, providers=providers)
+            if data is None:
+                raise RuntimeError("Missing scaler.onnx resource")
+            scaler_data = data
+            self.scaler_sess = rt.InferenceSession(
+                scaler_data, providers=providers
+            )
             data = get_data(pkg, "classifier.onnx")
+            if data is None:
+                raise RuntimeError("Missing classifier.onnx resource")
+            classifier_data = data
             self.classifier_sess = rt.InferenceSession(
-                data, providers=providers
+                classifier_data, providers=providers
             )
         else:
             model_path = Path(model_path)
@@ -110,20 +118,26 @@ class MLHoldingDetection:
 
                 name = self.scaler_sess.get_inputs()[0].name
                 value = features.astype(np.float32)
-                x = self.scaler_sess.run(None, {name: value})[0]
+                x = cast(Any, self.scaler_sess.run(None, {name: value})[0])
 
                 name = self.classifier_sess.get_inputs()[0].name
                 value = x.astype(np.float32)
-                pred = self.classifier_sess.run(None, {name: value})[0]
+                pred = cast(
+                    Any, self.classifier_sess.run(None, {name: value})[0]
+                )
 
                 if bool(pred.round().item()):
                     if start is None:
                         start, stop = window.start, window.stop
-                    elif start < stop:
+                    elif stop is not None and start < stop:
                         stop = window.stop
                     else:
-                        yield flight.between(start, stop)  # type: ignore
+                        candidate = flight.between(start, stop)
+                        if candidate is not None:
+                            yield candidate
                         start, stop = window.start, window.stop
 
         if start is not None:
-            yield flight.between(start, stop)  # type: ignore
+            candidate = flight.between(start, stop)
+            if candidate is not None:
+                yield candidate

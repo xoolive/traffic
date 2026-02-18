@@ -8,7 +8,7 @@ hence the following line:
 import logging
 import sys
 from types import TracebackType
-from typing import Any, Dict, Iterable, Iterator, Optional, TypeVar
+from typing import Any, Dict, Iterable, Iterator, Optional, TypeVar, cast
 
 from tqdm.auto import tqdm as _tqdm_auto
 from tqdm.autonotebook import tqdm as _tqdm_autonotebook
@@ -27,12 +27,13 @@ def silent_tqdm(
     yield from iterable  # Dummy tqdm function
 
 
+# TODO improve this and remove the need for the cast
 tqdm_dict: Dict[str, ProgressbarType] = {
-    "autonotebook": _tqdm_autonotebook,
-    "auto": _tqdm_auto,
-    "rich": _tqdm_rich,
+    "autonotebook": cast(ProgressbarType, _tqdm_autonotebook),
+    "auto": cast(ProgressbarType, _tqdm_auto),
+    "rich": cast(ProgressbarType, _tqdm_rich),
     "silent": silent_tqdm,
-    "std": _tqdm_std,
+    "std": cast(ProgressbarType, _tqdm_std),
 }
 
 

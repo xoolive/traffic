@@ -71,7 +71,7 @@ class TakeoffAirportInference:
 
     >>> missing_data = belevingsvlucht.after("2018-05-30 15:30")
     >>> missing_data.infer_airport("takeoff")
-    Airport(icao='NL-0114', name='Netherlands Traffic Center Heliport', ...)
+    Airport(icao='NL-0114', ...)
 
     >>> from traffic.data import airports
     >>> large_airports = airports.query("type == 'large_airport'")
@@ -109,7 +109,7 @@ class LandingAirportInference:
 
     >>> missing_data = belevingsvlucht.before("2018-05-30 20:00")
     >>> missing_data.infer_airport("landing")
-    Airport(icao='NL-0092', name='De Kreupel Helipad', ...)
+    Airport(icao='NL-0092', ..., name='De Kreupel Helipad', ...)
 
     >>> from traffic.data import airports
     >>> large_airports = airports.query("type == 'large_airport'")

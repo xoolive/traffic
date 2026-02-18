@@ -10,7 +10,6 @@ from ...core.airspace import Airspaces
 
 class Eurofirs(Airspaces):
     def __init__(self, data: gpd.GeoDataFrame | None = None) -> None:
-        self.data = data
         if data is None:
             current_file = Path(__file__).absolute()
             with current_file.with_name("eurofirs.json").open("r") as fh:
@@ -37,6 +36,8 @@ class Eurofirs(Airspaces):
                 .drop(columns=["UPPERUNIT", "LOWERUNIT", "EFFECTDATE", "ICAO"])
                 .set_geometry("geometry")
             )
+        else:
+            self.data = data
 
 
 eurofirs = Eurofirs()

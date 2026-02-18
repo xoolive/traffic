@@ -243,14 +243,16 @@ class FilterPosition(FilterBase):
     def __init__(self, cascades: int = 2) -> None:
         self.cascades = cascades
 
-    def apply(self, flight: pd.DataFrame) -> pd.DataFrame:
+    def apply(self, data: pd.DataFrame) -> pd.DataFrame:
         from ...core import Flight
 
-        flight = Flight(flight)
+        flight: None | Flight = Flight(data)
         for _ in range(self.cascades):
             if flight is None:
-                return None
+                return data.iloc[:0]
             flight = flight.cumulative_distance().query(
                 "compute_gs < compute_gs.mean() + 3 * compute_gs.std()"
             )
+        if flight is None:
+            return data.iloc[:0]
         return flight.data

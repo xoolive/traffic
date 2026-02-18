@@ -24,14 +24,14 @@ class KalmanTaxiway(ProcessXYFilterBase):
     """
 
     # Descriptors are convenient to store the evolution of the process
-    x_mes: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    x_pre: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    x1_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    p1_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    x2_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
-    p2_cor: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    x_mes: TrackVariable[Any] = TrackVariable()
+    x_pre: TrackVariable[Any] = TrackVariable()
+    x1_cor: TrackVariable[Any] = TrackVariable()
+    p1_cor: TrackVariable[Any] = TrackVariable()
+    x2_cor: TrackVariable[Any] = TrackVariable()
+    p2_cor: TrackVariable[Any] = TrackVariable()
 
-    xs: TrackVariable[pd.core.arrays.ExtensionArray] = TrackVariable()
+    xs: TrackVariable[Any] = TrackVariable()
     shl: TrackVariable[Any] = TrackVariable()
     closest_line: TrackVariable[Any] = TrackVariable()
 

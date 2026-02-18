@@ -16,6 +16,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 import rs1090
@@ -233,15 +234,18 @@ class RawData(DataFrameMixin):
         self,
         reference: Union[None, str, Airport, Tuple[float, float]] = None,
     ) -> Optional[Traffic]:
+        ref_tuple: tuple[float, float] | None = None
         if isinstance(reference, str):
             reference = airports[reference]
         if hasattr(reference, "latlon"):
-            reference = reference.latlon  # type: ignore
+            ref_tuple = cast(tuple[float, float], cast(Any, reference).latlon)
+        elif isinstance(reference, tuple):
+            ref_tuple = reference
 
         decoded = rs1090.decode(
             self.data.rawmsg,
             self.data.timestamp.astype("int64") * 1e-9,
-            reference=reference,
+            reference=ref_tuple,
         )
 
         if len(decoded) == 0:
@@ -290,8 +294,11 @@ class RawData(DataFrameMixin):
 
         if isinstance(reference, str):
             reference = airports[reference]
+        ref_tuple: tuple[float, float] | None = None
         if hasattr(reference, "latlon"):
-            reference = reference.latlon  # type: ignore
+            ref_tuple = cast(tuple[float, float], cast(Any, reference).latlon)
+        elif isinstance(reference, tuple):
+            ref_tuple = reference
 
         filename = Path(filename)
         b_content = filename.read_bytes()
@@ -314,7 +321,7 @@ class RawData(DataFrameMixin):
             decoded = rs1090.decode(
                 msg_iter,
                 [t.timestamp() for t in timestamps],
-                reference=reference,
+                reference=ref_tuple,
             )
 
         elif all_lines.startswith("1a"):  # xxd -p on radarcape dump
@@ -332,7 +339,7 @@ class RawData(DataFrameMixin):
             decoded = rs1090.decode(
                 msg_list,
                 rc_timestamps,
-                reference=reference,
+                reference=ref_tuple,
             )
         else:
             return None
@@ -389,8 +396,11 @@ class RawData(DataFrameMixin):
 
         if isinstance(reference, str):
             reference = airports[reference]
+        ref_tuple: tuple[float, float] | None = None
         if hasattr(reference, "latlon"):
-            reference = reference.latlon  # type: ignore
+            ref_tuple = cast(tuple[float, float], cast(Any, reference).latlon)
+        elif isinstance(reference, tuple):
+            ref_tuple = reference
 
         with filename.open("r") as fh:
             all_lines = fh.readlines()
@@ -407,7 +417,7 @@ class RawData(DataFrameMixin):
         decoded = rs1090.decode(
             msg_iter,
             [t.timestamp() for t in timestamps],
-            reference=reference,
+            reference=ref_tuple,
         )
 
         if len(decoded) == 0:

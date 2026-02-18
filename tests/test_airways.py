@@ -11,7 +11,9 @@ def test_basic() -> None:
 
     l888 = airways["L888"]
     assert l888 is not None
-    assert 2.8e6 < l888.project_shape().length < 3e6
+    l888_shape = l888.project_shape()
+    assert l888_shape is not None
+    assert 2.8e6 < l888_shape.length < 3e6
 
 
 def test_through_extent() -> None:
@@ -27,12 +29,16 @@ def test_through_extent() -> None:
     air_ext = airways.extent(LSAS)
     assert air_ext is not None
     swiss_length = max(
-        air_ext[route].project_shape().length
+        air_ext_shape.length
         for route in air_ext.search("DITON").data.route
+        for air_ext_shape in [air_ext[route].project_shape()]
+        if air_ext_shape is not None
     )
     full_length = max(
-        airways[route].project_shape().length
-        for route in airways.search("DITON").data.route
+        airway_shape.length
+        for route in air_ext.search("DITON").data.route
+        for airway_shape in [airways[route].project_shape()]
+        if airway_shape is not None
     )
     assert swiss_length < 1e6 < full_length
 

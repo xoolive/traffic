@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Iterator, Literal, overload
+from numbers import Real
+from typing import Any, Iterator, Literal, cast, overload
 
 import numpy as np
 import pandas as pd
@@ -11,8 +12,8 @@ from .time import timelike, to_datetime
 
 
 class Interval:
-    start: datetime.datetime
-    stop: datetime.datetime
+    start: pd.Timestamp
+    stop: pd.Timestamp
 
     def __init__(self, start: timelike, stop: timelike) -> None:
         self.start = to_datetime(start)
@@ -26,19 +27,19 @@ class Interval:
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Interval):
             return False
-        return self.start == other.start and self.stop == other.stop
+        return bool(self.start == other.start and self.stop == other.stop)
 
     def __req__(self, other: Any) -> bool:
         if not isinstance(other, Interval):
             return False
-        return self.start == other.start and self.stop == other.stop
+        return bool(self.start == other.start and self.stop == other.stop)
 
     def duration(self) -> pd.Timedelta:
         return self.stop - self.start
 
     def overlap(self, other: Interval) -> bool:
         """Returns True if two intervals overlap."""
-        return self.start < other.stop and self.stop > other.start
+        return bool(self.start < other.stop and self.stop > other.start)
 
     def __radd__(self, other: Literal[0]) -> IntervalCollection:
         if other == 0:
@@ -167,42 +168,92 @@ class IntervalCollection(DataFrameMixin):
         start: None | timelike | list[timelike] = None,
         stop: None | timelike | list[timelike] = None,
     ) -> None:
-        if isinstance(data, Interval):
-            data = [data, *other]
-        if isinstance(data, list):
-            if all(isinstance(elt, Interval) for elt in data):
-                start = [elt.start for elt in data]
-                stop = [elt.stop for elt in data]
-                data = None
-        if not isinstance(data, pd.DataFrame):
-            # We reorder parameters here to accept notations like
-            # IntervalCollection(start, stop)
-            if start is None or stop is None:
-                start, stop, *_ = data, *other, start, stop
-                data = None
-        if data is None:
-            if start is None or stop is None:
-                msg = "If no data is specified, provide start and stop"
-                raise TypeError(msg)
-            if isinstance(start, (str, float, datetime.datetime, pd.Timestamp)):
-                start = [start]
-                stop = [stop]
-            assert isinstance(start, list) and isinstance(stop, list)
-            if len(start) == 0 or len(stop) == 0:
-                msg = "If no data is specified, provide start and stop"
-                raise TypeError(msg)
+        frame: pd.DataFrame | None = (
+            data if isinstance(data, pd.DataFrame) else None
+        )
 
-            data = pd.DataFrame(
-                {
-                    "start": [to_datetime(t) for t in start],
-                    "stop": [to_datetime(t) for t in stop],
-                }
-            )
+        if frame is None:
+            intervals: list[Interval] | None = None
 
-        # assert isinstance(data, pd.DataFrame)
-        # assert data.eval("(start > stop).sum()") == 0
+            if isinstance(data, Interval):
+                intervals = [data]
+                for elt in other:
+                    if isinstance(elt, Interval):
+                        intervals.append(elt)
+                    else:
+                        msg = (
+                            "Cannot mix Interval inputs "
+                            "with non-Interval values"
+                        )
+                        raise TypeError(msg)
+            elif isinstance(data, list) and all(
+                isinstance(elt, Interval) for elt in data
+            ):
+                intervals = cast(list[Interval], data)
 
-        self.data = data
+            if intervals is not None:
+                start_list = [elt.start for elt in intervals]
+                stop_list = [elt.stop for elt in intervals]
+                frame = pd.DataFrame(
+                    {
+                        "start": [to_datetime(t) for t in start_list],
+                        "stop": [to_datetime(t) for t in stop_list],
+                    }
+                )
+            else:
+                start_value: None | timelike | list[timelike] = start
+                stop_value: None | timelike | list[timelike] = stop
+
+                if start_value is None or stop_value is None:
+                    values: list[timelike | list[timelike]] = []
+                    if isinstance(
+                        data, (str, Real, datetime.datetime, pd.Timestamp)
+                    ):
+                        values.append(data)
+                    elif isinstance(data, list):
+                        values.append(cast(list[timelike], data))
+
+                    for elt in other:
+                        if isinstance(elt, Interval):
+                            msg = (
+                                "Cannot infer start/stop "
+                                "from Interval mixed inputs"
+                            )
+                            raise TypeError(msg)
+                        values.append(elt)
+
+                    if start_value is None and len(values) >= 1:
+                        start_value = values[0]
+                    if stop_value is None and len(values) >= 2:
+                        stop_value = values[1]
+
+                if start_value is None or stop_value is None:
+                    msg = "If no data is specified, provide start and stop"
+                    raise TypeError(msg)
+
+                start_list = (
+                    cast(list[timelike], start_value)
+                    if isinstance(start_value, list)
+                    else [start_value]
+                )
+                stop_list = (
+                    cast(list[timelike], stop_value)
+                    if isinstance(stop_value, list)
+                    else [stop_value]
+                )
+
+                if len(start_list) == 0 or len(stop_list) == 0:
+                    msg = "If no data is specified, provide start and stop"
+                    raise TypeError(msg)
+
+                frame = pd.DataFrame(
+                    {
+                        "start": [to_datetime(t) for t in start_list],
+                        "stop": [to_datetime(t) for t in stop_list],
+                    }
+                )
+
+        self.data = frame
 
     def __iter__(self) -> Iterator[Interval]:
         for _, line in self.data.iterrows():

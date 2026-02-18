@@ -52,7 +52,7 @@ def pia_candidate(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def country(reg: Dict[str, str]) -> Dict[str, str]:
+def country(reg: Dict[str, str]) -> Dict[str, Any]:
     # First, search the country based on the registered address intervals
     icao24 = int(reg["icao24"], 16)
     candidate = next(
@@ -65,15 +65,18 @@ def country(reg: Dict[str, str]) -> Dict[str, str]:
     )
 
     # If not found or suspicious (Unassigned), look at the tail number pattern
+    candidate_country = (
+        "" if candidate is None else str(candidate.get("country", ""))
+    )
     if (
-        candidate is None or candidate["country"].startswith("Unassigned")
+        candidate is None or candidate_country.startswith("Unassigned")
     ) and "registration" in reg.keys():
         candidate = next(
             (
                 elt
                 for elt in registration_patterns
                 if "pattern" in elt
-                and re.match(elt["pattern"], reg["registration"])
+                and re.match(str(elt["pattern"]), reg["registration"])
             ),
             None,
         )
@@ -87,12 +90,15 @@ def country(reg: Dict[str, str]) -> Dict[str, str]:
     #   the same ICAO address range
 
     if "registration" in reg.keys() and "categories" in candidate.keys():
+        categories = candidate.get("categories", [])
+        if not isinstance(categories, list):
+            categories = []
         precise = next(
             (
                 elt
-                for elt in candidate["categories"]
+                for elt in categories
                 if "pattern" in elt
-                and re.match(elt["pattern"], reg["registration"])
+                and re.match(str(elt["pattern"]), reg["registration"])
             ),
             None,
         )
@@ -192,12 +198,18 @@ class Aircraft(DataFrameMixin):
         other_columns = ["operator", "owner", "age"]
         for column in other_columns:
             if column in self.data.columns:
-                self.columns_options[column] = dict(max_width=30)
+                if self.columns_options is not None:
+                    self.columns_options[column] = dict(max_width=30)
 
     def download_junzis(self) -> None:  # coverage: ignore
         filename = self.cache_path / "junzis_db.pkl"
         if filename.exists():
-            self.data = pd.read_pickle(filename).fillna("")
+            pickled = pd.read_pickle(filename).fillna("")
+            self.data = (
+                pickled.to_frame()
+                if isinstance(pickled, pd.Series)
+                else pickled
+            )
 
         f = client.get("https://junzis.com/adb/download/aircraft_db.zip")
         with zipfile.ZipFile(io.BytesIO(f.content)) as zfile:
@@ -256,21 +268,30 @@ class Aircraft(DataFrameMixin):
         _log.info("Loading OpenSky aircraft database")
         return pd.read_parquet(self.cache_path / "opensky_db.parquet")
 
-    def __getitem__(self: T, name: str | list[str]) -> None | T:
+    def __getitem__(self: T, key: Any) -> Any:
         """Requests an aircraft by icao24 or registration (exact match)."""
 
-        if isinstance(name, str):
-            df = self.data.query(
-                "icao24 == @name.lower() or registration == @name.upper()"
-            )
+        if isinstance(key, str):
+            df = self.data[
+                (self.data.icao24 == key.lower())
+                | (self.data.registration == key.upper())
+            ]
+        elif isinstance(key, list):
+            lower = {elt.lower() for elt in key}
+            upper = {elt.upper() for elt in key}
+            df = self.data[
+                self.data.icao24.isin(lower)
+                | self.data.registration.isin(upper)
+            ]
         else:
-            df = self.data.query("icao24 in @name or registration in @name")
+            return super().__getitem__(key)
+
         if df.shape[0] == 0:
             return None
         return self.__class__(df)
 
     def get_unique(self, name: str) -> None | Tail:
-        _log.warn("Use .get() function instead", DeprecationWarning)
+        _log.warning("Use .get() function instead", DeprecationWarning)
         return self.get(name)
 
     def get(self, name: str) -> None | Tail:

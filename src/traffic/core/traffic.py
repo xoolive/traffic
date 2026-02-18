@@ -45,7 +45,7 @@ from .sv import StateVectors
 if TYPE_CHECKING:
     import plotly.graph_objects as go
     from cartopy import crs
-    from cartopy.mpl.geoaxes import GeoAxesSubplot
+    from cartopy.mpl.geoaxes import GeoAxes
     from ipyleaflet import Map as LeafletMap
     from matplotlib.artist import Artist
 
@@ -174,7 +174,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         path = Path(filename)
         _log.warning(f"{path.suffixes} extension is not supported")
-        return None
+        return cast(Self, None)
 
     @classmethod
     def from_fr24(
@@ -253,7 +253,7 @@ class Traffic(HBoxMixin, GeographyMixin):
             columns.append("flight_id")
         other_stats = cast(pd.DataFrame, other.summary(columns).eval())
         assert self_stats is not None and other_stats is not None
-        for (icao24,), lines in self_stats.groupby(["icao24"]):
+        for icao24, lines in self_stats.groupby("icao24"):
             self_interval = IntervalCollection(lines)
             self_interval = self_interval.reset_index()
             other_df = other_stats.query("icao24 == @icao24")
@@ -360,11 +360,13 @@ class Traffic(HBoxMixin, GeographyMixin):
                 self_stats = self.summary(["icao24", "start", "stop"]).eval()
                 other_stats = other.summary(["icao24", "start", "stop"]).eval()
                 assert self_stats is not None and other_stats is not None
-                for (icao24,), lines in self_stats.groupby(["icao24"]):
+                for icao24, lines in self_stats.groupby("icao24"):
                     self_interval = IntervalCollection(lines)
                     self_interval = self_interval.reset_index()
-                    other_df = other_stats.query("icao24 == @icao24")
-                    if cast(pd.DataFrame, other_df).shape[0] == 0:
+                    other_df = cast(
+                        pd.DataFrame, other_stats.query("icao24 == @icao24")
+                    )
+                    if other_df.shape[0] == 0:
                         for interval in self_interval:
                             cumul.append(
                                 dict(
@@ -452,7 +454,10 @@ class Traffic(HBoxMixin, GeographyMixin):
     def __getitem__(self, key: IterStr) -> Traffic: ...
 
     @overload
-    def __getitem__(self, key: Traffic) -> Traffic: ...
+    def __getitem__(self, key: pd.DataFrame) -> Traffic: ...
+
+    @overload
+    def __getitem__(self, key: Traffic) -> Traffic: ...  # type: ignore
 
     def __getitem__(
         self,
@@ -670,7 +675,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         if isinstance(by, pd.DataFrame):
             for i, (_, line) in enumerate(by.iterrows()):
                 if nb_flights is None or i < nb_flights:
-                    flight = self[line]
+                    flight = self._getSeries(line)
                     if flight is not None:
                         yield flight
             return
@@ -1023,7 +1028,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     @lazy_evaluation(default=True)
     def between(
         self, start: timelike, stop: time_or_delta, strict: bool = True
-    ) -> Optional["Traffic"]:
+    ) -> None | Traffic:
         # Corner cases when start or stop are None or NaT
         if start is None or start != start:
             return self.before(stop, strict=strict)
@@ -1132,12 +1137,12 @@ class Traffic(HBoxMixin, GeographyMixin):
         if "callsign" not in self.data.columns:
             default_key = list(elt for elt in default_key if elt != "callsign")
         key = default_key if self.flight_ids is None else "flight_id"
-        return (
-            self.data.groupby(key)[["timestamp"]]
-            .count()
-            .sort_values("timestamp", ascending=False)
-            .rename(columns={"timestamp": "count"})
+        stats = (
+            self.data.groupby(key, as_index=True)
+            .agg(count=("timestamp", "count"))
+            .sort_values(by="count", ascending=False)
         )
+        return cast(pd.DataFrame, stats)
 
     @lazy_evaluation()
     def summary(self, attributes: list[str]) -> pd.DataFrame: ...
@@ -1186,7 +1191,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     def plot(
         self,
-        ax: "GeoAxesSubplot",
+        ax: "GeoAxes",
         nb_flights: Optional[int] = None,
         **kwargs: Any,
     ) -> None:  # coverage: ignore
@@ -1276,8 +1281,8 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         data = (
             self.assign(
-                latitude=lambda x: ((r_lat * x.latitude).round() / r_lat),
-                longitude=lambda x: ((r_lon * x.longitude).round() / r_lon),
+                latitude=lambda x: (r_lat * x.latitude).round() / r_lat,
+                longitude=lambda x: (r_lon * x.longitude).round() / r_lon,
             )
             .groupby(["latitude", "longitude"])
             .agg(kwargs)
@@ -1301,7 +1306,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     def plot_wind(
         self,
-        ax: "GeoAxesSubplot",
+        ax: "GeoAxes",
         resolution: Union[Dict[str, float], None] = None,
         threshold: int = 10,
         filtered: bool = False,
@@ -1409,8 +1414,9 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         return self.__class__(
             self.data.groupby(["icao24", "callsign"]).filter(
-                lambda x: x.drop_duplicates("last_position").count().max()
-                > threshold
+                lambda x: (
+                    x.drop_duplicates("last_position").count().max() > threshold
+                )
             )
         )
 

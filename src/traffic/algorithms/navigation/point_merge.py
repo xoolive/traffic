@@ -1,6 +1,6 @@
 import logging
 from operator import attrgetter
-from typing import Any, Iterator
+from typing import Any, Iterator, cast
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -80,10 +80,13 @@ class PointMerge:
         if isinstance(self.point_merge, list):
             results = []
             for params in self.point_merge:
-                id_ = params.get("secondary_point", params["point_merge"])
+                params_obj = cast(dict[str, Any], params)
+                id_ = params_obj.get(
+                    "secondary_point", params_obj["point_merge"]
+                )
                 assert id_ is not None
                 name = id_ if isinstance(id_, str) else id_.name
-                for segment in flight.point_merge(**params):
+                for segment in flight.point_merge(**params_obj):
                     results.append(segment.assign(point_merge=name))
             yield from sorted(results, key=attrgetter("start"))
             return
@@ -136,7 +139,7 @@ class PointMerge:
                 self.distance_interval if self.distance_interval else (0, 100)
             )
             constant_distance = (
-                before_point.distance(self.secondary_point)
+                before_point.distance(secondary_point)
                 .diff("distance")
                 .query(
                     f"{lower} < distance < {upper} and "
