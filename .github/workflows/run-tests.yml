@@ -3,7 +3,6 @@ name: tests
 on:
   push:
   pull_request:
-  pull_request_target:
   schedule:
     - cron: "42 7 * * 0" # Every Sunday morning when I am fast asleep :)
     # This is useful for keeping the cache fit and ready
@@ -40,7 +39,7 @@ jobs:
       - name: Type checking
         run: |
           uv run mypy src/traffic tests scripts
-          uv run ty check src/traffic tests scripts
+          uv run ty check src/traffic tests
 
   cache_traffic:
     name: setup traffic cache
