@@ -2,8 +2,6 @@ name: tests
 
 on:
   push:
-    branches:
-      - master
   pull_request:
   pull_request_target:
   schedule:
@@ -36,11 +34,13 @@ jobs:
 
       - name: Style checking
         run: |
-          uv run ruff check src tests
-          uv run ruff format --check src tests
+          uv run ruff check src tests scripts
+          uv run ruff format --check src tests scripts
 
       - name: Type checking
-        run: uv run mypy src tests
+        run: |
+          uv run mypy src/traffic tests scripts
+          uv run ty check src/traffic tests scripts
 
   cache_traffic:
     name: setup traffic cache
@@ -69,7 +69,7 @@ jobs:
         with:
           path: |
             ~/.cache/traffic/
-          key: traffic-${{ hashFiles('uv.lock') }}
+          key: traffic-${{ runner.os }}-py3.12-${{ hashFiles('uv.lock') }}
 
       - name: Install project and fill cache
         if: steps.cache-folder.outputs.cache-hit != 'true'
@@ -82,6 +82,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     needs: cache_traffic
+    if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
 
     strategy:
       matrix:
@@ -90,14 +91,7 @@ jobs:
           - windows-latest
           - macos-latest
         python-version:
-          - "3.11"
-          - "3.12"
-          - "3.13"
           - "3.14"
-          # `trino` (v0.336.0) depends on `orjson` (v3.11.5)
-          # which does not support Python 3.14t
-          # https://github.com/ijl/orjson/issues/591#issuecomment-3160351169
-          # - "3.14t"
 
       fail-fast: false
 
@@ -123,7 +117,64 @@ jobs:
         with:
           path: |
             ~/.cache/traffic/
-          key: traffic-${{ hashFiles('uv.lock') }}
+          key: traffic-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install project
+        run: |
+          uv sync --dev --all-extras
+
+      - name: Run tests
+        env:
+          LD_LIBRARY_PATH: /usr/local/lib
+          TRAFFIC_CACHE_PATH: ~/.cache/traffic/
+          TRAFFIC_NM_PATH: ""
+        run: |
+          uv run pytest
+
+  tests_fast_full_matrix:
+    name: (fast/full-matrix) python-${{ matrix.python-version }} on ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+    needs: cache_traffic
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+        python-version:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+
+      fail-fast: false
+
+    env:
+      PYTHON_VERSION: ${{ matrix.python-version }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache folder for traffic
+        uses: actions/cache@v5
+        id: cache-folder
+        with:
+          path: |
+            ~/.cache/traffic/
+          key: traffic-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
 
       - name: Install project
         run: |
@@ -143,7 +194,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: cache_traffic
 
-    if: ${{ github.event_name != 'pull_request_target' }}
+    if: ${{ github.event_name == 'schedule' && github.ref == 'refs/heads/master' }}
 
     strategy:
       matrix:
@@ -152,14 +203,7 @@ jobs:
           # - windows-latest  # TODO blocking issue with LFS not working well
           - macos-latest
         python-version:
-          - "3.11"
-          - "3.12"
-          - "3.13"
           - "3.14"
-          # `trino` (v0.336.0) depends on `orjson` (v3.11.5)
-          # which does not support Python 3.14t
-          # https://github.com/ijl/orjson/issues/591#issuecomment-3160351169
-          # - "3.14t"
 
       fail-fast: false
 
@@ -216,7 +260,7 @@ jobs:
         with:
           path: |
             ~/.cache/traffic/
-          key: traffic-${{ hashFiles('uv.lock') }}
+          key: traffic-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
 
       - name: Install project
         run: |
