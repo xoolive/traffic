@@ -44,7 +44,7 @@ repos:
       - id: ty-check
         name: ty check
         description: Type check with ty.
-        entry: uv run ty check
+        entry: uv run ty check src tests
         language: system
         pass_filenames: false
         require_serial: true

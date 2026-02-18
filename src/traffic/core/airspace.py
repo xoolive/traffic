@@ -67,9 +67,9 @@ class Airspaces(DataFrameMixin):
     )
 
     @overload
-    def __getitem__(self, key: Any) -> Any: ...
-    @overload
     def __getitem__(self, key: str) -> Airspace: ...
+    @overload
+    def __getitem__(self, key: Any) -> Any: ...
 
     def __getitem__(self, key: Any) -> Any:
         if not isinstance(key, str):
