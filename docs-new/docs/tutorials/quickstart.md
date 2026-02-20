@@ -29,7 +29,8 @@ Flight(icao24='484506', callsign='TRA051')
 ```
 
 !!! tip "Rich representations"
-If you activate `rich` representations, per <https://rich.readthedocs.io/>, rendering is adapted:
+
+    If you activate `rich` representations, per <https://rich.readthedocs.io/>, rendering is adapted:
 
     ```python
     from rich.pretty import pprint
@@ -133,8 +134,9 @@ try {
 }
 </script>
 
-!!!warning
-Watch the difference between `strict` (`>`) and inclusive (`>=`) timestamp comparisons.
+!!! warning
+
+    Watch the difference between `strict` (`>`) and inclusive (`>=`) timestamp comparisons.
 
     ``` python
     >>> belevingsvlucht.after("2018-05-30 19:00").start
@@ -143,9 +145,10 @@ Watch the difference between `strict` (`>`) and inclusive (`>=`) timestamp compa
     Timestamp('2018-05-30 19:00:00+0000', tz='UTC')
     ```
 
-!!!note
-Each `Flight` wraps a pandas `DataFrame`.  
- If a method is missing for a specific task, access the underlying dataframe directly.
+!!! note
+
+    Each `Flight` wraps a pandas `DataFrame`.  
+    If a method is missing for a specific task, access the underlying dataframe directly.
 
 ```python
 belevingsvlucht.between("2018-05-30 19:00", "2018-05-30 20:00").data
