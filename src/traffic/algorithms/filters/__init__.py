@@ -108,7 +108,7 @@ class FilterMean(FilterBase):
 
 
 class FilterAboveSigmaMedian(FilterBase):
-    """Filters noisy values above one sigma wrt median filter.
+    """Filters noisy values above one sigma with respect to median filter.
 
     The method first applies a median filter on each feature of the
     DataFrame. A default kernel size is applied for a number of features
@@ -120,22 +120,23 @@ class FilterAboveSigmaMedian(FilterBase):
     unacceptable values with NaNs.
 
     Then, a strategy may be applied to fill the NaN values, by default a
-    forward/backward fill. Other strategies may be passed, for instance *do
-    nothing*: ``None``; or *interpolate*: ``lambda x: x.interpolate()``.
+    forward/backward fill. Other strategies may be passed, for instance:
 
-    .. note::
+    - *do nothing*: ``None``; or
+    - *interpolate*: ``lambda x: x.interpolate()``.
 
-        This method if often more efficient when applied several times with
-        different kernel values.Kernel values may be passed as integers, or
-        list/tuples of integers for cascade of filters:
+    !!! note "Kernel tuning"
+        This method is often more efficient when applied several times with
+        different kernel values. Kernel values may be passed as integers, or
+        list/tuples of integers for cascaded filters.
 
-        .. code:: python
+        ```python
+        # this cascade of filters appears to work well on altitude
+        flight.filter(altitude=17).filter(altitude=53)
 
-            # this cascade of filters appears to work well on altitude
-            flight.filter(altitude=17).filter(altitude=53)
-
-            # this is equivalent to the default value
-            flight.filter(altitude=(17, 53))
+        # this is equivalent to the default value
+        flight.filter(altitude=(17, 53))
+        ```
 
     """
 

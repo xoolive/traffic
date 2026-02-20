@@ -1,0 +1,24 @@
+<!-- Tags -->
+{% include "partials/tags.html" %}
+
+<!-- Actions -->
+{% include "partials/actions.html" %}
+
+<!--
+  Same as Material default, except we skip the fallback page title on homepage.
+-->
+{% if "\u003ch1" not in page.content and page.url not in ["", ".", "index/"] %}
+<h1>{{ page.title | d(config.site_name, true)}}</h1>
+{% endif %}
+
+<!-- Page content -->
+{{ page.content }}
+
+<!-- Source file information -->
+{% include "partials/source-file.html" %}
+
+<!-- Was this page helpful? -->
+{% include "partials/feedback.html" %}
+
+<!-- Comment system -->
+{% include "partials/comments.html" %}

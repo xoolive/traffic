@@ -1,0 +1,161 @@
+site_name: traffic
+site_description: Air traffic data processing with Python
+site_url: https://traffic-viz.github.io
+repo_url: https://github.com/xoolive/traffic
+repo_name: xoolive/traffic
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  custom_dir: overrides
+  favicon: assets/favicon/favicon.ico
+  logo: assets/logo/logo_small.png
+  font:
+    text: "Inter"
+    code: "JetBrains Mono"
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+extra_css:
+  - assets/stylesheets/extra.css
+  - assets/stylesheets/observable.css
+  - https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
+
+extra_javascript:
+  - https://unpkg.com/leaflet@1.9.4/dist/leaflet.js
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - ../src
+          options:
+            docstring_style: sphinx
+            merge_init_into_class: true
+            scoped_crossrefs: true
+            relative_crossrefs: true
+            show_source: false
+            show_root_heading: true
+            show_root_toc_entry: false
+            show_signature_annotations: true
+            separate_signature: true
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Getting started: getting-started.md
+  - Publications: publications.md
+  - Tutorials:
+      - Overview: tutorials/index.md
+      - Quickstart: tutorials/quickstart.md
+      - Data visualization: tutorials/visualization.md
+      - Declarative processing: tutorials/declarative.md
+  - Gallery:
+      - Overview: gallery/index.md
+      - Calibration flights: gallery/calibration.md
+      - SAVAN flights: gallery/savan.md
+      - Tour de France 2020: gallery/tour-de-france.md
+      - Zero gravity: gallery/zero-gravity.md
+      - Traffic density: gallery/heatmaps.md
+      - COVID 19: gallery/covid.md
+      - Russian ban: gallery/russian-ban.md
+      - Geomagnetic declination: gallery/geomagnetic-declination.md
+      - Sun elevation: gallery/sun-elevation.md
+  - User Guide:
+      - Overview: user-guide/index.md
+      - Sources of data:
+          - Sample trajectories: user-guide/sample-trajectories.md
+          - Airport information: user-guide/airports.md
+          - Aircraft information: user-guide/aircraft.md
+          - Navigation data: user-guide/navigation.md
+          - Flight plans: user-guide/flight-plans.md
+          - Airspace information: user-guide/airspace.md
+          - OpenSky Network: user-guide/opensky.md
+          - Raw data: user-guide/raw-data.md
+          - EUROCONTROL data: user-guide/eurocontrol.md
+      - Data processing:
+          - Trajectory cleaning: user-guide/cleaning.md
+          - Trajectory interpolation: user-guide/interpolation.md
+          - Trajectory resampling: user-guide/resampling.md
+          - Trajectory simplification: user-guide/simplification.md
+          - Trajectory arithmetic: user-guide/arithmetic.md
+          - Trajectory iteration: user-guide/iteration.md
+      - Navigation and performance:
+          - Flight phases: user-guide/flight-phases.md
+          - Go-around: user-guide/go-around.md
+          - Runway detection: user-guide/runway-detection.md
+          - Holding patterns: user-guide/holding-patterns.md
+          - Point merge: user-guide/point-merge.md
+          - Top of climb: user-guide/top-of-climb.md
+          - Top of descent: user-guide/top-of-descent.md
+          - Closest point of approach: user-guide/cpa.md
+          - ATC deconfliction: user-guide/atc-deconfliction.md
+          - Emissions estimation: user-guide/emissions.md
+          - Trajectory prediction: user-guide/prediction.md
+      - Data visualization:
+          - Plot trajectories: user-guide/plotting.md
+          - Airspace occupancy: user-guide/airspace-occupancy.md
+          - Trajectory clustering: user-guide/clustering.md
+      - Troubleshooting:
+          - Common issues: user-guide/troubleshooting.md
+  - Reference:
+      - API Overview: reference/index.md
+      - Core:
+          - traffic.core.airspace: reference/api/traffic.core.airspace.md
+          - traffic.core.cache: reference/api/traffic.core.cache.md
+          - traffic.core.distance: reference/api/traffic.core.distance.md
+          - traffic.core.flight: reference/api/traffic.core.flight.md
+          - traffic.core.flightplan: reference/api/traffic.core.flightplan.md
+          - traffic.core.intervals: reference/api/traffic.core.intervals.md
+          - traffic.core.iterator: reference/api/traffic.core.iterator.md
+          - traffic.core.lazy: reference/api/traffic.core.lazy.md
+          - traffic.core.mixins: reference/api/traffic.core.mixins.md
+          - traffic.core.structure: reference/api/traffic.core.structure.md
+          - traffic.core.sv: reference/api/traffic.core.sv.md
+          - traffic.core.time: reference/api/traffic.core.time.md
+          - traffic.core.traffic: reference/api/traffic.core.traffic.md
+      - Algorithms:
+          - traffic.algorithms.filters: reference/api/traffic.algorithms.filters.md
+          - traffic.algorithms.ground: reference/api/traffic.algorithms.ground.md
+          - traffic.algorithms.metadata: reference/api/traffic.algorithms.metadata.md
+          - traffic.algorithms.navigation: reference/api/traffic.algorithms.navigation.md
+          - traffic.algorithms.performance: reference/api/traffic.algorithms.performance.md
+          - traffic.algorithms.prediction: reference/api/traffic.algorithms.prediction.md

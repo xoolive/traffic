@@ -196,7 +196,7 @@ def point_leaflet(self: Any, **kwargs: Any) -> Marker:
     marker = Marker(location=(self.latitude, self.longitude), **kwargs)
 
     label = HTML()
-    label.value = repr(self)
+    label.value = kwargs.get("title", "")
     marker.popup = label
 
     return marker

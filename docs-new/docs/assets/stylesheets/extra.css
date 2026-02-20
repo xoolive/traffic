@@ -1,0 +1,56 @@
+.md-typeset {
+  font-size: 0.75rem;
+  line-height: 1.65;
+}
+
+.md-typeset h1 {
+  margin-bottom: 0.8rem;
+}
+
+.md-typeset h2 {
+  margin-top: 2rem;
+}
+
+.md-content__inner {
+  max-width: 72ch;
+}
+
+.hero-tagline {
+  font-size: 1.15rem;
+  margin: 0.4rem auto 1rem;
+  max-width: 52ch;
+}
+
+.hero-actions {
+  margin: 1rem 0 1.5rem;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.home-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-card {
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.8rem;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--md-default-bg-color) 92%, #d7eef7 8%);
+}
+
+.home-card h3 {
+  margin-top: 0.1rem;
+  margin-bottom: 0.45rem;
+}
+
+@media (max-width: 900px) {
+  .home-grid,
+  .home-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}

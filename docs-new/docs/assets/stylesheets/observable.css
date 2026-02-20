@@ -1,0 +1,62 @@
+/* Observable-inspired blocks in quickstart */
+.obs-view-host {
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  background: color-mix(in srgb, var(--md-default-bg-color) 94%, #eaf2f7 6%);
+  margin: 0.6rem 0 1rem;
+}
+
+.obs-view-host h4 {
+  margin: 0 0 0.35rem;
+}
+
+.obs-view-host ul {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.obs-view-host li {
+  margin-bottom: 0.1rem !important;
+}
+
+.obs-table-host {
+  overflow-x: auto;
+  margin: 0.6rem 0 1.1rem;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.75rem;
+  background: var(--md-default-bg-color);
+}
+
+.obs-table-host table {
+  width: 100%;
+  min-width: 680px;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.obs-table-host thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  font-weight: 600;
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  background: color-mix(in srgb, var(--md-default-bg-color) 88%, #dbe7ef 12%);
+}
+
+.obs-table-host tbody td,
+.obs-table-host tbody th {
+  padding: 0.44rem 0.65rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  vertical-align: top;
+}
+
+.obs-table-host tbody tr:hover td,
+.obs-table-host tbody tr:hover th {
+  background: color-mix(in srgb, var(--md-default-bg-color) 85%, #ebf3f8 15%);
+}

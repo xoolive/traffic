@@ -57,6 +57,9 @@ dev = [
   "jupyter-sphinx>=0.5.3",
   "vl-convert-python>=1.7.0",
   "ty>=0.0.17",
+  "zensical>=0.0.23",
+  "mkdocstrings>=1.0.3",
+  "mkdocstrings-python>=2.0.2",
 ]
 
 [tool.uv.sources]
