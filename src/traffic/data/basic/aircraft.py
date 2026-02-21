@@ -131,7 +131,9 @@ class Aircraft(DataFrameMixin):
     """By default, the OpenSky aircraft database is downloaded from
     https://opensky-network.org/aircraft-database
 
+    ```pycon
     >>> from traffic.data import aircraft
+    ```
 
     The database can be manually downloaded or upgraded (the operation can take
     up to five minutes with a slow Internet connection), with
@@ -140,23 +142,29 @@ class Aircraft(DataFrameMixin):
     Basic requests can be made by the bracket notation, they return **a subset
     of the database, even if the result is unique**
 
+    ```pycon
     >>> aircraft["F-GFKY"]  # doctest: +SKIP
       icao24   registration   typecode   model             operator     owner
      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
+    ```
 
+    ```pycon
     >>> aircraft["391558"]  # doctest: +SKIP
       icao24   registration   typecode   model             operator   owner
      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       391558   F-GFKY         A320       Airbus A320 211   Air France   Air France
+    ```
 
     Only :meth:`~traffic.data.basic.aircraft.Aircraft.get` returns a
     :class:`~traffic.data.basic.aircraft.Tail` object.
 
+    ```pycon
     >>> aircraft.get("F-GFKY")
     Tail(icao24='391558', registration='F-GFKY', typecode='A320', flag='🇫🇷')
+    ```
 
-    .. tip::
+    !!! tip
 
         Different custom databases may also be used as a replacement if you
         provide a path in the configuration file.
@@ -304,9 +312,11 @@ class Aircraft(DataFrameMixin):
 
         :param name: the icao24 identifier or the tail number of the aircraft
 
+        ```pycon
         >>> from traffic.data import aircraft
         >>> aircraft.get("F-GFKY")
         Tail(icao24='391558', registration='F-GFKY', typecode='A320', flag='🇫🇷')
+        ```
         """
         df = self[name]
         if df is None:
@@ -318,6 +328,7 @@ class Aircraft(DataFrameMixin):
 
         :param name: the owner or operator of the aircraft
 
+        ```pycon
         >>> aircraft.operator("British Antarctic")  # doctest: +SKIP
           icao24   registration   typecode   model   operator
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -325,6 +336,7 @@ class Aircraft(DataFrameMixin):
           4241f5   VP-FBL         DHC6               British Antarctic Survey
           4241f6   VP-FAZ         DHC6               British Antarctic Survey
           43be5b   VP-FBQ         DHC7               British Antarctic Survey
+        ```
 
         """
         return self.query(f"operator.str.contains('{name}')")
@@ -334,6 +346,7 @@ class Aircraft(DataFrameMixin):
 
         :param name: the owner or operator of the aircraft
 
+        ```pycon
         >>> aircraft.stats("Air France")  # doctest: +SKIP
                                     model  icao24
         typecode
@@ -343,6 +356,7 @@ class Aircraft(DataFrameMixin):
         A321              Airbus A321-212      20
         A332              Airbus A330-203      15
         ...
+        ```
         """
         subset = self.operator(name)
         if subset is None:
@@ -358,6 +372,7 @@ class Aircraft(DataFrameMixin):
 
         :param name: the model or the typecode of the aircraft
 
+        ```pycon
         >>> aircraft.model("A320")  # doctest: +SKIP
           icao24   registration   typecode   model         operator   owner
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -372,6 +387,7 @@ class Aircraft(DataFrameMixin):
           380d9a   F-WWBD         A20N       Airbus A320   Airbus     Airbus
           380dba   F-WWBF         A20N       Airbus A320   Airbus     Airbus
           ... (7021 more entries)
+        ```
 
         """
 
@@ -398,6 +414,7 @@ class Aircraft(DataFrameMixin):
         :param kwargs: all keyword arguments correspond to the name of
             other methods which are chained if query_str is non empty
 
+        ```pycon
         >>> aircraft.query(registration="^F-ZB", model="EC45")  # doctest: +SKIP
           icao24   registration   typecode   model                     operator
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -412,6 +429,7 @@ class Aircraft(DataFrameMixin):
           3b7b8d   F-ZBQD         EC45       Airbus Helicopters H145   French Securite Civile
           3b7b8e   F-ZBQC         EC45       Airbus Helicopters H145   French Securite Civile
           ... (19 more entries)
+        ```
         """
         if query_str != "":
             return super().query(query_str, *args, **kwargs)

@@ -30,12 +30,14 @@ def flight_leaflet(self: Any, **kwargs: Any) -> Optional[Polyline]:
 
     Example usage:
 
+    ```pycon
     >>> from ipyleaflet import Map
     >>> # Center the map near the landing airport
     >>> m = Map(center=flight.at().latlon, zoom=7)
     >>> m.add(flight)
     >>> m.add(flight.leaflet(color='red'))
     >>> m
+    ```
 
     """
     shape = self.shape

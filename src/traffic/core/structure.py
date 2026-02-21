@@ -174,6 +174,7 @@ class Airport(FormatMixin, HBoxMixin, PointMixin, ShapelyMixin):
         """
         Get runway information associated with the airport.
 
+        ```pycon
         >>> airports['EHAM'].runways
           latitude   longitude   bearing   name
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -187,7 +188,8 @@ class Airport(FormatMixin, HBoxMixin, PointMixin, ShapelyMixin):
           52.3       4.737       2.997     36C
           52.32      4.78        183       18L
           52.29      4.777       3.002     36R
-        ... (2 more entries)"""
+        ... (2 more entries)
+        ```"""
         from ..data import runways
 
         return runways[self]

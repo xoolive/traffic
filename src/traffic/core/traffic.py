@@ -86,7 +86,7 @@ class Traffic(HBoxMixin, GeographyMixin):
     `clustering <#traffic.core.Traffic.clustering>`_ (more to come) are
     available.
 
-    .. note::
+    !!! note
 
         When methods need to be chained on each trajectory contained in the
         collection, **lazy iteration and evaluation** is in place. This means
@@ -96,7 +96,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         .. autoclass:: traffic.core.lazy.LazyTraffic()
             :members: eval
 
-    .. tip::
+    !!! tip
 
         Sample traffic structures are provided for testing purposes in module
         ``traffic.data.samples``
@@ -648,13 +648,17 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         Default iteration calls this method with default arguments:
 
+        ```pycon
         >>> for flight in t:
         ...     pass
+        ```
 
         is equivalent to:
 
+        ```pycon
         >>> for flight in t.iterate():
         ...     pass
+        ```
 
         However the it may be beneficial to specify the `by` parameter:
 
@@ -703,11 +707,15 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         Default iteration calls this method with default arguments:
 
+        ```pycon
         >>> t.filter()
+        ```
 
         is equivalent to:
 
+        ```pycon
         >>> t.iterate_lazy().filter()
+        ```
 
         However the it may be beneficial to specify the `by` parameter:
 
@@ -1149,7 +1157,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     def geoencode(self, *args: Any, **kwargs: Any) -> NoReturn:
         """
-        .. danger::
+        !!! danger
 
             This method is not implemented.
         """
@@ -1204,9 +1212,11 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         Example usage:
 
+        ```pycon
         >>> from cartes.crs import EuroPP
         >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=EuroPP()))
         >>> t.plot(ax, alpha=.5)
+        ```
 
         """
         params: Dict[str, Any] = {}
@@ -1328,6 +1338,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         Example usage:
 
+        ```pycon
         >>> from cartes.crs import Mercator
         >>> fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator()))
         >>> (
@@ -1338,6 +1349,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...     .eval()
         ...     .plot_wind(ax, alpha=.5)
         ... )
+        ```
 
         """
 
@@ -1513,6 +1525,7 @@ class Traffic(HBoxMixin, GeographyMixin):
 
         Example usage:
 
+        ```pycon
         >>> from cartes.crs import EuroPP
         >>> from sklearn.cluster import DBSCAN
         >>> from sklearn.preprocessing import StandardScaler
@@ -1524,6 +1537,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         ...     transform=StandardScaler(),
         ... ).fit_predict()
         >>> t_dbscan.groupby(["cluster"]).agg({"flight_id": "nunique"})
+        ```
 
         .. parsed-literal::
                         flight_id
@@ -1585,7 +1599,7 @@ class Traffic(HBoxMixin, GeographyMixin):
         Returns the trajectory in the Traffic that is the closest to all other
         trajectories.
 
-        .. warning::
+        !!! warning
 
             Remember the time and space complexity of this method is in O(n^2).
 

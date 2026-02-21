@@ -28,18 +28,23 @@ class LandingAlignedOnILS:
     Example usage:
 
 
+    ```pycon
     >>> from traffic.data.samples import belevingsvlucht
+    ```
 
     The detected runway identifier is available in the ILS column:
 
 
+    ```pycon
     >>> aligned = belevingsvlucht.landing('EHAM').next()
     >>> f"ILS {aligned.max('ILS')}; landing time {aligned.stop:%H:%M}"
     'ILS 06; landing time 20:17'
+    ```
 
     We can specify the method by default:
 
 
+    ```pycon
     >>> for aligned in belevingsvlucht.landing('EHLE', method="default"):
     ...     print(aligned.start)
     2018-05-30 16:00:...
@@ -48,15 +53,19 @@ class LandingAlignedOnILS:
     2018-05-30 18:13:...
     2018-05-30 19:05:...
     2018-05-30 19:42:...
+    ```
 
+    ```pycon
     >>> final = belevingsvlucht.final("landing('EHLE', method='default')")
     >>> final.ILS_max  # equivalent to final.max("ILS")
     '23'
+    ```
 
     Usual built-in functions works as on any kind of iterators, here we get the
     flight segment with the latest start timestamp. (equivalent to the `final`
     method used above)
 
+    ```pycon
     >>> from operator import attrgetter
     >>> last_aligned = max(
     ...     belevingsvlucht.landing("EHLE"),
@@ -64,6 +73,7 @@ class LandingAlignedOnILS:
     ... )
     >>> last_aligned.start
     Timestamp('2018-05-30 19:42:...+0000', tz='UTC')
+    ```
 
 
     """
@@ -149,14 +159,17 @@ class LandingWithRunwayChange:
     We can reuse the trajectory from the :ref:`Getting started` page to
     illustrate the usage of this method
 
+    ```pycon
     >>> from traffic.data.samples import quickstart
     >>> flight = quickstart['AFR17YC']
     >>> flight.has("landing(airport='LFPG', method='runway_change')")
     True
+    ```
 
     Since the trajectory has a runway change, we can print characteristics of
     each segment:
 
+    ```pycon
     >>> segments = flight.landing('LFPG', method="aligned_on_ils")
     >>> first = next(segments)
     >>> f"{first.start:%H:%M} {first.stop:%H:%M} aligned on {first.ILS_max}"
@@ -164,6 +177,7 @@ class LandingWithRunwayChange:
     >>> second = next(segments)
     >>> f"{second.start:%H:%M} {second.stop:%H:%M} aligned on {second.ILS_max}"
     '13:36 13:39 aligned on 08L'
+    ```
     """
 
     def __init__(
@@ -228,6 +242,7 @@ class LandingAnyAttempt:
       airports. It is important to pick a threshold significantly above the
       altitude of the candidate airports.
 
+    ```pycon
     >>> from traffic.data.samples import belevingsvlucht
     >>> attempts = belevingsvlucht.landing(method="anywhere")
     >>> for i, attempt in enumerate(attempts):
@@ -238,6 +253,7 @@ class LandingAnyAttempt:
     Step 3: EHLE runway 05
     Step 4: EHLE runway 23
     Step 5: EHAM runway 06
+    ```
 
     """
 

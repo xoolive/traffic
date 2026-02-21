@@ -27,10 +27,12 @@ class PolygonBasedRunwayDetection:
       threshold side.
     :param opening: the angle (in degrees) of opening of the trapeze.
 
+    ```pycon
     >>> from traffic.data.samples import belevingsvlucht
     >>> takeoff = belevingsvlucht.next('takeoff("EHAM", method="default")')
     >>> takeoff.duration
     Timedelta('0 days 00:00:25')
+    ```
     """
 
     def __init__(
@@ -160,15 +162,19 @@ class TrackBasedRunwayDetection:
     :param adv_alt_th: Minimum altitude to consider a flight as a
       landing/go-around candidate.
 
+    ```pycon
     >>> from traffic.data.samples import elal747
     >>> takeoff = elal747.takeoff(method="track_based", airport="LIRF").next()
     >>> takeoff.duration, takeoff.runway_max
     (Timedelta('0 days 00:00:40'), '25')
+    ```
 
+    ```pycon
     >>> from traffic.data.samples import belevingsvlucht
     >>> takeoff = belevingsvlucht.next('takeoff("EHAM", method="default")')
     >>> takeoff.duration
     Timedelta('0 days 00:00:25')
+    ```
 
     """
 

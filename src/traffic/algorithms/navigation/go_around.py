@@ -27,19 +27,25 @@ class GoAroundDetection:
 
     Example usage:
 
+    ```pycon
     >>> from traffic.data.samples import belevingsvlucht
+    ```
 
     By default, go arounds will be detected at Amsterdam Schiphol airport (EHAM)
 
 
+    ```pycon
     >>> belevingsvlucht.go_around().next()
     >>> amsterdam_goaround = GoAroundDetection(airport="EHAM")
     >>> belevingsvlucht.go_around(method=amsterdam_goaround).next()
+    ```
 
     There were none; however we find 5 of them at Lelystad airport.
 
+    ```pycon
     >>> belevingsvlucht.go_around("EHLE").sum()
     5
+    ```
 
     """
 

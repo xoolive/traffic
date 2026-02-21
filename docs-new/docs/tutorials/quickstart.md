@@ -7,7 +7,7 @@ A single trajectory is embedded in a `Flight` structure, a collection of traject
 `Flight` is the core class offering representations, methods and attributes to single trajectories. Trajectories can either:
 
 - **be imported from the sample trajectory set**;
-- be downloaded from The OpenSky Network;
+- be [downloaded from The OpenSky Network](../user-guide/opensky.md);
 - be loaded from a tabular file (csv, json, parquet, etc.);
 - be decoded from raw ADS-B signals or streams.
 

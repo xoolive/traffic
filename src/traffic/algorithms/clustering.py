@@ -182,7 +182,7 @@ def centroid(
     Returns the trajectory in the Traffic that is the closest to all other
     trajectories.
 
-    .. warning::
+    !!! warning
 
         Remember the time and space complexity of this method is **quadratic**.
 

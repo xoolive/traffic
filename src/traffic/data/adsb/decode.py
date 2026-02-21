@@ -285,7 +285,7 @@ class RawData(DataFrameMixin):
         :param filename: the path to the file containing the data
         :param reference: the reference location, as specified above
 
-        .. warning::
+        !!! warning
 
             dump1090 must be run the ``--mlat`` option.
 

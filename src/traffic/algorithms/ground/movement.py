@@ -14,7 +14,7 @@ class StartMoving:
     """
     Returns the part of the trajectory after the aircraft starts moving.
 
-    .. warning::
+    !!! warning
 
         This method has been extensively tested on aircraft taxiing before
         take-off. It should be adapted/taken with extra care for

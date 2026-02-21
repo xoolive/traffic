@@ -31,6 +31,7 @@ class FlightPlanInference:
        It should be good practice to limit the size of the navaid dataset: the
        smaller the data, the faster the computation will be.
 
+    ```pycon
     >>> from traffic.data import navaids
     >>> from traffic.data.samples import savan
     >>> flight = savan["SAVAN01"]
@@ -44,6 +45,7 @@ class FlightPlanInference:
     aligned on DPE (VOR) for 0 days 00:16:19
     aligned on CHW (VOR) for 0 days 00:15:45
     aligned on BRY (VOR) for 0 days 00:19:27
+    ```
 
     For more insights about this example:
     :ref:`Calibration flights with SAVAN trajectories`

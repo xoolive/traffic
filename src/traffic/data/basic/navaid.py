@@ -37,12 +37,18 @@ class Navaids(GeoDBMixin):
 
     A (deprecated) database of world navigational beacons is available as:
 
+    ```pycon
     >>> from traffic.data import navaids
+
+    ```
 
     Any navigational beacon can be accessed by the bracket notation:
 
+    ```pycon
     >>> navaids['NARAK']
     Navaid('NARAK', type='FIX', latitude=44.29527778, longitude=1.74888889)
+
+    ```
 
     """
 
@@ -248,13 +254,19 @@ class Navaids(GeoDBMixin):
     ) -> Navaid:
         """Search for a navaid from all alternative data sources.
 
+        ```pycon
         >>> from traffic.data import navaids
+        ```
 
+        ```pycon
         >>> navaids.get("ZUE")  # doctest: +SKIP
         Navaid('ZUE', type='NDB', latitude=30.9, longitude=20.068, altitude=0.0, description='ZUEITINA NDB', frequency='369.0kHz')
+        ```
 
+        ```pycon
         >>> navaids.extent("Switzerland").get("ZUE")  # doctest: +SKIP
         Navaid('ZUE', type='VOR', latitude=47.592, longitude=8.817, altitude=1730.0, description='ZURICH EAST VOR-DME', frequency='110.05MHz')
+        ```
         """
         for _key, value in reversed(
             sorted(
@@ -289,22 +301,26 @@ class Navaids(GeoDBMixin):
         Selects the subset of airways matching name in the name or description
         field.
 
-        .. warning::
+        !!! warning
             The same name may match several navigational beacons in the world.
             Use the extent() method to limit the search to an area of interest.
 
+        ```pycon
         >>> navaids.search("ZUE")  # doctest: +SKIP
           name   type   latitude   longitude   altitude   frequency   description
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ZUE    NDB    30.9       20.07       0          369         ZUEITINA NDB
           ZUE    VOR    47.59      8.818       1730       110         ZURICH EAST VOR-DME
           ZUE    DME    47.59      8.818       1730       110         ZURICH EAST VOR-DME
+        ```
 
+        ```pycon
         >>> navaids.extent("Switzerland").search("ZUE")  # doctest: +SKIP
           name   type   latitude   longitude   altitude   frequency   description
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ZUE    VOR    47.59      8.818       1730       110         ZURICH EAST VOR-DME
           ZUE    DME    47.59      8.818       1730       110         ZURICH EAST VOR-DME
+        ```
         """
         return self.__class__(
             self.data.query(

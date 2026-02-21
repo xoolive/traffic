@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import pitot.geodesy as geo
 
@@ -14,11 +14,23 @@ _log = logging.getLogger(__name__)
 
 def closest_point(
     data: pd.DataFrame,
-    point: Optional["PointLike"] = None,
+    point: None | "PointLike" = None,
     *,
-    latitude: Optional[float] = None,
-    longitude: Optional[float] = None,
+    latitude: None | float = None,
+    longitude: None | float = None,
 ) -> pd.Series:
+    """Return the row in ``data`` closest to a reference point.
+
+    A reference can be provided either as a ``point`` object exposing
+    ``latitude``, ``longitude`` and ``name`` attributes, or via explicit
+    ``latitude`` and ``longitude`` values.
+
+    :param data: a Dataframe containing ``latitude`` and ``longitude`` columns
+    :param point: optional point-like object used as reference
+    :param latitude: reference latitude when ``point`` is not provided
+    :param longitude: reference longitude when ``point`` is not provided
+    :return: closest row as a series, enriched with ``distance`` and ``point``
+    """
     if point is not None:
         latitude = point.latitude
         longitude = point.longitude
@@ -41,15 +53,13 @@ def closest_point(
 
 
 def minimal_angular_difference(angle1: float, angle2: float) -> float:
-    """
-    Calculate the min diff between two angles, considering circularity.
+    """Return the minimal difference between two angles.
 
-    Parameters:
-        angle1 (float): First angle in degrees.
-        angle2 (float): Second angle in degrees.
+    The result is always in the range [0, 180].
 
-    Returns:
-        float: Minimal angular difference in degrees.
+    :param angle1: first angle in degrees
+    :param angle2: second angle in degrees
+    :return: minimal angular difference in degrees
     """
     diff = abs(angle1 - angle2) % 360
     return min(diff, 360 - diff)

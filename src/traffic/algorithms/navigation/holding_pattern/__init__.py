@@ -33,9 +33,11 @@ class MLHoldingDetection:
     :param vertical_rate: a boolean set to True if the vertical rate should be
       taken into account in the model.
 
+    ```pycon
     >>> from traffic.data.samples import belevingsvlucht
     >>> belevingsvlucht.has("holding_pattern")
     True
+    ```
 
     See also: :ref:`How to detect holding patterns in aircraft trajectories?`
 

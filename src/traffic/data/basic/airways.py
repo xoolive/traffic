@@ -27,17 +27,23 @@ class Airways(GeoDBMixin):
 
     A (deprecated) database of world ATS routes is available as:
 
+    ```pycon
     >>> from traffic.data import airways
+    ```
 
     Any ATS route can be accessed by the bracket notation:
 
+    ```pycon
     >>> airways['Z50']
     Route('Z50', navaids=['EGOBA', 'SOT', 'BULTI', 'AYE', 'AVMON', ...])
+    ```
 
+    ```pycon
     >>> airways.extent((-0.33, 4.85, 42.34, 45.05))["UN869"]
     Route('UN869', navaids=['XOMBO', 'TIVLI', 'AGN', 'NARAK', 'NASEP', ...])
+    ```
 
-    .. note::
+    !!! note
         The following snippet plots the (in)famous `Silk Road Airway (L888)
         <https://flugdienstberater.org/l888>`_ over the Himalaya mountains,
         which requires special qualifications.
@@ -156,6 +162,7 @@ class Airways(GeoDBMixin):
         Selects the subset of airways matching name in the route name or in the
         passed navigational beacon.
 
+        ```pycon
         >>> airways.extent('Switzerland').search("Z50")  # doctest: +SKIP
           route   id   navaid   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -164,7 +171,9 @@ class Airways(GeoDBMixin):
           Z50     9    SOPER    46.89      8.944
           Z50     10   PELAD    46.6       9.726
           Z50     11   RESIA    46.48      10.04
+        ```
 
+        ```pycon
         >>> airways.search("NARAK")  # doctest: +SKIP
           route   id   navaid   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -174,6 +183,7 @@ class Airways(GeoDBMixin):
           UT122   15   NARAK    44.3       1.749
           UY155   2    NARAK    44.3       1.749
           UZ365   3    NARAK    44.3       1.749
+        ```
         """
         output = self.__class__(
             self.data.query("route == @name.upper() or navaid == @name.upper()")

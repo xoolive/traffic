@@ -539,22 +539,19 @@ class FlightPlan(ShapelyMixin):
     ) -> List["Artist"]:  # coverage: ignore
         """Plots the trajectory on a Matplotlib axis.
 
-        FlightPlans support Cartopy axis as well with automatic projection. If
-        no projection is provided, a default `PlateCarree
-        <https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree>`_
-        is applied.
+        FlightPlans support Cartopy axes with automatic projection. If no
+        projection is provided, a default `PlateCarree` is applied.
 
         Example usage:
 
-        .. code:: python
+        ```python
+        from cartes.crs import Mercator
+        fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
+        flightplan.plot(ax, labels=True, alpha=.5)
+        ```
 
-            from cartes.crs import Mercator
-            fig, ax = plt.subplots(1, subplot_kw=dict(projection=Mercator())
-            flightplan.plot(ax, labels=True, alpha=.5)
-
-        .. note::
-            See also `geoencode() <#traffic.core.Flight.geoencode>`_ for the
-            altair equivalent.
+        !!! note
+            See also `Flight.geoencode` for the Altair equivalent.
 
         """
 

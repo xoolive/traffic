@@ -17,7 +17,6 @@ theme:
     code: "JetBrains Mono"
   features:
     - navigation.sections
-    - navigation.expand
     - navigation.top
     - content.code.copy
     - search.suggest
@@ -70,6 +69,7 @@ plugins:
             - ../src
           options:
             docstring_style: sphinx
+            docstring_section_style: list
             merge_init_into_class: true
             scoped_crossrefs: true
             relative_crossrefs: true
@@ -91,15 +91,18 @@ nav:
       - Declarative processing: tutorials/declarative.md
   - Gallery:
       - Overview: gallery/index.md
-      - Calibration flights: gallery/calibration.md
-      - SAVAN flights: gallery/savan.md
-      - Tour de France 2020: gallery/tour-de-france.md
-      - Zero gravity: gallery/zero-gravity.md
-      - Traffic density: gallery/heatmaps.md
-      - COVID 19: gallery/covid.md
-      - Russian ban: gallery/russian-ban.md
-      - Geomagnetic declination: gallery/geomagnetic-declination.md
-      - Sun elevation: gallery/sun-elevation.md
+      - Trajectory patterns:
+          - Calibration flights: gallery/calibration.md
+          - SAVAN flights: gallery/savan.md
+          - Tour de France 2020: gallery/tour-de-france.md
+          - Zero gravity: gallery/zero-gravity.md
+      - Air traffic density:
+          - Traffic density: gallery/heatmaps.md
+          - COVID 19: gallery/covid.md
+          - Russian ban: gallery/russian-ban.md
+      - Planet Earth:
+          - Geomagnetic declination: gallery/geomagnetic-declination.md
+          - Sun elevation: gallery/sun-elevation.md
   - User Guide:
       - Overview: user-guide/index.md
       - Sources of data:

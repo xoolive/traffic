@@ -22,18 +22,22 @@ class FlightRadar24:
 
         - Data as downloaded from the history webpage:
 
+          ```pycon
           >>> Flight.from_fr24(fr24_folder / "JL516_3376ab31.csv")
           Flight(icao24=None, callsign='JAL516')
           >>> _.duration
           Timedelta('0 days 01:24:28')
+          ```
 
         - Data as downloaded from a blog post, when they name it "granular"
 
+          ```pycon
           >>> f = fr24_folder / "JL516_Flightradar24_ADS-B_data_granular.csv"
           >>> Flight.from_fr24(f)
           Flight(icao24='8467d8', callsign='JAL516')
           >>> _.duration
           Timedelta('0 days 01:07:12.125000')
+          ```
         """
         data = pd.read_csv(filename)
         if "UTC" in data.columns:  # That's the web version
@@ -88,17 +92,21 @@ class FlightRadar24:
     def from_json(cls, filename: str | Path) -> Flight:
         """Parses data as downloaded by FlightRadar24 website.
 
+        ```pycon
         >>> from traffic.data.samples import fr24
         >>> folder = Path(fr24.__file__).parent
         >>> Flight.from_fr24(folder / "3376ab31.json")
         Flight('3376ab31', icao24='8467d8', callsign='JAL516')
         >>> _.duration
         Timedelta('0 days 01:24:28')
+        ```
 
+        ```pycon
         >>> Flight.from_fr24(folder / "2ce4f83f.json")
         Flight('2ce4f83f', icao24='ae503d', callsign='SPAR19')
         >>> _.Mach_max
         .8
+        ```
 
         """
         filename = Path(filename)

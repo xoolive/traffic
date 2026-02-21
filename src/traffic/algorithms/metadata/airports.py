@@ -62,21 +62,27 @@ class TakeoffAirportInference:
     in the trajectory.
 
 
+    ```pycon
     >>> from traffic.data.samples import belevingsvlucht
     >>> belevingsvlucht.infer_airport("takeoff")
     Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', ...)
+    ```
 
     When data is missing near the ground, it may be relevant
     to specify a subset of airports as a keyword parameter.
 
+    ```pycon
     >>> missing_data = belevingsvlucht.after("2018-05-30 15:30")
     >>> missing_data.infer_airport("takeoff")
     Airport(icao='NL-0114', ...)
+    ```
 
+    ```pycon
     >>> from traffic.data import airports
     >>> large_airports = airports.query("type == 'large_airport'")
     >>> missing_data.infer_airport("takeoff", dataset=large_airports)
     Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', ...)
+    ```
     """
 
     def __init__(
@@ -100,21 +106,27 @@ class LandingAirportInference:
     """Returns the most probable landing airport based on the last location
     in the trajectory.
 
+    ```pycon
     >>> from traffic.data.samples import belevingsvlucht
     >>> belevingsvlucht.infer_airport("landing")
     Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', ...)
+    ```
 
     When data is missing near the ground, it may be relevant
     to specify a subset of airports as a keyword parameter.
 
+    ```pycon
     >>> missing_data = belevingsvlucht.before("2018-05-30 20:00")
     >>> missing_data.infer_airport("landing")
     Airport(icao='NL-0092', ..., name='De Kreupel Helipad', ...)
+    ```
 
+    ```pycon
     >>> from traffic.data import airports
     >>> large_airports = airports.query("type == 'large_airport'")
     >>> missing_data.infer_airport("landing", dataset=large_airports)
     Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', ...)
+    ```
 
     """
 

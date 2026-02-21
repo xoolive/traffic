@@ -27,6 +27,7 @@ _log = logging.getLogger(__name__)
 def to_datetime(time: timelike) -> pd.Timestamp:
     """Facility to convert anything to a pd.Timestamp.
 
+    ```pycon
     >>> f"{to_datetime('2017-01-14')}"
     '2017-01-14 00:00:00+00:00'
     >>> f"{to_datetime('2017-01-14 12:00Z')}"
@@ -35,6 +36,7 @@ def to_datetime(time: timelike) -> pd.Timestamp:
     '2017-01-14 12:00:00+00:00'
     >>> f"{to_datetime(datetime(2017, 1, 14, 12, tzinfo=timezone.utc))}"
     '2017-01-14 12:00:00+00:00'
+    ```
     """
 
     if isinstance(time, str):

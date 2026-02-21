@@ -141,8 +141,10 @@ class DataFrameMixin(object):
 
         Example usage:
 
+        ```pycon
         >>> from traffic.core import Traffic
         >>> t = Traffic.from_file(filename)
+        ```
         """
         path = Path(filename).expanduser()
 
@@ -455,11 +457,13 @@ class ShapelyMixin(object):
     def extent(self) -> tuple[float, float, float, float]:
         """Returns the extent of the (bounding box of the) shape.
 
-        .. note::
+        !!! note
             When plotting with Matplotlib and Cartopy, the extent property is
             convenient in the following use case:
 
+            ```pycon
             >>> ax.set_extent(obj.extent)
+            ```
 
         :return:
             Extent is given in the following order in the origin crs:
@@ -623,7 +627,7 @@ class GeographyMixin(DataFrameMixin):
         """Enrich a DataFrame with new longitude and latitude columns computed
         from x and y columns.
 
-        .. warning::
+        !!! warning
 
             Make sure to use as source projection the one used to compute
             ``'x'`` and ``'y'`` columns in the first place.
@@ -861,6 +865,7 @@ class GeoDBMixin(DataFrameMixin):
         :class:`~traffic.data.basic.airports.Airports` or
         :class:`~traffic.data.basic.navaid.Navaids`.
 
+        ```pycon
         >>> from traffic.data import airways
         >>> airways.extent(eurofirs['LFBB'])  # doctest: +SKIP
           route    id   navaid   latitude    longitude
@@ -876,7 +881,9 @@ class GeoDBMixin(DataFrameMixin):
           A25      14   BMC      44.83       -0.7211
           A25      15   SAU      44.68       -0.1529
          ... (703 more lines)
+        ```
 
+        ```pycon
         >>> from traffic.data import airports
         >>> airports.extent("Bornholm")  # doctest: +SKIP
          name                 country   icao      iata   latitude   longitude
@@ -884,12 +891,15 @@ class GeoDBMixin(DataFrameMixin):
          Bodilsker Airstrip   Denmark   DK-0027   nan    55.06      15.05
          Bornholm Airport     Denmark   EKRN      RNN    55.06      14.76
          Ro Airport           Denmark   EKRR      nan    55.21      14.88
+        ```
 
+        ```pycon
         >>> from traffic.data import navaids
         >>> navaids['ZUE']
         Navaid('ZUE', type='NDB', latitude=30.9, longitude=20.06833333, altitude=0.0, description='ZUEITINA NDB', frequency='369.0kHz')
         >>> navaids.extent('Switzerland')['ZUE']
         Navaid('ZUE', type='VOR', latitude=47.59216667, longitude=8.81766667, altitude=1730.0, description='ZURICH EAST VOR-DME', frequency='110.05MHz')
+        ```
 
         """
         from cartes.osm import Nominatim

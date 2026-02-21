@@ -11,9 +11,11 @@ class FlightPhasesOpenAP:
 
     Usage:
 
+    ```pycon
     >>> from traffic.data.samples import belevingsvlucht
     >>> climb = belevingsvlucht.phases().query('phase == "CLIMB"')
     >>> first_climb = climb.next("split")
+    ```
 
     See also: :ref:`How to find flight phases on a trajectory?`
 
@@ -21,9 +23,11 @@ class FlightPhasesOpenAP:
     phases. The intersection operator ``&`` returns the part of the trajectory
     which is simultaneously a take-off and a climb:
 
+    ```pycon
     >>> takeoff = belevingsvlucht.next('takeoff("EHAM")')
     >>> (takeoff & first_climb).duration
     Timedelta('0 days 00:00:23')
+    ```
     """
 
     def __init__(self, twindow: int = 60) -> None:

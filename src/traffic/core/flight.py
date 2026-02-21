@@ -181,14 +181,14 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     - ``latitude``, ``longitude``: in degrees, WGS84 (EPSG:4326);
     - ``altitude``: in feet.
 
-    .. note::
+    !!! note
 
         The ``flight_id`` (identifier for a trajectory) may be used in place of
         a pair of (``icao24``, ``callsign``). More features may also be provided
         for further processing, e.g. ``groundspeed``, ``vertical_rate``,
         ``track``, ``heading``, ``IAS`` (indicated airspeed) or ``squawk``.
 
-    .. tip::
+    !!! tip
 
         Read more about:
 
@@ -578,7 +578,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         """
         Applies `func` to the object.
 
-        .. warning::
+        !!! warning
 
             The logic is similar to that of :meth:`~pandas.DataFrame.pipe`
             method, but the function applies on T, not on the DataFrame.
@@ -602,9 +602,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> flight.has("go_around")
         >>> flight.has("runway_change")
         >>> flight.has(lambda f: f.aligned_on_ils("LFBO"))
+        ```
         """
         return self.next(method) is not None
 
@@ -615,9 +617,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> flight.sum("go_around")
         >>> flight.sum("runway_change")
         >>> flight.sum(lambda f: f.aligned_on_ils("LFBO"))
+        ```
         """
         fun = (
             getattr(self.__class__, method)
@@ -732,10 +736,12 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> flight.all("go_around")
         >>> flight.all("runway_change")
         >>> flight.all('aligned_on_ils("LFBO")')
         >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
+        ```
         """
         fun = (
             getattr(self.__class__, method)
@@ -765,9 +771,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         """
         Returns the first segment of trajectory yielded by flight.method()
 
+        ```pycon
         >>> flight.next("go_around")
         >>> flight.next("runway_change")
         >>> flight.next(lambda f: f.aligned_on_ils("LFBO"))
+        ```
         """
         fun = (
             getattr(self.__class__, method)
@@ -784,9 +792,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         Returns the final (last) segment of trajectory yielded by
         flight.method()
 
+        ```pycon
         >>> flight.final("go_around")
         >>> flight.final("runway_change")
         >>> flight.final(lambda f: f.aligned_on_ils("LFBO"))
+        ```
         """
         fun: Callable[[Flight], Iterator[Flight]] = (
             getattr(self.__class__, method)
@@ -859,24 +869,30 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     def min(self, feature: str) -> Any:
         """Returns the minimum value of given feature.
 
+        ```pycon
         >>> flight.min('altitude')  # dummy example
         24000
+        ```
         """
         return self.data[feature].min()
 
     def max(self, feature: str) -> Any:
         """Returns the maximum value of given feature.
 
+        ```pycon
         >>> flight.max('altitude')  # dummy example
         35000
+        ```
         """
         return self.data[feature].max()
 
     def mean(self, feature: str) -> Any:
         """Returns the average value of given feature.
 
+        ```pycon
         >>> flight.mean('vertical_rate')  # dummy example
         -1000
+        ```
         """
         return self.data[feature].mean()
 
@@ -890,13 +906,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         This is fully equivalent to `f.longer_than("1 minute")`:
 
+        ```pycon
         >>> f.feature_gt("duration", pd.Timedelta('1 minute'))
         True
+        ```
 
         This is equivalent to `f.max('altitude') > 35000`:
 
+        ```pycon
         >>> f.feature_gt(lambda f: f.max("altitude"), 35000)
         True
+        ```
 
         The second one can be useful for stacking operations during
         lazy evaluation.
@@ -920,13 +940,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         This is fully equivalent to `f.shorter_than("1 minute")`:
 
+        ```pycon
         >>> f.feature_lt("duration", pd.Timedelta('1 minute'))
         True
+        ```
 
         This is equivalent to `f.max('altitude') < 35000`:
 
+        ```pycon
         >>> f.feature_lt(lambda f: f.max("altitude"), 35000)
         True
+        ```
 
         The second one can be useful for stacking operations during
         lazy evaluation.
@@ -961,12 +985,16 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     ) -> Flight:
         """Assign absolute versions of features to new columns.
 
+        ```pycon
         >>> flight.abs("track")
+        ```
 
         The two following commands are equivalent:
 
+        ```pycon
         >>> flight.abs(["track", "heading"])
         >>> flight.abs(track="track_abs", heading="heading_abs")
+        ```
 
         """
         assign_dict = dict()
@@ -988,12 +1016,16 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     ) -> Flight:
         """Assign differential versions of features to new columns.
 
+        ```pycon
         >>> flight.diff("track")
+        ```
 
         The two following commands are equivalent:
 
+        ```pycon
         >>> flight.diff(["track", "heading"])
         >>> flight.diff(track="track_diff", heading="heading_diff")
+        ```
 
         """
         assign_dict = dict()
@@ -1237,7 +1269,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> t.summary(['icao24', 'start', 'stop', 'duration'])
+        ```
 
         Consider monkey-patching properties to the Flight class if you need more
         information in your summary dictionary.
@@ -1257,9 +1291,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> flight.skip(minutes=10)
         >>> flight.skip("1h")
         >>> flight.skip(10)  # seconds by default
+        ```
         """
         delta = to_timedelta(value, **kwargs)
         bound = self.start + delta  # noqa: F841 => used in the query
@@ -1277,9 +1313,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> flight.first(minutes=10)
         >>> flight.first("1h")
         >>> flight.first(10)  # seconds by default
+        ```
         """
         delta = to_timedelta(value, **kwargs)
         bound = self.start + delta  # noqa: F841 => used in the query
@@ -1300,9 +1338,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> flight.shorten(minutes=10)
         >>> flight.shorten("1h")
         >>> flight.shorten(10)  # seconds by default
+        ```
         """
         delta = to_timedelta(value, **kwargs)
         bound = self.stop - delta  # noqa: F841 => used in the query
@@ -1320,9 +1360,11 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> flight.last(minutes=10)
         >>> flight.last("1h")
         >>> flight.last(10)  # seconds by default
+        ```
         """
         delta = to_timedelta(value, **kwargs)
         bound = self.stop - delta  # noqa: F841 => used in the query
@@ -1548,12 +1590,14 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> from traffic.data.samples import elal747
         >>> elal747.query("altitude < 15000").max_split()
         Flight ELY1747
         aircraft: 738043 · 🇮🇱 4X-ELC (B744)
         origin: LIRF (2019-11-03 12:14:40+00:00)
         destination: LLBG (2019-11-03 14:13:00+00:00)
+        ```
 
         In this example, the fancy part of the trajectory occurs below
         15,000 ft. The command extracts the plane pattern.
@@ -1592,7 +1636,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         For example:
 
+        ```pycon
         >>> f.agg_time("10 min", straight=lambda df: Flight(df).distance())
+        ```
 
         returns a Flight with a new column ``straight`` with the great circle
         distance between points sampled every 10 minutes.
@@ -1641,7 +1687,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         For example:
 
+        ```pycon
         >>> f.agg_time('3T', groundspeed='mean')
+        ```
 
         returns a Flight with a new column groundspeed_mean with groundspeed
         averaged per intervals of 3 minutes.
@@ -1941,8 +1989,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> flight.predict(minutes=10, method="straight")
         >>> flight.before("2018-12-24 23:55").predict(minutes=10)  # Merry XMas!
+        ```
 
         """
         from ..algorithms.prediction import PredictBase
@@ -2100,7 +2150,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         are usually available in ADS-B messages; the heading and the true
         airspeed may be decoded in EHS messages.
 
-        .. note::
+        !!! note
 
             Check the :meth:`query_ehs` method to find a way to enrich your
             flight with such features. Note that this data is not necessarily
@@ -2170,8 +2220,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Usage:
 
+        ```pycon
         >>> flight.infer_airport("takeoff")
         >>> flight.infer_airport("landing")
+        ```
 
         Check the documentation of the classes for more options.
 
@@ -2415,22 +2467,28 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         All the following calls are equivalent:
 
+        ```pycon
         >>> flight.landing("EHAM")  # returns a flight iterator
         >>> flight.landing("EHAM", method="default")
         >>> flight.landing(airport="EHAM", method="default")
         >>> flight.landing(method=LandingAlignedOnILS(airport="EHAM"))
+        ```
 
         As with other :class:`~traffic.core.FlightIterator`, we can:
 
         - check whether an aircraft is landing at a given airport:
 
+          ```pycon
           >>> flight.landing("EHAM").has()
           >>> flight.has("landing('EHAM')")
+          ```
 
         - get the first landing attempt:
 
+          ```pycon
           >>> flight.landing("EHAM").next()
           >>> flight.next("landing('EHAM')")
+          ```
 
         More details in the specific documentation for each class.
 
@@ -2524,10 +2582,12 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Usage:
 
+        ```pycon
         >>> flight.takeoff("EHAM")  # returns a flight iterator
         >>> flight.takeoff("EHAM", method="default")
         >>> flight.takeoff(airport="EHAM", method="default")
         >>> flight.takeoff(PolygonBasedRunwayDetection(airport="EHAM"))
+        ```
 
         More details in the specific documentation for each class.
 
@@ -2561,7 +2621,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Usage:
 
+        ```pycon
         >>> flight_iterator = flight.thermals()
+        ```
         """
         from ..algorithms.navigation.thermals import GliderThermal
 
@@ -2672,7 +2734,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Usage:
 
+        ```pycon
         >>> flight.pushback(airport="LSZH", method="default")
+        ```
 
         """
         from ..algorithms.ground import pushback
@@ -3003,7 +3067,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
           column (by default, named "distance") with the distance of each
           point of the trajectory to the geometrical element.
 
-        .. warning::
+        !!! warning
 
             - An Airspace is (currently) considered as its flattened
               representation
@@ -3113,6 +3177,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         .. code:: python
 
+            ```pycon
             >>> item = belevingsvlucht.between(
             ...     "2018-05-30 16:00", "2018-05-30 17:00"
             ... ).closest_point(  # type: ignore
@@ -3124,6 +3189,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             ... )
             >>> f"{item.point}, {item.distance:.2f}m"
             "Lelystad Airport, 49.11m"
+            ```
 
         """
         from .distance import closest_point
@@ -3455,7 +3521,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         As a consequence, the clipped trajectory may have points outside the
         shape.
 
-        .. warning::
+        !!! warning
 
             Altitudes are not taken into account.
 
@@ -3533,7 +3599,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         By default, raw messages are requested from the OpenSky Network
         database.
 
-        .. warning::
+        !!! warning
 
             Making a lot of small requests can be very inefficient and may look
             like a denial of service. If you get the raw messages using a
@@ -3692,7 +3758,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             flight.plot(ax, alpha=.5)
 
 
-        .. note::
+        !!! note
 
             See also :meth:`geoencode` for the altair equivalent.
 
@@ -3762,7 +3828,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             )
 
 
-        .. note::
+        !!! note
 
             See also :meth:`plot_time` for the Matplotlib equivalent.
 
@@ -3852,7 +3918,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
                 secondary_y=['altitude']
             )
 
-        .. note::
+        !!! note
 
             See also :meth:`chart` for the altair equivalent.
 
@@ -3978,8 +4044,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         Example usage:
 
+        ```pycon
         >>> from traffic.core import Flight
         >>> t = Flight.from_file("example_flight.csv")
+        ```
         """
 
         tentative = super().from_file(filename, **kwargs)

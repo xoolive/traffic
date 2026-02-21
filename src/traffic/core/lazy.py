@@ -75,7 +75,7 @@ class LazyLambda:
     """
     This callable is stacked for future operations on Flights.
 
-    .. warning::
+    !!! warning
         A non-class implementation is possible with nested functions but the
         result would not be pickable and raise issues during multiprocessing.
 
@@ -129,9 +129,11 @@ class LazyTraffic:
     """
     In the following example, ``lazy_t`` is not evaluated:
 
-    >>> lazy_t = t.filter().resample('10s')
-    >>> type(t_lazy)
+    ```pycon
+    >>> lazy_t = t.filter().resample("10s")
+    >>> type(lazy_t)
     traffic.core.lazy.LazyTraffic
+    ```
 
     You need to call the ``.eval()`` method for that.
 
@@ -187,14 +189,18 @@ class LazyTraffic:
 
         The following call
 
+        ```pycon
         >>> t_lazy.eval(max_workers=4, desc="preprocessing")
+        ```
 
         is equivalent to the multiprocessed version of
 
+        ```pycon
         >>> Traffic.from_flights(
         ...     flight.filter().resample("10s")
         ...     for flight in tqdm(t, desc="preprocessing")
         ... )
+        ```
 
         When many operations are stacked, this call is more efficient, esp. on
         large structures, than as many full iterations on the Traffic structure.
@@ -202,9 +208,11 @@ class LazyTraffic:
         Backward compatibility is ensured by an automatic call to eval() with
         default options.
 
+        ```pycon
         >>> t_lazy.to_pickle("output_file.pkl")
         WARNING:root:.eval() has been automatically appended for you.
         Check the documentation for more options.
+        ```
 
         """
 
@@ -434,7 +442,7 @@ feature is experimental.
         if default is True:
             if f.__doc__ is not None:
                 f.__doc__ += """
-        .. note::
+        !!! note
 
             This method will use the :class:Flight implementation
             when stacked for lazy evaluation.
@@ -470,7 +478,7 @@ feature is experimental.
         if λf.__doc__ is not None:
             λf.__doc__ += """
 
-        .. warning::
+        !!! warning
 
             This method will be stacked for lazy evaluation.  """
 

@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 class property_cache(object):
     """Computes attribute value and caches it in the instance.
 
-    | **Reference:** Python Cookbook (Denis Otkidach)
-    | https://stackoverflow.com/users/168352/denis-otkidach
+    > **Reference:** Python Cookbook
+    > ([Denis Otkidach](https://stackoverflow.com/users/168352/denis-otkidach))
 
     This decorator allows you to create a property which can be computed once
     and accessed many times. Sort of like memoization, but by instance.
@@ -80,8 +80,9 @@ def cache_results(
 ) -> Callable[[Callable[..., T]], T | Callable[..., T]]:
     """
     The point of this method is to be able to cache results of some costly
-    functions on :class:`pd.DataFrame`, :class:`~traffic.core.Flight` or
-    :class:`~traffic.core.Traffic` structures.
+    functions on pandas DataFrame,
+    [`Flight`](traffic.core.flight/) or
+    [`Traffic`](traffic.core.traffic/) structures.
 
     Decorate your function with the cache_results method and go ahead!
 
@@ -90,7 +91,7 @@ def cache_results(
     :param cache_path: (default: current directory)
         where to store the results
 
-    :param loader: (default: :meth:`pd.read_pickle`)
+    :param loader: (default: ``pandas.read_pickle``)
         the function used to load the data from a cache file
 
     :param pd_varnames: (default: False)

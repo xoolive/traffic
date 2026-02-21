@@ -34,6 +34,7 @@ class BeaconTrackBearingAlignment:
 
     Usage:
 
+    ```pycon
     >>> from traffic.data import navaids
     >>> from traffic.data.samples import elal747
     >>> subset = elal747.skip("2h30min").first("2h30min")
@@ -41,6 +42,7 @@ class BeaconTrackBearingAlignment:
     ...     print(f"aligned on {segment.navaid_max} for {segment.duration}")
     aligned on KAVOS for 0 days 00:07:00
     aligned on PEDER for 0 days 00:05:40
+    ```
 
     See also: :ref:`How to infer a flight plan from a trajectory?`
 

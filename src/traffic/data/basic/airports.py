@@ -29,16 +29,20 @@ class Airports(GeoDBMixin):
 
     A database of major world airports is available as:
 
+    ```pycon
     >>> from traffic.data import airports
+    ```
 
     Airports information can be accessed with attributes:
 
+    ```pycon
     >>> airports["EHAM"].latlon  # doctest: +NUMBER
     (52.3086, 4.7639)
     >>> airports["EHAM"].iata
     'AMS'
     >>> airports["EHAM"].name
     'Amsterdam Airport Schiphol'
+    ```
 
     """
 
@@ -167,9 +171,11 @@ class Airports(GeoDBMixin):
 
         :param name: the IATA or ICAO code of the airport
 
+        ```pycon
         >>> from traffic.data import airports
         >>> airports["EHAM"]
         Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', country='Netherlands', latitude=52.308601, longitude=4.76389, altitude=-11)
+        ```
         """
         if isinstance(key, int):
             p = self.data.iloc[key]
@@ -199,12 +205,14 @@ class Airports(GeoDBMixin):
             name, city name of full name of the airport.
 
 
+        ```pycon
         >>> from traffic.data import airports
         >>> airports.query('type == "large_airport"').search('Tokyo')  # doctest: +SKIP
           name                                 country   icao   iata   latitude   longitude
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           Narita International Airport           Japan   RJAA   NRT    35.76      140.4
           Tokyo Haneda International Airport     Japan   RJTT   HND    35.55      139.8
+        ```
 
         """
         if "municipality" in self.data.columns:

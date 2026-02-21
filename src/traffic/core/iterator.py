@@ -38,7 +38,7 @@ class FlightIterator:
     - get the biggest/shortest element with ``.max()``/``.min()``. By default,
       comparison is made on duration.
 
-    .. warning::
+    !!! warning
 
         **FlightIterator instances consume themselves out**.
 
@@ -126,12 +126,16 @@ class FlightIterator:
 
         Example usage:
 
+        ```pycon
         >>> flight.emergency().has()
         True
+        ```
 
         This is equivalent to:
 
+        ```pycon
         >>> flight.has("emergency")
+        ```
         """
         return self.next() is not None
 
@@ -140,11 +144,15 @@ class FlightIterator:
 
         Example usage:
 
+        ```pycon
         >>> first_attempt = flight.runway_change().next()
+        ```
 
         This is equivalent to:
 
+        ```pycon
         >>> flight.next("runway_change")
+        ```
         """
         return next(self, None)
 
@@ -153,11 +161,15 @@ class FlightIterator:
 
         Example usage:
 
+        ```pycon
         >>> first_attempt = flight.runway_change().final()
+        ```
 
         This is equivalent to:
 
+        ```pycon
         >>> flight.final("runway_change")
+        ```
         """
         segment = None
         for segment in self:
@@ -169,12 +181,16 @@ class FlightIterator:
 
         Example usage:
 
+        ```pycon
         >>> flight.go_around().sum()
         1
+        ```
 
         This is equivalent to:
 
+        ```pycon
         >>> flight.sum("go_around")
+        ```
         """
 
         return len(self)
@@ -182,12 +198,16 @@ class FlightIterator:
     def all(self, flight_id: None | str = None) -> Optional["Flight"]:
         """Returns the concatenation of elements in the FlightIterator.
 
+        ```pycon
         >>> flight.aligned_on_ils("LFBO").all()
+        ```
 
         This is equivalent to:
 
+        ```pycon
         >>> flight.all(lambda f: f.aligned_on_ils("LFBO"))
         >>> flight.all('aligned_on_ils("LFBO")')
+        ```
 
         """
         from traffic.core import Flight, Traffic
@@ -213,11 +233,15 @@ class FlightIterator:
 
         By default, comparison is based on duration.
 
+        ```pycon
         >>> flight.query("altitude < 5000").split().max()
+        ```
 
         but it can be set on start time as well (the last event to start)
 
+        ```pycon
         >>> flight.query("altitude < 5000").split().max(key="start")
+        ```
         """
 
         return max(self, key=lambda x: getattr(x, key), default=None)
@@ -227,11 +251,15 @@ class FlightIterator:
 
         By default, comparison is based on duration.
 
+        ```pycon
         >>> flight.query("altitude < 5000").split().min()
+        ```
 
         but it can be set on ending time as well (the first event to stop)
 
+        ```pycon
         >>> flight.query("altitude < 5000").split().min(key="stop")
+        ```
         """
         return min(self, key=lambda x: getattr(x, key), default=None)
 
@@ -242,7 +270,9 @@ class FlightIterator:
 
         For instance:
 
+        ```pycon
         >>> flight.split("10min").map(lambda f: f.resample("2s")).all()
+        ```
 
         """
 
