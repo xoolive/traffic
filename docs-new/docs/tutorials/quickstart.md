@@ -9,7 +9,7 @@ A single trajectory is embedded in a `Flight` structure, a collection of traject
 - **be imported from the sample trajectory set**;
 - be downloaded from The OpenSky Network;
 - be loaded from a tabular file (csv, json, parquet, etc.);
-- be decoded from raw ADS-B signals.
+- be decoded from raw ADS-B signals or streams.
 
 !!!note "Belevingsvlucht (2018)"
 
@@ -87,11 +87,11 @@ try {
   dest.append(viewNode);
 } catch (err) {
   console.error(err);
-  viewHost.textContent = "Failed to load traffic.js demo.";
+  dest.textContent = "Failed to load traffic.js demo.";
 }
 </script>
 
-Flight objects have a number of attributes:
+Information about each Flight instance are available through attributes or properties:
 
 ```python
 >>> dict(belevingsvlucht)
@@ -103,13 +103,18 @@ Flight objects have a number of attributes:
     'stop': Timestamp('2018-05-30 20:22:56+0000', tz='UTC'),
     'duration': Timedelta('0 days 05:01:18')
 }
+```
+
+Methods are provided to select relevant parts of the flight, e.g. based on timestamps. The start and stop properties refer to the timestamps of the first and last recorded samples. Note that all timestamps are by default set to universal time (UTC) as it is common practice in aviation.
+
+```python
 >>> belevingsvlucht.start
 Timestamp('2018-05-30 15:21:38+0000', tz='UTC')
 >>> belevingsvlucht.stop
 Timestamp('2018-05-30 20:22:56+0000', tz='UTC')
 ```
 
-And also methods to modify them
+And also methods to modify them:
 
 ```python
 belevingsvlucht.first(minutes=30)
@@ -130,7 +135,7 @@ try {
   dest.append(viewNode);
 } catch (err) {
   console.error(err);
-  viewHost.textContent = "Failed to load traffic.js demo.";
+  dest.textContent = "Failed to load traffic.js demo.";
 }
 </script>
 
@@ -147,7 +152,7 @@ try {
 
 !!! note
 
-    Each `Flight` wraps a pandas `DataFrame`.  
+    Each `Flight` wraps a pandas `DataFrame`.
     If a method is missing for a specific task, access the underlying dataframe directly.
 
 ```python
@@ -174,257 +179,155 @@ try {
 }
 </script>
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-&#10;    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-&#10;    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-
-</div>
-
 ## Traffic objects
+
+Traffic is the core class to represent collections of trajectories. In practice, all trajectories are flattened in the same pd.DataFrame.
 
 ```python
 from traffic.data.samples import quickstart
 ```
 
+The basic representation of a Traffic object is a summary view of the data: the structure tries to infer how to separate trajectories in the data structure based on customizable heuristics, and returns a number of sample points for each trajectory.
+
 ```python
 quickstart
 ```
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+<div class="output">
+<h4><b>Traffic</b></h4> with 236 identifiers
+<div class="traffic-summary-wrap">
+<table class="traffic-summary">
+  <thead>
+    <tr><td>icao24</td><td>callsign</td><td>count</td></tr>
+  </thead>
+  <tbody>
+    <tr><th>39d300</th><th>TVF91KQ</th><td class="count-bar" style="--bar: 100.0%">3893</td></tr>
+    <tr><th>39b002</th><th>FHMAC</th><td class="count-bar" style="--bar: 86.3%">3360</td></tr>
+    <tr><th>3aabfc</th><th>FMY8055</th><td class="count-bar" style="--bar: 68.6%">2669</td></tr>
+    <tr><th>39c82b</th><th>PEA501</th><td class="count-bar" style="--bar: 57.7%">2247</td></tr>
+    <tr><th>4241bb</th><th>VPCAL</th><td class="count-bar" style="--bar: 55.7%">2168</td></tr>
+    <tr><th>02a195</th><th>TAR722</th><td class="count-bar" style="--bar: 55.6%">2166</td></tr>
+    <tr><th>398495</th><th>CCM774V</th><td class="count-bar" style="--bar: 54.8%">2134</td></tr>
+    <tr><th>4bc844</th><th>PGT90Y</th><td class="count-bar" style="--bar: 54.6%">2124</td></tr>
+    <tr><th>39ceb4</th><th>TVF19YP</th><td class="count-bar" style="--bar: 53.3%">2076</td></tr>
+    <tr><th>4d02be</th><th>JFA12P</th><td class="count-bar" style="--bar: 52.8%">2057</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
 
-<h4><b>Traffic</b></h4> with 236 identifiers<style type="text/css">
-#T_901fc_row0_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 100.0%, transparent 100.0%);
-}
-#T_901fc_row1_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 86.3%, transparent 86.3%);
-}
-#T_901fc_row2_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 68.6%, transparent 68.6%);
-}
-#T_901fc_row3_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 57.7%, transparent 57.7%);
-}
-#T_901fc_row4_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 55.7%, transparent 55.7%);
-}
-#T_901fc_row5_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 55.6%, transparent 55.6%);
-}
-#T_901fc_row6_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 54.8%, transparent 54.8%);
-}
-#T_901fc_row7_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 54.6%, transparent 54.6%);
-}
-#T_901fc_row8_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 53.3%, transparent 53.3%);
-}
-#T_901fc_row9_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 52.8%, transparent 52.8%);
-}
-</style>
+Traffic objects offer the ability to index and iterate on all flights contained in the structure.
+In order to separate and identify trajectories (Flight), Traffic objects will use either:
 
-|        |          | count |
-| ------ | -------- | ----- |
-| icao24 | callsign |       |
-| 39d300 | TVF91KQ  | 3893  |
-| 39b002 | FHMAC    | 3360  |
-| 3aabfc | FMY8055  | 2669  |
-| 39c82b | PEA501   | 2247  |
-| 4241bb | VPCAL    | 2168  |
-| 02a195 | TAR722   | 2166  |
-| 398495 | CCM774V  | 2134  |
-| 4bc844 | PGT90Y   | 2124  |
-| 39ceb4 | TVF19YP  | 2076  |
-| 4d02be | JFA12P   | 2057  |
+- a customizable flight identifier (flight_id); or
+- a combination of timestamp and icao24 (aircraft identifier);
 
-```python
-quickstart["TAR722"]
-quickstart["39b002"]
-```
+Indexation will be made on:
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+- icao24, callsign (or flight_id if available):
 
-![](quickstart_files/figure-commonmark/cell-11-output-2.svg)
+      ```python
+      quickstart["02a195"]  # return type: Flight, based on icao24
+      quickstart["TAR722"]  # return type: Flight, based on callsign
+      ```
 
-```python
-quickstart[0]
-quickstart[:10]
-```
+      <div id="tar722" class="obs-view-host"></div>
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+<script type="module">
+import {Runtime} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@5/+esm";
+import define from "https://api.observablehq.com/@xoolive/traffic-js.js?v=3";
 
-<h4><b>Traffic</b></h4> with 10 identifiers<style type="text/css">
-#T_9443a_row0_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 100.0%, transparent 100.0%);
+const dest = document.getElementById("tar722");
+try {
+  const main = new Runtime().module(define);
+  const quickstart = await main.value("quickstart");
+  const flight = Array.from(quickstart).filter((flight) => flight.callsign === "TAR722")[0];
+  const v = await flight.view();
+  dest.append(v);
+} catch (err) {
+  console.error(err);
+  viewHost.textContent = "Failed to load traffic.js demo.";
 }
-#T_9443a_row1_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 61.1%, transparent 61.1%);
-}
-#T_9443a_row2_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 59.6%, transparent 59.6%);
-}
-#T_9443a_row3_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 53.2%, transparent 53.2%);
-}
-#T_9443a_row4_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 52.8%, transparent 52.8%);
-}
-#T_9443a_row5_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 51.3%, transparent 51.3%);
-}
-#T_9443a_row6_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 47.3%, transparent 47.3%);
-}
-#T_9443a_row7_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 40.4%, transparent 40.4%);
-}
-#T_9443a_row8_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 37.1%, transparent 37.1%);
-}
-#T_9443a_row9_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 36.8%, transparent 36.8%);
-}
-</style>
+</script>
 
-|        |          | count |
-| ------ | -------- | ----- |
-| icao24 | callsign |       |
-| 02a195 | TAR722   | 2166  |
-| 0a0046 | DAH1011  | 1323  |
-| 0101de | MSR799   | 1290  |
-| 34150e | IBE34AK  | 1152  |
-| 06a2b1 | QTR9UU   | 1144  |
-| 0a0047 | DAH1000  | 1111  |
-| 300789 | IWALK    | 1024  |
-| 06a1e7 | QTR23JR  | 874   |
-| 06a133 | QQE940   | 803   |
-| 0a0047 | DAH1001  | 798   |
+- an integer or a slice, to take flights in order in the collection:
 
-```python
-quickstart[["AFR83HQ", "AFR83PX", "AFR84UW", "AFR91QD"]]
-```
+      ```python
+      quickstart[0]  # return type: Flight, the first trajectory in the collection
+      quickstart[:10]  # return type: Traffic, the 10 first trajectories in the collection
+      ```
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+    <div class="output">
+      <h4><b>Traffic</b></h4> with 10 identifiers
+      <div class="traffic-summary-wrap">
+      <table class="traffic-summary">
+        <thead>
+          <tr><td>icao24</td><td>callsign</td><td>count</td></tr>
+        </thead>
+        <tbody>
+          <tr><th>02a195</th><th>TAR722</th><td class="count-bar" style="--bar: 100.0%">2166</td></tr>
+          <tr><th>0a0046</th><th>DAH1011</th><td class="count-bar" style="--bar: 61.1%">1323</td></tr>
+          <tr><th>0101de</th><th>MSR799</th><td class="count-bar" style="--bar: 59.6%">1290</td></tr>
+          <tr><th>34150e</th><th>IBE34AK</th><td class="count-bar" style="--bar: 53.2%">1152</td></tr>
+          <tr><th>06a2b1</th><th>QTR9UU</th><td class="count-bar" style="--bar: 52.8%">1144</td></tr>
+          <tr><th>0a0047</th><th>DAH1000</th><td class="count-bar" style="--bar: 51.3%">1111</td></tr>
+          <tr><th>300789</th><th>IWALK</th><td class="count-bar" style="--bar: 47.3%">1024</td></tr>
+          <tr><th>06a1e7</th><th>QTR23JR</th><td class="count-bar" style="--bar: 40.4%">874</td></tr>
+          <tr><th>06a133</th><th>QQE940</th><td class="count-bar" style="--bar: 37.1%">803</td></tr>
+          <tr><th>0a0047</th><th>DAH1001</th><td class="count-bar" style="--bar: 36.8%">798</td></tr>
+        </tbody>
+      </table>
+      </div>
+      </div>
 
-<h4><b>Traffic</b></h4> with 4 identifiers<style type="text/css">
-#T_f35a2_row0_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 100.0%, transparent 100.0%);
-}
-#T_f35a2_row1_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 87.3%, transparent 87.3%);
-}
-#T_f35a2_row2_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 84.6%, transparent 84.6%);
-}
-#T_f35a2_row3_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 51.0%, transparent 51.0%);
-}
-</style>
+- a subset of trajectories can also be selected with a list:
 
-|        |          | count |
-| ------ | -------- | ----- |
-| icao24 | callsign |       |
-| 394c04 | AFR83PX  | 1274  |
-| 3946e2 | AFR84UW  | 1112  |
-| 3946e0 | AFR91QD  | 1078  |
-| 3950d0 | AFR83HQ  | 650   |
+  ```python
+  quickstart[["AFR83HQ", "AFR83PX", "AFR84UW", "AFR91QD"]]
+  ```
 
-```python
-quickstart.query('callsign.str.startswith("AFR")')
-```
+  <div class="output">
+  <h4><b>Traffic</b></h4> with 4 identifiers
+  <div class="traffic-summary-wrap">
+  <table class="traffic-summary">
+    <thead>
+      <tr><td>icao24</td><td>callsign</td><td>count</td></tr>
+    </thead>
+    <tbody>
+      <tr><th>394c04</th><th>AFR83PX</th><td class="count-bar" style="--bar: 100.0%">1274</td></tr>
+      <tr><th>3946e2</th><th>AFR84UW</th><td class="count-bar" style="--bar: 87.3%">1112</td></tr>
+      <tr><th>3946e0</th><th>AFR91QD</th><td class="count-bar" style="--bar: 84.6%">1078</td></tr>
+      <tr><th>3950d0</th><th>AFR83HQ</th><td class="count-bar" style="--bar: 51.0%">650</td></tr>
+    </tbody>
+  </table>
+  </div>
+  </div>
 
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+- or with a pandas-like query():
 
-<h4><b>Traffic</b></h4> with 84 identifiers<style type="text/css">
-#T_dc55d_row0_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 100.0%, transparent 100.0%);
-}
-#T_dc55d_row1_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 99.1%, transparent 99.1%);
-}
-#T_dc55d_row2_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 83.6%, transparent 83.6%);
-}
-#T_dc55d_row3_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 82.1%, transparent 82.1%);
-}
-#T_dc55d_row4_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 77.6%, transparent 77.6%);
-}
-#T_dc55d_row5_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 76.6%, transparent 76.6%);
-}
-#T_dc55d_row6_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 74.6%, transparent 74.6%);
-}
-#T_dc55d_row7_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 73.4%, transparent 73.4%);
-}
-#T_dc55d_row8_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 70.1%, transparent 70.1%);
-}
-#T_dc55d_row9_col0 {
-  width: 10em;
-  background: linear-gradient(90deg, #5fba7d 67.6%, transparent 67.6%);
-}
-</style>
+  ```python
+  quickstart.query('callsign.str.startswith("AFR")')
+  ```
 
-|        |          | count |
-| ------ | -------- | ----- |
-| icao24 | callsign |       |
-| 393324 | AFR69CR  | 1992  |
-| 393320 | AFR85FF  | 1975  |
-| 398564 | AFR9455  | 1666  |
-| 3985a4 | AFR19BH  | 1636  |
-| 3944f1 | AFR15AH  | 1546  |
-| 3944f0 | AFR51LU  | 1525  |
-| 393321 | AFR18KJ  | 1486  |
-| 3944ed | AFR71ZP  | 1463  |
-| 3950cd | AFR26TR  | 1396  |
-| 394c13 | AFR1753  | 1346  |
+  <div class="output">
+  <h4><b>Traffic</b></h4> with 84 identifiers
+  <div class="traffic-summary-wrap">
+  <table class="traffic-summary">
+    <thead>
+      <tr><td>icao24</td><td>callsign</td><td>count</td></tr>
+    </thead>
+    <tbody>
+      <tr><th>393324</th><th>AFR69CR</th><td class="count-bar" style="--bar: 100.0%">1992</td></tr>
+      <tr><th>393320</th><th>AFR85FF</th><td class="count-bar" style="--bar: 99.1%">1975</td></tr>
+      <tr><th>398564</th><th>AFR9455</th><td class="count-bar" style="--bar: 83.6%">1666</td></tr>
+      <tr><th>3985a4</th><th>AFR19BH</th><td class="count-bar" style="--bar: 82.1%">1636</td></tr>
+      <tr><th>3944f1</th><th>AFR15AH</th><td class="count-bar" style="--bar: 77.6%">1546</td></tr>
+      <tr><th>3944f0</th><th>AFR51LU</th><td class="count-bar" style="--bar: 76.6%">1525</td></tr>
+      <tr><th>393321</th><th>AFR18KJ</th><td class="count-bar" style="--bar: 74.6%">1486</td></tr>
+      <tr><th>3944ed</th><th>AFR71ZP</th><td class="count-bar" style="--bar: 73.4%">1463</td></tr>
+      <tr><th>3950cd</th><th>AFR26TR</th><td class="count-bar" style="--bar: 70.1%">1396</td></tr>
+      <tr><th>394c13</th><th>AFR1753</th><td class="count-bar" style="--bar: 67.6%">1346</td></tr>
+    </tbody>
+  </table>
+  </div>
+  </div>
