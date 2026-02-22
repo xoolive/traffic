@@ -3,11 +3,6 @@
 If this is your first contact with `traffic`, you are in the right
 place.
 
-!!! warning "Search at any time"
-
-    From any page, you may use the built-in search shortcut: `Ctrl+K` on Windows/Linux, `⌘K` on macOS.
-    Then type keywords (e.g. `"landing"`, `"lazy"`, `"pushback"`, etc.) to jump directly to the relevant page.
-
 <div class="home-grid home-grid-3">
   <div class="home-card">
     <h3>I want to learn how to use traffic</h3>
@@ -32,3 +27,13 @@ place.
     <p><a href="reference/">API reference</a></p>
   </div>
 </div>
+
+!!! warning "Search at any time"
+
+    From any page, you may use the built-in search shortcut: `Ctrl+K` on Windows/Linux, `⌘K` on macOS.
+
+    Then type keywords (e.g. `"landing"`, `"lazy"`, `"pushback"`, etc.) to jump directly to the relevant page.
+
+## Further Reading
+
+- If you want to see how the library is used in research and real-world studies, visit the [Publications](/publications/) page.

@@ -1,3 +1,5 @@
+# Flight and Traffic objects
+
 The `traffic` library provides methods and attributes for trajectories
 and collections of trajectories, represented as pandas `DataFrame`.
 A single trajectory is embedded in a `Flight` structure, a collection of trajectories in a `Traffic` structure.
@@ -11,9 +13,7 @@ A single trajectory is embedded in a `Flight` structure, a collection of traject
 - be loaded from a tabular file (csv, json, parquet, etc.);
 - be decoded from raw ADS-B signals or streams.
 
-!!!note "Belevingsvlucht (2018)"
-
-    In 2018, the Dutch government organised a _“belevingsvlucht”_ (“experience flight”) to let policymakers experience the planned low-altitude flight routes for Lelystad Airport. The intention was to demonstrate that the routes were acceptable in practice. Instead, the flight highlighted how complex and constrained these trajectories were, reinforcing concerns about noise impact, airspace complexity, and operational realism.
+We reuse here the flight introduce in our [previous page](basic.md).
 
 ```python
 from traffic.data.samples import belevingsvlucht
@@ -30,12 +30,14 @@ Flight(icao24='484506', callsign='TRA051')
 
 !!! tip "Rich representations"
 
-    If you activate `rich` representations, per <https://rich.readthedocs.io/>, rendering is adapted:
+    If you activate Rich representations, rendering is adapted:
 
     ```python
-    from rich.pretty import pprint
+    from rich.pretty import pprint  # (1)!
     pprint(belevingsvlucht)
     ```
+
+    1. See the official documentation <https://rich.readthedocs.io/>
 
     <div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"><span style="color: #800080; text-decoration-color: #800080; font-weight: bold">Flight</span><span style="font-weight: bold">(</span><span style="color: #808000; text-decoration-color: #808000">icao24</span>=<span style="color: #008000; text-decoration-color: #008000">'484506'</span>, <span style="color: #808000; text-decoration-color: #808000">callsign</span>=<span style="color: #008000; text-decoration-color: #008000">'TRA051'</span><span style="font-weight: bold">)</span>
     </pre>
@@ -227,9 +229,12 @@ Indexation will be made on:
 - icao24, callsign (or flight_id if available):
 
       ```python
-      quickstart["02a195"]  # return type: Flight, based on icao24
-      quickstart["TAR722"]  # return type: Flight, based on callsign
+      quickstart["02a195"]  # (1)!
+      quickstart["TAR722"]  # (2)!
       ```
+
+      1. return type: Flight, based on icao24
+      2. return type: Flight, based on callsign
 
       <div id="tar722" class="obs-view-host"></div>
 
@@ -253,9 +258,12 @@ try {
 - an integer or a slice, to take flights in order in the collection:
 
       ```python
-      quickstart[0]  # return type: Flight, the first trajectory in the collection
-      quickstart[:10]  # return type: Traffic, the 10 first trajectories in the collection
+      quickstart[0]  # (1)!
+      quickstart[:10]  # (2)!
       ```
+
+      1. return the first trajectory in the collection: that's a Flight
+      2. return the 10 first trajectories in the collection: that's a Traffic
 
     <div class="output">
       <h4><b>Traffic</b></h4> with 10 identifiers
@@ -331,3 +339,10 @@ try {
   </table>
   </div>
   </div>
+
+---
+
+<nav class="tutorial-nav" aria-label="Tutorial navigation">
+  <a class="prev-link" href="/tutorials/"><- Overview</a>
+  <a class="next-link" href="/tutorials/visualization/">Trajectory visualization -></a>
+</nav>

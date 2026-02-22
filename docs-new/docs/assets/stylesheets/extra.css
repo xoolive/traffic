@@ -1,5 +1,5 @@
 .md-typeset {
-  font-size: 0.75rem;
+  /*font-size: 0.75rem;*/
   line-height: 1.65;
 }
 
@@ -53,4 +53,31 @@
   .home-grid-3 {
     grid-template-columns: 1fr;
   }
+}
+
+.tutorial-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.tutorial-nav a {
+  display: inline-block;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.75rem;
+  text-decoration: none;
+  background: color-mix(in srgb, var(--md-default-bg-color) 92%, #f3f6f8 8%);
+  max-width: 250px;
+  min-width: 230px;
+}
+
+.tutorial-nav a:hover {
+  background: var(--md-accent-fg-color--transparent);
+}
+
+.tutorial-nav .next-link {
+  margin-left: auto;
+  text-align: right;
 }

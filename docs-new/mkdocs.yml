@@ -17,8 +17,14 @@ theme:
     code: "JetBrains Mono"
   features:
     - navigation.sections
+    - navigation.path
     - navigation.top
+    - content.code.edit
+    - content.code.view
     - content.code.copy
+    - content.code.annotate
+    - content.footnote.tooltips
+    - content.tooltips
     - search.suggest
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -35,6 +41,9 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
+
+extra:
+  generator: false
 
 extra_css:
   - assets/stylesheets/extra.css
@@ -57,6 +66,10 @@ markdown_extensions:
   - pymdownx.highlight
   - pymdownx.superfences
   - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path:
+        - .
+        - ..
   - pymdownx.tabbed:
       alternate_style: true
 
@@ -86,8 +99,9 @@ nav:
   - Publications: publications.md
   - Tutorials:
       - Overview: tutorials/index.md
-      - Quickstart: tutorials/quickstart.md
-      - Data visualization: tutorials/visualization.md
+      - Flight and Traffic objects: tutorials/quickstart.md
+      - Trajectory visualization: tutorials/visualization.md
+      - Landing patterns: tutorials/patterns.md
       - Declarative processing: tutorials/declarative.md
   - Gallery:
       - Overview: gallery/index.md
@@ -132,6 +146,7 @@ nav:
           - Top of descent: user-guide/top-of-descent.md
           - Closest point of approach: user-guide/cpa.md
           - ATC deconfliction: user-guide/atc-deconfliction.md
+          - GNSS interference: user-guide/gnss-interference.md
           - Emissions estimation: user-guide/emissions.md
           - Trajectory prediction: user-guide/prediction.md
       - Data visualization:
