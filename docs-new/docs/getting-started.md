@@ -24,7 +24,7 @@ place.
   <div class="home-card">
     <h3>I need precise API details</h3>
     <p>Browse classes, methods, and type-annotated signatures.</p>
-    <p><a href="reference/">API reference</a></p>
+    <p><a href="/reference/">API reference</a></p>
   </div>
 </div>
 

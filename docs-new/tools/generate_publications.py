@@ -5,6 +5,43 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+MONTH_ORDER = {
+    "jan": 1,
+    "january": 1,
+    "feb": 2,
+    "february": 2,
+    "mar": 3,
+    "march": 3,
+    "apr": 4,
+    "april": 4,
+    "may": 5,
+    "jun": 6,
+    "june": 6,
+    "jul": 7,
+    "july": 7,
+    "aug": 8,
+    "august": 8,
+    "sep": 9,
+    "sept": 9,
+    "september": 9,
+    "oct": 10,
+    "october": 10,
+    "nov": 11,
+    "november": 11,
+    "dec": 12,
+    "december": 12,
+}
+
+
+def _month_rank(month: str) -> int:
+    m = month.strip().lower()
+    if not m:
+        return 0
+    if m.isdigit():
+        v = int(m)
+        return v if 1 <= v <= 12 else 0
+    return MONTH_ORDER.get(m, 0)
+
 
 def _split_top_level(text: str, sep: str = ",") -> list[str]:
     parts: list[str] = []
@@ -120,10 +157,17 @@ def parse_bibtex(text: str) -> list[dict[str, str]]:
             i = j
             continue
 
-        key, fields = block.split(",", 1)
+        first, rest = block.split(",", 1)
+        if "=" in first:
+            key = f"auto_{len(entries) + 1}"
+            fields = block
+        else:
+            key = first.strip()
+            fields = rest
+
         data = _parse_entry(fields)
         data["entrytype"] = etype
-        data["key"] = key.strip()
+        data["key"] = key
         entries.append(data)
         i = j
 
@@ -298,7 +342,7 @@ def render_publications(entries: list[dict[str, str]]) -> str:
         items = sorted(
             by_year[year],
             key=lambda e: (
-                e.get("month", ""),
+                _month_rank(e.get("month", "")),
                 e.get("author", ""),
                 e.get("title", ""),
             ),
