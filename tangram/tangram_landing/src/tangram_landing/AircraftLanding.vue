@@ -22,7 +22,14 @@ import {
 } from "vue";
 import { PathLayer } from "@deck.gl/layers";
 import { PathStyleExtension } from "@deck.gl/extensions";
-import type { TangramApi, Disposable } from "@open-aviation/tangram-core/api";
+import {
+  TrajectoryApi,
+  type EntityKey,
+  type TangramApi,
+  type Disposable,
+  type TrajectoryGetRequest,
+  type TrajectoryGetResult,
+} from "@open-aviation/tangram-core/api";
 import type { Layer } from "@deck.gl/core";
 
 // TODO: figure out how one plugin can share types with another
@@ -43,33 +50,59 @@ interface TooltipItem {
   y: number;
 }
 
-const tangramApi = inject<TangramApi>("tangramApi");
-if (!tangramApi) throw new Error("assert: tangram api not provided");
+const tangramApi = inject<TangramApi>("tangramApi")!;
 
 const layerDisposable: Ref<Disposable | null> = ref(null);
 const alignments = reactive(new Map<string, AlignmentData | null>());
+const pendingAlignments = reactive(new Set<string>());
+
+const selectedAircraftId = ref<string | null>(null);
+const selectionDisposable = tangramApi.selection.onChanged((map) => {
+  // TODO: hardcoding jet1090 for now, we may want to generalise it
+  const selectedAircraft = map.get("jet1090_aircraft");
+  if (!selectedAircraft || selectedAircraft.size === 0) {
+    selectedAircraftId.value = null;
+  } else {
+    selectedAircraftId.value = selectedAircraft.values().next().value;
+  }
+});
 
 const activeAircraft = computed(() => {
+  // NOTE: we intentionally depend on the entity store so the layer updates as
+  // realtime positions stream in, but *alignment fetching* is driven only by
+  // selection key changes.
   const map = new Map<string, AircraftState>();
-  if (!tangramApi.state.activeEntities.value) return map;
-  for (const [id, entity] of tangramApi.state.activeEntities.value) {
-    if (entity.type === "jet1090_aircraft") {
-      map.set(id, entity.state as AircraftState);
-    }
-  }
+  // TODO: hardcoding jet1090 for now, we may want to generalise it
+  const entities = tangramApi.state.getEntitiesByType("jet1090_aircraft").value;
+  const id = selectedAircraftId.value;
+  if (!id) return map;
+  const entity = entities.get(id);
+  if (entity) map.set(id, entity.state as AircraftState);
   return map;
 });
 
 watch(
-  () => new Set(activeAircraft.value.keys()),
-  async (newIds, oldIds) => {
-    if (oldIds) {
-      for (const id of oldIds) {
-        if (!newIds.has(id)) alignments.delete(id);
-      }
+  selectedAircraftId,
+  (newId, oldId) => {
+    if (oldId && oldId !== newId) {
+      alignments.delete(oldId);
+      pendingAlignments.delete(oldId);
     }
-    for (const id of newIds) {
-      if (!alignments.has(id)) fetchAlignment(id);
+
+    if (newId) {
+      for (const id of alignments.keys()) {
+        if (id !== newId) alignments.delete(id);
+      }
+
+      if (!alignments.has(newId) && !pendingAlignments.has(newId)) {
+        pendingAlignments.add(newId);
+        void fetchAlignment(newId).finally(() =>
+          pendingAlignments.delete(newId),
+        );
+      }
+    } else {
+      alignments.clear();
+      pendingAlignments.clear();
     }
   },
   { immediate: true },
@@ -77,11 +110,15 @@ watch(
 
 async function fetchAlignment(id: string) {
   try {
-    // TODO: figure out inter-plugin communication to avoid redudant fetches
-    // and, do not hardcode jet1090 as the only source of data.
-    const trajectory = await fetch(`/jet1090/data/${id}`).then((res) =>
-      res.json(),
-    );
+    const key: EntityKey = { id, type: "jet1090_aircraft" };
+
+    const trajectoryResult = await tangramApi.bus.request<
+      Omit<TrajectoryGetRequest, "request_id">,
+      TrajectoryGetResult
+    >(TrajectoryApi.TOPIC_GET, { key });
+
+    const trajectory = trajectoryResult.points;
+
     const response = await fetch("/align/airport", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -89,7 +126,11 @@ async function fetchAlignment(id: string) {
     });
     const aligned = await response.json();
 
-    if (aligned.status === "found" && activeAircraft.value.has(id)) {
+    if (
+      aligned.status === "found" &&
+      selectedAircraftId.value === id &&
+      activeAircraft.value.has(id)
+    ) {
       alignments.set(id, {
         runwayName: aligned.runway,
         runwayLatLon: aligned.latlon,
@@ -98,7 +139,7 @@ async function fetchAlignment(id: string) {
       alignments.set(id, null);
     }
   } catch (e) {
-    if (activeAircraft.value.has(id)) alignments.set(id, null);
+    if (selectedAircraftId.value === id) alignments.set(id, null);
   }
 }
 
@@ -189,5 +230,6 @@ function getTooltipStyle(item: TooltipItem): CSSProperties {
 
 onUnmounted(() => {
   layerDisposable.value?.dispose();
+  selectionDisposable.dispose();
 });
 </script>
