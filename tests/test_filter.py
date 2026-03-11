@@ -1,6 +1,8 @@
 import pytest
 from cartes.crs import Lambert93  # type: ignore
 
+import pandas as pd
+from traffic.algorithms.filters.aggressive import FilterClustering
 from traffic.algorithms.filters.ekf import EKF
 from traffic.algorithms.ground.kalman_taxiway import KalmanTaxiway
 from traffic.data.samples import full_flight_short
@@ -46,3 +48,40 @@ def test_ekf() -> None:
 
     # assert distance.lateral.max() <  # currently 0
     assert distance.vertical.max() < 50
+
+
+def test_filter_clustering_onground_pyarrow() -> None:
+    """FilterClustering must handle pyarrow-backed bool onground with NA.
+
+    When pandas (2.x or 3.x) reads ADS-B data from parquet, boolean
+    columns like ``onground`` use the ``bool[pyarrow]`` dtype.  After
+    resampling, NA values appear.  ``FilterClustering`` calls
+    ``diff().astype(bool)`` which raises
+    ``TypeError: boolean value of NA is ambiguous`` unless NA values
+    are handled before the cast.
+    """
+    n = 50
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range(
+                "2025-01-01", periods=n, freq="1s", tz="UTC"
+            ),
+            "latitude": [48.0 + i * 0.001 for i in range(n)],
+            "longitude": [2.0 + i * 0.001 for i in range(n)],
+            "altitude": [35000.0] * n,
+            "groundspeed": [450.0] * n,
+            "track": [180.0] * n,
+            "vertical_rate": [0.0] * n,
+            # pyarrow bool with NA — reproduces post-resample state
+            "onground": pd.array(
+                [False] * 20 + [None] * 10 + [False] * 20,
+                dtype="bool[pyarrow]",
+            ),
+        }
+    )
+
+    filt = FilterClustering()
+    result = filt.apply(df)
+
+    assert len(result) == n
+    assert "onground" in result.columns
