@@ -137,7 +137,7 @@ class FilterClustering(FilterBase):
             if column not in data.columns:
                 continue
             if column == "onground":
-                statechange = data[column].diff().astype(bool)
+                statechange = data[column].diff().fillna(False).astype(bool)
                 data["group"] = statechange.eq(True).cumsum()
                 groups = data["group"].value_counts()
                 keepers = groups[groups > param["group_size"]].index.tolist()
