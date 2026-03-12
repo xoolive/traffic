@@ -52,7 +52,8 @@ class FlightRadar24:
                 timestamp = @pd.to_datetime(timestamp, unit='s', utc=True)
                 latitude = Position.str.split(",").str[0].astype("float")
                 longitude = Position.str.split(",").str[1].astype("float")
-                """
+                """,
+                    engine="python",
                 )
                 .drop(columns=["UTC", "Position"])
             )
@@ -71,7 +72,8 @@ class FlightRadar24:
                 timestamp = timestamp.str.replace("Z", "")
                 timestamp = @pd.to_datetime(timestamp, utc=True)
                 icao24 = icao24.str.slice(2)
-                """
+                """,
+                    engine="python",
                 )
                 .drop(
                     columns=[
@@ -111,13 +113,14 @@ class FlightRadar24:
                 pd.json_normalize(
                     [elt["ems"] for elt in flight["track"] if elt["ems"]]
                 )
-                .eval("mach = mach / 1000")
+                .eval("mach = mach / 1000", engine="python")
                 .rename(columns=dict(ts="timestamp"))
             )
             data = pd.concat([data, ems_data]).sort_values("timestamp")
         data = (
             data.eval(
-                "timestamp = @pd.to_datetime(timestamp, unit='s', utc=True)"
+                "timestamp = @pd.to_datetime(timestamp, unit='s', utc=True)",
+                engine="python",
             )
             .assign(
                 flight_id=flight["identification"]["id"],
@@ -255,7 +258,8 @@ class FlightRadar24:
                 ),
                 on="flight_id",
             ).eval(
-                "timestamp = @pd.to_datetime(snapshot_id, utc=True, unit='s')"
+                "timestamp = @pd.to_datetime(snapshot_id, utc=True, unit='s')",
+                engine="python",
             )
         )
 
