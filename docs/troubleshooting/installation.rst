@@ -8,7 +8,7 @@ There are three installation processes:
 
   .. code:: bash
 
-     conda create -n traffic -c conda-forge python=3.9 traffic
+     conda create -n traffic -c conda-forge python=3.11 traffic
 
 - the pip way, but you are responsible for non Python dependency management.
   With Linux, you may check how the environment is created for GitHub Actions;
