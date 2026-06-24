@@ -17,7 +17,7 @@ You will find below the code producing the following maps.
    :align: center
 
 
-First download the data from the `Impala shell </opensky_impala.html>`__ over your area of interest (ground trajectories are kept out of the dataset).
+First download the data from the `Impala shell </data_sources/opensky_db.html>`__ over your area of interest (ground trajectories are kept out of the dataset).
 
 .. code:: python
 

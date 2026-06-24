@@ -82,7 +82,7 @@ Currently, the trend shows:
 Data collection and preparation
 ===============================
 
-On the `Impala shell <../opensky_impala.html>`_, a particular table contains flight lists with associated origin and destination airport. The data has been downloaded using the `opensky.flightlist <https://traffic-viz.github.io/opensky_impala.html#traffic.data.adsb.opensky_impala.Impala.flightlist>`_ method, curated, then aggregated with aircraft and flight number information before being published `here <https://opensky-network.org/datasets/covid-19/>`_. Download the data and run the following:
+On the `Impala shell <../data_sources/opensky_db.html>`_, a particular table contains flight lists with associated origin and destination airport. The data has been downloaded using the ``opensky.flightlist`` method, curated, then aggregated with aircraft and flight number information before being published `here <https://opensky-network.org/datasets/covid-19/>`_. Download the data and run the following:
 
 .. code:: python
 
