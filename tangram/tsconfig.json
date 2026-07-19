@@ -1,0 +1,14 @@
+{
+  "extends": "@open-aviation/tangram-core/tsconfig.plugin.json",
+  "compilerOptions": {
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true
+  },
+  "include": [
+    "tangram_*/src/**/*.ts",
+    "tangram_*/src/**/*.d.ts",
+    "tangram_*/src/**/*.vue"
+  ],
+  "exclude": ["**/dist/**", "**/dist-frontend/**", "target/**", ".venv/**"]
+}
