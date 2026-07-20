@@ -1,31 +1,34 @@
-<template>
-  <div
-    v-for="item in visibleTooltips"
-    :key="item.id"
-    :style="getTooltipStyle(item)"
-    class="map-tooltip"
-  >
-    {{ item.name }}
-  </div>
-</template>
+<template><div hidden></div></template>
 
 <script setup lang="ts">
-import {
-  computed,
-  inject,
-  onUnmounted,
-  reactive,
-  watch,
-  ref,
-  type CSSProperties,
-  type Ref,
-} from "vue";
-import { PathLayer } from "@deck.gl/layers";
-import { PathStyleExtension } from "@deck.gl/extensions";
-import type { TangramApi, Disposable } from "@open-aviation/tangram-core/api";
 import type { Layer } from "@deck.gl/core";
+import {
+  PathStyleExtension,
+  type PathStyleExtensionProps,
+} from "@deck.gl/extensions";
+import { PathLayer, TextLayer, type PathLayerProps } from "@deck.gl/layers";
+import {
+  TrajectoryApi,
+  type Disposable,
+  type EntityKey,
+  type TangramApi,
+  type TrajectoryGetRequest,
+  type TrajectoryGetResult,
+} from "@open-aviation/tangram-core/api";
+import { computed, inject, onUnmounted, ref, shallowRef, watch } from "vue";
 
-// TODO: figure out how one plugin can share types with another
+// TODO: hardcoding jet1090 for now, we may want to generalise so it handles say
+// minisky
+const ENTITY_TYPE = "jet1090_aircraft";
+const TRAJECTORY_TIMEOUT_MS = 30_000;
+const ROUTE_COLOR = [154, 146, 98, 128] as const;
+const LABEL_COLOR = [255, 250, 226, 230] as const;
+const LABEL_BACKGROUND_COLOR = [92, 87, 57, 170] as const;
+const LABEL_BORDER_COLOR = [154, 146, 98, 112] as const;
+
+type MapPosition = [longitude: number, latitude: number];
+type LatitudeLongitude = [latitude: number, longitude: number];
+
 interface AircraftState {
   latitude?: number;
   longitude?: number;
@@ -33,161 +36,204 @@ interface AircraftState {
 
 interface AlignmentData {
   runwayName: string;
-  runwayLatLon: [number, number];
+  runwayLatLon: LatitudeLongitude;
 }
 
-interface TooltipItem {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
+interface AlignmentFoundResponse {
+  status: "found";
+  airport: string;
+  runway: string;
+  latlon: LatitudeLongitude;
 }
 
-const tangramApi = inject<TangramApi>("tangramApi");
-if (!tangramApi) throw new Error("assert: tangram api not provided");
+interface AlignmentNotFoundResponse {
+  status: "not found";
+}
 
-const layerDisposable: Ref<Disposable | null> = ref(null);
-const alignments = reactive(new Map<string, AlignmentData | null>());
+type AlignmentResponse = AlignmentFoundResponse | AlignmentNotFoundResponse;
 
-const activeAircraft = computed(() => {
-  const map = new Map<string, AircraftState>();
-  if (!tangramApi.state.activeEntities.value) return map;
-  for (const [id, entity] of tangramApi.state.activeEntities.value) {
-    if (entity.type === "jet1090_aircraft") {
-      map.set(id, entity.state as AircraftState);
-    }
-  }
-  return map;
+interface SelectedAlignment {
+  aircraftId: string;
+  data: AlignmentData;
+}
+
+interface AlignmentPath {
+  path: [MapPosition, MapPosition];
+}
+
+interface RunwayLabel {
+  position: MapPosition;
+  text: string;
+}
+
+const tangramApi = inject<TangramApi>("tangramApi")!;
+const aircraft = tangramApi.state.getEntitiesByType<AircraftState>(ENTITY_TYPE);
+const selectedAircraftId = ref<string | null>(null);
+const alignment = shallowRef<SelectedAlignment | null>(null);
+const routeLayerDisposable = shallowRef<Disposable | null>(null);
+const labelLayerDisposable = shallowRef<Disposable | null>(null);
+
+const selectionDisposable = tangramApi.selection.onChanged((selection) => {
+  // intentionally follow one aircraft from a multi-selection for now
+  selectedAircraftId.value =
+    selection.get(ENTITY_TYPE)?.values().next().value ?? null;
+});
+
+const selectedAircraft = computed(() => {
+  const id = selectedAircraftId.value;
+  return id ? (aircraft.value.get(id) ?? null) : null;
 });
 
 watch(
-  () => new Set(activeAircraft.value.keys()),
-  async (newIds, oldIds) => {
-    if (oldIds) {
-      for (const id of oldIds) {
-        if (!newIds.has(id)) alignments.delete(id);
-      }
-    }
-    for (const id of newIds) {
-      if (!alignments.has(id)) fetchAlignment(id);
-    }
+  selectedAircraftId,
+  (id, _previousId, onCleanup) => {
+    alignment.value = null;
+    if (!id) return;
+
+    const controller = new AbortController();
+    onCleanup(() => controller.abort());
+    void loadAlignment(id, controller.signal);
   },
   { immediate: true },
 );
 
-async function fetchAlignment(id: string) {
+async function loadAlignment(id: string, signal: AbortSignal): Promise<void> {
   try {
-    // TODO: figure out inter-plugin communication to avoid redudant fetches
-    // and, do not hardcode jet1090 as the only source of data.
-    const trajectory = await fetch(`/jet1090/data/${id}`).then((res) =>
-      res.json(),
-    );
-    const response = await fetch("/align/airport", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ aircraft: trajectory }),
-    });
-    const aligned = await response.json();
-
-    if (aligned.status === "found" && activeAircraft.value.has(id)) {
-      alignments.set(id, {
-        runwayName: aligned.runway,
-        runwayLatLon: aligned.latlon,
-      });
-    } else {
-      alignments.set(id, null);
+    const data = await fetchAlignment(id, signal);
+    if (!signal.aborted && selectedAircraftId.value === id) {
+      alignment.value = data ? { aircraftId: id, data } : null;
     }
-  } catch (e) {
-    if (activeAircraft.value.has(id)) alignments.set(id, null);
+  } catch {
+    if (!signal.aborted && selectedAircraftId.value === id) {
+      alignment.value = null;
+    }
   }
 }
 
-const layerData = computed(() => {
-  const paths: any[] = [];
-  for (const [id, state] of activeAircraft.value) {
-    const align = alignments.get(id);
-    if (align && state.latitude != null && state.longitude != null) {
-      paths.push({
-        path: [
-          [state.longitude, state.latitude],
-          [align.runwayLatLon[1], align.runwayLatLon[0]],
-        ],
-      });
-    }
+async function fetchAlignment(
+  id: string,
+  signal: AbortSignal,
+): Promise<AlignmentData | null> {
+  const key: EntityKey = { id, type: ENTITY_TYPE };
+  const trajectory = await tangramApi.bus.request<
+    Omit<TrajectoryGetRequest, "request_id">,
+    TrajectoryGetResult
+  >(
+    TrajectoryApi.TOPIC_GET,
+    { key },
+    { signal, timeoutMs: TRAJECTORY_TIMEOUT_MS },
+  );
+
+  const response = await fetch("/align/airport", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ aircraft: trajectory.points }),
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error(`alignment request failed: ${response.status}`);
   }
-  return paths;
+
+  const result = (await response.json()) as AlignmentResponse;
+  if (result.status === "not found") return null;
+  return { runwayName: result.runway, runwayLatLon: result.latlon };
+}
+
+const overlayData = computed(() => {
+  const currentAlignment = alignment.value;
+  const currentAircraft = selectedAircraft.value;
+  if (!currentAlignment || !currentAircraft) return null;
+
+  const { latitude, longitude } = currentAircraft.state;
+  if (latitude == null || longitude == null) return null;
+
+  const [runwayLatitude, runwayLongitude] = currentAlignment.data.runwayLatLon;
+  const runwayPosition: MapPosition = [runwayLongitude, runwayLatitude];
+
+  return {
+    paths: [
+      {
+        path: [[longitude, latitude], runwayPosition],
+      },
+    ] satisfies AlignmentPath[],
+    labels: [
+      {
+        position: runwayPosition,
+        text: currentAlignment.data.runwayName,
+      },
+    ] satisfies RunwayLabel[],
+  };
 });
 
 watch(
-  layerData,
-  (paths) => {
-    if (layerDisposable.value) layerDisposable.value.dispose();
-    if (paths.length > 0) {
-      const layer = new PathLayer({
-        id: "aircraft-align-layer",
-        data: paths,
-        pickable: false,
-        widthScale: 1,
-        widthMinPixels: 3,
-        extensions: [new PathStyleExtension({ dash: true })],
-        getDashArray: [10, 5],
-        getDashGapPickable: false,
-        getDashJustified: true,
-        getDashOffset: 0,
-        getDashAlign: 0,
-        getPath: (d) => d.path,
-        getColor: [0, 0, 0, 255],
-      }) as Layer;
-      layerDisposable.value = tangramApi.map.addLayer(layer);
+  overlayData,
+  (data) => {
+    if (!data) {
+      routeLayerDisposable.value?.dispose();
+      routeLayerDisposable.value = null;
+      labelLayerDisposable.value?.dispose();
+      labelLayerDisposable.value = null;
+      return;
+    }
+
+    const routeProps: PathLayerProps<AlignmentPath> &
+      PathStyleExtensionProps<AlignmentPath> = {
+      id: "aircraft-align-route",
+      data: data.paths,
+      pickable: false,
+      widthScale: 1,
+      widthMinPixels: 2,
+      getWidth: 2,
+      getPath: (item) => item.path,
+      getColor: ROUTE_COLOR,
+      extensions: [new PathStyleExtension({ dash: true })],
+      getDashArray: [10, 10],
+      dashJustified: true,
+    };
+    const routeLayer = new PathLayer<AlignmentPath>(routeProps) as Layer;
+
+    const labelLayer = new TextLayer<RunwayLabel>({
+      id: "aircraft-align-runway-label",
+      data: data.labels,
+      pickable: false,
+      billboard: true,
+      background: true,
+      backgroundPadding: [4, 2],
+      backgroundBorderRadius: 3,
+      fontFamily: "B612",
+      fontWeight: 600,
+      getPosition: (item) => item.position,
+      getText: (item) => item.text,
+      getSize: 12,
+      getColor: LABEL_COLOR,
+      getBackgroundColor: LABEL_BACKGROUND_COLOR,
+      getBorderColor: LABEL_BORDER_COLOR,
+      getBorderWidth: 1,
+      getPixelOffset: [0, 12],
+    }) as Layer;
+
+    if (routeLayerDisposable.value) {
+      tangramApi.map.setLayer(routeLayer, { slot: "routes" });
+    } else {
+      routeLayerDisposable.value = tangramApi.map.setLayer(routeLayer, {
+        slot: "routes",
+      });
+    }
+
+    if (labelLayerDisposable.value) {
+      tangramApi.map.setLayer(labelLayer, { slot: "routes" });
+    } else {
+      labelLayerDisposable.value = tangramApi.map.setLayer(labelLayer, {
+        slot: "routes",
+      });
     }
   },
   { immediate: true },
 );
-
-const visibleTooltips = computed(() => {
-  const items: TooltipItem[] = [];
-  if (!tangramApi.map.isReady.value) return items;
-
-  // required to trigger recompute on map move
-  tangramApi.map.center.value;
-  tangramApi.map.zoom.value;
-  tangramApi.map.pitch.value;
-  tangramApi.map.bearing.value;
-
-  const mapInstance = tangramApi.map.getMapInstance();
-
-  for (const [id, align] of alignments) {
-    if (!align) continue;
-    const [lat, lon] = align.runwayLatLon;
-    const projected = mapInstance.project([lon, lat]);
-    items.push({
-      id,
-      name: align.runwayName,
-      x: projected.x,
-      y: projected.y,
-    });
-  }
-  return items;
-});
-
-function getTooltipStyle(item: TooltipItem): CSSProperties {
-  return {
-    position: "absolute",
-    left: `${item.x + 15}px`,
-    top: `${item.y - 10}px`,
-    pointerEvents: "none",
-    background: "#ffe60a",
-    border: "1px solid #ccc",
-    padding: "4px",
-    borderRadius: "4px",
-    zIndex: 1000,
-    fontFamily: "Frutiger, Helvetica, B612, sans-serif",
-    fontWeight: "bold",
-    fontSize: "14px",
-  };
-}
 
 onUnmounted(() => {
-  layerDisposable.value?.dispose();
+  routeLayerDisposable.value?.dispose();
+  labelLayerDisposable.value?.dispose();
+  selectionDisposable.dispose();
 });
 </script>
