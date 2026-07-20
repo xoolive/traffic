@@ -1,6 +1,15 @@
+sync:
+  uv sync --all-packages --frozen
+  pnpm install --frozen-lockfile
+
 fmt:
-  uv run ruff check tangram_* --fix || true
-  uv run ruff format tangram_* || true
-  pnpm i || true
-  pnpm fmt || true
-  pnpm lint || true
+  uv run --all-packages ruff check tangram_* --fix
+  uv run --all-packages ruff format tangram_*
+  pnpm fmt
+  pnpm lint:fix
+
+check:
+  uv run --all-packages ruff check tangram_*
+  uv run --all-packages ruff format tangram_* --check
+  uv run --all-packages mypy tangram_landing/src
+  pnpm check
