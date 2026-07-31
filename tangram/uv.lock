@@ -3407,7 +3407,7 @@ wheels = [
 [[package]]
 name = "tangram-core"
 version = "0.6.0"
-source = { editable = "../../tangram/packages/tangram_core" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastapi" },
     { name = "httpx", extra = ["http2"] },
@@ -3418,18 +3418,50 @@ dependencies = [
     { name = "typer" },
     { name = "uvicorn" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = ">=0.115.4" },
-    { name = "httpx", extras = ["http2"], specifier = ">=0.27.2" },
-    { name = "orjson", specifier = ">=3" },
-    { name = "platformdirs", specifier = ">=4.5.0" },
-    { name = "pydantic", specifier = ">=2.6.1" },
-    { name = "redis", specifier = ">=5.2.0" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer" },
-    { name = "uvicorn", specifier = ">=0.32.0" },
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/42/0efae0b34ead34ca99fa487ef0172a3ea22bcddf25a6b97fc8ebc2c3ae3a/tangram_core-0.6.0-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:3afd8b688c24c972007b9a2929316f256d4d7fbdcf004f84802b642efe0d227e", size = 10871091, upload-time = "2026-07-31T07:16:45.139Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/20/91c8f736c8d4be3c7a1b52ee5d47bd32536597707dc61c0bd5fa45e7f048/tangram_core-0.6.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:74d851850c4a2af0c5913297ffd809046d49c0d6eac8ae7e67f4d7043430ec76", size = 10756271, upload-time = "2026-07-31T07:16:47.766Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/0f/5932d00a848737f7b5abbb0cc3d54073b4ecff1d98bf56de58a38bee69a5/tangram_core-0.6.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:93b3f77851e95b0366e3422c807c3dae0dfa5c271a4b0b2958f0bb5d1375cab6", size = 10931626, upload-time = "2026-07-31T07:16:50.971Z" },
+    { url = "https://files.pythonhosted.org/packages/24/85/ae087c13dcc53833368687b519131c965c09bc56398421a5274ace6cfa95/tangram_core-0.6.0-cp311-cp311-manylinux_2_28_armv7l.whl", hash = "sha256:43ae9e64a208fbe60cc195ffa35ff76114138b7beb6f89619d0f8374407d8d17", size = 10586678, upload-time = "2026-07-31T07:16:53.818Z" },
+    { url = "https://files.pythonhosted.org/packages/08/84/5cf7a1fb95647e19c0fabe47b0fa01e7b83b12496934cf6477febac2c61b/tangram_core-0.6.0-cp311-cp311-manylinux_2_28_i686.whl", hash = "sha256:a336bd579d05da74375198507092e9997eb22e5f0dbad2d2043de937dfb9c7fe", size = 10763040, upload-time = "2026-07-31T07:16:56.577Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/3b/809387de271d89cdfe5e046fd841623604b58a46c9d3f9bc0adebc358ab4/tangram_core-0.6.0-cp311-cp311-manylinux_2_28_ppc64le.whl", hash = "sha256:c1ce2a09a74f9b6b91135711bb3b561cbef145551e502f2a4c0951c9f9ca6ead", size = 10973711, upload-time = "2026-07-31T07:16:58.815Z" },
+    { url = "https://files.pythonhosted.org/packages/8d/93/249219233c743c6b9aa6c66786fb2eb79c25c48e6ef7121bf1f4dc333359/tangram_core-0.6.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:a96059fce7f0bb3158a26d1449f0dfe10c8bfcbc15e895731a4fe55db4043210", size = 11016628, upload-time = "2026-07-31T07:17:01.49Z" },
+    { url = "https://files.pythonhosted.org/packages/64/3a/30fad5095b68b45de22603b7c7b997e39465b0dcaa31e5e5b506c7ad34ba/tangram_core-0.6.0-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:9d3596b17fe7702f86308d2afdb7f353c6363247f446e7d0ee6be4f5cb52a927", size = 11128226, upload-time = "2026-07-31T07:17:03.881Z" },
+    { url = "https://files.pythonhosted.org/packages/08/83/5b1ab4f056bbb2ff029b7d848153fb9aca5512854a4120c34cfe8b3ddc9a/tangram_core-0.6.0-cp311-cp311-musllinux_1_1_armv7l.whl", hash = "sha256:198cb06ac3fc5ff72d92d0db8538bb3367e10ff2123bfdf1a01ad3f4806dcecd", size = 10833032, upload-time = "2026-07-31T07:17:06.777Z" },
+    { url = "https://files.pythonhosted.org/packages/75/8f/a79f7d3503d65813d6de0e86b77eeca69d3e9fd0044022b68e72b397cce5/tangram_core-0.6.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:e362a32d345bd88fdb2087fbbf9ef447f8c934a4f22ecd18f285039bbaa99609", size = 11304479, upload-time = "2026-07-31T07:17:09.317Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/51/524ccf5dcd5e4627577c507356bd3926d81316d1e042434cf327954fb983/tangram_core-0.6.0-cp311-cp311-win_amd64.whl", hash = "sha256:18732c603ea54b61525b5aeecbe39b1e785adf4d495bc02196a8561af8e234a2", size = 10424402, upload-time = "2026-07-31T07:17:12.29Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/b8/5252fded8a36c0d8a63c3361d812392956d9b8ea37bb5abb9afea79dafff/tangram_core-0.6.0-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:c5e416a4a11bdfda594c86e1e486e1bd19eabe08f2afb1e2281e73a19a65fef1", size = 10873747, upload-time = "2026-07-31T07:17:14.573Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/c3/8b8fdf74ef4a8fcc89b3a998210500fb60e557e067a902616cb9e60d7427/tangram_core-0.6.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:bb4de374184abe9130e8c97125ff5966e017201bc7699c80393e932085c3ffc7", size = 10748337, upload-time = "2026-07-31T07:17:16.865Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/f1/8f49fdc822634eda4b9bc7e0b457caf38a3ae86c58d168f276e11e9bc2cc/tangram_core-0.6.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:125db9085ab80b46bde2d59015db2eda173a2ea6691cc515ad04db030119affe", size = 10928740, upload-time = "2026-07-31T07:17:19.252Z" },
+    { url = "https://files.pythonhosted.org/packages/78/fb/7c0617676d90212f200c649b23a3983846efcb48a8e2eb01be206a015dc2/tangram_core-0.6.0-cp312-cp312-manylinux_2_28_armv7l.whl", hash = "sha256:51b587f062e812fc28b731aafc98faacaeb736672eb0fc448639e7a03abc4b1c", size = 10583991, upload-time = "2026-07-31T07:17:21.752Z" },
+    { url = "https://files.pythonhosted.org/packages/20/b5/463e62c01d2bd5e28f84802e61e7b0b11719b89ecab6753036568b1e89e0/tangram_core-0.6.0-cp312-cp312-manylinux_2_28_i686.whl", hash = "sha256:13885a9e83e08110631f74c03b02217cbf6cba6d2bca1af6ce114d297a8e791d", size = 10758471, upload-time = "2026-07-31T07:17:24.423Z" },
+    { url = "https://files.pythonhosted.org/packages/9f/be/030b5efea8069e9da90273ba02c6bed34c09ddd7e7e8854b52dbd6a4a1d4/tangram_core-0.6.0-cp312-cp312-manylinux_2_28_ppc64le.whl", hash = "sha256:fd76a9462dc9a165be6a8606ca7dc4242a5be81576f64093ff3ee0d2c16a5904", size = 10970732, upload-time = "2026-07-31T07:17:26.834Z" },
+    { url = "https://files.pythonhosted.org/packages/58/7e/b262c7ad39fa9aca011664935be902e68bba7dcd11af0153cd9261c57602/tangram_core-0.6.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:47d84f8ee45043d233779811ad5dd2cb4e9b4957331e398e15b7a5d1a8592062", size = 11010683, upload-time = "2026-07-31T07:17:29.379Z" },
+    { url = "https://files.pythonhosted.org/packages/81/0c/966441ffe48b9e5f0a55b2987517bd1807e3cde38b8b5d80ef348ffef20e/tangram_core-0.6.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:9bc61117d4540f0b61f34dd0c5e72c7aaa369341f13f53b7b2af7db0d4ed3246", size = 11125216, upload-time = "2026-07-31T07:17:31.775Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/6a/581c4acf726eba33c3c80b48d052fbcec1d462ab1d67fe7a3a5707e4b30d/tangram_core-0.6.0-cp312-cp312-musllinux_1_1_armv7l.whl", hash = "sha256:4e67f638e0397e06268ea303385f3f754327326f92b1b796510c6fbc25d650d4", size = 10830824, upload-time = "2026-07-31T07:17:34.157Z" },
+    { url = "https://files.pythonhosted.org/packages/81/ba/009cb2478a4bfe0f88ab20eedb006d8950c7bc12675c7e765865d1449594/tangram_core-0.6.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:2fee563b05280d1c846e66439fd4d6df9db934628dbe658dabcbde5720e9cea5", size = 11299776, upload-time = "2026-07-31T07:17:36.543Z" },
+    { url = "https://files.pythonhosted.org/packages/26/86/a6832729ed01b0e4bad95ec6591e45328b677ac5bb6cb3fbbb6c01941a81/tangram_core-0.6.0-cp312-cp312-win_amd64.whl", hash = "sha256:233f4902c04af39f7f62ccbb596a0a2e70ff6b389fa98aca8e9520fde19240aa", size = 10417670, upload-time = "2026-07-31T07:17:38.924Z" },
+    { url = "https://files.pythonhosted.org/packages/79/c0/d9d835ccbc2f2a89072883191d3fa1c8d543c4c871baba46ecf9ef9f79e6/tangram_core-0.6.0-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:d1c13d4a5c529ee15541f186f3154d3ed746ca387b62ecb69136c36861ef9ad8", size = 10873915, upload-time = "2026-07-31T07:17:41.221Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/a6/5e95c95a21b1550c5342b7fce15089ed52b735cf3c463c6688b4bedb9c74/tangram_core-0.6.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:4080867df46ed5c518ec21de29b03c6cf628683d2d460acde864421d2cdc5e22", size = 10748399, upload-time = "2026-07-31T07:17:43.591Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/b4/3657339077f015516203c6b06b6a864b9c8e57da1f850a508d3c0a01dcc0/tangram_core-0.6.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:c84f4342e654e3f0e146009a0fb7ccb9b597ade857437cf72fa6c094471a114c", size = 10929792, upload-time = "2026-07-31T07:17:45.941Z" },
+    { url = "https://files.pythonhosted.org/packages/46/01/f42430062061855991c9b2a712624c7cb07eb5b064b8282725797d12941c/tangram_core-0.6.0-cp313-cp313-manylinux_2_28_armv7l.whl", hash = "sha256:ad7588437cb43303293bcd422d4a86678d7755eed026c0cb0a09ca03ff99c500", size = 10583586, upload-time = "2026-07-31T07:17:48.219Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/a4/5430a3d8fbe20127738b984c5d73a405c26aa779394869e3abe27e9ea2a0/tangram_core-0.6.0-cp313-cp313-manylinux_2_28_i686.whl", hash = "sha256:4cd111bf36d472c7d88fe9e2058857b495db46fcb027a9d3e9b5187610a3a0e9", size = 10757401, upload-time = "2026-07-31T07:17:51.165Z" },
+    { url = "https://files.pythonhosted.org/packages/22/3f/ef803ada44769d5586d34d76a0733104f85706072a7369815ac8853f2391/tangram_core-0.6.0-cp313-cp313-manylinux_2_28_ppc64le.whl", hash = "sha256:8bb9014541a4368b542f80fd3c4eedf179846f82320574a5d7b35c5ab8e8dcba", size = 10970879, upload-time = "2026-07-31T07:17:53.787Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/98/9a5d8e29b1294d1f3a5fd27f4b944c0909f290bc1ad5c6b081adb5f8d298/tangram_core-0.6.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:a284d5a332b70e35fd99052bcf8cdc68f93cc68720d11aab37b72c68cb99e4f8", size = 11011358, upload-time = "2026-07-31T07:17:57.101Z" },
+    { url = "https://files.pythonhosted.org/packages/26/ae/b5251b2f1450a5581ee825bf01cfb3e6f13904993a86ea5c5d7524a7180f/tangram_core-0.6.0-cp313-cp313-musllinux_1_1_aarch64.whl", hash = "sha256:373904d4616a85eb329d8d656a2df0e6e236c8c7cb76d48884182ed9816b40e8", size = 11126663, upload-time = "2026-07-31T07:18:00.782Z" },
+    { url = "https://files.pythonhosted.org/packages/07/17/480c0a02d90622809a2525dec0ed2414d6863a5fffceba2f409a8dccd90a/tangram_core-0.6.0-cp313-cp313-musllinux_1_1_armv7l.whl", hash = "sha256:b034f9731d1b4a0be6ce30cc0d08614024376869d91c0d676c27e8a3a4c51b1d", size = 10830789, upload-time = "2026-07-31T07:18:03.142Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/e5/a70529265c62729ed042e98523d5fc65e8f6c19bf9e1848ff811e3c43255/tangram_core-0.6.0-cp313-cp313-musllinux_1_1_x86_64.whl", hash = "sha256:d8d5338dcd8b4921f83d6daa74d930865a958f61168cab73f6bcc47531e7e498", size = 11300052, upload-time = "2026-07-31T07:18:06.049Z" },
+    { url = "https://files.pythonhosted.org/packages/65/d4/0752be634e6e0b161a7c8e0fc650834396954df03ae7988ead61e55f23f6/tangram_core-0.6.0-cp313-cp313-win_amd64.whl", hash = "sha256:a86adda4300ac37f5b38967a56eaf9f8e92a55eca2e95307f547efbed37e2eba", size = 10419138, upload-time = "2026-07-31T07:18:13.933Z" },
+    { url = "https://files.pythonhosted.org/packages/31/b1/c1a20b3ef2fefc6b973b0b2a66b72151d090200f50a7d95a8699d0074443/tangram_core-0.6.0-cp314-cp314-macosx_10_12_x86_64.whl", hash = "sha256:4f70b6fb064cbb80b738d7e74f5b6b11d7794f01fcdc4f36f4f4a258ce534373", size = 10874167, upload-time = "2026-07-31T07:18:16.251Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/a6/210296022695666ed3a1db4cee9554adc046b544e5d8623d24e639a01ff9/tangram_core-0.6.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:7d1d931e6c80b34804603ba76b1ece067283dbac9b9dd938121df66c4e4533db", size = 10748815, upload-time = "2026-07-31T07:18:18.793Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/20/83d319211e733272557cddb9178bb9dc33ee076c1ab02e83f6585d2b01e5/tangram_core-0.6.0-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:d4db4f7fa85eb6b013f8a3342cead2ea122c26fdaeb64fa79761c8173effb51c", size = 10929468, upload-time = "2026-07-31T07:18:21.792Z" },
+    { url = "https://files.pythonhosted.org/packages/61/12/295ee6677129ffcaae88e9ace6e7be7203cfbeb299709d7f0a52d16e953d/tangram_core-0.6.0-cp314-cp314-manylinux_2_28_armv7l.whl", hash = "sha256:b7de1f34ced8ecff4305b4298ad47809e6799f721d879fbe654341f75426c5f7", size = 10584240, upload-time = "2026-07-31T07:18:24.092Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/16/61107378e50ce827e01253ebd7874ae7381addf29d3fadf10366711968f9/tangram_core-0.6.0-cp314-cp314-manylinux_2_28_i686.whl", hash = "sha256:c166fd6fb4a739ca66cd2e699d96c917ded804915b29c17f5f3b640370550548", size = 10758783, upload-time = "2026-07-31T07:18:26.587Z" },
+    { url = "https://files.pythonhosted.org/packages/59/56/efa23ef5418d26aa3eddfb4cb78f253e80d50790f0fbc69b589a2b5a8b73/tangram_core-0.6.0-cp314-cp314-manylinux_2_28_ppc64le.whl", hash = "sha256:377cbf84c1bf1a35c058e4f4b9918f8da59eefff7a113c2ef94774641bb82b58", size = 10972091, upload-time = "2026-07-31T07:18:29.011Z" },
+    { url = "https://files.pythonhosted.org/packages/56/6f/211a7a9bfb6cc47f7cbbc734d39387adfb0d51ccada2e26e14f2f7bead7c/tangram_core-0.6.0-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:cc16dc0926460a894a3e94422f710d76b670c15d77f45265b837146878c9faa5", size = 11011462, upload-time = "2026-07-31T07:18:31.615Z" },
+    { url = "https://files.pythonhosted.org/packages/af/70/4f22b9266b633fb2c4230b72eaa73eb1189107f26b428ac0a36a7e99c35e/tangram_core-0.6.0-cp314-cp314-musllinux_1_1_aarch64.whl", hash = "sha256:1158ceae673fe4e53e58e2544e1baf461b407adecbec7a9183dfad8bb1141feb", size = 11125527, upload-time = "2026-07-31T07:18:34.195Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/ad/efa8c17c2bebc20a33438c0073d1d0e5f906311344452f7a99600ab16117/tangram_core-0.6.0-cp314-cp314-musllinux_1_1_armv7l.whl", hash = "sha256:af8bdfbc629cde6d4bab3c871b66259311900024a847aaab4699782acc924a58", size = 10831167, upload-time = "2026-07-31T07:18:36.916Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/82/009b1ea3d6336efb3337fab57632623bf66bd42697271ce639599d1bb329/tangram_core-0.6.0-cp314-cp314-musllinux_1_1_x86_64.whl", hash = "sha256:b73052c0006359843fe701263d74d48ed6f1e902854fcedab9920cedcd19cf5c", size = 11301772, upload-time = "2026-07-31T07:18:39.756Z" },
 ]
 
 [[package]]
@@ -3443,7 +3475,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "tangram-core", editable = "../../tangram/packages/tangram_core" },
+    { name = "tangram-core", specifier = ">=0.6.0" },
     { name = "traffic", editable = "../" },
 ]
 
