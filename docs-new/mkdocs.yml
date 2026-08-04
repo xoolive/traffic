@@ -136,6 +136,7 @@ nav:
           - Trajectory simplification: user-guide/simplification.md
           - Trajectory arithmetic: user-guide/arithmetic.md
           - Trajectory iteration: user-guide/iteration.md
+          - Trajectory generation: user-guide/generation.md
       - Navigation and performance:
           - Flight phases: user-guide/flight-phases.md
           - Go-around: user-guide/go-around.md
