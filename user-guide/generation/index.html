@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://www.xoolive.org/traffic/user-guide/atc-deconfliction/">
+        <link rel="canonical" href="https://www.xoolive.org/traffic/user-guide/generation/">
       
       
-        <link rel="prev" href="../cpa/">
+        <link rel="prev" href="../iteration/">
       
       
-        <link rel="next" href="../gnss-interference.md">
+        <link rel="next" href="../flight-phases/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Atc deconfliction - traffic</title>
+        <title>Trajectory generation - traffic</title>
       
     
     
@@ -90,6 +90,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#trajectory-generation" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -121,7 +126,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Atc deconfliction
+              Trajectory generation
             
           </span>
         </div>
@@ -1444,6 +1449,8 @@
                 
   
   
+    
+  
   
   
     
@@ -1453,11 +1460,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_3" checked>
         
           
           <label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="0">
@@ -1478,7 +1485,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1661,10 +1668,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../generation/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory generation
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1680,6 +1714,137 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-use-a-generation-object" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why use a Generation object?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-the-data-is-represented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the data is represented
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#end-to-end-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-end example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-and-coordinate-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature and coordinate choices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reconstructing-positions-from-track-and-groundspeed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reconstructing positions from track and groundspeed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.build_traffic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_traffic
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.sample" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sample
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1697,8 +1862,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1708,11 +1871,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" >
         
           
           <label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="0">
@@ -1733,7 +1896,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1972,17 +2135,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="././" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../atc-deconfliction/" class="md-nav__link">
         
   
   
@@ -1998,7 +2154,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -3080,6 +3235,126 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-use-a-generation-object" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why use a Generation object?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-the-data-is-represented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the data is represented
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#end-to-end-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-end example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-and-coordinate-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature and coordinate choices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reconstructing-positions-from-track-and-groundspeed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reconstructing positions from track and groundspeed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.build_traffic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        build_traffic
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.sample" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sample
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -3140,10 +3415,10 @@
     
     
       <li class="md-path__item">
-        <a href="../flight-phases/" class="md-path__link">
+        <a href="../cleaning/" class="md-path__link">
           
   <span class="md-ellipsis">
-    Navigation and performance
+    Data processing
   </span>
 
         </a>
@@ -3172,11 +3447,449 @@
   Same as Material default, except we skip the fallback page title on homepage.
 -->
 
-<h1>Atc deconfliction</h1>
-
 
 <!-- Page content -->
+<h1 id="trajectory-generation">Trajectory generation<a class="headerlink" href="#trajectory-generation" title="Permanent link">&para;</a></h1>
+<p><code>Generation</code> is a class provided by <code>traffic</code> to connect a <code>Traffic</code> collection
+to an external generative model:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">traffic.algorithms.generation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generation</span>
+</code></pre></div>
+<p>It is an adapter, not a generative model of its own. The external model learns
+and samples numerical vectors, while <code>Generation</code> handles trajectory-specific
+preparation and reconstruction. The example below uses a Gaussian mixture
+because its API is small, not because it is a good trajectory model. A VAE,
+diffusion model, or another generator can be used through the same class when
+it implements the <a href="#model-contract">model contract</a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Experimental API</p>
+<p>Trajectory generation currently provides a thin adapter around a generative
+model. It does not supply a model, enforce physical constraints, or guarantee
+realistic trajectories. Read the <a href="#current-limitations">current limitations</a>
+before using generated data in an analysis.</p>
+</div>
+<h2 id="why-use-a-generation-object">Why use a <code>Generation</code> object?<a class="headerlink" href="#why-use-a-generation-object" title="Permanent link">&para;</a></h2>
+<p>A model such as <code>GaussianMixture</code> knows how to fit and sample a matrix. It does
+not know how flights are separated inside a <code>Traffic</code> object, how trajectory
+features should be flattened, or how sampled values become timestamped
+geographic positions.</p>
+<p><code>Generation</code> keeps that boundary explicit:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Traffic</code></td>
+<td>Stores and separates the source flights.</td>
+</tr>
+<tr>
+<td><code>Generation</code></td>
+<td>Selects features, applies scaling, reshapes data, and rebuilds <code>Traffic</code> samples.</td>
+</tr>
+<tr>
+<td>External model</td>
+<td>Learns a distribution from a matrix and samples new vectors.</td>
+</tr>
+</tbody>
+</table>
+<p>This is the same general pattern used by <code>Flight.filter()</code>: traffic provides the
+data integration, while a filter object implements the numerical operation.
+The wrapper gives different model implementations one common entry point and
+keeps the fitted model, feature list, and scaler together. Fit once, then call
+<code>sample()</code> repeatedly without repeating the preparation logic.</p>
+<p>The <code>Traffic.generation()</code> convenience method returns the fitted wrapper
+directly. Keeping this logic outside <code>Traffic</code> also prevents model-specific
+options from accumulating on the core data structure.</p>
+<h2 id="how-the-data-is-represented">How the data is represented<a class="headerlink" href="#how-the-data-is-represented" title="Permanent link">&para;</a></h2>
+<p>A generative model expects one fixed-size vector per observation. A <code>Traffic</code>
+object instead contains a variable number of timestamped points per flight.
+Preparation therefore follows four steps:</p>
+<ol>
+<li>identify each flight with <code>assign_id()</code>;</li>
+<li>resample every flight to the same number of points;</li>
+<li>choose the features that describe one point;</li>
+<li>flatten each flight into one row of the model matrix.</li>
+</ol>
+<p>For <em>n</em> flights resampled to <em>p</em> points with <em>f</em> features, the fitted matrix has
+shape <code>(n, p × f)</code>. The fixed number of points is not optional: <code>Generation</code>
+cannot stack trajectories of different lengths.</p>
+<p>The reverse operation happens during sampling. Each model sample is reshaped to
+<code>(p, f)</code>, assigned a synthetic flight identifier, and returned as part of a new
+<code>Traffic</code> object.</p>
+<h2 id="end-to-end-example">End-to-end example<a class="headerlink" href="#end-to-end-example" title="Permanent link">&para;</a></h2>
+<p>The following example uses landing trajectories at Zurich Airport. It models
+projected position, altitude, and elapsed time with a two-component Gaussian
+mixture. This is intentionally a poor model: it keeps the fitting and sampling
+steps short enough to expose the complete <code>Generation</code> workflow.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cartes.crs</span><span class="w"> </span><span class="kn">import</span> <span class="n">EuroPP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.mixture</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianMixture</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">MinMaxScaler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">traffic.algorithms.generation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">traffic.data.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">landing_zurich_2019</span>
+</code></pre></div>
+<p><code>GaussianMixture</code> and <code>MinMaxScaler</code> require the <code>learning</code> optional dependency.
+Install <code>traffic[learning]</code> if scikit-learn is not already available.</p>
+<p>Start by selecting a coherent family of trajectories. Every flight is then
+resampled to 100 points. Here the first 1,000 flights are retained to keep the
+example reasonably quick.</p>
+<div class="highlight"><pre><span></span><code><span class="n">traffic</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">landing_zurich_2019</span>
+    <span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;runway == &#39;14&#39; and initial_flow == &#39;162-216&#39;&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">assign_id</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">unwrap</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="p">)[:</span><span class="mi">1000</span><span class="p">]</span>
+</code></pre></div>
+<p>Projected coordinates are preferable to longitude and latitude for this local
+example. Elapsed time is measured from the beginning of each flight; it must be
+computed explicitly because <code>timedelta</code> is not normally present in trajectory
+data.</p>
+<div class="highlight"><pre><span></span><code><span class="n">traffic</span> <span class="o">=</span> <span class="n">traffic</span><span class="o">.</span><span class="n">compute_xy</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="n">EuroPP</span><span class="p">())</span>
 
+
+<span class="k">def</span><span class="w"> </span><span class="nf">elapsed_seconds</span><span class="p">(</span><span class="n">frame</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">-</span> <span class="n">frame</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">min</span><span class="p">())</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+
+<span class="n">traffic</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">traffic</span><span class="o">.</span><span class="n">iterate_lazy</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">timedelta</span><span class="o">=</span><span class="n">elapsed_seconds</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Fit the external model through <code>Generation</code>. Scaling prevents features with
+large numerical ranges from dominating the fit.</p>
+<div class="highlight"><pre><span></span><code><span class="n">generator</span> <span class="o">=</span> <span class="n">Generation</span><span class="p">(</span>
+    <span class="n">generation</span><span class="o">=</span><span class="n">GaussianMixture</span><span class="p">(</span>
+        <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">covariance_type</span><span class="o">=</span><span class="s2">&quot;diag&quot;</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;altitude&quot;</span><span class="p">,</span> <span class="s2">&quot;timedelta&quot;</span><span class="p">],</span>
+    <span class="n">scaler</span><span class="o">=</span><span class="n">MinMaxScaler</span><span class="p">(</span><span class="n">feature_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+<span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">traffic</span><span class="p">)</span>
+</code></pre></div>
+<p>The same operation is available from the <code>Traffic</code> object:</p>
+<div class="highlight"><pre><span></span><code><span class="n">generator</span> <span class="o">=</span> <span class="n">traffic</span><span class="o">.</span><span class="n">generation</span><span class="p">(</span>
+    <span class="n">generation</span><span class="o">=</span><span class="n">GaussianMixture</span><span class="p">(</span>
+        <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">covariance_type</span><span class="o">=</span><span class="s2">&quot;diag&quot;</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;altitude&quot;</span><span class="p">,</span> <span class="s2">&quot;timedelta&quot;</span><span class="p">],</span>
+    <span class="n">scaler</span><span class="o">=</span><span class="n">MinMaxScaler</span><span class="p">(</span><span class="n">feature_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Sampling returns a <code>Traffic</code> object. Because the model uses projected <code>x</code> and
+<code>y</code>, the same projection is required to reconstruct longitude and latitude.</p>
+<div class="highlight"><pre><span></span><code><span class="n">generated</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="n">EuroPP</span><span class="p">())</span>
+</code></pre></div>
+<p><img alt="Training and generated trajectories" src="../../assets/images/trajectory-generation.png" /></p>
+<p>The generated trajectories reproduce the broad direction of the training set,
+but many paths are jagged or implausible. Two diagonal Gaussian components are
+a very weak description of this high-dimensional distribution. The model has
+no explicit notion of smoothness, turn rate, aircraft dynamics, or route
+structure. This output explains the adapter; it is not a realistic traffic
+simulator. More suitable models, including VAEs and diffusion models, can be
+used without moving trajectory preparation and reconstruction out of
+<code>Generation</code>.</p>
+<h2 id="feature-and-coordinate-choices">Feature and coordinate choices<a class="headerlink" href="#feature-and-coordinate-choices" title="Permanent link">&para;</a></h2>
+<p><code>Generation</code> can rebuild geographic coordinates in three ways:</p>
+<table>
+<thead>
+<tr>
+<th>Generated features</th>
+<th>Sampling argument</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>latitude</code>, <code>longitude</code></td>
+<td>none</td>
+<td>Coordinates are used directly.</td>
+</tr>
+<tr>
+<td><code>x</code>, <code>y</code></td>
+<td><code>projection=...</code></td>
+<td>Projected coordinates are converted back to longitude and latitude.</td>
+</tr>
+<tr>
+<td><code>track</code>, <code>groundspeed</code></td>
+<td><code>coordinates=...</code></td>
+<td>Positions are integrated from a known start or end point.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="reconstructing-positions-from-track-and-groundspeed">Reconstructing positions from track and groundspeed<a class="headerlink" href="#reconstructing-positions-from-track-and-groundspeed" title="Permanent link">&para;</a></h2>
+<p>Track and groundspeed describe motion, not absolute position. Reconstructing a
+trajectory from them requires one known position as a boundary condition. The
+<code>coordinates</code> argument supplies that position, while <code>forward</code> selects which
+end of the trajectory it belongs to:</p>
+<ul>
+<li><code>forward=True</code> fixes the <strong>first</strong> generated point at <code>coordinates</code>, then
+  integrates track and groundspeed forward in time. This is the natural choice
+  for a departure whose initial position is known.</li>
+<li><code>forward=False</code> fixes the <strong>last</strong> generated point at <code>coordinates</code>, then
+  reconstructs earlier positions backwards. This is usually the right choice
+  for landing trajectories when the runway endpoint is known.</li>
+</ul>
+<p>Fit a generator with <code>track</code>, <code>groundspeed</code>, and <code>timedelta</code> among its features:</p>
+<div class="highlight"><pre><span></span><code><span class="n">track_generator</span> <span class="o">=</span> <span class="n">traffic</span><span class="o">.</span><span class="n">generation</span><span class="p">(</span>
+    <span class="n">generation</span><span class="o">=</span><span class="n">GaussianMixture</span><span class="p">(</span>
+        <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">covariance_type</span><span class="o">=</span><span class="s2">&quot;diag&quot;</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;track&quot;</span><span class="p">,</span> <span class="s2">&quot;groundspeed&quot;</span><span class="p">,</span> <span class="s2">&quot;altitude&quot;</span><span class="p">,</span> <span class="s2">&quot;timedelta&quot;</span><span class="p">],</span>
+    <span class="n">scaler</span><span class="o">=</span><span class="n">MinMaxScaler</span><span class="p">(</span><span class="n">feature_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>The choice of reference depends on which endpoint is known. For a forward
+reconstruction, use a representative point at the beginning of the approach.
+The generated final positions should then fall near Zurich, but nothing forces
+them to intersect a runway:</p>
+<div class="highlight"><pre><span></span><code><span class="n">approach_start</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">48.12822</span><span class="p">,</span> <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="mf">8.56836</span><span class="p">}</span>
+
+<span class="n">forward_landings</span> <span class="o">=</span> <span class="n">track_generator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="mi">40</span><span class="p">,</span>
+    <span class="n">coordinates</span><span class="o">=</span><span class="n">approach_start</span><span class="p">,</span>
+    <span class="n">forward</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>For landing data, the stronger boundary condition is usually the runway end.
+Pass a reference near runway 14 and reconstruct backwards:</p>
+<div class="highlight"><pre><span></span><code><span class="n">runway_14</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">47.48365</span><span class="p">,</span> <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="mf">8.53391</span><span class="p">}</span>
+
+<span class="n">backward_landings</span> <span class="o">=</span> <span class="n">track_generator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="mi">40</span><span class="p">,</span>
+    <span class="n">coordinates</span><span class="o">=</span><span class="n">runway_14</span><span class="p">,</span>
+    <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Both reconstructions below use the same 40 track, groundspeed, altitude, and
+elapsed-time profiles sampled from the training matrix. The overview shows the
+complete trajectories and the endpoint fixed in each direction.</p>
+<p><img alt="Overview of forward and backward reconstruction" src="../../assets/images/trajectory-reconstruction-direction-overview.png" /></p>
+<p>The airport view then magnifies the final part of the same trajectories. The
+Zurich runways are drawn with
+<code>airports["LSZH"].plot(ax, footprint=False, runways=True)</code>.</p>
+<p><img alt="Forward and backward reconstruction around the Zurich runways" src="../../assets/images/trajectory-reconstruction-direction.png" /></p>
+<p>On the left, <code>forward=True</code> fixes a representative approach start outside the
+airport view. The red circles are the unconstrained final positions: they reach
+the airport area but do not necessarily meet runway 14. On the right,
+<code>forward=False</code> fixes every final point at the red star. Earlier points are
+reconstructed backwards from that runway reference.</p>
+<p>This endpoint constraint does not make a trajectory physically valid. It only
+translates the reconstructed path so that one end meets the supplied coordinate.
+Track errors, unrealistic speeds, or poor generated time profiles still affect
+the complete path. The current API also applies one reference coordinate to all
+samples; it cannot accept a different runway point for each generated flight.</p>
+<p>This mode specifically requires a feature named <code>timedelta</code>; <code>Generation</code> uses
+it to create the timestamps needed for integration. Positions are accumulated
+from speed and track, so small errors propagate along the trajectory.</p>
+<h2 id="model-contract">Model contract<a class="headerlink" href="#model-contract" title="Permanent link">&para;</a></h2>
+<p><code>Generation</code> accepts a trainable object with two methods:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+    <span class="o">...</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">samples</span><span class="p">,</span> <span class="n">metadata</span>
+</code></pre></div>
+<p>During <code>Generation.fit(traffic)</code>, <code>X</code> is a NumPy array with shape
+<code>(n_trajectories, n_points × n_features)</code>. The model must fit from that matrix.
+Model settings should currently be passed to the model constructor, as in
+<code>GaussianMixture(n_components=2)</code>, rather than to <code>Generation.fit()</code>.</p>
+<p>During <code>Generation.sample(n_samples)</code>, the model must return a pair:</p>
+<ol>
+<li>a NumPy array with shape <code>(n_samples, n_points × n_features)</code>;</li>
+<li>a second array containing model-specific metadata.</li>
+</ol>
+<p><code>Generation</code> uses the first item and currently ignores the second. The number
+of columns must match the matrix used for fitting so each row can be reshaped
+back to <code>(n_points, n_features)</code>.</p>
+<p><code>GaussianMixture</code> satisfies this contract directly:</p>
+<div class="highlight"><pre><span></span><code><span class="n">model</span> <span class="o">=</span> <span class="n">GaussianMixture</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">samples</span><span class="p">,</span> <span class="n">component_labels</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</code></pre></div>
+<p>Here <code>samples</code> contains the generated vectors and <code>component_labels</code> identifies
+the Gaussian component selected for each vector. This convenient API is why a
+Gaussian mixture works well as a documentation example. Its statistical model
+is still far too weak for realistic trajectory generation.</p>
+<p>VAEs and diffusion models often expose a different API: <code>sample()</code> may return a
+single tensor, training may happen through a separate loop, and generated data
+may remain on a GPU. A small adapter can present the contract expected by
+<code>Generation</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">GenerativeModelAdapter</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train_on</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples</span><span class="p">,</span> <span class="n">metadata</span>
+</code></pre></div>
+<p>The method names inside the adapter depend on the chosen framework. What matters
+is the <code>fit(X)</code> and <code>sample(n_samples) -&gt; (samples, metadata)</code> boundary. A
+scaler, when provided to <code>Generation</code>, must separately implement
+<code>fit_transform()</code> and <code>inverse_transform()</code>.</p>
+<h2 id="current-limitations">Current limitations<a class="headerlink" href="#current-limitations" title="Permanent link">&para;</a></h2>
+<ul>
+<li>All fitted trajectories must contain the same number of points.</li>
+<li>Requested features must already exist in every flight.</li>
+<li>The default feature list includes <code>timedelta</code>, which callers usually need to
+  create themselves; passing an explicit feature list is safer.</li>
+<li>Track/groundspeed reconstruction specifically requires the <code>timedelta</code>
+  feature and an anchor coordinate.</li>
+<li>Sampling from <code>x</code> and <code>y</code> requires the original projection.</li>
+<li>Generated timestamps are anchored to the current date rather than to the
+  training period.</li>
+<li><code>save()</code> and <code>from_file()</code> are not implemented.</li>
+<li>The wrapper does not impose kinematic, operational, or airspace constraints.</li>
+</ul>
+<p>These constraints are part of the present API rather than properties of
+trajectory generation in general.</p>
+<h2 id="api-reference">API reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h2>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+    <div class="doc doc-contents first">
+
+
+
+        <p>Generation class to handle trajectory generation.</p>
+<p>generation: GenerationProtocol
+    generation model, should implement <code>fit()</code> and <code>sample()</code>
+    methods.</p>
+<p>features: List[str]
+    List of features to generate. Example:
+    <code>['latitude', 'longitude', 'altitude', 'timedelta']</code>.</p>
+<p>scaler: ScalerProtocol, default: None
+    <em>if need be</em>, apply a scaler to the data before fitting the
+    generation model. You may want to consider <code>StandardScaler()
+    &lt;https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html&gt;</code>_.
+    The scaler object should implement <code>fit_transform()</code> and
+    <code>inverse_transform()</code> methods.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="traffic.algorithms.generation.Generation.build_traffic" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">build_traffic</span>
+
+
+<a href="#traffic.algorithms.generation.Generation.build_traffic" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">build_traffic</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span>
+    <span class="n">projection</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Proj</span><span class="p">,</span> <span class="n">Projection</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">coordinates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Coordinates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">forward</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Traffic</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Build Traffic DataFrame from numpy array according to the list
+of features <code>self.features</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="traffic.algorithms.generation.Generation.sample" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">sample</span>
+
+
+<a href="#traffic.algorithms.generation.Generation.sample" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sample</span><span class="p">(</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">projection</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Proj</span><span class="p">,</span> <span class="n">Projection</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">coordinates</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Coordinates</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">forward</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Traffic</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Samples trajectories from the generation model.</p>
+<p>n_samples: int, default: 1
+    Number of trajectories to sample.</p>
+<p>projection: pyproj.Proj, cartopy.Projection, default: None
+    Required if the generation model uses <code>x</code> and <code>y</code> projections
+    instead of <code>latitude</code> and <code>longitude</code>.</p>
+<p>coordinates: Dict[str, float], default: None
+    Required if the generation model uses <code>track</code> and <code>groundspeed</code>
+    instead of <code>latitude</code> and <code>longitude</code>. It should have
+    <code>'latitude'</code> and <code>'longitude'</code> keys. Example:
+    <code>{'latitude': 12.2, 'longitude': 43.5}</code>.</p>
+<p>forward: bool, default: True
+    Indicates whether the <code>coordinates</code> attribute corresponds to
+    the first coordinate of the trajectories or the last one. If
+    <code>True</code> it is the first, else it is the last.</p>
+<p>Example usage:
+    .. code-block:: python</p>
+<div class="highlight"><pre><span></span><code>    # Generation of 10 trajectories with track and groundspeed
+    # features, considering some ending coordinates for each
+    # trajectories.
+    t_gen = g.sample(
+        10,
+        coordinates={&quot;latitude&quot;: 15, &quot;longitude&quot;:15},
+        forward=False,
+    )
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 <!-- Source file information -->
 
