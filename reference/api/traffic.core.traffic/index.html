@@ -1,0 +1,6078 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Air traffic data processing with Python">
+      
+      
+      
+        <link rel="canonical" href="https://www.xoolive.org/traffic/reference/api/traffic.core.traffic/">
+      
+      
+        <link rel="prev" href="../traffic.core.time/">
+      
+      
+        <link rel="next" href="../traffic.algorithms.filters/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/favicon/favicon.ico">
+      <meta name="generator" content="zensical-0.0.23">
+    
+    
+      
+        <title>traffic.core.traffic - traffic</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.1e989742.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/observable.css">
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/traffic.css">
+    
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,a=__md_scope)=>JSON.parse(t.getItem(a.pathname+"."+e)),__md_set=(e,t,a=localStorage,_=__md_scope)=>{try{a.setItem(_.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#trafficcoretraffic" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="traffic" class="md-header__button md-logo" aria-label="traffic" data-md-component="logo">
+      
+  <img src="../../../assets/logo/logo_small.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            traffic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              traffic.core.traffic
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/xoolive/traffic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    xoolive/traffic
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="traffic" class="md-nav__button md-logo" aria-label="traffic" data-md-component="logo">
+      
+  <img src="../../../assets/logo/logo_small.png" alt="logo">
+
+    </a>
+    traffic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/xoolive/traffic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    xoolive/traffic
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../publications.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flight and Traffic objects
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/visualization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory visualization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Landing patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/declarative/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Declarative processing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gallery
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Gallery
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory patterns
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Trajectory patterns
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/calibration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Calibration flights
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/savan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SAVAN flights
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/tour-de-france/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tour de France 2020
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/zero-gravity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Zero gravity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Air traffic density
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Air traffic density
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/heatmaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Traffic density
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/covid/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    COVID 19
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/russian-ban/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Russian ban
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planet Earth
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Planet Earth
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/geomagnetic-declination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Geomagnetic declination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gallery/sun-elevation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sun elevation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_2" id="__nav_7_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sources of data
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sources of data
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/sample-trajectories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sample trajectories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/airports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Airport information
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/aircraft/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Aircraft information
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/navigation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Navigation data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/flight-plans/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flight plans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/airspace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Airspace information
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/opensky/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenSky Network
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/raw-data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Raw data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/eurocontrol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    EUROCONTROL data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data processing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data processing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/cleaning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory cleaning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/interpolation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory interpolation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/resampling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory resampling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/simplification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory simplification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/arithmetic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory arithmetic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/iteration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory iteration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Navigation and performance
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Navigation and performance
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/flight-phases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flight phases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/go-around/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go-around
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/runway-detection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Runway detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/holding-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Holding patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/point-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Point merge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/top-of-climb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Top of climb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/top-of-descent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Top of descent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/cpa/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Closest point of approach
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/atc-deconfliction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ATC deconfliction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/gnss-interference.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GNSS interference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/emissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Emissions estimation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/prediction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_5" id="__nav_7_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data visualization
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data visualization
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/plotting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot trajectories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/airspace-occupancy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Airspace occupancy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/clustering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory clustering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_6" id="__nav_7_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user-guide/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8_2" id="__nav_8_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Core
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.airspace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.airspace
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.cache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.cache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.distance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.distance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.flight/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.flight
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.flightplan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.flightplan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.intervals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.intervals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.iterator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.iterator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.lazy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.lazy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.mixins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.mixins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.sv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.sv
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.core.time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.time
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.traffic
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.core.traffic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Traffic
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Traffic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__add__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __add__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__and__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __and__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __getitem__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__sub__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __sub__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.agg_latlon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        agg_latlon
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.agg_xy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        agg_xy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.airborne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        airborne
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.aircraft_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        aircraft_data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.assign" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        assign
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.assign_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        assign_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.callsigns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        callsigns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.centroid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        centroid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.clean_invalid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clean_invalid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.closest_point_of_approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        closest_point_of_approach
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.clustering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clustering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.compute_latlon_from_xy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compute_latlon_from_xy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.compute_xy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compute_xy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.convert_dtypes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        convert_dtypes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.drop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.drop_duplicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drop_duplicates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.end_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        end_time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.fillna" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fillna
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.flight_ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        flight_ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.from_flights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_flights
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.from_fr24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_fr24
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.geoencode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        geoencode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.groupby" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        groupby
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.icao24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icao24
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.iterate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.iterate_lazy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate_lazy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        merge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.plot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.plot_wind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_wind
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.rename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rename
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.replace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        replace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.reset_index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset_index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.sample" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sample
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.sort_values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sort_values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.start_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        start_time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_csv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_excel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_excel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_feather" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_feather
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_hdf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_hdf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_parquet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_parquet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_pickle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_pickle
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Algorithms
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Algorithms
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.algorithms.filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.algorithms.filters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.algorithms.ground/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.algorithms.ground
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.algorithms.metadata/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.algorithms.metadata
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.algorithms.navigation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.algorithms.navigation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.algorithms.performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.algorithms.performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../traffic.algorithms.prediction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    traffic.algorithms.prediction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Traffic
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Traffic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__add__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __add__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__and__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __and__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__getitem__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __getitem__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__sub__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __sub__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.agg_latlon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        agg_latlon
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.agg_xy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        agg_xy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.airborne" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        airborne
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.aircraft_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        aircraft_data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.assign" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        assign
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.assign_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        assign_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.callsigns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        callsigns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.centroid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        centroid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.clean_invalid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clean_invalid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.closest_point_of_approach" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        closest_point_of_approach
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.clustering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clustering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.compute_latlon_from_xy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compute_latlon_from_xy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.compute_xy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compute_xy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.convert_dtypes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        convert_dtypes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.drop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.drop_duplicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        drop_duplicates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.end_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        end_time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.fillna" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fillna
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.flight_ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        flight_ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.from_flights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_flights
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.from_fr24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_fr24
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.geoencode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        geoencode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.groupby" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        groupby
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.icao24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        icao24
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.iterate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.iterate_lazy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate_lazy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        merge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.plot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.plot_wind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_wind
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.rename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rename
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.replace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        replace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.reset_index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset_index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.sample" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sample
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.sort_values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sort_values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.start_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        start_time
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_csv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_excel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_excel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_feather" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_feather
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_hdf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_hdf
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_parquet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_parquet
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.to_pickle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_pickle
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Reference
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../traffic.core.airspace/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Core
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  <!-- Tags -->
+
+
+
+<!-- Actions -->
+
+  
+  
+
+
+<!--
+  Same as Material default, except we skip the fallback page title on homepage.
+-->
+
+
+<!-- Page content -->
+<h1 id="trafficcoretraffic"><code>traffic.core.traffic</code><a class="headerlink" href="#trafficcoretraffic" title="Permanent link">&para;</a></h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="traffic.core.traffic.Traffic" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">Traffic</span>
+
+
+<a href="#traffic.core.traffic.Traffic" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Traffic</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;HBoxMixin&lt;/span&gt;" href="../traffic.core.mixins/#traffic.core.mixins.HBoxMixin">HBoxMixin</a></code>, <code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;GeographyMixin&lt;/span&gt;" href="../traffic.core.mixins/#traffic.core.mixins.GeographyMixin">GeographyMixin</a></code></p>
+
+
+
+        <p>Traffic is the abstraction representing a collection of <code>Flights
+&lt;traffic.core.flight.html&gt;</code>_. When Flight objects are summed up, the
+resulting structure is a Traffic.</p>
+<p>Data is all flattened into one single pandas DataFrame and methods are
+provided to properly access (with the bracket notation) and iterate on each
+Flight in the structure.</p>
+<p>On top of basic methods and properties (<code>aircraft
+&lt;traffic.core.Traffic.aircraft&gt;</code><em>, <code>callsigns
+&lt;traffic.core.Traffic.callsigns&gt;</code></em>, <code>flight_ids
+&lt;traffic.core.Traffic.flight_ids&gt;</code><em>, <code>start_time
+&lt;traffic.core.Traffic.start_time&gt;</code></em>, <code>end_time
+&lt;traffic.core.Traffic.end_time&gt;</code><em>) and data preprocessing (most methods
+available on Flight), more complex algorithms like <code>closest point of
+approach &lt;#traffic.core.Traffic.closest_point_of_approach&gt;</code></em> and
+<code>clustering &lt;#traffic.core.Traffic.clustering&gt;</code>_ (more to come) are
+available.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When methods need to be chained on each trajectory contained in the
+collection, <strong>lazy iteration and evaluation</strong> is in place. This means
+that applying such a method on a Traffic structure will only stack
+operations without evaluating them.</p>
+<p>.. autoclass:: traffic.core.lazy.LazyTraffic()
+    :members: eval</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Sample traffic structures are provided for testing purposes in module
+<code>traffic.data.samples</code></p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.__add__" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">__add__</span>
+
+
+<a href="#traffic.core.traffic.Traffic.__add__" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__add__</span><span class="p">(</span><span class="n">other</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">|</span> <span class="n">Flight</span> <span class="o">|</span> <span class="n">Traffic</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Traffic</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Concatenation operator.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>other</code></b>
+              (<code><span title="typing.Literal">Literal</span>[0] | <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Flight&lt;/span&gt;" href="../traffic.core.flight/#traffic.core.flight.Flight">Flight</a> | <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Traffic&lt;/span&gt;" href="./#traffic.core.traffic.Traffic">Traffic</a></code>)
+          –
+          <div class="doc-md-description">
+            <p>is the other Flight or Traffic.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Traffic&lt;/span&gt;" href="./#traffic.core.traffic.Traffic">Traffic</a></code>
+          –
+          <div class="doc-md-description">
+            <p>The sum of two Traffic returns a Traffic collection.
+Summing a Traffic with 0 returns the same Traffic, for compatibility
+reasons with the sum() builtin.</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.__and__" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">__and__</span>
+
+
+<a href="#traffic.core.traffic.Traffic.__and__" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__and__</span><span class="p">(</span><span class="n">other</span><span class="p">:</span> <span class="s1">&#39;Traffic&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Traffic&#39;</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Intersection of collections.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>other</code></b>
+              (<code>&#39;Traffic&#39;</code>)
+          –
+          <div class="doc-md-description">
+            
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="typing.Optional">Optional</span>[&#39;Traffic&#39;]</code>
+          –
+          <div class="doc-md-description">
+            <p>the subset of trajectories present in both collections.
+The result is based on the <code>flight_id</code> if present, and on
+intervals otherwise.</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.__getitem__" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">__getitem__</span>
+
+
+<a href="#traffic.core.traffic.Traffic.__getitem__" class="headerlink" title="Permanent link">&para;</a></h3>
+          <div class="doc-overloads">
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Flight</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><span class="nf">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Flight</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><span class="nf">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">slice</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Traffic</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><span class="nf">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">IterStr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Traffic</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><span class="nf">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Traffic</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><span class="nf">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Traffic</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Traffic</span>
+</code></pre></div>          </div>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__getitem__</span><span class="p">(</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="o">|</span> <span class="nb">slice</span>
+    <span class="o">|</span> <span class="nb">str</span>
+    <span class="o">|</span> <span class="n">IterStr</span>
+    <span class="o">|</span> <span class="n">Series</span>
+    <span class="o">|</span> <span class="n">DataFrame</span>
+    <span class="o">|</span> <span class="n">Traffic</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Flight</span> <span class="o">|</span> <span class="n">Traffic</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Indexation of collections.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>key</code></b>
+              (<code><span title="int">int</span> | <span title="slice">slice</span> | <span title="str">str</span> | <span title="traffic.core.traffic.IterStr">IterStr</span> | <span title="pandas.Series">Series</span> | <span title="pandas.DataFrame">DataFrame</span> | <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Traffic&lt;/span&gt;" href="./#traffic.core.traffic.Traffic">Traffic</a></code>)
+          –
+          <div class="doc-md-description">
+            <ul>
+<li>if the key is an integer, will return a Flight object
+  (in order of iteration);</li>
+<li>if the key is a slice, will return a Traffic object
+  (in order of iteration);</li>
+<li>if the key is a string, will return a Flight object, based on
+  the <code>flight_id</code>, <code>icao24</code> or <code>callsign</code>;</li>
+<li>if the key is a list of string, will return a Traffic object,
+  based on the same criteria as above;</li>
+<li>if the key is a pd.Series, will return a Flight object.
+  The key must contain an <code>icao24</code> feature. It may contain a
+  <code>callsign</code>, a <code>start</code> (or <code>firstSeen</code>) timestamp, a <code>stop</code>
+  (or <code>lastSeen</code>) timestamp. If it contains a <code>flight_id</code>
+  column, this will be assigned to the Flight.</li>
+<li>if the key is a pd.DataFrame, will return a Traffic object.
+  The key must contain an <code>icao24</code> feature. It may contain a
+  <code>callsign</code>, a <code>start</code> (or <code>firstSeen</code>) timestamp, a <code>stop</code>
+  (or <code>lastSeen</code>) timestamp. If it contains a <code>flight_id</code>
+  column, this will be assigned to the Flight.</li>
+<li>if the key is a Traffic object, will return a new Traffic
+  collection, based on the <code>flight_id</code> elements present in key.
+  If no <code>flight_id</code> is available, it will return the subset of
+  trajectories in <code>self</code> that overlap with any trajectory in key
+  (with the same icao24 indicator)</li>
+</ul>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Flight&lt;/span&gt;" href="../traffic.core.flight/#traffic.core.flight.Flight">Flight</a> | <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Traffic&lt;/span&gt;" href="./#traffic.core.traffic.Traffic">Traffic</a></code>
+          –
+          <div class="doc-md-description">
+            <p>According to the type of the key, the result could be
+a Flight or a Traffic object.</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.__sub__" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">__sub__</span>
+
+
+<a href="#traffic.core.traffic.Traffic.__sub__" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">__sub__</span><span class="p">(</span>
+    <span class="n">other</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">Flight</span> <span class="o">|</span> <span class="n">Traffic</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">Traffic</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Remove trajectories from a Traffic object.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>other</code></b>
+              (<code><span title="str">str</span> | <span title="list">list</span>[<span title="str">str</span>] | <span title="set">set</span>[<span title="str">str</span>] | <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Flight&lt;/span&gt;" href="../traffic.core.flight/#traffic.core.flight.Flight">Flight</a> | <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Traffic&lt;/span&gt;" href="./#traffic.core.traffic.Traffic">Traffic</a></code>)
+          –
+          <div class="doc-md-description">
+            <ul>
+<li>When the <code>other</code> attribute is a string, or a list/set of
+  strings, all flights matching the <code>flight_id</code>, <code>callsign</code> or
+  <code>icao24</code> attribute are removed from the collection;</li>
+<li>When the <code>other</code> attribute is a Flight, the collection will be
+  pruned of the trajectory with the same <code>flight_id</code>; or the
+  segment of trajectory for that <code>icao24</code> address between the
+  <code>start</code> and <code>stop</code> timestamps;</li>
+<li>When the <code>other</code> attribute is a Traffic object, the difference
+  is computed based on the <code>flight_id</code> if both structures have
+  one; otherwise, we iterate through flights and consider removing
+  part of the trajectory.</li>
+</ul>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code>None | <a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Traffic&lt;/span&gt;" href="./#traffic.core.traffic.Traffic">Traffic</a></code>
+          –
+          <div class="doc-md-description">
+            <p>a new collection of trajectories as a Traffic object</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.agg_latlon" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">agg_latlon</span>
+
+
+<a href="#traffic.core.traffic.Traffic.agg_latlon" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">agg_latlon</span><span class="p">(</span>
+    <span class="n">resolution</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Aggregates values of a traffic over a grid of lat/lon.</p>
+<p>The resolution of the grid is passed as a dictionary parameter.
+By default, the grid is made by rounding latitudes and longitudes to
+the nearest integer values. <code>dict(latitude=2, longitude=4)</code>
+will take 2 values per integer latitude intervals (43, 43.5, 44, ...)
+and 4 values per integer longitude intervals (1, 1.25, 1.5, 1.75, ...).</p>
+<p>The kwargs specifies how to aggregate values:</p>
+<ul>
+<li><code>altitude="mean"</code> would average all values in the given cell;</li>
+<li><code>timestamp="count"</code> would return the number of samples per cell;</li>
+<li><code>icao24="nunique"</code> would return the number of different aircraft
+  int the given cell.</li>
+</ul>
+<p>The returned pandas DataFrame is indexed over latitude and longitude
+values. It is conveniently chainable with the <code>.to_xarray()</code> method
+in order to plot density heatmaps.</p>
+<p>Example usage:</p>
+<p>.. code:: python</p>
+<div class="highlight"><pre><span></span><code>switzerland.agg_latlon(
+    resolution=dict(latitude=10, longitude=10),
+    vertical_rate=&quot;mean&quot;,
+    timestamp=&quot;count&quot;
+)
+</code></pre></div>
+<p>See how to make <code>flight density heatmaps &lt;/scenarios/heatmaps.html&gt;</code>_</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.agg_xy" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">agg_xy</span>
+
+
+<a href="#traffic.core.traffic.Traffic.agg_xy" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">agg_xy</span><span class="p">(</span>
+    <span class="n">resolution</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">projection</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">Proj</span> <span class="o">|</span> <span class="s2">&quot;crs.Projection&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Aggregates values of a traffic over a grid of x/y, with x and y
+computed by :meth:<code>~traffic.core.GeographyMixin.compute_xy()</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>resolution</code></b>
+              (<code>None | <span title="dict">dict</span>[<span title="str">str</span>, <span title="float">float</span>]</code>)
+          –
+          <div class="doc-md-description">
+            <p>The resolution of the grid is passed as a dictionary
+parameter. By default, the grid is made by rounding x and y to the
+lower ten kilometer values.
+<code>dict(x=5000, y=3000)</code> will take 1 value per 5000 meters for x
+(10000, 15000, 20000, ...) and 1 value per 3000 meters for y (9000,
+12000, 15000, 18000, 20000, ...).</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>projection</code></b>
+              (<code>None | <span title="pyproj.Proj">Proj</span> | &#39;crs.Projection&#39;</code>, default:
+                  <code>None</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>is used to compute the x and y values.</p>
+<p>The kwargs specifies how to aggregate values:</p>
+<ul>
+<li><code>altitude="mean"</code> would average all values in the given cell;</li>
+<li><code>timestamp="count"</code> would return the number of samples per cell;</li>
+<li><code>icao24="nunique"</code> would return the number of different aircraft
+  int the given cell.</li>
+</ul>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="pandas.DataFrame">DataFrame</span></code>
+          –
+          <div class="doc-md-description">
+            <p>a :class:<code>~pandas.DataFrame</code> indexed over x and y values. It is
+    conveniently chainable with the <code>.to_xarray()</code> method in order to
+    plot density heatmaps.</p>
+<p>Example usage:</p>
+<p>.. code:: python</p>
+<div class="highlight"><pre><span></span><code>belevingsvlucht.agg_xy(
+    resolution=dict(x=3e3, y=3e3),
+    vertical_rate=&quot;mean&quot;,
+    timestamp=&quot;count&quot;
+)
+</code></pre></div>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.airborne" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">airborne</span>
+
+
+<a href="#traffic.core.traffic.Traffic.airborne" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">airborne</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Traffic&#39;</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the airborne part of the Traffic.</p>
+<p>The airborne part is determined by an <code>onground</code> flag or null values
+in the altitude column.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.aircraft_data" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">aircraft_data</span>
+
+
+<a href="#traffic.core.traffic.Traffic.aircraft_data" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">aircraft_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;Traffic&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Add registration and aircraft typecode based on the <code>aircraft database
+&lt;aircraft.html&gt;</code>_.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.assign" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">assign</span>
+
+
+<a href="#traffic.core.traffic.Traffic.assign" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">assign</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.assign</code> method to the
+underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.assign_id" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">assign_id</span>
+
+
+<a href="#traffic.core.traffic.Traffic.assign_id" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">assign_id</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{self.callsign}</span><span class="s2">_</span><span class="si">{idx:&gt;03}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Assigns a <code>flight_id</code> to trajectories present in the structure.</p>
+<p>The heuristics with iterate on flights based on <code>flight_id</code> (if the
+feature is present) or of <code>icao24</code>, <code>callsign</code> and intervals of time
+without recorded data.</p>
+<p>The flight_id is created according to a pattern passed in parameter,
+by default based on the callsign (if any) and an incremented index.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.callsigns" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">callsigns</span>
+
+
+<a href="#traffic.core.traffic.Traffic.callsigns" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">callsigns</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return all the different callsigns in the DataFrame</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.centroid" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">centroid</span>
+
+
+<a href="#traffic.core.traffic.Traffic.centroid" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">centroid</span><span class="p">(</span>
+    <span class="n">nb_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">features</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">projection</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;crs.Projection&quot;</span><span class="p">,</span> <span class="n">Proj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">transformer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;TransformerProtocol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Flight&quot;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the trajectory in the Traffic that is the closest to all other
+trajectories.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Remember the time and space complexity of this method is in O(n^2).</p>
+</div>
+<p><code>*args</code> and <code>**kwargs</code> are passed as is to
+:meth:<code>scipy.spatial.distance.pdist</code></p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.clean_invalid" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">clean_invalid</span>
+
+
+<a href="#traffic.core.traffic.Traffic.clean_invalid" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">clean_invalid</span><span class="p">(</span><span class="n">threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Traffic&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Removes irrelevant data from the Traffic DataFrame.</p>
+<p>Data that has been downloaded from the OpenSky Impala shell often
+contains faulty data, esp. because of faulty callsigns (wrongly decoded?
+faulty crc?) and of automatically repeated positions (see
+<code>last_position</code>).</p>
+<p>This methods is an attempt to automatically clean this data.</p>
+<p>Data uncleaned could result in the following count of messages
+associated to aircraft icao24 <code>02008b</code> which could be easily removed.</p>
+<p>.. parsed-literal::
+                           count
+    icao24  callsign
+    02008b  0  221         8
+            2AM2R1         4
+            2N D           1
+            3DYCI          1
+            3N    I8       1
+            3Q G9 E        1
+            6  V X         1
+            [...]</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.closest_point_of_approach" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">closest_point_of_approach</span>
+
+
+<a href="#traffic.core.traffic.Traffic.closest_point_of_approach" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">closest_point_of_approach</span><span class="p">(</span>
+    <span class="n">lateral_separation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">vertical_separation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">projection</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Proj</span><span class="p">,</span> <span class="s2">&quot;crs.Projection&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">round_t</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;d&quot;</span><span class="p">,</span>
+    <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;CPA&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Computes a Closest Point of Approach (CPA) dataframe for all pairs of
+trajectories candidates for being separated by less than
+lateral_separation in vertical_separation.</p>
+<p>The problem of iterating over pairs of trajectories is of unreasonable
+complexity O(n**2). Therefore, instead of computing the CPA between all
+pairs of trajectory, we do it for all pairs of trajectories coming
+closer than a given <code>lateral_separation</code> and <code>vertical_separation</code>.</p>
+<p>lateral_separation: float (in <strong>meters</strong>)
+    Depending on your application, you could start with 10 * 1852 (for
+    10 nautical miles)</p>
+<p>vertical_separation: float (in ft)
+    Depending on your application, you could start with 1500 (feet)</p>
+<p>projection: pyproj.Proj, crs.Projection, None
+    a first filtering is applied on the bounding boxes of trajectories,
+    expressed in meters. You need to provide a decent projection able to
+    approximate distances by Euclide formula. By default, EuroPP()
+    projection is considered, but a non explicit argument will raise a
+    warning.</p>
+<p>round_t: str
+    an additional column will be added in the DataFrame to group
+    trajectories by relevant time frames. Distance computations will be
+    considered only between trajectories flown in the same time frame.
+    By default, the 'd' pandas freq parameter is considered, to group
+    trajectories by day, but other ways of splitting ('h') may be more
+    relevant and impact performance.</p>
+<p>max_workers: int
+    distance computations are spread over a given number of
+    processors.</p>
+<p>Returns a CPA DataFrame wrapper.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.clustering" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">clustering</span>
+
+
+<a href="#traffic.core.traffic.Traffic.clustering" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">clustering</span><span class="p">(</span>
+    <span class="n">clustering</span><span class="p">:</span> <span class="s2">&quot;ClusteringProtocol&quot;</span><span class="p">,</span>
+    <span class="n">nb_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">features</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">projection</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;crs.Projection&quot;</span><span class="p">,</span> <span class="n">Proj</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;TransformerProtocol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">return_traffic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Clustering</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Computes a clustering of the trajectories, add labels in a column
+<code>cluster</code>.</p>
+<p>The method:</p>
+<div class="highlight"><pre><span></span><code>- resamples all trajectories with the same number of samples
+  ``nb_samples`` (no default value);
+- *if need be,* computes x and y coordinates based on ``projection``
+  through a call to `compute_xy()
+  &lt;#traffic.core.Traffic.compute_xy&gt;`_ (no default value);
+- *if need be,* apply a transformer to the resulting `X` matrix.
+  You may want to consider `StandardScaler()
+  &lt;https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html&gt;`_;
+- generates the appropriate structure for a call to the usual
+  `sklearn API
+  &lt;https://scikit-learn.org/stable/modules/clustering.html#clustering&gt;`_
+  that is a class with a ``fit()`` method and a ``predict()`` method
+  or a ``labels_`` attribute;
+- returns a Clustering object, on which to call fit(), predict() or
+  fit_predict() methods. Predicting methods return the original
+  Traffic DataFrame with an additional ``cluster`` column.
+</code></pre></div>
+<p>Example usage:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">cartes.crs</span><span class="w"> </span><span class="kn">import</span> <span class="n">EuroPP</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.cluster</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBSCAN</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">StandardScaler</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_dbscan</span> <span class="o">=</span> <span class="n">traffic</span><span class="o">.</span><span class="n">clustering</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">nb_samples</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">projection</span><span class="o">=</span><span class="n">EuroPP</span><span class="p">(),</span>
+<span class="gp">... </span>    <span class="n">clustering</span><span class="o">=</span><span class="n">DBSCAN</span><span class="p">(</span><span class="n">eps</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">min_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">transform</span><span class="o">=</span><span class="n">StandardScaler</span><span class="p">(),</span>
+<span class="gp">... </span><span class="p">)</span><span class="o">.</span><span class="n">fit_predict</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_dbscan</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;cluster&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s2">&quot;flight_id&quot;</span><span class="p">:</span> <span class="s2">&quot;nunique&quot;</span><span class="p">})</span>
+</code></pre></div>
+<p>.. parsed-literal::
+                flight_id
+    cluster
+    -1          15
+    0           29
+    1           13
+    2           24
+    3           24</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.compute_latlon_from_xy" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">compute_latlon_from_xy</span>
+
+
+<a href="#traffic.core.traffic.Traffic.compute_latlon_from_xy" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">compute_latlon_from_xy</span><span class="p">(</span>
+    <span class="n">projection</span><span class="p">:</span> <span class="n">Proj</span> <span class="o">|</span> <span class="n">Projection</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Enrich a DataFrame with new longitude and latitude columns computed
+from x and y columns.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Make sure to use as source projection the one used to compute
+<code>'x'</code> and <code>'y'</code> columns in the first place.</p>
+</div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.compute_xy" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">compute_xy</span>
+
+
+<a href="#traffic.core.traffic.Traffic.compute_xy" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">compute_xy</span><span class="p">(</span>
+    <span class="n">projection</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">Proj</span> <span class="o">|</span> <span class="s2">&quot;crs.Projection&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Enrich the structure with new x and y columns computed through a
+projection of the latitude and longitude columns.</p>
+<p>The source projection is WGS84 (EPSG 4326).
+The default destination projection is a Lambert Conformal Conical
+projection centred on the data inside the dataframe.</p>
+<p>Other valid projections are available:</p>
+<ul>
+<li>as <code>pyproj.Proj</code> objects;</li>
+<li>as <code>cartopy.crs.Projection</code> objects.</li>
+</ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.convert_dtypes" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">convert_dtypes</span>
+
+
+<a href="#traffic.core.traffic.Traffic.convert_dtypes" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">convert_dtypes</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.convert_dtypes</code> method to
+the underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.drop" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">drop</span>
+
+
+<a href="#traffic.core.traffic.Traffic.drop" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">drop</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.drop</code> method to the
+underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.drop_duplicates" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">drop_duplicates</span>
+
+
+<a href="#traffic.core.traffic.Traffic.drop_duplicates" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">drop_duplicates</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.drop_duplicates</code> method to
+the underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.end_time" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">end_time</span>
+
+
+<a href="#traffic.core.traffic.Traffic.end_time" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">end_time</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the latest timestamp in the DataFrame.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.fillna" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">fillna</span>
+
+
+<a href="#traffic.core.traffic.Traffic.fillna" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">fillna</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.fillna</code> method to the
+underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.flight_ids" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">flight_ids</span>
+
+
+<a href="#traffic.core.traffic.Traffic.flight_ids" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">flight_ids</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return all the different flight_id in the DataFrame</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.from_flights" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_flights</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#traffic.core.traffic.Traffic.from_flights" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_flights</span><span class="p">(</span>
+    <span class="n">flights</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Flight</span><span class="p">]],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;Traffic&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Creates a Traffic structure from all flights passed as an
+iterator or iterable.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.from_fr24" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_fr24</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#traffic.core.traffic.Traffic.from_fr24" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_fr24</span><span class="p">(</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">trajectories</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">ems</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Traffic</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Parses data as usually provided by FlightRadar24.</p>
+<p>When FlightRadar24 provides data excerpts from their database, they
+usually provide:</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>metadata</code></b>
+              (<code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>a CSV file with metadata</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>trajectories</code></b>
+              (<code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>a zip file containing one file per flight with
+trajectory information.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>ems</code></b>
+              (<code>None | <span title="str">str</span> | <span title="pathlib.Path">Path</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>a zip file containing one file per flight with
+extended Mode-S information.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><a class="autorefs autorefs-internal" title="&lt;span class=&quot;doc doc-object-name doc-class-name&quot;&gt;Traffic&lt;/span&gt;" href="./#traffic.core.traffic.Traffic">Traffic</a></code>
+          –
+          <div class="doc-md-description">
+            <p>a regular Traffic object.</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.generation" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">generation</span>
+
+
+<a href="#traffic.core.traffic.Traffic.generation" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">generation</span><span class="p">(</span>
+    <span class="n">generation</span><span class="p">:</span> <span class="s2">&quot;GenerationProtocol&quot;</span><span class="p">,</span>
+    <span class="n">features</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">scaler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;ScalerProtocol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generation</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Fits a generative model on the traffic.</p>
+<p>The method:
+    - extracts features in underlying Traffic DataFrame to define an
+      <code>X</code> matrix.
+    - <em>if need be,</em> apply a scaler to the resulting <code>X</code> matrix.
+      You may want to consider <code>StandardScaler()
+      &lt;https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html&gt;</code>_;
+    - returns a Generation object with a generation model fitted on X.
+      You can call sample() on this returned object to generate new
+      trajectories.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.geoencode" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">geoencode</span>
+
+
+<a href="#traffic.core.traffic.Traffic.geoencode" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">geoencode</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>This method is not implemented.</p>
+</div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.groupby" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">groupby</span>
+
+
+<a href="#traffic.core.traffic.Traffic.groupby" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">groupby</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.groupby</code> method to the
+underlying pandas DataFrame.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.icao24" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">icao24</span>
+
+
+<a href="#traffic.core.traffic.Traffic.icao24" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">icao24</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return all the different icao24 aircraft ids in the DataFrame</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.iterate" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">iterate</span>
+
+
+<a href="#traffic.core.traffic.Traffic.iterate" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">iterate</span><span class="p">(</span>
+    <span class="n">on</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;icao24&quot;</span><span class="p">,</span> <span class="s2">&quot;callsign&quot;</span><span class="p">],</span>
+    <span class="n">by</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">nb_flights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Flight</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Iterates over Flights contained in the Traffic structure.</p>
+<p>Default iteration calls this method with default arguments:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">flight</span> <span class="ow">in</span> <span class="n">t</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">pass</span>
+</code></pre></div>
+<p>is equivalent to:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">flight</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">iterate</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">pass</span>
+</code></pre></div>
+<p>However the it may be beneficial to specify the <code>by</code> parameter:</p>
+<ul>
+<li>as a pandas DataFrame with callsign and or icao24 columns, it
+  defines a subset of Flights to select.</li>
+<li>as a a string, <code>by</code> defines the minimum time range without
+  data for a flight.</li>
+</ul>
+<p>If the callsign shouldn't be used for iteration, you may specify it
+using the <code>on</code> keyword argument.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.iterate_lazy" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">iterate_lazy</span>
+
+
+<a href="#traffic.core.traffic.Traffic.iterate_lazy" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">iterate_lazy</span><span class="p">(</span>
+    <span class="n">iterate_kw</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">tqdm_kw</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LazyTraffic</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Triggers a lazy iteration on the Traffic structure.</p>
+<p>Default iteration calls this method with default arguments:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">filter</span><span class="p">()</span>
+</code></pre></div>
+<p>is equivalent to:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">iterate_lazy</span><span class="p">()</span><span class="o">.</span><span class="n">filter</span><span class="p">()</span>
+</code></pre></div>
+<p>However the it may be beneficial to specify the <code>by</code> parameter:</p>
+<ul>
+<li>as a pandas DataFrame with callsign and or icao24 columns, it
+  defines a subset of Flights to select.</li>
+<li>as a a string, <code>by</code> defines the minimum time range without
+  data for a flight.</li>
+</ul>
+<p>You may also select parameters to pass to a tentative tqdm
+progressbar.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.merge" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">merge</span>
+
+
+<a href="#traffic.core.traffic.Traffic.merge" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">merge</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.merge</code> method to the
+underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.plot" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">plot</span>
+
+
+<a href="#traffic.core.traffic.Traffic.plot" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">plot</span><span class="p">(</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="s2">&quot;GeoAxes&quot;</span><span class="p">,</span>
+    <span class="n">nb_flights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Plots each trajectory on a Matplotlib axis.</p>
+<p>Each Flight supports Cartopy axis as well with automatic projection. If
+no projection is provided, a default <code>PlateCarree
+&lt;https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree&gt;</code>_
+is applied.</p>
+<p>Example usage:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">cartes.crs</span><span class="w"> </span><span class="kn">import</span> <span class="n">EuroPP</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="n">EuroPP</span><span class="p">()))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.5</span><span class="p">)</span>
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.plot_wind" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">plot_wind</span>
+
+
+<a href="#traffic.core.traffic.Traffic.plot_wind" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">plot_wind</span><span class="p">(</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="s2">&quot;GeoAxes&quot;</span><span class="p">,</span>
+    <span class="n">resolution</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">filtered</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Artist&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Plots the wind field seen by the aircraft on a Matplotlib axis.</p>
+<p>The Flight supports Cartopy axis as well with automatic projection. If
+no projection is provided, a default <code>PlateCarree
+&lt;https://scitools.org.uk/cartopy/docs/v0.15/crs/projections.html#platecarree&gt;</code>_
+is applied.</p>
+<p>The <code>resolution</code> argument may be:</p>
+<div class="highlight"><pre><span></span><code>- a dictionary, e.g dict(latitude=4, longitude=4), if you
+  want a grid with a resolution of 4 points per latitude and
+  longitude degree.
+- None (default) for dict(latitude=1, longitude=1)
+</code></pre></div>
+<p>Example usage:</p>
+<div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">cartes.crs</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mercator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="n">Mercator</span><span class="p">()))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">traffic</span>
+<span class="gp">... </span>    <span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="s2">&quot;1s&quot;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;altitude &gt; 10000&#39;</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="o">.</span><span class="n">compute_wind</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="o">.</span><span class="n">plot_wind</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">.5</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.query" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">query</span>
+
+
+<a href="#traffic.core.traffic.Traffic.query" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">query</span><span class="p">(</span>
+    <span class="n">query_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.query</code> method to the
+underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.rename" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">rename</span>
+
+
+<a href="#traffic.core.traffic.Traffic.rename" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">rename</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.rename</code> method to the
+underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.replace" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">replace</span>
+
+
+<a href="#traffic.core.traffic.Traffic.replace" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">replace</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.replace</code> method to the
+underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.reset_index" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">reset_index</span>
+
+
+<a href="#traffic.core.traffic.Traffic.reset_index" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">reset_index</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.reset_index</code> method to the
+underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.sample" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">sample</span>
+
+
+<a href="#traffic.core.traffic.Traffic.sample" class="headerlink" title="Permanent link">&para;</a></h3>
+          <div class="doc-overloads">
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sample</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Traffic</span>
+</code></pre></div><div class="doc-signature highlight"><pre><span></span><code><span class="nf">sample</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Flight</span>
+</code></pre></div>          </div>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sample</span><span class="p">(</span>
+    <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Flight</span> <span class="o">|</span> <span class="n">Traffic</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns a random sample of traffic data.</p>
+<p>If n is None, a single Flight is randomly selected;
+Otherwise a Traffic with n randomly sampled flights is returned.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>size</code></b>
+              (<code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>, default:
+                  <code>None</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>The number of samples to take from the dataset.
+Default is None, meaning one flight is returned.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>seed</code></b>
+              (<code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>, default:
+                  <code>None</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Seed for the random number generator.</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.sort_values" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">sort_values</span>
+
+
+<a href="#traffic.core.traffic.Traffic.sort_values" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sort_values</span><span class="p">(</span><span class="n">by</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Applies the Pandas :meth:<code>~pandas.DataFrame.sort_values</code> method to the
+underlying pandas DataFrame and get the result back in the same
+structure.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.start_time" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">start_time</span>
+
+
+<a href="#traffic.core.traffic.Traffic.start_time" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">start_time</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the earliest timestamp in the DataFrame.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.to_csv" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_csv</span>
+
+
+<a href="#traffic.core.traffic.Traffic.to_csv" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_csv</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Exports to CSV format.</p>
+<p>Options can be passed to :meth:<code>pandas.DataFrame.to_csv</code>
+as args and kwargs arguments.</p>
+<p>Read more: :ref:<code>How to export and store trajectory and airspace data?</code></p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.to_excel" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_excel</span>
+
+
+<a href="#traffic.core.traffic.Traffic.to_excel" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_excel</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Exports to Excel format.</p>
+<p>Options can be passed to :meth:<code>pandas.DataFrame.to_excel</code>
+as args and kwargs arguments.</p>
+<p>Read more: :ref:<code>How to export and store trajectory and airspace data?</code></p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.to_feather" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_feather</span>
+
+
+<a href="#traffic.core.traffic.Traffic.to_feather" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_feather</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Exports to feather format.</p>
+<p>Options can be passed to :meth:<code>pandas.DataFrame.to_feather</code>
+as args and kwargs arguments.</p>
+<p>Read more: :ref:<code>How to export and store trajectory and airspace data?</code></p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.to_hdf" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_hdf</span>
+
+
+<a href="#traffic.core.traffic.Traffic.to_hdf" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_hdf</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Exports to HDF format.</p>
+<p>Options can be passed to :meth:<code>pandas.DataFrame.to_hdf</code>
+as args and kwargs arguments.</p>
+<p>Read more: :ref:<code>How to export and store trajectory and airspace data?</code></p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.to_json" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_json</span>
+
+
+<a href="#traffic.core.traffic.Traffic.to_json" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_json</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Exports to JSON format.</p>
+<p>Options can be passed to :meth:<code>pandas.DataFrame.to_json</code>
+as args and kwargs arguments.</p>
+<p>Read more: :ref:<code>How to export and store trajectory and airspace data?</code></p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.to_parquet" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_parquet</span>
+
+
+<a href="#traffic.core.traffic.Traffic.to_parquet" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_parquet</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Exports to parquet format.</p>
+<p>Options can be passed to :meth:<code>pandas.DataFrame.to_parquet</code>
+as args and kwargs arguments.</p>
+<p>Read more: :ref:<code>How to export and store trajectory and airspace data?</code></p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="traffic.core.traffic.Traffic.to_pickle" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_pickle</span>
+
+
+<a href="#traffic.core.traffic.Traffic.to_pickle" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_pickle</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Exports to pickle format.</p>
+<p>Options can be passed to :meth:<code>pandas.DataFrame.to_pickle</code>
+as args and kwargs arguments.</p>
+<p>Read more: :ref:<code>How to export and store trajectory and airspace data?</code></p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<!-- Source file information -->
+
+
+
+
+
+
+
+
+
+<!-- Was this page helpful? -->
+
+
+
+
+<!-- Comment system -->
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["navigation.sections","navigation.path","navigation.top","content.code.edit","content.code.view","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","search.suggest"],"search":"../../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.5fcf0de6.min.js"></script>
+      
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      
+    
+  </body>
+</html>

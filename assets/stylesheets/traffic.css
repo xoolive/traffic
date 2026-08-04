@@ -1,0 +1,43 @@
+.traffic-summary-wrap {
+  overflow-x: auto;
+  margin: 0.5rem 0 1rem;
+}
+
+.md-typeset .output {
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.75rem;
+  padding: 0ex 2ex;
+}
+
+.md-typeset table.traffic-summary {
+  width: auto;
+  border: 0;
+  display: table;
+  font-size: 0.6rem;
+}
+
+.md-typeset table.traffic-summary th,
+.md-typeset table.traffic-summary td {
+  border-top: 0;
+  padding: 0.5em 0.5em;
+  white-space: nowrap;
+  vertical-align: middle;
+  text-align: right;
+}
+
+.md-typeset table.traffic-summary th {
+  font-weight: 700;
+}
+
+.md-typeset table.traffic-summary thead td {
+  font-weight: 700;
+}
+
+.md-typeset table.traffic-summary td.count-bar {
+  min-width: 10em;
+  background: linear-gradient(
+    90deg,
+    #5fba7d var(--bar),
+    transparent var(--bar)
+  );
+}
