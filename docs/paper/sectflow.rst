@@ -34,7 +34,7 @@ Data preparation
 
 
 The data has been downloaded from the `OpenSky Network Impala
-database <../opensky_usage.html>`__.
+database <../data_sources/opensky_db.html>`__.
 
 First a `clustering <../clustering.html>`_ is applied to the dataset. The
 implementation of the specific clustering described in the paper is available on

@@ -34,7 +34,7 @@ TMA.
     )
 
 The data has been downloaded from the `OpenSky Network Impala
-database <../opensky_usage.html>`__. The following recalls all the
+database <../data_sources/opensky_db.html>`__. The following recalls all the
 callsigns selected for this route.
 
 .. code:: python
