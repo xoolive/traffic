@@ -126,7 +126,7 @@ class FlightPlanInference:
     ) -> Iterator[pd.DataFrame]:
         table = self.all_aligned_segments(traj, all_points)
         for block in self.groupby_intervals(table):
-            d_max = block.eval("duration.max()")
+            d_max = block.eval("duration.max()", engine="python")
             t_threshold = d_max - pd.Timedelta("30s")  # noqa: F841
             yield (
                 block.sort_values("shift_mean")
