@@ -109,6 +109,34 @@ class Traffic(HBoxMixin, GeographyMixin):
 
     __slots__ = ("data",)
 
+    @property
+    def bounds(self) -> tuple[float, float, float, float]:
+        """Return ``(west, south, east, north)`` for all valid positions."""
+        positions = self.data[["longitude", "latitude"]].astype(float)
+        positions = positions[np.isfinite(positions).all(axis=1)]
+        if positions.empty:
+            raise ValueError("Traffic contains no valid positions")
+        return (
+            float(positions.longitude.min()),
+            float(positions.latitude.min()),
+            float(positions.longitude.max()),
+            float(positions.latitude.max()),
+        )
+
+    @property
+    def extent(self) -> tuple[float, float, float, float]:
+        """Return ``(west, east, south, north)`` for projected map axes."""
+        west, south, east, north = self.bounds
+        return west, east, south, north
+
+    @property
+    def __geo_interface__(self) -> Dict[str, Any]:
+        """Represent the collection as one geometry per flight."""
+        return {
+            "type": "GeometryCollection",
+            "geometries": [flight.__geo_interface__ for flight in self],
+        }
+
     @classmethod
     def from_flights(
         cls, flights: Iterable[Optional[Flight]]

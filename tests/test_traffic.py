@@ -1,12 +1,62 @@
 import pickle
 from typing import Any, cast
 
+import matplotlib.pyplot as plt
 import pytest
+from cartes.crs import Mercator
 
 import pandas as pd
-from traffic.core import Flight
+from traffic.core import Flight, Traffic
 from traffic.data import eurofirs
 from traffic.data.samples import switzerland
+
+
+def test_cartes_extent() -> None:
+    flight = switzerland[0]
+    figure, ax = plt.subplots(subplot_kw={"projection": Mercator()})
+
+    ax.set_extent(flight)
+    ax.set_extent(switzerland)
+    plt.close(figure)
+
+    assert switzerland.bounds == (
+        float(switzerland.data.longitude.min()),
+        float(switzerland.data.latitude.min()),
+        float(switzerland.data.longitude.max()),
+        float(switzerland.data.latitude.max()),
+    )
+    assert switzerland.extent == (
+        switzerland.bounds[0],
+        switzerland.bounds[2],
+        switzerland.bounds[1],
+        switzerland.bounds[3],
+    )
+
+    subset = switzerland[:2]
+    geo_interface = subset.__geo_interface__
+    assert geo_interface["type"] == "GeometryCollection"
+    assert len(geo_interface["geometries"]) == 2
+
+    partial_positions = Traffic(
+        pd.DataFrame(
+            {
+                "longitude": [1, 999, 2],
+                "latitude": [50, float("nan"), 51],
+            }
+        )
+    )
+    assert partial_positions.bounds == (1, 50, 2, 51)
+
+    no_positions = Traffic(
+        pd.DataFrame(
+            {
+                "longitude": [1, float("nan")],
+                "latitude": [float("nan"), 50],
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="no valid positions"):
+        _ = no_positions.bounds
 
 
 def test_properties() -> None:
