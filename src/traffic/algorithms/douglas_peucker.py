@@ -6,61 +6,89 @@ import pandas as pd
 import pyproj
 
 
-def _douglas_peucker_rec(
+def _douglas_peucker_iter(
     x: npt.NDArray[Any],
     y: npt.NDArray[Any],
     mask: npt.NDArray[Any],
     tolerance: float,
 ) -> None:
-    len_x = len(x)
-    if len_x < 3:
+    # Iterative Ramer-Douglas-Peucker (explicit stack) to avoid the
+    # RecursionError the recursive formulation triggered on long
+    # trajectories, notably on Python 3.14 (see issue #568).
+    n = len(x)
+    if n < 3:
         return
+    stack: list[tuple[int, int]] = [(0, n)]
+    while stack:
+        start, end = stack.pop()
+        len_seg = end - start
+        if len_seg < 3:
+            continue
+        # Slices are views into the original arrays, so writing to
+        # mask_seg mutates ``mask`` at the right absolute positions.
+        x_seg = x[start:end]
+        y_seg = y[start:end]
+        mask_seg = mask[start:end]
 
-    v = np.array([[y[len_x - 1] - y[0]], [x[0] - x[len_x - 1]]])
-    d = np.abs(
-        np.dot(
-            np.dstack([x[1:-1] - x[0], y[1:-1] - y[0]])[0],
-            v / np.sqrt(np.sum(v * v)),
+        v = np.array([[y_seg[-1] - y_seg[0]], [x_seg[0] - x_seg[-1]]])
+        d = np.abs(
+            np.dot(
+                np.dstack([x_seg[1:-1] - x_seg[0], y_seg[1:-1] - y_seg[0]])[0],
+                v / np.sqrt(np.sum(v * v)),
+            )
         )
-    )
 
-    if np.max(d) < tolerance:
-        mask[np.s_[1 : len_x - 1]] = 0
-        return
+        if np.max(d) < tolerance:
+            mask_seg[np.s_[1 : len_seg - 1]] = 0
+            continue
 
-    arg = cast(int, np.argmax(d))
-    _douglas_peucker_rec(x[: arg + 2], y[: arg + 2], mask[: arg + 2], tolerance)
-    _douglas_peucker_rec(x[arg + 1 :], y[arg + 1 :], mask[arg + 1 :], tolerance)
+        arg = cast(int, np.argmax(d))
+        # The farthest point sits at segment index ``arg + 1``; the two
+        # sub-ranges mirror the recursive ``x[: arg + 2]`` / ``x[arg + 1:]``
+        # splits and share that point.
+        farthest = start + arg + 1
+        stack.append((start, farthest + 1))
+        stack.append((farthest, end))
 
 
-def _douglas_peucker_rec_3d(
+def _douglas_peucker_iter_3d(
     x: npt.NDArray[Any],
     y: npt.NDArray[Any],
     z: npt.NDArray[Any],
     mask: npt.NDArray[Any],
     tolerance: float,
 ) -> None:
-    len_x = len(x)
-    if len_x < 3:
+    # Iterative 3D variant; see _douglas_peucker_iter for the rationale.
+    n = len(x)
+    if n < 3:
         return
+    stack: list[tuple[int, int]] = [(0, n)]
+    while stack:
+        start, end = stack.pop()
+        len_seg = end - start
+        if len_seg < 3:
+            continue
+        x_seg = x[start:end]
+        y_seg = y[start:end]
+        z_seg = z[start:end]
+        mask_seg = mask[start:end]
 
-    start = np.array([x[0], y[0], z[0]])
-    end = np.array([x[-1], y[-1], z[-1]])
-    point = np.dstack([x[1:], y[1:], z[1:]])[0] - start
-    d = np.cross(point, (start - end) / np.linalg.norm(start - end))
-    d = np.sqrt(np.sum(d * d, axis=1))
+        start_pt = np.array([x_seg[0], y_seg[0], z_seg[0]])
+        end_pt = np.array([x_seg[-1], y_seg[-1], z_seg[-1]])
+        point = np.dstack([x_seg[1:], y_seg[1:], z_seg[1:]])[0] - start_pt
+        d = np.cross(
+            point, (start_pt - end_pt) / np.linalg.norm(start_pt - end_pt)
+        )
+        d = np.sqrt(np.sum(d * d, axis=1))
 
-    if np.max(d) < tolerance:
-        mask[np.s_[1 : len_x - 1]] = 0
-        return
+        if np.max(d) < tolerance:
+            mask_seg[np.s_[1 : len_seg - 1]] = 0
+            continue
 
-    arg = cast(int, np.argmax(d))
-    _douglas_peucker_rec_3d(
-        x[: arg + 2], y[: arg + 2], z[: arg + 2], mask[: arg + 2], tolerance
-    )
-    _douglas_peucker_rec_3d(
-        x[arg + 1 :], y[arg + 1 :], z[arg + 1 :], mask[arg + 1 :], tolerance
-    )
+        arg = cast(int, np.argmax(d))
+        farthest = start + arg + 1
+        stack.append((start, farthest + 1))
+        stack.append((farthest, end))
 
 
 def douglas_peucker(
@@ -146,8 +174,8 @@ def douglas_peucker(
 
     mask: npt.NDArray[Any] = np.ones(len(x_arr), dtype=bool)
     if z_arr is None:
-        _douglas_peucker_rec(x_arr, y_arr, mask, tolerance)
+        _douglas_peucker_iter(x_arr, y_arr, mask, tolerance)
     else:
-        _douglas_peucker_rec_3d(x_arr, y_arr, z_arr, mask, tolerance)
+        _douglas_peucker_iter_3d(x_arr, y_arr, z_arr, mask, tolerance)
 
     return mask
