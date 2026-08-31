@@ -280,6 +280,40 @@ def test_clip_point() -> None:
     assert flight.clip(eurofirs["LFBB"]) is None
 
 
+def test_coords_with_pyarrow_dtypes() -> None:
+    data = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2025-01-01", periods=3, tz="UTC"),
+            "longitude": [116.0, 116.1, 116.2],
+            "latitude": [39.0, 39.1, 39.2],
+            "altitude": [1000, 1100, 1200],
+        }
+    ).convert_dtypes(dtype_backend="pyarrow")
+    flight = Flight(data)
+
+    for _ in range(20):
+        assert len(list(flight.coords)) == 3
+        assert len(list(flight.coords4d())) == 3
+        assert len(list(flight.xy_time)) == 3
+        assert flight.shape is not None
+
+
+def test_coords_rejects_null_longitude() -> None:
+    data = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2025-01-01", periods=4, tz="UTC"),
+            "longitude": [116.0, None, 116.2, 116.3],
+            "latitude": [39.0, 39.1, 39.2, 39.3],
+            "altitude": [1000, 1100, 1200, 1300],
+        }
+    ).convert_dtypes(dtype_backend="pyarrow")
+    flight = Flight(data)
+
+    assert len(list(flight.coords)) == 3
+    assert len(list(flight.coords4d())) == 3
+    assert len(list(flight.xy_time)) == 3
+
+
 def test_closest_point() -> None:
     from traffic.data import airports, navaids
 

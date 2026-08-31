@@ -816,7 +816,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
     @property
     def coords(self) -> Iterator[Tuple[float, float, float]]:
-        data = self.data.query("longitude.notnull()")
+        # Use a boolean mask rather than DataFrame.query(): with pyarrow-backed
+        # columns, query("longitude.notnull()") can intermittently return an
+        # empty frame even when valid positions are present.
+        data = self.data[self.data["longitude"].notna()]
         if "altitude" not in data.columns:
             data = data.assign(altitude=0)
         yield from zip(
@@ -827,7 +830,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
         )
 
     def coords4d(self, delta_t: bool = False) -> Iterator[Entry]:
-        data = self.data.query("longitude.notnull()")
+        data = self.data[self.data["longitude"].notna()]
         if delta_t:
             time = (data.timestamp - data.timestamp.min()).dt.total_seconds()
         else:
@@ -853,9 +856,10 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
     @property
     def xy_time(self) -> Iterator[Tuple[float, float, float]]:
-        self_filtered = self.query("longitude.notnull()")
-        if self_filtered is None:
+        data = self.data[self.data["longitude"].notna()]
+        if data.shape[0] == 0:
             return None
+        self_filtered = self.__class__(data)
         iterator = iter(zip(self_filtered.coords, self_filtered.timestamp))
         while True:
             next_ = next(iterator, None)
@@ -3768,8 +3772,9 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
 
         if "projection" in ax.__dict__ and "transform" not in kwargs:
             kwargs["transform"] = PlateCarree()
-        if self.shape is not None:
-            return ax.plot(*self.shape.xy, **kwargs)  # type: ignore
+        shape = self.shape
+        if shape is not None:
+            return ax.plot(*shape.xy, **kwargs)  # type: ignore
         return []
 
     def chart(self, *features: str) -> "alt.Chart":  # coverage: ignore
