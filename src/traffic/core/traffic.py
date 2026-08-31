@@ -51,7 +51,11 @@ if TYPE_CHECKING:
 
     from ..algorithms.clustering import ClusteringProtocol, TransformerProtocol
     from ..algorithms.cpa import CPA
-    from ..algorithms.generation import GenerationProtocol, ScalerProtocol
+    from ..algorithms.generation import (
+        GenerationProtocol,
+        LegacyScalerProtocol,
+        ScalerProtocol,
+    )
     from .airspace import Airspace
 
 
@@ -1566,7 +1570,9 @@ class Traffic(HBoxMixin, GeographyMixin):
         self,
         generation: "GenerationProtocol",
         features: Optional[List[str]] = None,
-        scaler: Optional["ScalerProtocol"] = None,
+        scaler: Optional[
+            Union["ScalerProtocol", "LegacyScalerProtocol"]
+        ] = None,
     ) -> Generation:
         """Fits a generative model on the traffic.
 

@@ -30,11 +30,11 @@ geographic positions.
 
 `Generation` keeps that boundary explicit:
 
-| Component | Responsibility |
-| --- | --- |
-| `Traffic` | Stores and separates the source flights. |
-| `Generation` | Selects features, applies scaling, reshapes data, and rebuilds `Traffic` samples. |
-| External model | Learns a distribution from a matrix and samples new vectors. |
+| Component      | Responsibility                                                                    |
+| -------------- | --------------------------------------------------------------------------------- |
+| `Traffic`      | Stores and separates the source flights.                                          |
+| `Generation`   | Selects features, applies scaling, reshapes data, and rebuilds `Traffic` samples. |
+| External model | Learns a distribution from a matrix and samples new vectors.                      |
 
 This is the same general pattern used by `Flight.filter()`: traffic provides the
 data integration, while a filter object implements the numerical operation.
@@ -45,6 +45,12 @@ keeps the fitted model, feature list, and scaler together. Fit once, then call
 The `Traffic.generation()` convenience method returns the fitted wrapper
 directly. Keeping this logic outside `Traffic` also prevents model-specific
 options from accumulating on the core data structure.
+
+The external model may be omitted when a workflow prepares and serializes
+matrices before choosing or training a model. With `generation=None`, feature
+scaling, matrix transformation, inverse transformation, and `build_traffic()`
+remain available. Calls to `fit()`, `fit_prepared()`, or `sample()` fail clearly
+because no model is attached.
 
 ## How the data is represented
 
@@ -57,7 +63,7 @@ Preparation therefore follows four steps:
 3. choose the features that describe one point;
 4. flatten each flight into one row of the model matrix.
 
-For *n* flights resampled to *p* points with *f* features, the fitted matrix has
+For _n_ flights resampled to _p_ points with _f_ features, the fitted matrix has
 shape `(n, p × f)`. The fixed number of points is not optional: `Generation`
 cannot stack trajectories of different lengths.
 
@@ -171,11 +177,11 @@ used without moving trajectory preparation and reconstruction out of
 
 `Generation` can rebuild geographic coordinates in three ways:
 
-| Generated features | Sampling argument | Behaviour |
-| --- | --- | --- |
-| `latitude`, `longitude` | none | Coordinates are used directly. |
-| `x`, `y` | `projection=...` | Projected coordinates are converted back to longitude and latitude. |
-| `track`, `groundspeed` | `coordinates=...` | Positions are integrated from a known start or end point. |
+| Generated features      | Sampling argument | Behaviour                                                           |
+| ----------------------- | ----------------- | ------------------------------------------------------------------- |
+| `latitude`, `longitude` | none              | Coordinates are used directly.                                      |
+| `x`, `y`                | `projection=...`  | Projected coordinates are converted back to longitude and latitude. |
+| `track`, `groundspeed`  | `coordinates=...` | Positions are integrated from a known start or end point.           |
 
 ## Reconstructing positions from track and groundspeed
 
@@ -275,8 +281,9 @@ def sample(n_samples):
 
 During `Generation.fit(traffic)`, `X` is a NumPy array with shape
 `(n_trajectories, n_points × n_features)`. The model must fit from that matrix.
-Model settings should currently be passed to the model constructor, as in
-`GaussianMixture(n_components=2)`, rather than to `Generation.fit()`.
+Model settings may be passed to the model constructor, as in
+`GaussianMixture(n_components=2)`, or as keyword arguments to
+`Generation.fit()` when the model's `fit()` method accepts them.
 
 During `Generation.sample(n_samples)`, the model must return a pair:
 
@@ -322,8 +329,31 @@ class GenerativeModelAdapter:
 
 The method names inside the adapter depend on the chosen framework. What matters
 is the `fit(X)` and `sample(n_samples) -> (samples, metadata)` boundary. A
-scaler, when provided to `Generation`, must separately implement
-`fit_transform()` and `inverse_transform()`.
+For split preprocessing, a scaler must implement `fit()`, `transform()`, and
+`inverse_transform()`. The original `prepare_features()` convenience method also
+accepts legacy scalers that only implement `fit_transform()` and
+`inverse_transform()`; those scalers cannot transform validation or test splits
+without refitting.
+
+For a controlled train/validation/test split, fit trajectory preprocessing
+before fitting the model. A model-independent preparation stage may construct
+the wrapper explicitly:
+
+```python
+preprocessor = Generation(
+    generation=None,
+    features=["track", "groundspeed", "altitude", "timedelta"],
+    scaler=MinMaxScaler(feature_range=(-1, 1)),
+)
+preprocessor.fit_preprocessing(training_traffic)
+X_train = preprocessor.transform_features(training_traffic)
+X_validation = preprocessor.transform_features(validation_traffic)
+X_test = preprocessor.transform_features(test_traffic)
+```
+
+`Generation.fit(traffic)` is the convenience form for the simpler case where
+one collection is both the preprocessing and model-fitting data. The explicit
+methods prevent a scaler from being refit on validation or test trajectories.
 
 ## Current limitations
 
@@ -336,7 +366,11 @@ scaler, when provided to `Generation`, must separately implement
 - Sampling from `x` and `y` requires the original projection.
 - Generated timestamps are anchored to the current date rather than to the
   training period.
-- `save()` and `from_file()` are not implemented.
+- `save()` and `from_file()` are not implemented; serialize the feature list and
+  scaler state in the surrounding experiment artifact when reproducibility is
+  required.
+- A wrapper created with `generation=None` can prepare matrices and rebuild
+  `Traffic`, but cannot fit or sample an external model.
 - The wrapper does not impose kinematic, operational, or airspace constraints.
 
 These constraints are part of the present API rather than properties of

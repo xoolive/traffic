@@ -8,6 +8,7 @@ from typing import (
     Tuple,
     TypedDict,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -22,6 +23,20 @@ if TYPE_CHECKING:
 
 
 class ScalerProtocol(Protocol):
+    def fit(self, X: npt.NDArray[np.float64]) -> Any: ...
+
+    def transform(
+        self, X: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]: ...
+
+    def inverse_transform(
+        self, X: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]: ...
+
+
+class LegacyScalerProtocol(Protocol):
+    """Pre-split scaler contract supported by the original API."""
+
     def fit_transform(
         self, X: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]: ...
@@ -116,9 +131,10 @@ def compute_latlon_from_trackgs(
 class Generation:
     """Generation class to handle trajectory generation.
 
-    generation: GenerationProtocol
-        generation model, should implement ``fit()`` and ``sample()``
-        methods.
+    generation: GenerationProtocol, optional
+        Generation model implementing ``fit()`` and ``sample()``. It may be
+        ``None`` when the wrapper is used only to prepare feature matrices or
+        rebuild a ``Traffic`` object.
 
     features: List[str]
         List of features to generate. Example:
@@ -128,7 +144,7 @@ class Generation:
         *if need be*, apply a scaler to the data before fitting the
         generation model. You may want to consider `StandardScaler()
         <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html>`_.
-        The scaler object should implement ``fit_transform()`` and
+        The scaler object should implement ``fit()``, ``transform()``, and
         ``inverse_transform()`` methods.
     """
 
@@ -145,18 +161,68 @@ class Generation:
 
     def __init__(
         self,
-        generation: GenerationProtocol,
+        generation: Optional[GenerationProtocol],
         features: List[str],
-        scaler: Optional[ScalerProtocol] = None,
+        scaler: Optional[Union[ScalerProtocol, LegacyScalerProtocol]] = None,
     ) -> None:
         self.generation = generation
         self.features = features
         self.scaler = scaler
 
-    def prepare_features(self, t: "Traffic") -> npt.NDArray[np.float64]:
-        X = np.stack(list(f.data[self.features].values.ravel() for f in t))
+    def _feature_matrix(self, t: "Traffic") -> npt.NDArray[np.float64]:
+        return np.stack(
+            [f.data[self.features].to_numpy(dtype=float).ravel() for f in t]
+        )
+
+    def _uses_split_scaler(self) -> bool:
+        return (
+            self.scaler is not None
+            and hasattr(self.scaler, "fit")
+            and hasattr(self.scaler, "transform")
+        )
+
+    def _split_scaler(self) -> ScalerProtocol:
+        if not self._uses_split_scaler():
+            raise TypeError(
+                "Split preprocessing requires a scaler with fit() and "
+                "transform() methods"
+            )
+        return cast(ScalerProtocol, self.scaler)
+
+    def fit_preprocessing(self, t: "Traffic") -> "Generation":
+        """Fit the feature scaler on ``t`` without fitting the model."""
         if self.scaler is not None:
-            X = self.scaler.fit_transform(X)
+            self._split_scaler().fit(self._feature_matrix(t))
+        return self
+
+    def transform_features(self, t: "Traffic") -> npt.NDArray[np.float64]:
+        """Return flattened features using the already-fitted scaler."""
+        X = self._feature_matrix(t)
+        if self.scaler is not None:
+            X = self._split_scaler().transform(X)
+        return X
+
+    def prepare_features(self, t: "Traffic") -> npt.NDArray[np.float64]:
+        """Fit preprocessing and return flattened features.
+
+        This preserves the original convenience API. For a train/validation/test
+        workflow, call :meth:`fit_preprocessing` once on the training traffic,
+        then call :meth:`transform_features` for each split.
+        """
+        X = self._feature_matrix(t)
+        if self.scaler is None:
+            return X
+        if self._uses_split_scaler():
+            self._split_scaler().fit(X)
+            return self._split_scaler().transform(X)
+        return cast(LegacyScalerProtocol, self.scaler).fit_transform(X)
+
+    def inverse_transform_features(
+        self, X: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        """Undo feature scaling for model samples."""
+        if self.scaler is not None:
+            return self.scaler.inverse_transform(X)
         return X
 
     def build_traffic(
@@ -209,10 +275,22 @@ class Generation:
 
         return Traffic(df)
 
-    def fit(self, t: "Traffic", **kwargs: Any) -> "Generation":
-        X = self.prepare_features(t)
-        self.generation.fit(X)
+    def fit_prepared(
+        self, X: npt.NDArray[np.float64], **kwargs: Any
+    ) -> "Generation":
+        """Fit the external model from an already prepared matrix."""
+        if self.generation is None:
+            raise RuntimeError("Generation has no external model to fit")
+        self.generation.fit(X, **kwargs)
         return self
+
+    def fit(self, t: "Traffic", **kwargs: Any) -> "Generation":
+        if self.generation is None:
+            raise RuntimeError("Generation has no external model to fit")
+        if self.scaler is not None and not self._uses_split_scaler():
+            return self.fit_prepared(self.prepare_features(t), **kwargs)
+        self.fit_preprocessing(t)
+        return self.fit_prepared(self.transform_features(t), **kwargs)
 
     def sample(
         self,
@@ -253,9 +331,10 @@ class Generation:
                     forward=False,
                 )
         """
+        if self.generation is None:
+            raise RuntimeError("Generation has no external model to sample")
         X, _ = self.generation.sample(n_samples)
-        if self.scaler is not None:
-            X = self.scaler.inverse_transform(X)
+        X = self.inverse_transform_features(X)
         return self.build_traffic(X, projection, coordinates, forward)
 
     @classmethod
