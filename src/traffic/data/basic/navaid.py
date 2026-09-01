@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import ClassVar, Iterator
+from typing import Any, ClassVar, Iterator
 
-import numpy as np
 import pandas as pd
 
 from ...core.mixins import GeoDBMixin
@@ -278,7 +277,7 @@ class Navaids(GeoDBMixin):
         reference: None | tuple[float, float] = None,
         source: None | str = None,
         kind: None | str = None,
-        **kwargs: object,
+        **kwargs: Any,
     ) -> Navaid:
         """Search for a navaid/fix through the resolver.
 
@@ -370,7 +369,7 @@ class Navaids(GeoDBMixin):
         self,
         name: str,
         source: None | str = None,
-        **kwargs: object,
+        **kwargs: Any,
     ) -> Navaid:
         return self.get(name, source=source, kind="fix", **kwargs)
 
@@ -378,7 +377,7 @@ class Navaids(GeoDBMixin):
         self,
         name: str,
         source: None | str = None,
-        **kwargs: object,
+        **kwargs: Any,
     ) -> Navaid:
         return self.get(name, source=source, kind="navaid", **kwargs)
 

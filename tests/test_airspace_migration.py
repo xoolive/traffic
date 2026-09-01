@@ -1,5 +1,5 @@
 """
-Regression tests for navdata migration: Python traffic ↔ Rust thrust equivalence.
+Regression tests for Python/Rust navdata migration equivalence.
 
 These tests validate that the Python airspace model (core/airspace.py +
 data/basic/airspaces.py) produces correct results when fed payloads
@@ -33,9 +33,9 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+
 from shapely.geometry import Polygon, mapping
 from shapely.ops import unary_union
-
 from traffic.core.airspace import (
     Airspace,
     ExtrudedPolygon,
@@ -43,7 +43,6 @@ from traffic.core.airspace import (
 )
 from traffic.data import airspaces
 from traffic.data import resolver as _resolver
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -91,7 +90,7 @@ class TestUnaryUnionWithAlt:
         assert result[0].upper == 200.0
 
     def test_adjacent_identical_geometry_is_collapsed(self) -> None:
-        """Two adjacent layers with the same polygon geometry collapse into one."""
+        """Adjacent identical polygon layers collapse into one."""
         poly = Polygon(_make_square(1.0, 44.0, 1.0, 1.0))
         layers = [
             ExtrudedPolygon(poly, 100.0, 200.0),
@@ -115,7 +114,7 @@ class TestUnaryUnionWithAlt:
         assert result[0].upper == 300.0
 
     def test_different_geometry_per_band_produces_multiple_layers(self) -> None:
-        """Different polygon geometry at different altitude bands → separate layers."""
+        """Different geometry at altitude bands creates separate layers."""
         small = Polygon(_make_square(1.0, 44.0, 0.5, 0.5))
         large = Polygon(_make_square(0.5, 43.5, 2.0, 2.0))
         layers = [
@@ -143,7 +142,7 @@ class TestUnaryUnionWithAlt:
         assert abs(result[0].polygon.area - expected_area) < 1e-10
 
     def test_all_none_altitudes_returns_single_infinite_layer(self) -> None:
-        """When all lower/upper are None, a single layer with ±inf is returned."""
+        """All-None altitudes produce one layer with infinite bounds."""
         poly = Polygon(_make_square(1.0, 44.0, 1.0, 1.0))
         # Python unary_union_with_alt skips None in the altitude set;
         # if the set is empty it falls into the "len(slices) < 2" path.
@@ -211,7 +210,7 @@ class TestUnaryUnionWithAlt:
 
 
 class TestAirspacesGet:
-    """Tests for the public airspaces.get() method using monkeypatched resolver."""
+    """Tests for airspaces.get() using a monkeypatched resolver."""
 
     def _mock_resolve(
         self,
@@ -245,7 +244,7 @@ class TestAirspacesGet:
     def test_layered_payload_builds_correct_element_count(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """A 'layers' payload with 2 overlapping same-band polygons → 1 element."""
+        """Overlapping same-band polygons produce one element."""
         payload = {
             "designator": "LFBBCTA",
             "name": "BORDEAUX U/ACC",
@@ -505,7 +504,7 @@ class TestDdrCanonicalSamples:
         assert len(space.elements) == 1
         assert space.elements[0].lower == 245.0
         assert space.elements[0].upper == 660.0
-        # Area should be significant (rough bounding box is ~2×10^11 m²)
+        # Area should be significant (rough bounding box is ~2x10^11 m²)
         assert space.area > 1e10
 
     def test_fra_sector_type(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -658,11 +657,11 @@ class TestCoordinateConventions:
         a = Airspace("A", [ExtrudedPolygon(poly, 0.0, 100.0)])
         gj = mapping(a.shape)
         ring = list(gj["coordinates"][0])
-        # All first elements are lons (~1.5–2.5), all second are lats (~44.5–45.5)
+        # First elements are lons (~1.5-2.5); second are lats (~44.5-45.5).
         for coord in ring:
             lon, lat = coord[0], coord[1]
-            assert 1.0 < lon < 3.0, f"Expected lon ~1.5–2.5, got {lon}"
-            assert 44.0 < lat < 46.0, f"Expected lat ~44.5–45.5, got {lat}"
+            assert 1.0 < lon < 3.0, f"Expected lon ~1.5-2.5, got {lon}"
+            assert 44.0 < lat < 46.0, f"Expected lat ~44.5-45.5, got {lat}"
 
     def test_ddr_coordinate_decode_matches_python_reference(self) -> None:
         """

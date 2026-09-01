@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     from .adsb.opensky import OpenSky
     from .basic.aircraft import Aircraft
     from .basic.airports import Airports
-    from .basic.airways import Airways
     from .basic.airspaces import Airspaces
+    from .basic.airways import Airways
     from .basic.fixes import Fixes
     from .basic.navaid import Navaids
     from .basic.runways import Runways
@@ -39,8 +39,8 @@ __all__ = [
     "Navaids",
     "aircraft",
     "airports",
-    "airways",
     "airspaces",
+    "airways",
     "aixm_airports",
     "aixm_airspaces",
     "aixm_airways",

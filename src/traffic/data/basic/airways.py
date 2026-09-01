@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -167,7 +168,7 @@ class Airways(GeoDBMixin):
         self,
         name: str,
         source: None | str = None,
-        **kwargs: object,
+        **kwargs: Any,
     ) -> Route:
         from .. import resolver
 

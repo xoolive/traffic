@@ -165,7 +165,7 @@ class Airports(GeoDBMixin):
         self,
         name: str,
         source: None | str = None,
-        **kwargs: object,
+        **kwargs: Any,
     ) -> Airport:
         from .. import resolver
 
