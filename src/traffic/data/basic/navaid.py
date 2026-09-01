@@ -59,8 +59,15 @@ class Navaids(GeoDBMixin):
 
     def __init__(self, data: None | pd.DataFrame = None) -> None:
         self._data: None | pd.DataFrame = data
+        self._resolver_source: None | str = None
         if self.name not in Navaids.alternatives:
             Navaids.alternatives[self.name] = self
+
+    def source(self, source: str) -> "Navaids":
+        clone = self.__class__(self._data)
+        clone._extent = self._extent
+        clone._resolver_source = source
+        return clone
 
     @property
     def available(self) -> bool:
@@ -198,6 +205,38 @@ class Navaids(GeoDBMixin):
 
     @property
     def data(self) -> pd.DataFrame:
+        if self._resolver_source is not None:
+            from .. import resolver
+
+            nav = resolver.data(source=self._resolver_source, kind="navaid")
+            fix = resolver.data(source=self._resolver_source, kind="fix")
+            frame = pd.concat(
+                [x for x in [nav, fix] if not x.empty],
+                ignore_index=True,
+            )
+            if frame.empty:
+                raise RuntimeError(
+                    f"No navaid/fix data found for source {self._resolver_source}"
+                )
+
+            frame = frame.rename(
+                columns={
+                    "code": "name",
+                    "kind": "type",
+                }
+            )
+            if "type" in frame.columns:
+                frame["type"] = frame["type"].str.upper()
+            if "altitude" not in frame.columns:
+                frame["altitude"] = 0.0
+            if "frequency" not in frame.columns:
+                frame["frequency"] = None
+            if "magnetic_variation" not in frame.columns:
+                frame["magnetic_variation"] = None
+            if "description" not in frame.columns:
+                frame["description"] = None
+            return frame
+
         if self._data is not None:
             return self._data
 
@@ -223,74 +262,125 @@ class Navaids(GeoDBMixin):
         else:
             name = key
             reference = None
-        x = self.data.query(
-            "description == @name.upper() or name == @name.upper()"
+        return self.get(
+            name,
+            reference=reference,
+            source=self._resolver_source,
         )
-        if x.shape[0] == 0:
-            raise AttributeError(f"Point {name} not found")
-        if x.shape[0] > 1 and reference is not None:
-            x["distance"] = np.sqrt(
-                (x.latitude - reference[0]) ** 2
-                + (x.longitude - reference[1]) ** 2
-            )
-            x = x.sort_values("distance").head(1).drop(columns=["distance"])
-        dic = dict(x.iloc[0])
-        for key, value in dic.items():
-            if isinstance(value, np.float64):
-                dic[key] = float(value)
-        if "altitude" not in dic:
-            dic["altitude"] = None
-            dic["frequency"] = None
-            dic["magnetic_variation"] = None
-        dic.pop("id", None)
-        return Navaid(**dic)
 
     def global_get(self, name: str) -> Navaid:
         _log.warning("Use .get() function instead", DeprecationWarning)
         return self.get(name)
 
     def get(
-        self, name: str, reference: None | tuple[float, float] = None
+        self,
+        name: str,
+        reference: None | tuple[float, float] = None,
+        source: None | str = None,
+        kind: None | str = None,
+        **kwargs: object,
     ) -> Navaid:
-        """Search for a navaid from all alternative data sources.
+        """Search for a navaid/fix through the resolver.
 
         ```pycon
         >>> from traffic.data import navaids
+
         ```
 
         ```pycon
         >>> navaids.get("ZUE")  # doctest: +SKIP
         Navaid('ZUE', type='NDB', latitude=30.9, longitude=20.068, altitude=0.0, description='ZUEITINA NDB', frequency='369.0kHz')
+
         ```
 
         ```pycon
         >>> navaids.extent("Switzerland").get("ZUE")  # doctest: +SKIP
         Navaid('ZUE', type='VOR', latitude=47.592, longitude=8.817, altitude=1730.0, description='ZURICH EAST VOR-DME', frequency='110.05MHz')
+
         ```
         """
-        for _key, value in reversed(
-            sorted(
-                (
-                    (key, value)
-                    for key, value in self.alternatives.items()
-                    if value is not None
-                ),
-                key=lambda elt: elt[1].priority,
+        from .. import resolver
+
+        selected_source = (
+            source if source is not None else self._resolver_source
+        )
+
+        if kind in ("fix", "navaid"):
+            result = resolver.resolve(
+                source=selected_source,
+                kind=kind,  # type: ignore[arg-type]
+                code=name,
+                reference=reference,
+                **kwargs,
             )
-        ):
-            # Reapply the extent if it was applied before
-            if self._extent is not None:
-                value_ext = value.extent(self._extent)
-                if value_ext is None:
-                    continue
-                value = value_ext
-            if reference is not None:
-                alt = value[name, reference]
+        else:
+            nav = resolver.resolve(
+                navaid=name,
+                source=selected_source,
+                reference=reference,
+                **kwargs,
+            )
+            fix = resolver.resolve(
+                fix=name,
+                source=selected_source,
+                reference=reference,
+                **kwargs,
+            )
+            candidates = [
+                c for c in [nav.selected, fix.selected] if c is not None
+            ]
+            if len(candidates) == 0:
+                result = nav
             else:
-                alt = value[name]
-            if alt is not None:
-                return alt
-        raise AttributeError(f"Point {name} not found")
+                best = sorted(
+                    candidates, key=lambda c: c.confidence, reverse=True
+                )[0]
+                result = resolver.resolve(
+                    code=best.code,
+                    source=best.source,
+                    kind=best.kind,
+                )
+
+        candidate = result.selected
+        if candidate is None:
+            raise AttributeError(f"Point {name} not found")
+
+        payload = candidate.payload
+        navaid_name = str(candidate.code)
+        navaid_type = str(payload.get("point_type") or candidate.kind).upper()
+        description = payload.get("description")
+        if description is None and payload.get("region") is not None:
+            description = f"{navaid_name} {payload.get('region')}"
+
+        frequency = payload.get("frequency")
+        frequency_float = float(frequency) if frequency is not None else None
+
+        return Navaid(
+            navaid_name,
+            "FIX" if candidate.kind == "fix" else navaid_type,
+            float(payload.get("latitude") or 0.0),
+            float(payload.get("longitude") or 0.0),
+            float(payload.get("altitude") or 0.0),
+            frequency_float,
+            None,
+            str(description) if description is not None else None,
+        )
+
+    def get_fix(
+        self,
+        name: str,
+        source: None | str = None,
+        **kwargs: object,
+    ) -> Navaid:
+        return self.get(name, source=source, kind="fix", **kwargs)
+
+    def get_navaid(
+        self,
+        name: str,
+        source: None | str = None,
+        **kwargs: object,
+    ) -> Navaid:
+        return self.get(name, source=source, kind="navaid", **kwargs)
 
     def __iter__(self) -> Iterator[Navaid]:
         for _, x in self.data.iterrows():

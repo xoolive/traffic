@@ -29,6 +29,7 @@ class Airways(GeoDBMixin):
 
     ```pycon
     >>> from traffic.data import airways
+
     ```
 
     Any ATS route can be accessed by the bracket notation:
@@ -36,11 +37,13 @@ class Airways(GeoDBMixin):
     ```pycon
     >>> airways['Z50']
     Route('Z50', navaids=['EGOBA', 'SOT', 'BULTI', 'AYE', 'AVMON', ...])
+
     ```
 
     ```pycon
     >>> airways.extent((-0.33, 4.85, 42.34, 45.05))["UN869"]
     Route('UN869', navaids=['XOMBO', 'TIVLI', 'AGN', 'NARAK', 'NASEP', ...])
+
     ```
 
     !!! note
@@ -78,13 +81,16 @@ class Airways(GeoDBMixin):
     """
 
     cache_path: Path
-    alternatives: dict[str, "Airways"] = dict()  # noqa: RUF012
-    name: str = "default"
 
     def __init__(self, data: None | pd.DataFrame = None) -> None:
         self._data = data
-        if self.available:
-            Airways.alternatives[self.name] = self
+        self._resolver_source: None | str = None
+
+    def source(self, source: str) -> "Airways":
+        clone = self.__class__(self._data)
+        clone._extent = self._extent
+        clone._resolver_source = source
+        return clone
 
     def parse_data(self) -> pd.DataFrame:  # coverage: ignore
         cache_file = Path(__file__).parent.parent / "navdata" / "earth_awy.dat"
@@ -101,6 +107,36 @@ class Airways(GeoDBMixin):
 
     @property
     def data(self) -> pd.DataFrame:
+        if self._resolver_source is not None:
+            from .. import resolver
+
+            frame = resolver.data(source=self._resolver_source, kind="airway")
+            if frame.empty:
+                raise RuntimeError(
+                    f"No airway data found for source {self._resolver_source}"
+                )
+
+            if {"name", "points"}.issubset(frame.columns):
+                rows = []
+                for _, row in frame.iterrows():
+                    route_name = row["name"]
+                    points = (
+                        row["points"] if isinstance(row["points"], list) else []
+                    )
+                    for idx, point in enumerate(points):
+                        rows.append(
+                            {
+                                "route": route_name,
+                                "id": idx,
+                                "navaid": point.get("code"),
+                                "latitude": point.get("latitude", 0.0),
+                                "longitude": point.get("longitude", 0.0),
+                            }
+                        )
+                return pd.DataFrame.from_records(rows)
+
+            return frame
+
         if self._data is not None:
             return self._data
 
@@ -121,41 +157,44 @@ class Airways(GeoDBMixin):
         return self._data
 
     def __getitem__(self, key: str) -> Route:
-        output = self.data.query("route == @key").sort_values("id")
-        if output.shape[0] == 0:
-            raise AttributeError(f"Route {key} not found")
-        return Route(
-            key,
-            list(
-                Navaid(
-                    x["navaid"],
-                    "FIX",
-                    x["latitude"],
-                    x["longitude"],
-                    0,
-                    None,
-                    None,
-                    None,
-                )
-                for _, x in output.iterrows()
-            ),
-        )
+        return self.get(key)
 
     def global_get(self, name: str) -> Route:
         _log.warning("Use .get() function instead", DeprecationWarning)
         return self.get(name)
 
-    def get(self, name: str) -> Route:
-        """Search for a route from all alternative data sources."""
-        for _key, value in sorted(
-            self.alternatives.items(),
-            # lowest priority for the default source of information
-            key=lambda key: 1 if key[0] == "default" else 0,
-        ):
-            alt = value[name]
-            if alt is not None:
-                return alt
-        raise AttributeError(f"Route {name} not found")
+    def get(
+        self,
+        name: str,
+        source: None | str = None,
+        **kwargs: object,
+    ) -> Route:
+        from .. import resolver
+
+        selected_source = (
+            source if source is not None else self._resolver_source
+        )
+        result = resolver.resolve(airway=name, source=selected_source, **kwargs)
+        if result.selected is None:
+            if source is None:
+                raise AttributeError(f"Route {name} not found")
+            raise AttributeError(f"Route {name} not found in source {source}")
+
+        points = result.selected.payload.get("points", [])
+        navaids = [
+            Navaid(
+                str(point.get("code") or ""),
+                str(point.get("kind") or "FIX").upper(),
+                float(point.get("latitude") or 0.0),
+                float(point.get("longitude") or 0.0),
+                0,
+                None,
+                None,
+                None,
+            )
+            for point in points
+        ]
+        return Route(result.selected.code, navaids)
 
     def search(self, name: str) -> "Airways":
         """
@@ -171,6 +210,7 @@ class Airways(GeoDBMixin):
           Z50     9    SOPER    46.89      8.944
           Z50     10   PELAD    46.6       9.726
           Z50     11   RESIA    46.48      10.04
+
         ```
 
         ```pycon
@@ -183,6 +223,7 @@ class Airways(GeoDBMixin):
           UT122   15   NARAK    44.3       1.749
           UY155   2    NARAK    44.3       1.749
           UZ365   3    NARAK    44.3       1.749
+
         ```
         """
         output = self.__class__(

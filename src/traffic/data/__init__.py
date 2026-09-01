@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     from .basic.aircraft import Aircraft
     from .basic.airports import Airports
     from .basic.airways import Airways
+    from .basic.airspaces import Airspaces
+    from .basic.fixes import Fixes
     from .basic.navaid import Navaids
     from .basic.runways import Runways
     from .eurocontrol.aixm.airports import AIXMAirportParser
@@ -38,12 +40,15 @@ __all__ = [
     "aircraft",
     "airports",
     "airways",
+    "airspaces",
     "aixm_airports",
     "aixm_airspaces",
     "aixm_airways",
     "aixm_navaids",
     "client",
     "eurofirs",
+    "fixes",
+    "freeroute",
     "navaids",
     "nm_airspaces",
     "nm_airways",
@@ -56,6 +61,9 @@ __all__ = [
 aircraft: "Aircraft"
 airports: "Airports"
 airways: "Airways"
+airspaces: "Airspaces"
+freeroute: "Airspaces"
+fixes: "Fixes"
 navaids: "Navaids"
 runways: "Runways"
 aixm_airports: "AIXMAirportParser"
@@ -124,6 +132,20 @@ def __getattr__(name: str) -> Any:
         _cached_imports[name] = res
         return res
 
+    if name == "airspaces":
+        from .basic.airspaces import Airspaces
+
+        res = Airspaces()
+        _cached_imports[name] = res
+        return res
+
+    if name == "freeroute":
+        from .basic.airspaces import Airspaces
+
+        res = Airspaces().fra
+        _cached_imports[name] = res
+        return res
+
     if name == "eurofirs":
         from .eurocontrol.eurofirs import eurofirs
 
@@ -134,6 +156,13 @@ def __getattr__(name: str) -> Any:
 
         Navaids.cache_path = cache_path
         res = Navaids()
+        _cached_imports[name] = res
+        return res
+
+    if name == "fixes":
+        from .basic.fixes import Fixes
+
+        res = Fixes()
         _cached_imports[name] = res
         return res
 

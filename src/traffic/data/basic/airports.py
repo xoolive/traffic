@@ -1,7 +1,6 @@
 # ruff: noqa: E501
 from __future__ import annotations
 
-import io
 from pathlib import Path
 from typing import Any, ClassVar, overload
 
@@ -10,10 +9,8 @@ import httpx
 import pandas as pd
 
 from ... import cache_expiration
-from ...core import tqdm
 from ...core.mixins import GeoDBMixin
 from ...core.structure import Airport
-from .. import client
 
 __all__ = ["Airport", "Airports"]
 
@@ -31,6 +28,7 @@ class Airports(GeoDBMixin):
 
     ```pycon
     >>> from traffic.data import airports
+
     ```
 
     Airports information can be accessed with attributes:
@@ -42,6 +40,7 @@ class Airports(GeoDBMixin):
     'AMS'
     >>> airports["EHAM"].name
     'Amsterdam Airport Schiphol'
+
     ```
 
     """
@@ -66,80 +65,47 @@ class Airports(GeoDBMixin):
     def __init__(self, data: None | pd.DataFrame = None) -> None:
         self._data: None | pd.DataFrame = data
         self._src = "open"
+        self._resolver_source: None | str = None
+
+    def source(self, source: str) -> "Airports":
+        clone = self.__class__(self._data)
+        clone._src = self._src
+        clone._extent = self._extent
+        clone._resolver_source = source
+        return clone
+
+    @property
+    def available(self) -> bool:
+        return True
 
     def download_airports(self) -> None:  # coverage: ignore
         """
         Download an up to date version of the airports database from
         `ourairports.com <https://ourairports.com/>`_
         """
+        from ..resolver import OurAirportsProvider
 
-        f = client.get("https://ourairports.com/data/airports.csv")
-        total = int(f.headers["Content-Length"])
-        buffer = io.BytesIO()
-        for chunk in tqdm(
-            f.iter_bytes(chunk_size=1024),
-            total=total // 1024 + 1 if total % 1024 > 0 else 0,
-            desc="airports @ourairports.com",
-        ):
-            buffer.write(chunk)
-
-        buffer.seek(0)
-        df = pd.read_csv(buffer)
-
-        f = client.get("https://ourairports.com/data/countries.csv")
-        buffer = io.BytesIO(f.content)
-        buffer.seek(0)
-        countries = pd.read_csv(buffer)
-
-        self._data = df.rename(
-            columns={
-                "latitude_deg": "latitude",
-                "longitude_deg": "longitude",
-                "elevation_ft": "altitude",
-                "iata_code": "iata",
-                "ident": "icao",
-            }
-        ).merge(
-            countries[["code", "name"]].rename(
-                columns=dict(code="iso_country", name="country")
-            )
-        )[
-            [
-                "name",
-                "iata",
-                "icao",
-                "latitude",
-                "longitude",
-                "country",
-                "altitude",
-                "type",
-                "municipality",
-            ]
-        ]
-
+        self._data = OurAirportsProvider().fetch_data()
         self._data.to_parquet(self.cache_path / "airports_ourairports.parquet")
 
     def download_fr24(self) -> None:  # coverage: ignore
-        c = client.get(
-            "https://www.flightradar24.com/_json/airports.php",
-            headers={"user-agent": "Mozilla/5.0"},
-        )
+        from ..resolver import Fr24AirportsProvider
 
-        self._data = (
-            pd.DataFrame.from_records(c.json()["rows"])
-            .assign(name=lambda df: df.name.str.strip())
-            .rename(
-                columns={
-                    "lat": "latitude",
-                    "lon": "longitude",
-                    "alt": "altitude",
-                }
-            )
-        )
+        self._data = Fr24AirportsProvider().fetch_data()
         self._data.to_parquet(self.cache_path / "airports_fr24.parquet")
 
     @property
     def data(self) -> pd.DataFrame:
+        if self._resolver_source is not None:
+            from .. import resolver
+
+            frame = resolver.data(source=self._resolver_source, kind="airport")
+            if frame.empty:
+                raise RuntimeError(
+                    f"No airport data found for source {self._resolver_source}"
+                )
+            return frame
+
         if self._data is not None:
             return self._data
 
@@ -175,6 +141,7 @@ class Airports(GeoDBMixin):
         >>> from traffic.data import airports
         >>> airports["EHAM"]
         Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', country='Netherlands', latitude=52.308601, longitude=4.76389, altitude=-11)
+
         ```
         """
         if isinstance(key, int):
@@ -182,13 +149,8 @@ class Airports(GeoDBMixin):
         elif not isinstance(key, str):
             return super().__getitem__(key)
         else:
-            name = key
-            x = self.data.query(
-                "iata == @name.upper() or icao == @name.upper()"
-            )
-            if x.shape[0] == 0:
-                raise ValueError(f"Unknown airport {name} in current database")
-            p = x.iloc[0]
+            return self.get(key)
+
         return Airport(
             int(p.altitude),
             p.country,
@@ -197,6 +159,36 @@ class Airports(GeoDBMixin):
             float(p.latitude),
             float(p.longitude),
             p["name"],
+        )
+
+    def get(
+        self,
+        name: str,
+        source: None | str = None,
+        **kwargs: object,
+    ) -> Airport:
+        from .. import resolver
+
+        selected_source = (
+            source if source is not None else self._resolver_source
+        )
+        result = resolver.resolve(
+            airport=name, source=selected_source, **kwargs
+        )
+        if result.selected is None:
+            if source is None:
+                raise ValueError(f"Unknown airport {name} in current database")
+            raise ValueError(f"Unknown airport {name} in source {source}")
+
+        payload = result.selected.payload
+        return Airport(
+            int(payload.get("altitude", 0) or 0),
+            str(payload.get("country") or ""),
+            str(payload.get("iata") or ""),
+            str(payload.get("icao") or ""),
+            float(payload.get("latitude") or 0.0),
+            float(payload.get("longitude") or 0.0),
+            str(payload.get("name") or ""),
         )
 
     def search(self, name: str) -> "Airports":
@@ -212,6 +204,7 @@ class Airports(GeoDBMixin):
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           Narita International Airport           Japan   RJAA   NRT    35.76      140.4
           Tokyo Haneda International Airport     Japan   RJTT   HND    35.55      139.8
+
         ```
 
         """
