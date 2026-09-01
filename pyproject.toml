@@ -57,6 +57,7 @@ dev = [
   "jupyter-sphinx>=0.5.3",
   "vl-convert-python>=1.7.0",
   "ty>=0.0.17",
+  "traffic-thrust",
   "zensical>=0.0.23",
   "mkdocstrings>=1.0.3",
   "mkdocstrings-python>=2.0.2",
@@ -68,6 +69,7 @@ dev = [
 # pitot = { path = "../pitot", editable = true }
 # pyopensky = { path = "../pyopensky", editable = true }
 # rs1090 = { path = "../rs1090/python", editable = true }
+traffic-thrust = { path = "../thrust/python", editable = true }
 
 [project.urls]
 Documentation = "https://traffic-viz.github.io/"
@@ -86,6 +88,7 @@ lonboard = ["lonboard>=0.10.3; python_version<'3.13'"]
 spark = ["pyspark>=4.0.1"]
 xarray = ["xarray>=2024.10.0"]
 learning = ["scikit-learn>=1.5.2"]
+thrust = ["traffic-thrust"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
