@@ -21,7 +21,7 @@ import pytest
 
 
 def _import_field15_parser():
-    """Return Field15Parser from thrust, or skip the test if thrust is not installed."""
+    """Return Field15Parser, or skip if thrust is unavailable."""
     try:
         from thrust.data.field15 import Field15Parser  # type: ignore[import]
 
@@ -36,28 +36,22 @@ def test_parse_direct_route_returns_tokens():
     Field15Parser = _import_field15_parser()
 
     tokens = Field15Parser.parse("LFPG DCT LACOU DCT LFLL")
-    kinds = [type(t).__name__ for t in tokens]
     # At minimum we expect points and connectors — not an empty list
     assert len(tokens) >= 3
 
 
 def test_parse_airway_route_contains_airway_connector():
-    """A route with an ATS airway segment should contain at least one Connector.Airway token."""
+    """A route with an ATS airway segment contains an airway connector."""
     pytest.importorskip("thrust")
     Field15Parser = _import_field15_parser()
-    from thrust.data.field15 import Connector  # type: ignore[import]
-
     tokens = Field15Parser.parse("LFPG DCT LACOU UM184 VEBIT DCT LFLL")
-    airway_tokens = [
-        t for t in tokens if isinstance(t, Connector) and hasattr(t, "value")
-    ]
     # Alternatively check by repr — Connector.Airway should appear
     token_reprs = [repr(t) for t in tokens]
     assert any("UM184" in r for r in token_reprs)
 
 
 def test_parse_speed_altitude_modifier():
-    """A speed/altitude prefix like N0450F350 should parse as a Modifier token."""
+    """A speed/altitude prefix should parse as a Modifier token."""
     pytest.importorskip("thrust")
     Field15Parser = _import_field15_parser()
     from thrust.data.field15 import Modifier  # type: ignore[import]
@@ -91,7 +85,7 @@ def test_parse_dct_only_route_has_no_airway():
 
 @pytest.mark.slow
 def test_airac_database_enrich_route_returns_segments():
-    """AiracDatabase.enrich_route returns a non-empty list of Segment objects."""
+    """AiracDatabase.enrich_route returns Segment objects."""
     aixm_dir = os.environ.get("TRAFFIC_TEST_AIXM_DIR")
     if aixm_dir is None:
         pytest.skip("Set TRAFFIC_TEST_AIXM_DIR to run AIXM field15 test")
@@ -249,7 +243,7 @@ def test_aixm_field15_provider_raises_without_thrust(monkeypatch):
             raise ImportError("mocked: thrust not installed")
         return real_import(name, *args, **kwargs)
 
-    from traffic.data.resolver.providers_eurocontrol import AIXMField15Provider
+    from traffic.data.resolver.providers.eurocontrol import AIXMField15Provider
 
     with monkeypatch.context() as m:
         m.setattr(builtins, "__import__", mock_import)
