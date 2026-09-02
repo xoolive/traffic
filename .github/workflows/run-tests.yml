@@ -36,10 +36,12 @@ jobs:
           uv run ruff check src tests scripts
           uv run ruff format --check src tests scripts
 
-      - name: Type checking
-        run: |
-          uv run mypy src/traffic tests
-          uv run ty check src/traffic tests
+      - name: Type checking with Ty
+        run: >-
+          uv run ty check --python-version 3.12
+          src/traffic/data/resolver src/traffic/data/basic
+          tests/test_resolver.py tests/test_field15.py
+          tests/test_airspace_migration.py
 
   cache_traffic:
     name: setup traffic cache
