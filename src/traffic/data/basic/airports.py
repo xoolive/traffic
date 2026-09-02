@@ -26,14 +26,11 @@ class Airports(GeoDBMixin):
 
     A database of major world airports is available as:
 
-    ```pycon
     >>> from traffic.data import airports
 
-    ```
 
     Airports information can be accessed with attributes:
 
-    ```pycon
     >>> airports["EHAM"].latlon  # doctest: +NUMBER
     (52.3086, 4.7639)
     >>> airports["EHAM"].iata
@@ -41,7 +38,6 @@ class Airports(GeoDBMixin):
     >>> airports["EHAM"].name
     'Amsterdam Airport Schiphol'
 
-    ```
 
     """
 
@@ -137,12 +133,10 @@ class Airports(GeoDBMixin):
 
         :param name: the IATA or ICAO code of the airport
 
-        ```pycon
         >>> from traffic.data import airports
         >>> airports["EHAM"]
         Airport(icao='EHAM', iata='AMS', name='Amsterdam Airport Schiphol', country='Netherlands', latitude=52.308601, longitude=4.76389, altitude=-11)
 
-        ```
         """
         if isinstance(key, int):
             p = self.data.iloc[key]
@@ -167,11 +161,30 @@ class Airports(GeoDBMixin):
         source: None | str = None,
         **kwargs: Any,
     ) -> Airport:
-        from .. import resolver
-
         selected_source = (
             source if source is not None else self._resolver_source
         )
+
+        if selected_source is None and self._data is not None:
+            upper = name.upper()
+            matches = self._data[
+                (self._data["icao"] == upper) | (self._data["iata"] == upper)
+            ]
+            if matches.empty:
+                raise ValueError(f"Unknown airport {name} in current database")
+            payload = matches.iloc[0]
+            return Airport(
+                int(payload.get("altitude", 0) or 0),
+                str(payload.get("country") or ""),
+                str(payload.get("iata") or ""),
+                str(payload.get("icao") or ""),
+                float(payload.get("latitude") or 0.0),
+                float(payload.get("longitude") or 0.0),
+                str(payload.get("name") or ""),
+            )
+
+        from .. import resolver
+
         result = resolver.resolve(
             airport=name, source=selected_source, **kwargs
         )
@@ -197,7 +210,6 @@ class Airports(GeoDBMixin):
             name, city name of full name of the airport.
 
 
-        ```pycon
         >>> from traffic.data import airports
         >>> airports.query('type == "large_airport"').search('Tokyo')  # doctest: +SKIP
           name                                 country   icao   iata   latitude   longitude
@@ -205,7 +217,6 @@ class Airports(GeoDBMixin):
           Narita International Airport           Japan   RJAA   NRT    35.76      140.4
           Tokyo Haneda International Airport     Japan   RJTT   HND    35.55      139.8
 
-        ```
 
         """
         if "municipality" in self.data.columns:

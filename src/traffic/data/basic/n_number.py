@@ -36,7 +36,6 @@ def create_icao(number: int, prefix: str = "a") -> str:
 
     The output is an hexadecimal of length 6 starting with the suffix
 
-    ```pycon
     >>> create_icao(11)
     'a0000b'
     >>> create_icao(915399)
@@ -45,7 +44,6 @@ def create_icao(number: int, prefix: str = "a") -> str:
     Traceback (most recent call last):
         ...
     RuntimeError: Invalid value, must be below 0xdf7c7 for N99999
-    ```
 
     """
     if number > 0xDF7C7:
@@ -60,7 +58,6 @@ def get_suffix(offset: int) -> str:
     An offset of 0 returns in a valid empty suffix
     A non-zero offset return a string containing one or two characters
 
-    ```pycon
     >>> get_suffix(0)
     ''
     >>> get_suffix(1)
@@ -75,7 +72,6 @@ def get_suffix(offset: int) -> str:
     'B'
     >>> get_suffix(600)
     'ZZ'
-    ```
 
     """
     if offset == 0:
@@ -89,7 +85,6 @@ def get_suffix(offset: int) -> str:
 def suffix_offset(suffix: str) -> int:
     """Compute the offset corresponding to the given alphabetical suffix.
 
-    ```pycon
     >>> suffix_offset("")
     0
     >>> suffix_offset("A")
@@ -102,7 +97,6 @@ def suffix_offset(suffix: str) -> int:
     27
     >>> suffix_offset("ZZ")
     600
-    ```
     """
     length = len(suffix)
 
@@ -131,7 +125,6 @@ def suffix_offset(suffix: str) -> int:
 def n_number_to_icao(n_number: str) -> str:
     """Convert a N-number to corresponding a- icao address.
 
-    ```pycon
     >>> n_number_to_icao("N1")
     'a00001'
     >>> n_number_to_icao("N1AZ")
@@ -150,7 +143,6 @@ def n_number_to_icao(n_number: str) -> str:
     'ac6a7a'
     >>> n_number_to_icao("N99999")
     'adf7c7'
-    ```
 
     """
 
@@ -186,7 +178,6 @@ def n_number_to_icao(n_number: str) -> str:
 def icao_to_n_number(icao: str) -> None | str:
     """Convert an a- ICAO address to a N-number registration
 
-    ```pycon
     >>> icao_to_n_number("a00001")
     'N1'
     >>> icao_to_n_number("a0001a")
@@ -205,7 +196,6 @@ def icao_to_n_number(icao: str) -> None | str:
     'N9A'
     >>> icao_to_n_number("adf7c7")
     'N99999'
-    ```
     """
 
     icao = icao.lower()

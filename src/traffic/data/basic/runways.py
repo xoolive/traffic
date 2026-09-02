@@ -134,7 +134,7 @@ class Runway(HBoxMixin, ShapelyMixin, DataFrameMixin):
             del params["mode"]
             return super().geoencode().mark_geoshape(**params)  # type: ignore
         elif kwargs.get("mode", None) == "labels":
-            params = {
+            params: Dict[str, Any] = {
                 **{"baseline": "middle", "dy": 20, "fontSize": 18},
                 **kwargs,
             }
@@ -278,7 +278,7 @@ class RunwaysAirport(HBoxMixin, ShapelyMixin, DataFrameMixin):
             del params["mode"]
             return super().geoencode().mark_geoshape(**params)  # type: ignore
         elif kwargs.get("mode", None) == "labels":
-            params = {
+            params: Dict[str, Any] = {
                 **{"baseline": "middle", "dy": 20, "fontSize": 18},
                 **kwargs,
             }

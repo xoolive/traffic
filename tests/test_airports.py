@@ -1,4 +1,5 @@
 import pickle
+import re
 import zipfile
 
 import pytest
@@ -65,7 +66,9 @@ def test_runway_bearing() -> None:
             # of OurAirports database
             continue
         for runway in airport.runways.list:
-            delta = abs(int(runway.name[:2]) * 10 - runway.bearing)
+            match = re.match(r"^\d+", runway.name)
+            assert match is not None
+            delta = abs(int(match.group()) * 10 - runway.bearing)
             if delta > 180:
                 delta = 360 - delta
             # It can be as big as 25 degrees with parallel runways!

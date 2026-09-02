@@ -26,14 +26,12 @@ class ParkingPositionGeometricIntersection:
 
     Example usage:
 
-    ```pycon
     >>> from traffic.data.samples import elal747
     >>> parking = elal747.parking_position('LIRF').max()
     >>> parking.duration
     Timedelta('0 days 00:05:20')
     >>> parking.parking_position_max
     '702'
-    ```
 
     !!! warning
 

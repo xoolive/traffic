@@ -36,18 +36,14 @@ class Navaids(GeoDBMixin):
 
     A (deprecated) database of world navigational beacons is available as:
 
-    ```pycon
     >>> from traffic.data import navaids
 
-    ```
 
     Any navigational beacon can be accessed by the bracket notation:
 
-    ```pycon
     >>> navaids['NARAK']
     Navaid('NARAK', type='FIX', latitude=44.29527778, longitude=1.74888889)
 
-    ```
 
     """
 
@@ -281,28 +277,56 @@ class Navaids(GeoDBMixin):
     ) -> Navaid:
         """Search for a navaid/fix through the resolver.
 
-        ```pycon
+        Objects backed by an explicit local DataFrame, such as an extent
+        selection or a dataset-specific waypoint collection, are resolved
+        locally. Explicit ``source`` selections continue to use the resolver.
+
         >>> from traffic.data import navaids
 
-        ```
 
-        ```pycon
         >>> navaids.get("ZUE")  # doctest: +SKIP
         Navaid('ZUE', type='NDB', latitude=30.9, longitude=20.068, altitude=0.0, description='ZUEITINA NDB', frequency='369.0kHz')
 
-        ```
 
-        ```pycon
         >>> navaids.extent("Switzerland").get("ZUE")  # doctest: +SKIP
         Navaid('ZUE', type='VOR', latitude=47.592, longitude=8.817, altitude=1730.0, description='ZURICH EAST VOR-DME', frequency='110.05MHz')
 
-        ```
         """
-        from .. import resolver
-
         selected_source = (
             source if source is not None else self._resolver_source
         )
+
+        if selected_source is None and self._data is not None:
+            upper = name.upper()
+            matches = self._data[
+                (self._data["description"] == upper)
+                | (self._data["name"] == upper)
+            ].copy()
+            if kind == "fix":
+                matches = matches[matches["type"].str.upper() == "FIX"]
+            elif kind == "navaid":
+                matches = matches[matches["type"].str.upper() != "FIX"]
+            if matches.empty:
+                raise AttributeError(f"Point {name} not found")
+            if reference is not None and len(matches) > 1:
+                matches = matches.assign(
+                    _distance=(
+                        (matches.latitude - reference[0]) ** 2
+                        + (matches.longitude - reference[1]) ** 2
+                    )
+                ).sort_values("_distance")
+            payload = matches.iloc[0].drop(
+                labels=["_distance"], errors="ignore"
+            )
+            data = payload.to_dict()
+            data.pop("id", None)
+            data.setdefault("altitude", 0.0)
+            data.setdefault("frequency", None)
+            data.setdefault("magnetic_variation", None)
+            data.setdefault("description", None)
+            return Navaid(**data)
+
+        from .. import resolver
 
         if kind in ("fix", "navaid"):
             result = resolver.resolve(
@@ -346,7 +370,11 @@ class Navaids(GeoDBMixin):
 
         payload = candidate.payload
         navaid_name = str(candidate.code)
-        navaid_type = str(payload.get("point_type") or candidate.kind).upper()
+        navaid_type = str(
+            payload.get("point_type")
+            or payload.get("type")
+            or ("FIX" if candidate.kind == "fix" else candidate.kind)
+        ).upper()
         description = payload.get("description")
         if description is None and payload.get("region") is not None:
             description = f"{navaid_name} {payload.get('region')}"
@@ -394,22 +422,18 @@ class Navaids(GeoDBMixin):
             The same name may match several navigational beacons in the world.
             Use the extent() method to limit the search to an area of interest.
 
-        ```pycon
         >>> navaids.search("ZUE")  # doctest: +SKIP
           name   type   latitude   longitude   altitude   frequency   description
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ZUE    NDB    30.9       20.07       0          369         ZUEITINA NDB
           ZUE    VOR    47.59      8.818       1730       110         ZURICH EAST VOR-DME
           ZUE    DME    47.59      8.818       1730       110         ZURICH EAST VOR-DME
-        ```
 
-        ```pycon
         >>> navaids.extent("Switzerland").search("ZUE")  # doctest: +SKIP
           name   type   latitude   longitude   altitude   frequency   description
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           ZUE    VOR    47.59      8.818       1730       110         ZURICH EAST VOR-DME
           ZUE    DME    47.59      8.818       1730       110         ZURICH EAST VOR-DME
-        ```
         """
         return self.__class__(
             self.data.query(

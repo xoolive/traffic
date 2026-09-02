@@ -33,13 +33,11 @@ class ParkingPositionBasedPushback:
     :param parking_positions: The parking positions can be passed as an
       :class:`~cartes.osm.Overpass` instance.
 
-    ```pycon
     >>> from traffic.data.samples import zurich_airport
     >>> flight = zurich_airport["AEE5ZH"]
     >>> pushback = flight.pushback('LSZH', method="parking_position")
     >>> pushback.duration
     Timedelta('0 days 00:01:45')
-    ```
 
     !!! warning
 
@@ -128,13 +126,11 @@ class ParkingAreaBasedPushback:
       :class:`~cartes.osm.Overpass` instance or a list of Polygon.
 
 
-    ```pycon
     >>> from traffic.data.samples import zurich_airport
     >>> flight = zurich_airport["AEE5ZH"]
     >>> pushback = flight.pushback('LSZH', method="parking_area")
     >>> pushback.duration
     Timedelta('0 days 00:04:26')
-    ```
 
     !!! warning
 

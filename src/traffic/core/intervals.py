@@ -128,39 +128,29 @@ class IntervalCollection(DataFrameMixin):
 
     Intervals can be created using one of the following syntaxes:
 
-    ```pycon
     >>> sample_dates = pd.date_range("2023-01-01", "2023-02-01", freq="1D")
     >>> t0, t1, t2, t3, *_ = sample_dates
-    ```
 
     - as a list of :class:`~Interval`:
 
-        ```pycon
         >>> IntervalCollection([Interval(t0, t1), Interval(t2, t3)])
         [[2023-01-01 00:00:00, 2023-01-02 00:00:00], ...]
-        ```
 
     - as an expanded tuple of :class:`~Interval`:
 
-        ```pycon
         >>> IntervalCollection(Interval(t0, t1), Interval(t2, t3))
         [[2023-01-01 00:00:00, 2023-01-02 00:00:00], ...]
-        ```
 
     - a list of start and stop values:
 
-        ```pycon
         >>> IntervalCollection([t0, t2], [t1, t3])
         [[2023-01-01 00:00:00, 2023-01-02 00:00:00], ...]
-        ```
 
     - as a :class:`~pandas.DataFrame`:
 
-        ```pycon
         >>> df = pd.DataFrame({'start': [t0, t2], 'stop': [t1, t3]})
         >>> IntervalCollection(df)
         [[2023-01-01 00:00:00, 2023-01-02 00:00:00], ...]
-        ```
 
     """
 
@@ -341,7 +331,6 @@ class IntervalCollection(DataFrameMixin):
     def consolidate(self) -> IntervalCollection:
         """Consolidate the IntervalCollection.
 
-        ```pycon
         >>> sample_dates = pd.date_range("2023-01-01", "2023-02-01", freq="1D")
         >>> t0, t1, t2, t3, *_ = sample_dates
         >>> interval = IntervalCollection([Interval(t0, t2), Interval(t1, t3)])
@@ -349,7 +338,6 @@ class IntervalCollection(DataFrameMixin):
         [[2023-01-01 ..., 2023-01-03 ...], [2023-01-02 ..., 2023-01-04 ...]]
         >>> interval.consolidate()
         [[2023-01-01 ..., 2023-01-04 ...]]
-        ```
 
         """
 
