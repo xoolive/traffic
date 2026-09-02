@@ -85,7 +85,7 @@ jobs:
 
       - name: Install the project
         run: |
-          uv sync --dev --all-extras
+          uv sync --dev --all-extras --no-extra thrust
 
       - name: Build pages
         env:

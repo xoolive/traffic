@@ -29,7 +29,7 @@ jobs:
 
       - name: Install the project
         run: |
-          uv sync --dev --all-extras
+          uv sync --dev --all-extras --no-extra thrust
 
       - name: Style checking
         run: |
@@ -75,7 +75,7 @@ jobs:
       - name: Install project and fill cache
         if: steps.cache-folder.outputs.cache-hit != 'true'
         run: |
-          uv sync --dev --all-extras
+          uv sync --dev --all-extras --no-extra thrust
           uv run traffic cache --fill
 
   tests_fast:
@@ -122,7 +122,7 @@ jobs:
 
       - name: Install project
         run: |
-          uv sync --dev --all-extras
+          uv sync --dev --all-extras --no-extra thrust
 
       - name: Run tests
         env:
@@ -179,7 +179,7 @@ jobs:
 
       - name: Install project
         run: |
-          uv sync --dev --all-extras
+          uv sync --dev --all-extras --no-extra thrust
 
       - name: Run tests
         env:
@@ -265,7 +265,7 @@ jobs:
 
       - name: Install project
         run: |
-          uv sync --dev --all-extras
+          uv sync --dev --all-extras --no-extra thrust
 
       - name: Run tests
         env:
