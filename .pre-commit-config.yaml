@@ -23,7 +23,8 @@ repos:
     rev: v3.1.0
     hooks:
       - id: prettier
-        exclude: readsb
+        # Cache payloads are fixtures, not source JSON; preserve their writer format.
+        exclude: ^(tests/(cache|cartes)/|docs/cache/)
   - repo: local
     hooks:
       - id: ty-check
