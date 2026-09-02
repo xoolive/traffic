@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/favicon/favicon.ico">
-      <meta name="generator" content="zensical-0.0.23">
+      <meta name="generator" content="zensical-0.0.58">
     
     
       
@@ -34,12 +34,12 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.1e989742.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.5da3a30f.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.812a03bb.min.css">
       
       
 
@@ -53,7 +53,7 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
         <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
       
     
@@ -66,7 +66,7 @@
     
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,a=__md_scope)=>JSON.parse(t.getItem(a.pathname+"."+e)),__md_set=(e,t,a=localStorage,_=__md_scope)=>{try{a.setItem(_.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
     
       
 
@@ -87,7 +87,7 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
     <div data-md-component="skip">
       
         
@@ -109,10 +109,10 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="./.." title="traffic" class="md-header__button md-logo" aria-label="traffic" data-md-component="logo">
       
-  <img src="../assets/logo/logo_small.png" alt="logo">
+  <img src="../assets/logo/logo_small.png" alt="traffic">
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
@@ -166,7 +166,7 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search">
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
           
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
@@ -182,7 +182,7 @@
         <a href="https://github.com/xoolive/traffic" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
     xoolive/traffic
@@ -217,7 +217,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="./.." title="traffic" class="md-nav__button md-logo" aria-label="traffic" data-md-component="logo">
       
-  <img src="../assets/logo/logo_small.png" alt="logo">
+  <img src="../assets/logo/logo_small.png" alt="traffic">
 
     </a>
     traffic
@@ -227,7 +227,7 @@
       <a href="https://github.com/xoolive/traffic" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
     xoolive/traffic
@@ -251,8 +251,7 @@
   <span class="md-ellipsis">
     
   
-    Home
-  
+  Home
 
     
   </span>
@@ -278,8 +277,7 @@
   <span class="md-ellipsis">
     
   
-    Installation
-  
+  Installation
 
     
   </span>
@@ -305,8 +303,7 @@
   <span class="md-ellipsis">
     
   
-    Getting started
-  
+  Getting started
 
     
   </span>
@@ -332,8 +329,7 @@
   <span class="md-ellipsis">
     
   
-    Publications
-  
+  Publications
 
     
   </span>
@@ -377,8 +373,7 @@
   <span class="md-ellipsis">
     
   
-    Tutorials
-  
+  Tutorials
 
     
   </span>
@@ -393,8 +388,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tutorials
-  
+  Tutorials
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -409,7 +403,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
       
       
         
@@ -422,8 +416,7 @@
   <span class="md-ellipsis">
     
   
-    Overview
-  
+  Overview
 
     
   </span>
@@ -440,8 +433,7 @@
   <span class="md-ellipsis">
     
   
-    Overview
-  
+  Overview
 
     
   </span>
@@ -469,9 +461,9 @@
         <li class="md-nav__item">
   <a href="#a-basic-example" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         A basic example
-      
+      </span>
     </span>
   </a>
   
@@ -500,8 +492,7 @@
   <span class="md-ellipsis">
     
   
-    Flight and Traffic objects
-  
+  Flight and Traffic objects
 
     
   </span>
@@ -528,8 +519,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory visualization
-  
+  Trajectory visualization
 
     
   </span>
@@ -556,8 +546,7 @@
   <span class="md-ellipsis">
     
   
-    Landing patterns
-  
+  Landing patterns
 
     
   </span>
@@ -584,8 +573,7 @@
   <span class="md-ellipsis">
     
   
-    Declarative processing
-  
+  Declarative processing
 
     
   </span>
@@ -635,8 +623,7 @@
   <span class="md-ellipsis">
     
   
-    Gallery
-  
+  Gallery
 
     
   </span>
@@ -651,8 +638,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Gallery
-  
+  Gallery
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -671,8 +657,7 @@
   <span class="md-ellipsis">
     
   
-    Overview
-  
+  Overview
 
     
   </span>
@@ -712,8 +697,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory patterns
-  
+  Trajectory patterns
 
     
   </span>
@@ -728,8 +712,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Trajectory patterns
-  
+  Trajectory patterns
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -748,8 +731,7 @@
   <span class="md-ellipsis">
     
   
-    Calibration flights
-  
+  Calibration flights
 
     
   </span>
@@ -776,8 +758,7 @@
   <span class="md-ellipsis">
     
   
-    SAVAN flights
-  
+  SAVAN flights
 
     
   </span>
@@ -804,8 +785,7 @@
   <span class="md-ellipsis">
     
   
-    Tour de France 2020
-  
+  Tour de France 2020
 
     
   </span>
@@ -832,8 +812,7 @@
   <span class="md-ellipsis">
     
   
-    Zero gravity
-  
+  Zero gravity
 
     
   </span>
@@ -881,8 +860,7 @@
   <span class="md-ellipsis">
     
   
-    Air traffic density
-  
+  Air traffic density
 
     
   </span>
@@ -897,8 +875,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Air traffic density
-  
+  Air traffic density
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -917,8 +894,7 @@
   <span class="md-ellipsis">
     
   
-    Traffic density
-  
+  Traffic density
 
     
   </span>
@@ -945,8 +921,7 @@
   <span class="md-ellipsis">
     
   
-    COVID 19
-  
+  COVID 19
 
     
   </span>
@@ -973,8 +948,7 @@
   <span class="md-ellipsis">
     
   
-    Russian ban
-  
+  Russian ban
 
     
   </span>
@@ -1022,8 +996,7 @@
   <span class="md-ellipsis">
     
   
-    Planet Earth
-  
+  Planet Earth
 
     
   </span>
@@ -1038,8 +1011,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Planet Earth
-  
+  Planet Earth
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -1058,8 +1030,7 @@
   <span class="md-ellipsis">
     
   
-    Geomagnetic declination
-  
+  Geomagnetic declination
 
     
   </span>
@@ -1086,8 +1057,7 @@
   <span class="md-ellipsis">
     
   
-    Sun elevation
-  
+  Sun elevation
 
     
   </span>
@@ -1145,8 +1115,7 @@
   <span class="md-ellipsis">
     
   
-    User Guide
-  
+  User Guide
 
     
   </span>
@@ -1161,8 +1130,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    User Guide
-  
+  User Guide
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -1181,8 +1149,7 @@
   <span class="md-ellipsis">
     
   
-    Overview
-  
+  Overview
 
     
   </span>
@@ -1222,8 +1189,7 @@
   <span class="md-ellipsis">
     
   
-    Sources of data
-  
+  Sources of data
 
     
   </span>
@@ -1238,8 +1204,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Sources of data
-  
+  Sources of data
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -1258,8 +1223,7 @@
   <span class="md-ellipsis">
     
   
-    Sample trajectories
-  
+  Sample trajectories
 
     
   </span>
@@ -1286,8 +1250,7 @@
   <span class="md-ellipsis">
     
   
-    Airport information
-  
+  Airport information
 
     
   </span>
@@ -1314,8 +1277,7 @@
   <span class="md-ellipsis">
     
   
-    Aircraft information
-  
+  Aircraft information
 
     
   </span>
@@ -1342,8 +1304,7 @@
   <span class="md-ellipsis">
     
   
-    Navigation data
-  
+  Navigation data
 
     
   </span>
@@ -1370,8 +1331,7 @@
   <span class="md-ellipsis">
     
   
-    Flight plans
-  
+  Flight plans
 
     
   </span>
@@ -1398,8 +1358,7 @@
   <span class="md-ellipsis">
     
   
-    Airspace information
-  
+  Airspace information
 
     
   </span>
@@ -1426,8 +1385,7 @@
   <span class="md-ellipsis">
     
   
-    OpenSky Network
-  
+  OpenSky Network
 
     
   </span>
@@ -1454,8 +1412,7 @@
   <span class="md-ellipsis">
     
   
-    Raw data
-  
+  Raw data
 
     
   </span>
@@ -1482,8 +1439,7 @@
   <span class="md-ellipsis">
     
   
-    EUROCONTROL data
-  
+  EUROCONTROL data
 
     
   </span>
@@ -1531,8 +1487,7 @@
   <span class="md-ellipsis">
     
   
-    Data processing
-  
+  Data processing
 
     
   </span>
@@ -1547,8 +1502,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Data processing
-  
+  Data processing
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -1567,8 +1521,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory cleaning
-  
+  Trajectory cleaning
 
     
   </span>
@@ -1595,8 +1548,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory interpolation
-  
+  Trajectory interpolation
 
     
   </span>
@@ -1623,8 +1575,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory resampling
-  
+  Trajectory resampling
 
     
   </span>
@@ -1651,8 +1602,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory simplification
-  
+  Trajectory simplification
 
     
   </span>
@@ -1679,8 +1629,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory arithmetic
-  
+  Trajectory arithmetic
 
     
   </span>
@@ -1707,8 +1656,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory iteration
-  
+  Trajectory iteration
 
     
   </span>
@@ -1735,8 +1683,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory generation
-  
+  Trajectory generation
 
     
   </span>
@@ -1784,8 +1731,7 @@
   <span class="md-ellipsis">
     
   
-    Navigation and performance
-  
+  Navigation and performance
 
     
   </span>
@@ -1800,8 +1746,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Navigation and performance
-  
+  Navigation and performance
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -1820,8 +1765,7 @@
   <span class="md-ellipsis">
     
   
-    Flight phases
-  
+  Flight phases
 
     
   </span>
@@ -1848,8 +1792,7 @@
   <span class="md-ellipsis">
     
   
-    Go-around
-  
+  Go-around
 
     
   </span>
@@ -1876,8 +1819,7 @@
   <span class="md-ellipsis">
     
   
-    Runway detection
-  
+  Runway detection
 
     
   </span>
@@ -1904,8 +1846,7 @@
   <span class="md-ellipsis">
     
   
-    Holding patterns
-  
+  Holding patterns
 
     
   </span>
@@ -1932,8 +1873,7 @@
   <span class="md-ellipsis">
     
   
-    Point merge
-  
+  Point merge
 
     
   </span>
@@ -1960,8 +1900,7 @@
   <span class="md-ellipsis">
     
   
-    Top of climb
-  
+  Top of climb
 
     
   </span>
@@ -1988,8 +1927,7 @@
   <span class="md-ellipsis">
     
   
-    Top of descent
-  
+  Top of descent
 
     
   </span>
@@ -2016,8 +1954,7 @@
   <span class="md-ellipsis">
     
   
-    Closest point of approach
-  
+  Closest point of approach
 
     
   </span>
@@ -2044,8 +1981,7 @@
   <span class="md-ellipsis">
     
   
-    ATC deconfliction
-  
+  ATC deconfliction
 
     
   </span>
@@ -2072,8 +2008,7 @@
   <span class="md-ellipsis">
     
   
-    GNSS interference
-  
+  GNSS interference
 
     
   </span>
@@ -2100,8 +2035,7 @@
   <span class="md-ellipsis">
     
   
-    Emissions estimation
-  
+  Emissions estimation
 
     
   </span>
@@ -2128,8 +2062,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory prediction
-  
+  Trajectory prediction
 
     
   </span>
@@ -2177,8 +2110,7 @@
   <span class="md-ellipsis">
     
   
-    Data visualization
-  
+  Data visualization
 
     
   </span>
@@ -2193,8 +2125,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Data visualization
-  
+  Data visualization
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -2213,8 +2144,7 @@
   <span class="md-ellipsis">
     
   
-    Plot trajectories
-  
+  Plot trajectories
 
     
   </span>
@@ -2241,8 +2171,7 @@
   <span class="md-ellipsis">
     
   
-    Airspace occupancy
-  
+  Airspace occupancy
 
     
   </span>
@@ -2269,8 +2198,7 @@
   <span class="md-ellipsis">
     
   
-    Trajectory clustering
-  
+  Trajectory clustering
 
     
   </span>
@@ -2318,8 +2246,7 @@
   <span class="md-ellipsis">
     
   
-    Troubleshooting
-  
+  Troubleshooting
 
     
   </span>
@@ -2334,8 +2261,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Troubleshooting
-  
+  Troubleshooting
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -2354,8 +2280,7 @@
   <span class="md-ellipsis">
     
   
-    Common issues
-  
+  Common issues
 
     
   </span>
@@ -2413,8 +2338,7 @@
   <span class="md-ellipsis">
     
   
-    Reference
-  
+  Reference
 
     
   </span>
@@ -2429,8 +2353,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Reference
-  
+  Reference
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -2449,8 +2372,7 @@
   <span class="md-ellipsis">
     
   
-    API Overview
-  
+  API Overview
 
     
   </span>
@@ -2490,8 +2412,7 @@
   <span class="md-ellipsis">
     
   
-    Core
-  
+  Core
 
     
   </span>
@@ -2506,8 +2427,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Core
-  
+  Core
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -2526,8 +2446,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.airspace
-  
+  traffic.core.airspace
 
     
   </span>
@@ -2554,8 +2473,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.cache
-  
+  traffic.core.cache
 
     
   </span>
@@ -2582,8 +2500,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.distance
-  
+  traffic.core.distance
 
     
   </span>
@@ -2610,8 +2527,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.flight
-  
+  traffic.core.flight
 
     
   </span>
@@ -2638,8 +2554,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.flightplan
-  
+  traffic.core.flightplan
 
     
   </span>
@@ -2666,8 +2581,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.intervals
-  
+  traffic.core.intervals
 
     
   </span>
@@ -2694,8 +2608,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.iterator
-  
+  traffic.core.iterator
 
     
   </span>
@@ -2722,8 +2635,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.lazy
-  
+  traffic.core.lazy
 
     
   </span>
@@ -2750,8 +2662,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.mixins
-  
+  traffic.core.mixins
 
     
   </span>
@@ -2778,8 +2689,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.structure
-  
+  traffic.core.structure
 
     
   </span>
@@ -2806,8 +2716,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.sv
-  
+  traffic.core.sv
 
     
   </span>
@@ -2834,8 +2743,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.time
-  
+  traffic.core.time
 
     
   </span>
@@ -2862,8 +2770,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.core.traffic
-  
+  traffic.core.traffic
 
     
   </span>
@@ -2911,8 +2818,7 @@
   <span class="md-ellipsis">
     
   
-    Algorithms
-  
+  Algorithms
 
     
   </span>
@@ -2927,8 +2833,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Algorithms
-  
+  Algorithms
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -2947,8 +2852,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.algorithms.filters
-  
+  traffic.algorithms.filters
 
     
   </span>
@@ -2975,8 +2879,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.algorithms.ground
-  
+  traffic.algorithms.ground
 
     
   </span>
@@ -3003,8 +2906,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.algorithms.metadata
-  
+  traffic.algorithms.metadata
 
     
   </span>
@@ -3031,8 +2933,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.algorithms.navigation
-  
+  traffic.algorithms.navigation
 
     
   </span>
@@ -3059,8 +2960,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.algorithms.performance
-  
+  traffic.algorithms.performance
 
     
   </span>
@@ -3087,8 +2987,7 @@
   <span class="md-ellipsis">
     
   
-    traffic.algorithms.prediction
-  
+  traffic.algorithms.prediction
 
     
   </span>
@@ -3126,6 +3025,19 @@
               
               <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
                 <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
                   <div class="md-sidebar__inner">
                     
 
@@ -3146,9 +3058,9 @@
         <li class="md-nav__item">
   <a href="#a-basic-example" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      <span class="md-typeset">
         A basic example
-      
+      </span>
     </span>
   </a>
   
@@ -3181,6 +3093,7 @@
     <li class="md-path__item">
       <a href="./.." class="md-path__link">
         
+  
   <span class="md-ellipsis">
     Home
   </span>
@@ -3196,9 +3109,13 @@
   
     
     
+    
+    
+    
       <li class="md-path__item">
         <a href="././" class="md-path__link">
           
+  
   <span class="md-ellipsis">
     Tutorials
   </span>
@@ -3249,13 +3166,13 @@
 <span class="n">m</span> <span class="o">=</span> <span class="n">belevingsvlucht</span><span class="o">.</span><span class="n">map_leaflet</span><span class="p">(</span>  <span class="c1"># (3)!</span>
     <span class="n">zoom</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
     <span class="n">highlight</span><span class="o">=</span><span class="p">{</span>
-      <span class="s2">&quot;orange&quot;</span><span class="p">:</span> <span class="s2">&quot;first(&#39;15 min&#39;)&quot;</span><span class="p">,</span>  <span class="c1"># (4)!</span>
-      <span class="s2">&quot;red&quot;</span><span class="p">:</span> <span class="s2">&quot;holding_pattern&quot;</span>  <span class="c1"># (5)!</span>
+      <span class="s2">"orange"</span><span class="p">:</span> <span class="s2">"first('15 min')"</span><span class="p">,</span>  <span class="c1"># (4)!</span>
+      <span class="s2">"red"</span><span class="p">:</span> <span class="s2">"holding_pattern"</span>  <span class="c1"># (5)!</span>
     <span class="p">},</span>
 <span class="p">)</span>
 
-<span class="n">m</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">airports</span><span class="p">[</span><span class="s2">&quot;EHLE&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">leaflet</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Lelystad Airport&quot;</span><span class="p">))</span>  <span class="c1"># (6)!</span>
-<span class="n">m</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">airports</span><span class="p">[</span><span class="s2">&quot;EHAM&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">leaflet</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Amsterdam Airport Schiphol&quot;</span><span class="p">))</span>
+<span class="n">m</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">airports</span><span class="p">[</span><span class="s2">"EHLE"</span><span class="p">]</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">leaflet</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Lelystad Airport"</span><span class="p">))</span>  <span class="c1"># (6)!</span>
+<span class="n">m</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">airports</span><span class="p">[</span><span class="s2">"EHAM"</span><span class="p">]</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">leaflet</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Amsterdam Airport Schiphol"</span><span class="p">))</span>
 
 <span class="n">m</span>
 </code></pre></div>
@@ -3396,11 +3313,10 @@ try {
     
       
       
-      
-      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["navigation.sections","navigation.path","navigation.top","content.code.edit","content.code.view","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","search.suggest"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["navigation.sections","navigation.path","navigation.top","content.code.edit","content.code.view","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","search.suggest"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.5fcf0de6.min.js"></script>
+      <script src="../assets/javascripts/bundle.6970bfe9.min.js"></script>
       
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
       
