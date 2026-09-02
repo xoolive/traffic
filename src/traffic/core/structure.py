@@ -304,6 +304,14 @@ class Navaid(PointMixin):
     magnetic_variation: Optional[float]
     description: Optional[str]
 
+    @property
+    def is_fix(self) -> bool:
+        return self.type.upper() == "FIX"
+
+    @property
+    def is_radio_navaid(self) -> bool:
+        return not self.is_fix
+
     def __getattr__(self, name: str) -> float:
         if name == "lat":
             return self.latitude
