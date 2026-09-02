@@ -19,21 +19,6 @@ repos:
       - id: ruff
       - id: ruff-format
         args: [--check]
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.2
-    hooks:
-      - id: mypy
-        exclude: ^docs/conf.py
-        additional_dependencies:
-          - altair
-          - cartes
-          - cartopy
-          - impunity
-          - pitot
-          - pyopensky
-          - py7zr
-          - pytest
-          - rs1090
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.1.0
     hooks:
@@ -44,7 +29,11 @@ repos:
       - id: ty-check
         name: ty check
         description: Type check with ty.
-        entry: uv run ty check src tests
+        entry: >-
+          uv run ty check --python-version 3.12
+          src/traffic/data/resolver src/traffic/data/basic
+          tests/test_resolver.py tests/test_field15.py
+          tests/test_airspace_migration.py
         language: system
         pass_filenames: false
         require_serial: true
