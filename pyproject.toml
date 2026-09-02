@@ -62,12 +62,12 @@ dev = [
 ]
 
 [tool.uv.sources]
+# traffic-thrust = { path = "../thrust/python", editable = true }
 # cartes = { path = "../cartes", editable = true }
 # impunity = { path = "../impunity", editable = true }
 # pitot = { path = "../pitot", editable = true }
 # pyopensky = { path = "../pyopensky", editable = true }
 # rs1090 = { path = "../rs1090/python", editable = true }
-traffic-thrust = { path = "../thrust/python", editable = true }
 
 [project.urls]
 Documentation = "https://traffic-viz.github.io/"
@@ -86,7 +86,7 @@ lonboard = ["lonboard>=0.10.3; python_version<'3.13'"]
 spark = ["pyspark>=4.0.1"]
 xarray = ["xarray>=2024.10.0"]
 learning = ["scikit-learn>=1.5.2"]
-thrust = ["traffic-thrust"]
+thrust = ["traffic-thrust>=0.2.3"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
