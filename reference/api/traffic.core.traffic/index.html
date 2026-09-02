@@ -2871,6 +2871,39 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__geo_interface__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __geo_interface__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.extent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#traffic.core.traffic.Traffic.__add__" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3692,6 +3725,39 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.__geo_interface__" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        __geo_interface__
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bounds
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#traffic.core.traffic.Traffic.extent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#traffic.core.traffic.Traffic.__add__" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4414,6 +4480,78 @@ operations without evaluating them.</p>
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="traffic.core.traffic.Traffic.__geo_interface__" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">__geo_interface__</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#traffic.core.traffic.Traffic.__geo_interface__" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">__geo_interface__</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Represent the collection as one geometry per flight.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="traffic.core.traffic.Traffic.bounds" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">bounds</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#traffic.core.traffic.Traffic.bounds" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">bounds</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return <code>(west, south, east, north)</code> for all valid positions.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="traffic.core.traffic.Traffic.extent" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">extent</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#traffic.core.traffic.Traffic.extent" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">extent</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return <code>(west, east, south, north)</code> for projected map axes.</p>
+
+    </div>
+
+</div>
 
 
 
@@ -5392,7 +5530,9 @@ extended Mode-S information.</p>
 <div class="doc-signature highlight"><pre><span></span><code><span class="nf">generation</span><span class="p">(</span>
     <span class="n">generation</span><span class="p">:</span> <span class="s2">&quot;GenerationProtocol&quot;</span><span class="p">,</span>
     <span class="n">features</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">scaler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;ScalerProtocol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">scaler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+        <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;ScalerProtocol&quot;</span><span class="p">,</span> <span class="s2">&quot;LegacyScalerProtocol&quot;</span><span class="p">]</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generation</span>
 </code></pre></div>
 

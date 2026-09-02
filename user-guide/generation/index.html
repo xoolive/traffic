@@ -1831,10 +1831,65 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.fit_prepared" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fit_prepared
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.fit_preprocessing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fit_preprocessing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.inverse_transform_features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inverse_transform_features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.prepare_features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prepare_features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#traffic.algorithms.generation.Generation.sample" class="md-nav__link">
     <span class="md-ellipsis">
       
         sample
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.transform_features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        transform_features
       
     </span>
   </a>
@@ -3344,10 +3399,65 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.fit_prepared" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fit_prepared
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.fit_preprocessing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fit_preprocessing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.inverse_transform_features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inverse_transform_features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.prepare_features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prepare_features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#traffic.algorithms.generation.Generation.sample" class="md-nav__link">
     <span class="md-ellipsis">
       
         sample
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#traffic.algorithms.generation.Generation.transform_features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        transform_features
       
     </span>
   </a>
@@ -3503,6 +3613,11 @@ keeps the fitted model, feature list, and scaler together. Fit once, then call
 <p>The <code>Traffic.generation()</code> convenience method returns the fitted wrapper
 directly. Keeping this logic outside <code>Traffic</code> also prevents model-specific
 options from accumulating on the core data structure.</p>
+<p>The external model may be omitted when a workflow prepares and serializes
+matrices before choosing or training a model. With <code>generation=None</code>, feature
+scaling, matrix transformation, inverse transformation, and <code>build_traffic()</code>
+remain available. Calls to <code>fit()</code>, <code>fit_prepared()</code>, or <code>sample()</code> fail clearly
+because no model is attached.</p>
 <h2 id="how-the-data-is-represented">How the data is represented<a class="headerlink" href="#how-the-data-is-represented" title="Permanent link">&para;</a></h2>
 <p>A generative model expects one fixed-size vector per observation. A <code>Traffic</code>
 object instead contains a variable number of timestamped points per flight.
@@ -3704,8 +3819,9 @@ from speed and track, so small errors propagate along the trajectory.</p>
 </code></pre></div>
 <p>During <code>Generation.fit(traffic)</code>, <code>X</code> is a NumPy array with shape
 <code>(n_trajectories, n_points × n_features)</code>. The model must fit from that matrix.
-Model settings should currently be passed to the model constructor, as in
-<code>GaussianMixture(n_components=2)</code>, rather than to <code>Generation.fit()</code>.</p>
+Model settings may be passed to the model constructor, as in
+<code>GaussianMixture(n_components=2)</code>, or as keyword arguments to
+<code>Generation.fit()</code> when the model's <code>fit()</code> method accepts them.</p>
 <p>During <code>Generation.sample(n_samples)</code>, the model must return a pair:</p>
 <ol>
 <li>a NumPy array with shape <code>(n_samples, n_points × n_features)</code>;</li>
@@ -3742,8 +3858,27 @@ may remain on a GPU. A small adapter can present the contract expected by
 </code></pre></div>
 <p>The method names inside the adapter depend on the chosen framework. What matters
 is the <code>fit(X)</code> and <code>sample(n_samples) -&gt; (samples, metadata)</code> boundary. A
-scaler, when provided to <code>Generation</code>, must separately implement
-<code>fit_transform()</code> and <code>inverse_transform()</code>.</p>
+For split preprocessing, a scaler must implement <code>fit()</code>, <code>transform()</code>, and
+<code>inverse_transform()</code>. The original <code>prepare_features()</code> convenience method also
+accepts legacy scalers that only implement <code>fit_transform()</code> and
+<code>inverse_transform()</code>; those scalers cannot transform validation or test splits
+without refitting.</p>
+<p>For a controlled train/validation/test split, fit trajectory preprocessing
+before fitting the model. A model-independent preparation stage may construct
+the wrapper explicitly:</p>
+<div class="highlight"><pre><span></span><code><span class="n">preprocessor</span> <span class="o">=</span> <span class="n">Generation</span><span class="p">(</span>
+    <span class="n">generation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;track&quot;</span><span class="p">,</span> <span class="s2">&quot;groundspeed&quot;</span><span class="p">,</span> <span class="s2">&quot;altitude&quot;</span><span class="p">,</span> <span class="s2">&quot;timedelta&quot;</span><span class="p">],</span>
+    <span class="n">scaler</span><span class="o">=</span><span class="n">MinMaxScaler</span><span class="p">(</span><span class="n">feature_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+<span class="p">)</span>
+<span class="n">preprocessor</span><span class="o">.</span><span class="n">fit_preprocessing</span><span class="p">(</span><span class="n">training_traffic</span><span class="p">)</span>
+<span class="n">X_train</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="o">.</span><span class="n">transform_features</span><span class="p">(</span><span class="n">training_traffic</span><span class="p">)</span>
+<span class="n">X_validation</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="o">.</span><span class="n">transform_features</span><span class="p">(</span><span class="n">validation_traffic</span><span class="p">)</span>
+<span class="n">X_test</span> <span class="o">=</span> <span class="n">preprocessor</span><span class="o">.</span><span class="n">transform_features</span><span class="p">(</span><span class="n">test_traffic</span><span class="p">)</span>
+</code></pre></div>
+<p><code>Generation.fit(traffic)</code> is the convenience form for the simpler case where
+one collection is both the preprocessing and model-fitting data. The explicit
+methods prevent a scaler from being refit on validation or test trajectories.</p>
 <h2 id="current-limitations">Current limitations<a class="headerlink" href="#current-limitations" title="Permanent link">&para;</a></h2>
 <ul>
 <li>All fitted trajectories must contain the same number of points.</li>
@@ -3755,7 +3890,11 @@ scaler, when provided to <code>Generation</code>, must separately implement
 <li>Sampling from <code>x</code> and <code>y</code> requires the original projection.</li>
 <li>Generated timestamps are anchored to the current date rather than to the
   training period.</li>
-<li><code>save()</code> and <code>from_file()</code> are not implemented.</li>
+<li><code>save()</code> and <code>from_file()</code> are not implemented; serialize the feature list and
+  scaler state in the surrounding experiment artifact when reproducibility is
+  required.</li>
+<li>A wrapper created with <code>generation=None</code> can prepare matrices and rebuild
+  <code>Traffic</code>, but cannot fit or sample an external model.</li>
 <li>The wrapper does not impose kinematic, operational, or airspace constraints.</li>
 </ul>
 <p>These constraints are part of the present API rather than properties of
@@ -3773,9 +3912,10 @@ trajectory generation in general.</p>
 
 
         <p>Generation class to handle trajectory generation.</p>
-<p>generation: GenerationProtocol
-    generation model, should implement <code>fit()</code> and <code>sample()</code>
-    methods.</p>
+<p>generation: GenerationProtocol, optional
+    Generation model implementing <code>fit()</code> and <code>sample()</code>. It may be
+    <code>None</code> when the wrapper is used only to prepare feature matrices or
+    rebuild a <code>Traffic</code> object.</p>
 <p>features: List[str]
     List of features to generate. Example:
     <code>['latitude', 'longitude', 'altitude', 'timedelta']</code>.</p>
@@ -3783,7 +3923,7 @@ trajectory generation in general.</p>
     <em>if need be</em>, apply a scaler to the data before fitting the
     generation model. You may want to consider <code>StandardScaler()
     &lt;https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html&gt;</code>_.
-    The scaler object should implement <code>fit_transform()</code> and
+    The scaler object should implement <code>fit()</code>, <code>transform()</code>, and
     <code>inverse_transform()</code> methods.</p>
 
 
@@ -3836,6 +3976,93 @@ of features <code>self.features</code>.</p>
 <div class="doc doc-object doc-function">
 
 
+<h2 id="traffic.algorithms.generation.Generation.fit_prepared" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">fit_prepared</span>
+
+
+<a href="#traffic.algorithms.generation.Generation.fit_prepared" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">fit_prepared</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generation</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Fit the external model from an already prepared matrix.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="traffic.algorithms.generation.Generation.fit_preprocessing" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">fit_preprocessing</span>
+
+
+<a href="#traffic.algorithms.generation.Generation.fit_preprocessing" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">fit_preprocessing</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">Traffic</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generation</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Fit the feature scaler on <code>t</code> without fitting the model.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="traffic.algorithms.generation.Generation.inverse_transform_features" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">inverse_transform_features</span>
+
+
+<a href="#traffic.algorithms.generation.Generation.inverse_transform_features" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">inverse_transform_features</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Undo feature scaling for model samples.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="traffic.algorithms.generation.Generation.prepare_features" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">prepare_features</span>
+
+
+<a href="#traffic.algorithms.generation.Generation.prepare_features" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">prepare_features</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">Traffic</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Fit preprocessing and return flattened features.</p>
+<p>This preserves the original convenience API. For a train/validation/test
+workflow, call :meth:<code>fit_preprocessing</code> once on the training traffic,
+then call :meth:<code>transform_features</code> for each split.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h2 id="traffic.algorithms.generation.Generation.sample" class="doc doc-heading">
             <span class="doc doc-object-name doc-function-name">sample</span>
 
@@ -3877,6 +4104,26 @@ of features <code>self.features</code>.</p>
         forward=False,
     )
 </code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="traffic.algorithms.generation.Generation.transform_features" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">transform_features</span>
+
+
+<a href="#traffic.algorithms.generation.Generation.transform_features" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">transform_features</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">Traffic</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return flattened features using the already-fitted scaler.</p>
 
 
     </div>
