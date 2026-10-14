@@ -35,7 +35,7 @@ def extended_kalman_filter(
     timestamps = pd.Series(measurements.index)
 
     for i in range(1, len(timestamps)):
-        dt = (timestamps[i] - timestamps[i - 1]).total_seconds()
+        dt = (timestamps.iloc[i] - timestamps.iloc[i - 1]).total_seconds()
 
         # Prediction Step
         F = jacobian_state_transition(x, dt)
