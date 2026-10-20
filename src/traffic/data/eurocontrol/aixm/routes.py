@@ -182,10 +182,12 @@ class AIXMRoutesParser(Airways):
             pd.concat(
                 [
                     self.data_routes.query("prefix.notnull()").eval(
-                        "name = prefix + secondLetter + number"
+                        "name = prefix + secondLetter + number",
+                        engine="python",
                     ),
                     self.data_routes.query("prefix.isnull()").eval(
-                        "name =  secondLetter + number"
+                        "name =  secondLetter + number",
+                        engine="python",
                     ),
                 ]
             )
