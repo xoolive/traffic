@@ -2641,7 +2641,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
     def pushback(
         self,
         *args: Any,
-        method: Literal["default", "parking_area", "parking_position"]
+        method: Literal["default", "parking_area", "parking_position", "tcn"]
         | ApplyOptionalBase = "default",
         **kwargs: Any,
     ) -> Optional["Flight"]:
@@ -2670,12 +2670,17 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
           and the moment the aircraft suddenly changes direction in the computed
           track angle.
 
+        - ``"tcn"`` uses
+          :class:`~traffic.algorithms.ground.pushback_tcn.TCNBasedPushback`
+          and identifies the pushback with a neural network, based on the
+          timestamped positions of the aircraft.
+
         Usage:
 
         >>> flight.pushback(airport="LSZH", method="default")
 
         """
-        from ..algorithms.ground import pushback
+        from ..algorithms.ground import pushback, pushback_tcn
         from ..algorithms.navigation import ApplyOptionalBase
 
         if len(args) and isinstance(args[0], ApplyOptionalBase):
@@ -2686,6 +2691,7 @@ class Flight(HBoxMixin, GeographyMixin, ShapelyMixin, metaclass=MetaFlight):
             default=pushback.ParkingPositionBasedPushback,
             parking_area=pushback.ParkingAreaBasedPushback,
             parking_position=pushback.ParkingPositionBasedPushback,
+            tcn=pushback_tcn.TCNBasedPushback,
         )
 
         method = (

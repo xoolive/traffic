@@ -223,6 +223,38 @@ def test_pushback_parking_area() -> None:
     assert parking_position.duration > pd.Timedelta("1 min")
 
 
+def test_pushback_tcn() -> None:
+    flight = zurich_airport["AEE5ZH"]
+    assert flight is not None
+    pushback = flight.pushback("LSZH", method="tcn")
+    assert pushback is not None
+    assert pd.Timedelta("1 min") < pushback.duration < pd.Timedelta("10 min")
+    assert flight.start <= pushback.start
+    assert pushback.stop <= flight.stop
+
+
+def test_pushback_tcn_sampling() -> None:
+    flight = zurich_airport["AEE5ZH"]
+    assert flight is not None
+    pushback = flight.pushback("LSZH", method="tcn")
+    assert pushback is not None
+    sparse = Flight(flight.data.iloc[::5])
+    resampled = sparse.pushback("LSZH", method="tcn")
+    assert resampled is not None
+    assert abs(resampled.start - pushback.start) < pd.Timedelta("30s")
+    assert abs(resampled.stop - pushback.stop) < pd.Timedelta("30s")
+
+
+def test_pushback_tcn_parameters() -> None:
+    flight = zurich_airport["AEE5ZH"]
+    assert flight is not None
+    assert flight.pushback("LSZH", method="tcn", core_threshold=1.0) is None
+    with pytest.raises(ValueError):
+        flight.pushback("LSZH", method="tcn", edge_threshold=0.9)
+    with pytest.raises(ValueError):
+        flight.pushback("LSZH", method="tcn", core_max_interruption="1 min")
+
+
 # @pytest.mark.xfail(
 #     raises=httpx.TransportError, reason="Quotas on OpenStreetMap"
 # )
