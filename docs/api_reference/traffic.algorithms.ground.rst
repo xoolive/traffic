@@ -31,6 +31,9 @@ Pushback detection
 .. automodule:: traffic.algorithms.ground.pushback
     :members:
 
+.. automodule:: traffic.algorithms.ground.pushback_tcn
+    :members:
+
 Runway detection
 ----------------
 
